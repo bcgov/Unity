@@ -24,6 +24,14 @@ namespace Unity.Payments.Repositories
                         && s.CorrelationProvider == correlationProvider);
         }
 
+        public async Task<Supplier?> GetBySupplierNumberAsync(string supplierNumber, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet
+                    .IncludeDetails(includeDetails)
+                    .FirstOrDefaultAsync(s => s.Number == supplierNumber);
+        }
+
         public override async Task<IQueryable<Supplier>> WithDetailsAsync()
         {
             // Uses the extension method defined above

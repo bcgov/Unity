@@ -1,21 +1,27 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Unity.GrantManager.Intakes;
 using System;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.GrantApplications;
-using Volo.Abp;
+using Unity.Payments.Suppliers;
+using Unity.Modules.Shared.Correlation;
+using Unity.Payments.Events;
+using Microsoft.AspNetCore.Authorization;
+using System.Collections.Generic;
+using Unity.Payments.Domain.Suppliers;
 
 namespace Unity.GrantManager.Applicants;
 
-[RemoteService(false)]
+[Authorize]
 [Dependency(ReplaceServices = true)]
-[ExposeServices(typeof(ApplicantsService), typeof(IApplicantsService))]
-public class ApplicantsService(IApplicantRepository applicantRepository,
-                              IApplicantAddressRepository addressRepository,
-                              IApplicantAgentRepository applicantAgentRepository) : ApplicationService, IApplicantsService
+[ExposeServices(typeof(ApplicantAppService), typeof(IApplicantsAppService))]
+public class ApplicantAppService(ISiteRepository siteRepository,
+                                 IApplicantRepository applicantRepository,
+                                 ISupplierAppService supplierAppService,
+                                 IApplicantAddressRepository addressRepository,
+                                 IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantsAppService
 {
 
     public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
@@ -31,6 +37,42 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
         applicant = await CreateNewApplicantAsync(intakeMap);
         await CreateApplicantAddressesAsync(intakeMap, applicant);
         return applicant;
+    }
+
+    public async Task<Applicant> RelateSupplierToApplicant(ApplicantSupplierEto applicantSupplierEto)
+    {
+        ArgumentNullException.ThrowIfNull(applicantSupplierEto.ApplicantId);
+        Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
+        ArgumentNullException.ThrowIfNull(applicant);
+        applicant.SupplierId = applicantSupplierEto.SupplierId;
+        await applicantRepository.UpdateAsync(applicant);
+        return applicant;
+    }
+
+    public async Task<List<Site>> GetSitesBySupplierIdAsync(Guid supplierId)
+    {
+        return await siteRepository.GetBySupplierAsync(supplierId);
+    }
+
+    public async Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId)
+    {
+
+        Applicant applicant = await applicantRepository.GetAsync(applicantId);
+
+        //If SupplierId is available, use it to get the supplier
+        if (applicant.SupplierId.HasValue)
+        {
+            Guid supplierId = applicant.SupplierId.Value;
+            return await supplierAppService.GetAsync(supplierId);
+        }
+
+        // If no SupplierId, fetch the supplier using the correlation
+        return await supplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+        {
+            CorrelationId = applicantId,
+            CorrelationProvider = CorrelationConsts.Applicant,
+            IncludeDetails = true
+        });
     }
 
     private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
@@ -117,7 +159,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
             Title = intakeMap.ContactTitle ?? string.Empty,
         };
 
-        if (IsJObject(intakeMap.ApplicantAgent))
+        if (MappingUtil.IsJObject(intakeMap.ApplicantAgent))
         {
             applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
             applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
@@ -126,28 +168,10 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
             applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
             applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
             applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
-            
         }
         await applicantAgentRepository.InsertAsync(applicantAgent);
 
         return applicantAgent;
     }
 
-    private static bool IsJObject(dynamic? applicantAgent)
-    {
-        if(applicantAgent == null) 
-            return false;
-        try
-        {
-            if (applicantAgent is Newtonsoft.Json.Linq.JObject)
-            {
-                return true; 
-            }
-        }
-        catch {
-            return false;
-        }
-
-        return false;
-    }
 }
