@@ -19,6 +19,7 @@ using Volo.Abp.Users;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Permissions;
+using Volo.Abp;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -89,6 +90,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized);
     }
 
+    [RemoteService(false)]
     public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status)
     {
         if (string.IsNullOrEmpty(emailTo))
