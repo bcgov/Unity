@@ -58,6 +58,7 @@ namespace Unity.Payments.PaymentRequests
             return (paymentConfig, paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount);
         }
 
+        [Authorize(PaymentsPermissions.Payments.RequestPayment)]
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
         {
             List<PaymentRequestDto> createdPayments = [];
@@ -143,7 +144,7 @@ namespace Unity.Payments.PaymentRequests
 
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
         {
-            List<PaymentRequestDto> updatedPayments = new();
+            List<PaymentRequestDto> updatedPayments = [];
 
             var paymentThreshold = await GetPaymentThresholdAsync();
 
@@ -213,7 +214,7 @@ namespace Unity.Payments.PaymentRequests
         {
             List<PaymentRequestStatus> level3Approvals = new() { PaymentRequestStatus.L3Pending, PaymentRequestStatus.L3Declined };
             return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && level3Approvals.Contains(status);
-        }
+        }        
 
         private async Task<PaymentRequestDto> CreatePaymentRequestDtoAsync(Guid paymentRequestId)
         {

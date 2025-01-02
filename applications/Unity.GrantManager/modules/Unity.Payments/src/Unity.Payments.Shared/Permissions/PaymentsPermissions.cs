@@ -13,7 +13,9 @@ public static class PaymentsPermissions
         public const string L2ApproveOrDecline = Default + ".L2ApproveOrDecline";
         public const string L3ApproveOrDecline = Default + ".L3ApproveOrDecline";
         public const string Decline = Default + ".Decline";
-    }
+        public const string RequestPayment = Default + ".RequestPayment";
+        public const string EditSupplierInfo = Default + ".EditSupplierInfo";
+    }    
 
     public static string[] GetAll()
     {

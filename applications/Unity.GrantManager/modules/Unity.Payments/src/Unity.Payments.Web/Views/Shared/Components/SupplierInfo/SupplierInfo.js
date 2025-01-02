@@ -1,5 +1,5 @@
 $(function () {
-    const l = abp.localization.getResource('Payments');    
+    const l = abp.localization.getResource('Payments');
 
     let dataTable;
     function loadSiteInfoTable() {
@@ -9,14 +9,17 @@ $(function () {
             const includeDetails = true;
             return { correlationId, correlationProvider, includeDetails };
         }
+
         let responseCallback = function (result) {
             let response = { data: [] };
-            if(result != null && result.sites != null) {
+
+            if (result?.sites != null) {
                 response.data = result.sites
-            } 
+            }
+
             return response;
         };
-                
+
         dataTable = $('#SiteInfoTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: false,
@@ -63,7 +66,7 @@ $(function () {
         );
     }
 
-    setTimeout(function () { loadSiteInfoTable(); },1000);
+    setTimeout(function () { loadSiteInfoTable(); }, 1000);
     $('#nav-organization-info-tab').one('click', function () {
         dataTable?.columns?.adjust();
     });
@@ -100,8 +103,8 @@ siteInfoModal.onResult(function () {
     );
 });
 
-function openSiteInfoModal(siteId, actionType) {    
-    const applicantId = $("#ApplicantInfoViewApplicantId").val(); 
+function openSiteInfoModal(siteId, actionType) {
+    const applicantId = $("#ApplicantInfoViewApplicantId").val();
     const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
     const supplierId = $("#SupplierId").val();
 
