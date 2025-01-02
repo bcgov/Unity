@@ -5,7 +5,7 @@ namespace Unity.Notifications;
 
 [DependsOn(
     typeof(AbpDddDomainModule),
-    typeof(NotificationsDomainSharedModule)
+    typeof(NotificationsDomainSharedModule)    
 )]
 public class NotificationsDomainModule : AbpModule
 {

@@ -1,7 +1,7 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
-using Unity.Modules.Integrations;
+using Unity.Modules.Shared.Integrations;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Caching;
@@ -30,7 +30,7 @@ namespace Unity.Payments.Integrations.Cas
                 ApiKey = CAS_API_KEY,
             };
 
-            TokenService tokenService = new TokenService(httpClientFactory, chesTokenCache);
+            TokenService tokenService = new(httpClientFactory, chesTokenCache, Logger);
             return await tokenService.GetAuthTokenAsync(clientOptions);
         }
     }

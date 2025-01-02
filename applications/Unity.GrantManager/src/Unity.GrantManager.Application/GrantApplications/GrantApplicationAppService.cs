@@ -260,6 +260,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     }
 
+    [Authorize(GrantApplicationPermissions.AssessmentResults.Edit)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -317,6 +318,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
     }
 
+    [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);

@@ -19,12 +19,13 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-select/js/dataTables.select.js");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.js");
         context.Files.AddIfNotContains("/libs/datatables.net-select-bs5/js/select.bootstrap5.js");
-        context.Files.AddIfNotContains("/libs/datatables.net-fixedheader/js/dataTables.fixedHeader.js");        
+        context.Files.AddIfNotContains("/libs/datatables.net-fixedheader/js/dataTables.fixedHeader.js");
 
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder/js/dataTables.colReorder.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder-bs5/js/colReorder.bootstrap5.min.js");
 
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader-bs5/js/fixedHeader.bootstrap5.min.js");
         context.Files.AddIfNotContains("/libs/echarts/echarts.min.js");
+        context.Files.AddIfNotContains("/libs/jszip/dist/jszip.min.js");
     }
 }

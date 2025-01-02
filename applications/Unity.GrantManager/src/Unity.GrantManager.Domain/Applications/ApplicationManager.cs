@@ -185,7 +185,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         application.ApplicationStatusId = statusChangedTo.Id;
         application.ApplicationStatus = statusChangedTo;
 
-        if (triggerAction == GrantApplicationAction.StartAssessment)
+        if (triggerAction == GrantApplicationAction.StartAssessment || triggerAction == GrantApplicationAction.Internal_StartAssessment)
         {
             application.AssessmentStartDate = DateTime.UtcNow;
         }

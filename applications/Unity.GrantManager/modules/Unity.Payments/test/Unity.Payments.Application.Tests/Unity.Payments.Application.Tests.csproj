@@ -10,11 +10,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Unity.Payments.Application\Unity.Payments.Application.csproj" />
-    <ProjectReference Include="..\Unity.Payments.TestBase\Unity.Payments.TestBase.csproj" />
-    <PackageReference Include="Autofac" Version="8.1.1" />
+    <ProjectReference Include="..\Unity.Payments.TestBase\Unity.Payments.TestBase.csproj" />    
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.3.0" />
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.3.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.3.4" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
     <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
   </ItemGroup>
 

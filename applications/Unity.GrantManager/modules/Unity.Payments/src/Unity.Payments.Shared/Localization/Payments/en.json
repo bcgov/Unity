@@ -29,6 +29,7 @@
     "ApplicationPaymentListTable:L1ApprovalDate": "L1 Approval Date",
     "ApplicationPaymentListTable:L2ApprovalDate": "L2 Approval Date",
     "ApplicationPaymentListTable:L3ApprovalDate": "L3 Approval Date",
+    "ApplicationPaymentListTable:BatchName": "Batch #",
     "ApplicationPaymentListTable:PaymentID": "Payment ID",
     "ApplicationPaymentListTable:ApplicantName": "Applicant Name",
     "ApplicationPaymentListTable:SupplierNumber": "Supplier Number",
@@ -95,6 +96,8 @@
     "Permission:Payments.Default": "Payments",
     "Permission:Payments.L1ApproveOrDecline": "Approve/Decline L1 Payments",
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
-    "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments"
+    "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
+    "Permission:Payments.RequestPayment": "Request Payment",
+    "Permission:Payments.EditSupplierInfo": "Update Supplier Info"
   }
 }

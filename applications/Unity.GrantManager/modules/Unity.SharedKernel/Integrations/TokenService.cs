@@ -3,22 +3,19 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System;
-using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
-using Volo.Abp.DependencyInjection;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Caching.Distributed;
 using Volo.Abp.Caching;
 
-namespace Unity.Modules.Integrations
+namespace Unity.Modules.Shared.Integrations
 {
-    [IntegrationService]
-    [ExposeServices(typeof(TokenService), typeof(ITokenService))]
     public class TokenService(
         IHttpClientFactory httpClientFactory,
-        IDistributedCache<TokenValidationResponse, string> chesTokenCache) : ApplicationService, ITokenService
+        IDistributedCache<TokenValidationResponse, string> chesTokenCache,
+        ILogger logger)
     {
         private const int ONE_MINUTE_SECONDS = 60;
 
@@ -48,7 +45,7 @@ namespace Unity.Modules.Integrations
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                Logger.LogInformation(ex, "Token Service Exception: {ExceptionMessage}", ExceptionMessage);
+                logger.LogInformation(ex, "Token Service Exception: {ExceptionMessage}", ExceptionMessage);
             }
 
             return tokenResponse;
@@ -87,7 +84,7 @@ namespace Unity.Modules.Integrations
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                Logger.LogError("Error fetching CHES API token");
+                logger.LogError("Error fetching CHES API token");
 
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
