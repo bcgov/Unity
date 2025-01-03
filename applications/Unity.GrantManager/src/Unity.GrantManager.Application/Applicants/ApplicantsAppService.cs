@@ -14,7 +14,7 @@ using Unity.Payments.Domain.Suppliers;
 
 namespace Unity.GrantManager.Applicants;
 
-[Authorize]
+
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(ApplicantAppService), typeof(IApplicantsAppService))]
 public class ApplicantAppService(ISiteRepository siteRepository,
