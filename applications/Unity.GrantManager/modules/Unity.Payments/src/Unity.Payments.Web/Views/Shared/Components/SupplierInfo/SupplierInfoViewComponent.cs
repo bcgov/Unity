@@ -19,7 +19,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
         ScriptTypes = [typeof(SupplierInfoWidgetScriptBundleContributor)],
         StyleTypes = [typeof(SupplierInfosWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class SupplierInfoViewComponent(IApplicantsAppService applicantsService,
+    public class SupplierInfoViewComponent(IApplicantSupplierAppService applicantSupplierService,
                                            IPermissionChecker permissionChecker,
                                            IFeatureChecker featureChecker) : AbpViewComponent
     {
@@ -51,7 +51,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 
         public virtual async Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId)
         {
-            return await applicantsService.GetSupplierByApplicantIdAsync(applicantId);
+            return await applicantSupplierService.GetSupplierByApplicantIdAsync(applicantId);
         }
 
         private async Task<bool> HasEditSupplier()

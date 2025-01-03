@@ -13,7 +13,7 @@ using Volo.Abp.Uow;
 namespace Unity.GrantManager.Intakes
 {
     public class IntakeFormSubmissionManager(IUnitOfWorkManager _unitOfWorkManager,
-                                             IApplicantsAppService applicantsService,
+                                             IApplicantAppService applicantService,
                                              IApplicationRepository _applicationRepository,
                                              IApplicationStatusRepository _applicationStatusRepository,
                                              IApplicationFormSubmissionRepository _applicationFormSubmissionRepository,
@@ -75,7 +75,7 @@ namespace Unity.GrantManager.Intakes
         private async Task<Application> CreateNewApplicationAsync(IntakeMapping intakeMap,
             ApplicationForm applicationForm)
         {
-            var applicant = await applicantsService.CreateOrRetrieveApplicantAsync(intakeMap);
+            var applicant = await applicantService.CreateOrRetrieveApplicantAsync(intakeMap);
             var submittedStatus = await _applicationStatusRepository.FirstAsync(s => s.StatusCode.Equals(GrantApplicationState.SUBMITTED));
             var application = await _applicationRepository.InsertAsync(
                 new Application
@@ -114,7 +114,7 @@ namespace Unity.GrantManager.Intakes
                 Application = application,
                 IntakeMap = intakeMap
             };
-            await applicantsService.CreateOrUpdateApplicantAgentAsync(applicantAgentDto);
+            await applicantService.CreateOrUpdateApplicantAgentAsync(applicantAgentDto);
             return application;
         }
 

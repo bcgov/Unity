@@ -6,7 +6,7 @@ using Volo.Abp.EventBus;
 
 namespace Unity.GrantManager.Handlers
 {
-    public class SupplierCreatedHandler(IApplicantsAppService applicantsService) :
+    public class SupplierCreatedHandler(IApplicantAppService applicantsService) :
                     ILocalEventHandler<ApplicantSupplierEto>, ITransientDependency
     {
         public async Task HandleEventAsync(ApplicantSupplierEto applicantSupplierEto)
