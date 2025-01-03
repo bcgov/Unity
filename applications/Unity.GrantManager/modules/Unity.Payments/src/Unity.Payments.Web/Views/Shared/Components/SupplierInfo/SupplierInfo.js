@@ -10,7 +10,6 @@ $(function () {
         }
 
         let responseCallback = function (result) {
-            console.log('result');
             let response = { data: [] };
             if(result != null) {
                 response.data = result
@@ -28,7 +27,7 @@ $(function () {
                 info: false,
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
-                    unity.grantManager.applicants.applicant.getSitesBySupplierId, inputAction, responseCallback
+                    unity.grantManager.applicants.applicantSupplier.getSitesBySupplierId, inputAction, responseCallback
                 ),
                 columnDefs: [
                     {
@@ -65,6 +64,7 @@ $(function () {
     }
 
     setTimeout(function () { loadSiteInfoTable(); }, 1000);
+
     $('#nav-organization-info-tab').one('click', function () {
         dataTable?.columns?.adjust();
     });
