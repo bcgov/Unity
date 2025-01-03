@@ -6,7 +6,6 @@ using System;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Events;
-using System.Collections.Generic;
 using Volo.Abp;
 
 namespace Unity.GrantManager.Applicants;
