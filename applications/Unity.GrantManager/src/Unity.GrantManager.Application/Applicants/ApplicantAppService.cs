@@ -5,25 +5,21 @@ using Unity.GrantManager.Intakes;
 using System;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.GrantApplications;
-using Unity.Payments.Suppliers;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Events;
-using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
-using Unity.Payments.Domain.Suppliers;
+using Volo.Abp;
 
 namespace Unity.GrantManager.Applicants;
 
 
 [Dependency(ReplaceServices = true)]
-[ExposeServices(typeof(ApplicantAppService), typeof(IApplicantsAppService))]
-public class ApplicantAppService(ISiteRepository siteRepository,
-                                 IApplicantRepository applicantRepository,
-                                 ISupplierAppService supplierAppService,
+[ExposeServices(typeof(ApplicantAppService), typeof(IApplicantAppService))]
+public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IApplicantAddressRepository addressRepository,
-                                 IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantsAppService
+                                 IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
 {
 
+    [RemoteService(false)]
     public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
     {
         ArgumentNullException.ThrowIfNull(intakeMap);
@@ -39,6 +35,7 @@ public class ApplicantAppService(ISiteRepository siteRepository,
         return applicant;
     }
 
+    [RemoteService(false)]
     public async Task<Applicant> RelateSupplierToApplicant(ApplicantSupplierEto applicantSupplierEto)
     {
         ArgumentNullException.ThrowIfNull(applicantSupplierEto.ApplicantId);
@@ -49,30 +46,36 @@ public class ApplicantAppService(ISiteRepository siteRepository,
         return applicant;
     }
 
-    public async Task<List<Site>> GetSitesBySupplierIdAsync(Guid supplierId)
+    [RemoteService(false)]
+    public async Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
     {
-        return await siteRepository.GetBySupplierAsync(supplierId);
-    }
-
-    public async Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId)
-    {
-
-        Applicant applicant = await applicantRepository.GetAsync(applicantId);
-
-        //If SupplierId is available, use it to get the supplier
-        if (applicant.SupplierId.HasValue)
+        var applicant = applicantAgentDto.Applicant;
+        var application = applicantAgentDto.Application;
+        var intakeMap = applicantAgentDto.IntakeMap;
+        var applicantAgent = new ApplicantAgent
         {
-            Guid supplierId = applicant.SupplierId.Value;
-            return await supplierAppService.GetAsync(supplierId);
+            ApplicantId = applicant.Id,
+            ApplicationId = application.Id,
+            Name = intakeMap.ContactName ?? string.Empty,
+            Phone = intakeMap.ContactPhone ?? string.Empty,
+            Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
+            Email = intakeMap.ContactEmail ?? string.Empty,
+            Title = intakeMap.ContactTitle ?? string.Empty,
+        };
+
+        if (MappingUtil.IsJObject(intakeMap.ApplicantAgent))
+        {
+            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
+            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
+            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
+            applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
+            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
+            applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
+            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
         }
+        await applicantAgentRepository.InsertAsync(applicantAgent);
 
-        // If no SupplierId, fetch the supplier using the correlation
-        return await supplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
-        {
-            CorrelationId = applicantId,
-            CorrelationProvider = CorrelationConsts.Applicant,
-            IncludeDetails = true
-        });
+        return applicantAgent;
     }
 
     private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
@@ -142,36 +145,4 @@ public class ApplicantAppService(ISiteRepository siteRepository,
             });
         }
     }
-
-    public async Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
-    {
-        var applicant = applicantAgentDto.Applicant;
-        var application = applicantAgentDto.Application;
-        var intakeMap = applicantAgentDto.IntakeMap;
-        var applicantAgent = new ApplicantAgent
-        {
-            ApplicantId = applicant.Id,
-            ApplicationId = application.Id,
-            Name = intakeMap.ContactName ?? string.Empty,
-            Phone = intakeMap.ContactPhone ?? string.Empty,
-            Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
-            Email = intakeMap.ContactEmail ?? string.Empty,
-            Title = intakeMap.ContactTitle ?? string.Empty,
-        };
-
-        if (MappingUtil.IsJObject(intakeMap.ApplicantAgent))
-        {
-            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
-            applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
-            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
-            applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
-            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
-        }
-        await applicantAgentRepository.InsertAsync(applicantAgent);
-
-        return applicantAgent;
-    }
-
 }
