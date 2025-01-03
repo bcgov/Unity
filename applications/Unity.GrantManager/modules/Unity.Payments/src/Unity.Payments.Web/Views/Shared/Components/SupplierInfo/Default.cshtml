@@ -29,20 +29,21 @@
             <abp-input asp-for="@Model.OriginalSupplierNumber" type="hidden" />
             <abp-input asp-for="@Model.HasEditSupplierInfo" type="hidden" />
 
-            @if (Model.HasEditSupplierInfo)
-            {
-                <abp-row class="m-0 p-0" id="supplierSearch">
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SupplierNumber" id="SupplierNumber" onchange="enableApplicantInfoSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SupplierName" id="SupplierName" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.Status" id="Status" />
-                    </abp-column>
-                </abp-row>
-            }
+            <abp-row class="m-0 p-0" id="supplierSearch">
+                <abp-column size="_4" class="px-1">
+                    <abp-input readonly="@(Model.HasEditSupplierInfo ? false : true)"
+                            class="@(Model.HasEditSupplierInfo ? "" : "disabled")"
+                            asp-for="@Model.SupplierNumber" 
+                            id="SupplierNumber" 
+                            onchange="enableApplicantInfoSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.SupplierName" id="SupplierName" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.Status" id="Status" />
+                </abp-column>
+            </abp-row>
 
         </abp-column>
     </abp-row>
