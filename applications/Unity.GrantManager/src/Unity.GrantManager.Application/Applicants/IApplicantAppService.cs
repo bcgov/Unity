@@ -1,12 +1,14 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
+using Unity.Payments.Events;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Applicants;
 
-public interface IApplicantsService : IApplicationService
+public interface IApplicantAppService : IApplicationService
 {
     Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap);
     Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto);
+    Task<Applicant> RelateSupplierToApplicant(ApplicantSupplierEto applicantSupplierEto);
 }

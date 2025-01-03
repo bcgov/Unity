@@ -3,20 +3,17 @@ $(function () {
 
     let dataTable;
     function loadSiteInfoTable() {
-        let inputAction = function (requestData, dataTableSettings) {
-            const correlationId = $("#SupplierCorrelationId").val();
-            const correlationProvider = $("#SupplierCorrelationProvider").val();
-            const includeDetails = true;
-            return { correlationId, correlationProvider, includeDetails };
+
+        let inputAction = function() {
+            const supplierId = $("#SupplierId").val();
+            return String(supplierId);
         }
 
         let responseCallback = function (result) {
             let response = { data: [] };
-
-            if (result?.sites != null) {
-                response.data = result.sites
-            }
-
+            if(result != null) {
+                response.data = result
+            } 
             return response;
         };
 
@@ -30,7 +27,7 @@ $(function () {
                 info: false,
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
-                    unity.payments.suppliers.supplier.getByCorrelation, inputAction, responseCallback
+                    unity.grantManager.applicants.applicantSupplier.getSitesBySupplierId, inputAction, responseCallback
                 ),
                 columnDefs: [
                     {
@@ -67,6 +64,7 @@ $(function () {
     }
 
     setTimeout(function () { loadSiteInfoTable(); }, 1000);
+
     $('#nav-organization-info-tab').one('click', function () {
         dataTable?.columns?.adjust();
     });

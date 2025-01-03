@@ -1,23 +1,24 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Unity.GrantManager.Intakes;
 using System;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.GrantApplications;
+using Unity.Payments.Events;
 using Volo.Abp;
 
 namespace Unity.GrantManager.Applicants;
 
-[RemoteService(false)]
+
 [Dependency(ReplaceServices = true)]
-[ExposeServices(typeof(ApplicantsService), typeof(IApplicantsService))]
-public class ApplicantsService(IApplicantRepository applicantRepository,
-                              IApplicantAddressRepository addressRepository,
-                              IApplicantAgentRepository applicantAgentRepository) : ApplicationService, IApplicantsService
+[ExposeServices(typeof(ApplicantAppService), typeof(IApplicantAppService))]
+public class ApplicantAppService(IApplicantRepository applicantRepository,
+                                 IApplicantAddressRepository addressRepository,
+                                 IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
 {
 
+    [RemoteService(false)]
     public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
     {
         ArgumentNullException.ThrowIfNull(intakeMap);
@@ -31,6 +32,49 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
         applicant = await CreateNewApplicantAsync(intakeMap);
         await CreateApplicantAddressesAsync(intakeMap, applicant);
         return applicant;
+    }
+
+    [RemoteService(false)]
+    public async Task<Applicant> RelateSupplierToApplicant(ApplicantSupplierEto applicantSupplierEto)
+    {
+        ArgumentNullException.ThrowIfNull(applicantSupplierEto.ApplicantId);
+        Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
+        ArgumentNullException.ThrowIfNull(applicant);
+        applicant.SupplierId = applicantSupplierEto.SupplierId;
+        await applicantRepository.UpdateAsync(applicant);
+        return applicant;
+    }
+
+    [RemoteService(false)]
+    public async Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
+    {
+        var applicant = applicantAgentDto.Applicant;
+        var application = applicantAgentDto.Application;
+        var intakeMap = applicantAgentDto.IntakeMap;
+        var applicantAgent = new ApplicantAgent
+        {
+            ApplicantId = applicant.Id,
+            ApplicationId = application.Id,
+            Name = intakeMap.ContactName ?? string.Empty,
+            Phone = intakeMap.ContactPhone ?? string.Empty,
+            Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
+            Email = intakeMap.ContactEmail ?? string.Empty,
+            Title = intakeMap.ContactTitle ?? string.Empty,
+        };
+
+        if (MappingUtil.IsJObject(intakeMap.ApplicantAgent))
+        {
+            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
+            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
+            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
+            applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
+            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
+            applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
+            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
+        }
+        await applicantAgentRepository.InsertAsync(applicantAgent);
+
+        return applicantAgent;
     }
 
     private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
@@ -99,55 +143,5 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
                 AddressType = AddressType.MailingAddress
             });
         }
-    }
-
-    public async Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
-    {
-        var applicant = applicantAgentDto.Applicant;
-        var application = applicantAgentDto.Application;
-        var intakeMap = applicantAgentDto.IntakeMap;
-        var applicantAgent = new ApplicantAgent
-        {
-            ApplicantId = applicant.Id,
-            ApplicationId = application.Id,
-            Name = intakeMap.ContactName ?? string.Empty,
-            Phone = intakeMap.ContactPhone ?? string.Empty,
-            Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
-            Email = intakeMap.ContactEmail ?? string.Empty,
-            Title = intakeMap.ContactTitle ?? string.Empty,
-        };
-
-        if (IsJObject(intakeMap.ApplicantAgent))
-        {
-            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
-            applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
-            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
-            applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
-            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
-            
-        }
-        await applicantAgentRepository.InsertAsync(applicantAgent);
-
-        return applicantAgent;
-    }
-
-    private static bool IsJObject(dynamic? applicantAgent)
-    {
-        if(applicantAgent == null) 
-            return false;
-        try
-        {
-            if (applicantAgent is Newtonsoft.Json.Linq.JObject)
-            {
-                return true; 
-            }
-        }
-        catch {
-            return false;
-        }
-
-        return false;
     }
 }
