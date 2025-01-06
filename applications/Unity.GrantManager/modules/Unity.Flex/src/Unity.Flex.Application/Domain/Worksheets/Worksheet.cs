@@ -6,7 +6,7 @@ using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using Unity.Flex.Worksheets;
-using static System.Collections.Specialized.BitVector32;
+using System.Text;
 
 namespace Unity.Flex.Domain.Worksheets
 {
@@ -21,6 +21,11 @@ namespace Unity.Flex.Domain.Worksheets
 
         public virtual Collection<WorksheetSection> Sections { get; private set; } = [];
         public virtual Collection<WorksheetLink> Links { get; private set; } = [];
+
+        // For reporting purposes
+        public string ReportColumns { get; set; } = string.Empty;
+        public string ReportKeys { get; set; } = string.Empty;
+        public string ReportViewName { get; set; } = string.Empty;
 
         protected Worksheet()
         {
@@ -91,8 +96,16 @@ namespace Unity.Flex.Domain.Worksheets
 
         public Worksheet SetName(string name)
         {
-            this.Name = name;
+            Name = name;
             return this;
         }
+
+        public Worksheet SetReportingFields(string keys, string columns, string reportViewName)
+        {
+            ReportKeys = keys;
+            ReportColumns = columns;
+            ReportViewName = reportViewName;
+            return this;
+        }       
     }
 }

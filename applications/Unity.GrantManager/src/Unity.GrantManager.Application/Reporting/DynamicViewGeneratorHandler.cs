@@ -3,32 +3,33 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Reporting
 {
-    public class DynamicViewGeneratorJob(
+    public class DynamicViewGeneratorHandler(
         IApplicationFormVersionRepository applicationFormVersionRepository,
         ICurrentTenant currentTenant,
-        IUnitOfWorkManager unitOfWorkManager) : AsyncBackgroundJob<DynamicViewGenerationArgs>, ITransientDependency
+        IUnitOfWorkManager unitOfWorkManager,
+        ILogger<DynamicViewGeneratorHandler> logger) : ILocalEventHandler<DynamicViewGenerationEto>, ITransientDependency
     {
-        public override async Task ExecuteAsync(DynamicViewGenerationArgs args)
+        public async Task HandleEventAsync(DynamicViewGenerationEto viewGenerationEvent)
         {
             try
             {
-                using (currentTenant.Change(args.TenantId))
+                using (currentTenant.Change(viewGenerationEvent.TenantId))
                 {
                     using var uow = unitOfWorkManager.Begin(isTransactional: false);
-                    var applicationFormVersion = await applicationFormVersionRepository.GetAsync(args.ApplicationFormVersionId);
+                    var applicationFormVersion = await applicationFormVersionRepository.GetAsync(viewGenerationEvent.ApplicationFormVersionId);
 
                     if (applicationFormVersion != null)
                     {
                         var dbContext = await applicationFormVersionRepository.GetDbContextAsync();
-                        FormattableString sql = $@"CALL generate_view({args.ApplicationFormVersionId});";
+                        FormattableString sql = $@"CALL generate_view({viewGenerationEvent.ApplicationFormVersionId});";
                         await dbContext.Database.ExecuteSqlAsync(sql);
                     }
 
@@ -37,7 +38,7 @@ namespace Unity.GrantManager.Reporting
             }
             catch (Exception ex)
             {
-                Logger.LogError("{errorMessage}", ex.Message);
+                logger.LogError("{errorMessage}", ex.Message);
             }
         }
     }

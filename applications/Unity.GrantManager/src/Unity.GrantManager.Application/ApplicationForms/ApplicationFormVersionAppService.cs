@@ -15,6 +15,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -35,7 +36,7 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IFormsApiService _formApiService;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IApplicationFormRepository _applicationFormRepository;
-        private readonly IBackgroundJobManager _backgroundJobManager;
+        private readonly ILocalEventBus _localEventBus;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
@@ -44,7 +45,7 @@ namespace Unity.GrantManager.ApplicationForms
             IApplicationFormVersionRepository applicationFormVersionRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
             IApplicationFormRepository applicationFormRepository,
-            IBackgroundJobManager backgroundJobManager)
+            ILocalEventBus localEventBus)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
@@ -53,7 +54,7 @@ namespace Unity.GrantManager.ApplicationForms
             _formApiService = formsApiService;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _applicationFormRepository = applicationFormRepository;
-            _backgroundJobManager = backgroundJobManager;
+            _localEventBus = localEventBus;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -303,12 +304,12 @@ namespace Unity.GrantManager.ApplicationForms
 
         private async Task QueueDynamicViewGeneratorAsync(ApplicationFormVersion applicationFormVersion)
         {
-            await _backgroundJobManager.EnqueueAsync(
-                new DynamicViewGenerationArgs
+            await _localEventBus.PublishAsync(
+                new DynamicViewGenerationEto
                 {
                     ApplicationFormVersionId = applicationFormVersion.Id,
                     TenantId = CurrentTenant.Id
-                });
+                }, true);
         }
 
         private async Task UpdateFormVersionWithReportKeysAndColumnsAsync(ApplicationFormVersion applicationFormVersion)
@@ -371,7 +372,6 @@ namespace Unity.GrantManager.ApplicationForms
             string? valuesProp = JObject.Parse(jProperty.Value.ToString())?["values"]?.ToString();
             return string.IsNullOrEmpty(valuesProp) ? [] : valuesProp.Split(',');
         }
-
 
         public async Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId)
         {

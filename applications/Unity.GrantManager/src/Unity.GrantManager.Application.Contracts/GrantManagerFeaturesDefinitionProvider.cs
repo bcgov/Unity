@@ -30,6 +30,12 @@ namespace Unity.GrantManager
                    displayName: LocalizableString
                                 .Create<FlexResource>("Flex"),
                 valueType: new ToggleStringValueType());
+
+            myGroup.AddFeature("Unity.Reporting",
+                defaultValue: "false",
+                displayName: LocalizableString
+                                .Create<NotificationsResource>("Enable Reporting Module"),
+                valueType: new ToggleStringValueType());
         }
     }
 }
