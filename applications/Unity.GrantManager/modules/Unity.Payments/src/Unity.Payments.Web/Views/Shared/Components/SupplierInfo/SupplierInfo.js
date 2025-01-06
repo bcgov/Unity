@@ -1,22 +1,22 @@
 $(function () {
-    const l = abp.localization.getResource('Payments');    
+    const l = abp.localization.getResource('Payments');
 
     let dataTable;
     function loadSiteInfoTable() {
-        let inputAction = function (requestData, dataTableSettings) {
-            const correlationId = $("#SupplierCorrelationId").val();
-            const correlationProvider = $("#SupplierCorrelationProvider").val();
-            const includeDetails = true;
-            return { correlationId, correlationProvider, includeDetails };
+
+        let inputAction = function() {
+            const supplierId = $("#SupplierId").val();
+            return String(supplierId);
         }
+
         let responseCallback = function (result) {
             let response = { data: [] };
-            if(result != null && result.sites != null) {
-                response.data = result.sites
+            if(result != null) {
+                response.data = result
             } 
             return response;
         };
-                
+
         dataTable = $('#SiteInfoTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: false,
@@ -27,7 +27,7 @@ $(function () {
                 info: false,
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
-                    unity.payments.suppliers.supplier.getByCorrelation, inputAction, responseCallback
+                    unity.grantManager.applicants.applicantSupplier.getSitesBySupplierId, inputAction, responseCallback
                 ),
                 columnDefs: [
                     {
@@ -63,7 +63,8 @@ $(function () {
         );
     }
 
-    setTimeout(function () { loadSiteInfoTable(); },1000);
+    setTimeout(function () { loadSiteInfoTable(); }, 1000);
+
     $('#nav-organization-info-tab').one('click', function () {
         dataTable?.columns?.adjust();
     });
@@ -100,8 +101,8 @@ siteInfoModal.onResult(function () {
     );
 });
 
-function openSiteInfoModal(siteId, actionType) {    
-    const applicantId = $("#ApplicantInfoViewApplicantId").val(); 
+function openSiteInfoModal(siteId, actionType) {
+    const applicantId = $("#ApplicantInfoViewApplicantId").val();
     const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
     const supplierId = $("#SupplierId").val();
 

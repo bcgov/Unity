@@ -31,3 +31,16 @@
 .payment-status-transition-arrow {
     color: #42814A;
 }
+
+#PaymentRequestListTable .error-icon {
+    color: #FF0909;
+}
+
+#PaymentRequestListTable .error-icon-selected {
+    color: #FF0909;
+}
+
+#PaymentRequestListTable .error-row td {
+    background-color: #FEEAEA;
+    color: #FF0909 !important;
+}

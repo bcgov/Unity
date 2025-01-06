@@ -17,29 +17,41 @@ namespace Unity.GrantManager.Emails
     {
         public async Task<bool> CreateAsync(CreateEmailDto dto)
         {
+            EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
+            emailNotificationEvent.Action = EmailAction.SendCustom;
+            await localEventBus.PublishAsync(emailNotificationEvent);
+            return true;
+        }
 
-            List<string> toList = new();
+        public async Task<bool> SaveDraftAsync(CreateEmailDto dto)
+        {
+            EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
+            emailNotificationEvent.Action = EmailAction.SaveDraft;
+            await localEventBus.PublishAsync(emailNotificationEvent);
+            return true;
+        }
+
+        private static EmailNotificationEvent GetEmailNotificationEvent(CreateEmailDto dto)
+        {
+            List<string> toList = [];
             string[] emails = dto.EmailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (string email in emails) {
+            foreach (string email in emails)
+            {
                 toList.Add(email.Trim());
             }
+            return
+            new EmailNotificationEvent
+            {
 
-            await localEventBus.PublishAsync(
-                new EmailNotificationEvent
-                {
-                    Action = EmailAction.SendCustom,
-                    ApplicationId = dto.ApplicationId,
-                    RetryAttempts = 0,
-                    EmailAddress = dto.EmailTo, 
-                    EmailAddressList = toList,
-                    EmailFrom = dto.EmailFrom,
-                    Subject = dto.EmailSubject,
-                    Body = dto.EmailBody
-                }
-            );
-
-            return true;
+                ApplicationId = dto.ApplicationId,
+                RetryAttempts = 0,
+                EmailAddress = dto.EmailTo,
+                EmailAddressList = toList,
+                EmailFrom = dto.EmailFrom,
+                Subject = dto.EmailSubject,
+                Body = dto.EmailBody
+            };
         }
     }
 }

@@ -3,6 +3,8 @@
     const UIElements = {
         applicationId: $('#DetailsViewApplicationId')[0].value,
         btnSend: $('#btn-send'),
+        btnSave: $('#btn-save'),
+        btnDiscard: $('#btn-send-discard'),
         btnConfirmSend: $('#btn-confirm-send'),
         btnCancelEmail: $('#btn-cancel-email'),
         btnNewEmail: $('#btn-new-email'),
@@ -20,6 +22,8 @@
     function bindUIEvents() {
         UIElements.btnNewEmail.on('click', showModalEmail);
         UIElements.btnSend.on('click', handleSendEmail);
+        UIElements.btnSave.on('click', handleSaveEmail);
+        UIElements.btnDiscard.on('click', handleDiscardEmail);
         UIElements.btnConfirmSend.on('click', handleConfirmSendEmail);
         UIElements.btnCancelEmail.on('click', handleCancelEmailSend);
         UIElements.btnSendClose.on('click', handleCloseEmail);
@@ -45,6 +49,10 @@
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
         UIElements.btnNewEmail.removeClass('hide');
+        UIElements.emailForm.trigger("reset");
+    }
+
+    function handleDiscardEmail() {
         UIElements.emailForm.trigger("reset");
     }
 
@@ -142,6 +150,29 @@
         $('#modal-content, #modal-background').addClass('active');
     }
 
+    function handleSaveEmail(e) {
+        // Prevent form submission and stop propagation
+        e.stopPropagation();
+        e.preventDefault();
+
+        unity.grantManager.emails.email
+            .saveDraft({
+                applicationId: UIElements.applicationId,
+                emailTo: UIElements.inputEmailTo[0].value,
+                emailFrom: UIElements.inputEmailFrom[0].value,
+                emailBody: UIElements.inputEmailBody[0].value,
+                emailSubject: UIElements.inputEmailSubject[0].value,
+                currentUserId: decodeURIComponent(abp.currentUser.id),
+            })
+            .then(function () {
+                handleCloseEmail();
+                abp.notify.success('Your email has been saved.');
+                PubSub.publish('refresh_application_emails');
+            }).catch(function () {
+                abp.notify.error('An error ocurred your email could not be saved.');
+            });
+    }
+
     function handleSendEmail(e) {
         // Prevent form submission and stop propagation
         e.stopPropagation();
@@ -161,6 +192,14 @@
         // If form is not valid, do not show confirmation
         return false; // Return false if validation or other conditions fail
     }
+
+    PubSub.subscribe('email_selected', (msg, data) => {
+        UIElements.inputEmailTo.val(data.toAddress);
+        UIElements.inputEmailFrom.val(data.fromAddress);
+        UIElements.inputEmailSubject.val(data.subject);
+        UIElements.inputEmailBody.val(data.body);
+        showModalEmail();
+    });
 
     PubSub.subscribe(
         'applicant_info_updated',

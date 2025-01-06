@@ -10,5 +10,6 @@ public enum EmailAction
     SendFailedSummary,
     SendApproval,
     SendDecline,
-    SendCustom
+    SendCustom,
+    SaveDraft
 }

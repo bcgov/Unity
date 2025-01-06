@@ -251,6 +251,11 @@
     padding-right: 100px;
 }
 
+#applicationEmailsWidget button {
+    margin: 2px;
+    border: 1px solid var(--bc-colors-blue-primary);
+}
+
 
 @keyframes rotateSpinner {
 	to {

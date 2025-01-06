@@ -42,9 +42,6 @@ spec:
         requests:
           cpu: {{ .Values.instances.requests.cpu }}
           memory: {{ .Values.instances.requests.memory }}
-        limits:
-          cpu: {{ .Values.instances.limits.cpu }}
-          memory: {{ .Values.instances.limits.memory }}
       sidecars:
         replicaCertCopy:
           resources:

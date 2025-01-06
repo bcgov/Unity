@@ -34,7 +34,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         {
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
             bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-            bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
+            bool isFormEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
+            bool isEditGranted = isFormEditGranted && !finalDecisionState;
             bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
 
             AssessmentResultsPageModel model = new()
@@ -42,6 +43,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                 ApplicationId = applicationId,
                 ApplicationFormId = application.ApplicationForm.Id,
                 ApplicationFormVersionId = applicationFormVersionId,
+                IsFormEditGranted = isFormEditGranted,
                 IsEditGranted = isEditGranted,
                 IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
 

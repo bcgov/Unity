@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
-using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;

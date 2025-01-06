@@ -11,7 +11,7 @@ public class NotificationsSettingDefinitionProvider : SettingDefinitionProvider
         context.Add(
             new SettingDefinition(
                 NotificationsSettings.Mailing.DefaultFromAddress,
-                "NoReply.Econ.Unity@gov.bc.ca",
+                "NoReply.Unity@gov.bc.ca",
                 L($"Setting:{NotificationsSettings.Mailing.DefaultFromAddress}.DisplayName"),
                 L($"Setting:{NotificationsSettings.Mailing.DefaultFromAddress}.Description"),
                 isVisibleToClients: false,

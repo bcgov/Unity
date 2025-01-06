@@ -27,6 +27,7 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public int? FiscalDay { get; set; }
     public DateOnly? StartedOperatingDate { get; set; }
     public Guid? TenantId { get; set; }
+    public Guid? SupplierId { get; set; }
     public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
     public decimal? MatchPercentage { get; set; }
 }

@@ -1,8 +1,8 @@
 ﻿using Volo.Abp;
 using System.Threading.Tasks;
 using System.Text.Json;
-using Unity.Modules.Integrations;
-using Unity.Modules.Http;
+using Unity.Modules.Shared.Integrations;
+using Unity.Modules.Shared.Http;
 using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
@@ -43,7 +43,7 @@ namespace Unity.Notifications.Integrations.Ches
                 ApiKey = "ChesApiKey"
             };
 
-            TokenService tokenService = new TokenService(_httpClientFactory, _chesTokenCache);
+            TokenService tokenService = new(_httpClientFactory, _chesTokenCache, Logger);
             var authToken = await tokenService.GetAuthTokenAsync(clientOptions);
             var resource = $"{_chesClientOptions.Value.ChesUrl}/email";
             string jsonString = JsonSerializer.Serialize(emailRequest);

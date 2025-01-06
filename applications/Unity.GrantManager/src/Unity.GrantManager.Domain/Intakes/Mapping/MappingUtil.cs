@@ -80,11 +80,27 @@ namespace Unity.GrantManager.Intakes.Mapping
             if (DateTime.TryParse(dateTime, culture, DateTimeStyles.None, out DateTime parsedDateTime))
             {
                 return parsedDateTime;
-            }       
+            }
             return null;
         }
 
+        public static bool IsJObject(dynamic? applicantAgent)
+        {
+            if (applicantAgent == null)
+                return false;
+            try
+            {
+                if (applicantAgent is Newtonsoft.Json.Linq.JObject)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
 
+            return false;
+        }
     }
-
 }

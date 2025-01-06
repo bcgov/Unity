@@ -1,41 +1,41 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Unity.Payments.Events;
 using Unity.Payments.Suppliers;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.Payments.Handlers
 {
-    public class UpsertSupplierHandler : ILocalEventHandler<UpsertSupplierEto>, ITransientDependency
+    public class UpsertSupplierHandler(ISupplierAppService supplierAppService,
+                                       SiteAppService siteAppService,
+                                       ILocalEventBus localEventBus) : ILocalEventHandler<UpsertSupplierEto>, ITransientDependency
     {
-        private readonly ISupplierAppService _supplierAppService;
-        private readonly ISiteAppService _siteAppService;
-
-        public UpsertSupplierHandler(
-            ISupplierAppService supplierAppService,
-            ISiteAppService siteAppService
-            )
-        {
-            _supplierAppService = supplierAppService;
-            _siteAppService = siteAppService;
-        }
 
         public async Task HandleEventAsync(UpsertSupplierEto eventData)
         {
-            var existing = await _supplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
-            {
-                CorrelationId = eventData.CorrelationId,
-                CorrelationProvider = eventData.CorrelationProvider,
-            });
+            SupplierDto supplierDto = await GetSupplierFromEvent(eventData);
+            await InsertSitesFromEventDtoAsync(supplierDto.Id, eventData);
 
-            SupplierDto supplierDto;
+            // Send event notification to application module
+            await localEventBus.PublishAsync(
+                new ApplicantSupplierEto
+                {
+                    SupplierId = supplierDto.Id,
+                    ApplicantId = eventData.CorrelationId
+                }
+            );
+        }
+
+        private async Task<SupplierDto> GetSupplierFromEvent(UpsertSupplierEto eventData) {
+            var existing = await supplierAppService.GetBySupplierNumberAsync(eventData.Number);
 
             // This is subject to some business rules and a domain implmentation
             if (existing != null)
             {
                 existing.Number = eventData.Number;
-
-                supplierDto = await _supplierAppService.UpdateAsync(existing.Id, new UpdateSupplierDto()
+                SupplierDto updatedSupplierDto = await supplierAppService.UpdateAsync(existing.Id, new UpdateSupplierDto()
                 {
                     Name = eventData.Name,
                     Number = existing.Number,
@@ -51,32 +51,31 @@ namespace Unity.Payments.Handlers
                     MailingAddress = existing.MailingAddress,
                     PostalCode = existing.PostalCode,
                     Province = existing.Province,
-                    City = existing.City,                    
+                    City = existing.City,
                 });
 
                 // Delete the current sites
-                await _siteAppService.DeleteBySupplierIdAsync(supplierDto.Id);
-            }
-            else
-            {
-                supplierDto = await _supplierAppService.CreateAsync(new CreateSupplierDto()
-                {
-                    Name = eventData.Name,
-                    Number = eventData.Number,
-                    Subcategory = eventData.Subcategory,
-                    ProviderId = eventData.ProviderId,
-                    BusinessNumber = eventData.BusinessNumber,
-                    Status = eventData.Status,
-                    SupplierProtected = eventData.SupplierProtected,
-                    StandardIndustryClassification = eventData.StandardIndustryClassification,
-                    LastUpdatedInCAS = eventData.LastUpdatedInCAS,
-                    CorrelationId = eventData.CorrelationId,
-                    CorrelationProvider = eventData.CorrelationProvider,
-                });
+                await siteAppService.DeleteBySupplierIdAsync(updatedSupplierDto.Id);
+
+                return updatedSupplierDto;
             }
 
-            await InsertSitesFromEventDtoAsync(supplierDto.Id, eventData);
-
+            SupplierDto supplierDto = await supplierAppService.CreateAsync(new CreateSupplierDto()
+                    {
+                        Name = eventData.Name,
+                        Number = eventData.Number,
+                        Subcategory = eventData.Subcategory,
+                        ProviderId = eventData.ProviderId,
+                        BusinessNumber = eventData.BusinessNumber,
+                        Status = eventData.Status,
+                        SupplierProtected = eventData.SupplierProtected,
+                        StandardIndustryClassification = eventData.StandardIndustryClassification,
+                        LastUpdatedInCAS = eventData.LastUpdatedInCAS,
+                        CorrelationId = eventData.CorrelationId,
+                        CorrelationProvider = eventData.CorrelationProvider,
+                    });
+            
+            return supplierDto;
         }
 
         protected virtual async Task InsertSitesFromEventDtoAsync(Guid supplierId, UpsertSupplierEto upsertSupplierEto)
@@ -103,8 +102,8 @@ namespace Unity.Payments.Handlers
                     LastUpdatedInCas = siteEto.LastUpdated
                 };
 
-                await _siteAppService.InsertAsync(siteDto);
-            }            
+                await siteAppService.InsertAsync(siteDto);
+            }
         }
     }
 }

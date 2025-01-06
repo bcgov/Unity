@@ -22,6 +22,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public Guid ApplicationFormVersionId { get; set; }
 
         public AssessmentResultsModel AssessmentResults { get; set; } = new();
+        public bool IsFormEditGranted { get; set; }
         public bool IsEditGranted { get; set; }
         public bool IsPostEditFieldsAllowed { get; set; }
 
