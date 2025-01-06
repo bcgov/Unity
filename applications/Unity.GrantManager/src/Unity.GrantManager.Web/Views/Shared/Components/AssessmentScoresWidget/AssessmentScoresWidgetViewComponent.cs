@@ -31,7 +31,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             _scoresheetRepository = scoresheetRepository;
             _scoresheetInstanceRepository = scoresheetInstanceRepository;
         }
-        
+
 
         public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId)
         {
@@ -77,8 +77,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                                             question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.SelectList)!.ToString();
                                             break;
                                         }
+                                    case QuestionType.TextArea:
+                                        {
+                                            question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.TextArea)!.ToString();
+                                            break;
+                                        }
                                 }
-                                
+
                             }
                         }
                     }
@@ -98,8 +103,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             };
 
             return View(model);
-        } 
-        
+        }
+
     }
 
     public class AssessmentScoresWidgetStyleBundleContributor : BundleContributor

@@ -11,39 +11,45 @@ message: |-
   For more information about using this template, including OpenShift considerations, see the project readme.md and wiki documents.
 metadata:
   name: unity-database
-  # This template uses a separate parameter .env file to override the default values defined in this section. 
-  # Use command: oc process -f .\database\unity-database.yaml --param-file=.env | oc create -f -
+  # This template uses a separate parameter .env file to override the default values defined in this section.
+  # oc process -f .\database\unity-database.yaml --param-file=unity-database.env | oc create -f -
   labels:
     template: unity-database
   annotations:
     description: |-
       PostgreSQL database service with persistent storage.
-      NOTE: Scaling to more than one replica is not supported. 
+      NOTE: Scaling to more than one replica is not supported.
     iconClass: icon-postgresql
     openshift.io/display-name: PostgreSQL
     openshift.io/documentation-url: https://docs.okd.io/latest/using_images/db_images/postgresql.html
     openshift.io/long-description: This template provides a standalone PostgreSQL
       server with an initial database created. The database is stored on persistent storage.
       The database name, username, and password are selected through parameters during provisioning.
-    tags: database, postgresql
+    tags: database,postgresql
 parameters:
 # Project namespace parameters
+- description: The name of the backup application.
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: false
+  value: unity-backup-cronjob
 - description: The name of the application grouping.
   displayName: Application Group
   name: APPLICATION_GROUP
   required: true
   value: unity-grantmanager
-- description: The name of the backup application.
-  displayName: Backup Application Name
-  name: BACKUP_APPLICATION_NAME
-  required: true
-  value: unity-backup
-# Additional parameters for database provisioning
+# Additional parameters for project database provisioning.
 - description: The name of the OpenShift Service exposed for the database.
   displayName: Database Service Name
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
+- description: The host exposed for the database.
+  displayName: Database Service Host
+  name: DATABASE_HOST
+  required: true
+  from: 'develop-crunchy-postgres-primary[a-zA-Z0-9]{6}-dev.svc'
+  generate: expression
 - description: The port exposed for the database.
   displayName: Database Service Port
   name: DATABASE_PORT
@@ -57,7 +63,7 @@ parameters:
 - description: Password for the PostgreSQL connection user.
   displayName: PostgreSQL Connection Password
   name: POSTGRESQL_PASSWORD
-  required: true
+  required: false
   from: '[a-zA-Z0-9]{26}'
   generate: expression
 - description: Name of the PostgreSQL database accessed.
@@ -79,50 +85,40 @@ parameters:
   name: STORAGE_OBJECT_NAME
   required: true
   value: s3-object-storage
-- description: The Namespace where the database container image resides.
+- description: The Namespace where the container image resides default=project-tools cluster=openshift, source=registry.redhat.io/rhel9/postgresql-16
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
-  required: true
-  value: redhat
-- description: The OpenShift ImageStream Name.
-  displayName: Registry ImageStream Name
+  from: '[a-zA-Z0-9]{5}-tools'
+  generate: expression
+- description: The Openshift ImageStream Name
+  displayName: Registry imagestream name
   name: IMAGESTREAM_NAME
   required: true
-  value: postgresql-15
-- description: The version of the PostgreSQL container image to use.
-  displayName: Registry ImageStream Tag
+  value: postgresql-16
+- description: The version of the postgresql container image to use.
+  displayName: Registry container image  to pull
   name: IMAGESTREAM_TAG
   required: true
   value: latest
-- description: The registry path of the PostgreSQL container image to use.
-  displayName: Registry Container Image
+- description: The registry path of the postgresql container image to use.
+  displayName: Registry container image to pull
   name: IMAGEPULL_REGISTRY
   required: true
-  value: registry.redhat.io/rhel9/
+  value: image-registry.apps.silver.devops.gov.bc.ca
 # Resource limits
 - description: The minimum amount of CPU the container is guaranteed.
   displayName: CPU Request
   name: CPU_REQUEST
   required: true
   value: 50m
-- description: The maximum amount of CPU the container is allowed to use.
-  displayName: CPU Limit
-  name: CPU_LIMIT
-  required: true
-  value: 500m
 - description: The minimum amount of memory the container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
   required: true
-  value: 256Mi
-- description: The maximum amount of memory the container is allowed to use.
-  displayName: Memory Limit
-  name: MEMORY_LIMIT
-  required: true
-  value: 1024Mi
-# Template objects to instantiate the database.
+  value: 64Mi
+# Template objects to instantiate the project.
 objects:
-# Secrets 
+# Secrets
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -136,72 +132,15 @@ objects:
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   stringData:
+    UNITY_DB_HOST: ${DATABASE_HOST}
+    UNITY_DB_PORT: ${DATABASE_PORT}
     UNITY_POSTGRES_DB: ${POSTGRESQL_DATABASE}
     UNITY_POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
     UNITY_POSTGRES_USER: ${POSTGRESQL_USER}
-  type: Opaque
-# ConfigMap
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: ${DATABASE_SERVICE_NAME}
-    labels:
-      app: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
-      app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  data:
-    UNITY_DB_HOST: ${DATABASE_SERVICE_NAME}
-    UNITY_DB_PORT: ${DATABASE_PORT}
     UNITY_TENANT_DB: ${UNITY_TENANT_DB}
-# Service
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      template.openshift.io/expose-uri: postgres://{.spec.clusterIP}:{.spec.ports[?(.name=="postgresql")].port}
-    name: ${DATABASE_SERVICE_NAME}
-    labels:
-      app: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
-      app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
-  spec:
-    ports:
-    - name: ${DATABASE_SERVICE_NAME}
-      nodePort: 0
-      protocol: TCP
-      port: ${{DATABASE_PORT}}
-      targetPort: ${{DATABASE_PORT}}
-    selector:
-      app: ${DATABASE_SERVICE_NAME}
-    sessionAffinity: None
-    type: ClusterIP
-  status:
-    loadBalancer: {}
-# Persistent storage for the database
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: ${DATABASE_SERVICE_NAME}
-    labels:
-      app: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
-      app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  spec:
-    accessModes:
-    - ReadWriteOnce
-    resources:
-      requests:
-        storage: ${VOLUME_CAPACITY}
-    storageClassName: netapp-file-standard
-    volumeMode: Filesystem
+  type: Opaque
 # Persistent storage for database backups
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -219,7 +158,7 @@ objects:
     resources:
       requests:
         storage: ${VOLUME_CAPACITY}
-    storageClassName: netapp-file-standard
+    storageClassName: netapp-file-backup
     volumeMode: Filesystem
 # Deployment
 - apiVersion: apps/v1
@@ -239,7 +178,7 @@ objects:
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
-    replicas: 1
+    replicas: 0
     selector:
       matchLabels:
         app: ${DATABASE_SERVICE_NAME}
@@ -259,26 +198,11 @@ objects:
           - containerPort: ${{DATABASE_PORT}}
             protocol: TCP
           env:
-          - name: POSTGRESQL_USER
-            valueFrom:
-              secretKeyRef:
-                name: ${DATABASE_SERVICE_NAME}
-                key: UNITY_POSTGRES_USER
-          - name: POSTGRESQL_PASSWORD
+          - name: POSTGRESQL_ADMIN_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: ${DATABASE_SERVICE_NAME}
                 key: UNITY_POSTGRES_PASSWORD
-          - name: POSTGRESQL_DATABASE
-            valueFrom:
-              secretKeyRef:
-                name: ${DATABASE_SERVICE_NAME}
-                key: UNITY_POSTGRES_DB
-          - name: PGPORT
-            valueFrom:
-              configMapKeyRef:
-                name: ${DATABASE_SERVICE_NAME}
-                key: UNITY_DB_PORT
           livenessProbe:
             exec:
               command:
@@ -293,27 +217,21 @@ objects:
             initialDelaySeconds: 5
             timeoutSeconds: 1
           resources:
-            limits:
-              cpu: ${CPU_LIMIT}
-              memory: ${MEMORY_LIMIT}
             requests:
               cpu: ${CPU_REQUEST}
               memory: ${MEMORY_REQUEST}
           terminationMessagePath: /dev/termination-log
+          envFrom:
+            - secretRef:
+                name: ${DATABASE_SERVICE_NAME}
           volumeMounts:
-          - mountPath: /var/lib/pgsql/data
-            name: ${DATABASE_SERVICE_NAME}-data
           - mountPath: /var/lib/pgsql/backups
             name: unity-data-backups
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         volumes:
-        - name: ${DATABASE_SERVICE_NAME}-data
-          persistentVolumeClaim:
-            claimName: ${DATABASE_SERVICE_NAME}
         - name: unity-data-backups
           persistentVolumeClaim:
             claimName: unity-data-backup
     strategy:
       type: Recreate
-

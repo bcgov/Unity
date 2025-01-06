@@ -20,7 +20,9 @@ public class SupplierInfoViewModel
     public string? Status { get; set; }
     [HiddenInput]
     public string? OriginalSupplierNumber { get; set; }
+    public Guid ApplicantId { get; set; }
     public Guid SupplierId { get; set; }
     public Guid SupplierCorrelationId { get; set; }
     public string SupplierCorrelationProvider { get; set; } = string.Empty;
+    public bool HasEditSupplierInfo { get; set; }
 }

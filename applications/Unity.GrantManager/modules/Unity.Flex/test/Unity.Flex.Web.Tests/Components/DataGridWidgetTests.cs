@@ -42,7 +42,7 @@ namespace Unity.Flex.Web.Tests.Components
             {
                 Type = Worksheets.CustomFieldType.DataGrid
             }
-            , string.Empty) as ViewViewComponentResult;
+            , string.Empty, Guid.NewGuid(), Guid.NewGuid()) as ViewViewComponentResult;
 
             DataGridViewModel? resultModel;
 

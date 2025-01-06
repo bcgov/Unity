@@ -1,10 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
@@ -14,10 +15,16 @@ using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.Users;
+using Volo.Abp.SettingManagement;
+using Unity.Notifications.Settings;
+using Unity.Notifications.Permissions;
+using Volo.Abp;
 
 namespace Unity.Notifications.EmailNotifications;
 
-[Dependency(ReplaceServices = true)]
+
+[Dependency(ReplaceServices = false)]
 [ExposeServices(typeof(EmailNotificationService), typeof(IEmailNotificationService))]
 public class EmailNotificationService : ApplicationService, IEmailNotificationService
 {
@@ -25,18 +32,24 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     private readonly IConfiguration _configuration;
     private readonly EmailQueueService _emailQueueService;
     private readonly IEmailLogsRepository _emailLogsRepository;
+    private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
+    private readonly ISettingManager _settingManager;
 
     public EmailNotificationService(
         IEmailLogsRepository emailLogsRepository,
         IConfiguration configuration,
         IChesClientService chesClientService,
-        EmailQueueService emailQueueService
+        EmailQueueService emailQueueService,
+        IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
+        ISettingManager settingManager
         )
     {
         _emailLogsRepository = emailLogsRepository;
         _configuration = configuration;
         _chesClientService = chesClientService;
         _emailQueueService = emailQueueService;
+        _externalUserLookupServiceProvider = externalUserLookupServiceProvider;
+        _settingManager = settingManager;
     }
 
     private const string approvalBody =
@@ -72,16 +85,23 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return declineBody;
     }
 
-    public async Task<EmailLog?> InitializeEmailLog(string email, string body, string subject, Guid applicationId)
-    {        
-        if (string.IsNullOrEmpty(email))
+    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
+    {
+        return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized);
+    }
+
+    [RemoteService(false)]
+    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status)
+    {
+        if (string.IsNullOrEmpty(emailTo))
         {
             return null;
         }
-        var emailObject = GetEmailObject(email, body, subject);
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
         EmailLog emailLog = GetMappedEmailLog(emailObject);
         emailLog.ApplicationId = applicationId;
-        
+        emailLog.Status = status ?? EmailStatus.Initialized;
+
         // When being called here the current tenant is in context - verified by looking at the tenant id
         EmailLog loggedEmail = await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);
         return loggedEmail;
@@ -100,31 +120,39 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <summary>
     /// Send Email Notfication
     /// </summary>
-    /// <param name="email">The email address to send to</param>
+    /// <param name="emailTo">The email address to send to</param>
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
-    public async Task<RestResponse> SendEmailNotification(string email, string body, string subject)
+    /// <param name="emailFrom">From Email Address</param>
+    /// <returns>HttpResponseMessage indicating the result of the operation</returns>
+    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom)
     {
-        RestResponse response = new RestResponse();
         try
         {
-            if (!string.IsNullOrEmpty(email))
+            if (string.IsNullOrEmpty(emailTo))
             {
-                var emailObject = GetEmailObject(email, body, subject);
-                response = await _chesClientService.SendAsync(emailObject);
-                await LogEmailResponse(emailObject, response);
+                Logger.LogError("EmailNotificationService->SendEmailNotification: The 'emailTo' parameter is null or empty.");
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("'emailTo' cannot be null or empty.")
+                };
+
             }
-            else
-            {
-                Logger.LogError("EmailNotificationService->SendEmailNotification: Email To Found.");
-            }
+            // Send the email using the CHES client service
+            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
+            var response = await _chesClientService.SendAsync(emailObject);
+
+            // Assuming SendAsync returns a HttpResponseMessage or equivalent:
+            return response;
         }
         catch (Exception ex)
         {
-            string ExceptionMessage = ex.Message;
-            Logger.LogError(ex, "EmailNotificationService->SendEmailNotification Exception: {ExceptionMessage}", ExceptionMessage);
+            Logger.LogError(ex, "EmailNotificationService->SendEmailNotification: Exception occurred while sending email.");
+            return new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+            };
         }
-        return response;
     }
 
     public async Task<EmailLog?> GetEmailLogById(Guid id)
@@ -133,12 +161,47 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         try
         {
             emailLog = await _emailLogsRepository.GetAsync(id);
-        } 
-        catch (EntityNotFoundException ex) {
+        }
+        catch (EntityNotFoundException ex)
+        {
             string ExceptionMessage = ex.Message;
             Logger.LogInformation(ex, "Entity Not found for Email Log Must be in wrong context: {ExceptionMessage}", ExceptionMessage);
         }
         return emailLog;
+    }
+
+    [Authorize]
+    public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId)
+    {
+        var entityList = await _emailLogsRepository.GetByApplicationIdAsync(applicationId);
+        var dtoList = ObjectMapper.Map<List<EmailLog>, List<EmailHistoryDto>>(entityList);
+
+        var sentByUserIds = dtoList
+            .Where(d => d.CreatorId.HasValue)
+            .Select(d => d.CreatorId!.Value)
+            .Distinct();
+
+        var userDictionary = new Dictionary<Guid, EmailHistoryUserDto>();
+
+        foreach (var userId in sentByUserIds)
+        {
+            var userInfo = await _externalUserLookupServiceProvider.FindByIdAsync(userId);
+            if (userInfo != null)
+            {
+                userDictionary[userId] = ObjectMapper.Map<IUserData, EmailHistoryUserDto>(userInfo);
+            }
+
+        }
+
+        foreach (var item in dtoList)
+        {
+            if (item.CreatorId.HasValue && userDictionary.TryGetValue(item.CreatorId.Value, out var userDto))
+            {
+                item.SentBy = userDto;
+            }
+        }
+
+        return dtoList;
     }
 
     /// <summary>
@@ -146,7 +209,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// </summary>
     /// <param name="EmailLog">The email log to send to q</param>
     public async Task SendEmailToQueue(EmailLog emailLog)
-    {        
+    {
         EmailNotificationEvent emailNotificationEvent = new EmailNotificationEvent();
         emailNotificationEvent.Id = emailLog.Id;
         emailNotificationEvent.TenantId = emailLog.TenantId;
@@ -154,29 +217,30 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
-    protected virtual dynamic GetEmailObject(string email, string body, string subject)
+    protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom)
     {
-        List<string> toList = new() { email };
+        List<string> toList = new();
+        string[] emails = emailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (string email in emails)
+        {
+            toList.Add(email.Trim());
+        }
+
+        var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+
         var emailObject = new
         {
             body,
             bodyType = "html",
             encoding = "utf-8",
-            from = _configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca",
+            from = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca",
             priority = "normal",
             subject,
             tag = "tag",
             to = toList
         };
         return emailObject;
-    }
-
-    protected virtual async Task<EmailLog> LogEmailResponse(object emailObject, RestResponse response)
-    {
-        EmailLog emailLog = GetMappedEmailLog(emailObject);
-        emailLog.ChesResponse = JsonConvert.SerializeObject(response);
-        emailLog.ChesStatus = response.StatusCode.ToString();
-        return await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);
     }
 
     protected virtual EmailLog GetMappedEmailLog(dynamic emailDynamicObject)
@@ -188,5 +252,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.FromAddress = emailDynamicObject.from;
         emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault() ?? "";
         return emailLog;
+    }
+
+    [Authorize(NotificationsPermissions.Settings)]
+    public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
+    {
+        if (!settingsDto.DefaultFromAddress.IsNullOrWhiteSpace())
+        {
+            await _settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
+        }
     }
 }

@@ -87,9 +87,19 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         var supplier = new Supplier(Guid.NewGuid(), "supp", "123", Guid.NewGuid(), "A");
         supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
         var addedSupplier = await _supplierRepository.InsertAsync(supplier);
-
-        _ = await _paymentRequestRepository
-            .InsertAsync(new PaymentRequest(Guid.NewGuid(), "", 100, "Test", "0000000000", "", addedSupplier.Sites[0].Id, Guid.NewGuid(), "","UP-XXXX-000000"), true);
+        CreatePaymentRequestDto paymentRequestDto = new CreatePaymentRequestDto();
+        paymentRequestDto.InvoiceNumber = "";
+        paymentRequestDto.Amount = 100;
+        paymentRequestDto.PayeeName = "Test";
+        paymentRequestDto.ContractNumber = "0000000000";
+        paymentRequestDto.SupplierNumber = "";
+        paymentRequestDto.SiteId = addedSupplier.Sites[0].Id;
+        paymentRequestDto.CorrelationId = Guid.NewGuid();
+        paymentRequestDto.CorrelationProvider = "";
+        paymentRequestDto.ReferenceNumber = "UP-XXXX-000000";
+        paymentRequestDto.BatchName = "UNITY_BATCH_1";
+        paymentRequestDto.BatchNumber = 1;
+        _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
 
         // Act
         var paymentRequests = await _paymentRequestAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto()

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Unity.GrantManager.Data;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Intakes;
+using System;
+using Microsoft.Extensions.Logging;
 
 
 namespace Unity.GrantManager.Controllers
@@ -24,34 +26,54 @@ namespace Unity.GrantManager.Controllers
         [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
         public async Task<IActionResult> GetApplicantAsync([FromQuery] ApplicantLookup applicantLookup)
         {
-            if (applicantLookup.UnityApplicantId == null)
+            if (applicantLookup.UnityApplicantId == null && applicantLookup.UnityApplicantName == null)
             {
                 return NotFound("Applicant Not Found");
             }
 
-            // Handle tenant context
-            if (CurrentTenant.Id == null)
-            {
-                var defaultTenant = await tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
-                using (CurrentTenant.Change(defaultTenant.Id, defaultTenant.Name))
+            try {
+                // Handle tenant context
+                if (CurrentTenant.Id == null)
                 {
-                    return await GetApplicantContent(applicantLookup.UnityApplicantId);
+                    var defaultTenant = await tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
+                    using (CurrentTenant.Change(defaultTenant.Id, defaultTenant.Name))
+                    {
+                        return await GetApplicantLookupResponse(applicantLookup);
+                    }
+                } else
+                {
+                    return await GetApplicantLookupResponse(applicantLookup);
                 }
+            } catch (Exception ex) {
+                var ExceptionMessage = ex.Message;
+                Logger.LogError(ex, "Applicant LookupController Exception: {ExceptionMessage}", ExceptionMessage);
+                return NotFound("Applicant Not Found");
             }
-
-            return await GetApplicantContent(applicantLookup.UnityApplicantId);
         }
 
-        private async Task<IActionResult> GetApplicantContent(string unityApplicantId)
+        private async Task<IActionResult> GetApplicantLookupResponse(ApplicantLookup applicantLookup)
         {
-            var result = await applicantService.ApplicantLookupByApplicantId(unityApplicantId);
-            
-            if (result == null)
+            string? applicantLookupResult = null;
+            IActionResult result;
+            if (applicantLookup.UnityApplicantId != null)
             {
-                return NotFound("Applicant Not Found");
+                applicantLookupResult = await applicantService.ApplicantLookupByApplicantId(applicantLookup.UnityApplicantId);
+            }
+            else if (applicantLookup.UnityApplicantName != null)
+            {
+                applicantLookupResult = await applicantService.ApplicantLookupByApplicantName(applicantLookup.UnityApplicantName);
             }
 
-            return Content(result, "application/json");
+            if (applicantLookupResult == null)
+            {
+                result = NotFound("Applicant Not Found");
+            }
+            else
+            {
+                result = Content(applicantLookupResult, "application/json");
+            }
+
+            return result;
         }
     }
 }

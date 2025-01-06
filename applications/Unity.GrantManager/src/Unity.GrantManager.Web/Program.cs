@@ -10,6 +10,7 @@ namespace Unity.GrantManager.Web;
 
 public static class Program
 {
+    // Test Sonar Qube run
     public async static Task<int> Main(string[] args)
     {
         try
@@ -38,6 +39,8 @@ public static class Program
                 Readiness probe. This is for detecting whether the application is ready to handle requests. If a readiness probe fails, Kubernetes will leave the pod running, but won't send any requests to the pod.
                 Startup probe. This is used when the container starts up, to indicate that it's ready. Once the startup probe succeeds, Kubernetes switches to using the liveness probe to determine if the application is alive. This probe was introduced in Kubernetes version 1.16.
             */
+
+
 
             await app.InitializeApplicationAsync();
             await app.RunAsync();

@@ -1,5 +1,10 @@
 ﻿@media (min-width: 1400px) {
-    .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
+    .container-xxl,
+    .container-xl,
+    .container-lg,
+    .container-md,
+    .container-sm,
+    .container {
         max-width: 1600px;
     }
 }
@@ -58,8 +63,8 @@
 }
 
 /*Targets specific textarea to remove hidden by default*/
-.formio-component-textarea div .card-body { 
-    display:inherit !important;
+.formio-component-textarea div .card-body {
+    display: inherit !important;
 }
 
 .nav-tabs .nav-item .nav-link.active {
@@ -162,14 +167,14 @@
     box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25) !important;
 }
 
-    .recom-select:hover {
-        background: #FFFFFF;
-        color: #333;
-    }
+.recom-select:hover {
+    background: #FFFFFF;
+    color: #333;
+}
 
-    .recom-select:disabled {
-        color: #333;
-    }
+.recom-select:disabled {
+    color: #333;
+}
 
 .recom-reset-button {
     font-size: 0.8rem;
@@ -204,29 +209,36 @@
     margin-bottom: 4px;
 }
 
+.float-inline {
+    float: inline-end;
+    margin-top: 20px;
+    margin-bottom: -30px;
+}
+
 textarea::placeholder {
     color: #b9b9b9 !important;
 }
 
 
-#widget{
+#widget {
     position: relative;
 }
 
-#widget #overlay{
+#widget #overlay {
     position: absolute;
     top: 0;
     right: 0;
     background-color: #FFFFFF;
-    box-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+    box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
 }
 
-#widget textarea{
+#widget textarea {
     border: 1px solid #e7e9ec;
     resize: vertical;
 }
 
-.fa, .fas {
+.fa,
+.fas {
     padding: 5px;
 }
 
@@ -234,49 +246,52 @@ i.fas:hover {
     cursor: pointer;
 }
 
-select.selected{
+select.selected {
     border: 1px solid rgba(0, 51, 102, 38%) !important;
     background-color: #fff !important;
 }
 
-    
-    .review-list-heading{
-        margin-left:0.5rem;
-       margin-top:0.3rem;
-    }
+
+.review-list-heading {
+    margin-left: 0.5rem;
+    margin-top: 0.3rem;
+}
 
 .mb-2.card.border {
     border-bottom: 1px solid rgba(214, 214, 214, 1)
 }
+
 .card-header.bg-default {
     background-color: white !important;
     margin-top: 1.2rem;
 }
 
-#application_attachment_upload_btn{
-    margin-top:0.8rem;
+#application_attachment_upload_btn {
+    margin-top: 0.8rem;
 }
 
 .details-nav .nav-link {
     display: flex;
-   
 }
-.details-nav .nav-link .fl{
-    margin-right:4px;
+
+.details-nav .nav-link .fl {
+    margin-right: 4px;
 }
+
 .comments-title {
     margin: 0.5rem 0rem 0rem 0.4rem;
 }
+
 .pdf-icon {
     display: block;
     margin-left: auto;
     margin-right: 0;
     padding-top: 0;
-
 }
-.pdf-icon:hover{
-    cursor:pointer;
-    box-shadow:none;
+
+.pdf-icon:hover {
+    cursor: pointer;
+    box-shadow: none;
 }
 
 .details-scrollable {
@@ -289,12 +304,12 @@ select.selected{
 #detailsTabContent {
     overflow-y: scroll;
     overflow-x: hidden;
-    height: calc(100vh - 298px);
+    height: calc(100vh - 300px);
     /* position: relative; */
     z-index: 1;
 }
 
-.formio-component-submit{
+.formio-component-submit {
     display: none;
 }
 
@@ -348,6 +363,7 @@ form label.error {
 .input-group-text:has(i.fa-calendar) {
     display: none !important;
 }
+
 .formio-editor-read-only-content {
     word-break: normal !important;
 }
@@ -358,4 +374,44 @@ form label.error {
 
 .visible {
     display: block;
+}
+
+#main-container {
+    display: flex;
+}
+
+#main-left,
+#main-right {
+    width: 50%;
+}
+
+#main-divider {
+    width: 10px;
+    background-color: #ccc;
+    cursor: col-resize;
+    border-radius: 10px;
+}
+
+#main-divider:hover {
+    background-color: #aaa;
+}
+
+#myTab {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.fade-in-load {
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+    /* Adjust the duration and easing as needed */
+}
+
+.fade-in-load.visible {
+    opacity: 1;
+}
+
+#main-loading {
+    display: flex;
+    justify-content: center;
 }

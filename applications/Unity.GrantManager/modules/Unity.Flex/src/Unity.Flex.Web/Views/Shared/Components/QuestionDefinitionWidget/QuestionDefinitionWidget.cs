@@ -26,6 +26,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
                 QuestionType.Text => (CustomFieldDefinition?)TextDefinitionWidget.TextDefinitionWidget.ParseFormValues(form),
                 QuestionType.YesNo => (CustomFieldDefinition?)QuestionYesNoDefinitionWidget.QuestionYesNoDefinitionWidget.ParseFormValues(form),
                 QuestionType.SelectList => (CustomFieldDefinition?)QuestionSelectListDefinitionWidget.QuestionSelectListDefinitionWidget.ParseFormValues(form),
+                QuestionType.TextArea => (CustomFieldDefinition?)TextAreaDefinitionWidget.TextAreaDefinitionWidget.ParseFormValues(form),
                 _ => null,
             };
         }

@@ -6,5 +6,6 @@
         Text = 2,
         YesNo = 6,
         SelectList = 12,
+        TextArea = 14
     }
 }

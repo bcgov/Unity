@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using System;
 using Unity.Notifications.Events;
 using Volo.Abp.Application.Services;
-using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
 using Microsoft.Extensions.Logging;
 
@@ -12,9 +12,9 @@ public class EmailQueueService : ApplicationService
 {
     private readonly IQueueProducer<EmailMessages> _queueProducer;
     private readonly ILogger<EmailQueueService> _logger;
-    private static int FiveMinutesInMilliSeconds = 300000;
-    private static int TenMintues = 10;
-    private static int TwentyMintues = 20;
+    private const int FiveMinutesInMilliSeconds = 300000;
+    private const int TenMintues = 10;
+    private const int TwentyMintues = 20;
 
     public EmailQueueService(IQueueProducer<EmailMessages> queueProducer,
          ILogger<EmailQueueService> logger)

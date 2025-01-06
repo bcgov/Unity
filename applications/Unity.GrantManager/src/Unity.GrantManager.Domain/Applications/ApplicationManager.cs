@@ -46,25 +46,29 @@ public class ApplicationManager : DomainService, IApplicationManager
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED);                      // 2.1 - Internal_Assign;            Role: Team Lead
+            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED)                      // 2.1 - Internal_Assign;            Role: Team Lead
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.ASSIGNED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW);              // 2.3 - Start Review;      Role: Reviewer 
+            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW)              // 2.3 - Start Review;      Role: Reviewer
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.UNDER_INITIAL_REVIEW)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED);
+            .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED)
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.INITITAL_REVIEW_COMPLETED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
+            .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.UNDER_ASSESSMENT)
             .SubstateOf(GrantApplicationState.OPEN)
@@ -78,7 +82,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED)
             .Permit(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED);
-        
+
         stateMachine.Configure(GrantApplicationState.DEFER)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
@@ -116,7 +120,7 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
-    } 
+    }
 
     public async Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId)
     {
@@ -131,7 +135,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         var permittedActions = Workflow.GetPermittedActions().ToList();
 
         var actionsList = allActions
-            .Select(trigger => 
+            .Select(trigger =>
             new ApplicationActionResultItem
             {
                 ApplicationAction = trigger,
@@ -140,8 +144,17 @@ public class ApplicationManager : DomainService, IApplicationManager
             })
             .OrderBy(x => (int)x.ApplicationAction)
             .ToList();
-        
+
         return actionsList;
+    }
+
+    public bool IsActionAllowed(Application application, GrantApplicationAction triggerAction)
+    {
+        var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
+            () => application.ApplicationStatus.StatusCode,
+            s => application.ApplicationStatus.StatusCode = s, ConfigureWorkflow);
+
+        return Workflow.GetPermittedActions().Contains(triggerAction);
     }
 
     public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
@@ -160,7 +173,6 @@ public class ApplicationManager : DomainService, IApplicationManager
         }
 
         // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
-        // WARNING: DRAFT CODE - MAY NOT BE PERSISTING STATE TRANSITIONS CORRECTLY
         var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
             () => statusChange,
             s => statusChange = s,
@@ -170,11 +182,10 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         var statusChangedTo = await _applicationStatusRepository.GetAsync(x => x.StatusCode.Equals(statusChange));
 
-        // NOTE: Is this required or can the navigation property be set on its own?
         application.ApplicationStatusId = statusChangedTo.Id;
         application.ApplicationStatus = statusChangedTo;
 
-        if (triggerAction == GrantApplicationAction.StartAssessment)
+        if (triggerAction == GrantApplicationAction.StartAssessment || triggerAction == GrantApplicationAction.Internal_StartAssessment)
         {
             application.AssessmentStartDate = DateTime.UtcNow;
         }

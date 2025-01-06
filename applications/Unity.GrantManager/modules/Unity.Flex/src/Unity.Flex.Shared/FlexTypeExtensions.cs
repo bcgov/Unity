@@ -63,6 +63,7 @@ namespace Unity.Flex
                 QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
                 QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),
                 QuestionType.SelectList => JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition),
+                QuestionType.TextArea => JsonSerializer.Deserialize<TextAreaDefinition>(definition),
                 _ => null,
             };
         }
@@ -137,6 +138,11 @@ namespace Unity.Flex
         public static bool GetIsDynamic(this CustomFieldDefinition field)
         {
             return DefinitionResolver.ResolveIsDynamic(field);
+        }
+
+        public static uint? GetRowsOrZero(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveRows(field) ?? 0;
         }
     }
 }

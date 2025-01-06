@@ -57,6 +57,13 @@ namespace Unity.GrantManager.Permissions
             public const string EditFinalStateFields = Default + ".EditFinalStateFields";
         }
 
+        public static class ProjectInfo
+        {
+            public const string Default = GroupName + ".ProjectInfo";
+            public const string Update = Default + ".Update";
+            public const string UpdateFinalStateFields = Update + ".UpdateFinalStateFields";
+        }
+
         public static string[] GetAll()
         {
             return ReflectionHelper.GetPublicConstantsRecursively(typeof(GrantApplicationPermissions));

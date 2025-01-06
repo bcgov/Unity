@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Volo.Abp.Domain.Services;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Linq;
 
 namespace Unity.GrantManager.Intakes
 {
@@ -19,35 +20,26 @@ namespace Unity.GrantManager.Intakes
             logger = loggerFactory.CreateLogger(typeof(InputComponentProcessor));
         }
 
-        private static readonly List<string> allowableContainerTypes =
-        [
-            "tabs",
-            "table",
-            "simplecols2",
-            "simplecols3",
-            "simplecols4",
-            "simplecontent",
-            "simplepanel",
-            "simpleparagraph",
-            "simpletabs",
-            "container",
-            "columns"
-        ];
-
-        private static readonly List<string> columnTypes =
-        [
+        private static readonly HashSet<string> allowableContainerTypes = new HashSet<string>
+        {
+            "tabs", "table", "simplecols2", "simplecols3", "simplecols4", 
+            "simplecontent", "simplepanel", "simpleparagraph", "simpletabs", 
+            "container", "columns", "panel"
+        };
+        private static readonly HashSet<string> columnTypes  = new HashSet<string>
+        {
             "simplecols2",
             "simplecols3",
             "simplecols4",
             "columns"
-        ];
+        };
 
-        private static readonly List<string> dynamicTypes =
-        [
+        private static readonly HashSet<string> dynamicTypes = new HashSet<string>
+        {
             "datagrid"
-        ];
+        };
 
-        private void AddComponentToDictionary(string key, string? tokenType, string label)
+        private void ProcessComponentToDictionary(string key, string? tokenType, string label)
         {
             if (!components.ContainsKey(key))
             {
@@ -56,10 +48,10 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        private static bool IsValidChildToken(JToken childToken)
+        private static bool IsValidToken(JToken token)
         {
-            var tokenInput = childToken["input"]?.ToString();
-            var tokenType = childToken["type"]?.ToString();
+            var tokenInput = token["input"]?.ToString();
+            var tokenType = token["type"]?.ToString();
 
             return tokenInput == "True" &&
                    tokenType != null &&
@@ -67,6 +59,7 @@ namespace Unity.GrantManager.Intakes
                    !allowableContainerTypes.Contains(tokenType);
         }
 
+        // Determine the sub-lookup type based on the token type
         public static string GetSubLookupType(string? tokenType)
         {
             // Default to "components" if tokenType is null or empty
@@ -91,53 +84,64 @@ namespace Unity.GrantManager.Intakes
             return "components";
         }
 
-        public void AddComponent(JToken childToken)
+        public void ProcessComponent(JToken token)
         {
             try
             {
-                if (!IsValidChildToken(childToken)) return;
+                if (!IsValidToken(token)) return;
 
-                string? key = childToken["key"]?.ToString();
-                string? label = childToken["label"]?.ToString();
-                string? tokenType = childToken["type"]?.ToString();
+                string? key = token["key"]?.ToString();
+                string? label = token["label"]?.ToString();
+                string? tokenType = token["type"]?.ToString();
 
                 if (key != null && label != null)
                 {
-                    AddComponentToDictionary(key, tokenType, label);
+                    ProcessComponentToDictionary(key, tokenType, label);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogInformation(ex, "An exception occurred in {MethodName}: {ExceptionMessage}", nameof(AddComponent), ex.Message);
+                logger.LogInformation(ex, "An exception occurred in {MethodName}: {ExceptionMessage}", nameof(ProcessComponent), ex.Message);
             }
         }
 
-        public void ConsumeToken(JToken? token)
+        protected void ProcessNestedComponents(JToken? token)
         {
             if (token != null)
             {
                 var subTokenType = token["type"]?.ToString();
 
-                string subSubTokenString = GetSubLookupType(subTokenType);
+                string subLookupType = GetSubLookupType(subTokenType);
 
-                var nestedComponentsComponents = ((JObject)token).SelectToken(subSubTokenString);
+                // Any dynamic types, get the parent and children tokens
+                if (!string.IsNullOrEmpty(subTokenType) && dynamicTypes.Contains(subTokenType))
+                {
+                    ProcessComponent(token);
+                }
+
+                var nestedComponentsComponents = ((JObject)token).SelectToken(subLookupType);
                 if (nestedComponentsComponents != null)
                 {
-                    GetAllInputComponents(nestedComponentsComponents);
+                    TraverseComponents(nestedComponentsComponents);
                 }
                 else
                 {
-                    AddComponent(token);
+                    ProcessComponent(token);
                 }
             }
         }
 
-        public void GetAllInputComponents(JToken? tokenComponents)
+        // Traverse through the components and process each one
+        public void TraverseComponents(JToken? tokenComponents)
         {
             if (tokenComponents == null) return;
 
             foreach (var childToken in tokenComponents.Children<JToken>())
             {
+                if (childToken.Type == JTokenType.Array)
+                {
+                    TraverseComponents(childToken);
+                }
                 if (childToken.Type != JTokenType.Object) continue;
 
                 ProcessChildToken(childToken);
@@ -149,7 +153,7 @@ namespace Unity.GrantManager.Intakes
             var tokenType = childToken["type"];
 
             // Add the component if applicable
-            AddComponent(childToken);
+            ProcessComponent(childToken);
 
             if (tokenType != null
                 && allowableContainerTypes.Contains(tokenType.ToString())
@@ -157,11 +161,23 @@ namespace Unity.GrantManager.Intakes
             {
                 ProcessNestedComponents(childToken, tokenType);
             }
-            else
+            else if (tokenType != null && dynamicTypes.Contains(tokenType.ToString()))
             {
-                if (tokenType != null && dynamicTypes.Contains(tokenType.ToString()))
+                ProcessNestedComponents(childToken);
+            }
+            else if (childToken.Children().Any())
+            {
+                ProcessMultiNested(childToken);
+            }
+        }
+
+        private void ProcessMultiNested(JToken childToken)
+        {
+            foreach (JProperty grandChildToken in childToken.Children<JProperty>())
+            {
+                if (grandChildToken.Name == "components")
                 {
-                    ConsumeToken(childToken);
+                    TraverseComponents(grandChildToken);
                 }
             }
         }
@@ -174,7 +190,7 @@ namespace Unity.GrantManager.Intakes
             // Safely select nested components
             var nestedComponents = childToken.SelectToken(subTokenString);
 
-            // If there are nested components, process them
+            // If there are nested components, process them            
             if (nestedComponents != null)
             {
                 foreach (var nestedTokenComponent in nestedComponents.Children())
@@ -184,19 +200,20 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
+
         private void ProcessNestedTokenComponent(JToken nestedTokenComponent, string subTokenString)
         {
             if (subTokenString == "rows")
             {
-                GetAllInputComponents(nestedTokenComponent);
+                TraverseComponents(nestedTokenComponent);
             }
             else
             {
-                ConsumeToken(nestedTokenComponent);
+                ProcessNestedComponents(nestedTokenComponent);
             }
         }
 
-        private static void FindNodes(JToken json, string name, List<JToken> nodes)
+        private static void FindNodesRecursive(JToken json, string name, List<JToken> nodes)
         {
             if (json.Type == JTokenType.Object)
             {
@@ -206,14 +223,15 @@ namespace Unity.GrantManager.Intakes
                     {
                         nodes.Add(child);
                     }
-                    FindNodes(child.Value, name, nodes);
+                    // Continue recursion for nested children
+                    FindNodesRecursive(child.Value, name, nodes);
                 }
             }
             else if (json.Type == JTokenType.Array)
             {
                 foreach (JToken child in json.Children())
                 {
-                    FindNodes(child, name, nodes);
+                    FindNodesRecursive(child, name, nodes);
                 }
             }
         }
@@ -221,7 +239,7 @@ namespace Unity.GrantManager.Intakes
         public static List<JToken> FindNodes(JToken json, string name)
         {
             var nodes = new List<JToken>();
-            FindNodes(json, name, nodes);
+            FindNodesRecursive(json, name, nodes);
             return nodes;
         }
 

@@ -38,6 +38,7 @@ using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Services;
+using Unity.GrantManager.Web.Settings;
 using Unity.Identity.Web;
 using Unity.Notifications.Web;
 using Unity.Payments;
@@ -62,6 +63,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict.Tokens;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
+using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.Timing;
 using Volo.Abp.Ui.LayoutHooks;
@@ -93,7 +95,7 @@ namespace Unity.GrantManager.Web;
     typeof(PaymentsWebModule),
     typeof(AbpBlobStoringModule),
     typeof(NotificationsWebModule),
-    typeof(FlexWebModule)
+    typeof(FlexWebModule)    
 )]
 public class GrantManagerWebModule : AbpModule
 {
@@ -132,7 +134,6 @@ public class GrantManagerWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
-        ConfigureAccessTokenManagement(context, configuration);
         ConfigureUtils(context);
         ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
@@ -190,17 +191,6 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
-        context.Services.AddCors(options =>
-        {
-            options.AddPolicy("ChefsOrigin",
-                builder =>
-                {
-                    builder.WithOrigins("https://chefs-dev.apps.silver.devops.gov.bc.ca") // Specify your exact origin
-                           .AllowAnyMethod() // Allow all methods (GET, POST, etc.)
-                           .AllowAnyHeader() // Allow all headers
-                           .AllowCredentials(); // Allow credentials
-                });
-        });
 
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
@@ -210,6 +200,11 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddHealthChecks()
            .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
+
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new ApplicationUiSettingPageContributor());
+        });
     }
 
     private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)
@@ -270,11 +265,7 @@ public class GrantManagerWebModule : AbpModule
         {
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = false;
-            options.Events.OnSigningOut = async e =>
-            {
-                // revoke refresh token on sign-out
-                await e.HttpContext.RevokeUserRefreshTokenAsync();
-            };
+            options.Events.OnSigningOut = async e => { await Task.CompletedTask; };
         })
         .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
         {
@@ -369,26 +360,6 @@ public class GrantManagerWebModule : AbpModule
                 options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
             }
-        });
-    }
-
-    private static void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
-    {
-        context.Services.AddAccessTokenManagement(options =>
-        {
-        })
-        .ConfigureBackchannelHttpClient();
-
-        // registers HTTP client that uses the managed user access token
-        context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
-        {
-            client.BaseAddress = new Uri(configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"]);
-        });
-
-        // registers HTTP client that uses the managed client access token
-        context.Services.AddClientAccessTokenHttpClient("client", configureClient: client =>
-        {
-            client.BaseAddress = new Uri(configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"]);
         });
     }
 
@@ -581,7 +552,6 @@ public class GrantManagerWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
-        app.UseCors("ChefsOrigin");
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)

@@ -40,11 +40,15 @@
 }
 
 #assessment-scoresheet #section-button:not(.collapsed)::after {
-    -webkit-filter: grayscale(1) invert(1);
-    filter: grayscale(1) invert(1);
+    -webkit-filter: grayscale(1);
+    filter: grayscale(1);
 }
 
 #assessment-scoresheet .preview-btn:not(.collapsed) {
-    background-color: #007bff;
+    background-color: #3470B1;
     color: #ffffff;
+}
+
+.scoresheet-top-btn-group { 
+    margin-top: -45px;
 }

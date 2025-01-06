@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.Payments.Permissions;
+using Unity.Notifications.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -45,7 +46,12 @@ namespace Unity.GrantManager.Permissions
                     IdentitySeedPermissions.Roles.Delete,
                     IdentitySeedPermissions.Roles.ManagePermissions,
                     GrantManagerPermissions.Intakes.Default,
-                    GrantManagerPermissions.ApplicationForms.Default
+                    GrantManagerPermissions.ApplicationForms.Default,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
 
             // - Reviewer
@@ -64,6 +70,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assessments.Confirm,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
 
             // - Assessor
@@ -83,6 +92,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
 
             // - TeamLead
@@ -106,6 +117,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
 
             // - Approver
@@ -120,6 +133,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
                     GrantApplicationPermissions.AssessmentResults.EditFinalStateFields,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
+                    GrantApplicationPermissions.ProjectInfo.UpdateFinalStateFields,
                 }, context.TenantId);
 
             // - SystemAdmin
@@ -127,8 +143,8 @@ namespace Unity.GrantManager.Permissions
                 new List<string>
                 {
                     GrantManagerPermissions.Default,
-                    SettingManagementSeedPermissions.Emailing,
-                    SettingManagementSeedPermissions.EmailingTest,
+                    UnitySettingManagementPermissions.UserInterface,
+                    NotificationsPermissions.Settings,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantManagerPermissions.Intakes.Default,
@@ -138,7 +154,12 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
                     GrantApplicationPermissions.Assessments.SendBack,
-                    GrantApplicationPermissions.Assessments.Confirm
+                    GrantApplicationPermissions.Assessments.Confirm,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
 
 
@@ -149,7 +170,12 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
-                    PaymentsPermissions.Payments.L1ApproveOrDecline
+                    PaymentsPermissions.Payments.L1ApproveOrDecline,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
 
                 }, context.TenantId);
 
@@ -160,8 +186,12 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
-                    PaymentsPermissions.Payments.L2ApproveOrDecline
+                    PaymentsPermissions.Payments.L2ApproveOrDecline,
 
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
 
             // -L3 Approver
@@ -171,9 +201,26 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
-                    PaymentsPermissions.Payments.L3ApproveOrDecline
+                    PaymentsPermissions.Payments.L3ApproveOrDecline,
 
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                    GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
+
+            // -External Assessor
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ExternalAssessor,
+                new List<string>
+                {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    PaymentsPermissions.Payments.Default,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.ProjectInfo.Default,
+                }, context.TenantId);
+
         }
     }
 }
