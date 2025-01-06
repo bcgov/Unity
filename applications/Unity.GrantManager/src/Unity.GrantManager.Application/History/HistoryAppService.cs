@@ -54,7 +54,7 @@ namespace Unity.GrantManager.History
                         {
                             OriginalValue = GetLookupValue(origninalValue, lookupDictionary),
                             NewValue = GetLookupValue(newValue, lookupDictionary),
-                            ChangeTime = utcDateTime,
+                            ChangeTime = utcDateTime.ToLocalTime(),
                             UserName = await LookupUserName(entityChange.AuditLogId)
                         };
                         historyList.Add(historyDto);

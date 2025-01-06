@@ -127,7 +127,7 @@
     function formatLuxonDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
             locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString({
+        }).toLocaleString({
             day: "numeric",
             year: "numeric",
             month: "numeric",
