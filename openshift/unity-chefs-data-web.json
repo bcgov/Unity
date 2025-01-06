@@ -26,6 +26,8 @@
           "app.kubernetes.io/part-of": "${APPLICATION_GROUP}"
         },
         "annotations": {
+          "haproxy.router.openshift.io/hsts_header": "max-age=31536000;includeSubDomains;preload",
+          "haproxy.router.openshift.io/ip_whitelist": "142.22.0.0/15 142.24.0.0/13 142.32.0.0/14 142.36.0.0/16",
           "template.openshift.io/expose-uri": "http://{.spec.host}{.spec.path}"
         }
       },
@@ -35,10 +37,53 @@
           "kind": "Service",
           "name": "${APPLICATION_SERVICE}"
         },
-        "tls": {
+        "httpHeaders": {
+          "actions": {
+              "request": null,
+              "response": [
+                  {
+                      "action": {
+                          "set": {
+                              "value": "SAMEORIGIN"
+                          },
+                          "type": "Set"
+                      },
+                      "name": "X-Frame-Options"
+                  },
+                  {
+                      "action": {
+                          "set": {
+                              "value": "no-sniff"
+                          },
+                          "type": "Set"
+                      },
+                      "name": "X-Content-Type-Options"
+                  },
+                  {
+                      "action": {
+                          "set": {
+                              "value": "strict-origin-when-cross-origin"
+                          },
+                          "type": "Set"
+                      },
+                      "name": "Referrer-Policy"
+                  },
+                  {
+                      "action": {
+                          "set": {
+                              "value": "object-src 'none'; frame-ancestors 'none'"
+                          },
+                          "type": "Set"
+                      },
+                      "name": "Content-Security-Policy"
+                  }
+              ]
+          }
+      },
+      "tls": {
           "termination": "edge",
           "insecureEdgeTerminationPolicy": "Redirect"
-        }        
+        }
       }
     }
   ],

@@ -15,6 +15,8 @@ public class PaymentsPermissionDefinitionProvider : PermissionDefinitionProvider
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.L1ApproveOrDecline, L("Permission:Payments.L1ApproveOrDecline"));
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.L2ApproveOrDecline, L("Permission:Payments.L2ApproveOrDecline"));
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.L3ApproveOrDecline, L("Permission:Payments.L3ApproveOrDecline"));
+        paymentsPermissions.AddChild(PaymentsPermissions.Payments.RequestPayment, L("Permission:Payments.RequestPayment"));
+        paymentsPermissions.AddChild(PaymentsPermissions.Payments.EditSupplierInfo, L("Permission:Payments.EditSupplierInfo"));
     }
 
     private static LocalizableString L(string name)

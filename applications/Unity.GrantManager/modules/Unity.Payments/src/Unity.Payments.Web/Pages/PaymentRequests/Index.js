@@ -22,7 +22,8 @@ $(function () {
         'l1Approval',
         'l2Approval',
         'l3Approval',
-        'CASResponse'
+        'CASResponse',
+        'batchName',
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -31,7 +32,6 @@ $(function () {
     let selectedPaymentIds = [];
 
     let actionButtons = [
-
         {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
@@ -105,8 +105,21 @@ $(function () {
         defaultVisibleColumns,
         listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
+    // Attach the draw event to add custom row coloring logic
+    dataTable.on('draw', function () {
+        dataTable.rows().every(function () {
+            let data = this.data();
+            if (data.errorSummary != null && data.errorSummary !== '') {
+                $(this.node()).addClass('error-row'); // Change to your desired color
+            }
+        });
+
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
-    let history_button = dataTable.buttons(['.history']);
+    let history_button = dataTable.buttons(['.history']);    
 
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
@@ -132,6 +145,12 @@ $(function () {
                 if ($(".chkbox:checked").length == $(".chkbox").length) {
                     $(".select-all-payments").prop("checked", true);
                 }
+                let row = dataTable.row(index).node();
+                let data = dataTable.row(index).data();
+                if (data.errorSummary != null && data.errorSummary !== '') {
+                    $(row).removeClass('error-row');
+                    $(row).find('i.fa-flag').addClass('error-icon-selected');
+                }
                 selectApplication(type, index, 'select_batchpayment_application');
             });
         }
@@ -144,6 +163,12 @@ $(function () {
                 $("#row_" + index).prop("checked", false);
                 if ($(".chkbox:checked").length != $(".chkbox").length) {
                     $(".select-all-payments").prop("checked", false);
+                }
+                let row = dataTable.row(index).node();
+                let data = dataTable.row(index).data();
+                if (data.errorSummary != null && data.errorSummary !== '') {
+                    $(row).addClass('error-row');
+                    $(row).find('i.fa-flag').removeClass('error-icon-selected');
                 }
             });
         }
@@ -169,7 +194,9 @@ $(function () {
     function checkActionButtons() {
         let isOnlySubmittedToCas = checkAllRowsHaveState('Submitted');
         if (dataTable.rows({ selected: true }).indexes().length > 0 && !isOnlySubmittedToCas) {
-            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
+            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
+                || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
+                || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
                 payment_approve_buttons.enable();
 
             } else {
@@ -223,6 +250,7 @@ $(function () {
             getInvoiceStatusColumn(),
             getPaymentStatusColumn(),
             getCASResponseColumn(),
+            getBatchNameColumn(),
         ]
     }
 
@@ -233,15 +261,23 @@ $(function () {
             data: 'referenceNumber',
             className: 'data-table-header',
             index: 0,
+            render: function (data, _, row) {
+                if (row.errorSummary != null && row.errorSummary !== '') {
+                    return `${data} <i class="fa fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
+                } else {
+                    return data;
+                }
+            }
         };
     }
+
     function getApplicantNameColumn() {
         return {
             title: l('ApplicationPaymentListTable:ApplicantName'),
             name: 'applicantName',
             data: 'payeeName',
             className: 'data-table-header',
-            index: 1,
+            index: 1
         };
     }
 
@@ -458,6 +494,23 @@ $(function () {
         };
     }
 
+    function getBatchNameColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:BatchName'),
+            name: 'batchName',
+            data: 'batchName',
+            className: 'data-table-header',
+            index: 19,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
     function getCASResponseColumn() {
         // Add button to view response modal
         return {
@@ -488,8 +541,6 @@ $(function () {
     /* the resizer needs looking at again after ux2 refactor 
      window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
     */
-
-
 
     $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();

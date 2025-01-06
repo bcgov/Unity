@@ -1,6 +1,6 @@
 ﻿using System;
 using Unity.Notifications.Events;
-using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Notifications.Integrations.RabbitMQ.QueueMessages
 {

@@ -35,3 +35,9 @@
 .physical-address-form {
     border-right: 0.25rem solid var(--bc-colors-white-background);
 }
+
+.switch-container {
+    margin-top: 27px;
+    margin-left: 15px;
+    padding-top: 5px;
+}

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
@@ -51,7 +50,7 @@ namespace Unity.Payments.Suppliers
         public virtual async Task DeleteBySupplierIdAsync(Guid supplierId)
         {
             var sites = await _siteRepository.GetBySupplierAsync(supplierId);
-            await _siteRepository.DeleteManyAsync(sites.Select(s => s.Id));
+            await _siteRepository.DeleteManyAsync(sites, true);
         }
     }
 }

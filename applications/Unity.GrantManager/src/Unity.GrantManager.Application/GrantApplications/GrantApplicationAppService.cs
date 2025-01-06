@@ -260,6 +260,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     }
 
+    [Authorize(GrantApplicationPermissions.AssessmentResults.Edit)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -317,6 +318,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
     }
 
+    [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -572,9 +574,12 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
     {
-        var applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+        List<ApplicantAddress> applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
+        if (applicantAddresses != null)
+        {
+            await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
+            await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+        }
     }
 
     protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId)

@@ -10,69 +10,94 @@ using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Events
 {
-    internal class EmailNotificationHandler : ILocalEventHandler<EmailNotificationEvent>, ITransientDependency
+    internal class EmailNotificationHandler(
+            IEmailNotificationService emailNotificationService,
+            IFeatureChecker featureChecker) : ILocalEventHandler<EmailNotificationEvent>, ITransientDependency
     {
-
-        private readonly IEmailNotificationService _emailNotificationService;
-        private readonly IFeatureChecker _featureChecker;
-
         private const string GRANT_APPLICATION_UPDATE_SUBJECT = "Grant Application Update";
         private const string FAILED_PAYMENTS_SUBJECT = "Failed Payment Requests";
 
-        public EmailNotificationHandler(
-            IEmailNotificationService emailNotificationService,
-            IFeatureChecker featureChecker)
-        {
-            _emailNotificationService = emailNotificationService;
-            _featureChecker = featureChecker;
-        }
-
         public async Task HandleEventAsync(EmailNotificationEvent eventData)
         {
-            if (await _featureChecker.IsEnabledAsync("Unity.Notifications"))
+            if (await featureChecker.IsEnabledAsync("Unity.Notifications"))
             {
                 await EmailNotificationEventAsync(eventData);
             }
         }
 
-
-        private async Task InitializeAndSendEmailToQueue(string email, string body, string subject, Guid applicationId)
+        private async Task InitializeAndSendEmailToQueue(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
         {
-            EmailLog emailLog = await _emailNotificationService.InitializeEmailLog(
-                                                email,
+            EmailLog emailLog = await InitializeEmail(
+                                                emailTo,
                                                 body,
                                                 subject,
-                                                applicationId) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
+                                                applicationId, 
+                                                emailFrom,
+                                                EmailStatus.Initialized);
 
-            await _emailNotificationService.SendEmailToQueue(emailLog);            
+            await emailNotificationService.SendEmailToQueue(emailLog);
+        }
+
+        private async Task<EmailLog> InitializeEmail(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string status)
+        {
+            EmailLog emailLog = await emailNotificationService.InitializeEmailLog(
+                                                emailTo,
+                                                body,
+                                                subject,
+                                                applicationId, 
+                                                emailFrom,
+                                                status) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
+            return emailLog;
         }
 
         private async Task EmailNotificationEventAsync(EmailNotificationEvent eventData)
         {
             if (eventData == null) return;
 
-            string email = eventData.EmailAddress;
+            string emailTo = eventData.EmailAddress;
             switch (eventData.Action)
             {
                 case EmailAction.SendFailedSummary:
                     {
-                        foreach(string emailString in eventData.EmailAddressList)
+                        foreach(string emailToAddress in eventData.EmailAddressList)
                         {
-                            await InitializeAndSendEmailToQueue(emailString, eventData.Body, FAILED_PAYMENTS_SUBJECT, eventData.ApplicationId);
+                            await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, FAILED_PAYMENTS_SUBJECT, eventData.ApplicationId, eventData.EmailFrom);
                         }
   
                         break;
                     }
                 case EmailAction.SendApproval:
                     {
-                        string body = _emailNotificationService.GetApprovalBody();
-                        await InitializeAndSendEmailToQueue(email, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId);
+                        string body = emailNotificationService.GetApprovalBody();
+                        await InitializeAndSendEmailToQueue(emailTo, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId, eventData.EmailFrom);
                         break;
                     }
                 case EmailAction.SendDecline:
                     {
-                        string body = _emailNotificationService.GetDeclineBody();
-                        await InitializeAndSendEmailToQueue(email, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId);
+                        string body = emailNotificationService.GetDeclineBody();
+                        await InitializeAndSendEmailToQueue(emailTo, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId, eventData.EmailFrom);
+                        break;
+                    }
+                case EmailAction.SendCustom:
+                    {
+                        foreach (string emailToAddress in eventData.EmailAddressList)
+                        {
+                            await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom);
+                        }
+                        break;
+                    }
+                case EmailAction.SaveDraft:
+                    {
+                        foreach (string emailToAddress in eventData.EmailAddressList)
+                        {
+                            await InitializeEmail(
+                                emailToAddress, 
+                                eventData.Body, 
+                                eventData.Subject, 
+                                eventData.ApplicationId, 
+                                eventData.EmailFrom, 
+                                EmailStatus.Draft);
+                        }
                         break;
                     }
                 case EmailAction.Retry:

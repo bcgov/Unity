@@ -1,17 +1,18 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
-using Unity.Notifications.Integrations.Ches;
 using Volo.Abp.BackgroundJobs;
 using Unity.Notifications.EmailNotifications;
 using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
-using Unity.Shared.MessageBrokers.RabbitMQ;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Unity.Notifications.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Http.Client;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.Notifications;
 
@@ -21,15 +22,27 @@ namespace Unity.Notifications;
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
     typeof(AbpBackgroundJobsModule),
-    typeof(AbpBackgroundWorkersQuartzModule)
+    typeof(AbpBackgroundWorkersQuartzModule),
+    typeof(AbpHttpClientModule)
     )]
 public class NotificationsApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
+        
         context.Services.AddAutoMapperObjectMapper<NotificationsApplicationModule>();
-        context.Services.AddScoped<IChesClientService, ChesClientService>();
+        context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
+
+        Configure<AbpAutoMapperOptions>(options =>
+        {
+            options.AddMaps<NotificationsApplicationModule>(validate: true);
+        });
+
+        context.Services.AddHttpClientProxies(
+           typeof(NotificationsApplicationContractsModule).Assembly,
+                  NotificationsRemoteServiceConsts.RemoteServiceName
+        );
 
         Configure<EmailBackgroundJobsOptions>(options =>
         {

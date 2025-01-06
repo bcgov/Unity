@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
 
 namespace Unity.Flex
@@ -24,8 +26,8 @@ namespace Unity.Flex
             {
                 var key = component["key"]?.ToString() ?? string.Empty;
                 var name = component["label"]?.ToString() ?? string.Empty;
-                var type = component["type"]?.ToString() ?? string.Empty;
-                var format = ExtractFormatter(component);
+                var type = ChefsToUnityTypes.Convert((component["type"]?.ToString() ?? string.Empty), CustomFieldType.Text.ToString());
+                var format = ResolveFormatter(component);
 
                 dataGridColumns.Add(new DataGridColumn(key, name, type, format));
             }
@@ -42,9 +44,23 @@ namespace Unity.Flex
                 {
                     var key = prop.Name;
                     var column = dataGridColumns.Find(s => s.Key == key);
+
                     if (column != null)
                     {
-                        dataGridRow.Cells.Add(new DataGridRowCell(key, prop.Value.ToString()));
+                        string value;
+
+                        if (DateTime.TryParse(prop.Value.ToString(), new CultureInfo("en-CA"), out DateTime parsedDate))
+                        {
+                            // If the value is a DateTime, keep the raw format
+                            value = prop.Value.ToString(Newtonsoft.Json.Formatting.None).Trim('"');
+                        }
+                        else
+                        {
+                            // Otherwise, use the value as-is
+                            value = prop.Value.ToString();
+                        }
+                        
+                        dataGridRow.Cells.Add(new DataGridRowCell(key, value));
                     }
                 }
 
@@ -54,19 +70,15 @@ namespace Unity.Flex
             return new DataGridValue(new DataGridRowsValue(dataGridRows)) { Columns = dataGridColumns };
         }
 
-        private static string? ExtractFormatter(JToken component)
+        private static string? ResolveFormatter(JToken component)
         {
-            // Refactor this to be more generic based on the component type
-            var format = component["format"]?.ToString();
-            if (format.IsNullOrEmpty())
+            // look for format, then currency as a possible formatter
+            var format = component["format"]?.ToString() ?? string.Empty;
+            if (format == string.Empty)
             {
-                var currency = component["currency"]?.ToString() ?? null;
-                if (currency != null)
-                {
-                    return currency;
-                }
+                format = component["currency"]?.ToString() ?? string.Empty;
             }
-            return null;
+            return format;
         }
 
         private static JArray FindComponents(JObject jObject, string key, string type)

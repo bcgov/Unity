@@ -6,7 +6,7 @@ metadata:
 spec:
   metadata:
     labels: {{ include "crunchy-postgres.labels" . | nindent 6 }}
-  {{ if .Values.crunchyImage }}  
+  {{ if .Values.crunchyImage }}
   image: {{ .Values.crunchyImage }}
   {{ end }}
   imagePullPolicy: {{.Values.imagePullPolicy}}
@@ -42,9 +42,6 @@ spec:
         requests:
           cpu: {{ .Values.instances.requests.cpu }}
           memory: {{ .Values.instances.requests.memory }}
-        limits:
-          cpu: {{ .Values.instances.limits.cpu }}
-          memory: {{ .Values.instances.limits.memory }}
       sidecars:
         replicaCertCopy:
           resources:
@@ -72,7 +69,7 @@ spec:
                     postgres-operator.crunchydata.com/cluster:
                       {{ template "crunchy-postgres.fullname" . }}
                     postgres-operator.crunchydata.com/instance-set: {{ .Values.instances.name }}-ha
-  
+
   users:
     - name: {{ template "crunchy-postgres.fullname" . }}
       databases:
@@ -98,7 +95,7 @@ spec:
           region: {{ .Values.dataSource.repo.s3.region }}
       stanza: {{ .Values.dataSource.stanza }}
   {{ end }}
-  
+
   backups:
     pgbackrest:
       {{ if .Values.pgBackRest.image }}
@@ -173,19 +170,21 @@ spec:
   standby:
     enabled: {{ .Values.standby.enabled }}
     repoName: {{ .Values.standby.repoName }}
-  
+
   patroni:
     dynamicConfiguration:
       postgresql:
         pg_hba:
-          - {{ .Values.patroni.postgresql.pg_hba}}
+          {{- range .Values.patroni.postgresql.pg_hba }}
+            - {{ . | quote }}
+          {{- end }}
         parameters:
           shared_buffers: {{ .Values.patroni.postgresql.parameters.shared_buffers }}
           wal_buffers: {{ .Values.patroni.postgresql.parameters.wal_buffers }}
           min_wal_size: {{ .Values.patroni.postgresql.parameters.min_wal_size }}
           max_wal_size: {{ .Values.patroni.postgresql.parameters.max_wal_size }}
           max_slot_wal_keep_size:  {{ .Values.patroni.postgresql.parameters.max_slot_wal_keep_size }}
-  
+
   proxy:
     pgBouncer:
       config:

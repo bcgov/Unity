@@ -38,7 +38,7 @@ RUN dotnet restore "src/Unity.GrantManager.Web/Unity.GrantManager.Web.csproj"
 COPY . .
 WORKDIR "/src/src/Unity.GrantManager.Web"
 
-RUN dotnet tool install -g Volo.Abp.Cli
+RUN dotnet tool install -g Volo.Abp.Cli --version 8.1.4
 ENV PATH="${PATH}:/root/.dotnet/tools"
 RUN dotnet dev-certs https --trust
 RUN abp install-libs
@@ -46,7 +46,7 @@ RUN abp install-libs
 FROM build AS publish
 ARG UNITY_BUILD_VERSION
 ARG UNITY_BUILD_REVISION
-RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -p:Version=${UNITY_BUILD_VERSION:-0.0.0} -p:SourceRevisionId=${UNITY_BUILD_REVISION:-0000000} -p:UseAppHost=false -o /app/publish 
+RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -p:Version=${UNITY_BUILD_VERSION:-0.0.0} -p:SourceRevisionId=${UNITY_BUILD_REVISION:-0000000} -p:UseAppHost=false -o /app/publish
 
 FROM base AS final
 WORKDIR /app

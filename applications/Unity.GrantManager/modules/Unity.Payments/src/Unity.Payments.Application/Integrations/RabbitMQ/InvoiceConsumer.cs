@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using System;
 using Volo.Abp.MultiTenancy;

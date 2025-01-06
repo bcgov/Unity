@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
 {
-    public class TextAreaDefinitionViewModel : WorksheetFieldDefinitionViewModelBase
+    public class TextAreaDefinitionViewModel : RequiredFieldViewModel
     {
         public TextAreaDefinitionViewModel() : base()
         {

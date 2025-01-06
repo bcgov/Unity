@@ -1,0 +1,18 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget;
+
+@model QuestionTextAreaViewModel;
+
+<div class="mb-3">
+    <label for="answer-text-@Model.QuestionId" class="form-label unt-form-label">Answer</label>
+    <textarea rows="@Model.Rows"
+              required="@Model.Required"
+              class="form-control answer-text-input"
+              minlength="@Model.MinLength"
+              maxlength="@Model.MaxLength"
+              disabled="@Model.IsDisabled"
+              id="answer-textarea-@Model.QuestionId"
+              name="Answer-Textarea-@Model.QuestionId"
+              data-original-value="@Model.Answer"
+              oninput="handleInputChange('@Model.QuestionId','answer-textarea-')">@Model.Answer</textarea>
+    <span id="error-message-@Model.QuestionId" class="text-danger field-validation-error"></span>
+</div>

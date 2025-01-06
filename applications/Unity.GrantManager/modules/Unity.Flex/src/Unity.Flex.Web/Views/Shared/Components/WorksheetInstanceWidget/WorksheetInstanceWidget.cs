@@ -124,7 +124,8 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
                     Order = field.Order,
                     Type = field.Type,
                     CurrentValue = null,
-                    UiAnchor = uiAnchor
+                    UiAnchor = uiAnchor,
+                    CurrentValueId = null
                 });
             }
         }
@@ -138,11 +139,13 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
 
         foreach (var field in worksheetViewModel.Sections.SelectMany(s => s.Fields))
         {
-            var fieldValue = worksheetInstance.Values?.Find(s => s.CustomFieldId == field.Id)?.CurrentValue ?? "{}";
-            field.CurrentValue = fieldValue;
+            var fieldValueEntry = worksheetInstance.Values?.Find(s => s.CustomFieldId == field.Id);
+            field.CurrentValue = fieldValueEntry?.CurrentValue ?? "{}";
+            field.CurrentValueId = fieldValueEntry?.Id;
             field.UiAnchor = uiAnchor;
         }
 
+        worksheetViewModel.WorksheetInstanceId = worksheetInstance.Id;
         return worksheetViewModel;
     }
 }

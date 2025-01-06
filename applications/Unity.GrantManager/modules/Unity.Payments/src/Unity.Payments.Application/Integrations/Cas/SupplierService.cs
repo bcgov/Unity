@@ -2,11 +2,11 @@
 using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
-using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -14,15 +14,14 @@ namespace Unity.Payments.Integrations.Cas
     [ExposeServices(typeof(SupplierService), typeof(ISupplierService))]
     public class SupplierService : ApplicationService, ISupplierService
     {
-        private readonly ITokenService _iTokenService;
+        private readonly ICasTokenService _iTokenService;
         private readonly IResilientHttpRequest _resilientRestClient;
         private readonly IOptions<CasClientOptions> _casClientOptions;
-
         private const string CFS_SUPPLIER = "cfs/supplier";
 
 
         public SupplierService(
-            ITokenService iTokenService,
+            ICasTokenService iTokenService,
             IResilientHttpRequest resilientHttpRequest,
             IOptions<CasClientOptions> casClientOptions)
         {
@@ -71,8 +70,6 @@ namespace Unity.Payments.Integrations.Cas
                 throw new UserFriendlyException("CAS Supplier Service: No Supplier Number");
             }
         }
-
-
     }
 
 #pragma warning disable S125 // Sections of code should not be commented out

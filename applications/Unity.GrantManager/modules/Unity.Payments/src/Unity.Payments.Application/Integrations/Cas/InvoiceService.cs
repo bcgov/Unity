@@ -16,6 +16,7 @@ using Unity.Payments.Codes;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Uow;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -23,7 +24,7 @@ namespace Unity.Payments.Integrations.Cas
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
     public class InvoiceService : ApplicationService, IInvoiceService
     {
-        private readonly ITokenService _iTokenService;
+        private readonly ICasTokenService _iTokenService;
         private readonly IPaymentRequestRepository _iPaymentRequestRepository;
         private readonly IResilientHttpRequest _resilientRestClient;
         private readonly ISiteRepository _iSiteRepository;
@@ -41,7 +42,7 @@ namespace Unity.Payments.Integrations.Cas
         };
 
         public InvoiceService(
-            ITokenService iTokenService,
+            ICasTokenService iTokenService,
             IPaymentRequestRepository paymentRequestRepository,
             IPaymentConfigurationAppService paymentConfigurationAppService,
             IResilientHttpRequest resilientHttpRequest,
@@ -82,6 +83,8 @@ namespace Unity.Payments.Integrations.Cas
                 casInvoice.DateInvoiceReceived = dateStringDayMonYear;
                 casInvoice.GlDate = dateStringDayMonYear;
                 casInvoice.InvoiceAmount = paymentRequest.Amount;
+                casInvoice.InvoiceBatchName = paymentRequest.BatchName;
+                casInvoice.PaymentAdviceComments = paymentRequest.Description;
 
                 InvoiceLineDetail invoiceLineDetail = new InvoiceLineDetail();
                 invoiceLineDetail.InvoiceLineNumber = 1;
@@ -173,7 +176,7 @@ namespace Unity.Payments.Integrations.Cas
             {
                 if(response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                 {
-                    var contentString = ResilientHttpRequest.ContentToString(response.Content);
+                    var contentString = Unity.Modules.Shared.Http.ResilientHttpRequest.ContentToString(response.Content);
                     var result = JsonSerializer.Deserialize<InvoiceResponse>(contentString)
                         ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
                     result.CASHttpStatusCode = response.StatusCode;
@@ -203,7 +206,7 @@ namespace Unity.Payments.Integrations.Cas
                 && response.Content != null
                 && response.IsSuccessStatusCode)
             {
-                string contentString = ResilientHttpRequest.ContentToString(response.Content);
+                string contentString = Unity.Modules.Shared.Http.ResilientHttpRequest.ContentToString(response.Content);
                 var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(contentString);
                 return result ?? new CasPaymentSearchResult();
             }
