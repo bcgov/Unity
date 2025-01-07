@@ -163,7 +163,7 @@
                 @*-------- Funding Agreement Section END ---------*@
 
                 @*-------- Payments Section ---------*@
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.Payments))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
                         <div class="w-100 px-2" id="PaymentInfoWidget">
