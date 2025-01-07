@@ -33,7 +33,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
 
     [BindProperty]
     [MinLength(1)]
-    [MaxLength(25)]
+    [MaxLength(50)]
     [Required]
     public string? Label { get; set; }
 

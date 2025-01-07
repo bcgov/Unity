@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
 
@@ -42,9 +44,23 @@ namespace Unity.Flex
                 {
                     var key = prop.Name;
                     var column = dataGridColumns.Find(s => s.Key == key);
+
                     if (column != null)
                     {
-                        dataGridRow.Cells.Add(new DataGridRowCell(key, prop.Value.ToString()));
+                        string value;
+
+                        if (DateTime.TryParse(prop.Value.ToString(), new CultureInfo("en-CA"), out DateTime parsedDate))
+                        {
+                            // If the value is a DateTime, keep the raw format
+                            value = prop.Value.ToString(Newtonsoft.Json.Formatting.None).Trim('"');
+                        }
+                        else
+                        {
+                            // Otherwise, use the value as-is
+                            value = prop.Value.ToString();
+                        }
+                        
+                        dataGridRow.Cells.Add(new DataGridRowCell(key, value));
                     }
                 }
 

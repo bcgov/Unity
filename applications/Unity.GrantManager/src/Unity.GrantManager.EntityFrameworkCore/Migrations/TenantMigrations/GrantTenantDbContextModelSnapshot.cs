@@ -2386,6 +2386,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("SentDateTime")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("text");
@@ -2552,6 +2556,14 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("BatchName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BatchNumber")
+                        .IsRequired()
                         .HasColumnType("numeric");
 
                     b.Property<int?>("CasHttpStatusCode")

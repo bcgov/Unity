@@ -19,6 +19,7 @@ using Volo.Abp.Users;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Permissions;
+using Volo.Abp;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -86,6 +87,12 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
 
     public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
     {
+        return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized);
+    }
+
+    [RemoteService(false)]
+    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status)
+    {
         if (string.IsNullOrEmpty(emailTo))
         {
             return null;
@@ -93,6 +100,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
         EmailLog emailLog = GetMappedEmailLog(emailObject);
         emailLog.ApplicationId = applicationId;
+        emailLog.Status = status ?? EmailStatus.Initialized;
 
         // When being called here the current tenant is in context - verified by looking at the tenant id
         EmailLog loggedEmail = await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);

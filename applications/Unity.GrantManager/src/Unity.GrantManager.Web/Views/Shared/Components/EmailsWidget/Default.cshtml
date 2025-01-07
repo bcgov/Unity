@@ -18,6 +18,7 @@
 <abp-button text="New Email" id="btn-new-email" icon-type="Other"  icon="fa-solid fa-plus" button-type="Light" />
 
 <div id="modal-content" class="modal-content" title="Email Send Confrirmation">
+    <h2 class="swal2-title" style="text-align: center;">Confirm Action</h2>
     <abp-column id="spinner-modal" class="modal-content">
             <abp-row class="m-0 p-0">
             <abp-column size="_12" class="px-1">
@@ -75,8 +76,33 @@
     <abp-row class="m-0 p-0">
         <abp-column size="_10" class="px-1">
             <abp-modal-footer>
-                <abp-button id="btn-send"  class="btn-send" text="Send" type="submit" button-type="Primary" data-applicationId="@Model.ApplicationId"></abp-button>
-                    <abp-button id="btn-send-close" class="close btn-send-close" data-dismiss="modal" aria-label="Close" text="Close" button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
+                <abp-button id="btn-save" 
+                                    icon-type="Other"
+                                    icon="fl fl-save"
+                                    class="btn-save" 
+                                    text="Save" 
+                                    type="button" 
+                                    button-type="Primary" 
+                                    data-applicationId="@Model.ApplicationId"></abp-button>
+
+                <abp-button id="btn-send" 
+                                    class="btn-send" 
+                                    text="Send" 
+                                    type="submit" 
+                                    button-type="Primary" 
+                                    data-applicationId="@Model.ApplicationId"></abp-button>
+                <abp-button id="btn-send-discard" 
+                            class="close btn-send-discard" 
+                            data-dismiss="modal" 
+                            aria-label="Discard" 
+                            text="Discard" 
+                            button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
+                <abp-button id="btn-send-close" 
+                            class="close btn-send-close" 
+                            data-dismiss="modal" 
+                            aria-label="Close" 
+                            text="Close" 
+                            button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
             </abp-modal-footer>
       </abp-column>
     </abp-row>

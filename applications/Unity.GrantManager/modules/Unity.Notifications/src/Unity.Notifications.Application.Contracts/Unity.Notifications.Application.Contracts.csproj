@@ -9,10 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
     <PackageReference Include="RestSharp" Version="112.0.0" />
-    <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.Authorization" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Application.Contracts" Version="8.3.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.Authorization" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Application.Contracts" Version="8.3.4" />
     <ProjectReference Include="..\Unity.Notifications.Domain.Shared\Unity.Notifications.Domain.Shared.csproj" />
   </ItemGroup>
 

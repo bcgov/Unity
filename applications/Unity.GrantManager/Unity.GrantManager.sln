@@ -137,8 +137,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Flex.Shared", "module
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Payments.Shared", "modules\Unity.Payments\src\Unity.Payments.Shared\Unity.Payments.Shared.csproj", "{0355D299-4880-4F11-84A9-E14639A76AC4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Shared", "Unity.Shared\MessageBrokers\RabbitMQ\Unity.Shared.csproj", "{05F6D75C-9BD0-464A-A4AA-27671AA46D54}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Flex.Web.Tests", "modules\Unity.Flex\test\Unity.Flex.Web.Tests\Unity.Flex.Web.Tests.csproj", "{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}"
 EndProject
 Global
@@ -355,10 +353,6 @@ Global
 		{0355D299-4880-4F11-84A9-E14639A76AC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0355D299-4880-4F11-84A9-E14639A76AC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0355D299-4880-4F11-84A9-E14639A76AC4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{05F6D75C-9BD0-464A-A4AA-27671AA46D54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{05F6D75C-9BD0-464A-A4AA-27671AA46D54}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{05F6D75C-9BD0-464A-A4AA-27671AA46D54}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{05F6D75C-9BD0-464A-A4AA-27671AA46D54}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}.Release|Any CPU.ActiveCfg = Release|Any CPU

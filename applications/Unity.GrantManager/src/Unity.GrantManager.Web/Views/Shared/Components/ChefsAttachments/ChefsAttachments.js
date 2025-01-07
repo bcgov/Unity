@@ -9,7 +9,12 @@ $(function () {
             setTimeout(function () {
                 PubSub.publish('update_application_attachment_count', { chefs: result.length });
             }, 10);
+
+            if (result.length === 0) { 
+                $('#downloadAll').prop("disabled", true);
+            }
         }
+        
         return {
             data: result
         };
@@ -71,7 +76,72 @@ $(function () {
         }
     });
 
-    $('#attachments-tab').one('click', function () {
+    $('#attachments-tab').on('click', function () {
         dataTable.columns.adjust();
+    });
+
+    $('#downloadAll').on('click', function () {
+        const _this = $(this);
+        const existingHTML = _this.html();
+        const zip = new JSZip();
+        const chefsAttactmentsTable = document.getElementById('ChefsAttachmentsTable');
+        const anchorTags = chefsAttactmentsTable.querySelectorAll('a');
+        const tempFiles = [];
+
+        if (anchorTags.length > 0) { 
+            anchorTags.forEach(item => {
+                if (item !== null) {
+                    let tempFileName = item.pathname.split('/').pop();
+                    let tempChefsFileId = item.pathname.split('/').slice(-2)[0];
+                    let tempFormSubmissionId = item.pathname.split('/').slice(-4)[0];
+
+                    tempFiles.push({
+                        FormSubmissionId: tempFormSubmissionId,
+                        ChefsFileId: tempChefsFileId,
+                        Filename: tempFileName
+                    });
+                }
+            });
+        } 
+
+        ////Calls an endpoint
+        $.ajax({
+            url: "/api/app/attachment/chefs/download-all",
+            data: JSON.stringify(tempFiles),
+            contentType: "application/json",
+            type: "POST",
+            beforeSend: function () {
+                //Add loading spinner
+                $(_this).html('<div class="spinner-loading"><span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Downloading...</div>').prop('disabled', true);
+            },
+            success: function (data) {
+                data.forEach(file => {
+                    zip.file(file.fileDownloadName, file.fileContents, { base64: true });
+                });
+
+                zip.generateAsync({ type: "blob" })
+                    .then(function (content) {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(content);
+                        link.download = 'Submission_Files.zip';
+                        link.click();
+                    });
+
+                abp.notify.success(
+                    '',
+                    'The files have been downloaded successfully.'
+                );
+                //show original HTML and enable
+                $(_this).html(existingHTML).prop('disabled', false);
+            },
+            error: function () {
+                abp.notify.error(
+                    '',
+                    'Error downloading the files.'
+                );
+                $(_this).html(existingHTML).prop('disabled', false);
+            }
+        });
+
     });
 });

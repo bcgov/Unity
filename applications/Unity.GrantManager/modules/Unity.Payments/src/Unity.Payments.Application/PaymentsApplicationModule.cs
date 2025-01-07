@@ -11,7 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.TenantManagement;
-using Unity.Shared.MessageBrokers.RabbitMQ;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;

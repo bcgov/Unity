@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Volo.Abp;
 using Unity.Payments.Domain.Exceptions;
+using Unity.Payments.PaymentRequests;
 
 namespace Unity.Payments.Domain.PaymentRequests
 {
@@ -41,13 +42,13 @@ namespace Unity.Payments.Domain.PaymentRequests
         // External Correlation
         public virtual Guid CorrelationId { get; private set; }
         public virtual string CorrelationProvider { get; private set; } = string.Empty;
-
         // Payee Info
         public virtual string PayeeName { get; private set; } = string.Empty;
         public virtual string ContractNumber { get; private set; } = string.Empty;
         public virtual string SupplierNumber { get; private set; } = string.Empty;
-
         public virtual string RequesterName { get; private set; } = string.Empty;
+        public virtual string BatchName { get; private set; } = string.Empty;
+        public virtual decimal BatchNumber { get; private set; } = 0;
 
         public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
@@ -78,32 +79,21 @@ namespace Unity.Payments.Domain.PaymentRequests
             return expenseApprovals;
         }
 
-        public PaymentRequest(Guid id,
-            string invoiceNumber,
-            decimal amount,
-            string payeeName,
-            string contractNumber,
-            string supplierNumber,
-            Guid siteId,
-            Guid correlationId,
-            string correlationProvider,
-            string referenceNumber,
-            string? description = null,
-            decimal? paymentThreshold = 500000m
-            )
-            : base(id)
+        public PaymentRequest(Guid id, CreatePaymentRequestDto createPaymentRequestDto) : base(id)
         {
-            InvoiceNumber = invoiceNumber;
-            Amount = amount;
-            PayeeName = payeeName;
-            ContractNumber = contractNumber;
-            SupplierNumber = supplierNumber;
-            SiteId = siteId;
-            Description = description;
-            CorrelationId = correlationId;
-            CorrelationProvider = correlationProvider;
-            ReferenceNumber = referenceNumber;
-            ExpenseApprovals = GenerateExpenseApprovals(amount, paymentThreshold);
+            InvoiceNumber = createPaymentRequestDto.InvoiceNumber;
+            Amount = createPaymentRequestDto.Amount;
+            PayeeName = createPaymentRequestDto.PayeeName;
+            ContractNumber = createPaymentRequestDto.ContractNumber;
+            SupplierNumber = createPaymentRequestDto.SupplierNumber;
+            SiteId = createPaymentRequestDto.SiteId;
+            Description = createPaymentRequestDto.Description;
+            CorrelationId = createPaymentRequestDto.CorrelationId;
+            CorrelationProvider = createPaymentRequestDto.CorrelationProvider;
+            ReferenceNumber = createPaymentRequestDto.ReferenceNumber;
+            BatchName = createPaymentRequestDto.BatchName;
+            BatchNumber = createPaymentRequestDto.BatchNumber;
+            ExpenseApprovals = GenerateExpenseApprovals(createPaymentRequestDto.Amount, createPaymentRequestDto.PaymentThreshold);
             ValidatePaymentRequest();
         }
 

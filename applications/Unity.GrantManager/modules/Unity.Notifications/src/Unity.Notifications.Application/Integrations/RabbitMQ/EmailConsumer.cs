@@ -10,7 +10,7 @@ using Unity.Notifications.Events;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
-using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Microsoft.Extensions.Logging;
 using Unity.Notifications.EmailNotifications;
 using Newtonsoft.Json;
@@ -75,6 +75,12 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                         // Update the response
                         emailLog.ChesResponse = JsonConvert.SerializeObject(response);
                         emailLog.ChesStatus = response.StatusCode.ToString();
+
+                        if(response.StatusCode.ToString() == "Created") {
+                            emailLog.Status = EmailStatus.Created;
+                        } else if (response.StatusCode.ToString() == "0") {
+                            emailLog.Status = EmailStatus.Failed;
+                        }
 
                         if (ReprocessBasedOnStatusCode(response.StatusCode))
                         {
