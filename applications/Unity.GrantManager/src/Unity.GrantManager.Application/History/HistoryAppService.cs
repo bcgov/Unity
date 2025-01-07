@@ -48,11 +48,13 @@ namespace Unity.GrantManager.History
                     {
                         string origninalValue = CleanValue(propertyChange.OriginalValue);
                         string newValue = CleanValue(propertyChange.NewValue);
+                        // Signal the kind of time so that tolocal knows how to convert it on the page
+                        DateTime utcDateTime = DateTime.SpecifyKind(entityChange.ChangeTime, DateTimeKind.Utc);
                         HistoryDto historyDto = new()
                         {
                             OriginalValue = GetLookupValue(origninalValue, lookupDictionary),
                             NewValue = GetLookupValue(newValue, lookupDictionary),
-                            ChangeTime = entityChange.ChangeTime,
+                            ChangeTime = utcDateTime.ToLocalTime(),
                             UserName = await LookupUserName(entityChange.AuditLogId)
                         };
                         historyList.Add(historyDto);
