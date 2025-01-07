@@ -11,13 +11,13 @@ using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Reporting
 {
-    public class DynamicViewGeneratorHandler(
+    public class SubmissionsDynamicViewGeneratorHandler(
         IApplicationFormVersionRepository applicationFormVersionRepository,
         ICurrentTenant currentTenant,
         IUnitOfWorkManager unitOfWorkManager,
-        ILogger<DynamicViewGeneratorHandler> logger) : ILocalEventHandler<DynamicViewGenerationEto>, ITransientDependency
+        ILogger<SubmissionsDynamicViewGeneratorHandler> logger) : ILocalEventHandler<SubmissionsDynamicViewGenerationEto>, ITransientDependency
     {
-        public async Task HandleEventAsync(DynamicViewGenerationEto viewGenerationEvent)
+        public async Task HandleEventAsync(SubmissionsDynamicViewGenerationEto viewGenerationEvent)
         {
             try
             {
@@ -29,7 +29,7 @@ namespace Unity.GrantManager.Reporting
                     if (applicationFormVersion != null)
                     {
                         var dbContext = await applicationFormVersionRepository.GetDbContextAsync();
-                        FormattableString sql = $@"CALL generate_view({viewGenerationEvent.ApplicationFormVersionId});";
+                        FormattableString sql = $@"CALL generate_submissions_view({viewGenerationEvent.ApplicationFormVersionId});";
                         await dbContext.Database.ExecuteSqlAsync(sql);
                     }
 
@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Reporting
             }
             catch (Exception ex)
             {
-                logger.LogError("{errorMessage}", ex.Message);
+                logger.LogError(ex, "{ErrorMessage}", ex.Message);
             }
         }
     }

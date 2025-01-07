@@ -1,7 +1,7 @@
 ﻿using System;
 using Unity.Flex.Domain.Worksheets;
 
-namespace Unity.Flex.Worksheets.Reporting
+namespace Unity.Flex.Worksheets.Reporting.FieldGenerators
 {
     public class CheckboxGroupReportingFieldsGenerator(CustomField customField, char separator, uint maxColumnLength)
         : ReportingFieldsGeneratorBase(customField, separator, maxColumnLength), IReportingFieldsGenerator

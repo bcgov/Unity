@@ -13,7 +13,7 @@ namespace Unity.GrantManager
         {
             var myGroup = context.AddGroup("GrantManager");
 
-            myGroup.AddFeature("Unity.Payments", 
+            myGroup.AddFeature("Unity.Payments",
                 defaultValue: "false",
                 displayName: LocalizableString
                                 .Create<PaymentsResource>("Payments"),
@@ -29,12 +29,6 @@ namespace Unity.GrantManager
                 defaultValue: "false",
                    displayName: LocalizableString
                                 .Create<FlexResource>("Flex"),
-                valueType: new ToggleStringValueType());
-
-            myGroup.AddFeature("Unity.Reporting",
-                defaultValue: "false",
-                displayName: LocalizableString
-                                .Create<NotificationsResource>("Enable Reporting Module"),
                 valueType: new ToggleStringValueType());
         }
     }

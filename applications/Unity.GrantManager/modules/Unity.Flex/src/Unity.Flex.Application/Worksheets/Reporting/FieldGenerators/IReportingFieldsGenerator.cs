@@ -1,4 +1,4 @@
-﻿namespace Unity.Flex.Worksheets.Reporting
+﻿namespace Unity.Flex.Worksheets.Reporting.FieldGenerators
 {
     public interface IReportingFieldsGenerator
     {

@@ -12,7 +12,6 @@ using Unity.GrantManager.Integration.Chefs;
 using Unity.GrantManager.Reporting;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
@@ -305,7 +304,7 @@ namespace Unity.GrantManager.ApplicationForms
         private async Task QueueDynamicViewGeneratorAsync(ApplicationFormVersion applicationFormVersion)
         {
             await _localEventBus.PublishAsync(
-                new DynamicViewGenerationEto
+                new SubmissionsDynamicViewGenerationEto
                 {
                     ApplicationFormVersionId = applicationFormVersion.Id,
                     TenantId = CurrentTenant.Id
@@ -362,7 +361,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             applicationFormVersion.ReportColumns = truncatedDelimitedKeys;
             applicationFormVersion.ReportKeys = pipeDelimitedKeys;
-            applicationFormVersion.ReportViewName = $"{form.ApplicationFormName}-V{applicationFormVersion.Version}";
+            applicationFormVersion.ReportViewName = $"FS-{form.ApplicationFormName?.Replace(" ", "")}-V{applicationFormVersion.Version}";
         }
 
         private static string[] ExtractNestedKeys(JProperty jProperty)

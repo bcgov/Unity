@@ -10,6 +10,7 @@ using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetInstances;
+using Unity.Flex.Worksheets.Reporting.DataGenerators;
 using Unity.Flex.Worksheets.Values;
 using Volo.Abp.Domain.Services;
 
@@ -68,6 +69,7 @@ namespace Unity.Flex.Domain.Services
             var worksheet = await worksheetRepository.GetAsync(instance.WorksheetId, true);
             var fieldDefinitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
             var instanceCurrentValue = new WorksheetInstanceValue();
+
             foreach (var field in instance.Values)
             {
                 var fieldDefinition = fieldDefinitions.Find(s => s.Id == field.CustomFieldId);
@@ -75,7 +77,10 @@ namespace Unity.Flex.Domain.Services
                     instanceCurrentValue.Values.Add(new FieldInstanceValue(fieldDefinition.Key,
                         JsonNode.Parse(field.CurrentValue)?["value"]?.ToString() ?? string.Empty));
             }
+
             instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));
+
+            instance.SetReportingData(ReportingDataGeneratorService.GenerateData(worksheet, instanceCurrentValue));
         }
 
         private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)
@@ -206,6 +211,7 @@ namespace Unity.Flex.Domain.Services
             var highestVersion = worksheetVersions.Max(s => s.Version);
             var clonedWorksheet = new Worksheet(Guid.NewGuid(), $"{versionSplit[0]}-v{highestVersion + 1}", worksheet.Title);
             clonedWorksheet.SetVersion(highestVersion + 1);
+
             foreach (var section in worksheet.Sections.OrderBy(s => s.Order))
             {
                 var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
@@ -219,7 +225,7 @@ namespace Unity.Flex.Domain.Services
 
             var result = await worksheetRepository.InsertAsync(clonedWorksheet);
             return result;
-        }       
+        }
 
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)
         {

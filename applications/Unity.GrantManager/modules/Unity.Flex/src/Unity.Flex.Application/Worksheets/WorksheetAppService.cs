@@ -8,15 +8,14 @@ using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Utils;
 using Unity.Flex.Domain.Worksheets;
-using Unity.Flex.Worksheets.Reporting;
+using Unity.Flex.Worksheets.Reporting.FieldGenerators;
 using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
 {
     [Authorize]
-    public partial class WorksheetAppService(IWorksheetRepository worksheetRepository, 
-        WorksheetsManager worksheetsManager,
-        ReportingFieldsGeneratorService reportingFieldsGeneratorService) : FlexAppService, IWorksheetAppService
+    public partial class WorksheetAppService(IWorksheetRepository worksheetRepository,
+        WorksheetsManager worksheetsManager) : FlexAppService, IWorksheetAppService
     {
         public virtual async Task<WorksheetDto> GetAsync(Guid id)
         {
@@ -109,10 +108,10 @@ namespace Unity.Flex.Worksheets
 
             _ = worksheet.SetPublished(true);
 
-            _ = reportingFieldsGeneratorService.GenerateAndSet(worksheet);
+            _ = ReportingFieldsGeneratorService.GenerateAndSet(worksheet);
 
             return await Task.FromResult(true);
-        }       
+        }
 
         public virtual async Task DeleteAsync(Guid id)
         {

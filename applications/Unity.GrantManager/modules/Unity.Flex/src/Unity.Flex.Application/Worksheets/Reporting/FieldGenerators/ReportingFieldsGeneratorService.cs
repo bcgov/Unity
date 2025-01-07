@@ -1,20 +1,19 @@
 ﻿using System.Linq;
 using System.Text;
 using Unity.Flex.Domain.Worksheets;
-using Volo.Abp.Application.Services;
 
-namespace Unity.Flex.Worksheets.Reporting
+namespace Unity.Flex.Worksheets.Reporting.FieldGenerators
 {
-    public class ReportingFieldsGeneratorService() : ApplicationService
+    public static class ReportingFieldsGeneratorService
     {
-        internal Worksheet GenerateAndSet(Worksheet worksheet, char separator = '|', uint maxColumnLength = 63)
+        public static Worksheet GenerateAndSet(Worksheet worksheet, char separator = '|', uint maxColumnLength = 63)
         {
             var (reportingKeys, reportingColumns, reportViewName) = GenerateReportingFields(worksheet, separator, maxColumnLength);
             worksheet.SetReportingFields(reportingKeys, reportingColumns, reportViewName);
             return worksheet;
         }
 
-        private (string reportingKeys, string reportingColumns, string reportViewName) GenerateReportingFields(Worksheet worksheet,
+        private static (string reportingKeys, string reportingColumns, string reportViewName) GenerateReportingFields(Worksheet worksheet,
             char separator,
             uint maxColumnLength)
         {
@@ -43,7 +42,7 @@ namespace Unity.Flex.Worksheets.Reporting
                 keysBuilder.Length--; // Remove the last separator                                    
             }
 
-            return new(columnsBuilder.ToString(), keysBuilder.ToString(), worksheet.Name);
+            return new(columnsBuilder.ToString(), keysBuilder.ToString(), $"WS-{worksheet.Name.ToUpper()}");
         }
     }
 }

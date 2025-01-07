@@ -6,7 +6,6 @@ using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using Unity.Flex.Worksheets;
-using System.Text;
 
 namespace Unity.Flex.Domain.Worksheets
 {
@@ -23,9 +22,9 @@ namespace Unity.Flex.Domain.Worksheets
         public virtual Collection<WorksheetLink> Links { get; private set; } = [];
 
         // For reporting purposes
-        public string ReportColumns { get; set; } = string.Empty;
-        public string ReportKeys { get; set; } = string.Empty;
-        public string ReportViewName { get; set; } = string.Empty;
+        public virtual string ReportColumns { get; set; } = string.Empty;
+        public virtual string ReportKeys { get; set; } = string.Empty;
+        public virtual string ReportViewName { get; set; } = string.Empty;
 
         protected Worksheet()
         {
@@ -106,6 +105,6 @@ namespace Unity.Flex.Domain.Worksheets
             ReportColumns = columns;
             ReportViewName = reportViewName;
             return this;
-        }       
+        }
     }
 }
