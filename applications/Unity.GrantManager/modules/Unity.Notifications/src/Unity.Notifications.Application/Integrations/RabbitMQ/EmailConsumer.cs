@@ -76,8 +76,8 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                         emailLog.ChesResponse = JsonConvert.SerializeObject(response);
                         emailLog.ChesStatus = response.StatusCode.ToString();
 
-                        if(response.StatusCode.ToString() == "Created") {
-                            emailLog.Status = EmailStatus.Created;
+                        if(response.StatusCode.ToString() == EmailStatus.Sent) {
+                            emailLog.Status = EmailStatus.Sent;
                         } else if (response.StatusCode.ToString() == "0") {
                             emailLog.Status = EmailStatus.Failed;
                         }
