@@ -20,6 +20,12 @@
             
             @foreach (HistoryDto historyDto in Model.ApplicationStatusHistoryList)
             {
+                string fromString = "";
+                if (!historyDto.OriginalValue.IsNullOrEmpty()) 
+                {
+                    fromString = "from";
+                }
+
                 <div class="mb-2 history-read-mode">
                     <div class="unity-history-block read-mode">
                         <div class="d-flex justify-content-between">
@@ -29,8 +35,8 @@
                         </div>
                         <div class="history-lbl">
                             <div>
-                                Status changed from
-                                <span class="status-change">@historyDto.OriginalValue</span> to
+                                Status changed @fromString <span class="status-change">@historyDto.OriginalValue</span> 
+                                to
                                 <span class="status-change">@historyDto.NewValue</span>
                             </div>
                         </div>
