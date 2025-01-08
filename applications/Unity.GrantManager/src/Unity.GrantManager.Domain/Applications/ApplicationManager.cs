@@ -190,6 +190,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             application.AssessmentStartDate = DateTime.UtcNow;
         }
 
+        application.LastModificationTime = DateTime.UtcNow; // This was not being updated
         return await _applicationRepository.UpdateAsync(application);
     }
 

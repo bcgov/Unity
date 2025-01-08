@@ -10,12 +10,13 @@
     Layout = null;
 }
 <br/>
-<div class="mb-2 card border"> 
-    <div class="card-header bg-default"> 
+<div id="application-history-div" class="mb-2 card border"> 
+    <div id="card-header-div" class="card-header bg-default"> 
         <h4 class="mb-0 card-title">Application Status History</h4> 
     </div> 
-    <div ref="tab-tabs" class="card-body" style="display: block;">
+    <div id="expanded-div" ref="tab-tabs" class="card-body" style="display: block;">
         <div id="history-div" class="mt-2 history-container">
+            <input id="historyLength" type="hidden" value="@Model.ApplicationStatusHistoryList?.Count"/>
             
             @foreach (HistoryDto historyDto in Model.ApplicationStatusHistoryList)
             {
