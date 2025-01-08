@@ -29,14 +29,6 @@
     display: flex;
 }
 
-#ApplicationAttachmentsTable_wrapper .length-menu-footer {
-    display:none;
-}
-
-#ChefsAttachmentsTable_wrapper .dt-buttons {
-    display: none;
-}
-
-#ChefsAttachmentsTable_wrapper .length-menu-footer {
-    margin-top: -55px;
+#ChefsAttachmentsTable_paginate { 
+    display: block !important;
 }
