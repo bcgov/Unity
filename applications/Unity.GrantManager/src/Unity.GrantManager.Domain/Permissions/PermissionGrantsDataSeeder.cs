@@ -150,6 +150,10 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
 
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
