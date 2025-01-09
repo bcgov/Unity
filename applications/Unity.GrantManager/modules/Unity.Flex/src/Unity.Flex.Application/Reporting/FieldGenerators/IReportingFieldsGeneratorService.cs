@@ -1,9 +1,7 @@
-﻿using Unity.Flex.Domain.Worksheets;
-
-namespace Unity.Flex.Reporting.FieldGenerators
+﻿namespace Unity.Flex.Reporting.FieldGenerators
 {
-    public interface IReportingFieldsGeneratorService
+    public interface IReportingFieldsGeneratorService<T> where T : IReportableEntity<T>
     {
-        Worksheet GenerateAndSet(Worksheet worksheet, char separator = '|', uint maxColumnLength = 63);
+        T GenerateAndSet(T worksheet, char separator = '|', uint maxColumnLength = 63);
     }
 }

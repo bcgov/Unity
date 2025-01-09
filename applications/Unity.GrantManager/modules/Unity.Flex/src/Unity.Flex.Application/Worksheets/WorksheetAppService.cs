@@ -16,7 +16,7 @@ namespace Unity.Flex.Worksheets
     [Authorize]
     public partial class WorksheetAppService(IWorksheetRepository worksheetRepository,
         WorksheetsManager worksheetsManager,
-        IReportingFieldsGeneratorService reportingFieldsGeneratorService) : FlexAppService, IWorksheetAppService
+        IReportingFieldsGeneratorService<Worksheet> reportingFieldsGeneratorService) : FlexAppService, IWorksheetAppService
     {
         public virtual async Task<WorksheetDto> GetAsync(Guid id)
         {

@@ -2,9 +2,8 @@
 
 namespace Unity.Flex.Reporting
 {
-    public class WorksheetsDynamicViewGeneratorEto
+    public class WorksheetsDynamicViewGeneratorEto : DynamicViewGeneratorEto
     {
-        public Guid? TenantId { get; set; }
         public Guid WorksheetId { get; set; }
     }
 }

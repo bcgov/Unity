@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Modules.Shared.Correlation;
@@ -24,6 +25,9 @@ namespace Unity.Flex.Domain.ScoresheetInstances
         public Guid? TenantId { get; set; }
 
         public virtual Collection<Answer> Answers { get; private set; } = [];
+
+        [Column(TypeName = "jsonb")]
+        public virtual string ReportData { get; private set; } = "{}";
 
         public ScoresheetInstance(Guid id, 
             Guid scoresheetId, 

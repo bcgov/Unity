@@ -1,4 +1,7 @@
-﻿using Unity.Flex.Domain.Worksheets;
+﻿using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators;
+using Unity.Flex.Reporting.FieldGenerators.QuestionFieldGenerators;
 using Unity.Flex.Worksheets;
 
 namespace Unity.Flex.Reporting.FieldGenerators
@@ -13,6 +16,11 @@ namespace Unity.Flex.Reporting.FieldGenerators
                 CustomFieldType.DataGrid => new DataGridReportingFieldsGenerator(customField, separator, maxColumnLength),
                 _ => new DefaultReportingFieldsGenerator(customField, separator, maxColumnLength),
             };
+        }
+
+        public static IReportingFieldsGenerator Create(Question question, char separator, uint maxColumnLength)
+        {
+            return new DefaultFieldsGenerator(question, separator, maxColumnLength);
         }
     }
 }

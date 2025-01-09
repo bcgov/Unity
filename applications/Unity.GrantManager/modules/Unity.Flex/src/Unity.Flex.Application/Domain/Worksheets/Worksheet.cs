@@ -6,10 +6,11 @@ using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using Unity.Flex.Worksheets;
+using Unity.Flex.Reporting;
 
 namespace Unity.Flex.Domain.Worksheets
 {
-    public class Worksheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
+    public class Worksheet : FullAuditedAggregateRoot<Guid>, IMultiTenant, IReportableEntity<Worksheet>
     {
         public virtual string Name { get; private set; } = string.Empty;
         public virtual string Title { get; private set; } = string.Empty;

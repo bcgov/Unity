@@ -1,16 +1,17 @@
-﻿using System.Linq;
-using System.Text;
-using Unity.Flex.Domain.Worksheets;
+﻿using Volo.Abp.Application.Services;
 using Volo.Abp;
-using Volo.Abp.Application.Services;
 using Volo.Abp.EventBus.Local;
+using Unity.Flex.Domain.Scoresheets;
+using System.Text;
+using System.Linq;
 
 namespace Unity.Flex.Reporting.FieldGenerators
 {
     [RemoteService(false)]
-    public class ReportingFieldsGeneratorService(ILocalEventBus localEventBus) : ApplicationService, IReportingFieldsGeneratorService
+    public class ScoresheetReportingFieldsGeneratorService(ILocalEventBus localEventBus) : ApplicationService,
+        IReportingFieldsGeneratorService<Scoresheet>
     {
-        public Worksheet GenerateAndSet(Worksheet worksheet, char separator = '|', uint maxColumnLength = 63)
+        public Scoresheet GenerateAndSet(Scoresheet worksheet, char separator = '|', uint maxColumnLength = 63)
         {
             var (reportingKeys, reportingColumns, reportViewName) = GenerateReportingFields(worksheet, separator, maxColumnLength);
             worksheet.SetReportingFields(reportingKeys, reportingColumns, reportViewName);
@@ -24,14 +25,14 @@ namespace Unity.Flex.Reporting.FieldGenerators
             return worksheet;
         }
 
-        private static (string reportingKeys, string reportingColumns, string reportViewName) GenerateReportingFields(Worksheet worksheet,
+        private static (string reportingKeys, string reportingColumns, string reportViewName) GenerateReportingFields(Scoresheet scoresheet,
             char separator,
             uint maxColumnLength)
         {
             StringBuilder keysBuilder = new();
             StringBuilder columnsBuilder = new();
 
-            foreach (var field in worksheet.Sections.SelectMany(s => s.Fields))
+            foreach (var field in scoresheet.Sections.SelectMany(s => s.Fields))
             {
                 var (columns, keys) = ReportingFieldsGeneratorFactory
                                         .Create(field, separator, maxColumnLength)
@@ -53,7 +54,7 @@ namespace Unity.Flex.Reporting.FieldGenerators
                 keysBuilder.Length--; // Remove the last separator                                    
             }
 
-            return new(columnsBuilder.ToString(), keysBuilder.ToString(), $"Worksheet-{worksheet.Name}");
+            return new(columnsBuilder.ToString(), keysBuilder.ToString(), $"Scoresheet-{scoresheet.Name}");
         }
     }
 }
