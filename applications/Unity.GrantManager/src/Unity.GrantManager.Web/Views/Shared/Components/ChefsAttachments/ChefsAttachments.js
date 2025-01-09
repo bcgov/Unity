@@ -1,14 +1,8 @@
 $(function () {
     const downloadAll = $("#downloadAll");
     const dt = $('#ChefsAttachmentsTable');
-    let dataTable;
+    let chefsDataTable;
     let selectedAtttachments = [];
-    const listColumns = getColumns();
-    const defaultVisibleColumns = [
-        'select',
-        'chefsFileName',
-        'chefsFileDownload'
-    ];
 
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
@@ -16,6 +10,10 @@ $(function () {
         return applicationId;
     }
     let responseCallback = function (result) {
+        if (result.length <= 0) {
+            $('.dataTables_paginate').hide();
+        }
+
         if (result) {
             setTimeout(function () {
                 PubSub.publish('update_application_attachment_count', { chefs: result.length });
@@ -74,15 +72,31 @@ $(function () {
         return newData;
     }
 
-    dataTable = initializeDataTable(dt,
-        defaultVisibleColumns,
-        listColumns, 10, 2,
-        unity.grantManager.grantApplications.attachment.getApplicationChefsFileAttachments,
-        inputAction, responseCallback, [], 'dynamicButtonContainerId');
+    chefsDataTable = dt.DataTable(
+        abp.libs.datatables.normalizeConfiguration({
+            serverSide: false,
+            paging: true,
+            order: [[1, 'desc']],
+            searching: true,
+            iDisplayLength: 25,
+            lengthMenu: [10, 25, 50, 100],
+            scrollX: true,
+            scrollCollapse: true,
+            processing: true,
+            select: {
+                style: 'multiple',
+                selector: 'td:not(:nth-child(8))',
+            },
+            ajax: abp.libs.datatables.createAjax(
+                unity.grantManager.grantApplications.attachment.getApplicationChefsFileAttachments,
+                inputAction,
+                responseCallback
+            ),
+            columnDefs: getColumns()
+        })
+    );
 
-    abp.libs.datatables.defaultConfigurations.searching = false;
-
-    dataTable.on('select', function (e, dt, type, indexes) {
+    chefsDataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach(index => {
                 $("#row_" + index).prop("checked", true);
@@ -94,7 +108,7 @@ $(function () {
         }
     });
 
-    dataTable.on('deselect', function (e, dt, type, indexes) {
+    chefsDataTable.on('deselect', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach(index => {
                 $("#row_" + index).prop("checked", false);
@@ -108,7 +122,7 @@ $(function () {
 
     function selectAttachment(type, indexes, action) {
         if (type === 'row') {
-            let data = dataTable.row(indexes).data();
+            let data = chefsDataTable.row(indexes).data();
             PubSub.publish(action, data);
 
             if (action == 'select_chefs_file') {
@@ -136,10 +150,10 @@ $(function () {
 
     $('.select-all-chefs-files').on('click', function () {
         if ($(this).is(':checked')) {
-            dataTable.rows({ 'page': 'current' }).select();
+            chefsDataTable.rows({ 'page': 'current' }).select();
         }
         else {
-            dataTable.rows({ 'page': 'current' }).deselect();
+            chefsDataTable.rows({ 'page': 'current' }).deselect();
         }
     });
 
@@ -152,8 +166,8 @@ $(function () {
                     abp.notify.success(
                         'Submission Attachment/s has been resynced.'
                     );
-                    dataTable.ajax.reload();
-                    dataTable.columns.adjust();
+                    chefsDataTable.ajax.reload();
+                    chefsDataTable.columns.adjust();
                 });
         }
         catch (error) {
@@ -162,7 +176,7 @@ $(function () {
     });
 
     $('#attachments-tab').on('click', function () {
-        dataTable.columns.adjust();
+        chefsDataTable.columns.adjust();
     });
 
     $(downloadAll).on('click', function () {
@@ -214,4 +228,5 @@ $(function () {
         }
 
     });
+
 });

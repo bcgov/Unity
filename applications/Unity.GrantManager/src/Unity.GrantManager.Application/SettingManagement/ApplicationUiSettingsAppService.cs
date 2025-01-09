@@ -31,7 +31,7 @@ public class ApplicationUiSettingsAppService(
     {
         if (CurrentTenant.IsAvailable)
         {
-            await settingManager.SetForCurrentTenantAsync(SettingsConstants.UI.Tabs.Submission, input.Submission.ToString());
+            await settingManager.SetForCurrentTenantAsync(SettingsConstants.UI.Tabs.Submission, true.ToString());
             await settingManager.SetForCurrentTenantAsync(SettingsConstants.UI.Tabs.Assessment, input.Assessment.ToString());
             await settingManager.SetForCurrentTenantAsync(SettingsConstants.UI.Tabs.Project, input.Project.ToString());
             await settingManager.SetForCurrentTenantAsync(SettingsConstants.UI.Tabs.Applicant, input.Applicant.ToString());

@@ -113,6 +113,8 @@
     "Permission:GrantManagerManagement.Default": "Default",
 
     "Permission:GrantApplicationManagement": "Grant Application Management",
+    "Permission:GrantApplicationManagement.Dashboard.Default": "Dashboard",
+    "Permission:GrantApplicationManagement.Dashboard.ViewDashboard": "View Dashboard",
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
