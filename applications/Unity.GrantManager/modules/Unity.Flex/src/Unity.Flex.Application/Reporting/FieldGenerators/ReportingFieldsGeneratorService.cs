@@ -1,15 +1,26 @@
 ﻿using System.Linq;
 using System.Text;
 using Unity.Flex.Domain.Worksheets;
+using Volo.Abp;
+using Volo.Abp.Application.Services;
+using Volo.Abp.EventBus.Local;
 
-namespace Unity.Flex.Worksheets.Reporting.FieldGenerators
+namespace Unity.Flex.Reporting.FieldGenerators
 {
-    public static class ReportingFieldsGeneratorService
+    [RemoteService(false)]
+    public class ReportingFieldsGeneratorService(ILocalEventBus localEventBus) : ApplicationService, IReportingFieldsGeneratorService
     {
-        public static Worksheet GenerateAndSet(Worksheet worksheet, char separator = '|', uint maxColumnLength = 63)
+        public Worksheet GenerateAndSet(Worksheet worksheet, char separator = '|', uint maxColumnLength = 63)
         {
             var (reportingKeys, reportingColumns, reportViewName) = GenerateReportingFields(worksheet, separator, maxColumnLength);
             worksheet.SetReportingFields(reportingKeys, reportingColumns, reportViewName);
+
+            localEventBus.PublishAsync(new WorksheetsDynamicViewGeneratorEto()
+            {
+                TenantId = CurrentTenant.Id,
+                WorksheetId = worksheet.Id
+            }, true);
+
             return worksheet;
         }
 
@@ -42,7 +53,7 @@ namespace Unity.Flex.Worksheets.Reporting.FieldGenerators
                 keysBuilder.Length--; // Remove the last separator                                    
             }
 
-            return new(columnsBuilder.ToString(), keysBuilder.ToString(), $"WS-{worksheet.Name.ToUpper()}");
+            return new(columnsBuilder.ToString(), keysBuilder.ToString(), $"Worksheet-{worksheet.Name}");
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Worksheets;
 
-namespace Unity.Flex.Worksheets.Reporting.FieldGenerators
+namespace Unity.Flex.Reporting.FieldGenerators
 {
     public static class ReportingFieldsGeneratorFactory
     {

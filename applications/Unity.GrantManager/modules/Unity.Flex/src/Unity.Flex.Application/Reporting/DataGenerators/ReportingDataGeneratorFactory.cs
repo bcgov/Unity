@@ -1,7 +1,8 @@
 ﻿using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
 
-namespace Unity.Flex.Worksheets.Reporting.DataGenerators
+namespace Unity.Flex.Reporting.DataGenerators
 {
     public static class ReportingDataGeneratorFactory
     {

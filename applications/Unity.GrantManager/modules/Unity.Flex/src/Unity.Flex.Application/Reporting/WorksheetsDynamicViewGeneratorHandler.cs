@@ -9,7 +9,7 @@ using Volo.Abp.EventBus;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
-namespace Unity.Flex.Worksheets.Reporting
+namespace Unity.Flex.Reporting
 {
     public class WorksheetsDynamicViewGeneratorHandler(
             IWorksheetRepository worksheetRepository,

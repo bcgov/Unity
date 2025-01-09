@@ -3,12 +3,15 @@ using System.Linq;
 using System.Text.Json;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets.Values;
+using Volo.Abp;
+using Volo.Abp.Application.Services;
 
-namespace Unity.Flex.Worksheets.Reporting.DataGenerators
+namespace Unity.Flex.Reporting.DataGenerators
 {
-    public static class ReportingDataGeneratorService
+    [RemoteService(false)]
+    public class ReportingDataGeneratorService : ApplicationService, IReportingDataGeneratorService
     {
-        public static string GenerateData(Worksheet worksheet, WorksheetInstanceValue instanceCurrentValue)
+        public string GenerateData(Worksheet worksheet, WorksheetInstanceValue instanceCurrentValue)
         {
             var reportData = new Dictionary<string, List<string>>();
             var reportingKeys = worksheet.ReportColumns.Split('|');

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Unity.Flex.Worksheets.Reporting.DataGenerators
+namespace Unity.Flex.Reporting.DataGenerators
 {
     public interface IReportingDataGenerator
     {

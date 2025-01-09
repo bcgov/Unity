@@ -9,8 +9,8 @@ using Unity.Flex.Domain.Utils;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Reporting.DataGenerators;
 using Unity.Flex.WorksheetInstances;
-using Unity.Flex.Worksheets.Reporting.DataGenerators;
 using Unity.Flex.Worksheets.Values;
 using Volo.Abp.Domain.Services;
 
@@ -18,7 +18,8 @@ namespace Unity.Flex.Domain.Services
 {
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository,
         IWorksheetRepository worksheetRepository,
-        IWorksheetLinkRepository worksheetLinkRepository) : DomainService
+        IWorksheetLinkRepository worksheetLinkRepository,
+        IReportingDataGeneratorService reportingService) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
@@ -80,7 +81,7 @@ namespace Unity.Flex.Domain.Services
 
             instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));
 
-            instance.SetReportingData(ReportingDataGeneratorService.GenerateData(worksheet, instanceCurrentValue));
+            instance.SetReportingData(reportingService.GenerateData(worksheet, instanceCurrentValue));
         }
 
         private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)

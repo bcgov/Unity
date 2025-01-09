@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -9,12 +8,11 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integration.Chefs;
-using Unity.GrantManager.Reporting;
+using Unity.GrantManager.Reporting.FieldGenerators;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -34,8 +32,7 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IFormsApiService _formApiService;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
-        private readonly IApplicationFormRepository _applicationFormRepository;
-        private readonly ILocalEventBus _localEventBus;
+        private readonly IReportingFieldsGeneratorService _reportingFieldsGeneratorService;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
@@ -43,8 +40,7 @@ namespace Unity.GrantManager.ApplicationForms
             IFormsApiService formsApiService,
             IApplicationFormVersionRepository applicationFormVersionRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-            IApplicationFormRepository applicationFormRepository,
-            ILocalEventBus localEventBus)
+            IReportingFieldsGeneratorService reportingFieldsGeneratorService)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
@@ -52,8 +48,7 @@ namespace Unity.GrantManager.ApplicationForms
             _unitOfWorkManager = unitOfWorkManager;
             _formApiService = formsApiService;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
-            _applicationFormRepository = applicationFormRepository;
-            _localEventBus = localEventBus;
+            _reportingFieldsGeneratorService = reportingFieldsGeneratorService;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -294,82 +289,9 @@ namespace Unity.GrantManager.ApplicationForms
                 applicationFormVersion = await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
             }
 
-            // Add keys and columns for report generation
-            await UpdateFormVersionWithReportKeysAndColumnsAsync(applicationFormVersion);
-            await QueueDynamicViewGeneratorAsync(applicationFormVersion);
+            await _reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
 
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
-        }
-
-        private async Task QueueDynamicViewGeneratorAsync(ApplicationFormVersion applicationFormVersion)
-        {
-            await _localEventBus.PublishAsync(
-                new SubmissionsDynamicViewGenerationEto
-                {
-                    ApplicationFormVersionId = applicationFormVersion.Id,
-                    TenantId = CurrentTenant.Id
-                }, true);
-        }
-
-        private async Task UpdateFormVersionWithReportKeysAndColumnsAsync(ApplicationFormVersion applicationFormVersion)
-        {
-            if (applicationFormVersion.AvailableChefsFields == null) return;
-
-            var form = await _applicationFormRepository.GetAsync(applicationFormVersion.ApplicationFormId);
-            JObject jObject = JObject.Parse(applicationFormVersion.AvailableChefsFields);
-
-            // Exclusion array
-            string[] exclusionArray = ["simplebuttonadvanced", "datagrid", "hidden"];
-            string[] nestedKeyFields = ["simplecheckboxes", "simplecheckboxadvanced"];
-
-            // Dictionary to store full key names and truncated key names
-            Dictionary<string, string> keyMapping = [];
-
-            // Filter out properties based on the exclusion array and extend child keys
-            var keys = jObject
-                .Properties()
-                .SelectMany(p =>
-                {
-
-                    string? typeValue = JObject.Parse(p.Value.ToString())?["type"]?.ToString();
-                    if (typeValue != null && exclusionArray.Contains(typeValue))
-                    {
-                        return [];
-                    }
-
-                    // Check for nested key fields and generate dashed keys
-                    if (typeValue != null && nestedKeyFields.Contains(typeValue))
-                    {
-                        return ExtractNestedKeys(p);
-                    }
-
-                    return [p.Name];
-                })
-                .Distinct()
-                .Select(fullKey =>
-                {
-                    string truncatedKey = fullKey.Length > 63 ? fullKey[..63] : fullKey;
-                    keyMapping[fullKey] = truncatedKey;
-                    return fullKey;
-                });
-
-            // Get all keys and pipe separate them
-            string pipeDelimitedKeys = string.Join("|", keys);
-
-            // Truncate each key to a maximum of 63 characters and create a pipe-delimited string
-            string truncatedDelimitedKeys = string.Join("|", keys.Select(k => k.Length > 63 ? k[..63] : k));
-
-            applicationFormVersion.ReportColumns = truncatedDelimitedKeys;
-            applicationFormVersion.ReportKeys = pipeDelimitedKeys;
-            applicationFormVersion.ReportViewName = $"FS-{form.ApplicationFormName?.Replace(" ", "")}-V{applicationFormVersion.Version}";
-        }
-
-        private static string[] ExtractNestedKeys(JProperty jProperty)
-        {
-            if (jProperty == null) return [];
-
-            string? valuesProp = JObject.Parse(jProperty.Value.ToString())?["values"]?.ToString();
-            return string.IsNullOrEmpty(valuesProp) ? [] : valuesProp.Split(',');
         }
 
         public async Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId)
