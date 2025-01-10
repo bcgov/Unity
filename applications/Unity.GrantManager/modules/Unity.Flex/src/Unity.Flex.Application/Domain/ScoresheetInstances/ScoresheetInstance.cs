@@ -45,5 +45,11 @@ namespace Unity.Flex.Domain.ScoresheetInstances
             Value = JsonSerializer.Serialize(this);
             return this;
         }
+
+        public ScoresheetInstance SetReportingData(string reportingData)
+        {
+            ReportData = reportingData;
+            return this;
+        }
     }
 }

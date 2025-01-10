@@ -2,12 +2,13 @@
 
 namespace Unity.Flex.Reporting.FieldGenerators.QuestionFieldGenerators
 {
-    public class DefaultFieldsGenerator(Question question, char separator, uint maxColumnLength)
-        : QuestionsReportingGenerator(question, separator, maxColumnLength), IReportingFieldsGenerator
+    public class DefaultFieldsGenerator(Question question)
+        : QuestionsReportingGenerator(question), IReportingFieldsGenerator
     {
         public (string columns, string keys) Generate()
         {
-            throw new System.NotImplementedException();
+            // We intentionally use the name twice here
+            return (question.Name, question.Name);
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Unity.Flex.Domain.Services
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository,
         IWorksheetRepository worksheetRepository,
         IWorksheetLinkRepository worksheetLinkRepository,
-        IReportingDataGeneratorService reportingService) : DomainService
+        IReportingDataGeneratorService<Worksheet, WorksheetInstanceValue> reportingService) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
@@ -81,7 +81,7 @@ namespace Unity.Flex.Domain.Services
 
             instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));
 
-            instance.SetReportingData(reportingService.GenerateData(worksheet, instanceCurrentValue));
+            instance.SetReportingData(reportingService.Generate(worksheet, instanceCurrentValue));
         }
 
         private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)
@@ -189,9 +189,9 @@ namespace Unity.Flex.Domain.Services
 
                         foreach (var field in allFields)
                         {
-                            var match = eventData.CustomFields.Find(s => s.fieldName == field.Name);
+                            var (fieldName, chefsPropertyName, value) = eventData.CustomFields.Find(s => s.fieldName == field.Name);
                             newInstance.AddValue(field.Id,
-                                ValueConverter.Convert(match.value?.ToString() ?? string.Empty, field.Type, match.chefsPropertyName, eventData.VersionData));
+                                ValueConverter.Convert(value?.ToString() ?? string.Empty, field.Type, chefsPropertyName, eventData.VersionData));
                         }
 
                         var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);

@@ -3,8 +3,8 @@ using Unity.Flex.Domain.Worksheets;
 
 namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
 {
-    public class DataGridReportingFieldsGenerator(CustomField customField, char separator, uint maxColumnLength)
-        : CustomFieldsReportingGenerator(customField, separator, maxColumnLength), IReportingFieldsGenerator
+    public class DataGridReportingFieldsGenerator(CustomField customField)
+        : CustomFieldsReportingGenerator(customField), IReportingFieldsGenerator
     {
         public (string columns, string keys) Generate()
         {

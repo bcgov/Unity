@@ -5,14 +5,10 @@ namespace Unity.Flex.Reporting.FieldGenerators.QuestionFieldGenerators
     public class QuestionsReportingGenerator
     {
         protected readonly Question question;
-        protected readonly char separator;
-        protected readonly uint maxColumnLength;
 
-        protected QuestionsReportingGenerator(Question question, char separator, uint maxColumnLength)
+        protected QuestionsReportingGenerator(Question question)
         {
             this.question = question;
-            this.separator = separator;
-            this.maxColumnLength = maxColumnLength;
         }
     }
 }

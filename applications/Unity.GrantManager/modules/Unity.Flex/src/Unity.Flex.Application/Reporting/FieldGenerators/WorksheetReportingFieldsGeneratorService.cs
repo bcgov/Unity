@@ -8,12 +8,11 @@ using Volo.Abp.EventBus.Local;
 namespace Unity.Flex.Reporting.FieldGenerators
 {
     [RemoteService(false)]
-    public class WorksheetReportingFieldsGeneratorService(ILocalEventBus localEventBus) : ApplicationService,
-        IReportingFieldsGeneratorService<Worksheet>
+    public class WorksheetReportingFieldsGeneratorService(ILocalEventBus localEventBus) : ApplicationService, IReportingFieldsGeneratorService<Worksheet>
     {
-        public Worksheet GenerateAndSet(Worksheet worksheet, char separator = '|', uint maxColumnLength = 63)
+        public Worksheet GenerateAndSet(Worksheet worksheet)
         {
-            var (reportingKeys, reportingColumns, reportViewName) = GenerateReportingFields(worksheet, separator, maxColumnLength);
+            var (reportingKeys, reportingColumns, reportViewName) = GenerateReportingFields(worksheet);
             worksheet.SetReportingFields(reportingKeys, reportingColumns, reportViewName);
 
             localEventBus.PublishAsync(new WorksheetsDynamicViewGeneratorEto()
@@ -25,9 +24,7 @@ namespace Unity.Flex.Reporting.FieldGenerators
             return worksheet;
         }
 
-        private static (string reportingKeys, string reportingColumns, string reportViewName) GenerateReportingFields(Worksheet worksheet,
-            char separator,
-            uint maxColumnLength)
+        private static (string reportingKeys, string reportingColumns, string reportViewName) GenerateReportingFields(Worksheet worksheet)
         {
             StringBuilder keysBuilder = new();
             StringBuilder columnsBuilder = new();
@@ -35,11 +32,11 @@ namespace Unity.Flex.Reporting.FieldGenerators
             foreach (var field in worksheet.Sections.SelectMany(s => s.Fields))
             {
                 var (columns, keys) = ReportingFieldsGeneratorFactory
-                                        .Create(field, separator, maxColumnLength)
+                                        .Create(field)
                                         .Generate();
 
-                columnsBuilder.Append(columns).Append(separator);
-                keysBuilder.Append(keys).Append(separator);
+                columnsBuilder.Append(columns).Append(ReportingConsts.ReportFieldDelimiter);
+                keysBuilder.Append(keys).Append(ReportingConsts.ReportFieldDelimiter);
             }
 
             // Remove the trailing separator

@@ -1,10 +1,7 @@
-﻿using Unity.Flex.Domain.Worksheets;
-using Unity.Flex.Worksheets.Values;
-
-namespace Unity.Flex.Reporting.DataGenerators
+﻿namespace Unity.Flex.Reporting.DataGenerators
 {
-    public interface IReportingDataGeneratorService
+    public interface IReportingDataGeneratorService<in T, in U> where T : IReportableEntity<T>
     {
-        string GenerateData(Worksheet worksheet, WorksheetInstanceValue instanceCurrentValue);
+        string Generate(T sheet, U instance);
     }
 }

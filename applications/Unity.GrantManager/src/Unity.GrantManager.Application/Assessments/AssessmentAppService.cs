@@ -384,39 +384,7 @@ namespace Unity.GrantManager.Assessments
             {
                 throw new AbpValidationException(ex.Message, ex);
             }
-
-        }
-
-        public async Task SaveScoresheetAnswer(Guid assessmentId, Guid questionId, string? answer, int questionType)
-        {
-            var assessment = await _assessmentRepository.GetAsync(assessmentId);
-            if (assessment != null)
-            {
-                if (CurrentUser.GetId() != assessment.AssessorId)
-                {
-                    throw new AbpValidationException("Error: You do not own this assessment record.");
-                }
-                if (assessment.Status.Equals(AssessmentState.COMPLETED))
-                {
-                    throw new AbpValidationException("Error: This assessment is already completed.");
-                }
-
-                if (await _featureChecker.IsEnabledAsync(UnityFlex))
-                {
-                    await _localEventBus.PublishAsync(new PersistScoresheetInstanceEto()
-                    {
-                        CorrelationId = assessmentId,
-                        QuestionId = questionId,
-                        Answer = answer,
-                        QuestionType = questionType
-                    });
-                }
-            }
-            else
-            {
-                throw new AbpValidationException("AssessmentId Not Found: " + assessmentId + ".");
-            }
-        }
+        }      
 
         public async Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto)
         {

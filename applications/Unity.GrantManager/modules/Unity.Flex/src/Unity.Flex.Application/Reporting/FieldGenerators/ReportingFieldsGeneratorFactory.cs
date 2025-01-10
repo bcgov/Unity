@@ -8,19 +8,19 @@ namespace Unity.Flex.Reporting.FieldGenerators
 {
     public static class ReportingFieldsGeneratorFactory
     {
-        public static IReportingFieldsGenerator Create(CustomField customField, char separator, uint maxColumnLength)
+        public static IReportingFieldsGenerator Create(CustomField customField)
         {
             return customField.Type switch
             {
-                CustomFieldType.CheckboxGroup => new CheckboxGroupReportingFieldsGenerator(customField, separator, maxColumnLength),
-                CustomFieldType.DataGrid => new DataGridReportingFieldsGenerator(customField, separator, maxColumnLength),
-                _ => new DefaultReportingFieldsGenerator(customField, separator, maxColumnLength),
+                CustomFieldType.CheckboxGroup => new CheckboxGroupReportingFieldsGenerator(customField),
+                CustomFieldType.DataGrid => new DataGridReportingFieldsGenerator(customField),
+                _ => new DefaultReportingFieldsGenerator(customField),
             };
         }
 
-        public static IReportingFieldsGenerator Create(Question question, char separator, uint maxColumnLength)
+        public static IReportingFieldsGenerator Create(Question question)
         {
-            return new DefaultFieldsGenerator(question, separator, maxColumnLength);
+            return new DefaultFieldsGenerator(question);
         }
     }
 }

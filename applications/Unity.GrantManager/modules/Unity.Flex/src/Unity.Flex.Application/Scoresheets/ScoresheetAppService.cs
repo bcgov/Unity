@@ -172,7 +172,6 @@ namespace Unity.Flex.Scoresheets
         {
             var existingQuestions = await questionRepository.GetListAsync();
             return existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.Number).Select(q => q.Id).ToList();
-
         }
 
         public async Task ValidateChangeableScoresheet(Guid scoresheetId)

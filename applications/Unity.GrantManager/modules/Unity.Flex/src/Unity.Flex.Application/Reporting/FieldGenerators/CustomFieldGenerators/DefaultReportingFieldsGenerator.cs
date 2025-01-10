@@ -2,8 +2,8 @@
 
 namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
 {
-    public class DefaultReportingFieldsGenerator(CustomField customField, char separator, uint maxColumnLength)
-        : CustomFieldsReportingGenerator(customField, separator, maxColumnLength), IReportingFieldsGenerator
+    public class DefaultReportingFieldsGenerator(CustomField customField)
+        : CustomFieldsReportingGenerator(customField), IReportingFieldsGenerator
     {
         public (string columns, string keys) Generate()
         {

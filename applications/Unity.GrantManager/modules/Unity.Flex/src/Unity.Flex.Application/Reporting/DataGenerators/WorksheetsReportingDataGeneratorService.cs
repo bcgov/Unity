@@ -9,12 +9,13 @@ using Volo.Abp.Application.Services;
 namespace Unity.Flex.Reporting.DataGenerators
 {
     [RemoteService(false)]
-    public class ReportingDataGeneratorService : ApplicationService, IReportingDataGeneratorService
+    public class WorksheetsReportingDataGeneratorService : ApplicationService,
+        IReportingDataGeneratorService<Worksheet, WorksheetInstanceValue>
     {
-        public string GenerateData(Worksheet worksheet, WorksheetInstanceValue instanceCurrentValue)
+        public string Generate(Worksheet worksheet, WorksheetInstanceValue instanceValue)
         {
             var reportData = new Dictionary<string, List<string>>();
-            var reportingKeys = worksheet.ReportColumns.Split('|');
+            var reportingKeys = worksheet.ReportColumns.Split(ReportingConsts.ReportFieldDelimiter);
 
             foreach (var reportKey in reportingKeys)
             {
@@ -22,7 +23,7 @@ namespace Unity.Flex.Reporting.DataGenerators
             }
 
             var definitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
-            foreach (var value in instanceCurrentValue.Values)
+            foreach (var value in instanceValue.Values)
             {
                 var definition = definitions.Find(s => s.Key == value.Key);
                 if (definition != null)
