@@ -841,6 +841,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool?>("RedStop")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Indigenous")
+                        .HasColumnType("text");
+
                     b.Property<string>("Sector")
                         .HasColumnType("text");
 

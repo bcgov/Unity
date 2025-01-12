@@ -91,6 +91,11 @@ namespace Unity.GrantManager.Intakes
         [Browsable(true)]
         public string? IndigenousOrgInd { get; set; }
 
+        [DisplayName("Indigenous")]
+        [MapFieldType("String")]
+        [Browsable(true)]
+        public string? Indigenous { get; set; }
+
         [DisplayName("Mailing City")]
         [MapFieldType("String")]
         [Browsable(true)]

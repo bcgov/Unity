@@ -15,4 +15,5 @@ public class GrantApplicationApplicantDto : AuditedEntityDto<Guid>
     public string OrganizationSize { get; set; } = string.Empty;
     public string SectorSubSectorIndustryDesc { get; set; } = string.Empty;
     public bool RedStop { get; set; } = false;
+    public string Indigenous { get; set; } = string.Empty;
 }
