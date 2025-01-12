@@ -23,7 +23,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
         public List<SelectListItem> OrgBookStatusList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrgBookStatusList);
         public List<SelectListItem> ApplicationSectorsList { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ApplicationSubSectorsList { get; set; } = new List<SelectListItem>();
-        
+        public List<SelectListItem> IndigenousList { get; set; } = FormatOptionsList(ApplicantInfoOptionsList.IndigenousList);
+
         public Guid ApplicationId { get; set; }
         public Guid ApplicantId { get; set; }
         public Guid ApplicationFormId { get; set; }
@@ -63,6 +64,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             public string? SubSector { get; set; }
 
             public bool RedStop { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Indigenous")]
+            [SelectItems(nameof(IndigenousList))]
+            public string? Indigenous { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactFullName")]
             [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]

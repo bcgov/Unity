@@ -100,7 +100,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
             IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
             OrgStatus = intakeMap.OrgStatus,
-            RedStop = false
+            RedStop = false,
+            Indigenous = intakeMap.Indigenous ?? "N",
         };
 
         return await applicantRepository.InsertAsync(applicant);
