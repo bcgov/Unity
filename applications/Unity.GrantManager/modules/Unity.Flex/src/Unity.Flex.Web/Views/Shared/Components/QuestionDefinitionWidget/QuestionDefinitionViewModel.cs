@@ -1,4 +1,4 @@
-﻿using Unity.Flex.Scoresheets;
+﻿using Unity.Flex.Scoresheets.Enums;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
 {

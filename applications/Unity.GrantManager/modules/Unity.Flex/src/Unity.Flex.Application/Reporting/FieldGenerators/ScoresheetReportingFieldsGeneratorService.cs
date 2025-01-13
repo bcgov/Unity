@@ -16,10 +16,10 @@ namespace Unity.Flex.Reporting.FieldGenerators
             var (reportingKeys, reportingColumns, reportViewName) = GenerateReportingFields(scoresheet);
             scoresheet.SetReportingFields(reportingKeys, reportingColumns, reportViewName);
 
-            localEventBus.PublishAsync(new WorksheetsDynamicViewGeneratorEto()
+            localEventBus.PublishAsync(new ScoresheetsDynamicViewGeneratorEto()
             {
                 TenantId = CurrentTenant.Id,
-                WorksheetId = scoresheet.Id
+                ScoresheetId = scoresheet.Id
             }, true);
 
             return scoresheet;
@@ -40,19 +40,10 @@ namespace Unity.Flex.Reporting.FieldGenerators
                 keysBuilder.Append(keys).Append(ReportingConsts.ReportFieldDelimiter);
             }
 
-            // Remove the trailing separator
-            if (columnsBuilder.Length > 0)
-            {
-                columnsBuilder.Length--;
-                // Remove the last separator
-            }
+            columnsBuilder.TrimEndDelimeter();
+            keysBuilder.TrimEndDelimeter();
 
-            if (keysBuilder.Length > 0)
-            {
-                keysBuilder.Length--; // Remove the last separator                                    
-            }
-
-            return new(columnsBuilder.ToString(), keysBuilder.ToString(), $"Scoresheet-{scoresheet.Name}");
+            return new(keysBuilder.ToString(), columnsBuilder.ToString(), $"Scoresheet-{scoresheet.Name}");
         }
     }
 }

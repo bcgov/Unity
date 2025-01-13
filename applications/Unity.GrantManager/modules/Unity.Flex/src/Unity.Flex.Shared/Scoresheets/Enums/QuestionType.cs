@@ -1,4 +1,4 @@
-﻿namespace Unity.Flex.Scoresheets
+﻿namespace Unity.Flex.Scoresheets.Enums
 {
     public enum QuestionType
     {

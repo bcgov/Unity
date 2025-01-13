@@ -7,8 +7,7 @@ namespace Unity.Flex.Reporting.FieldGenerators.QuestionFieldGenerators
     {
         public (string columns, string keys) Generate()
         {
-            // We intentionally use the name twice here
-            return (question.Name, question.Name);
+            return (SanitizeColumnName(question.Name), question.Name);
         }
     }
 }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Reporting.DataGenerators;
-using Unity.Flex.Scoresheets;
+using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.Domain.Services;
@@ -72,10 +72,10 @@ namespace Unity.Flex.Domain.Services
                     instance.Answers.Add(ans);
                 }
 
-                instance.SetReportingData(reportingDataGeneratorService.Generate(scoresheet, instance));
-
                 await scoresheetInstanceRepository.UpdateAsync(instance);
             }
+
+            instance.SetReportingData(reportingDataGeneratorService.Generate(scoresheet, instance));
         }
     }
 

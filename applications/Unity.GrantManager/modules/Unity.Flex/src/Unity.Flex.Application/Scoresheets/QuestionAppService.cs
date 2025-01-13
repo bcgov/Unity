@@ -2,6 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Validation;

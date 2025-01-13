@@ -23,6 +23,7 @@ namespace Unity.Flex.Reporting.DataGenerators
             }
 
             var definitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
+
             foreach (var value in instanceValue.Values)
             {
                 var definition = definitions.Find(s => s.Key == value.Key);

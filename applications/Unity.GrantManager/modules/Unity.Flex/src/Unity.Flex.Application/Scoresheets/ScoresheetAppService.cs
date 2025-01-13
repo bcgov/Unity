@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Utils;
-using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Reporting.FieldGenerators;
+using Unity.Flex.Scoresheets.Enums;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
@@ -276,8 +276,6 @@ namespace Unity.Flex.Scoresheets
 
             await scoresheetRepository.InsertAsync(newScoresheet);
         }
-
-
 
         public async Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck)
         {

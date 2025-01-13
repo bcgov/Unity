@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text.Json;
-using Unity.Flex.Scoresheets;
+using Unity.Flex.Scoresheets.Enums;
 
 namespace Unity.Flex.Worksheets.Definitions
 {

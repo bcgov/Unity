@@ -1,4 +1,5 @@
-﻿using Unity.Flex.Domain.Scoresheets;
+﻿using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
@@ -17,9 +18,9 @@ namespace Unity.Flex.Reporting.DataGenerators
             };
         }
 
-        public static IReportingDataGenerator Create(Question question, Answer answer)
+        public static IReportingDataGenerator Create(Answer answer)
         {
-            return new AnswerGenerators.DefaultReportDataGenerator(question, answer);
+            return new AnswerGenerators.DefaultReportDataGenerator(answer);
         }
     }
 }

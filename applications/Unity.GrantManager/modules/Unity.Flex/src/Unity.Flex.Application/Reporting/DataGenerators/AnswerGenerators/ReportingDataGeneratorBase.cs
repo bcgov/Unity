@@ -4,12 +4,9 @@ namespace Unity.Flex.Reporting.DataGenerators.AnswerGenerators
 {
     public class ReportingDataGeneratorBase
     {
-        protected Question question;
         protected Answer answer;
-
-        protected ReportingDataGeneratorBase(Question question, Answer answer)
+        protected ReportingDataGeneratorBase(Answer answer)
         {
-            this.question = question;
             this.answer = answer;
         }
     }
