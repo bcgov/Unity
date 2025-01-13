@@ -32,16 +32,21 @@ namespace Unity.Flex.Reporting.FieldGenerators
 
             foreach (var field in scoresheet.Sections.SelectMany(s => s.Fields))
             {
-                var (columns, keys) = ReportingFieldsGeneratorFactory
+                var (keys, columns) = ReportingFieldsGeneratorFactory
                                         .Create(field)
                                         .Generate();
 
-                columnsBuilder.Append(columns).Append(ReportingConsts.ReportFieldDelimiter);
-                keysBuilder.Append(keys).Append(ReportingConsts.ReportFieldDelimiter);
+                keysBuilder
+                    .Append(keys)
+                    .Append(ReportingConsts.ReportFieldDelimiter);
+
+                columnsBuilder
+                    .Append(columns)
+                    .Append(ReportingConsts.ReportFieldDelimiter);
             }
 
-            columnsBuilder.TrimEndDelimeter();
             keysBuilder.TrimEndDelimeter();
+            columnsBuilder.TrimEndDelimeter();
 
             return new(keysBuilder.ToString(), columnsBuilder.ToString(), $"Scoresheet-{scoresheet.Name}");
         }

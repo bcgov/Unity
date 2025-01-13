@@ -31,16 +31,21 @@ namespace Unity.Flex.Reporting.FieldGenerators
 
             foreach (var field in worksheet.Sections.SelectMany(s => s.Fields))
             {
-                var (columns, keys) = ReportingFieldsGeneratorFactory
+                var (keys, columns) = ReportingFieldsGeneratorFactory
                                         .Create(field)
                                         .Generate();
 
-                columnsBuilder.Append(columns).Append(ReportingConsts.ReportFieldDelimiter);
-                keysBuilder.Append(keys).Append(ReportingConsts.ReportFieldDelimiter);
-            }
+                keysBuilder
+                    .Append(keys)
+                    .Append(ReportingConsts.ReportFieldDelimiter);
 
-            columnsBuilder.TrimEndDelimeter();
+                columnsBuilder
+                    .Append(columns)
+                    .Append(ReportingConsts.ReportFieldDelimiter);
+            }
+            
             keysBuilder.TrimEndDelimeter();
+            columnsBuilder.TrimEndDelimeter();            
 
             return new(keysBuilder.ToString(), columnsBuilder.ToString(), $"Worksheet-{worksheet.Name}");
         }

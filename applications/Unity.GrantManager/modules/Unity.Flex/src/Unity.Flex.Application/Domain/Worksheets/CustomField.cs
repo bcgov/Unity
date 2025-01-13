@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp;
@@ -23,7 +24,8 @@ namespace Unity.Flex.Domain.Worksheets
 
         public Guid? TenantId { get; set; }
 
-        // Navigation        
+        // Navigation       
+        [JsonIgnore]
         public virtual WorksheetSection Section
         {
             set => _section = value;

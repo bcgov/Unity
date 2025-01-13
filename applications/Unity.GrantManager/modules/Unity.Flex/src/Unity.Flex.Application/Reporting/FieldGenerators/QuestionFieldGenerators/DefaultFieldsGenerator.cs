@@ -5,9 +5,9 @@ namespace Unity.Flex.Reporting.FieldGenerators.QuestionFieldGenerators
     public class DefaultFieldsGenerator(Question question)
         : QuestionsReportingGenerator(question), IReportingFieldsGenerator
     {
-        public (string columns, string keys) Generate()
+        public (string keys, string columns) Generate()
         {
-            return (SanitizeColumnName(question.Name), question.Name);
+            return (question.Name, SanitizeColumnName(question.Name));
         }
     }
 }

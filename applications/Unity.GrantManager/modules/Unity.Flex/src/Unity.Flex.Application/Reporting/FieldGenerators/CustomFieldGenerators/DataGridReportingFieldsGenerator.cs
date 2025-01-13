@@ -6,7 +6,7 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
     public class DataGridReportingFieldsGenerator(CustomField customField)
         : CustomFieldsReportingGenerator(customField), IReportingFieldsGenerator
     {
-        public (string columns, string keys) Generate()
+        public (string keys, string columns) Generate()
         {
             throw new NotImplementedException();
         }
