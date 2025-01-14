@@ -14,6 +14,12 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
             this.customField = customField;
         }
 
+        /// <summary>
+        /// Trim any trailing delimeter characters and return the stringified keys and columns
+        /// </summary>
+        /// <param name="keysString"></param>
+        /// <param name="columnsString"></param>
+        /// <returns>A tuple with the formatted keys and columns for reporting fields</returns>
         protected static (string keys, string columns) TrimAndCreateKeysAndColumns(StringBuilder keysString, StringBuilder columnsString)
         {
             keysString.TrimEndDelimeter();

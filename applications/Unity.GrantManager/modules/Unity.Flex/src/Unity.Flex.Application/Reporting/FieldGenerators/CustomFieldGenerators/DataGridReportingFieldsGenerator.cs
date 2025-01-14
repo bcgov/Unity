@@ -8,6 +8,10 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
     public class DataGridReportingFieldsGenerator(CustomField customField)
         : CustomFieldsReportingGenerator(customField), IReportingFieldsGenerator
     {
+        /// <summary>
+        /// Generate the keys and columns for reporting fields for a datagrid
+        /// </summary>
+        /// <returns>A tuple with the formatted keys and columns for reporting fields</returns>
         public (string keys, string columns) Generate()
         {
             var dynamicKeyColumn = "DynamicColumns";
@@ -18,6 +22,24 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
                 return (string.Empty, string.Empty);
             }
 
+            AddDynamicColumns(dynamicKeyColumn, definition);
+            AddColumnDefinitions(definition);
+
+            return TrimAndCreateKeysAndColumns(keysString, columnsString);
+        }
+
+        private void AddColumnDefinitions(DataGridDefinition definition)
+        {
+            foreach (var columnName in definition.Columns.Select(s => s.Name))
+            {
+                var fieldName = $"{customField.Key}-{columnName}";
+                keysString.AddFieldAndDelimiter(fieldName);
+                columnsString.AddFieldAndDelimiter(fieldName);
+            }
+        }
+
+        private void AddDynamicColumns(string dynamicKeyColumn, DataGridDefinition definition)
+        {
             if (definition.Dynamic)
             {
                 var fieldName = $"{customField.Key}-{dynamicKeyColumn}";
@@ -25,15 +47,6 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
                 keysString.AddFieldAndDelimiter(fieldName);
                 columnsString.AddFieldAndDelimiter(fieldName);
             }
-
-            foreach (var columnName in definition.Columns.Select(s => s.Name))
-            {
-                var fieldName = $"{customField.Key}-{columnName}";
-                keysString.AddFieldAndDelimiter(fieldName);
-                columnsString.AddFieldAndDelimiter(fieldName);
-            }
-
-            return TrimAndCreateKeysAndColumns(keysString, columnsString);
         }
     }
 }

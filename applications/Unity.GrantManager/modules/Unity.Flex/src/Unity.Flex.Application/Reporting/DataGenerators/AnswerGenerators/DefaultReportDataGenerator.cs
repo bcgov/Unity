@@ -4,8 +4,12 @@ using Unity.Flex.Domain.Scoresheets;
 namespace Unity.Flex.Reporting.DataGenerators.AnswerGenerators
 {
     public class DefaultReportDataGenerator(Answer answer)
-       : ReportingDataGeneratorBase(answer), IReportingDataGenerator
+       : ReportingDataGenerator(answer), IReportingDataGenerator
     {
+        /// <summary>
+        /// Default key values pairing for the reporting data generation
+        /// </summary>
+        /// <returns>Dictionary with keys and matched values for reporting data</returns>
         public Dictionary<string, List<string>> Generate()
         {
             return new Dictionary<string, List<string>>

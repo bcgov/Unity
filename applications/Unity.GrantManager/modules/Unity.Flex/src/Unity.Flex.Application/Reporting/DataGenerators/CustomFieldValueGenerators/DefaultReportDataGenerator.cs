@@ -5,7 +5,7 @@ using Unity.Flex.Worksheets.Values;
 namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
 {
     public class DefaultReportDataGenerator(CustomField customField, FieldInstanceValue value)
-        : ReportingDataGeneratorBase(customField, value), IReportingDataGenerator
+        : ReportingDataGenerator(customField, value), IReportingDataGenerator
     {
         public Dictionary<string, List<string>> Generate()
         {
