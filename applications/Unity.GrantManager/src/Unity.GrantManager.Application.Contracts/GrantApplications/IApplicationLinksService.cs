@@ -10,5 +10,6 @@ public interface IApplicationLinksService : ICrudAppService<
             Guid>
 {
     Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId);
-    
+    Task<ApplicationLinksInfoDto> GetLinkedApplicationAsync(Guid currentApplicationId, Guid linkedApplicationId);
+
 }
