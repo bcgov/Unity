@@ -93,7 +93,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                     string[]? selectedApplicationsArray = JsonConvert.DeserializeObject<string[]>(SelectedApplications);
                     List<GrantApplicationLiteDto>? grantApplications = JsonConvert.DeserializeObject<List<GrantApplicationLiteDto>>(GrantApplicationsList!);
                     List<ApplicationLinksInfoDto>? linkedApplications = JsonConvert.DeserializeObject<List<ApplicationLinksInfoDto>>(LinkedApplicationsList!);
-                    List<ApplicationLinksInfoDto>? applicationList = JsonConvert.DeserializeObject<List<ApplicationLinksInfoDto>>(GrantApplicationsList!);
 
                     foreach (var item in selectedApplicationsArray!)
                     {
