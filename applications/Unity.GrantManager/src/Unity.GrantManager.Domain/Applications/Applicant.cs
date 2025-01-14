@@ -8,11 +8,11 @@ namespace Unity.GrantManager.Applications;
 public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public string? ApplicantName { get; set; }
-    public string? OrganizationType { get; set; }
     public string? NonRegisteredBusinessName { get; set; }
     public string? OrgName { get; set; }
     public string? OrgNumber { get; set; }
     public string? OrgStatus { get; set; }
+    public string? OrganizationType { get; set; }
     public string? OrganizationSize { get; set; }
     public string? Sector { get; set; }
     public string? SubSector { get; set; }
