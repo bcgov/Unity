@@ -103,6 +103,7 @@ namespace Unity.GrantManager.Intakes
                 FiscalYearMonth = applicant.FiscalMonth,
                 BusinessNumber = applicant.BusinessNumber,
                 RedStop = applicant.RedStop,
+                IndigenousOrgInd = applicant.IndigenousOrgInd,
                 PhysicalAddressUnit = applicantPhysicalAgent?.Unit ?? "",
                 PhysicalAddressLine1 = applicantPhysicalAgent?.Street ?? "",
                 PhysicalAddressLine2 = applicantPhysicalAgent?.Street2 ?? "",

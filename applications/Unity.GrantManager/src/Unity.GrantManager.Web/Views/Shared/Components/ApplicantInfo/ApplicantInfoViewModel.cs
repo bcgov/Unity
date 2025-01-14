@@ -65,9 +65,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             public bool RedStop { get; set; }
 
-            [Display(Name = "ApplicantInfoView:ApplicantInfo.Indigenous")]
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd")]
             [SelectItems(nameof(IndigenousList))]
-            public string? Indigenous { get; set; }
+            public string? IndigenousOrgInd { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactFullName")]
             [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]

@@ -958,7 +958,7 @@
         return {
             title: 'Indigenous',
             name: 'indigenous',
-            data: 'applicant.indigenous',
+            data: 'applicant.indigenousOrgInd',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';
