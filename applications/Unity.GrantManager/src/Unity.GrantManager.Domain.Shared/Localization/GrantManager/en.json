@@ -311,7 +311,7 @@
     "ApplicantInfoView:ApplicantInfo.OrgBookStatus": "Org book status ",
     "ApplicantInfoView:ApplicantInfo.OrganizationType": "Organization Type",
     "ApplicantInfoView:ApplicantInfo.OrganizationSize": "Organization Size",
-    "ApplicantInfoView:ApplicantInfo.Indigenous": "Indigenous",
+    "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd": "Indigenous",
     "ApplicantInfoView:ApplicantInfo.Sector": "Sector",
     "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
     "ApplicantInfoView:ApplicantInfo.RedStop": "Red-Stop",

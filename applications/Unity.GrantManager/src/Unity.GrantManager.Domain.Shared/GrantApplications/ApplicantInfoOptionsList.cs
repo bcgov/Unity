@@ -8,8 +8,8 @@ public static class ApplicantInfoOptionsList
     public static ImmutableDictionary<string, string> IndigenousList =>
     ImmutableDictionary.CreateRange(new[]
       {
-            new KeyValuePair<string, string>("YES", "Yes"),
-            new KeyValuePair<string, string>("NO", "No"),
+            new KeyValuePair<string, string>("Yes", "Yes"),
+            new KeyValuePair<string, string>("No", "No"),
       });
 
 }

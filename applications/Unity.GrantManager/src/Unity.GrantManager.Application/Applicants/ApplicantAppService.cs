@@ -98,10 +98,9 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             SubSector = intakeMap.SubSector,
             SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc,
             ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
-            IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
+            IndigenousOrgInd = intakeMap.IndigenousOrgInd,
             OrgStatus = intakeMap.OrgStatus,
             RedStop = false,
-            Indigenous = intakeMap.Indigenous ?? "N",
         };
 
         return await applicantRepository.InsertAsync(applicant);
