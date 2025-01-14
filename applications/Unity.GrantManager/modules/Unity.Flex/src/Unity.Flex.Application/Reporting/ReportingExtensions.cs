@@ -13,5 +13,12 @@ namespace Unity.Flex.Reporting
                 // Remove the last separator
             }
         }
+
+        public static StringBuilder AddFieldAndDelimiter(this StringBuilder stringBuilder, string field)
+        {
+            return stringBuilder
+                   .Append(field)
+                   .Append(ReportingConsts.ReportFieldDelimiter);
+        }
     }
 }

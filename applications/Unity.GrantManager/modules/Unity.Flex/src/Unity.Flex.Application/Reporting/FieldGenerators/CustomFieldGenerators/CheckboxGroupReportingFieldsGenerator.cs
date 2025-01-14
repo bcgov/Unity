@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Text;
 using System.Text.Json;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
@@ -11,32 +10,23 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
     {
         public (string keys, string columns) Generate()
         {
-            var value = JsonSerializer.Deserialize<CheckboxGroupDefinition>(customField.Definition.ToString());
-            StringBuilder keysString = new();
-            StringBuilder columnsString = new();
+            var definition = JsonSerializer.Deserialize<CheckboxGroupDefinition>(customField.Definition.ToString());
 
-            if (value == null)
+            if (definition == null)
             {
                 return (string.Empty, string.Empty);
             }
 
-            var options = value.Options ?? [];
+            var options = definition.Options ?? [];
 
             foreach (var key in options.Select(s => s.Key))
             {
-                keysString
-                    .Append(key)
-                    .Append(ReportingConsts.ReportFieldDelimiter);
-
-                columnsString
-                    .Append(key)
-                    .Append(ReportingConsts.ReportFieldDelimiter);
+                var fieldName = $"{customField.Key}-{key}";
+                keysString.AddFieldAndDelimiter(fieldName);
+                columnsString.AddFieldAndDelimiter(fieldName);
             }
 
-            keysString.TrimEndDelimeter();
-            columnsString.TrimEndDelimeter();
-
-            return (keysString.ToString(), columnsString.ToString());
+            return TrimAndCreateKeysAndColumns(keysString, columnsString);
         }
     }
 }
