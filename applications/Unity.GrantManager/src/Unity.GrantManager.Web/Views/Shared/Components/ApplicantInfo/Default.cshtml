@@ -31,16 +31,19 @@
         <abp-input type="hidden" id="ApplicantInfoViewApplicantId" asp-for="@Model.ApplicantId" />
         <abp-row class="m-0 project-info-form">
             <abp-row class="m-0 p-0">
-                <abp-column size="_6" class="px-1">
+                <abp-column size="_4" class="px-1">
                     <abp-input asp-for="@Model.ApplicantInfo.OrgName" onchange="enableApplicantInfoSaveBtn(this)" />
                 </abp-column>
-                <abp-column size="_6" class="px-1">
+                <abp-column size="_4" class="px-1">
                     <abp-input asp-for="@Model.ApplicantInfo.OrgNumber" onchange="enableApplicantInfoSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input class="numeric-mask" asp-for="@Model.ApplicantInfo.OrganizationSize"
+                               onchange="enableApplicantInfoSaveBtn(this)" />
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_4" class="px-1">
-
                     <abp-select asp-for="@Model.ApplicantInfo.OrgStatus" asp-items="@Model.OrgBookStatusList"
                         id="orgBookStatusDropdown" onchange="enableApplicantInfoSaveBtn(this)">
                         <option value="">Please choose...</option>
@@ -53,8 +56,10 @@
                     </abp-select>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
-                    <abp-input class="numeric-mask" asp-for="@Model.ApplicantInfo.OrganizationSize"
-                        onchange="enableApplicantInfoSaveBtn(this)" />
+                    <abp-select asp-for="@Model.ApplicantInfo.IndigenousOrgInd" asp-items="@Model.IndigenousList"
+                           onchange="enableApplicantInfoSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">

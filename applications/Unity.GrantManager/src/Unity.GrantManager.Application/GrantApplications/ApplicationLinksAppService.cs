@@ -49,4 +49,29 @@ public class ApplicationLinksAppService : CrudAppService<
 
         return await combinedQuery.ToListAsync();
     }
+
+    public async Task<ApplicationLinksInfoDto> GetLinkedApplicationAsync(Guid currentApplicationId, Guid linkedApplicationId)
+    {
+        var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();
+        var applicationsQuery = await ApplicationRepository.GetQueryableAsync();
+        var applicationFormsQuery = await ApplicationFormRepository.GetQueryableAsync();
+
+        var combinedQuery = from applicationLinks in applicationLinksQuery
+                            join application in applicationsQuery on applicationLinks.LinkedApplicationId equals application.Id into appLinks
+                            from application in appLinks.DefaultIfEmpty() // Left join for safety
+                            join appForm in applicationFormsQuery on application.ApplicationFormId equals appForm.Id into appForms
+                            from appForm in appForms.DefaultIfEmpty() // Left join for safety
+                            where applicationLinks.ApplicationId == linkedApplicationId && applicationLinks.LinkedApplicationId == currentApplicationId
+                            select new ApplicationLinksInfoDto
+                            {
+                                Id = applicationLinks.Id,
+                                ApplicationId = application.Id,
+                                ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                                ReferenceNumber = application.ReferenceNo,
+                                Category = appForm.Category ?? "Unknown", // Handle potential nulls
+                                ProjectName = application.ProjectName
+                            };
+
+        return await combinedQuery.SingleAsync();
+    }
 }
