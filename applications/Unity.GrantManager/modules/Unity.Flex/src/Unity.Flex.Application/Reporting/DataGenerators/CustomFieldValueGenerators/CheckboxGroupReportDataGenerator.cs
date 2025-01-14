@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Text.Json;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets.Values;
 
@@ -10,7 +10,16 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
     {
         public Dictionary<string, List<string>> Generate()
         {
-            throw new NotImplementedException();
+            var values = new Dictionary<string, List<string>>();
+
+            var checkboxValue = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(value.Value);
+
+            foreach (var option in checkboxValue ?? [])
+            {
+                values.Add(option.Key, [option.Value.ToString()]);
+            }
+
+            return values;
         }
     }
 }
