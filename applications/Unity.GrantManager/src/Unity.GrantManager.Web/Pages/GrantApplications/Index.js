@@ -157,6 +157,7 @@
             getRiskRankingColumn(),
             getNotesColumn(),
             getRedStopColumn(),
+            getIndigenousColumn(),
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -950,6 +951,19 @@
                 return data ?? '';
             },
             index: 57
+        }
+    }
+
+    function getIndigenousColumn() {
+        return {
+            title: 'Indigenous',
+            name: 'indigenous',
+            data: 'applicant.indigenous',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 58
         }
     }
 
