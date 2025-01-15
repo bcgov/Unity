@@ -17,6 +17,11 @@ namespace Unity.GrantManager.Reporting
         IUnitOfWorkManager unitOfWorkManager,
         ILogger<SubmissionsDynamicViewGeneratorHandler> logger) : ILocalEventHandler<SubmissionsDynamicViewGenerationEto>, ITransientDependency
     {
+        /// <summary>
+        /// Generate a View in the database using the generate_submissions_view function based on the application form version
+        /// </summary>
+        /// <param name="viewGenerationEvent"></param>
+        /// <returns></returns>
         public async Task HandleEventAsync(SubmissionsDynamicViewGenerationEto viewGenerationEvent)
         {
             try

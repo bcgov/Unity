@@ -12,7 +12,7 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
         /// <summary>
         /// Generate the keys and values for a datagrid for reporting
         /// </summary>
-        /// <returns>ictionary of unique keys with any matching values for the keys</returns>
+        /// <returns>Dictionary of unique keys with any matching values for the keys</returns>
         public Dictionary<string, List<string>> Generate()
         {
             var values = new Dictionary<string, List<string>>();

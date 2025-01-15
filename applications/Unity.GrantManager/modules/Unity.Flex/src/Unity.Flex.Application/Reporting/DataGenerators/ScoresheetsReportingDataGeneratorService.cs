@@ -30,7 +30,7 @@ namespace Unity.Flex.Reporting.DataGenerators
             {
                 if (answer != null)
                 {
-                    var keyValues = ReportingDataGeneratorFactory
+                    var keyValues = ScoresheetsReportingDataGeneratorFactory
                         .Create(answer)
                         .Generate();
 

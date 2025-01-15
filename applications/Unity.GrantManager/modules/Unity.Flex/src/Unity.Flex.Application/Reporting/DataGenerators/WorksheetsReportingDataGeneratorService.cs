@@ -12,6 +12,12 @@ namespace Unity.Flex.Reporting.DataGenerators
     public class WorksheetsReportingDataGeneratorService : ApplicationService,
         IReportingDataGeneratorService<Worksheet, WorksheetInstanceValue>
     {
+        /// <summary>
+        /// Generates the data for the Worksheet ReportData field
+        /// </summary>
+        /// <param name="worksheet"></param>
+        /// <param name="instanceValue"></param>
+        /// <returns>Serialized Key/Values Pair of values for ReportData</returns>
         public string Generate(Worksheet worksheet, WorksheetInstanceValue instanceValue)
         {
             var reportData = new Dictionary<string, List<string>>();
@@ -29,7 +35,7 @@ namespace Unity.Flex.Reporting.DataGenerators
                 var definition = definitions.Find(s => s.Key == value.Key);
                 if (definition != null)
                 {
-                    var keyValues = ReportingDataGeneratorFactory
+                    var keyValues = WorksheetsReportingDataGeneratorFactory
                         .Create(definition, value)
                         .Generate();
 

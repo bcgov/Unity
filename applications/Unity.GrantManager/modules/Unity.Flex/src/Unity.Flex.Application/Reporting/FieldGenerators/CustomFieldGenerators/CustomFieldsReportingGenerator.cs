@@ -3,7 +3,7 @@ using Unity.Flex.Domain.Worksheets;
 
 namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
 {
-    public class CustomFieldsReportingGenerator
+    public class CustomFieldsReportingGenerator : ReportingFieldsGenerator
     {
         protected readonly CustomField customField;
         protected StringBuilder keysString = new();
@@ -25,7 +25,7 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
             keysString.TrimEndDelimeter();
             columnsString.TrimEndDelimeter();
 
-            return (keysString.ToString(), columnsString.ToString());
+            return (keysString.ToString(), SanitizeColumnName(columnsString.ToString()));
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
         public (string keys, string columns) Generate()
         {
             // We intentionally use the key twice here
-            return (customField.Key, customField.Key);
+            return (customField.Key, SanitizeColumnName(customField.Key));
         }
     }
 }

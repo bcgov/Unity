@@ -2,6 +2,9 @@
 
 namespace Unity.Flex.Reporting.DataGenerators.AnswerGenerators
 {
+    /// <summary>
+    /// Answer Report Data Generator Base
+    /// </summary>
     public class ReportingDataGenerator
     {
         protected Answer answer;

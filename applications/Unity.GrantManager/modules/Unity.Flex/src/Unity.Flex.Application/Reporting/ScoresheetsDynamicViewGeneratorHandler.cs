@@ -17,6 +17,11 @@ namespace Unity.Flex.Reporting
             IUnitOfWorkManager unitOfWorkManager,
             ILogger<ScoresheetsDynamicViewGeneratorHandler> logger) : ILocalEventHandler<ScoresheetsDynamicViewGeneratorEto>, ITransientDependency
     {
+        /// <summary>
+        /// Generate a view in the database using the generate_scoresheets_view procedure based on the scoresheet
+        /// </summary>
+        /// <param name="viewGenerationEvent"></param>
+        /// <returns></returns>
         public async Task HandleEventAsync(ScoresheetsDynamicViewGeneratorEto viewGenerationEvent)
         {
             try

@@ -1,13 +1,17 @@
-﻿using Unity.Flex.Domain.ScoresheetInstances;
-using Unity.Flex.Domain.Scoresheets;
-using Unity.Flex.Domain.Worksheets;
+﻿using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
 
 namespace Unity.Flex.Reporting.DataGenerators
 {
-    public static class ReportingDataGeneratorFactory
+    public static class WorksheetsReportingDataGeneratorFactory
     {
+        /// <summary>
+        /// Returns the correct Field Type Data Generator based on the Custom Field Type
+        /// </summary>
+        /// <param name="customField"></param>
+        /// <param name="value"></param>
+        /// <returns>Relevant IReportingDataGenerator that can generate the ReportingData field relevant to the type</returns>
         public static IReportingDataGenerator Create(CustomField customField, FieldInstanceValue value)
         {
             return customField.Type switch
@@ -16,11 +20,6 @@ namespace Unity.Flex.Reporting.DataGenerators
                 CustomFieldType.DataGrid => new CustomFieldValueGenerators.DataGridReportDataGenerator(customField, value),
                 _ => new CustomFieldValueGenerators.DefaultReportDataGenerator(customField, value),
             };
-        }
-
-        public static IReportingDataGenerator Create(Answer answer)
-        {
-            return new AnswerGenerators.DefaultReportDataGenerator(answer);
         }
     }
 }

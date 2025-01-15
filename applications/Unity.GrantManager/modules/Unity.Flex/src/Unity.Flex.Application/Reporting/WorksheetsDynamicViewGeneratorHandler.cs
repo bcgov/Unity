@@ -17,8 +17,13 @@ namespace Unity.Flex.Reporting
             IUnitOfWorkManager unitOfWorkManager,
             ILogger<WorksheetsDynamicViewGeneratorHandler> logger) : ILocalEventHandler<WorksheetsDynamicViewGeneratorEto>, ITransientDependency
     {
+        /// <summary>
+        /// Generate a view in the database using the generate_worksheets_view function based on the worksheet
+        /// </summary>
+        /// <param name="viewGenerationEvent"></param>
+        /// <returns></returns>
         public async Task HandleEventAsync(WorksheetsDynamicViewGeneratorEto viewGenerationEvent)
-        {
+        {            
             try
             {
                 using (currentTenant.Change(viewGenerationEvent.TenantId))

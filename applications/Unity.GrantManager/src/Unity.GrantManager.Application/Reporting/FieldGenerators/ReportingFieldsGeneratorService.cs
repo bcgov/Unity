@@ -14,6 +14,11 @@ namespace Unity.GrantManager.Reporting.FieldGenerators
     public class ReportingFieldsGeneratorService(ILocalEventBus localEventBus,
         IApplicationFormRepository applicationFormRepository) : ApplicationService, IReportingFieldsGeneratorService
     {
+        /// <summary>
+        /// Dissect the form version schema and extract key value pairs to be stored as the base for reporting
+        /// </summary>
+        /// <param name="applicationFormVersion"></param>
+        /// <returns></returns>
         public async Task GenerateAndSetAsync(ApplicationFormVersion applicationFormVersion)
         {
             // Add keys and columns for report generation
@@ -68,16 +73,16 @@ namespace Unity.GrantManager.Reporting.FieldGenerators
                 .Distinct()
                 .Select(fullKey =>
                 {
-                    string truncatedKey = fullKey.Length > 63 ? fullKey[..63] : fullKey;
+                    string truncatedKey = fullKey.Length > ReportingConsts.ReportColumnMaxLength ? fullKey[..ReportingConsts.ReportColumnMaxLength] : fullKey;
                     keyMapping[fullKey] = truncatedKey;
                     return fullKey;
                 });
 
             // Get all keys and pipe separate them
-            string pipeDelimitedKeys = string.Join("|", keys);
+            string pipeDelimitedKeys = string.Join(ReportingConsts.ReportFieldDelimiter, keys);
 
             // Truncate each key to a maximum of 63 characters and create a pipe-delimited string
-            string truncatedDelimitedKeys = string.Join("|", keys.Select(k => k.Length > 63 ? k[..63] : k));
+            string truncatedDelimitedKeys = string.Join(ReportingConsts.ReportFieldDelimiter, keys.Select(k => k.Length > ReportingConsts.ReportColumnMaxLength ? k[..ReportingConsts.ReportColumnMaxLength] : k));
 
             applicationFormVersion.ReportColumns = truncatedDelimitedKeys;
             applicationFormVersion.ReportKeys = pipeDelimitedKeys;
