@@ -1003,10 +1003,8 @@
         switch (str) {
             case true:
                 return "Yes";
-                break;
             case false:
                 return "No";
-                break;
             default:
                 return '';
         }
