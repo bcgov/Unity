@@ -157,6 +157,7 @@
             getRiskRankingColumn(),
             getNotesColumn(),
             getRedStopColumn(),
+            getIndigenousColumn(),
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -947,9 +948,22 @@
             data: 'applicant.redStop',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '';
+                return convertToYesNo(data);
             },
             index: 57
+        }
+    }
+
+    function getIndigenousColumn() {
+        return {
+            title: 'Indigenous',
+            name: 'indigenous',
+            data: 'applicant.indigenousOrgInd',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 58
         }
     }
 
@@ -983,6 +997,17 @@
             str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
         }
         return str.join(' ');
+    }
+
+    function convertToYesNo(str) {
+        switch (str) {
+            case true:
+                return "Yes";
+            case false:
+                return "No";
+            default:
+                return '';
+        }
     }
 
     $('.select-all-applications').click(function () {

@@ -89,12 +89,28 @@
                     data: 'body',
                     visible : false ,
                     className: 'data-table-header'
+                },
+                {
+                    data: 'status',
+                    render: function (data, _, full, meta) {
+                        console.log(full);
+                        if(data === 'Draft') {
+                            return generateDeleteButtonContent(full, meta.row);
+                        } else {
+                            return '';
+                        }
+                    },
+                    orderable: false
                 }
             ],
         })
     );
 
-    emailHistoryDataTable.on('click', 'tbody tr', function (e) {
+    function generateDeleteButtonContent(full, row) {
+        return `<button class="btn btn-delete-draft" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
+    }
+
+    emailHistoryDataTable.on('click', 'tbody tr', (e) => {
         e.currentTarget.classList.toggle('selected');
     });
 
@@ -103,7 +119,7 @@
     }
 
     // Add event listener for opening and closing details
-    emailHistoryDataTable.on('click', 'td.dt-control', function (e) {
+    emailHistoryDataTable.on('click', 'td.dt-control', (e) => {
         let tr = e.target.closest('tr');
         let row = emailHistoryDataTable.row(tr);
 
@@ -122,13 +138,13 @@
         let row = emailHistoryDataTable.row(tr);
         let column = emailHistoryDataTable.column( this );
 
-        if(column.index() > 0) {
+        if(column.index() > 0 && column.index() < 4) {
             let data = row.data();
             PubSub.publish('email_selected', data);
         }
     });
 
-    PubSub.subscribe('refresh_application_emails', (msg, data) => {
+    PubSub.subscribe('refresh_application_emails', () => {
         emailHistoryDataTable.ajax.reload();
     });
 
@@ -136,3 +152,33 @@
         emailHistoryDataTable.columns.adjust().draw();
     });
 });
+
+function deleteDraftEmail(id, rowIndex) {
+    Swal.fire({
+        title: "Delete Draft Email",
+        text: "Are you sure you want to delete this draft email?",
+        showCancelButton: true,
+        confirmButtonText: "Confirm",
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax(
+                {
+                    url: `/api/app/email-notification/${id}/email`,
+                    type: "DELETE",
+            })
+            .then(response => {
+                abp.notify.success('Draft email is successfully deleted.', 'Delete Draft Email');
+                PubSub.publish('refresh_application_emails');
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+        }
+    });
+}
+
+

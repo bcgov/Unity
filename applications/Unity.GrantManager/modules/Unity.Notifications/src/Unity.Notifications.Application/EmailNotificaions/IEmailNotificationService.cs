@@ -19,5 +19,6 @@ namespace Unity.Notifications.EmailNotifications
         string GetDeclineBody();
         Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId);
         Task UpdateSettings(NotificationsSettingsDto settingsDto);
+        Task DeleteEmail(Guid id);
     }
 }

@@ -28,3 +28,7 @@
 .submission-button-section {
     display: flex;
 }
+
+#ChefsAttachmentsTable_paginate { 
+    display: block !important;
+}

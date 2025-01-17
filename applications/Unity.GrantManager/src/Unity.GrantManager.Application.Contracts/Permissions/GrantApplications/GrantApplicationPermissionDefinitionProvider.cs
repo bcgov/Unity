@@ -11,6 +11,10 @@ namespace Unity.GrantManager.Permissions.GrantApplications
         {
             var grantApplicationPermissionsGroup = context.AddGroup(GrantApplicationPermissions.GroupName, L("Permission:GrantApplicationManagement"));
 
+            // Dashboard
+            var dashboardPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Dashboard.Default, L("Permission:GrantApplicationManagement.Dashboard.Default"));
+            dashboardPermissions.AddChild(GrantApplicationPermissions.Dashboard.ViewDashboard, L("Permission:GrantApplicationManagement.Dashboard.ViewDashboard"));
+
             // Application
             grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applications.Default, L("Permission:GrantApplicationManagement.Applications.Default"));
 

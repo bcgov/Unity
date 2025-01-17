@@ -113,6 +113,8 @@
     "Permission:GrantManagerManagement.Default": "Default",
 
     "Permission:GrantApplicationManagement": "Grant Application Management",
+    "Permission:GrantApplicationManagement.Dashboard.Default": "Dashboard",
+    "Permission:GrantApplicationManagement.Dashboard.ViewDashboard": "View Dashboard",
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
@@ -309,6 +311,7 @@
     "ApplicantInfoView:ApplicantInfo.OrgBookStatus": "Org book status ",
     "ApplicantInfoView:ApplicantInfo.OrganizationType": "Organization Type",
     "ApplicantInfoView:ApplicantInfo.OrganizationSize": "Organization Size",
+    "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd": "Indigenous",
     "ApplicantInfoView:ApplicantInfo.Sector": "Sector",
     "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
     "ApplicantInfoView:ApplicantInfo.RedStop": "Red-Stop",

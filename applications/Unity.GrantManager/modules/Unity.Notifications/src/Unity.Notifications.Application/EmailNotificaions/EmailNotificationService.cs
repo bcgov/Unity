@@ -85,6 +85,11 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return declineBody;
     }
 
+    public async Task DeleteEmail(Guid id)
+    {
+        await _emailLogsRepository.DeleteAsync(id);
+    }
+
     public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
     {
         return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized);

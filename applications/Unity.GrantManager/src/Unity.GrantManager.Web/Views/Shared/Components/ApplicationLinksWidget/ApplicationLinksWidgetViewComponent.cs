@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.GrantApplications;
+using System.Linq;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
 {
@@ -25,7 +26,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            List<ApplicationLinksInfoDto> applicationLinks = await _applicationLinksService.GetListByApplicationAsync(applicationId);
+            var applicationList = await _applicationLinksService.GetListByApplicationAsync(applicationId);
+            List<ApplicationLinksInfoDto> applicationLinks = applicationList.Where(item => item.ApplicationId != applicationId).ToList();
             ApplicationLinksWidgetViewModel model = new() {
                 ApplicationLinks = applicationLinks,
                 ApplicationId = applicationId
