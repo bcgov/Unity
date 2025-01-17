@@ -3,7 +3,6 @@ using System;
 using Microsoft.AspNetCore.Authorization;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Services;
-using System.Xml;
 
 namespace Unity.Flex.WorksheetInstances
 {
