@@ -948,7 +948,7 @@
             data: 'applicant.redStop',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '';
+                return convertToYesNo(data);
             },
             index: 57
         }
@@ -997,6 +997,17 @@
             str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
         }
         return str.join(' ');
+    }
+
+    function convertToYesNo(str) {
+        switch (str) {
+            case true:
+                return "Yes";
+            case false:
+                return "No";
+            default:
+                return '';
+        }
     }
 
     $('.select-all-applications').click(function () {
