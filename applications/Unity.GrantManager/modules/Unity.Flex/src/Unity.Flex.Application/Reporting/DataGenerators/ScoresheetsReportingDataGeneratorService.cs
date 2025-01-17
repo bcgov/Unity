@@ -24,7 +24,7 @@ namespace Unity.Flex.Reporting.DataGenerators
                 reportData.Add(reportKey, []);
             }
 
-            foreach (var (key, answer) in from key in reportData
+            foreach (var (answerKey, answer) in from key in reportData
                                           let answerKeys = answers.Find(s => s.Question?.Name == key.Key)
                                           select (key, answerKeys))
             {

@@ -347,10 +347,5 @@ namespace Unity.GrantManager.ApplicationForms
             var formVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(formVersionId);
             return formVersion?.Version ?? 0;
         }
-
-        public Task GenerateDynamicViewAsync(Guid applicationFormVersionId)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

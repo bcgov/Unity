@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using Unity.Flex.Domain.Worksheets;
 
 namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators

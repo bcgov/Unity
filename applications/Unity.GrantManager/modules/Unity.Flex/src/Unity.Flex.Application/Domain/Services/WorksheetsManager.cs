@@ -189,7 +189,7 @@ namespace Unity.Flex.Domain.Services
 
                         foreach (var field in allFields)
                         {
-                            var (fieldName, chefsPropertyName, value) = eventData.CustomFields.Find(s => s.fieldName == field.Name);
+                            var (_, chefsPropertyName, value) = eventData.CustomFields.Find(s => s.fieldName == field.Name);
                             newInstance.AddValue(field.Id,
                                 ValueConverter.Convert(value?.ToString() ?? string.Empty, field.Type, chefsPropertyName, eventData.VersionData));
                         }

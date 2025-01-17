@@ -29,9 +29,9 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
                 foreach (var cell in cells)
                 {
                     var fieldName = $"{customField.Key}-{cell.Key}";
-                    if (values.TryGetValue(fieldName, out List<string>? value))
+                    if (values.TryGetValue(fieldName, out List<string>? cellValue))
                     {
-                        value.Add(cell.Value);
+                        cellValue.Add(cell.Value);
                     }
                     else
                     {
