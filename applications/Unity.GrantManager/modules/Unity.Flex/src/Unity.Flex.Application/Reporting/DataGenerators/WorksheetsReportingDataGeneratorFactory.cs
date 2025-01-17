@@ -1,6 +1,6 @@
-﻿using Unity.Flex.Domain.Worksheets;
+﻿using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets;
-using Unity.Flex.Worksheets.Values;
 
 namespace Unity.Flex.Reporting.DataGenerators
 {
@@ -12,7 +12,7 @@ namespace Unity.Flex.Reporting.DataGenerators
         /// <param name="customField"></param>
         /// <param name="value"></param>
         /// <returns>Relevant IReportingDataGenerator that can generate the ReportingData field relevant to the type</returns>
-        public static IReportingDataGenerator Create(CustomField customField, FieldInstanceValue value)
+        public static IReportingDataGenerator Create(CustomField customField, CustomFieldValue value)
         {
             return customField.Type switch
             {

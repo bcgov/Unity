@@ -12,7 +12,7 @@ namespace Unity.Flex.Reporting.DataGenerators
     public class ScoresheetsReportingDataGeneratorService : ApplicationService,
         IReportingDataGeneratorService<Scoresheet, ScoresheetInstance>
     {
-        public string Generate(Scoresheet scoresheet, ScoresheetInstance instanceValue)
+        public void GenerateAndSet(Scoresheet scoresheet, ScoresheetInstance instanceValue)
         {
             var reportData = new Dictionary<string, List<string>>();
 
@@ -43,7 +43,7 @@ namespace Unity.Flex.Reporting.DataGenerators
                 }
             }
 
-            return JsonSerializer.Serialize(reportData);
+            instanceValue.SetReportingData(JsonSerializer.Serialize(reportData));
         }
     }
 }

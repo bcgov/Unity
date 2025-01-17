@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
-using Unity.Flex.Worksheets.Values;
 
 namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
 {
-    public class DefaultReportDataGenerator(CustomField customField, FieldInstanceValue value)
+    public class DefaultReportDataGenerator(CustomField customField, CustomFieldValue value)
         : ReportingDataGenerator(customField, value), IReportingDataGenerator
     {
         /// <summary>
@@ -13,9 +14,11 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
         /// <returns>Dictionary with keys and matched values for reporting data</returns>
         public Dictionary<string, List<string>> Generate()
         {
+            JObject dataValue = JObject.Parse(value.CurrentValue);
+
             return new Dictionary<string, List<string>>
             {
-                { value.Key, new List<string>() { value.Value } }
+                { customField.Key, new List<string>() { dataValue["value"]?.ToString() ?? string.Empty } }
             };
         }
     }

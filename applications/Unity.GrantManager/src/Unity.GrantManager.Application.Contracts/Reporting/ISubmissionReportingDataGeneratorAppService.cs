@@ -4,8 +4,8 @@ using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Reporting
 {
-    public interface IReportingDataGeneratorAppService : IApplicationService
+    public interface ISubmissionReportingDataGeneratorAppService : IApplicationService
     {
-        Task GenerateReportData(Guid submissionId);
+        Task Generate(Guid submissionId);        
     }
 }

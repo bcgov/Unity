@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json;
+using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets.Values;
 
 namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
 {
-    public class CheckboxGroupReportDataGenerator(CustomField customField, FieldInstanceValue value)
+    public class CheckboxGroupReportDataGenerator(CustomField customField, CustomFieldValue value)
         : ReportingDataGenerator(customField, value), IReportingDataGenerator
     {
         /// <summary>
@@ -16,7 +17,7 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
         {
             var values = new Dictionary<string, List<string>>();
 
-            var checkboxValue = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(value.Value);
+            var checkboxValue = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(value.CurrentValue);
 
             foreach (var option in checkboxValue ?? [])
             {

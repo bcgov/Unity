@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.Linq;
+using System.Text;
 using Unity.Flex.Domain.Worksheets;
 
 namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
@@ -25,7 +27,23 @@ namespace Unity.Flex.Reporting.FieldGenerators.CustomFieldGenerators
             keysString.TrimEndDelimeter();
             columnsString.TrimEndDelimeter();
 
-            return (keysString.ToString(), SanitizeColumnName(columnsString.ToString()));
+            return (keysString.ToString(), SanitizeColumnsString(columnsString));
+        }
+
+        private static string SanitizeColumnsString(StringBuilder columnsString)
+        {
+            var columnsToFormat = columnsString
+                .ToString()
+                .Split(ReportingConsts.ReportFieldDelimiter);
+
+            // Iterate over the values and update each value
+            for (int i = 0; i < columnsToFormat.Length; i++)
+            {
+                // Example update: append "_updated" to each value
+                columnsToFormat[i] = SanitizeColumnName(columnsToFormat[i]);
+            }
+
+            return string.Join(ReportingConsts.ReportFieldDelimiter, columnsToFormat);
         }
     }
 }

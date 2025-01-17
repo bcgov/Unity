@@ -19,7 +19,7 @@ namespace Unity.Flex.Domain.Services
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository,
         IWorksheetRepository worksheetRepository,
         IWorksheetLinkRepository worksheetLinkRepository,
-        IReportingDataGeneratorService<Worksheet, WorksheetInstanceValue> reportingService) : DomainService
+        IReportingDataGeneratorService<Worksheet, WorksheetInstance> reportingService) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
@@ -69,7 +69,7 @@ namespace Unity.Flex.Domain.Services
             // Update and set the instance value for the worksheet - high level values serialized
             var worksheet = await worksheetRepository.GetAsync(instance.WorksheetId, true);
             var fieldDefinitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
-            var instanceCurrentValue = new WorksheetInstanceValue();
+            var instanceCurrentValue = new WorksheetInstanceValue();                        
 
             foreach (var field in instance.Values)
             {
@@ -81,7 +81,7 @@ namespace Unity.Flex.Domain.Services
 
             instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));
 
-            instance.SetReportingData(reportingService.Generate(worksheet, instanceCurrentValue));
+            reportingService.GenerateAndSet(worksheet, instance);
         }
 
         private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)

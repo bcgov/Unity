@@ -75,7 +75,7 @@ namespace Unity.Flex.Domain.Services
                 await scoresheetInstanceRepository.UpdateAsync(instance);
             }
 
-            instance.SetReportingData(reportingDataGeneratorService.Generate(scoresheet, instance));
+            reportingDataGeneratorService.GenerateAndSet(scoresheet, instance);
         }
     }
 

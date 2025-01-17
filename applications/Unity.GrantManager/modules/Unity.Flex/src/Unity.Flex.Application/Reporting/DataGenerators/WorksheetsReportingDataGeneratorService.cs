@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
-using Unity.Flex.Worksheets.Values;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 
@@ -10,7 +10,7 @@ namespace Unity.Flex.Reporting.DataGenerators
 {
     [RemoteService(false)]
     public class WorksheetsReportingDataGeneratorService : ApplicationService,
-        IReportingDataGeneratorService<Worksheet, WorksheetInstanceValue>
+        IReportingDataGeneratorService<Worksheet, WorksheetInstance>
     {
         /// <summary>
         /// Generates the data for the Worksheet ReportData field
@@ -18,10 +18,10 @@ namespace Unity.Flex.Reporting.DataGenerators
         /// <param name="worksheet"></param>
         /// <param name="instanceValue"></param>
         /// <returns>Serialized Key/Values Pair of values for ReportData</returns>
-        public string Generate(Worksheet worksheet, WorksheetInstanceValue instanceValue)
+        public void GenerateAndSet(Worksheet worksheet, WorksheetInstance instanceValue)
         {
             var reportData = new Dictionary<string, List<string>>();
-            var reportingKeys = worksheet.ReportColumns.Split(ReportingConsts.ReportFieldDelimiter);
+            var reportingKeys = worksheet.ReportKeys.Split(ReportingConsts.ReportFieldDelimiter);
 
             foreach (var reportKey in reportingKeys)
             {
@@ -32,7 +32,7 @@ namespace Unity.Flex.Reporting.DataGenerators
 
             foreach (var value in instanceValue.Values)
             {
-                var definition = definitions.Find(s => s.Key == value.Key);
+                var definition = definitions.Find(s => s.Id == value.CustomFieldId);
                 if (definition != null)
                 {
                     var keyValues = WorksheetsReportingDataGeneratorFactory
@@ -48,7 +48,7 @@ namespace Unity.Flex.Reporting.DataGenerators
                 }
             }
 
-            return JsonSerializer.Serialize(reportData);
+            instanceValue.SetReportingData(JsonSerializer.Serialize(reportData));
         }
     }
 }

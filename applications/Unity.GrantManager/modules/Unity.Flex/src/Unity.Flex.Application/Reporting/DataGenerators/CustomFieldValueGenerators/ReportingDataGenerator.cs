@@ -1,5 +1,5 @@
-﻿using Unity.Flex.Domain.Worksheets;
-using Unity.Flex.Worksheets.Values;
+﻿using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.Worksheets;
 
 namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
 {
@@ -9,9 +9,9 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
     public class ReportingDataGenerator
     {
         protected CustomField customField;
-        protected FieldInstanceValue value;
+        protected CustomFieldValue value;
 
-        protected ReportingDataGenerator(CustomField customField, FieldInstanceValue value)
+        protected ReportingDataGenerator(CustomField customField, CustomFieldValue value)
         {
             this.customField = customField;
             this.value = value;

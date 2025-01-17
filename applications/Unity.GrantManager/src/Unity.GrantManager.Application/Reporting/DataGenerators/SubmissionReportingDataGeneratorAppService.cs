@@ -9,11 +9,11 @@ using Volo.Abp.Domain.Entities;
 namespace Unity.GrantManager.Reporting.DataGenerators
 {
     [Authorize]
-    public class ReportingDataGeneratorAppService(IReportingDataGenerator reportingDataGenerator,
+    public class SubmissionReportingDataGeneratorAppService(IReportingDataGenerator reportingDataGenerator,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-        IApplicationFormVersionRepository applicationFormVersionRepository) : ApplicationService, IReportingDataGeneratorAppService
+        IApplicationFormVersionRepository applicationFormVersionRepository) : ApplicationService, ISubmissionReportingDataGeneratorAppService
     {
-        public async Task GenerateReportData(Guid submissionId)
+        public async Task Generate(Guid submissionId)
         {
             var submission = await applicationFormSubmissionRepository.GetAsync(submissionId);
             Guid applicationFormVersionId;

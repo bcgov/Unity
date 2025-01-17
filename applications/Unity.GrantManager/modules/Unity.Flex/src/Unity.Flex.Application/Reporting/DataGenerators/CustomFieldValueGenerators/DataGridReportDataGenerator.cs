@@ -1,12 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets.Values;
 
 namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
 {
-    public class DataGridReportDataGenerator(CustomField customField, FieldInstanceValue value)
+    public class DataGridReportDataGenerator(CustomField customField, CustomFieldValue value)
        : ReportingDataGenerator(customField, value), IReportingDataGenerator
     {
         /// <summary>
@@ -16,7 +18,9 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
         public Dictionary<string, List<string>> Generate()
         {
             var values = new Dictionary<string, List<string>>();
-            var rowsValue = JsonSerializer.Deserialize<DataGridRowsValue>(value.Value);
+            JObject dataValue = JObject.Parse(value.CurrentValue);
+
+            var rowsValue = JsonSerializer.Deserialize<DataGridRowsValue>(dataValue["value"]?.ToString() ?? string.Empty);
 
             if (rowsValue == null) return values;
 

@@ -1,6 +1,8 @@
-﻿namespace Unity.GrantManager.Reporting.DataGenerators
+﻿using Volo.Abp.Application.Services;
+
+namespace Unity.GrantManager.Reporting.DataGenerators
 {
-    public interface IReportingDataGenerator
+    public interface IReportingDataGenerator : IApplicationService
     {
         string? Generate(dynamic formSubmission, string? reportKeys);
     }
