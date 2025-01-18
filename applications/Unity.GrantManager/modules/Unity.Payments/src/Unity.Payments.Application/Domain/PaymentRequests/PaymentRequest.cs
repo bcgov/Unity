@@ -45,6 +45,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         // Payee Info
         public virtual string PayeeName { get; private set; } = string.Empty;
         public virtual string ContractNumber { get; private set; } = string.Empty;
+        public virtual string SupplierName { get; private set; } = string.Empty;
         public virtual string SupplierNumber { get; private set; } = string.Empty;
         public virtual string RequesterName { get; private set; } = string.Empty;
         public virtual string BatchName { get; private set; } = string.Empty;
@@ -86,6 +87,7 @@ namespace Unity.Payments.Domain.PaymentRequests
             PayeeName = createPaymentRequestDto.PayeeName;
             ContractNumber = createPaymentRequestDto.ContractNumber;
             SupplierNumber = createPaymentRequestDto.SupplierNumber;
+            SupplierName = createPaymentRequestDto.SupplierName;
             SiteId = createPaymentRequestDto.SiteId;
             Description = createPaymentRequestDto.Description;
             CorrelationId = createPaymentRequestDto.CorrelationId;

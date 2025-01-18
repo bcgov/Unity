@@ -76,9 +76,13 @@
             .then(response => response.text())
             .then(data => {
                 let supplierInfo = document.getElementById('supplier-info-widget');
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const siteIdValue = doc.querySelector('#SiteId').value;
+
                 if (supplierInfo) {
                     supplierInfo.innerHTML = data;
-                    PubSub.publish('reload_sites_list');
+                    PubSub.publish('reload_sites_list', siteIdValue);
                 }
                 $('.cas-spinner').hide();
             })

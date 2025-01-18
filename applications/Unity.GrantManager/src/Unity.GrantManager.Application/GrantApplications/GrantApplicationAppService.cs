@@ -512,7 +512,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         string supplierprotected = casSupplierResponse.GetProperty("supplierprotected").ToString();
         string standardindustryclassification = casSupplierResponse.GetProperty("standardindustryclassification").ToString();
 
-        _ = DateTime.TryParse(lastUpdated, out DateTime lastUpdatedDate);
+        _ = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime lastUpdatedDate);
         List<SiteEto> siteEtos = new List<SiteEto>();
         JArray siteArray = JsonConvert.DeserializeObject<dynamic>(casSupplierResponse.GetProperty("supplieraddress").ToString());
         foreach (dynamic site in siteArray)
@@ -546,12 +546,17 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         string postalCode = site["postalcode"].ToString();
         string emailAddress = site["emailaddress"].ToString();
         string eftAdvicePref = site["eftadvicepref"].ToString();
+        string accountNumber = site["accountnumber"].ToString();
+        string maskedAccountNumber = accountNumber.Length > 4 
+            ? new string('*', accountNumber.Length - 4) + accountNumber[^4..] 
+            : accountNumber;
+        string bankAccount = maskedAccountNumber;
         string providerId = site["providerid"].ToString();
         string siteStatus = site["status"].ToString();
         string siteProtected = site["siteprotected"].ToString();
         string siteLastUpdated = site["lastupdated"].ToString();
 
-        _ = DateTime.TryParse(siteLastUpdated, out DateTime siteLastUpdatedDate);
+        _ = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime siteLastUpdatedDate);
         return new SiteEto
         {
             SupplierSiteCode = supplierSiteCode,
@@ -564,6 +569,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             PostalCode = postalCode,
             EmailAddress = emailAddress,
             EFTAdvicePref = eftAdvicePref,
+            BankAccount = bankAccount,
             ProviderId = providerId,
             Status = siteStatus,
             SiteProtected = siteProtected,

@@ -14,6 +14,7 @@ namespace Unity.Payments.PaymentRequests
         public string PayeeName { get; set; }
         public string ContractNumber { get; set; }
         public string SupplierNumber { get; set; }
+        public string SupplierName { get; set; }
         public string CorrelationProvider { get; set; } = string.Empty;
         public string BatchName { get; set; }
         public decimal BatchNumber { get; set; } = 0;

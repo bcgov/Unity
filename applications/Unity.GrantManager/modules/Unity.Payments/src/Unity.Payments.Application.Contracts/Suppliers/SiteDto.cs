@@ -22,5 +22,6 @@ public class SiteDto : AuditedEntityDto<Guid>
     public string? ProviderId { get; set; }
     public string? Status { get; set; }
     public string? SiteProtected { get; set; }
+    public string? BankAccount { get; set; }
     public DateTime? LastUpdatedInCas { get; set; }
 }
