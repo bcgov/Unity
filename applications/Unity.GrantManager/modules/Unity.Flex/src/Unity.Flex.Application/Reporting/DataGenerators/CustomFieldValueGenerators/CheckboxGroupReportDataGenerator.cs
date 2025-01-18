@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Text.Json;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
@@ -16,8 +17,9 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
         public Dictionary<string, List<string>> Generate()
         {
             var values = new Dictionary<string, List<string>>();
+            JObject dataValue = JObject.Parse(value.CurrentValue);
 
-            var checkboxValue = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(value.CurrentValue);
+            var checkboxValue = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(dataValue["value"]?.ToString() ?? string.Empty);
 
             foreach (var option in checkboxValue ?? [])
             {
