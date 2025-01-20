@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using Unity.Flex.Domain.WorksheetInstances;
@@ -20,35 +22,43 @@ namespace Unity.Flex.Reporting.DataGenerators
         /// <returns>Serialized Key/Values Pair of values for ReportData</returns>
         public void GenerateAndSet(Worksheet worksheet, WorksheetInstance instanceValue)
         {
-            var reportData = new Dictionary<string, List<string>>();
-            var reportingKeys = worksheet.ReportKeys.Split(ReportingConsts.ReportFieldDelimiter);
-
-            foreach (var reportKey in reportingKeys)
+            try
             {
-                reportData.Add(reportKey, []);
-            }
+                var reportData = new Dictionary<string, List<string>>();
+                var reportingKeys = worksheet.ReportKeys.Split(ReportingConsts.ReportFieldDelimiter);
 
-            var definitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
-
-            foreach (var value in instanceValue.Values)
-            {
-                var definition = definitions.Find(s => s.Id == value.CustomFieldId);
-                if (definition != null)
+                foreach (var reportKey in reportingKeys)
                 {
-                    var keyValues = WorksheetsReportingDataGeneratorFactory
-                        .Create(definition, value)
-                        .Generate();
+                    reportData.Add(reportKey, []);
+                }
 
-                    foreach (var keyValue in from keyValue in keyValues
-                                             where reportData.ContainsKey(keyValue.Key)
-                                             select keyValue)
+                var definitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
+
+                foreach (var value in instanceValue.Values)
+                {
+                    var definition = definitions.Find(s => s.Id == value.CustomFieldId);
+                    if (definition != null)
                     {
-                        reportData[keyValue.Key] = keyValue.Value;
+                        var keyValues = WorksheetsReportingDataGeneratorFactory
+                            .Create(definition, value)
+                            .Generate();
+
+                        foreach (var keyValue in from keyValue in keyValues
+                                                 where reportData.ContainsKey(keyValue.Key)
+                                                 select keyValue)
+                        {
+                            reportData[keyValue.Key] = keyValue.Value;
+                        }
                     }
                 }
-            }
 
-            instanceValue.SetReportingData(JsonSerializer.Serialize(reportData));
+                instanceValue.SetReportingData(JsonSerializer.Serialize(reportData));
+            }
+            catch (Exception ex)
+            {
+                // Blanket catch here, as we dont want this generation to interfere we intake, report formatted data can be re-generated later
+                Logger.LogError(ex, "Error processing reporting data for: {correlationId}", instanceValue.CorrelationId);
+            }
         }
     }
 }
