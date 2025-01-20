@@ -18,7 +18,11 @@ $(function () {
     init();
 
     function bindUIEvents() {
-        UIElements.navOrgInfoTab.one('click', function () { dataTable.columns.adjust(); });
+        UIElements.navOrgInfoTab.one('click', function () { 
+            if (dataTable) {
+                dataTable.columns.adjust(); 
+            }
+        });
     }
 
     function loadSiteInfoTable() {
