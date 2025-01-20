@@ -32,8 +32,13 @@
 
         // Update checkboxes which are serialized if unchecked
         $(`#paymentInfoForm input:checkbox`).each(function () {
-            paymentInfoForm[this.name] = (this.checked).toString();
+            paymentInfoObj[this.name] = (this.checked).toString();
         });
+
+        // Make sure all the custom fields are set in the custom fields object
+        if (typeof Flex === 'function') {
+            Flex?.setCustomFields(paymentInfoObj);
+        }
 
         paymentInfoObj['correlationId'] = formVersionId;
         paymentInfoObj['worksheetId'] = worksheetId;
