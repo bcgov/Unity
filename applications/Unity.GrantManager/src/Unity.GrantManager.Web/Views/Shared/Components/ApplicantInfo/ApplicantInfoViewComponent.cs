@@ -82,6 +82,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 OrganizationSize = applicantInfoDto.OrganizationSize,
                 SectorSubSectorIndustryDesc = applicantInfoDto.SectorSubSectorIndustryDesc,
                 RedStop = applicantInfoDto.RedStop,
+                IndigenousOrgInd = applicantInfoDto.IndigenousOrgInd,
             };
 
             if (applicantInfoDto.ApplicantAddresses.Count != 0)

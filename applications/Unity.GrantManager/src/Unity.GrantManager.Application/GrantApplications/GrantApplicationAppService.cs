@@ -405,6 +405,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
             applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
+            applicant.IndigenousOrgInd = input.IndigenousOrgInd ?? "";
 
             _ = await _applicantRepository.UpdateAsync(applicant);
 
