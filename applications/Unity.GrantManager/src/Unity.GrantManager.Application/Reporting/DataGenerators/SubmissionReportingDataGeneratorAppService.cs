@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Threading.Tasks;
@@ -15,33 +16,41 @@ namespace Unity.GrantManager.Reporting.DataGenerators
     {
         public async Task Generate(Guid submissionId)
         {
-            var submission = await applicationFormSubmissionRepository.GetAsync(submissionId);
-            Guid applicationFormVersionId;
-            ApplicationFormVersion? applicationFormVersion;
-
-            if (submission.ApplicationFormVersionId == null)
+            try
             {
-                applicationFormVersion = await applicationFormVersionRepository.GetByChefsFormVersionAsync(submission.FormVersionId ?? Guid.Empty);
+                var submission = await applicationFormSubmissionRepository.GetAsync(submissionId);
+                Guid applicationFormVersionId;
+                ApplicationFormVersion? applicationFormVersion;
 
-                if (applicationFormVersion == null)
+                if (submission.ApplicationFormVersionId == null)
                 {
-                    throw new EntityNotFoundException();
+                    applicationFormVersion = await applicationFormVersionRepository.GetByChefsFormVersionAsync(submission.FormVersionId ?? Guid.Empty);
+
+                    if (applicationFormVersion == null)
+                    {
+                        throw new EntityNotFoundException();
+                    }
+
+                    applicationFormVersionId = applicationFormVersion.Id;
+                }
+                else
+                {
+                    applicationFormVersionId = submission.ApplicationFormVersionId.Value;
                 }
 
-                applicationFormVersionId = applicationFormVersion.Id;
+                applicationFormVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId) ?? throw new EntityNotFoundException();
+
+                JObject submissionData = JObject.Parse(submission.Submission);
+
+                var reportData = reportingDataGenerator.Generate(submissionData, applicationFormVersion.ReportKeys);
+
+                submission.ReportData = reportData ?? "{}";
             }
-            else
+            catch (Exception ex)
             {
-                applicationFormVersionId = submission.ApplicationFormVersionId.Value;
+                // Blanket catch here, as we dont want this generation to interfere we intake, report formatted data can be re-generated later
+                Logger.LogError(ex, "Error processing reporting data for submission - submissionId: {submissionId}", submissionId);
             }
-
-            applicationFormVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId) ?? throw new EntityNotFoundException();
-
-            JObject submissionData = JObject.Parse(submission.Submission);
-
-            var reportData = reportingDataGenerator.Generate(submissionData, applicationFormVersion.ReportKeys);
-
-            submission.ReportData = reportData ?? "{}";
         }
     }
 }
