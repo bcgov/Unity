@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Events;
 using Unity.Payments.Suppliers;
 using Volo.Abp.DependencyInjection;
@@ -31,7 +33,7 @@ namespace Unity.Payments.Handlers
         private async Task<SupplierDto> GetSupplierFromEvent(UpsertSupplierEto eventData) {
             var existing = await supplierAppService.GetBySupplierNumberAsync(eventData.Number);
 
-            // This is subject to some business rules and a domain implmentation
+            // This is subject to some business rules and a domain implementation
             if (existing != null)
             {
                 existing.Number = eventData.Number;
@@ -53,9 +55,6 @@ namespace Unity.Payments.Handlers
                     Province = existing.Province,
                     City = existing.City,
                 });
-
-                // Delete the current sites
-                await siteAppService.DeleteBySupplierIdAsync(updatedSupplierDto.Id);
 
                 return updatedSupplierDto;
             }
@@ -80,6 +79,18 @@ namespace Unity.Payments.Handlers
 
         protected virtual async Task InsertSitesFromEventDtoAsync(Guid supplierId, UpsertSupplierEto upsertSupplierEto)
         {
+            // If sites are being inserted from a lookup then potentially the CAS data has brought back different data
+            // Did any sites already exist for the current supplier?
+            List<Site>? existingSites = await siteAppService.GetSitesBySupplierIdAsync(supplierId);
+            if(existingSites != null && existingSites.Count > 0)
+            {
+                // Where any defaulted in the applicants?
+                // If so then we need - re-associate ? or delete the existing site from the applicant?
+
+                // Delete the current sites
+                await siteAppService.DeleteBySupplierIdAsync(supplierId);
+            }
+
             foreach(SiteEto siteEto in upsertSupplierEto.SiteEtos)
             {                
                 SiteDto siteDto = new()
@@ -96,6 +107,7 @@ namespace Unity.Payments.Handlers
                     Country = siteEto.Country,
                     EmailAddress = siteEto.EmailAddress,
                     EFTAdvicePref = siteEto.EFTAdvicePref,
+                    BankAccount = siteEto.BankAccount,
                     ProviderId = siteEto.ProviderId,
                     Status = siteEto.Status,
                     SiteProtected = siteEto.SiteProtected,
