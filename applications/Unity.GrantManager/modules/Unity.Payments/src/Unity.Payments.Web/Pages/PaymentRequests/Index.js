@@ -103,9 +103,19 @@ $(function () {
         return newData;
     }
 
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
-        listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns,
+        maxRowsPerPage: 10,
+        defaultSortColumn: 10,
+        dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
+        data: {},
+        responseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        dataTableName: 'PaymentRequestListTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     // Attach the draw event to add custom row coloring logic
     dataTable.on('draw', function () {
@@ -234,7 +244,7 @@ $(function () {
         let columnIndex = 0;
         return [
             getSelectColumn('Select Application', 'rowCount', 'payments'),
-            getPaymenReferenceColumn(columnIndex),
+            getPaymentReferenceColumn(columnIndex++),
             getApplicantNameColumn(columnIndex++),
             getSupplierNumberColumn(columnIndex++),
             getSupplierNameColumn(columnIndex++),
@@ -258,7 +268,7 @@ $(function () {
         ]
     }
 
-    function getPaymenReferenceColumn(columnIndex) {
+    function getPaymentReferenceColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:PaymentID'),
             name: 'referenceNumber',
