@@ -1,5 +1,5 @@
 ﻿$(function () {
-
+    const emptyGuid = '00000000-0000-0000-0000-000000000000';
     const UIElements = {
         applicationId: $('#DetailsViewApplicationId')[0].value,
         btnSend: $('#btn-send'),
@@ -10,17 +10,22 @@
         btnNewEmail: $('#btn-new-email'),
         btnSendClose: $('#btn-send-close'),
         emailForm: $('#EmailForm'),
+        inputEmailId: $('#EmailId'),
         inputEmailTo: $($('#EmailTo')[0]),
         inputEmailToField: $('#EmailTo')[0],
         inputEmailFrom: $($('#EmailFrom')[0]),
         inputEmailSubject: $($('#EmailSubject')[0]),
         inputEmailBody: $($('#EmailBody')[0]),
+        inputOriginalEmailTo: $($('#OriginalDraftEmailTo')[0]),
+        inputOriginalEmailFrom: $($('#OriginalDraftEmailFrom')[0]),
+        inputOriginalEmailSubject: $($('#OriginalDraftEmailSubject')[0]),
+        inputOriginalEmailBody: $($('#OriginalDraftEmailBody')[0]),
         emailSpinner: $('#spinner-modal'),
         confirmationModal: $('#confirmation-modal')
     };
 
     function bindUIEvents() {
-        UIElements.btnNewEmail.on('click', showModalEmail);
+        UIElements.btnNewEmail.on('click', handleNewEmail);
         UIElements.btnSend.on('click', handleSendEmail);
         UIElements.btnSave.on('click', handleSaveEmail);
         UIElements.btnDiscard.on('click', handleDiscardEmail);
@@ -40,6 +45,26 @@
         toastr.options.positionClass = 'toast-top-center';
     }
 
+    function disableEmail() {
+        UIElements.btnSend.attr('disabled', true);
+        UIElements.btnSave.attr('disabled', true);
+        UIElements.btnDiscard.attr('disabled', true);
+        UIElements.inputEmailTo.attr('disabled', true);
+        UIElements.inputEmailFrom.attr('disabled', true);
+        UIElements.inputEmailSubject.attr('disabled', true);
+        UIElements.inputEmailBody.attr('disabled', true);
+    }
+
+    function enableEmail() {
+        UIElements.btnSend.attr('disabled', false);
+        UIElements.btnSave.attr('disabled', false);
+        UIElements.btnDiscard.attr('disabled', false);
+        UIElements.inputEmailTo.attr('disabled', false);
+        UIElements.inputEmailFrom.attr('disabled', false);
+        UIElements.inputEmailSubject.attr('disabled', false);
+        UIElements.inputEmailBody.attr('disabled', false);
+    }
+
     function handleKeyUpTrim(e) {
         let trimmedString = e.currentTarget.value.trim();
         e.currentTarget.value = trimmedString;
@@ -50,14 +75,23 @@
         UIElements.emailForm.removeClass('active');
         UIElements.btnNewEmail.removeClass('hide');
         UIElements.emailForm.trigger("reset");
+        enableEmail();
     }
 
     function handleDiscardEmail() {
-        UIElements.emailForm.trigger("reset");
+        UIElements.inputEmailTo.val(UIElements.inputOriginalEmailTo.val());
+        UIElements.inputEmailFrom.val(UIElements.inputOriginalEmailFrom.val());
+        UIElements.inputEmailSubject.val(UIElements.inputOriginalEmailSubject.val());
+        UIElements.inputEmailBody.val(UIElements.inputOriginalEmailBody.val());
     }
 
     function handleCancelEmailSend() {
         $('#modal-content, #modal-background').removeClass('active');
+    }
+
+    function handleNewEmail() {
+        UIElements.inputEmailId.val(emptyGuid);
+        showModalEmail();
     }
 
     function showModalEmail() {
@@ -121,6 +155,7 @@
         UIElements.emailSpinner.show();
         unity.grantManager.emails.email
             .create({
+                emailId: UIElements.inputEmailId[0].value,
                 applicationId: UIElements.applicationId,
                 emailTo: UIElements.inputEmailTo[0].value,
                 emailFrom: UIElements.inputEmailFrom[0].value,
@@ -151,12 +186,10 @@
     }
 
     function handleSaveEmail(e) {
-        // Prevent form submission and stop propagation
-        e.stopPropagation();
-        e.preventDefault();
-
+        if (validateEmailForm(e)) {
         unity.grantManager.emails.email
             .saveDraft({
+                emailId: UIElements.inputEmailId[0].value,
                 applicationId: UIElements.applicationId,
                 emailTo: UIElements.inputEmailTo[0].value,
                 emailFrom: UIElements.inputEmailFrom[0].value,
@@ -171,9 +204,13 @@
             }).catch(function () {
                 abp.notify.error('An error ocurred your email could not be saved.');
             });
+        }
+        else {
+            return false;
+        }
     }
 
-    function handleSendEmail(e) {
+    function validateEmailForm(e) {
         // Prevent form submission and stop propagation
         e.stopPropagation();
         e.preventDefault();
@@ -183,17 +220,31 @@
             return false; // If validation fails, stop further processing
         }
 
+        return UIElements.emailForm.valid();
+    }
+    function handleSendEmail(e) {
         // Check if the form is valid
-        if (UIElements.emailForm.valid()) {
+        if (validateEmailForm(e)) {
             showConfirmation(); // Show confirmation if the form is valid
             return true; // Return true to indicate success
         }
-
         // If form is not valid, do not show confirmation
         return false; // Return false if validation or other conditions fail
     }
 
     PubSub.subscribe('email_selected', (msg, data) => {
+        
+        if(data && data.status === 'Draft') {
+            UIElements.inputEmailId.val(data.id);
+            UIElements.inputOriginalEmailTo.val(data.toAddress);
+            UIElements.inputOriginalEmailFrom.val(data.fromAddress);
+            UIElements.inputOriginalEmailSubject.val(data.subject);
+            UIElements.inputOriginalEmailBody.val(data.body);
+            enableEmail();
+        } else if(data && (data.status === 'Sent' || data.status === 'Initialized')) {
+            disableEmail();
+        }
+
         UIElements.inputEmailTo.val(data.toAddress);
         UIElements.inputEmailFrom.val(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);

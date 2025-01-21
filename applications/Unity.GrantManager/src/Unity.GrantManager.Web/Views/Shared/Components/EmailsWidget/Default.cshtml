@@ -32,7 +32,7 @@
     <abp-row class="m-0 p-0" id="confirmation-modal">
         <abp-column size="_12" class="px-1">
             <p>
-                <label id="confirmation-label" for="btn-send" class="col-form-label" class="confirmation-label" ref="label">
+                <label id="confirmation-label" for="btn-send" class="col-form-label confirmation-label" ref="label">
                     Are you sure you want to send this email?
                 </label>
             </p>
@@ -51,6 +51,11 @@
 
 <form id="EmailForm" class="email-form">
     <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
+    <input type="hidden" id="EmailId" name="EmailId" />
+    <input type="hidden" id="OriginalDraftEmailTo"/>
+    <input type="hidden" id="OriginalDraftEmailFrom"/>
+    <input type="hidden" id="OriginalDraftEmailSubject"/>
+    <input type="hidden" id="OriginalDraftEmailBody"/>
 
     <abp-row class="m-0 p-0">
         <abp-column size="_10" class="px-1">

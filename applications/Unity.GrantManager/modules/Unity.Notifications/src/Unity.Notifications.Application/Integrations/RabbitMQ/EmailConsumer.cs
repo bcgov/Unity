@@ -61,49 +61,58 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
             EmailLog? emailLog = await _emailNotificationService.GetEmailLogById(emailNotificationEvent.Id);
             if (emailLog != null && emailLog.Id != Guid.Empty && emailLog.ToAddress != null)
             {
-
-                try
-                {
-                    // Resend the email - Update the RetryCount
-                    if (emailLog.RetryAttempts <= _retryAttemptMax)
-                    {
-                        HttpResponseMessage response = await _emailNotificationService.SendEmailNotification(
-                                                                                        emailLog.ToAddress,
-                                                                                        emailLog.Body,
-                                                                                        emailLog.Subject,
-                                                                                        emailLog.FromAddress);
-                        // Update the response
-                        emailLog.ChesResponse = JsonConvert.SerializeObject(response);
-                        emailLog.ChesStatus = response.StatusCode.ToString();
-
-                        if(response.StatusCode.ToString() == EmailStatus.Created.ToString()) {
-                            emailLog.Status = EmailStatus.Sent;
-                        } else if (response.StatusCode.ToString() == "0") {
-                            emailLog.Status = EmailStatus.Failed;
-                        }
-
-                        if (ReprocessBasedOnStatusCode(response.StatusCode))
-                        {
-                            emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
-                            await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
-                            await uow.SaveChangesAsync(); // Timing of Retry update
-                            emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
-                            await _emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
-                        } else {
-                            await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
-                            await uow.SaveChangesAsync();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    string ExceptionMessage = ex.Message;
-                    _logger.LogInformation(ex, "Process Delayed Email Exception: {ExceptionMessage}", ExceptionMessage);
-                }
+                await ProcessEmailLogAsync(emailLog, emailNotificationEvent, uow);
             }
         }
 
         return Task.CompletedTask;
+    }
+
+    private async Task ProcessEmailLogAsync(EmailLog emailLog, EmailNotificationEvent emailNotificationEvent, IUnitOfWork uow)
+    {
+        try
+        {
+            // Resend the email - Update the RetryCount
+            if (emailLog.RetryAttempts <= _retryAttemptMax)
+            {
+                HttpResponseMessage response = await _emailNotificationService.SendEmailNotification(
+                                                                                    emailLog.ToAddress,
+                                                                                    emailLog.Body,
+                                                                                    emailLog.Subject,
+                                                                                    emailLog.FromAddress);
+                // Update the response
+                emailLog.ChesResponse = JsonConvert.SerializeObject(response);
+                emailLog.ChesStatus = response.StatusCode.ToString();
+
+                if (response.StatusCode.ToString() == EmailStatus.Created.ToString())
+                {
+                    emailLog.Status = EmailStatus.Sent;
+                }
+                else if (response.StatusCode.ToString() == "0")
+                {
+                    emailLog.Status = EmailStatus.Failed;
+                }
+
+                if (ReprocessBasedOnStatusCode(response.StatusCode))
+                {
+                    emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
+                    await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                    await uow.SaveChangesAsync(); // Timing of Retry update
+                    emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
+                    await _emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
+                }
+                else
+                {
+                    await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                    await uow.SaveChangesAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            string ExceptionMessage = ex.Message;
+            _logger.LogInformation(ex, "Process Delayed Email Exception: {ExceptionMessage}", ExceptionMessage);
+        }
     }
 
     private static bool ReprocessBasedOnStatusCode(HttpStatusCode statusCode)
