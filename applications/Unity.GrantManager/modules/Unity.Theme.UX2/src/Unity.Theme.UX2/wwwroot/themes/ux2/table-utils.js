@@ -11,7 +11,19 @@ function createNumberFormatter() {
     });
 }
 
-function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, responseCallback, actionButtons, dynamicButtonContainerId) {
+function initializeDataTable(
+    dt, 
+    defaultVisibleColumns, 
+    listColumns, 
+    maxRowsPerPage, 
+    defaultSortColumn, 
+    dataEndpoint, 
+    data, 
+    responseCallback, 
+    actionButtons,
+    pagingEnabled,
+    dataTableName,
+    dynamicButtonContainerId) {
 
     let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
 
@@ -25,11 +37,9 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                 headerOffset: 0
             },
             serverSide: false,
-            paging: true,
+            paging: pagingEnabled,
             order: [[defaultSortColumn, 'desc']],
             searching: true,
-           
-           
             iDisplayLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
@@ -110,10 +120,9 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
     });
 
     iDt.buttons().container().prependTo(`#${dynamicButtonContainerId}`);
-    $('.dataTables_wrapper').append('<div class="length-menu-footer"></div>');
-
+    $(`#${dataTableName}_wrapper`).append(`<div class="length-menu-footer ${dataTableName}"></div>`);
     // Move the length menu to the footer container
-    $('.dataTables_length').appendTo('.length-menu-footer');
+    $(`#${dataTableName}_length`).appendTo(`.${dataTableName}`);
     init(iDt);
 
     updateFilter(iDt, dt[0].id, filterData);

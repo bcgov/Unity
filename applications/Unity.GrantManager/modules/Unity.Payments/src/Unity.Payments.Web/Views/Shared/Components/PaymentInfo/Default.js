@@ -132,10 +132,14 @@
         });
         return newData;
     }
-
+    let paging = true;
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 10, 3, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 10, 3, 
+        unity.payments.paymentRequests.paymentRequest.getListByApplicationId, 
+        inputAction, responseCallback, actionButtons, paging, 
+        'ApplicationPaymentRequestListTable',
+        'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 

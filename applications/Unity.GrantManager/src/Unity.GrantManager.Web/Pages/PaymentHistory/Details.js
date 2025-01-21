@@ -27,6 +27,7 @@
         return document.getElementById('paymentId').value
     };
 
+    let paging = true
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
@@ -36,6 +37,8 @@
         inputAction,
         responseCallback,
         actionButtons,
+        paging,
+        'AuditHistoryTable',
         'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());      

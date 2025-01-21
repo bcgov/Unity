@@ -44,6 +44,7 @@ $(function () {
         
         const listColumns = getColumns();
         const defaultVisibleColumns = ['number','paymentGroup','addressLine1','bankAccount','status','id'];
+
         let actionButtons = [
             {
                 text: 'Filter',
@@ -55,6 +56,7 @@ $(function () {
                 }
             }
         ];
+        let paging = false;
 
         dataTable = initializeDataTable(dt,
             defaultVisibleColumns,
@@ -65,6 +67,8 @@ $(function () {
             inputAction,
             responseCallback,
             actionButtons,
+            paging,
+            'SiteInfoTable',
             'siteDynamicButtonContainerId');
     
         dataTable.on('search.dt', () => handleSearch());
@@ -81,8 +85,9 @@ $(function () {
     
         function getColumns() {
             let columnIndex = 0;
+
             return [
-                getSiteNumber(columnIndex),
+                getSiteNumber(columnIndex++),
                 getPayGroup(columnIndex++),
                 getMailingAddress(columnIndex++),
                 getBankAccount(columnIndex++),

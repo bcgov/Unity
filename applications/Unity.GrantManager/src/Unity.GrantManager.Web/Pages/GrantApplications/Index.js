@@ -41,6 +41,7 @@
             data: result.items
         };
     };
+    let paging = true;
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
@@ -50,6 +51,8 @@
         {},
         responseCallback,
         actionButtons,
+        paging,
+        'GrantApplicationsTable',
         'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
