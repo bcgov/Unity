@@ -35,6 +35,14 @@ $(function () {
         }
 
         let responseCallback = function (result) {
+
+            if (!result || !result.items || result.items.length === 0) {
+                return {
+                    recordsTotal: 0,
+                    recordsFiltered: 0,
+                    data: []
+                };
+            }
             return {
                 recordsTotal: result.totalCount,
                 recordsFiltered: result.items.length,
