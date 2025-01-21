@@ -101,6 +101,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             IndigenousOrgInd = intakeMap.IndigenousOrgInd,
             OrgStatus = intakeMap.OrgStatus,
             RedStop = false,
+            FiscalDay = MappingUtil.ConvertToIntFromString(intakeMap.FiscalDay),
+            FiscalMonth = intakeMap.FiscalMonth
         };
 
         return await applicantRepository.InsertAsync(applicant);
