@@ -17,4 +17,7 @@ public class GrantApplicationApplicantDto : AuditedEntityDto<Guid>
     public string SectorSubSectorIndustryDesc { get; set; } = string.Empty;
     public bool RedStop { get; set; } = false;
     public string IndigenousOrgInd { get; set; } = string.Empty;
+    public string UnityApplicantId { get; set; } = string.Empty;
+    public string FiscalDay { get; set; } = string.Empty;
+    public string FiscalMonth { get; set; } = string.Empty;
 }

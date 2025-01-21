@@ -158,6 +158,9 @@
             getNotesColumn(),
             getRedStopColumn(),
             getIndigenousColumn(),
+            getFyeDayColumn(),
+            getFyeMonthColumn(),
+            getApplicantIdColumn()
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -964,6 +967,50 @@
                 return data ?? '';
             },
             index: 58
+        }
+    }
+
+    function getFyeDayColumn() {
+        return {
+            title: 'FYE Day',
+            name: 'fyeDay',
+            data: 'applicant.fiscalDay',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 59
+        }
+    }
+
+    function getFyeMonthColumn() {
+        return {
+            title: 'FYE Month',
+            name: 'fyeMonth',
+            data: 'applicant.fiscalMonth',
+            className: 'data-table-header',
+            render: function (data) {
+                if (data) {
+                    return titleCase(data);
+                }
+                else {
+                    return '';
+                }
+            },
+            index: 59
+        }
+    }
+
+    function getApplicantIdColumn() {
+        return {
+            title: 'Applicant Id',
+            name: 'applicantId',
+            data: 'applicant.unityApplicantId',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 60
         }
     }
 
