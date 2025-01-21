@@ -11,19 +11,21 @@ function createNumberFormatter() {
     });
 }
 
-function initializeDataTable(
-    dt, 
-    defaultVisibleColumns, 
-    listColumns, 
-    maxRowsPerPage, 
-    defaultSortColumn, 
-    dataEndpoint, 
-    data, 
-    responseCallback, 
-    actionButtons,
-    pagingEnabled,
-    dataTableName,
-    dynamicButtonContainerId) {
+function initializeDataTable(options) {
+    const {
+        dt,
+        defaultVisibleColumns,
+        listColumns,
+        maxRowsPerPage,
+        defaultSortColumn,
+        dataEndpoint,
+        data,
+        responseCallback,
+        actionButtons,
+        pagingEnabled,
+        dataTableName,
+        dynamicButtonContainerId
+    } = options;
 
     let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
 

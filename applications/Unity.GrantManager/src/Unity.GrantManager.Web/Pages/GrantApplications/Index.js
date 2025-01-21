@@ -42,18 +42,19 @@
         };
     };
     let paging = true;
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
         listColumns,
-        10,
-        4,
-        unity.grantManager.grantApplications.grantApplication.getList,
-        {},
+        maxRowsPerPage: 10,
+        defaultSortColumn: 4,
+        dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
+        data: {},
         responseCallback,
         actionButtons,
-        paging,
-        'GrantApplicationsTable',
-        'dynamicButtonContainerId');
+        pagingEnabled: true,
+        dataTableName: 'GrantApplicationsTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     dataTable.on('search.dt', () => handleSearch());
 

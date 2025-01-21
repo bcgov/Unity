@@ -132,14 +132,19 @@
         });
         return newData;
     }
-    let paging = true;
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
-        listColumns, 10, 3, 
-        unity.payments.paymentRequests.paymentRequest.getListByApplicationId, 
-        inputAction, responseCallback, actionButtons, paging, 
-        'ApplicationPaymentRequestListTable',
-        'dynamicButtonContainerId');
+        listColumns,
+        maxRowsPerPage: 10,
+        defaultSortColumn: 3,
+        dataEndpoint: unity.payments.paymentRequests.paymentRequest.getListByApplicationId,
+        data: inputAction,
+        responseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        dataTableName: 'ApplicationPaymentRequestListTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     dataTable.on('search.dt', () => handleSearch());
 

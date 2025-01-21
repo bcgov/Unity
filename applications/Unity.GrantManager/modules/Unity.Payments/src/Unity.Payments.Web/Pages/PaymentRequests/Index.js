@@ -103,19 +103,19 @@ $(function () {
         return newData;
     }
 
-    let paging = true;
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
-        listColumns, 
-        10, 
-        10, 
-        unity.payments.paymentRequests.paymentRequest.getList, 
-        {}, 
-        responseCallback, 
-        actionButtons, 
-        paging,
-        'PaymentRequestListTable', 
-        'dynamicButtonContainerId');
+        listColumns,
+        maxRowsPerPage: 10,
+        defaultSortColumn: 10,
+        dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
+        data: {},
+        responseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        dataTableName: 'PaymentRequestListTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     // Attach the draw event to add custom row coloring logic
     dataTable.on('draw', function () {

@@ -56,20 +56,20 @@ $(function () {
                 }
             }
         ];
-        let paging = false;
 
-        dataTable = initializeDataTable(dt,
+        dataTable = initializeDataTable({
+            dt,
             defaultVisibleColumns,
             listColumns,
-            10,
-            0,
-            unity.grantManager.applicants.applicantSupplier.getSitesBySupplierId,
-            inputAction,
+            maxRowsPerPage: 10,
+            defaultSortColumn: 0,
+            dataEndpoint: unity.grantManager.applicants.applicantSupplier.getSitesBySupplierId,
+            data: inputAction,
             responseCallback,
             actionButtons,
-            paging,
-            'SiteInfoTable',
-            'siteDynamicButtonContainerId');
+            pagingEnabled: false,
+            dataTableName: 'SiteInfoTable',
+            dynamicButtonContainerId: 'siteDynamicButtonContainerId'});
     
         dataTable.on('search.dt', () => handleSearch());
         

@@ -4,8 +4,6 @@
 
     const listColumns = getColumns();
     const defaultVisibleColumns = ['EntityName', 'PropertyName', 'OriginalValue', 'NewValue', 'ChangeTime', 'UserName'];
-    const maxRows = 20;
-    const defaultSortColumn = 0;
     let actionButtons = [];
 
     let responseCallback = function (result) {
@@ -27,19 +25,19 @@
         return document.getElementById('paymentId').value
     };
 
-    let paging = true
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
         listColumns,
-        maxRows,
-        defaultSortColumn,
-        unity.grantManager.history.paymentHistory.getPaymentHistoryList,
-        inputAction,
+        maxRowsPerPage: 20,
+        defaultSortColumn: 0,
+        dataEndpoint: unity.grantManager.history.paymentHistory.getPaymentHistoryList,
+        data: inputAction,
         responseCallback,
         actionButtons,
-        paging,
-        'AuditHistoryTable',
-        'dynamicButtonContainerId');
+        pagingEnabled: true,
+        dataTableName: 'AuditHistoryTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     dataTable.on('search.dt', () => handleSearch());      
 
