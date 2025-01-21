@@ -629,7 +629,7 @@ $(function () {
         $('table[data-resize-aware="true"]:visible').each(function () {
             const table = $(this).DataTable();
             try {
-                table.columns.adjust().draw();                
+                table.columns.adjust().draw();
             }
             catch {
                 console.error(`Adjust width failed for table ${$(this).id}:`, error);
@@ -745,6 +745,14 @@ const Flex = class {
         }
 
         formObject.CustomFields[input.name] = input.value;
+    }
+
+    static setCustomFields(customFieldsObj) {
+        for (const key in customFieldsObj) {
+            if (customFieldsObj.hasOwnProperty(key) && key.startsWith('custom_')) {
+                customFieldsObj.CustomFields[key] = customFieldsObj[key];
+            }
+        }
     }
 }
 
