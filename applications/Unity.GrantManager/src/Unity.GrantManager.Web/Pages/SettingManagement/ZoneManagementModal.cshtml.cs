@@ -1,15 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.SettingManagement;
-using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Unity.GrantManager.Zones;
 
 namespace Unity.GrantManager.Web.Pages.SettingManagement
 {
-    public class ZoneManagementModalModel : AbpPageModel
+    public class ZoneManagementModalModel : GrantManagerPageModel
     {
         [Required]
         [HiddenInput]
@@ -35,7 +34,8 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         {
             ValidateModel();
 
-            if (ProviderName == "F" && Guid.TryParse(ProviderKey, out Guid formId)) {
+            if (ProviderName == "F" && Guid.TryParse(ProviderKey, out Guid formId))
+            {
                 GroupTemplate = await UiSettingsAppService.GetForFormAsync(formId);
             }
 
