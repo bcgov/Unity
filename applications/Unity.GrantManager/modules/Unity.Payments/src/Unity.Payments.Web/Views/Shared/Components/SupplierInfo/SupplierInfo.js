@@ -36,7 +36,8 @@ $(function () {
 
         let responseCallback = function (result) {
 
-            if (!(result?.items?.length)) {
+            if (!result || result.length === 0) {
+
                 return {
                     recordsTotal: 0,
                     recordsFiltered: 0,
@@ -44,9 +45,9 @@ $(function () {
                 };
             }
             return {
-                recordsTotal: result.totalCount,
-                recordsFiltered: result.items.length,
-                data: result.items
+                recordsTotal: result.length,
+                recordsFiltered: result.length,
+                data: result
             };
         };
         

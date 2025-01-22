@@ -24,12 +24,25 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         ArgumentNullException.ThrowIfNull(intakeMap);
 
         Applicant? applicant = await GetExistingApplicantAsync(intakeMap.UnityApplicantId);
-        if (applicant != null)
+        if (applicant == null)
         {
-            return applicant;
+            applicant = await CreateNewApplicantAsync(intakeMap);
+        } else {
+            applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
+            applicant.NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegisteredBusinessName;
+            applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
+            applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
+            applicant.OrganizationType = intakeMap.OrganizationType ?? applicant.OrganizationType;
+            applicant.Sector = intakeMap.Sector ?? applicant.Sector;
+            applicant.SubSector = intakeMap.SubSector ?? applicant.SubSector;
+            applicant.SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc ?? applicant.SectorSubSectorIndustryDesc;
+            applicant.ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? applicant.ApproxNumberOfEmployees;
+            applicant.IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? applicant.IndigenousOrgInd;
+            applicant.OrgStatus = intakeMap.OrgStatus  ?? applicant.OrgStatus;
+            applicant.FiscalDay = MappingUtil.ConvertToIntFromString(intakeMap.FiscalDay) ?? applicant.FiscalDay;
+            applicant.FiscalMonth = intakeMap.FiscalMonth ?? applicant.FiscalMonth;
         }
 
-        applicant = await CreateNewApplicantAsync(intakeMap);
         await CreateApplicantAddressesAsync(intakeMap, applicant);
         return applicant;
     }
@@ -51,16 +64,26 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         var applicant = applicantAgentDto.Applicant;
         var application = applicantAgentDto.Application;
         var intakeMap = applicantAgentDto.IntakeMap;
-        var applicantAgent = new ApplicantAgent
-        {
-            ApplicantId = applicant.Id,
-            ApplicationId = application.Id,
-            Name = intakeMap.ContactName ?? string.Empty,
-            Phone = intakeMap.ContactPhone ?? string.Empty,
-            Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
-            Email = intakeMap.ContactEmail ?? string.Empty,
-            Title = intakeMap.ContactTitle ?? string.Empty,
-        };
+        var applicantAgent = await applicantAgentRepository.GetByApplicantIdAsync(applicant.Id);
+        bool applicantAgentExists = applicantAgent != null;
+        if(applicantAgent != null) {
+            applicantAgent.Name = intakeMap.ContactName ?? applicantAgent.Name;
+            applicantAgent.Phone = intakeMap.ContactPhone ?? applicantAgent.Phone;
+            applicantAgent.Phone2 = intakeMap.ContactPhone2 ?? applicantAgent.Phone2;
+            applicantAgent.Email = intakeMap.ContactEmail ?? applicantAgent.Email;
+            applicantAgent.Title = intakeMap.ContactTitle ?? applicantAgent.Title;
+        } else {
+            applicantAgent = new ApplicantAgent
+            {
+                ApplicantId = applicant.Id,
+                ApplicationId = application.Id,
+                Name = intakeMap.ContactName ?? string.Empty,
+                Phone = intakeMap.ContactPhone ?? string.Empty,
+                Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
+                Email = intakeMap.ContactEmail ?? string.Empty,
+                Title = intakeMap.ContactTitle ?? string.Empty,
+            };
+        }
 
         if (MappingUtil.IsJObject(intakeMap.ApplicantAgent))
         {
@@ -72,7 +95,15 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
             applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
         }
-        await applicantAgentRepository.InsertAsync(applicantAgent);
+
+        if (applicantAgentExists)
+        {
+            await applicantAgentRepository.UpdateAsync(applicantAgent);
+        }
+        else
+        {
+            await applicantAgentRepository.InsertAsync(applicantAgent);
+        }
 
         return applicantAgent;
     }

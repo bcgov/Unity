@@ -13,5 +13,6 @@ public class ApplicantAddressDto : EntityDto<Guid>
     public string? City { get; set; }
     public string? Province { get; set; }
     public string? Postal { get; set; }
+    public DateTime CreationTime { get; set; }
     public AddressType AddressType { get; set; }
 }
