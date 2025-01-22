@@ -28,7 +28,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             applicant = await CreateNewApplicantAsync(intakeMap);
         } else {
-            applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
+            applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
             applicant.NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegisteredBusinessName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
             applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
