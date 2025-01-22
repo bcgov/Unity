@@ -41,7 +41,7 @@
             data: result.items
         };
     };
-    let paging = true;
+
     dataTable = initializeDataTable({
         dt,
         defaultVisibleColumns,
