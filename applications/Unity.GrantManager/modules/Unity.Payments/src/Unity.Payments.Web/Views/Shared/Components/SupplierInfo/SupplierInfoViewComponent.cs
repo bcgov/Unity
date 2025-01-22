@@ -11,6 +11,7 @@ using Volo.Abp.Features;
 using Unity.GrantManager.Applicants;
 using Volo.Abp.Authorization.Permissions;
 using Unity.Payments.Permissions;
+using Unity.GrantManager.Applications;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
@@ -20,6 +21,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
         StyleTypes = [typeof(SupplierInfosWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class SupplierInfoViewComponent(IApplicantSupplierAppService applicantSupplierService,
+                                           IApplicantRepository applicantRepository,
                                            IPermissionChecker permissionChecker,
                                            IFeatureChecker featureChecker) : AbpViewComponent
     {
@@ -30,9 +32,11 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
             if (await featureChecker.IsEnabledAsync("Unity.Payments"))
             {
                 SupplierDto? supplier = await GetSupplierByApplicantIdAsync(applicantId);
+                Applicant? applicant = await applicantRepository.GetAsync(applicantId);
                 return View(new SupplierInfoViewModel()
                 {
                     ApplicantId = applicantId,
+                    SiteId = applicant?.SiteId ?? Guid.Empty,
                     SupplierCorrelationId = applicantId,
                     SupplierCorrelationProvider = CorrelationConsts.Applicant,
                     SupplierId = supplier?.Id ?? Guid.Empty,

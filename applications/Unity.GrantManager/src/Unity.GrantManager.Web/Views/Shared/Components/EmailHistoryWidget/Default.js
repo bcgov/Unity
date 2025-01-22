@@ -93,7 +93,6 @@
                 {
                     data: 'status',
                     render: function (data, _, full, meta) {
-                        console.log(full);
                         if(data === 'Draft') {
                             return generateDeleteButtonContent(full, meta.row);
                         } else {
