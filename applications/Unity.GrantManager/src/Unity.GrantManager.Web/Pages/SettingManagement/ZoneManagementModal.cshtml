@@ -1,0 +1,65 @@
+﻿@page
+@using System.Web;
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+
+@inject IStringLocalizer<GrantManagerResource> L
+@model Unity.GrantManager.Web.Pages.SettingManagement.ZoneManagementModalModel
+@{
+}
+
+<form id="ZoneManagementForm" method="post" asp-page="/SettingManagement/ZoneManagementModal" data-script-class="Unity.Modals.ZoneManagement">
+    <abp-modal id="ZoneManagementModal" size="ExtraLarge">
+        <abp-modal-header title="User Interface Configuration"></abp-modal-header>
+        <abp-modal-body>
+            <input asp-for="@Model.ProviderKey" />
+            <input asp-for="@Model.ProviderName" />
+                @* <abp-tabs name="ZonesTabs" tab-style="PillVertical" vertical-header-size="_3" class="custom-scroll-container">
+                    <abp-tab title="@Model.GroupTemplate.Name" name="v-pills-tab-@Model.GroupTemplate.Name"> *@
+                        <div class="w-100" style="height: 500px;overflow-y: auto">
+                            <div class="ps-1">
+                                <div class="row row-cols-1 row-cols-md-2 g-4">
+                                @foreach (var tab in Model.GroupTemplate.Zones)
+                                {
+                                    <abp-column class="border-0">
+                                        <div class="form-switch">
+                                            <abp-input 
+                                                asp-for="@tab.IsEnabled"
+                                                abp-id-name="@tab.Name"
+                                                check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
+                                                label="@(L[$"Setting:{@tab.Name}.DisplayName"].Value)"
+                                                class="fw-bold"
+                                                group-data-zone-name="@tab.Name" />
+                                            <input asp-for="@tab.Name" abp-id-name="@tab.Name" hidden/>
+                                        </div>
+
+                                        @foreach (var zone in tab.Zones)
+                                        {
+                                            <div class="form-switch">
+                                                <abp-input asp-for="@zone.IsEnabled"
+                                                    abp-id-name="@zone.Name"
+                                                    check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
+                                                    label="@(L[$"Setting:{@zone.Name}.DisplayName"].Value)"
+                                                    group-data-zone-name="@zone.Name"
+                                                    group-data-parent-name="@tab.Name"
+                                                    group-style="margin-inline-start: 25px" />
+                                                <input asp-for="@zone.Name" abp-id-name="@zone.Name" hidden />
+                                            </div>
+                                        }
+                                    </abp-column>
+                                }
+                                </div>
+                            </div>
+                        </div>
+            @*         </abp-tab>
+                </abp-tabs> *@
+        </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button data-bs-dismiss="modal" button-type="Link">@L["Cancel"]</abp-button>
+            <abp-button button-type="Outline_Primary" id="ResetToDefaults"><i class="fa fa-refresh"></i> @L["ResetToDefault"]</abp-button>
+            <abp-button button-type="Primary" type="submit"><i class="fa fa-check"></i> @L["Save"]</abp-button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

@@ -9,6 +9,8 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Locality;
+using Unity.GrantManager.SettingManagement;
+using Unity.GrantManager.Zones;
 
 namespace Unity.GrantManager;
 
@@ -69,6 +71,9 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationLinksDto, ApplicationLink>();
         CreateMap<Application, GrantApplicationLiteDto>();
         CreateMap<ApplicantAddress, ApplicantAddressDto>();
+        CreateMap<ZoneGroupDefinition, ZoneGroupDefinitionDto>().ReverseMap();
+        CreateMap<ZoneTabDefinition, ZoneTabDefinitionDto>().ReverseMap();
+        CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
     }
 }
 
