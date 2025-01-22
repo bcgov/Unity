@@ -8,11 +8,11 @@
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
-        let formVersionId = $("#ApplicationFormVersionId").val(); 
+        let formVersionId = $("#ApplicationFormVersionId").val();
         let worksheetId = $("#ApplicantInfo_WorksheetId").val();
 
-        $.each(formData, function (_, input) {            
-            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {                
+        $.each(formData, function (_, input) {
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(ApplicantInfoObj, input);
             }
             else {
@@ -23,7 +23,7 @@
                     ApplicantInfoObj[input.name.split(".")[1]] = null;
                 }
 
-            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
+                if (input.name == 'ApplicantId' || input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
                     ApplicantInfoObj[input.name] = input.value;
                 }
             }
@@ -34,12 +34,15 @@
             ApplicantInfoObj[this.name] = (this.checked).toString();
         });
 
-        try {
+        // Make sure all the custom fields are set in the custom fields object
+        if (typeof Flex === 'function') {
+            Flex?.setCustomFields(ApplicantInfoObj);
+        }
 
-            if (ApplicantInfoObj["SupplierNumber"]+"" != "undefined" 
-             && ApplicantInfoObj["SupplierNumber"]+"" != ""
-             && ApplicantInfoObj["SupplierNumber"]+"" != ApplicantInfoObj["OriginalSupplierNumber"]+"")
-            {
+        try {
+            if (ApplicantInfoObj["SupplierNumber"] + "" != "undefined"
+                && ApplicantInfoObj["SupplierNumber"] + "" != ""
+                && ApplicantInfoObj["SupplierNumber"] + "" != ApplicantInfoObj["OriginalSupplierNumber"] + "") {
                 $('.cas-spinner').show();
             }
 
@@ -58,7 +61,7 @@
                 })
                 .then(function () {
                     $('.cas-spinner').hide();
-                }).catch(function(){
+                }).catch(function () {
                     $('.cas-spinner').hide();
                 });
         }
@@ -76,9 +79,13 @@
             .then(response => response.text())
             .then(data => {
                 let supplierInfo = document.getElementById('supplier-info-widget');
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const siteIdValue = doc.querySelector('#SiteId').value;
+
                 if (supplierInfo) {
                     supplierInfo.innerHTML = data;
-                    PubSub.publish('reload_sites_list');
+                    PubSub.publish('reload_sites_list', siteIdValue);
                 }
                 $('.cas-spinner').hide();
             })

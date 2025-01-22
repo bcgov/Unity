@@ -32,8 +32,13 @@
 
         // Update checkboxes which are serialized if unchecked
         $(`#paymentInfoForm input:checkbox`).each(function () {
-            paymentInfoForm[this.name] = (this.checked).toString();
+            paymentInfoObj[this.name] = (this.checked).toString();
         });
+
+        // Make sure all the custom fields are set in the custom fields object
+        if (typeof Flex === 'function') {
+            Flex?.setCustomFields(paymentInfoObj);
+        }
 
         paymentInfoObj['correlationId'] = formVersionId;
         paymentInfoObj['worksheetId'] = worksheetId;
@@ -127,10 +132,19 @@
         });
         return newData;
     }
-
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
-        listColumns, 10, 3, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns,
+        maxRowsPerPage: 10,
+        defaultSortColumn: 3,
+        dataEndpoint: unity.payments.paymentRequests.paymentRequest.getListByApplicationId,
+        data: inputAction,
+        responseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        dataTableName: 'ApplicationPaymentRequestListTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     dataTable.on('search.dt', () => handleSearch());
 

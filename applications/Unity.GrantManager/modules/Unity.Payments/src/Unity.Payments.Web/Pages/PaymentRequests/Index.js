@@ -29,6 +29,7 @@ $(function () {
     let paymentRequestStatusModal = new abp.ModalManager({
         viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
     });
+
     let selectedPaymentIds = [];
 
     let actionButtons = [
@@ -83,6 +84,7 @@ $(function () {
         },
 
     ];
+
     let responseCallback = function (result) {
         return {
             recordsTotal: result.totalCount,
@@ -101,9 +103,19 @@ $(function () {
         return newData;
     }
 
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
-        listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns,
+        maxRowsPerPage: 10,
+        defaultSortColumn: 11,
+        dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
+        data: {},
+        responseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        dataTableName: 'PaymentRequestListTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     // Attach the draw event to add custom row coloring logic
     dataTable.on('draw', function () {
@@ -229,38 +241,40 @@ $(function () {
     }
 
     function getColumns() {
+        let columnIndex = 0;
         return [
             getSelectColumn('Select Application', 'rowCount', 'payments'),
-            getPaymenReferenceColumn(),
-            getApplicantNameColumn(),
-            getSupplierNumberColumn(),
-            getSiteNumberColumn(),
-            getContractNumberColumn(),
-            getInvoiceNumberColumn(),
-            getPayGroupColumn(),
-            getAmountColumn(),
-            getStatusColumn(),
-            getRequestedonColumn(),
-            getUpdatedOnColumn(),
-            getPaidOnColumn(),
-            getL1ApprovalColumn(),
-            getL2ApprovalColumn(),
-            getL3ApprovalColumn(),
-            getDescriptionColumn(),
-            getInvoiceStatusColumn(),
-            getPaymentStatusColumn(),
-            getCASResponseColumn(),
-            getBatchNameColumn(),
+            getPaymentReferenceColumn(columnIndex++),
+            getApplicantNameColumn(columnIndex++),
+            getSupplierNumberColumn(columnIndex++),
+            getSupplierNameColumn(columnIndex++),
+            getSiteNumberColumn(columnIndex++),
+            getContractNumberColumn(columnIndex++),
+            getInvoiceNumberColumn(columnIndex),
+            getPayGroupColumn(columnIndex++),
+            getAmountColumn(columnIndex++),
+            getStatusColumn(columnIndex++),
+            getRequestedonColumn(columnIndex++),
+            getUpdatedOnColumn(columnIndex++),
+            getPaidOnColumn(columnIndex++),
+            getL1ApprovalColumn(columnIndex++),
+            getL2ApprovalColumn(columnIndex++),
+            getL3ApprovalColumn(columnIndex++),
+            getDescriptionColumn(columnIndex++),
+            getInvoiceStatusColumn(columnIndex++),
+            getPaymentStatusColumn(columnIndex++),
+            getCASResponseColumn(columnIndex++),
+            getBatchNameColumn(columnIndex++),
         ]
     }
 
-    function getPaymenReferenceColumn() {
+    function getPaymentReferenceColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:PaymentID'),
             name: 'referenceNumber',
             data: 'referenceNumber',
             className: 'data-table-header',
-            index: 0,
+            index: columnIndex,
             render: function (data, _, row) {
                 if (row.errorSummary != null && row.errorSummary !== '') {
                     return `${data} <i class="fa fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
@@ -271,64 +285,76 @@ $(function () {
         };
     }
 
-    function getApplicantNameColumn() {
+    function getApplicantNameColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:ApplicantName'),
             name: 'applicantName',
             data: 'payeeName',
             className: 'data-table-header',
-            index: 1
+            index: columnIndex
         };
     }
 
-    function getSupplierNumberColumn() {
+    function getSupplierNumberColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:SupplierNumber'),
             name: 'supplierNumber',
             data: 'supplierNumber',
             className: 'data-table-header',
-            index: 2,
+            index: columnIndex,
         };
     }
-    function getSiteNumberColumn() {
+
+    function getSupplierNameColumn(columnIndex) {
+        return {
+            title: 'Supplier Name',
+            name: 'supplierName',
+            data: 'supplierName',
+            className: 'data-table-header',
+            index: columnIndex,
+        };
+    }
+
+    function getSiteNumberColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:SiteNumber'),
             name: 'siteNumber',
             data: 'site',
             className: 'data-table-header',
-            index: 3,
+            index: columnIndex,
             render: function (data) {
                 return data?.number;
             }
         };
     }
-    function getContractNumberColumn() {
+    function getContractNumberColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:ContractNumber'),
             name: 'contactNumber',
             data: 'contractNumber',
             className: 'data-table-header',
-            index: 4,
+            index: columnIndex,
 
         };
     }
 
-    function getInvoiceNumberColumn() {
+    function getInvoiceNumberColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:InvoiceNumber'),
             name: 'invoiceNumber',
             data: 'invoiceNumber',
             className: 'data-table-header',
-            index: 5,
+            index: columnIndex,
         };
     }
-    function getPayGroupColumn() {
+
+    function getPayGroupColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:PayGroup'),
             name: 'payGroup',
             data: 'site',
             className: 'data-table-header',
-            index: 6,
+            index: columnIndex,
             render: function (data) {
                 switch (data.paymentGroup) {
                     case 1:
@@ -342,26 +368,26 @@ $(function () {
         };
     }
 
-    function getAmountColumn() {
+    function getAmountColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:Amount'),
             name: 'amount',
             data: 'amount',
             className: 'data-table-header  currency-display',
-            index: 7,
+            index: columnIndex,
             render: function (data) {
                 return formatter.format(data);
             },
         };
     }
 
-    function getStatusColumn() {
+    function getStatusColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:Status'),
             name: 'status',
             data: 'status',
             className: 'data-table-header',
-            index: 8,
+            index: columnIndex,
             render: function (data) {
 
                 let statusText = getStatusText(data);
@@ -371,154 +397,51 @@ $(function () {
         };
     }
 
-
-    function getRequestedonColumn() {
+    function getRequestedonColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:RequestedOn'),
             name: 'requestedOn',
             data: 'creationTime',
             className: 'data-table-header',
-            index: 9,
+            index: columnIndex,
             render: function (data) {
                 return formatDate(data);
             }
         };
     }
-    function getUpdatedOnColumn() {
+    function getUpdatedOnColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:UpdatedOn'),
             name: 'updatedOn',
             data: 'lastModificationTime',
             className: 'data-table-header',
-            index: 10,
+            index: columnIndex,
             render: function (data) {
                 return formatDate(data);
             }
         };
     }
-    function getPaidOnColumn() {
+    function getPaidOnColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:PaidOn'),
             name: 'paidOn',
             data: 'paidOn',
             className: 'data-table-header',
-            index: 11,
+            index: columnIndex,
             render: function (data) {
                 return formatDate(data);
             }
         };
     }
 
-    function getL1ApprovalColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:L1ApprovalDate'),
-            name: 'l1Approval',
-            data: 'expenseApprovals',
-            className: 'data-table-header',
-            index: 13,
-            render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 1)
-                return formatDate(approval?.decisionDate);
-            }
-        };
-    }
-    function getL2ApprovalColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:L2ApprovalDate'),
-            name: 'l2Approval',
-            data: 'expenseApprovals',
-            className: 'data-table-header',
-            index: 14,
-            render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 2)
-                return formatDate(approval?.decisionDate);
-            }
-        };
-    }
-    function getL3ApprovalColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:L3ApprovalDate'),
-            name: 'l3Approval',
-            data: 'expenseApprovals',
-            className: 'data-table-header',
-            index: 15,
-            render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 3)
-                return formatDate(approval?.decisionDate);
-            }
-        };
-    }
-
-    function getDescriptionColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:Description'),
-            name: 'paymentDescription',
-            data: 'description',
-            className: 'data-table-header',
-            index: 16
-
-        };
-    }
-
-    function getInvoiceStatusColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:InvoiceStatus'),
-            name: 'invoiceStatus',
-            data: 'invoiceStatus',
-            className: 'data-table-header',
-            index: 17,
-            render: function (data) {
-                if (data + "" !== "undefined" && data?.length > 0) {
-                    return data;
-                } else {
-                    return "";
-                }
-            }
-        };
-    }
-
-    function getPaymentStatusColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:PaymentStatus'),
-            name: 'paymentStatus',
-            data: 'paymentStatus',
-            className: 'data-table-header',
-            index: 18,
-            render: function (data) {
-                if (data + "" !== "undefined" && data?.length > 0) {
-                    return data;
-                } else {
-                    return "";
-                }
-            }
-        };
-    }
-
-    function getBatchNameColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:BatchName'),
-            name: 'batchName',
-            data: 'batchName',
-            className: 'data-table-header',
-            index: 19,
-            render: function (data) {
-                if (data + "" !== "undefined" && data?.length > 0) {
-                    return data;
-                } else {
-                    return "";
-                }
-            }
-        };
-    }
-
-    function getCASResponseColumn() {
+    function getCASResponseColumn(columnIndex) {
         // Add button to view response modal
         return {
             title: l('ApplicationPaymentListTable:CASResponse'),
             name: 'CASResponse',
             data: 'casResponse',
             className: 'data-table-header',
-            index: 12,
+            index: columnIndex,
             render: function (data) {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
@@ -527,6 +450,110 @@ $(function () {
             }
         };
     }
+
+    function getL1ApprovalColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:L1ApprovalDate'),
+            name: 'l1Approval',
+            data: 'expenseApprovals',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                let approval = getExpenseApprovalsDetails(data, 1)
+                return formatDate(approval?.decisionDate);
+            }
+        };
+    }
+    function getL2ApprovalColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:L2ApprovalDate'),
+            name: 'l2Approval',
+            data: 'expenseApprovals',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                let approval = getExpenseApprovalsDetails(data, 2)
+                return formatDate(approval?.decisionDate);
+            }
+        };
+    }
+    function getL3ApprovalColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:L3ApprovalDate'),
+            name: 'l3Approval',
+            data: 'expenseApprovals',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                let approval = getExpenseApprovalsDetails(data, 3)
+                return formatDate(approval?.decisionDate);
+            }
+        };
+    }
+
+    function getDescriptionColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:Description'),
+            name: 'paymentDescription',
+            data: 'description',
+            className: 'data-table-header',
+            index: columnIndex
+
+        };
+    }
+
+    function getInvoiceStatusColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:InvoiceStatus'),
+            name: 'invoiceStatus',
+            data: 'invoiceStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+    function getPaymentStatusColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:PaymentStatus'),
+            name: 'paymentStatus',
+            data: 'paymentStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+    function getBatchNameColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:BatchName'),
+            name: 'batchName',
+            data: 'batchName',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
@@ -562,7 +589,6 @@ $(function () {
 
     function getStatusTextColor(status) {
         switch (status) {
-
             case "L1Pending":
                 return "#053662";
 

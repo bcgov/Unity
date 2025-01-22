@@ -1,6 +1,7 @@
 ﻿using System;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Unity.Payments.Enums;
+using Unity.Payments.Suppliers;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -24,6 +25,7 @@ namespace Unity.Payments.Domain.Suppliers
         /* CAS Information */
         public virtual string? EmailAddress { get; set; }
         public virtual string? EFTAdvicePref { get; set; }
+        public virtual string? BankAccount { get; set; }
         public virtual string? ProviderId { get; set; }
         public virtual string? Status { get; set; }
         public virtual string? SiteProtected { get; set; }
@@ -55,34 +57,25 @@ namespace Unity.Payments.Domain.Suppliers
             PostalCode = address?.PostalCode;
         }
 
-        public Site(
-            string number,
-            PaymentGroup paymentMethod,
-            string? emailAddress = default,
-            string? etfAdvise = default,
-            string? providerId = default,
-            string? status = default,
-            string? siteProtected = default,
-            Address? address = default,
-            Guid supplierId = default,
-            DateTime? lastUpdatedInCas = default)
+        public Site(SiteDto siteDto)
         {
-            Number = number;
-            SupplierId = supplierId;
-            EmailAddress = emailAddress;
-            EFTAdvicePref = etfAdvise;
-            ProviderId = providerId;
-            Status = status;
-            SiteProtected = siteProtected;
-            PaymentGroup = paymentMethod;
-            AddressLine1 = address?.AddressLine1;
-            AddressLine2 = address?.AddressLine2;
-            AddressLine3 = address?.AddressLine3;
-            Country = address?.Country;
-            City = address?.City;
-            Province = address?.Province;
-            PostalCode = address?.PostalCode;
-            LastUpdatedInCas = lastUpdatedInCas;
+            Number = siteDto.Number;
+            SupplierId = siteDto.SupplierId;
+            EmailAddress = siteDto.EmailAddress;
+            EFTAdvicePref = siteDto.EFTAdvicePref;
+            BankAccount = siteDto.BankAccount;
+            ProviderId = siteDto.ProviderId;
+            Status = siteDto.Status;
+            SiteProtected = siteDto.SiteProtected;
+            PaymentGroup = siteDto.PaymentGroup;
+            AddressLine1 = siteDto.AddressLine1;
+            AddressLine2 = siteDto?.AddressLine2;
+            AddressLine3 = siteDto?.AddressLine3;
+            Country = siteDto?.Country;
+            City = siteDto?.City;
+            Province = siteDto?.Province;
+            PostalCode = siteDto?.PostalCode;
+            LastUpdatedInCas = siteDto?.LastUpdatedInCas;
         }
 
         public void SetNumber(string number)

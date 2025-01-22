@@ -30,6 +30,11 @@
             projectInfoObj[this.name] = (this.checked).toString();
         });
 
+        // Make sure all the custom fields are set in the custom fields object
+        if (typeof Flex === 'function') {
+            Flex?.setCustomFields(projectInfoObj);
+        }
+
         projectInfoObj['correlationId'] = formVersionId;
         projectInfoObj['worksheetId'] = worksheetId;
         updateProjectInfo(applicationId, projectInfoObj);
