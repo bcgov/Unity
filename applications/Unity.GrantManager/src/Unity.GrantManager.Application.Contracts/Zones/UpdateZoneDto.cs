@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.SettingManagement;
+﻿namespace Unity.GrantManager.Zones;
 public class UpdateZoneDto
 {
     public string Name { get; set; }

@@ -9,7 +9,6 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Locality;
-using Unity.GrantManager.SettingManagement;
 using Unity.GrantManager.Zones;
 
 namespace Unity.GrantManager;

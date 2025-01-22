@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Unity.GrantManager.SettingManagement;
+namespace Unity.GrantManager.Zones;
 
 public class ZoneGroupDefinitionDto
 {

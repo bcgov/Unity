@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.GrantManager.Zones;
 using Volo.Abp.Application.Services;
-using Volo.Abp.PermissionManagement;
 
 namespace Unity.GrantManager.SettingManagement;
 public interface IApplicationUiSettingsAppService : IApplicationService
