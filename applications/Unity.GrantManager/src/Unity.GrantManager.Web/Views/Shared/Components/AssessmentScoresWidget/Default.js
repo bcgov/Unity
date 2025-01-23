@@ -216,10 +216,7 @@ function handleInputChange(questionId, inputFieldPrefix) {
         if (assessmentAnswersArr[x].questionType === 1) {
             let inputNumberField = document.getElementById('answer-number-' + assessmentAnswersArr[x].questionId);
             let numberErrorMessage = document.getElementById('error-message-' + assessmentAnswersArr[x].questionId);
-
-            if (inputNumberField.required) { 
-                assessmentAnswersArr[x].isValid = validateNumericField(inputNumberField, numberErrorMessage);
-            }
+            assessmentAnswersArr[x].isValid = validateNumericField(inputNumberField, numberErrorMessage);
         } else if (assessmentAnswersArr[x].questionType === 2) {
             let inputTextField = document.getElementById('answer-text-' + assessmentAnswersArr[x].questionId);
             let textErrorMessage = document.getElementById('error-message-' + assessmentAnswersArr[x].questionId);

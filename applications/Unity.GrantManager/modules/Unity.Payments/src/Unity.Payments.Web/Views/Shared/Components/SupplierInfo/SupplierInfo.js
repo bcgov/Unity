@@ -78,6 +78,7 @@ $(function () {
             responseCallback,
             actionButtons,
             pagingEnabled: false,
+            reorderEnabled: true,
             dataTableName: 'SiteInfoTable',
             dynamicButtonContainerId: 'siteDynamicButtonContainerId'});
     
