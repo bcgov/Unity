@@ -59,6 +59,7 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
 
             var updateZones = GroupTemplate.Zones
                 .SelectMany(z => z.Zones)
+                .Where(z => !z.IsConfigurationDisabled)
                 .Select(p => new UpdateZoneDto
                 {
                     Name = p.Name,

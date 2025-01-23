@@ -13,16 +13,23 @@ public static class DefaultZoneDefinition
                  SortOrder = 1,
                  Zones = [
                      new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Assessment + ".AssessmentApproval",
+                         ViewComponentType = "AssessmentApprovalViewComponent",
+                         IsEnabled = true,
+                         IsConfigurationDisabled = true,
+                         SortOrder = 1
+                     },
+                     new ZoneDefinition {
                          Name = SettingsConstants.UI.Tabs.Assessment + ".AssessmentResults",
                          ViewComponentType = "AssessmentResults",
                          IsEnabled = true,
-                         SortOrder = 1
+                         SortOrder = 2
                      },
                      new ZoneDefinition {
                          Name = SettingsConstants.UI.Tabs.Assessment + ".ReviewList",
                          ViewComponentType = "ReviewList",
                          IsEnabled = true,
-                         SortOrder = 2
+                         SortOrder = 3
                      }
                  ]
              },
@@ -37,7 +44,14 @@ public static class DefaultZoneDefinition
                          ViewComponentType = "ProjectInfoViewComponent",
                          IsEnabled = true,
                          SortOrder = 1
-                     }
+                     },
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Project + ".ProjectLocation",
+                         ViewComponentType = "ProjectLocationViewComponent",
+                         IsEnabled = true,
+                         IsConfigurationDisabled = true,
+                         SortOrder = 2
+                     },
                  ]
              },
              new ZoneTabDefinition {
@@ -51,7 +65,28 @@ public static class DefaultZoneDefinition
                          ViewComponentType = "ApplicantInfoViewComponent",
                          IsEnabled = true,
                          SortOrder = 1
-                     }
+                     },
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Applicant + ".ContactInfo",
+                         ViewComponentType = "ApplicantContactInfoViewComponent",
+                         IsEnabled = true,
+                         IsConfigurationDisabled = true,
+                         SortOrder = 2
+                     },
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Applicant + ".SigningAuthority",
+                         ViewComponentType = "ApplicantSigningAuthorityViewComponent",
+                         IsEnabled = true,
+                         IsConfigurationDisabled = true,
+                         SortOrder = 3
+                     },
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Applicant + ".PhysicalAddress",
+                         ViewComponentType = "ApplicantPhysicalAddressViewComponent",
+                         IsEnabled = true,
+                         IsConfigurationDisabled = true,
+                         SortOrder = 4
+                     },
                  ]
              },
              new ZoneTabDefinition {
@@ -79,6 +114,13 @@ public static class DefaultZoneDefinition
                          ViewComponentType = "PaymentInfoViewComponent",
                          IsEnabled = true,
                          SortOrder = 1
+                     },
+                      new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Payments + ".PaymentList",
+                         ViewComponentType = "PaymentListViewComponent",
+                         IsEnabled = true,
+                         IsConfigurationDisabled = true,
+                         SortOrder = 2
                      }
                  ]
              }

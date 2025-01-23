@@ -40,9 +40,10 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
                         {
                             Name = zone.Name,
                             ViewComponentType = zone.ViewComponentType,
-                            IsEnabled = existingTemplate.Zones
+                            IsEnabled = zone.IsConfigurationDisabled || (existingTemplate.Zones
                                 .SelectMany(et => et.Zones)
-                                .FirstOrDefault(ez => ez.Name == zone.Name)?.IsEnabled ?? false,
+                                .FirstOrDefault(ez => ez.Name == zone.Name)?.IsEnabled ?? false),
+                            IsConfigurationDisabled = zone.IsConfigurationDisabled,
                             SortOrder = zone.SortOrder
                         })
                         .ToList()
@@ -63,15 +64,6 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
         var submitTemplate = input != null ? ObjectMapper.Map<ZoneGroupDefinitionDto, ZoneGroupDefinition>(input) : DefaultZoneDefinition.Template;
         await zoneManager.SetForFormAsync(formId, submitTemplate);
     }
-
-    //public async Task GetAsync(string providerName, string providerKey))
-    //{
-    //    if (Guid.TryParse())
-    //    {
-    //        var zoneTemplates = await zoneManager.GetAsync(formId);
-    //    }
-    //    return ObjectMapper.Map<ZoneGroupDefinition, ZoneGroupDefinitionDto>(zoneTemplates);
-    //}
 
     [Authorize(UnitySettingManagementPermissions.UserInterface)]
     public async Task UpdateAsync(string providerName, string providerKey, List<UpdateZoneDto> input)
@@ -103,7 +95,7 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
                             IsEnabled = updateZoneDtos.FirstOrDefault(dto => dto.Name == zone.Name)?.IsEnabled ?? zone.IsEnabled,
                             SortOrder = zone.SortOrder
                         })
-                        .Where(zone => zone.IsEnabled) // Filter out disabled ZoneDefinitions
+                        .Where(zone => zone.IsEnabled && !zone.IsConfigurationDisabled) // Filter out disabled ZoneDefinitions
                         .ToList()
                 })
                 .Where(zoneTab => zoneTab.IsEnabled) // Filter out disabled ZoneTabDefinitions

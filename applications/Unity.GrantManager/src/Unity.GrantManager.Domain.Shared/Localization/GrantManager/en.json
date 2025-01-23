@@ -236,11 +236,17 @@
     "Setting:GrantManager.UI.Tabs.FundingAgreement.Description": "Toggle visibility of the Funding Agreement tab for the tenant",
 
     "Setting:GrantManager.UI.Tabs.Assessment.AssessmentResults.DisplayName": "Application Assessment Results",
+    "Setting:GrantManager.UI.Tabs.Assessment.AssessmentApproval.DisplayName": "Approval",
     "Setting:GrantManager.UI.Tabs.Assessment.ReviewList.DisplayName": "Assessment List",
     "Setting:GrantManager.UI.Tabs.Project.ProjectInfo.DisplayName": "Project Summary",
     "Setting:GrantManager.UI.Tabs.Applicant.ApplicantInfo.DisplayName": "Applicant Info",
+    "Setting:GrantManager.UI.Tabs.Applicant.ContactInfo.DisplayName": "Contact Info",
+    "Setting:GrantManager.UI.Tabs.Applicant.SigningAuthority.DisplayName": "Signing Authority",
+    "Setting:GrantManager.UI.Tabs.Applicant.PhysicalAddress.DisplayName": "Physical Address",
     "Setting:GrantManager.UI.Tabs.FundingAgreement.FundingAgreementInfo.DisplayName": "Contract Info",
     "Setting:GrantManager.UI.Tabs.Payments.PaymentInfo.DisplayName": "Payment Summary",
+    "Setting:GrantManager.UI.Tabs.Payments.PaymentList.DisplayName": "Payment List",
+    "Setting:GrantManager.UI.Tabs.Project.ProjectLocation.DisplayName": "Project Location",
 
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",

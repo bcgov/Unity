@@ -13,6 +13,15 @@
             }
 
             $tab.find('.custom-checkbox')
+                .filter('[data-parent-name="' + parentName + '"]')
+                .find('input[type="checkbox"]:disabled')
+                .each(function () {
+                    let $child = $(this);
+                    $child.prop('checked', true);
+                    checkChildren($tab, $child, true);
+                });
+
+            $tab.find('.custom-checkbox')
                 .filter('[data-zone-name="' + parentName + '"]')
                 .find('input[type="checkbox"]')
                 .each(function () {
@@ -22,7 +31,7 @@
                 });
         }
 
-        function uncheckChildren($tab, $checkBox) {
+        function checkChildren($tab, $checkBox, $checkState) {
             let zoneName = $checkBox
                 .closest('.custom-checkbox')
                 .attr('data-zone-name');
@@ -35,8 +44,8 @@
                 .find('input[type="checkbox"]')
                 .each(function () {
                     let $child = $(this);
-                    $child.prop('checked', false);
-                    uncheckChildren($tab, $child);
+                    $child.prop('checked', $checkState);
+                    checkChildren($tab, $child, $checkState);
                 });
         }
 
@@ -47,11 +56,11 @@
                     .each(function () {
                         let $checkBox = $(this);
                         $checkBox.change(function () {
-                            if ($checkBox.is(':checked')) {
+                            let $checkState = $checkBox.is(':checked');
+                            if ($checkState) {
                                 checkParents($tab, $checkBox, '.custom-checkbox')
-                            } else {
-                                uncheckChildren($tab, $checkBox);
                             }
+                            checkChildren($tab, $checkBox, $checkState);
                         });
                     });
 
