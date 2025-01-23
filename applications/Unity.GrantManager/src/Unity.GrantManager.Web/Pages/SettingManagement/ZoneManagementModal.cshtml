@@ -11,7 +11,9 @@
     Layout = null;
 }
 
-<form id="ZoneManagementForm" method="post" asp-page="/SettingManagement/ZoneManagementModal" data-script-class="Unity.Modals.ZoneManagement">
+<abp-script src="/Pages/SettingManagement/zone-management-modal.js" />
+
+<form id="ZoneManagementForm" method="post" asp-page="/SettingManagement/ZoneManagementModal" data-script-class="abp.modals.ZoneManagement">
     <abp-modal id="ZoneManagementModal" size="ExtraLarge">
         <abp-modal-header title="User Interface Configuration"></abp-modal-header>
         <abp-modal-body>
