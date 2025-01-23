@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.SettingManagement;
 using Unity.GrantManager.Zones;
+using Volo.Abp.AspNetCore.Mvc.ApplicationConfigurations;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.Web.Pages.SettingManagement
 {
@@ -24,10 +26,12 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         public ZoneGroupDefinitionDto? GroupTemplate { get; set; }
 
         protected IApplicationUiSettingsAppService UiSettingsAppService { get; }
+        protected ILocalEventBus LocalEventBus { get; }
 
-        public ZoneManagementModalModel(IApplicationUiSettingsAppService uiSettingsAppService)
+        public ZoneManagementModalModel(IApplicationUiSettingsAppService uiSettingsAppService, ILocalEventBus localEventBus)
         {
             UiSettingsAppService = uiSettingsAppService;
+            LocalEventBus = localEventBus;
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -63,6 +67,10 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
                   updateZoneDtos
                   );
             }
+
+            await LocalEventBus.PublishAsync(
+                new CurrentApplicationConfigurationCacheResetEventData()
+            );
 
             return NoContent();
         }
