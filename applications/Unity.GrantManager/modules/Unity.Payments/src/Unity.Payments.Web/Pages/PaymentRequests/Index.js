@@ -114,6 +114,7 @@ $(function () {
         responseCallback,
         actionButtons,
         pagingEnabled: true,
+        reorderEnabled: true,
         dataTableName: 'PaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 

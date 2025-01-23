@@ -20,6 +20,8 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.js");
         context.Files.AddIfNotContains("/libs/datatables.net-select-bs5/js/select.bootstrap5.js");
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader/js/dataTables.fixedHeader.js");
+        context.Files.AddIfNotContains("/libs/datatables.net-staterestore-dt/js/staterestore.datatables.js");
+        context.Files.AddIfNotContains("/libs/datatables.net-staterestore/js/datatables.staterestore.js");
 
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder/js/dataTables.colReorder.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder-bs5/js/colReorder.bootstrap5.min.js");
