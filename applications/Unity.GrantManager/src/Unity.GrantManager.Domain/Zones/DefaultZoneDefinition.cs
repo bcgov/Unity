@@ -7,92 +7,81 @@ public static class DefaultZoneDefinition
     {
         Name = "MainZone",
         Zones = [
-         new ZoneTabDefinition {
-             Name = SettingsConstants.UI.Tabs.Assessment,
-             DisplayName = null,
-             IsEnabled = true,
-             SortOrder = 1,
-             Zones = [
-                 new ZoneDefinition {
-                     Name = SettingsConstants.UI.Tabs.Assessment + ".AssessmentResults",
-                     ViewComponentType = "AssessmentResults",
-                     IsEnabled = true,
-                     SortOrder = 1,
-                     DisplayName = null
-                 },
-                 new ZoneDefinition {
-                     Name = SettingsConstants.UI.Tabs.Assessment + ".ReviewList",
-                     ViewComponentType = "ReviewList",
-                     IsEnabled = true,
-                     SortOrder = 2,
-                     DisplayName = null
-                 }
-             ]
-         },
-         new ZoneTabDefinition {
-             Name = SettingsConstants.UI.Tabs.Project,
-             DisplayName = null,
-             IsEnabled = true,
-             SortOrder = 2,
-             ElementId = "nav-project-info",
-             Zones = [
-                 new ZoneDefinition {
-                     Name = SettingsConstants.UI.Tabs.Assessment + ".ProjectInfoViewComponent",
-                     ViewComponentType = "ProjectInfoViewComponent",
-                     IsEnabled = true,
-                     SortOrder = 1,
-                     DisplayName = null,
-                 }
-             ]
-         },
-         new ZoneTabDefinition {
-             Name = SettingsConstants.UI.Tabs.Applicant,
-             DisplayName = null,
-             IsEnabled = true,
-             SortOrder = 3,
-             ElementId = "nav-organization-info",
-             Zones = [
-                 new ZoneDefinition {
-                     Name = SettingsConstants.UI.Tabs.Assessment + ".ApplicantInfoViewComponent",
-                     ViewComponentType = "ApplicantInfoViewComponent",
-                     IsEnabled = true,
-                     SortOrder = 1,
-                     DisplayName = null,
-                 }
-             ]
-         },
-         new ZoneTabDefinition {
-             Name = SettingsConstants.UI.Tabs.FundingAgreement,
-             DisplayName = null,
-             IsEnabled = true,
-             SortOrder = 4,
-             ElementId = "nav-funding-agreement-info",
-             Zones = [
-                 new ZoneDefinition {
-                     Name = SettingsConstants.UI.Tabs.Assessment + ".FundingAgreementInfoViewComponent",
-                     ViewComponentType = "FundingAgreementInfoViewComponent",
-                     IsEnabled = true,
-                     SortOrder = 1,
-                     DisplayName = null,
-                 }
-             ]
-         },
-         new ZoneTabDefinition {
-             Name = SettingsConstants.UI.Tabs.Payments,
-             DisplayName = null,
-             IsEnabled = true,
-             SortOrder = 5,
-             ElementId = "nav-payment-info",
-             Zones = [
-                 new ZoneDefinition {
-                     Name = SettingsConstants.UI.Tabs.Payments + ".PaymentInfoViewComponent",
-                     ViewComponentType = "PaymentInfoViewComponent",
-                     IsEnabled = true,
-                     SortOrder = 1,
-                     DisplayName = null,
-                 }
-             ]
-         }
-     ]
+             new ZoneTabDefinition {
+                 Name = SettingsConstants.UI.Tabs.Assessment,
+                 IsEnabled = true,
+                 SortOrder = 1,
+                 Zones = [
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Assessment + ".AssessmentResults",
+                         ViewComponentType = "AssessmentResults",
+                         IsEnabled = true,
+                         SortOrder = 1
+                     },
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Assessment + ".ReviewList",
+                         ViewComponentType = "ReviewList",
+                         IsEnabled = true,
+                         SortOrder = 2
+                     }
+                 ]
+             },
+             new ZoneTabDefinition {
+                 Name = SettingsConstants.UI.Tabs.Project,
+                 IsEnabled = true,
+                 SortOrder = 2,
+                 ElementId = "nav-project-info",
+                 Zones = [
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Project + ".ProjectInfo",
+                         ViewComponentType = "ProjectInfoViewComponent",
+                         IsEnabled = true,
+                         SortOrder = 1
+                     }
+                 ]
+             },
+             new ZoneTabDefinition {
+                 Name = SettingsConstants.UI.Tabs.Applicant,
+                 IsEnabled = true,
+                 SortOrder = 3,
+                 ElementId = "nav-organization-info",
+                 Zones = [
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Applicant + ".ApplicantInfo",
+                         ViewComponentType = "ApplicantInfoViewComponent",
+                         IsEnabled = true,
+                         SortOrder = 1
+                     }
+                 ]
+             },
+             new ZoneTabDefinition {
+                 Name = SettingsConstants.UI.Tabs.FundingAgreement,
+                 IsEnabled = true,
+                 SortOrder = 4,
+                 ElementId = "nav-funding-agreement-info",
+                 Zones = [
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.FundingAgreement + ".FundingAgreementInfo",
+                         ViewComponentType = "FundingAgreementInfoViewComponent",
+                         IsEnabled = true,
+                         SortOrder = 1
+                     }
+                 ]
+             },
+             new ZoneTabDefinition {
+                 Name = SettingsConstants.UI.Tabs.Payments,
+                 IsEnabled = true,
+                 SortOrder = 5,
+                 ElementId = "nav-payment-info",
+                 Zones = [
+                     new ZoneDefinition {
+                         Name = SettingsConstants.UI.Tabs.Payments + ".PaymentInfo",
+                         ViewComponentType = "PaymentInfoViewComponent",
+                         IsEnabled = true,
+                         SortOrder = 1
+                     }
+                 ]
+             }
+        ]
     };
 }

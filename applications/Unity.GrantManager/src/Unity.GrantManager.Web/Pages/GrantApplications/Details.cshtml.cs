@@ -18,6 +18,7 @@ using Unity.GrantManager.Flex;
 using Unity.Flex.WorksheetLinks;
 using Newtonsoft.Json.Linq;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Zones;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -28,6 +29,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         private readonly IWorksheetLinkAppService _worksheetLinkAppService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
         private readonly IFeatureChecker _featureChecker;
+        protected readonly IZoneManagementAppService _zoneManagementAppService;
 
         [BindProperty(SupportsGet = true)]
         public string? SubmissionId { get; set; } = null;
@@ -81,17 +83,23 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public List<BoundWorksheet> CustomTabs { get; set; } = [];
 
+        [BindProperty]
+        public HashSet<string> ZoneStateSet { get; set; } = [];
+
         public DetailsModel(GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
             IApplicationFormVersionAppService applicationFormVersionAppService,
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
             _worksheetLinkAppService = worksheetLinkAppService;
             _featureChecker = featureChecker;
             _applicationFormVersionAppService = applicationFormVersionAppService;
+            _zoneManagementAppService = zoneManagementAppService;
+            
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
@@ -101,6 +109,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public async Task OnGetAsync()
         {
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+
+            ZoneStateSet = await _zoneManagementAppService.GetZoneStateSet(applicationFormSubmission.ApplicationFormId);
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
