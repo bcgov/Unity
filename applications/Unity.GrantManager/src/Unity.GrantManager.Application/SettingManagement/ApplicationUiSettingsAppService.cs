@@ -4,10 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Permissions;
-using Unity.GrantManager.Settings;
 using Unity.GrantManager.Zones;
-using Volo.Abp.SettingManagement;
-using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.SettingManagement;
 
@@ -23,7 +20,37 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
     public async Task<ZoneGroupDefinitionDto?> GetForFormAsync(Guid formId)
     {
         var zoneTemplates = await zoneManager.GetAsync(formId);
-        return ObjectMapper.Map<ZoneGroupDefinition, ZoneGroupDefinitionDto>(zoneTemplates);
+        var updatedTemplate = ReverseCreateZoneConfigurationFromTemplate(zoneTemplates);
+        return ObjectMapper.Map<ZoneGroupDefinition, ZoneGroupDefinitionDto>(updatedTemplate);
+    }
+
+    private static ZoneGroupDefinition ReverseCreateZoneConfigurationFromTemplate(ZoneGroupDefinition existingTemplate)
+    {
+        var updatedZoneGroup = new ZoneGroupDefinition
+        {
+            Name = DefaultZoneDefinition.Template.Name,
+            Zones = DefaultZoneDefinition.Template.Zones
+                .Select(zoneTab => new ZoneTabDefinition
+                {
+                    Name = zoneTab.Name,
+                    IsEnabled = existingTemplate.Zones.FirstOrDefault(et => et.Name == zoneTab.Name)?.IsEnabled ?? false,
+                    SortOrder = zoneTab.SortOrder,
+                    Zones = zoneTab.Zones
+                        .Select(zone => new ZoneDefinition
+                        {
+                            Name = zone.Name,
+                            ViewComponentType = zone.ViewComponentType,
+                            IsEnabled = existingTemplate.Zones
+                                .SelectMany(et => et.Zones)
+                                .FirstOrDefault(ez => ez.Name == zone.Name)?.IsEnabled ?? false,
+                            SortOrder = zone.SortOrder
+                        })
+                        .ToList()
+                })
+                .ToList()
+        };
+
+        return updatedZoneGroup;
     }
 
     public async Task SetConfigurationAsync()
@@ -37,21 +64,14 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
         await zoneManager.SetForFormAsync(formId, submitTemplate);
     }
 
-    // TODO: Deprecated, remove
-    public async Task<ApplicationUiSettingsDto> GetAsync()
-    {
-        var settingsDto = new ApplicationUiSettingsDto
-        {
-            Submission = await SettingProvider.GetAsync<bool>(SettingsConstants.UI.Tabs.Submission),
-            Assessment = await SettingProvider.GetAsync<bool>(SettingsConstants.UI.Tabs.Assessment),
-            Project = await SettingProvider.GetAsync<bool>(SettingsConstants.UI.Tabs.Project),
-            Applicant = await SettingProvider.GetAsync<bool>(SettingsConstants.UI.Tabs.Applicant),
-            Payments = await SettingProvider.GetAsync<bool>(SettingsConstants.UI.Tabs.Payments),
-            FundingAgreement = await SettingProvider.GetAsync<bool>(SettingsConstants.UI.Tabs.FundingAgreement)
-        };
-
-        return settingsDto;
-    }
+    //public async Task GetAsync(string providerName, string providerKey))
+    //{
+    //    if (Guid.TryParse())
+    //    {
+    //        var zoneTemplates = await zoneManager.GetAsync(formId);
+    //    }
+    //    return ObjectMapper.Map<ZoneGroupDefinition, ZoneGroupDefinitionDto>(zoneTemplates);
+    //}
 
     [Authorize(UnitySettingManagementPermissions.UserInterface)]
     public async Task UpdateAsync(string providerName, string providerKey, List<UpdateZoneDto> input)
@@ -67,6 +87,33 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
         }
     }
 
+    public static ZoneGroupDefinition CreateSettingPageTemplate(List<UpdateZoneDto> updateZoneDtos)
+    {
+        return new ZoneGroupDefinition
+        {
+            Name = DefaultZoneDefinition.Template.Name,
+            Zones = DefaultZoneDefinition.Template.Zones
+                .Select(zoneTab => new ZoneTabDefinition
+                {
+                    Name = zoneTab.Name,
+                    IsEnabled = updateZoneDtos.FirstOrDefault(dto => dto.Name == zoneTab.Name)?.IsEnabled ?? zoneTab.IsEnabled,
+                    SortOrder = zoneTab.SortOrder,
+                    Zones = zoneTab.Zones
+                        .Select(zone => new ZoneDefinition
+                        {
+                            Name = zone.Name,
+                            ViewComponentType = zone.ViewComponentType,
+                            IsEnabled = updateZoneDtos.FirstOrDefault(dto => dto.Name == zone.Name)?.IsEnabled ?? zone.IsEnabled,
+                            SortOrder = zone.SortOrder
+                        })
+                        .Where(zone => zone.IsEnabled) // Filter out disabled ZoneDefinitions
+                        .ToList()
+                })
+                .Where(zoneTab => zoneTab.IsEnabled) // Filter out disabled ZoneTabDefinitions
+                .ToList()
+        };
+    }
+
     public static ZoneGroupDefinition CreateZoneConfigurationFromTemplate(List<UpdateZoneDto> updateZoneDtos)
     {
         return new ZoneGroupDefinition
@@ -76,18 +123,15 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
                 .Select(zoneTab => new ZoneTabDefinition
                 {
                     Name = zoneTab.Name,
-                    DisplayName = zoneTab.DisplayName,
                     IsEnabled = updateZoneDtos.FirstOrDefault(dto => dto.Name == zoneTab.Name)?.IsEnabled ?? zoneTab.IsEnabled,
                     SortOrder = zoneTab.SortOrder,
-                    ElementId = zoneTab.ElementId,
                     Zones = zoneTab.Zones
                         .Select(zone => new ZoneDefinition
                         {
                             Name = zone.Name,
                             ViewComponentType = zone.ViewComponentType,
                             IsEnabled = updateZoneDtos.FirstOrDefault(dto => dto.Name == zone.Name)?.IsEnabled ?? zone.IsEnabled,
-                            SortOrder = zone.SortOrder,
-                            DisplayName = zone.DisplayName
+                            SortOrder = zone.SortOrder
                         })
                         .Where(zone => zone.IsEnabled) // Filter out disabled ZoneDefinitions
                         .ToList()
@@ -95,5 +139,10 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
                 .Where(zoneTab => zoneTab.IsEnabled) // Filter out disabled ZoneTabDefinitions
                 .ToList()
         };
+    }
+
+    public Task<ApplicationUiSettingsDto> GetAsync()
+    {
+        throw new NotImplementedException();
     }
 }
