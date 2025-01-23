@@ -24,7 +24,6 @@
                     <div class="w-100" style="height: 500px;overflow-y: auto">
                         <div class="ps-1">
                             <div class="row row-cols-1 row-cols-md-2 g-4">
-                                @* @foreach (var tab in Model.GroupTemplate.Zones) *@
                                 @for (var i = 0; i < Model.GroupTemplate.Zones.Count; i++)
                                 {
                                     var tabGroup = Model.GroupTemplate.Zones[i];
@@ -39,7 +38,6 @@
                                             <input asp-for="@tabGroup.Name" abp-id-name="@Model.GroupTemplate.Zones[i].Name" hidden />
                                         </div>
 
-                                        @* @foreach (var zone in tab.Zones) *@
                                         @for(var j = 0; j < tabGroup.Zones.Count; j++)
                                         {
                                             var zone = tabGroup.Zones[j];

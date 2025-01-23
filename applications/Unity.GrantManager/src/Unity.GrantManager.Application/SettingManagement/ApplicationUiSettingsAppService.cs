@@ -78,40 +78,10 @@ public class ApplicationUiSettingsAppService(IZoneManager zoneManager) : GrantMa
     {
         var updatedTemplate = CreateZoneConfigurationFromTemplate(input);
 
-        // Check if valid form
-        // Check if zone valid for configured features
-
         if (Guid.TryParse(providerKey, out Guid providerId))
         {
             await zoneManager.SetForFormAsync(providerId, updatedTemplate);
         }
-    }
-
-    public static ZoneGroupDefinition CreateSettingPageTemplate(List<UpdateZoneDto> updateZoneDtos)
-    {
-        return new ZoneGroupDefinition
-        {
-            Name = DefaultZoneDefinition.Template.Name,
-            Zones = DefaultZoneDefinition.Template.Zones
-                .Select(zoneTab => new ZoneTabDefinition
-                {
-                    Name = zoneTab.Name,
-                    IsEnabled = updateZoneDtos.FirstOrDefault(dto => dto.Name == zoneTab.Name)?.IsEnabled ?? zoneTab.IsEnabled,
-                    SortOrder = zoneTab.SortOrder,
-                    Zones = zoneTab.Zones
-                        .Select(zone => new ZoneDefinition
-                        {
-                            Name = zone.Name,
-                            ViewComponentType = zone.ViewComponentType,
-                            IsEnabled = updateZoneDtos.FirstOrDefault(dto => dto.Name == zone.Name)?.IsEnabled ?? zone.IsEnabled,
-                            SortOrder = zone.SortOrder
-                        })
-                        .Where(zone => zone.IsEnabled) // Filter out disabled ZoneDefinitions
-                        .ToList()
-                })
-                .Where(zoneTab => zoneTab.IsEnabled) // Filter out disabled ZoneTabDefinitions
-                .ToList()
-        };
     }
 
     public static ZoneGroupDefinition CreateZoneConfigurationFromTemplate(List<UpdateZoneDto> updateZoneDtos)

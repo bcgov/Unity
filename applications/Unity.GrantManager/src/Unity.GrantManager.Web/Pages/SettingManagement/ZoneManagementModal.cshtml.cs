@@ -23,7 +23,7 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         public string ProviderKey { get; set; } = string.Empty;
 
         [BindProperty]
-        public ZoneGroupDefinitionDto? GroupTemplate { get; set; }
+        public ZoneGroupDefinitionDto GroupTemplate { get; set; }
 
         protected IApplicationUiSettingsAppService UiSettingsAppService { get; }
         protected ILocalEventBus LocalEventBus { get; }
@@ -50,15 +50,22 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         {
             ValidateModel();
 
-            // NOTE: Cleaning up from JS submission approach
-            var updateZoneDtos = GroupTemplate?.Zones
+            var updateTabs = GroupTemplate.Zones
+                .Select(t => new UpdateZoneDto
+                {
+                    Name = t.Name,
+                    IsEnabled = t.IsEnabled
+                });
+
+            var updateZones = GroupTemplate.Zones
                 .SelectMany(z => z.Zones)
                 .Select(p => new UpdateZoneDto
                 {
                     Name = p.Name,
                     IsEnabled = p.IsEnabled
-                }).ToList();
+                });
 
+            var updateZoneDtos = updateTabs.Concat(updateZones).ToList();
             if (updateZoneDtos != null)
             {
                 await UiSettingsAppService.UpdateAsync(
