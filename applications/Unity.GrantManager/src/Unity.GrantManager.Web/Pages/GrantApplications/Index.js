@@ -23,6 +23,21 @@
         'orgNumber',
         'orgBookStatus'];
 
+    //For stateRestore label in modal
+    let languageSetValues = {
+        stateRestore: {
+            creationModal: {
+                title: 'Create View',
+                name: 'Name',
+                button: 'Save',
+            },
+            emptyStates: 'No saved views',
+            renameTitle: 'Rename View',
+            renameLabel: 'New Name for "%s"',
+            removeConfirm: 'Are you sure you want to remove "%s"?'
+        }
+    }
+
     let actionButtons = [
         {
             extend: 'csv',
@@ -38,6 +53,11 @@
             className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
             config: {
                 creationModal: true,
+                splitSecondaries: [
+                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk" ></i> Update'},
+                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square" ></i> Rename'},
+                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can" ></i> Delete'}
+                ]
             },
             buttons: [
                 { extend: 'createState', text: 'Save As View' },
@@ -70,6 +90,7 @@
         actionButtons,
         pagingEnabled: true,
         reorderEnabled: false,
+        languageSetValues,
         dataTableName: 'GrantApplicationsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'
     });
