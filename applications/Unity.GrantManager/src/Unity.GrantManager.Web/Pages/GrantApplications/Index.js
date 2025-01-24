@@ -25,7 +25,11 @@
 
     //For stateRestore label in modal
     let languageSetValues = {
-        stateRestore: {
+        buttons: {
+            stateRestore: 'View %d'
+        },
+        stateRestore:
+        {
             creationModal: {
                 title: 'Create View',
                 name: 'Name',
@@ -33,8 +37,12 @@
             },
             emptyStates: 'No saved views',
             renameTitle: 'Rename View',
-            renameLabel: 'New Name for "%s"',
-            removeConfirm: 'Are you sure you want to remove "%s"?'
+            renameLabel: 'New name for "%s"',
+            removeTitle: 'Delete View',
+            removeConfirm: 'Are you sure you want to delete "%s"?',
+            removeSubmit: 'Delete',
+            duplicateError: 'A view with this name already exists.',
+            removeError: 'Failed to remove view.',
         }
     }
 
