@@ -144,6 +144,7 @@
         actionButtons,
         pagingEnabled: true,
         reorderEnabled: true,
+        languageSetValues: {},
         dataTableName: 'ApplicationPaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 

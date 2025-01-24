@@ -24,6 +24,7 @@ function initializeDataTable(options) {
         actionButtons,
         pagingEnabled,
         reorderEnabled,
+        languageSetValues,
         dataTableName,
         dynamicButtonContainerId
     } = options;
@@ -32,7 +33,7 @@ function initializeDataTable(options) {
     let filterData = {};
 
     let iDt = dt.DataTable(
-        abp.libs.datatables.normalizeConfiguration({
+       abp.libs.datatables.normalizeConfiguration({
             fixedHeader: {
                 header: true,
                 footer: false,
@@ -69,6 +70,7 @@ function initializeDataTable(options) {
             //fixedHeader: true,
             stateSave: true,
             stateDuration: 0,
+            oLanguage: languageSetValues,
             dom: 'Blfrtip',
             buttons: actionButtons,
             drawCallback: function () {
