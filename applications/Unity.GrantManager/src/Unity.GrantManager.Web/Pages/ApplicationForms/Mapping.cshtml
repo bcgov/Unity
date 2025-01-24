@@ -7,10 +7,13 @@
 @using Microsoft.AspNetCore.Authorization;
 @using Unity.GrantManager.Permissions;
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@using Volo.Abp.Authorization.Permissions;
+
 @model MappingModel
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
+@inject IPermissionChecker PermissionChecker
 @{
     PageLayout.Content.MenuItemName = "GrantManager.ApplicationForms";
     PageLayout.Content.Title = "Application Mapping";
@@ -81,6 +84,19 @@
                             button-type="Success" />
             </div>
         </abp-column>
+        @if(await PermissionChecker.IsGrantedAsync(UnitySettingManagementPermissions.UserInterface)) {
+        <abp-column size="_4" class="px-1">
+            <div class="btn-label-wrapper">
+                <label for="btn-link-worksheets" class="form-label">User Interface:</label>
+                <abp-button id="btn-ui-configuration"
+                            icon-type="Other"
+                            icon="fl fl-link"
+                            text="UI Configuration"
+                            abp-tooltip="Configure the UI for applications associated with this form."
+                            button-type="Primary" />
+            </div>
+        </abp-column>
+        }
     </abp-row>
 
     @if (Model?.FlexEnabled == true)

@@ -23,16 +23,17 @@ function initializeDataTable(options) {
         responseCallback,
         actionButtons,
         pagingEnabled,
+        reorderEnabled,
+        languageSetValues,
         dataTableName,
         dynamicButtonContainerId
     } = options;
 
     let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
-
     let filterData = {};
 
     let iDt = dt.DataTable(
-        abp.libs.datatables.normalizeConfiguration({
+       abp.libs.datatables.normalizeConfiguration({
             fixedHeader: {
                 header: true,
                 footer: false,
@@ -64,11 +65,12 @@ function initializeDataTable(options) {
                 style: 'multiple',
                 selector: 'td:not(:nth-child(8))',
             },
-            colReorder: true,
+            colReorder: reorderEnabled,
             orderCellsTop: true,
             //fixedHeader: true,
             stateSave: true,
             stateDuration: 0,
+            oLanguage: languageSetValues,
             dom: 'Blfrtip',
             buttons: actionButtons,
             drawCallback: function () {
@@ -297,7 +299,7 @@ function getColumnsVisibleByDefault(columns, listColumns) {
 
 function getColumnToggleButtonsSorted(listColumns, dataTable) {    
     let exludeIndxs = [0];
-    return listColumns
+    const res = listColumns
         .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
         .filter(obj => !exludeIndxs.includes(obj.index))
         .sort((a, b) => a.title.localeCompare(b.title))
@@ -313,8 +315,11 @@ function getColumnToggleButtonsSorted(listColumns, dataTable) {
                 }
 
             },
-            className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable)
+            className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable),
+            extend: 'columnToggle',
+            columns: a.index
         }));
+    return res;
 }
 
 function updateFilter(dt, dtName, filterData) {

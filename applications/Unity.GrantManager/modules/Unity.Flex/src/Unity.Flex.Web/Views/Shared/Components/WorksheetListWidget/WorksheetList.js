@@ -168,6 +168,8 @@ $(function () {
         } else {
             previewPane?.html('<p>No sections to display.</p>');
         }
+
+        $('.preview-scrollable').first().scrollTop(0);
     }
 
     PubSub.subscribe(

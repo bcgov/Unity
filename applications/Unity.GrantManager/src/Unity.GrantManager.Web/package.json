@@ -15,6 +15,8 @@
     "datatables.net-fixedheader": "^3.4.0",
     "datatables.net-fixedheader-bs5": "^3.4.0",
     "datatables.net-select-bs5": "^1.7.0",
+    "datatables.net-staterestore": "^1.4.1",
+    "datatables.net-staterestore-dt": "^1.4.1",
     "echarts": "5.5.0",
     "formiojs": "^4.15.1",
     "html2canvas": "^1.4.1",
