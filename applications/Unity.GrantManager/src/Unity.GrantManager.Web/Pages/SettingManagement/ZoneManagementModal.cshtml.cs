@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         public string ProviderKey { get; set; } = string.Empty;
 
         [BindProperty]
-        public ZoneGroupDefinitionDto? GroupTemplate { get; set; }
+        public ZoneGroupDefinitionDto GroupTemplate { get; set; } = new ZoneGroupDefinitionDto();
 
         protected IZoneManagementAppService UiSettingsAppService { get; }
         protected ILocalEventBus LocalEventBus { get; }
@@ -37,11 +37,6 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
             ValidateModel();
 
             GroupTemplate = await UiSettingsAppService.GetAsync(ProviderName, ProviderKey);
-
-            if (GroupTemplate == null)
-            {
-                return BadRequest("GroupTemplate cannot be null.");
-            }
 
             return Page();
         }

@@ -18,13 +18,13 @@
             <input asp-for="@Model.ProviderKey" />
             <input asp-for="@Model.ProviderName" />
             <abp-tabs name="ZonesTabs" tab-style="Tab" class="custom-scroll-container">
-                <abp-tab title="Application Details" name="tab-@Model.GroupTemplate?.Name">
+                <abp-tab title="Application Details" name="tab-@Model.GroupTemplate.Name">
                     <div class="w-100" style="height: 500px;overflow-y: auto">
                         <div class="ps-1">
                             <div class="row row-cols-1 row-cols-md-2 g-4">
-                                @for (var i = 0; i < Model.GroupTemplate?.Tabs.Count; i++)
+                                @for (var i = 0; i < Model.GroupTemplate.Tabs.Count; i++)
                                 {
-                                    var tabGroup = Model.GroupTemplate?.Tabs[i];
+                                    var tabGroup = Model.GroupTemplate.Tabs[i];
                                     <abp-column class="border-0">
                                         <div class="form-switch">
                                             <abp-input asp-for="@tabGroup.IsEnabled"

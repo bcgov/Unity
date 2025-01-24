@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.Zones;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Web.Components.ApplicationUiSettingGroup;
