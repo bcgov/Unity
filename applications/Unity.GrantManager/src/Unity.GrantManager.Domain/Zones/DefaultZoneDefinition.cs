@@ -6,7 +6,7 @@ public static class DefaultZoneDefinition
     public static readonly ZoneGroupDefinition Template = new()
     {
         Name = "MainZone",
-        Zones = [
+        Tabs = [
              new ZoneTabDefinition {
                  Name = SettingsConstants.UI.Tabs.Assessment,
                  IsEnabled = true,

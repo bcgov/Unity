@@ -5,5 +5,5 @@ namespace Unity.GrantManager.Zones;
 public class ZoneGroupDefinitionDto
 {
     public string Name { get; set; } = string.Empty;
-    public List<ZoneTabDefinitionDto> Zones { get; set; } = [];
+    public List<ZoneTabDefinitionDto> Tabs { get; set; } = [];
 }

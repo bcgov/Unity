@@ -50,14 +50,14 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         {
             ValidateModel();
 
-            var updateTabs = GroupTemplate.Zones
+            var updateTabs = GroupTemplate.Tabs
                 .Select(t => new UpdateZoneDto
                 {
                     Name = t.Name,
                     IsEnabled = t.IsEnabled
                 });
 
-            var updateZones = GroupTemplate.Zones
+            var updateZones = GroupTemplate.Tabs
                 .SelectMany(z => z.Zones)
                 .Where(z => !z.IsConfigurationDisabled)
                 .Select(p => new UpdateZoneDto

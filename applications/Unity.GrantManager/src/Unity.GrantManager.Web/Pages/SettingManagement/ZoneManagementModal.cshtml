@@ -24,18 +24,18 @@
                     <div class="w-100" style="height: 500px;overflow-y: auto">
                         <div class="ps-1">
                             <div class="row row-cols-1 row-cols-md-2 g-4">
-                                @for (var i = 0; i < Model.GroupTemplate.Zones.Count; i++)
+                                @for (var i = 0; i < Model.GroupTemplate.Tabs.Count; i++)
                                 {
-                                    var tabGroup = Model.GroupTemplate.Zones[i];
+                                    var tabGroup = Model.GroupTemplate.Tabs[i];
                                     <abp-column class="border-0">
                                         <div class="form-switch">
                                             <abp-input asp-for="@tabGroup.IsEnabled"
-                                            abp-id-name="@Model.GroupTemplate.Zones[i].IsEnabled"
+                                            abp-id-name="@Model.GroupTemplate.Tabs[i].IsEnabled"
                                             check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
                                             label="@L[$"Setting:{tabGroup.Name}.DisplayName"].Value"
                                             class="fw-bold"
                                             group-data-zone-name="@tabGroup.Name" />
-                                            <input asp-for="@tabGroup.Name" abp-id-name="@Model.GroupTemplate.Zones[i].Name" hidden />
+                                            <input asp-for="@tabGroup.Name" abp-id-name="@Model.GroupTemplate.Tabs[i].Name" hidden />
                                         </div>
 
                                         @for(var j = 0; j < tabGroup.Zones.Count; j++)
@@ -43,7 +43,7 @@
                                             var zone = tabGroup.Zones[j];
                                             <div class="form-switch">
                                                 <abp-input asp-for="@zone.IsEnabled"
-                                                           abp-id-name="@Model.GroupTemplate.Zones[i].Zones[j].IsEnabled"
+                                                           abp-id-name="@Model.GroupTemplate.Tabs[i].Zones[j].IsEnabled"
                                                            check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
                                                            label="@(L[$"Setting:{zone.Name}.DisplayName"].Value)"
                                                            group-data-zone-name="@zone.Name"
@@ -51,7 +51,7 @@
                                                            group-style="margin-inline-start: 25px"
                                                            disabled=@zone.IsConfigurationDisabled />
 
-                                                <input asp-for="@zone.Name" abp-id-name="@Model.GroupTemplate.Zones[i].Zones[j].Name" hidden />
+                                                <input asp-for="@zone.Name" abp-id-name="@Model.GroupTemplate.Tabs[i].Zones[j].Name" hidden />
                                             </div>
                                         }
                                     </abp-column>
