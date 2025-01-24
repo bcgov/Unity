@@ -16,7 +16,7 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
     /// </summary>
     /// <param name="formId"></param>
     /// <returns></returns>
-    public async Task<HashSet<string>> GetZoneStateSet(Guid formId)
+    public async Task<HashSet<string>> GetZoneStateSetAsync(Guid formId)
     {
         var zoneTemplates = await zoneManager.GetAsync(formId.ToString());
 
@@ -44,15 +44,8 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
         return ObjectMapper.Map<ZoneGroupDefinition, ZoneGroupDefinitionDto>(updatedTemplate);
     }
 
-    public async Task<ZoneGroupDefinitionDto> GetForFormAsync(Guid formId)
-    {
-        var zoneTemplates = await zoneManager.GetAsync("F", formId.ToString());
-        var updatedTemplate = UnmergeZoneConfigurationTemplate(zoneTemplates);
-        return ObjectMapper.Map<ZoneGroupDefinition, ZoneGroupDefinitionDto>(updatedTemplate);
-    }
-
     [Authorize(UnitySettingManagementPermissions.UserInterface)]
-    public async Task UpdateAsync(string providerName, string providerKey, List<UpdateZoneDto> input)
+    public async Task SetAsync(string providerName, string providerKey, List<UpdateZoneDto> input)
     {
         var updatedTemplate = MergeZoneConfigurationTemplate(input);
 
@@ -62,7 +55,7 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
         }
     }
 
-    private static ZoneGroupDefinition UnmergeZoneConfigurationTemplate(ZoneGroupDefinition existingTemplate)
+    private static ZoneGroupDefinition UnmergeZoneConfigurationTemplate(ZoneGroupDefinition currentConfiguration)
     {
         var updatedZoneGroup = new ZoneGroupDefinition
         {
@@ -71,7 +64,7 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
                 .Select(tab => new ZoneTabDefinition
                 {
                     Name = tab.Name,
-                    IsEnabled = existingTemplate.Tabs.Any(templateTabs => templateTabs.Name == tab.Name && templateTabs.IsEnabled),
+                    IsEnabled = currentConfiguration.Tabs.Any(templateTabs => templateTabs.Name == tab.Name && templateTabs.IsEnabled),
                     SortOrder = tab.SortOrder,
                     Zones = tab.Zones
                         .Select(zone => new ZoneDefinition
@@ -79,8 +72,8 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
                             Name = zone.Name,
                             ViewComponentType = zone.ViewComponentType,
                             IsEnabled = zone.IsConfigurationDisabled
-                                ? existingTemplate.Tabs.Any(templateTabs => templateTabs.Name == tab.Name && templateTabs.IsEnabled)
-                                : existingTemplate.Tabs.SelectMany(et => et.Zones).Any(ez => ez.Name == zone.Name && ez.IsEnabled),
+                                ? currentConfiguration.Tabs.Any(templateTabs => templateTabs.Name == tab.Name && templateTabs.IsEnabled)
+                                : currentConfiguration.Tabs.SelectMany(et => et.Zones).Any(ez => ez.Name == zone.Name && ez.IsEnabled),
                             IsConfigurationDisabled = zone.IsConfigurationDisabled,
                             SortOrder = zone.SortOrder
                         })
@@ -120,28 +113,4 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
                 .ToList()
         };
     }
-
-    public async Task<ZoneGroupDefinitionDto> GetTemplateAsync()
-    {
-        var zoneTemplates = await zoneManager.GetAsync();
-        return ObjectMapper.Map<ZoneGroupDefinition, ZoneGroupDefinitionDto>(zoneTemplates);
-    }
-
-    public async Task SetConfigurationAsync()
-    {
-        await zoneManager.SetForTennantAsync(DefaultZoneDefinition.Template);
-    }
-
-    public async Task SetConfigurationAsync(Guid formId, ZoneGroupDefinitionDto? input)
-    {
-        var submitTemplate = input != null ? ObjectMapper.Map<ZoneGroupDefinitionDto, ZoneGroupDefinition>(input) : DefaultZoneDefinition.Template;
-        await zoneManager.SetForFormAsync(formId, submitTemplate);
-    }
-
-    public Task<ApplicationUiSettingsDto> GetAsync()
-    {
-        throw new NotImplementedException();
-    }
-
-
 }

@@ -52,9 +52,9 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
                 .Prepend(new UpdateZoneDto { Name = tab.Name, IsEnabled = tab.IsEnabled }))
             .ToList();
 
-            if (updateZoneDtos.Any())
+            if (updateZoneDtos.Count != 0)
             {
-                await UiSettingsAppService.UpdateAsync(ProviderName, ProviderKey, updateZoneDtos);
+                await UiSettingsAppService.SetAsync(ProviderName, ProviderKey, updateZoneDtos);
             }
 
             await LocalEventBus.PublishAsync(

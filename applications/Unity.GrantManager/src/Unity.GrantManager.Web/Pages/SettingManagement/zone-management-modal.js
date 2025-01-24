@@ -50,27 +50,34 @@
         }
 
         this.initDom = function ($el) {
+            function handleCheckboxChange($tab, $checkBox) {
+                let $checkState = $checkBox.is(':checked');
+                if ($checkState) {
+                    checkParents($tab, $checkBox, '.custom-checkbox');
+                }
+                checkChildren($tab, $checkBox, $checkState);
+            }
+
+            function handleFormControlChange($tab, $element) {
+                checkParents($tab, $element, '.form-group');
+            }
+
             $el.find('.tab-pane').each(function () {
                 let $tab = $(this);
-                $tab.find('input[type="checkbox"]')
-                    .each(function () {
-                        let $checkBox = $(this);
-                        $checkBox.change(function () {
-                            let $checkState = $checkBox.is(':checked');
-                            if ($checkState) {
-                                checkParents($tab, $checkBox, '.custom-checkbox')
-                            }
-                            checkChildren($tab, $checkBox, $checkState);
-                        });
-                    });
 
-                $tab.find('.form-control')
-                    .each(function () {
-                        let $element = $(this);
-                        $element.change(function () {
-                            checkParents($tab, $element, '.form-group')
-                        });
+                $tab.find('input[type="checkbox"]').each(function () {
+                    let $checkBox = $(this);
+                    $checkBox.change(function () {
+                        handleCheckboxChange($tab, $checkBox);
                     });
+                });
+
+                $tab.find('.form-control').each(function () {
+                    let $element = $(this);
+                    $element.change(function () {
+                        handleFormControlChange($tab, $element);
+                    });
+                });
             });
 
             $(function () {

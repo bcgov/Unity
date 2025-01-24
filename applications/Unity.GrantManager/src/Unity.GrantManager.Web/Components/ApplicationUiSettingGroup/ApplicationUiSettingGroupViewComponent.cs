@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.SettingManagement;
 using Unity.GrantManager.Zones;
 using Volo.Abp.AspNetCore.Mvc;
 
@@ -10,8 +10,6 @@ public class ApplicationUiSettingGroupViewComponent(IZoneManagementAppService se
 {
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
-        var model = await settingsAppService.GetAsync();
-        var viewModel = ObjectMapper.Map<ApplicationUiSettingsDto, ApplicationUiSettingsViewModel>(model!);
-        return View("~/Components/ApplicationUiSettingGroup/Default.cshtml", viewModel);
+        throw new NotImplementedException();
     }
 }
