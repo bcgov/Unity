@@ -29,9 +29,14 @@ public class ZoneManager : DomainService, IZoneManager, ITransientDependency
         return Task.FromResult(DefaultZoneDefinition.Template);
     }
 
-    public async Task<ZoneGroupDefinition> GetAsync(Guid formId)
+    public async Task<ZoneGroupDefinition> GetAsync(string providerKey)
     {
-        var configurationJson = await _settingManager.GetOrNullAsync(SettingsConstants.UI.Zones, FormProviderKey, formId.ToString());
+        return await GetAsync(FormProviderKey, providerKey);
+    }
+
+    public async Task<ZoneGroupDefinition> GetAsync(string providerName, string providerKey)
+    {
+        var configurationJson = await _settingManager.GetOrNullAsync(SettingsConstants.UI.Zones, providerName, providerKey, fallback: true);
         ZoneGroupDefinition? currentConfiguration = null;
         if (configurationJson != null)
         {

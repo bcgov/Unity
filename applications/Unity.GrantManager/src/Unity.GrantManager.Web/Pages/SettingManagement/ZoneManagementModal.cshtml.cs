@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.SettingManagement;
 using Unity.GrantManager.Zones;
 using Volo.Abp.AspNetCore.Mvc.ApplicationConfigurations;
 using Volo.Abp.EventBus.Local;
@@ -23,12 +22,12 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         public string ProviderKey { get; set; } = string.Empty;
 
         [BindProperty]
-        public ZoneGroupDefinitionDto GroupTemplate { get; set; }
+        public required ZoneGroupDefinitionDto GroupTemplate { get; set; }
 
-        protected IApplicationUiSettingsAppService UiSettingsAppService { get; }
+        protected IZoneManagementAppService UiSettingsAppService { get; }
         protected ILocalEventBus LocalEventBus { get; }
 
-        public ZoneManagementModalModel(IApplicationUiSettingsAppService uiSettingsAppService, ILocalEventBus localEventBus)
+        public ZoneManagementModalModel(IZoneManagementAppService uiSettingsAppService, ILocalEventBus localEventBus)
         {
             UiSettingsAppService = uiSettingsAppService;
             LocalEventBus = localEventBus;
@@ -38,10 +37,7 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         {
             ValidateModel();
 
-            if (ProviderName == "F" && Guid.TryParse(ProviderKey, out Guid formId))
-            {
-                GroupTemplate = await UiSettingsAppService.GetForFormAsync(formId);
-            }
+            GroupTemplate = await UiSettingsAppService.GetAsync(ProviderName, ProviderKey);
 
             return Page();
         }
@@ -50,30 +46,16 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         {
             ValidateModel();
 
-            var updateTabs = GroupTemplate.Tabs
-                .Select(t => new UpdateZoneDto
-                {
-                    Name = t.Name,
-                    IsEnabled = t.IsEnabled
-                });
+            var updateZoneDtos = GroupTemplate.Tabs
+            .SelectMany(tab => tab.Zones
+                .Where(zone => !zone.IsConfigurationDisabled)
+                .Select(zone => new UpdateZoneDto { Name = zone.Name, IsEnabled = zone.IsEnabled })
+                .Prepend(new UpdateZoneDto { Name = tab.Name, IsEnabled = tab.IsEnabled }))
+            .ToList();
 
-            var updateZones = GroupTemplate.Tabs
-                .SelectMany(z => z.Zones)
-                .Where(z => !z.IsConfigurationDisabled)
-                .Select(p => new UpdateZoneDto
-                {
-                    Name = p.Name,
-                    IsEnabled = p.IsEnabled
-                });
-
-            var updateZoneDtos = updateTabs.Concat(updateZones).ToList();
-            if (updateZoneDtos != null)
+            if (updateZoneDtos.Any())
             {
-                await UiSettingsAppService.UpdateAsync(
-                  ProviderName,
-                  ProviderKey,
-                  updateZoneDtos
-                  );
+                await UiSettingsAppService.UpdateAsync(ProviderName, ProviderKey, updateZoneDtos);
             }
 
             await LocalEventBus.PublishAsync(
