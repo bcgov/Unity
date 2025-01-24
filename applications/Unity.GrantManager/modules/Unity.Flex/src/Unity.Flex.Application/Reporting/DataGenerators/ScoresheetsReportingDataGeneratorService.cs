@@ -52,7 +52,7 @@ namespace Unity.Flex.Reporting.DataGenerators
             catch (Exception ex)
             {
                 // Blanket catch here, as we dont want this generation to interfere we intake, report formatted data can be re-generated later
-                Logger.LogError(ex, "Error processing reporting data for scoresheet - correlationId: {correlationId}", instanceValue.CorrelationId);
+                Logger.LogError(ex, "Error processing reporting data for scoresheet - correlationId: {CorrelationId}", instanceValue.CorrelationId);
             }
         }
     }

@@ -49,7 +49,7 @@ namespace Unity.GrantManager.Reporting.DataGenerators
             catch (Exception ex)
             {
                 // Blanket catch here, as we dont want this generation to interfere we intake, report formatted data can be re-generated later
-                Logger.LogError(ex, "Error processing reporting data for submission - submissionId: {submissionId}", submissionId);
+                Logger.LogError(ex, "Error processing reporting data for submission - submissionId: {SubmissionId}", submissionId);
             }
         }
     }
