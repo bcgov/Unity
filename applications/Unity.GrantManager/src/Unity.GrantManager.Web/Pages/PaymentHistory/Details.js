@@ -37,6 +37,7 @@
         actionButtons,
         pagingEnabled: true,
         reorderEnabled: true,
+        languageSetValues: {},
         dataTableName: 'AuditHistoryTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 

@@ -115,6 +115,7 @@ $(function () {
         actionButtons,
         pagingEnabled: true,
         reorderEnabled: true,
+        languageSetValues: {},
         dataTableName: 'PaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
