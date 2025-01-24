@@ -301,6 +301,7 @@ $(function () {
             title: l('ApplicationPaymentListTable:SupplierNumber'),
             name: 'supplierNumber',
             data: 'supplierNumber',
+            visible: true,
             className: 'data-table-header',
             index: columnIndex,
         };
@@ -311,6 +312,7 @@ $(function () {
             title: 'Supplier Name',
             name: 'supplierName',
             data: 'supplierName',
+            visible: false,
             className: 'data-table-header',
             index: columnIndex,
         };
