@@ -36,6 +36,7 @@
         responseCallback,
         actionButtons,
         pagingEnabled: true,
+        reorderEnabled: true,
         dataTableName: 'AuditHistoryTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 

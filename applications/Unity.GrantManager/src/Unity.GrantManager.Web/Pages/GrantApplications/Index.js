@@ -22,6 +22,7 @@
         'community',
         'orgNumber',
         'orgBookStatus'];
+
     let actionButtons = [
         {
             extend: 'csv',
@@ -31,6 +32,21 @@
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
             }
+        },
+        {
+            extend: 'savedStates',
+            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
+            config: {
+                creationModal: true,
+            },
+            buttons: [
+                { extend: 'createState', text: 'Save As View' },
+                { extend: 'removeAllStates', text: 'Delete All Views' },
+                {
+                    extend: 'spacer',
+                    style: 'bar',
+                }
+            ]
         }
     ];
 
@@ -41,7 +57,7 @@
             data: result.items
         };
     };
-    let paging = true;
+
     dataTable = initializeDataTable({
         dt,
         defaultVisibleColumns,
@@ -53,8 +69,10 @@
         responseCallback,
         actionButtons,
         pagingEnabled: true,
+        reorderEnabled: false,
         dataTableName: 'GrantApplicationsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'});
+        dynamicButtonContainerId: 'dynamicButtonContainerId'
+    });
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -69,7 +87,7 @@
                 selectApplication(type, index, 'select_application');
             });
         }
-        
+
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
@@ -88,6 +106,10 @@
         let table = $('#GrantApplicationsTable').DataTable();
         table.search($(this).val()).draw();
     });
+
+    //For savedStates
+    $('.grp-savedStates').text('Save View');
+    $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
 
     function selectApplication(type, indexes, action) {
         if (type === 'row') {
@@ -1001,7 +1023,7 @@
                     return '';
                 }
             },
-            index: 59
+            index: 60
         }
     }
 
@@ -1014,7 +1036,7 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: 60
+            index: 61
         }
     }
 

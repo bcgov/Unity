@@ -108,12 +108,13 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 10,
+        defaultSortColumn: 11,
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
         data: {},
         responseCallback,
         actionButtons,
         pagingEnabled: true,
+        reorderEnabled: true,
         dataTableName: 'PaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
@@ -300,6 +301,7 @@ $(function () {
             title: l('ApplicationPaymentListTable:SupplierNumber'),
             name: 'supplierNumber',
             data: 'supplierNumber',
+            visible: true,
             className: 'data-table-header',
             index: columnIndex,
         };
@@ -310,6 +312,7 @@ $(function () {
             title: 'Supplier Name',
             name: 'supplierName',
             data: 'supplierName',
+            visible: false,
             className: 'data-table-header',
             index: columnIndex,
         };

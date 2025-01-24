@@ -422,7 +422,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 await _localEventBus.PublishAsync(supplierEto);
             }
 
-            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
+            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId);
             if (applicantAgent == null)
             {
                 applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent

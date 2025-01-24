@@ -5,7 +5,8 @@ $(function () {
     const UIElements = {
         navOrgInfoTab: $('#nav-organization-info-tab'),
         applicantId: $("#ApplicantId"),
-        siteId: $("#SiteId")
+        siteId: $("#SiteId"),
+        hasEditSupplier: $("#HasEditSupplierInfo")
     };
 
     function init() {
@@ -36,7 +37,8 @@ $(function () {
 
         let responseCallback = function (result) {
 
-            if (!(result?.items?.length)) {
+            if (!result || result.length === 0) {
+
                 return {
                     recordsTotal: 0,
                     recordsFiltered: 0,
@@ -44,9 +46,9 @@ $(function () {
                 };
             }
             return {
-                recordsTotal: result.totalCount,
-                recordsFiltered: result.items.length,
-                data: result.items
+                recordsTotal: result.length,
+                recordsFiltered: result.length,
+                data: result
             };
         };
         
@@ -76,6 +78,7 @@ $(function () {
             responseCallback,
             actionButtons,
             pagingEnabled: false,
+            reorderEnabled: true,
             dataTableName: 'SiteInfoTable',
             dynamicButtonContainerId: 'siteDynamicButtonContainerId'});
     
@@ -109,6 +112,7 @@ $(function () {
         return {
             title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber'),
             data: 'number',
+            name: 'number',
             className: 'data-table-header',
             index: columnIndex
         }
@@ -137,6 +141,7 @@ $(function () {
         return {
             title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:MailingAddress'),
             data: 'addressLine1',
+            name: 'addressLine1',
             className: 'data-table-header',
             render: function (data, type, full, meta) {
                 return nullToEmpty(full.addressLine1) + ' ' + nullToEmpty(full.addressLine2) + " " + nullToEmpty(full.addressLine3) + " " + nullToEmpty(full.city) + " " + nullToEmpty(full.province) + " " + nullToEmpty(full.postalCode);
@@ -148,6 +153,7 @@ $(function () {
     function getBankAccount(columnIndex) {
         return {
             title: 'Bank Account',
+            name: 'bankAccount',
             data: 'bankAccount',
             className: 'data-table-header',
             index: columnIndex
@@ -157,6 +163,7 @@ $(function () {
     function getStatus(columnIndex) {
         return {
             title: 'Status',
+            name: 'status',
             data: 'status',
             className: 'data-table-header',
             index: columnIndex
@@ -167,11 +174,13 @@ $(function () {
         return {
             title: 'Default',
             data: 'id',
+            name: 'id',
             className: 'data-table-header',
             sortable: false,
             render: function (data, type, full, meta) {
                 let checked = UIElements.siteId.val() == data ? 'checked' : '';
-                return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} />`;
+                let disabled = UIElements.hasEditSupplier.val() == 'False' ? 'disabled' : '';
+                return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
             },
             index: columnIndex
         }

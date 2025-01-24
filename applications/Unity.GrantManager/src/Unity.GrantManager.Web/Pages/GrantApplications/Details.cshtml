@@ -1,5 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @* #pragma warning disable S1128 *@
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
+@using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Settings
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
@@ -119,7 +121,21 @@
                         <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.AssessmentResults")" id="assessmentResultWidget">
                             @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.ReviewList")" id="assessmentMainView">
+                    @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                    {
+                        <div id="assessmentResultsCustomWidget">
+                            @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
+                                     new
+                                     {
+                                         instanceCorrelationId = Model.ApplicationId,
+                                         instanceCorrelationProvider = CorrelationConsts.Application,
+                                         sheetCorrelationId = Model.ApplicationFormVersionId,
+                                         sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                                         uiAnchor = FlexConsts.AssessmentInfoUiAnchor
+                                     })
+                        </div>
+                    }
+                    <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.ReviewList")" id="assessmentMainView">
                             @await Component.InvokeAsync("ReviewList")
                         </div>
                         <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
@@ -378,7 +394,3 @@
         </abp-card>
     </div>
 </div>
-
-
-
-

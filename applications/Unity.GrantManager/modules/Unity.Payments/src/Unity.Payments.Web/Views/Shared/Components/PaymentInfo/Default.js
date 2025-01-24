@@ -143,6 +143,7 @@
         responseCallback,
         actionButtons,
         pagingEnabled: true,
+        reorderEnabled: true,
         dataTableName: 'ApplicationPaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
