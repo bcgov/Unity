@@ -1,5 +1,6 @@
 ﻿$(function () {
     let worksheetsModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/LinkWorksheetsModal');
+    let uiConfigurationModal = new abp.ModalManager(abp.appPath + 'SettingManagement/ZoneManagementModal');
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
@@ -65,7 +66,8 @@
         inputSearchBar: $('#search-bar'),
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
-        linkWorksheets: $('#btn-link-worksheets')
+        linkWorksheets: $('#btn-link-worksheets'),
+        uiConfiguration: $('#btn-ui-configuration')
     };
 
     init();
@@ -101,10 +103,15 @@
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
         UIElements.selectVersionList.on('change', handleSelectVersion);
         UIElements.linkWorksheets.on('click', handleLinkWorksheets);
+        UIElements.uiConfiguration.on('click', handleUiConfigurationModal);
     }
 
     function handleLinkWorksheets() {
         worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });        
+    }
+
+    function handleUiConfigurationModal() {
+        uiConfigurationModal.open({ providerName: 'F', providerKey: $('#applicationFormId').val(), providerKeyDisplayName: 'Test.Display.Name' });
     }
 
     function handleEdit() {
