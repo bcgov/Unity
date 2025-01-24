@@ -38,6 +38,11 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
 
             GroupTemplate = await UiSettingsAppService.GetAsync(ProviderName, ProviderKey);
 
+            if (GroupTemplate == null)
+            {
+                return BadRequest("GroupTemplate cannot be null.");
+            }
+
             return Page();
         }
 
@@ -45,12 +50,17 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         {
             ValidateModel();
 
+            if (GroupTemplate == null)
+            {
+                return BadRequest("GroupTemplate cannot be null.");
+            }
+
             var updateZoneDtos = GroupTemplate.Tabs
-            .SelectMany(tab => tab.Zones
-                .Where(zone => !zone.IsConfigurationDisabled)
-                .Select(zone => new UpdateZoneDto { Name = zone.Name, IsEnabled = zone.IsEnabled })
-                .Prepend(new UpdateZoneDto { Name = tab.Name, IsEnabled = tab.IsEnabled }))
-            .ToList();
+                .SelectMany(tab => tab.Zones
+                    .Where(zone => !zone.IsConfigurationDisabled)
+                    .Select(zone => new UpdateZoneDto { Name = zone.Name, IsEnabled = zone.IsEnabled })
+                    .Prepend(new UpdateZoneDto { Name = tab.Name, IsEnabled = tab.IsEnabled }))
+                .ToList();
 
             if (updateZoneDtos.Count != 0)
             {
