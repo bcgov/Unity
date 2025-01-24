@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,7 +21,7 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         public string ProviderKey { get; set; } = string.Empty;
 
         [BindProperty]
-        public required ZoneGroupDefinitionDto GroupTemplate { get; set; }
+        public ZoneGroupDefinitionDto? GroupTemplate { get; set; }
 
         protected IZoneManagementAppService UiSettingsAppService { get; }
         protected ILocalEventBus LocalEventBus { get; }
