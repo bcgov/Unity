@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Permissions;
-using Unity.GrantManager.SettingManagement;
 
 namespace Unity.GrantManager.Zones;
 
@@ -20,21 +19,11 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
     {
         var zoneTemplates = await zoneManager.GetAsync(formId.ToString());
 
-        var enabledTabs = zoneTemplates.Tabs
+        return zoneTemplates.Tabs
             .Where(zoneTab => zoneTab.IsEnabled)
-            .Select(zoneTab => zoneTab.Name)
+            .SelectMany(zoneTab => new[] { zoneTab.Name }
+            .Concat(zoneTab.Zones.Where(zone => zone.IsEnabled).Select(zone => zone.Name)))
             .ToHashSet();
-
-        var enabledZones = zoneTemplates.Tabs
-            .Where(zoneTab => zoneTab.IsEnabled)
-            .SelectMany(zoneTab => zoneTab.Zones)
-            .Where(zone => zone.IsEnabled)
-            .Select(zone => zone.Name)
-            .ToHashSet();
-
-        enabledTabs.UnionWith(enabledZones);
-
-        return enabledTabs;
     }
 
     public async Task<ZoneGroupDefinitionDto> GetAsync(string providerName, string providerKey)
@@ -47,17 +36,15 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
     [Authorize(UnitySettingManagementPermissions.UserInterface)]
     public async Task SetAsync(string providerName, string providerKey, List<UpdateZoneDto> input)
     {
-        var updatedTemplate = MergeZoneConfigurationTemplate(input);
-
         if (Guid.TryParse(providerKey, out Guid providerId))
         {
-            await zoneManager.SetForFormAsync(providerId, updatedTemplate);
+            await zoneManager.SetForFormAsync(providerId, MergeZoneConfigurationTemplate(input));
         }
     }
 
     private static ZoneGroupDefinition UnmergeZoneConfigurationTemplate(ZoneGroupDefinition currentConfiguration)
     {
-        var updatedZoneGroup = new ZoneGroupDefinition
+        return new ZoneGroupDefinition
         {
             Name = DefaultZoneDefinition.Template.Name,
             Tabs = DefaultZoneDefinition.Template.Tabs
@@ -83,8 +70,6 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
                 .OrderBy(t => t.SortOrder)
                 .ToList()
         };
-
-        return updatedZoneGroup;
     }
 
     public static ZoneGroupDefinition MergeZoneConfigurationTemplate(List<UpdateZoneDto> updateZoneDtos)

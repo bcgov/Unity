@@ -6,9 +6,9 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Web.Components.ApplicationUiSettingGroup;
 
-public class ApplicationUiSettingGroupViewComponent(IZoneManagementAppService settingsAppService) : AbpViewComponent
+public class ApplicationUiSettingGroupViewComponent() : AbpViewComponent
 {
-    public virtual async Task<IViewComponentResult> InvokeAsync()
+    public virtual Task<IViewComponentResult> InvokeAsync()
     {
         throw new NotImplementedException();
     }
