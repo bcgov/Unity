@@ -4,61 +4,74 @@ using System.Collections.Generic;
 using System.Linq;
 using Volo.Abp.Application.Services;
 using Volo.Abp;
+using Microsoft.Extensions.Logging;
+using System;
 
 namespace Unity.GrantManager.Reporting.DataGenerators
 {
     [RemoteService(false)]
     public class ReportingDataGenerator : ApplicationService, IReportingDataGenerator
     {
-        public string? Generate(dynamic formSubmission, string? reportKeys)
+        public string? Generate(dynamic formSubmission, string? reportKeys, Guid submissionId)
         {
-            if (reportKeys == null) return null;
-
-            var reportResult = new Dictionary<string, List<string>>();
-
-            JObject submission = JObject.Parse(formSubmission.ToString());
-
-            // Navigate to the "data" node within the "submission" node
-            JToken? dataNode = submission.SelectToken("submission.submission.data");
-
-            List<string> keysToTrack = [.. reportKeys.Split('|')];
-
-            if (dataNode == null) return null;
-
-            // Perform a recursive scan of the data node
-            ScanNode(dataNode, keysToTrack, reportResult);
-
-            // Ensure all keys are present in the result, even if no matches were found
-            foreach (var key in keysToTrack)
+            try
             {
-                if (!reportResult.ContainsKey(key))
+                if (reportKeys == null) return null;
+
+                var reportResult = new Dictionary<string, List<string>>();
+
+                JObject submission = JObject.Parse(formSubmission.ToString());
+
+                // Navigate to the "data" node within the "submission" node
+                JToken? dataNode = submission.SelectToken("submission.submission.data");
+
+                List<string> keysToTrack = [.. reportKeys.Split('|')];
+
+                if (dataNode == null) return null;
+
+                // Perform a recursive scan of the data node
+                ScanNode(dataNode, keysToTrack, reportResult);
+
+                // Ensure all keys are present in the result, even if no matches were found
+                foreach (var key in keysToTrack)
                 {
-                    reportResult[key] = [];
+                    if (!reportResult.ContainsKey(key))
+                    {
+                        reportResult[key] = [];
+                    }
                 }
-            }
 
-            // Clean up the JSON strings
-            foreach (var key in reportResult.Keys.ToList())
+                // Clean up the JSON strings
+                foreach (var key in reportResult.Keys.ToList())
+                {
+                    reportResult[key] = reportResult[key].Select(CleanJsonString).ToList();
+                }
+
+                // Sort the dictionary by keys alphabetically 
+                var sortedResult = reportResult.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                // Create a simple JSON object from the result dictionary
+                JObject jsonObject = [];
+
+                foreach (var kvp in sortedResult)
+                {
+                    JArray valuesArray = new(kvp.Value);
+                    jsonObject[kvp.Key] = valuesArray;
+                }
+
+                if (jsonObject == null) return null;
+
+                // Prep value for db            
+                return jsonObject.ToString();
+
+            }
+            catch (Exception ex)
             {
-                reportResult[key] = reportResult[key].Select(CleanJsonString).ToList();
+                // Blanket catch here, as we dont want this generation to interfere we intake, report formatted data can be re-generated later
+                Logger.LogError(ex, "Error processing reporting data for submission - submissionId: {SubmissionId}", submissionId);
             }
 
-            // Sort the dictionary by keys alphabetically 
-            var sortedResult = reportResult.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-            // Create a simple JSON object from the result dictionary
-            JObject jsonObject = [];
-
-            foreach (var kvp in sortedResult)
-            {
-                JArray valuesArray = new(kvp.Value);
-                jsonObject[kvp.Key] = valuesArray;
-            }
-
-            if (jsonObject == null) return null;
-
-            // Prep value for db            
-            return jsonObject.ToString();
+            return null;
         }
 
         static void ScanNode(JToken node, List<string> keysToTrack, Dictionary<string, List<string>> result)

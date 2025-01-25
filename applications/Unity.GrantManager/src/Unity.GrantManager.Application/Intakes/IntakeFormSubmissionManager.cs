@@ -71,11 +71,11 @@ namespace Unity.GrantManager.Intakes
                 formSubmission,
                 formVersionSubmissionHeaderMapping);
 
-            newSubmission.ReportData = _reportingDataGenerator.Generate(formSubmission, localFormVersion?.ReportKeys);
+            newSubmission.ReportData = _reportingDataGenerator.Generate(formSubmission, localFormVersion?.ReportKeys, newSubmission.Id);
             newSubmission.ApplicationFormVersionId = localFormVersion?.Id;
 
             await uow.SaveChangesAsync();
-            
+
             return application.Id;
         }
 
