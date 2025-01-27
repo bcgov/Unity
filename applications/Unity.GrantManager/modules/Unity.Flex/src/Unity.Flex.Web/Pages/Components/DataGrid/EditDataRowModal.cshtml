@@ -121,7 +121,7 @@
         // Add a new 'change' event handler
         formElements.on('change', function () {
             let isValid = form.valid();
-            let hasInvalidCurrency = rowEditFormHasInvalidCurrencyCustomFields(formId);
+            let hasInvalidCurrency = rowEditFormHasInvalidCurrencyCustomFields(formId);            
             saveBtn.prop('disabled', !(isValid && !hasInvalidCurrency));
 
             if (!isValid) {
@@ -135,7 +135,7 @@
 
         // Get all date/time elements
         let datetimeElements = $(`#${formId} input[type="datetime-local"], #${formId} input[type="date"]`);
-        
+
         // Loop through all the input elements
         datetimeElements.each(function () {
             // Find the <i> element within the same .custom-input-group
@@ -145,11 +145,14 @@
             icon.attr('class', '');
         });
 
-        function rowEditFormHasInvalidCurrencyCustomFields(formId) {
+        function rowEditFormHasInvalidCurrencyCustomFields(formId) {            
             let invalidFieldsFound = false;
             $("#" + formId + " input:visible").each(function (i, el) {
                 let $field = $(this);
-                if ($field.hasClass('custom-currency-input')) {
+                if ($field.hasClass('custom-currency-input')) {                        
+                    if ($field.val() === '' || $field.val() === '0') {
+                       $field.val('0.00');
+                    }                    
                     if (!isValidCurrencyCustomField($field)) {
                         invalidFieldsFound = true;
                     }

@@ -895,6 +895,14 @@ datatables.net-colreorder@1.7.2, datatables.net-colreorder@^1.7.0:
     datatables.net "^1.13.0"
     jquery ">=1.7"
 
+"datatables.net-dt@1.11 - 2":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/datatables.net-dt/-/datatables.net-dt-2.2.1.tgz#41c485f3b74f8affe3b155feb3fcb1aad6f6f285"
+  integrity sha512-ca2hFyyuwkLnZxa8hGuSP5oD+r9gQitOrbXRwuT0bPSnIR5qx39KTHbK7QayUjl2iXTUdYah7PnQT8A80RuTXw==
+  dependencies:
+    datatables.net "2.2.1"
+    jquery ">=1.7"
+
 datatables.net-fixedheader-bs5@^3.4.0:
   version "3.4.1"
   resolved "https://registry.npmjs.org/datatables.net-fixedheader-bs5/-/datatables.net-fixedheader-bs5-3.4.1.tgz"
@@ -927,6 +935,30 @@ datatables.net-select@>=1.6.2:
   integrity sha512-ps8eL8S2gUV7EdzMraw8mfQlHXpfuc8TC2onBxdk0snP8eizPe85VhpI3r4ULvPRTTI7vcViz8E7JV8aayA2lw==
   dependencies:
     datatables.net ">=1.13.4"
+    jquery ">=1.7"
+
+datatables.net-staterestore-dt@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/datatables.net-staterestore-dt/-/datatables.net-staterestore-dt-1.4.1.tgz#fce5db383c597075e81041561ea76bcda8e2048f"
+  integrity sha512-ArY+a7T37ddCUry76kiUL/afsFczfWmYLPeKzU1d+PUag9k0awmqRIRvnCv77AZI8HUx12W2i049Uk0FSS64LQ==
+  dependencies:
+    datatables.net-dt "1.11 - 2"
+    datatables.net-staterestore "1.4.1"
+    jquery ">=1.7"
+
+datatables.net-staterestore@1.4.1, datatables.net-staterestore@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/datatables.net-staterestore/-/datatables.net-staterestore-1.4.1.tgz#dc48709d2f27ec8e402953f2ebd6e90cd05b6692"
+  integrity sha512-bQvHPB3RJObL9zr5J4Td5tl2oG9CjtjlUBGhaWfIJ6l/DtOv1LHB5+I3p/zyahpXfPo34UNz+3GNrdlWBeLwoA==
+  dependencies:
+    datatables.net "1.11 - 2"
+    jquery ">=1.7"
+
+"datatables.net@1.11 - 2", datatables.net@2.2.1:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/datatables.net/-/datatables.net-2.2.1.tgz#30506074a42eb6f9bfdd823bd7e97d7458c6f1c4"
+  integrity sha512-Hz7f+a77xGdroAzej88aobT5nkQIJ2Oy1JI7yh2cl0QAXQSJDXOKkOLknu+nphVP8CP8w9MtLCmwMst/F8niiQ==
+  dependencies:
     jquery ">=1.7"
 
 datatables.net@1.13.11, datatables.net@>=1.13.4, datatables.net@^1.11.4, datatables.net@^1.13.0:
