@@ -29,13 +29,13 @@
                 <div id="btn-container-@Model.Field.Id" class="dynamic-buttons-div">
                 </div>
             </div>
-            <table data-value-id="@Model.Field.CurrentValueId" 
-                   data-field-id="@Model.Field.Id" 
+            <table data-value-id="@Model.Field.CurrentValueId"
+                   data-field-id="@Model.Field.Id"
                    data-wsi-id="@Model.WorksheetInstanceId"
                    data-ws-id="@Model.WorksheetId"
                    data-ws-anchor="@Model.UiAnchor"
-                   id="@Model.Field.Id" 
-                   class="display custom-dynamic-table @(Model.AllowEdit ? "custom-table-edit" : "")">
+                   id="@Model.Field.Id"
+                   class="display custom-dynamic-table custom-table-actions)">
                 <caption></caption>
                 <thead>
                     <tr>
@@ -43,10 +43,7 @@
                         {
                             <th>@column</th>
                         }
-                        @if (Model.AllowEdit)
-                        {
-                            <th></th>
-                        }
+                        <th class="custom-actions-header">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,11 +56,8 @@
                                     @cell.Value
                                 </td>
                             }
-                            @if (Model.AllowEdit)
-                            {
-                                <td>
-                                </td>
-                            }
+                            <td>
+                            </td>
                         </tr>
                     }
                 </tbody>
