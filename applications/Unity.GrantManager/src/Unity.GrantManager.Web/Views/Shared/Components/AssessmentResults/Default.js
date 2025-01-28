@@ -37,6 +37,12 @@
             assessmentResultObj[this.name] = (this.checked).toString();
         });
 
+
+        // Make sure all the custom fields are set in the custom fields object
+        if (typeof Flex === 'function') {
+            Flex?.setCustomFields(assessmentResultObj);
+        }
+
         try {
             assessmentResultObj['correlationId'] = formVersionId;
             assessmentResultObj['worksheetId'] = worksheetId;

@@ -15,6 +15,7 @@
     "ApplicationPaymentRequest:Title": "Request Payment",
     "ApplicationPaymentRequest:Amount": "Amount",
     "ApplicationPaymentRequest:Description": "Description",
+    "ApplicationPaymentRequest:SiteName": "Site Name",
     "ApplicationPaymentRequest:InvoiceNumber": "Invoice #",
     "ApplicationPaymentRequest:SiteNumber": "Site #",
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
@@ -47,7 +48,7 @@
     "ApplicationPaymentListTable:InvoiceStatus": "Invoice Status",
     "ApplicationPaymentListTable:PaymentStatus": "CAS Payment Status",
 
-    "ApplicantInfoView:SupplierInfoTitle": "Payments",
+    "ApplicantInfoView:SupplierInfoTitle": "Supplier Info",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber": "Site #",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup": "Pay Group",

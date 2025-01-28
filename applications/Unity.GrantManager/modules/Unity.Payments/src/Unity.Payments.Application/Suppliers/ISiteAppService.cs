@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
+using Unity.Payments.Domain.Suppliers;
 
 namespace Unity.Payments.Suppliers
 {
@@ -8,8 +10,9 @@ namespace Unity.Payments.Suppliers
     {
         Task<SiteDto> GetAsync(Guid id);
 
-        Task InsertAsync(SiteDto siteDto);
+        Task<Guid> InsertAsync(SiteDto siteDto);
 
         Task DeleteBySupplierIdAsync(Guid supplierId);
+        Task<List<Site>> GetSitesBySupplierIdAsync(Guid supplierId);
     }
 }

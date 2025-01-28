@@ -17,14 +17,6 @@ public class ApplicationUiSettingPageContributor : SettingPageContributorBase
 
     public override Task ConfigureAsync(SettingPageCreationContext context)
     {
-        context.Groups.Add(
-           new SettingPageGroup(
-               SettingsConstants.UI.Tabs.Default,
-               "Application Tabs",
-               typeof(ApplicationUiSettingGroupViewComponent),
-               order: 1
-           )
-        );
         return Task.CompletedTask;
     }
 }

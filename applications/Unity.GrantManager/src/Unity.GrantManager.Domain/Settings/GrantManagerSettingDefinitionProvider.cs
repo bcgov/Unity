@@ -34,6 +34,17 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
         {
             AddSettingDefinition(context, setting.Key, setting.Value.ToString());
         }
+
+        context.Add(
+            new SettingDefinition(
+                SettingsConstants.UI.Zones,
+                string.Empty,
+                L($"Setting:{SettingsConstants.UI.Zones}.DisplayName"),
+                L($"Setting:{SettingsConstants.UI.Zones}.Description"),
+                isVisibleToClients: false,
+                isInherited: false,
+                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName)
+        );
     }
 
     private static void AddSettingDefinition(ISettingDefinitionContext currentContext, string settingName, string defaultValue = "True")

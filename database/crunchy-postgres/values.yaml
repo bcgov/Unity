@@ -49,14 +49,14 @@ dataSource:
 
 pgBackRest:
   image: # it's not necessary to specify an image as the images specified in the Crunchy Postgres Operator will be pulled by default
-  retention: "7" # Ideally a larger number such as 30 backups/days
+  retention: "4" # Ideally a larger number such as 30 backups/days
   # If retention-full-type set to 'count' then the oldest backups will expire when the number of backups reach the number defined in retention
   # If retention-full-type set to 'time' then the number defined in retention will take that many days worth of full backups before expiration
-  retentionFullType: time
+  retentionFullType: count
   repos:
     schedules:
-      full: 0 10 * * *
-      incremental: 0 3,15,19,23 * * *
+      full: 10 6 * * 0    # Full backup every Sunday at 10:05 PM PST (06:05 UTC)
+      incremental: 20 */8 * * *  # Incremental every 8 hours at 35 minutes past the hour
     volume:
       accessModes: "ReadWriteOnce"
       storage: 256Mi
@@ -98,8 +98,8 @@ pgBackRest:
     # Please DO NOT push this value to GitHub
     keySecret: "s3SecretValue"
     # set the default schedule to avoid conflicts
-    fullSchedule: 30 10 * * *
-    incrementalSchedule: 30 3,15,19,23 * * *
+    fullSchedule: 10 6 * * 1 # Full backup every Monday at 10:05 PM PST (06:10 UTC)
+    incrementalSchedule: 40 */8 * * * # Incremental every 8 hours
 
 patroni:
   postgresql:

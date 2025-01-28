@@ -16,6 +16,8 @@ module.exports = {
         '@node_modules/datatables.net-fixedheader-bs5/': '@libs/datatables.net-fixedheader-bs5/',
         '@node_modules/datatables.net-colreorder/': '@libs/datatables.net-colreorder/',
         '@node_modules/datatables.net-colreorder-bs5/': '@libs/datatables.net-colreorder-bs5/',
+        '@node_modules/datatables.net-staterestore/': '@libs/datatables.net-staterestore/',
+        '@node_modules/datatables.net-staterestore-dt/': '@libs/datatables.net-staterestore-dt/',
 
         '@node_modules/jspdf/dist/': '@libs/jspdf/dist',
         '@node_modules/html2canvas/dist/': '@libs/html2canvas/dist',

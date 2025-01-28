@@ -6,6 +6,12 @@ namespace Unity.GrantManager.Permissions
     {
         public const string GroupName = "GrantApplicationManagement";
 
+        public static class Dashboard
+        {
+            public const string Default = GroupName + ".Dashboard";
+            public const string ViewDashboard = Default + ".ViewDashboard";
+        }
+
         public static class Applications
         {
             public const string Default = GroupName + ".Applications";

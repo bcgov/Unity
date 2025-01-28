@@ -20,6 +20,9 @@
 <div id="orgApplicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
 
 <abp-row class="px-1 pb-2 mb-4 project-info-container">
+
+
+
     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
         <div id="ApplicantInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
             <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle"].Value</h6>
@@ -27,6 +30,7 @@
         <abp-button text="Save" id="saveApplicantInfoBtn" class="floating-save-btn" icon-type="Other" icon="fl fl-save"
             button-type="Primary" disabled="true" />
     </abp-column>
+
     <form id="ApplicantInfoForm">
         <abp-input type="hidden" id="ApplicantInfoViewApplicantId" asp-for="@Model.ApplicantId" />
         <abp-row class="m-0 project-info-form">
@@ -92,6 +96,14 @@
 
             </abp-row>
         </abp-row>
+
+        @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
+        {
+            <div id="supplier-info-widget">
+                @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
+            </div>
+        }
+
         <abp-row class="m-0 project-info-location">
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
@@ -251,13 +263,6 @@
                          sheetCorrelationProvider = CorrelationConsts.FormVersion,
                          uiAnchor = FlexConsts.ApplicantInfoUiAnchor
                      })
-        }
-
-        @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
-        {
-            <div id="supplier-info-widget">
-                @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
-            </div>
         }
     </form>
 </abp-row>

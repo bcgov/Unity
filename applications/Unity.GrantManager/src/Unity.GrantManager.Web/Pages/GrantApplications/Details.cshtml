@@ -1,5 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @* #pragma warning disable S1128 *@
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
+@using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Settings
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
@@ -77,6 +79,10 @@
 
         return initials;
     }
+
+    public bool IsZoneVisible(string zoneName) => Model.ZoneStateSet.Contains(zoneName);
+
+    public string ZoneCssClass(string zoneName) => IsZoneVisible(zoneName) ? string.Empty : "d-none";
 }
 <div id="main-loading">    
     <img src="/images/homepage/unity.svg" alt="unity-application-loading">
@@ -109,53 +115,78 @@
                 @*-------- Submission Section END ---------*@
 
                 @*-------- Review & Assessment Section ---------*@
-                <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
-                    <div class="w-100 px-2" id="assessmentResultWidget">
-                        @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                    </div>
-                    <div class="w-100 px-2" id="assessmentMainView">
-                        @await Component.InvokeAsync("ReviewList")
-                    </div>
-                    <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
-                        <abp-column size="_12">
-                            <abp-row>
-                                <abp-column size="_12" class="back-button-container">
-                                    <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
-                                </abp-column>
-                                <abp-column size="_8">
-                                    <h4 class="review-heading">Assessment Result Attachments</h4>
-                                </abp-column>
-                                <abp-column size="_4" class="add-review-btn-container">
+                @if (IsZoneVisible(SettingsConstants.UI.Tabs.Assessment))
+                {
+                    <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
+                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.AssessmentResults")" id="assessmentResultWidget">
+                            @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                        </div>
+                    @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                    {
+                        <div id="assessmentResultsCustomWidget">
+                            @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
+                                     new
+                                     {
+                                         instanceCorrelationId = Model.ApplicationId,
+                                         instanceCorrelationProvider = CorrelationConsts.Application,
+                                         sheetCorrelationId = Model.ApplicationFormVersionId,
+                                         sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                                         uiAnchor = FlexConsts.AssessmentInfoUiAnchor
+                                     })
+                        </div>
+                    }
+                    <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.ReviewList")" id="assessmentMainView">
+                            @await Component.InvokeAsync("ReviewList")
+                        </div>
+                        <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
+                            <abp-column size="_12">
+                                <abp-row>
+                                    <abp-column size="_12" class="back-button-container">
+                                        <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
+                                    </abp-column>
+                                    <abp-column size="_8">
+                                        <h4 class="review-heading">Assessment Result Attachments</h4>
+                                    </abp-column>
+                                    <abp-column size="_4" class="add-review-btn-container">
 
-                                </abp-column>
-                            </abp-row>
+                                    </abp-column>
+                                </abp-row>
 
-                        </abp-column>
-                    </abp-row>
-                </abp-tab>
+                            </abp-column>
+                        </abp-row>
+                    </abp-tab>
+                }
                 @*-------- Review & Assessment Section END ---------*@
 
                 @*-------- Project Info Section ---------*@
-                <abp-tab name="nav-project-info" title="Project Info">
-                    <div class="w-100 px-2" id="projectInfoWidget">
-                        @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                    </div>
-                </abp-tab>
+                @if (IsZoneVisible(SettingsConstants.UI.Tabs.Project))
+                {
+                    <abp-tab name="nav-project-info" title="Project Info">
+                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Project}.ProjectInfo")" id="projectInfoWidget">
+                            @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                        </div>
+                    </abp-tab>
+                }
                 @*-------- Project Info Section END ---------*@
 
                 @*-------- Applicant Info Section ---------*@
-                <abp-tab name="nav-organization-info" title="Applicant Info">
-                    <div class="w-100 px-2" id="ApplicantInfoWidget">
-                        @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                    </div>
-                </abp-tab>
+                @if (IsZoneVisible(SettingsConstants.UI.Tabs.Applicant))
+                {
+                    <abp-tab name="nav-organization-info" title="Applicant Info">
+                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Applicant}.ApplicantInfo")" id="ApplicantInfoWidget">
+                            @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                        </div>
+                    </abp-tab>
+                }
+                
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Funding Agreement Info Section ---------*@
-                @if (await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.FundingAgreement))
+                @if (await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.FundingAgreement) 
+                    && IsZoneVisible(SettingsConstants.UI.Tabs.FundingAgreement))
                 {
                     <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
-                        <div class="w-100 px-2" id="FundingAgreementInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.FundingAgreement}.FundingAgreementInfo")" id="FundingAgreementInfoWidget">
                             @await Component.InvokeAsync("FundingAgreementInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
@@ -163,10 +194,12 @@
                 @*-------- Funding Agreement Section END ---------*@
 
                 @*-------- Payments Section ---------*@
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") 
+                    && await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.Payments)
+                    && IsZoneVisible(SettingsConstants.UI.Tabs.Payments))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
-                        <div class="w-100 px-2" id="PaymentInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Payments}.PaymentInfo")" id="PaymentInfoWidget">
                             @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
@@ -361,7 +394,3 @@
         </abp-card>
     </div>
 </div>
-
-
-
-

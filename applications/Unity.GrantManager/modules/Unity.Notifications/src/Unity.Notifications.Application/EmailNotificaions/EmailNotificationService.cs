@@ -85,6 +85,30 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return declineBody;
     }
 
+    public async Task DeleteEmail(Guid id)
+    {
+        await _emailLogsRepository.DeleteAsync(id);
+    }
+
+    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status)
+    {
+        if (string.IsNullOrEmpty(emailTo))
+        {
+            return null;
+        }
+        
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
+        EmailLog emailLog = await _emailLogsRepository.GetAsync(emailId);
+        emailLog = UpdateMappedEmailLog(emailLog, emailObject);
+        emailLog.ApplicationId = applicationId;
+        emailLog.Id = emailId;
+        emailLog.Status = status ?? EmailStatus.Initialized;
+
+        // When being called here the current tenant is in context - verified by looking at the tenant id
+        EmailLog loggedEmail = await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+        return loggedEmail;
+    }
+
     public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
     {
         return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized);
@@ -98,7 +122,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             return null;
         }
         var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
-        EmailLog emailLog = GetMappedEmailLog(emailObject);
+        EmailLog emailLog = new EmailLog();
+        emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
         emailLog.Status = status ?? EmailStatus.Initialized;
 
@@ -232,7 +257,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         var emailObject = new
         {
             body,
-            bodyType = "html",
+            bodyType = "text",
             encoding = "utf-8",
             from = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca",
             priority = "normal",
@@ -243,9 +268,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return emailObject;
     }
 
-    protected virtual EmailLog GetMappedEmailLog(dynamic emailDynamicObject)
+    protected virtual EmailLog UpdateMappedEmailLog(EmailLog emailLog, dynamic emailDynamicObject)
     {
-        EmailLog emailLog = new EmailLog();
         emailLog.Body = emailDynamicObject.body;
         emailLog.Subject = emailDynamicObject.subject;
         emailLog.BodyType = emailDynamicObject.bodyType;

@@ -82,7 +82,29 @@ namespace Unity.GrantManager.Events
                     {
                         foreach (string emailToAddress in eventData.EmailAddressList)
                         {
-                            await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom);
+                          if(eventData.Id == Guid.Empty)
+                            {
+                                await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom);
+                            }
+                            else {
+                                EmailLog? emailLog = await emailNotificationService.UpdateEmailLog(
+                                    eventData.Id,
+                                    emailToAddress, 
+                                    eventData.Body, 
+                                    eventData.Subject, 
+                                    eventData.ApplicationId, 
+                                    eventData.EmailFrom, 
+                                    EmailStatus.Initialized);
+                                
+                                if (emailLog != null)
+                                {
+                                    await emailNotificationService.SendEmailToQueue(emailLog);
+                                }
+                                else
+                                {
+                                    throw new UserFriendlyException("Unable to update Email Log");
+                                }
+                            }
                         }
                         break;
                     }
@@ -90,13 +112,27 @@ namespace Unity.GrantManager.Events
                     {
                         foreach (string emailToAddress in eventData.EmailAddressList)
                         {
-                            await InitializeEmail(
-                                emailToAddress, 
-                                eventData.Body, 
-                                eventData.Subject, 
-                                eventData.ApplicationId, 
-                                eventData.EmailFrom, 
-                                EmailStatus.Draft);
+                            if(eventData.Id != Guid.Empty)
+                            {
+                                await emailNotificationService.UpdateEmailLog(
+                                    eventData.Id,
+                                    emailToAddress, 
+                                    eventData.Body, 
+                                    eventData.Subject, 
+                                    eventData.ApplicationId, 
+                                    eventData.EmailFrom, 
+                                    EmailStatus.Draft);
+                            }
+                            else
+                            {
+                                await InitializeEmail(
+                                    emailToAddress, 
+                                    eventData.Body, 
+                                    eventData.Subject, 
+                                    eventData.ApplicationId, 
+                                    eventData.EmailFrom, 
+                                    EmailStatus.Draft);
+                            }
                         }
                         break;
                     }

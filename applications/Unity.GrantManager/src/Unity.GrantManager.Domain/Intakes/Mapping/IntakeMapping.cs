@@ -86,6 +86,16 @@ namespace Unity.GrantManager.Intakes
         [Browsable(true)]
         public string? ForestryFocus { get; set; }
 
+        [DisplayName("Fiscal Year End(FYE) Day")]
+        [MapFieldType("Number")]
+        [Browsable(true)]
+        public string? FiscalDay { get; set; }
+
+        [DisplayName("Fiscal Year End(FYE) Month")]
+        [MapFieldType("String")]
+        [Browsable(true)]
+        public string? FiscalMonth { get; set; }
+
         [DisplayName("Indigenous Organization Indicator")]
         [MapFieldType("String")]
         [Browsable(true)]
