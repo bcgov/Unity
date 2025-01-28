@@ -78,6 +78,15 @@ namespace Unity.GrantManager.Permissions
             public const string Read = Default + Operation.Read;
             public const string Update = Default + Operation.Update;
             public const string Delete = Default + Operation.Delete;
+
+            public const string EditOrganization = Default + ".Organization" + Operation.Update;
+            public const string EditContact = Default + ".Contact" + Operation.Update;
+            public const string EditSigningAuthority = Default + ".SigningAuthority" + Operation.Update;
+            public const string EditAddress = Default + ".Address" + Operation.Update;
+
+            public const string AddAdditionalContact = Default + ".AdditionalContact" + Operation.Create;
+            public const string UpdateAdditionalContact = Default + ".AdditionalContact" + Operation.Update;
+            public const string DeleteAdditionalContact = Default + ".AdditionalContact" + Operation.Delete;
         }
 
         public static class ProjectInfo
