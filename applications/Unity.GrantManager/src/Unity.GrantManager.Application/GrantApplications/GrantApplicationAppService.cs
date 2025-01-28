@@ -388,6 +388,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         input.ProjectFundingTotal ??= application.ProjectFundingTotal;
     }
 
+    [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
