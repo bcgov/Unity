@@ -320,8 +320,7 @@ $(function () {
             tableDataSet.wsiId,
             rowDataSet.rowNo,
             false,
-            tableDataSet.uiAnchor,
-            ['field1', 'field2']);
+            tableDataSet.uiAnchor);
     }
 
     PubSub.subscribe(
