@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Polly;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,8 +8,11 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.Reporting.DataGenerators;
+using Unity.Modules.Shared.Features;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Features;
+using Volo.Abp.UI.Navigation;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Intakes
@@ -21,7 +25,8 @@ namespace Unity.GrantManager.Intakes
                                              IIntakeFormSubmissionMapper _intakeFormSubmissionMapper,
                                              IApplicationFormVersionRepository _applicationFormVersionRepository,
                                              CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper,
-                                             IReportingDataGenerator _reportingDataGenerator) : DomainService, IIntakeFormSubmissionManager
+                                             IReportingDataGenerator _reportingDataGenerator,
+                                             IFeatureChecker featureChecker) : DomainService, IIntakeFormSubmissionManager
     {
 
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
@@ -69,9 +74,13 @@ namespace Unity.GrantManager.Intakes
             await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id,
                 localFormVersion?.Id ?? Guid.Empty,
                 formSubmission,
-                formVersionSubmissionHeaderMapping);
+            formVersionSubmissionHeaderMapping);
 
-            newSubmission.ReportData = _reportingDataGenerator.Generate(formSubmission, localFormVersion?.ReportKeys, newSubmission.Id);
+            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            {
+                newSubmission.ReportData = _reportingDataGenerator.Generate(formSubmission, localFormVersion?.ReportKeys, newSubmission.Id);
+            }
+
             newSubmission.ApplicationFormVersionId = localFormVersion?.Id;
 
             await uow.SaveChangesAsync();

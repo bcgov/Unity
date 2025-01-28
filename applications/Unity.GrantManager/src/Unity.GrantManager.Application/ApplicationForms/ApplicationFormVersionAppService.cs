@@ -9,10 +9,12 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integration.Chefs;
 using Unity.GrantManager.Reporting.FieldGenerators;
+using Unity.Modules.Shared.Features;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -33,6 +35,7 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IFormsApiService _formApiService;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IReportingFieldsGeneratorService _reportingFieldsGeneratorService;
+        private readonly IFeatureChecker _featureChecker;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
@@ -40,7 +43,8 @@ namespace Unity.GrantManager.ApplicationForms
             IFormsApiService formsApiService,
             IApplicationFormVersionRepository applicationFormVersionRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-            IReportingFieldsGeneratorService reportingFieldsGeneratorService)
+            IReportingFieldsGeneratorService reportingFieldsGeneratorService,
+            IFeatureChecker featureChecker)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
@@ -49,6 +53,7 @@ namespace Unity.GrantManager.ApplicationForms
             _formApiService = formsApiService;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _reportingFieldsGeneratorService = reportingFieldsGeneratorService;
+            _featureChecker = featureChecker;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -289,7 +294,10 @@ namespace Unity.GrantManager.ApplicationForms
                 applicationFormVersion = await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
             }
 
-            await _reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
+            if (await _featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            {
+                await _reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
+            }
 
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
         }

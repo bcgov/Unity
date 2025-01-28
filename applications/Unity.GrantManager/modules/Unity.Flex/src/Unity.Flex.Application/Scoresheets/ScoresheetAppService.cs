@@ -9,7 +9,9 @@ using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Utils;
 using Unity.Flex.Reporting.FieldGenerators;
 using Unity.Flex.Scoresheets.Enums;
+using Unity.Modules.Shared.Features;
 using Volo.Abp;
+using Volo.Abp.Features;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
@@ -20,7 +22,8 @@ namespace Unity.Flex.Scoresheets
         IScoresheetRepository scoresheetRepository,
         IScoresheetSectionRepository sectionRepository,
         IQuestionRepository questionRepository,
-        IReportingFieldsGeneratorService<Scoresheet> reportingFieldsGeneratorService) : FlexAppService, IScoresheetAppService
+        IReportingFieldsGeneratorService<Scoresheet> reportingFieldsGeneratorService,
+        IFeatureChecker featureChecker) : FlexAppService, IScoresheetAppService
     {
         private readonly static object _sectionLockObject = new();
         private readonly static object _questionLockObject = new();
@@ -189,7 +192,10 @@ namespace Unity.Flex.Scoresheets
 
             scoresheet.Published = true;
 
-            scoresheet = reportingFieldsGeneratorService.GenerateAndSet(scoresheet);
+            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            {
+                scoresheet = reportingFieldsGeneratorService.GenerateAndSet(scoresheet);
+            }
 
             await scoresheetRepository.UpdateAsync(scoresheet);
         }

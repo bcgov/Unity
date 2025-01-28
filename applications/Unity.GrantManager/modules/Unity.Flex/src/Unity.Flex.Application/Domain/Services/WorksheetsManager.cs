@@ -12,14 +12,17 @@ using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Reporting.DataGenerators;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets.Values;
+using Unity.Modules.Shared.Features;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Features;
 
 namespace Unity.Flex.Domain.Services
 {
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository,
         IWorksheetRepository worksheetRepository,
         IWorksheetLinkRepository worksheetLinkRepository,
-        IReportingDataGeneratorService<Worksheet, WorksheetInstance> reportingService) : DomainService
+        IReportingDataGeneratorService<Worksheet, WorksheetInstance> reportingService,
+        IFeatureChecker featureChecker) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
@@ -69,7 +72,7 @@ namespace Unity.Flex.Domain.Services
             // Update and set the instance value for the worksheet - high level values serialized
             var worksheet = await worksheetRepository.GetAsync(instance.WorksheetId, true);
             var fieldDefinitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
-            var instanceCurrentValue = new WorksheetInstanceValue();                        
+            var instanceCurrentValue = new WorksheetInstanceValue();
 
             foreach (var field in instance.Values)
             {
@@ -81,7 +84,10 @@ namespace Unity.Flex.Domain.Services
 
             instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));
 
-            reportingService.GenerateAndSet(worksheet, instance);
+            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            {
+                reportingService.GenerateAndSet(worksheet, instance);
+            }
         }
 
         private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)

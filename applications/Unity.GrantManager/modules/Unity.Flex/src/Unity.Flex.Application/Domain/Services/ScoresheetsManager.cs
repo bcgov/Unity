@@ -8,14 +8,17 @@ using Unity.Flex.Reporting.DataGenerators;
 using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
+using Unity.Modules.Shared.Features;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Features;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Domain.Services
 {
     public class ScoresheetsManager(IScoresheetInstanceRepository scoresheetInstanceRepository,
         IScoresheetRepository scoresheetRepository,
-        IReportingDataGeneratorService<Scoresheet, ScoresheetInstance> reportingDataGeneratorService) : DomainService
+        IReportingDataGeneratorService<Scoresheet, ScoresheetInstance> reportingDataGeneratorService,
+        IFeatureChecker featureChecker) : DomainService
     {
         public static List<string> ValidateScoresheetAnswersAsync(ScoresheetInstance scoresheetInstance, Scoresheet scoresheet)
         {
@@ -75,7 +78,10 @@ namespace Unity.Flex.Domain.Services
                 await scoresheetInstanceRepository.UpdateAsync(instance);
             }
 
-            reportingDataGeneratorService.GenerateAndSet(scoresheet, instance);
+            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            {
+                reportingDataGeneratorService.GenerateAndSet(scoresheet, instance);
+            }
         }
     }
 
