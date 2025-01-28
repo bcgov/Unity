@@ -191,9 +191,10 @@ $(function () {
         'refresh_sites_list',
         (msg, data) => {
             if(dataTable) {
-                dataTable.ajax.reload();
+                dataTable?.ajax.reload();
                 dataTable?.columns?.adjust();
             }
+
         }
     );
 
