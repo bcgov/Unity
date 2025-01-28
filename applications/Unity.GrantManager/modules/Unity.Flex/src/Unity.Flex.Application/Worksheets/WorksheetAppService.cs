@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Utils;
