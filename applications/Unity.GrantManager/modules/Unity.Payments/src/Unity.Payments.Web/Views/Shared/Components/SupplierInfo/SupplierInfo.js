@@ -190,8 +190,10 @@ $(function () {
     PubSub.subscribe(
         'refresh_sites_list',
         (msg, data) => {
-            dataTable.ajax.reload();
-            dataTable?.columns?.adjust();
+            if(dataTable) {
+                dataTable.ajax.reload();
+                dataTable?.columns?.adjust();
+            }
         }
     );
 
