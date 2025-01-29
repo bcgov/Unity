@@ -87,19 +87,9 @@ parameters:
   name: CPU_REQUEST
   required: true
   value: 50m
-- description: The maximum amount of CPU the Container is allowed to use when running.
-  displayName: CPU Limit
-  name: CPU_LIMIT
-  required: true
-  value: 50m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
-  required: true
-  value: 64Mi
-- description: The maximum amount of Memory the Container is allowed to use when running.
-  displayName: Memory Limit
-  name: MEMORY_LIMIT
   required: true
   value: 64Mi
 # Template objects to instantiate the project application.
@@ -254,9 +244,6 @@ objects:
             image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
             imagePullPolicy: Always
             resources:
-              limits:
-                cpu: ${CPU_LIMIT}
-                memory: ${MEMORY_LIMIT}
               requests:
                 cpu: ${CPU_REQUEST}
                 memory: ${MEMORY_REQUEST}

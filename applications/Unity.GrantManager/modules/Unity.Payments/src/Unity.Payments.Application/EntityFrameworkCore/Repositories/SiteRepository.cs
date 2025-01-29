@@ -17,8 +17,12 @@ namespace Unity.Payments.Repositories
 
         public async Task<List<Site>> GetBySupplierAsync(Guid supplierId)
         {
+            if(supplierId == Guid.Empty)
+            {
+                return new List<Site>();
+            }
+            
             var dbSet = await GetDbSetAsync();
-
             return dbSet.Where(s => s.SupplierId == supplierId).ToList();
         }
     }

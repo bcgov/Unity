@@ -847,6 +847,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("SectorSubSectorIndustryDesc")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("SiteId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateOnly?>("StartedOperatingDate")
                         .HasColumnType("date");
 
@@ -855,6 +858,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("SubSector")
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -2562,8 +2568,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("BatchNumber")
-                        .IsRequired()
+                    b.Property<decimal>("BatchNumber")
                         .HasColumnType("numeric");
 
                     b.Property<int?>("CasHttpStatusCode")
@@ -2696,6 +2701,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("AddressLine3")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BankAccount")
                         .HasColumnType("text");
 
                     b.Property<string>("City")

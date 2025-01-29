@@ -49,7 +49,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
         [BindProperty]
         public Guid? CurrentApplicationId { get; set; }
 
-
         public ApplicationLinksModalModel(IApplicationLinksService applicationLinksService, IGrantApplicationAppService grantApplicationAppService)
         {
             _applicationLinksService = applicationLinksService ?? throw new ArgumentNullException(nameof(applicationLinksService));
@@ -62,18 +61,23 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
             {
                 CurrentApplicationId = applicationId;
                 var grantApplications = await _grantApplicationAppService.GetAllApplicationsAsync();
+                var tempGrantApplications = new List<GrantApplicationLiteDto>(grantApplications);
+                var currentApplication = tempGrantApplications.Single(item => item.Id == applicationId);
+
                 var linkedApplications = await _applicationLinksService.GetListByApplicationAsync(applicationId);
+                var filteredLinkedApplications = linkedApplications.Where(item => item.ApplicationId != CurrentApplicationId);
 
                 // remove current application id from ths suggestion list
-                grantApplications.Remove(grantApplications.Single(item => item.Id == applicationId));
+                tempGrantApplications.Remove(currentApplication);
 
-                var formattedAllApplications = grantApplications.Select(item => item.ReferenceNo + " - " + item.ProjectName).ToList();
-                var formattedLinkedApplications = linkedApplications.Select(item => item.ReferenceNumber + " - " + item.ProjectName).ToList();
+                var formattedAllApplications = tempGrantApplications.Select(item => item.ReferenceNo + " - " + item.ProjectName).ToList();
+                var formattedLinkedApplications = filteredLinkedApplications.Select(item => item.ReferenceNumber + " - " + item.ProjectName).ToList();
 
                 AllApplications = string.Join(",", formattedAllApplications);
                 SelectedApplications = string.Join(",", formattedLinkedApplications);
                 GrantApplicationsList = JsonConvert.SerializeObject(grantApplications);
-                LinkedApplicationsList = JsonConvert.SerializeObject(linkedApplications);
+                LinkedApplicationsList = JsonConvert.SerializeObject(filteredLinkedApplications);
+
             }
             catch (Exception ex)
             {
@@ -100,9 +104,17 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                         if (applicationLinksInfoDto == null) {
                             Guid linkedApplicationId = grantApplications!.Find(application => application.ReferenceNo == referenceNo)!.Id;
 
+                            //For CurrentApplication
                             await _applicationLinksService.CreateAsync(new ApplicationLinksDto{
                                 ApplicationId = CurrentApplicationId ?? Guid.Empty,
                                 LinkedApplicationId = linkedApplicationId
+                            });
+
+                            //For LinkedApplication
+                            await _applicationLinksService.CreateAsync(new ApplicationLinksDto
+                            {
+                                ApplicationId = linkedApplicationId,
+                                LinkedApplicationId = CurrentApplicationId ?? Guid.Empty
                             });
                         }
                     }
@@ -113,6 +125,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                         var selectedIndex = selectedApplicationsArray!.FindIndex(selected => selected.Split('-')[0].Trim() == linked.ReferenceNumber);
                         if(selectedIndex < 0) {
                             await _applicationLinksService.DeleteAsync(linked.Id);
+                            
+                            var linkApp = await _applicationLinksService.GetLinkedApplicationAsync(CurrentApplicationId ?? Guid.Empty, linked.ApplicationId);
+                            await _applicationLinksService.DeleteAsync(linkApp.Id);
                         }
                     }
                 }

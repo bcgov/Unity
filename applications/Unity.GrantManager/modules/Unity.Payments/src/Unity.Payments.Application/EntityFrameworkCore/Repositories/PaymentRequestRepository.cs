@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Unity.Payments.Codes;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.EntityFrameworkCore;
+using Unity.Payments.Enums;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -45,8 +46,7 @@ namespace Unity.Payments.Repositories
             var dbSet = await GetDbSetAsync();
             decimal applicationPaymentRequestsTotal = dbSet
               .Where(p => p.CorrelationId.Equals(correlationId))
-              // Need to define a where clause on the Status
-              // Don't include declined - right now we don't know how to set status
+              .Where(p => p.Status != PaymentRequestStatus.L1Declined && p.Status != PaymentRequestStatus.L2Declined && p.Status != PaymentRequestStatus.L3Declined)
               .GroupBy(p => p.CorrelationId)
               .Select(p => p.Sum(q => q.Amount))
               .FirstOrDefault();

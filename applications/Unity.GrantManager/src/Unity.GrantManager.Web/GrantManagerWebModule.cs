@@ -477,7 +477,7 @@ public class GrantManagerWebModule : AbpModule
             ((MemoryCacheStorage)options.Storage).CacheDuration
                 = TimeSpan.FromMinutes(configuration.GetValue("MiniProfiler:CacheDuration", 30));
 
-            options.PopupRenderPosition = RenderPosition.Right;
+            options.PopupRenderPosition = StackExchange.Profiling.RenderPosition.Right;
             options.PopupStartHidden = true;
             options.PopupToggleKeyboardShortcut = configuration.GetValue("MiniProfiler:PopupToggleKeyboardShortcut", "Alt+P") ?? "Alt+P";
             options.PopupShowTimeWithChildren = true;

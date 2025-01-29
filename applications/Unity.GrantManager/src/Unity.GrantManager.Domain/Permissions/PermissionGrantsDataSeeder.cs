@@ -50,6 +50,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
@@ -71,6 +73,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
@@ -92,6 +96,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
@@ -117,6 +123,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
@@ -133,6 +141,8 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
                     GrantApplicationPermissions.AssessmentResults.EditFinalStateFields,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.UpdateFinalStateFields,
@@ -150,6 +160,10 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
 
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
@@ -158,6 +172,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
@@ -174,6 +190,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
 
@@ -190,6 +208,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
@@ -205,6 +225,8 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                 }, context.TenantId);
@@ -218,6 +240,7 @@ namespace Unity.GrantManager.Permissions
                     PaymentsPermissions.Payments.Default,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.ApplicantInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Default,
                 }, context.TenantId);
 

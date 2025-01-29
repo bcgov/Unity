@@ -27,13 +27,14 @@ namespace Unity.GrantManager.History
                 {
                     string origninalValue = CleanValue(propertyChange.OriginalValue);
                     string newValue = CleanValue(propertyChange.NewValue);
+                    DateTime utcDateTime = DateTime.SpecifyKind(entityChange.EntityChange.ChangeTime, DateTimeKind.Utc);
                     HistoryDto historyDto = new()
                     {
                         EntityName = GetShortEntityName(entityChange.EntityChange.EntityTypeFullName),
                         PropertyName = propertyChange.PropertyName, // The name of the property on the entity class.
                         OriginalValue = origninalValue,
                         NewValue = newValue,
-                        ChangeTime = entityChange.EntityChange.ChangeTime,
+                        ChangeTime = utcDateTime.ToLocalTime(),
                         UserName = entityChange.UserName
                     };
                     historyList.Add(historyDto);

@@ -6,6 +6,8 @@ using Unity.Payments.Suppliers;
 using Unity.Modules.Shared.Correlation;
 using System.Collections.Generic;
 using Unity.Payments.Domain.Suppliers;
+using Microsoft.AspNetCore.Mvc;
+using Unity.Payments.Integrations.Cas;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -14,12 +16,26 @@ namespace Unity.GrantManager.Applicants;
 [ExposeServices(typeof(ApplicantSupplierAppService), typeof(IApplicantSupplierAppService))]
 public class ApplicantSupplierAppService(ISiteRepository siteRepository,
                                  IApplicantRepository applicantRepository,
+                                 ISupplierService supplierService,
                                  ISupplierAppService supplierAppService) : GrantManagerAppService, IApplicantSupplierAppService
 {
 
     public async Task<List<Site>> GetSitesBySupplierIdAsync(Guid supplierId)
     {
         return await siteRepository.GetBySupplierAsync(supplierId);
+    }
+    
+    public async Task<dynamic> GetSupplierByNumber(string supplierNumber)
+    {
+        return await supplierService.GetCasSupplierInformationAsync(supplierNumber);
+    }
+
+    [HttpPost("api/app/applicant/{applicantId}/site/{siteId}")]
+    public async Task DefaultApplicantSite(Guid applicantId, Guid siteId)
+    {
+        Applicant applicant = await applicantRepository.GetAsync(applicantId);
+        applicant.SiteId = siteId;
+        await applicantRepository.UpdateAsync(applicant);
     }
 
     public async Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId)

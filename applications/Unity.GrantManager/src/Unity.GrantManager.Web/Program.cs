@@ -40,8 +40,6 @@ public static class Program
                 Startup probe. This is used when the container starts up, to indicate that it's ready. Once the startup probe succeeds, Kubernetes switches to using the liveness probe to determine if the application is alive. This probe was introduced in Kubernetes version 1.16.
             */
 
-
-
             await app.InitializeApplicationAsync();
             await app.RunAsync();
             return 0;

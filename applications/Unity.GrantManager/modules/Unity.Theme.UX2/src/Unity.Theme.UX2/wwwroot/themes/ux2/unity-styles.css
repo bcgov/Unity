@@ -552,13 +552,6 @@ div.dt-buttons div.dropdown-menu {
     background-color: #ccdef9 !important;
 }
 
-.dt-button-collection.dropdown-menu {
-    right: 0;
-    left: auto !important;
-    max-width: 100%;
-    overflow-x: hidden;
-}
-
 .mr-10 {
     margin-right: 10px;
 }

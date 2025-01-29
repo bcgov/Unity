@@ -113,6 +113,8 @@
     "Permission:GrantManagerManagement.Default": "Default",
 
     "Permission:GrantApplicationManagement": "Grant Application Management",
+    "Permission:GrantApplicationManagement.Dashboard.Default": "Dashboard",
+    "Permission:GrantApplicationManagement.Dashboard.ViewDashboard": "View Dashboard",
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
@@ -233,6 +235,19 @@
     "Setting:GrantManager.UI.Tabs.FundingAgreement.DisplayName": "Funding Agreement",
     "Setting:GrantManager.UI.Tabs.FundingAgreement.Description": "Toggle visibility of the Funding Agreement tab for the tenant",
 
+    "Setting:GrantManager.UI.Tabs.Assessment.AssessmentResults.DisplayName": "Application Assessment Results",
+    "Setting:GrantManager.UI.Tabs.Assessment.AssessmentApproval.DisplayName": "Approval",
+    "Setting:GrantManager.UI.Tabs.Assessment.ReviewList.DisplayName": "Assessment List",
+    "Setting:GrantManager.UI.Tabs.Project.ProjectInfo.DisplayName": "Project Summary",
+    "Setting:GrantManager.UI.Tabs.Applicant.ApplicantInfo.DisplayName": "Applicant Info",
+    "Setting:GrantManager.UI.Tabs.Applicant.ContactInfo.DisplayName": "Contact Info",
+    "Setting:GrantManager.UI.Tabs.Applicant.SigningAuthority.DisplayName": "Signing Authority",
+    "Setting:GrantManager.UI.Tabs.Applicant.PhysicalAddress.DisplayName": "Physical Address",
+    "Setting:GrantManager.UI.Tabs.FundingAgreement.FundingAgreementInfo.DisplayName": "Contract Info",
+    "Setting:GrantManager.UI.Tabs.Payments.PaymentInfo.DisplayName": "Payment Summary",
+    "Setting:GrantManager.UI.Tabs.Payments.PaymentList.DisplayName": "Payment List",
+    "Setting:GrantManager.UI.Tabs.Project.ProjectLocation.DisplayName": "Project Location",
+
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
     "Summary:ContactsTitle": "Additional Contact(s)",
@@ -289,6 +304,9 @@
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
 
+    "Permission:GrantApplicationManagement.ApplicantInfo": "Applicant Info",
+    "Permission:GrantApplicationManagement.ApplicantInfo.Update": "Applicant Info Update",
+
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
     "ApplicantInfoView:PhysicalAddress": "Physical Address",
@@ -309,6 +327,7 @@
     "ApplicantInfoView:ApplicantInfo.OrgBookStatus": "Org book status ",
     "ApplicantInfoView:ApplicantInfo.OrganizationType": "Organization Type",
     "ApplicantInfoView:ApplicantInfo.OrganizationSize": "Organization Size",
+    "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd": "Indigenous",
     "ApplicantInfoView:ApplicantInfo.Sector": "Sector",
     "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
     "ApplicantInfoView:ApplicantInfo.RedStop": "Red-Stop",

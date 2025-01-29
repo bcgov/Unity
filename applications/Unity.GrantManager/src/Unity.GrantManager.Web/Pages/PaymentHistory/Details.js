@@ -4,8 +4,6 @@
 
     const listColumns = getColumns();
     const defaultVisibleColumns = ['EntityName', 'PropertyName', 'OriginalValue', 'NewValue', 'ChangeTime', 'UserName'];
-    const maxRows = 20;
-    const defaultSortColumn = 0;
     let actionButtons = [];
 
     let responseCallback = function (result) {
@@ -27,16 +25,21 @@
         return document.getElementById('paymentId').value
     };
 
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
         listColumns,
-        maxRows,
-        defaultSortColumn,
-        unity.grantManager.history.paymentHistory.getPaymentHistoryList,
-        inputAction,
+        maxRowsPerPage: 20,
+        defaultSortColumn: 0,
+        dataEndpoint: unity.grantManager.history.paymentHistory.getPaymentHistoryList,
+        data: inputAction,
         responseCallback,
         actionButtons,
-        'dynamicButtonContainerId');
+        pagingEnabled: true,
+        reorderEnabled: true,
+        languageSetValues: {},
+        dataTableName: 'AuditHistoryTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     dataTable.on('search.dt', () => handleSearch());      
 
@@ -127,7 +130,7 @@
     function formatLuxonDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
             locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString({
+        }).toLocaleString({
             day: "numeric",
             year: "numeric",
             month: "numeric",

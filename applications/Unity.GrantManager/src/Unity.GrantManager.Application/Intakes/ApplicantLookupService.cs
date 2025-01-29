@@ -82,7 +82,7 @@ namespace Unity.GrantManager.Intakes
             List<ApplicantAddress>? applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
 
             // Order by date (for example, DateCreated) in descending order
-            applicantAddresses = applicantAddresses?.OrderByDescending(x => x.LastModificationTime).ToList();
+            applicantAddresses = applicantAddresses?.OrderByDescending(x => x.CreationTime).ToList();
 
             // Filter physical and mailing addresses from the sorted list
             ApplicantAddress? applicantPhysicalAgent = applicantAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.PhysicalAddress);
@@ -103,6 +103,7 @@ namespace Unity.GrantManager.Intakes
                 FiscalYearMonth = applicant.FiscalMonth,
                 BusinessNumber = applicant.BusinessNumber,
                 RedStop = applicant.RedStop,
+                IndigenousOrgInd = applicant.IndigenousOrgInd,
                 PhysicalAddressUnit = applicantPhysicalAgent?.Unit ?? "",
                 PhysicalAddressLine1 = applicantPhysicalAgent?.Street ?? "",
                 PhysicalAddressLine2 = applicantPhysicalAgent?.Street2 ?? "",
