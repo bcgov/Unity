@@ -12,6 +12,8 @@ using Unity.GrantManager.Integration.Orgbook;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using Unity.Modules.Shared.Utils;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -22,7 +24,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
-{
+{   protected ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
     public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
@@ -164,7 +166,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            var ExceptionMessage = ex.Message;
+            Logger.LogError(ex, "UpdateApplicantOrgMatchAsync Exception: {ExceptionMessage}", ExceptionMessage);
         }
     }
 
