@@ -79,6 +79,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("ReportData")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid>("ScoresheetId")
                         .HasColumnType("uuid");
 
@@ -290,6 +294,18 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("ReportColumns")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportKeys")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportViewName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -478,6 +494,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<string>("ReportData")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -690,6 +710,18 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("ReportColumns")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportKeys")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportViewName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -1624,6 +1656,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("ApplicationFormId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ApplicationFormVersionId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
@@ -1668,6 +1703,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("RenderedHTML")
                         .HasColumnType("text");
+
+                    b.Property<string>("ReportData")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("Submission")
                         .IsRequired()
@@ -1747,6 +1786,18 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("ReportColumns")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportKeys")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportViewName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("SubmissionHeaderMapping")
                         .HasColumnType("text");

@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Scoresheets;
+using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.Validation;

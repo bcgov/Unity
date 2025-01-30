@@ -5,32 +5,33 @@
 @using Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget;
 @using Unity.Flex;
+@using Unity.Flex.Scoresheets.Enums;
 
 @model QuestionDefinitionViewModel;
 
 @switch (Model.Type)
 {
-    case Unity.Flex.Scoresheets.QuestionType.Text:
+    case QuestionType.Text:
         <abp-row class"m-0 p-0">
             @await Component.InvokeAsync(typeof(TextDefinitionWidget), new { Model.Definition })
         </abp-row>
         break;
-    case Unity.Flex.Scoresheets.QuestionType.Number:
+    case QuestionType.Number:
         <abp-row class"m-0 p-0">
             @await Component.InvokeAsync(typeof(NumericDefinitionWidget), new { Model.Definition })
         </abp-row>
         break;
-    case Unity.Flex.Scoresheets.QuestionType.YesNo:
+    case QuestionType.YesNo:
         <abp-row class"m-0 p-0">
             @await Component.InvokeAsync(typeof(QuestionYesNoDefinitionWidget), new { Model.Definition })
         </abp-row>
         break;
-    case Unity.Flex.Scoresheets.QuestionType.SelectList:
+    case QuestionType.SelectList:
         <abp-row class"m-0 p-0">
             @await Component.InvokeAsync(typeof(QuestionSelectListDefinitionWidget), new { Model.Definition })
         </abp-row>
         break;
-    case Unity.Flex.Scoresheets.QuestionType.TextArea:
+    case QuestionType.TextArea:
         <abp-row class"m-0 p-0">
             @await Component.InvokeAsync(typeof(TextAreaDefinitionWidget), new { Model.Definition })
         </abp-row>

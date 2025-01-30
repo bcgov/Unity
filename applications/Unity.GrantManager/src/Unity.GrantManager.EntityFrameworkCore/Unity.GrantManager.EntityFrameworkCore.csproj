@@ -34,6 +34,5 @@
 
 	<ItemGroup>
 		<Folder Include="Migrations\HostMigrations\" />
-		<Folder Include="Migrations\TenantMigrations\" />
 	</ItemGroup>
 </Project>

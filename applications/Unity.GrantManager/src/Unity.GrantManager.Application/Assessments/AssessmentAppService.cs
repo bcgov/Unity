@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex;
 using Unity.Flex.Scoresheets;
+using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
 using Unity.GrantManager.Applications;
@@ -162,7 +163,7 @@ namespace Unity.GrantManager.Assessments
             double selectListSubtotal = instance.Answers.Where(a => existingSelectListQuestionIds.Contains(a.QuestionId))
                 .Sum(answer =>
                 {
-                    var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.SelectList)!.ToString();
+                    var value = ValueResolver.Resolve(answer.CurrentValue!, QuestionType.SelectList)!.ToString();
                     var question = existingSelectListQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
                     var definition = JsonSerializer.Deserialize<QuestionSelectListDefinition>(question.Definition ?? "{}");
                     var selectedOption = definition?.Options.Find(o => o.Value == value);
@@ -185,7 +186,7 @@ namespace Unity.GrantManager.Assessments
             double yesNoSubtotal = instance.Answers.Where(a => existingYesNoQuestionIds.Contains(a.QuestionId))
                 .Sum(answer =>
                 {
-                    var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.YesNo)!.ToString();
+                    var value = ValueResolver.Resolve(answer.CurrentValue!, QuestionType.YesNo)!.ToString();
                     var question = existingYesNoQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
                     var definition = JsonSerializer.Deserialize<QuestionYesNoDefinition>(question.Definition ?? "{}");
                     return value switch
@@ -202,7 +203,7 @@ namespace Unity.GrantManager.Assessments
         {
             var existingNumericQuestionIds = await _scoresheetAppService.GetNumericQuestionIdsAsync(questionIds);
             double numericSubtotal = instance.Answers.Where(a => existingNumericQuestionIds.Contains(a.QuestionId))
-                .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.Number)!.ToString()));
+                .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, QuestionType.Number)!.ToString()));
             return numericSubtotal;
         }
 
@@ -384,39 +385,7 @@ namespace Unity.GrantManager.Assessments
             {
                 throw new AbpValidationException(ex.Message, ex);
             }
-
-        }
-
-        public async Task SaveScoresheetAnswer(Guid assessmentId, Guid questionId, string? answer, int questionType)
-        {
-            var assessment = await _assessmentRepository.GetAsync(assessmentId);
-            if (assessment != null)
-            {
-                if (CurrentUser.GetId() != assessment.AssessorId)
-                {
-                    throw new AbpValidationException("Error: You do not own this assessment record.");
-                }
-                if (assessment.Status.Equals(AssessmentState.COMPLETED))
-                {
-                    throw new AbpValidationException("Error: This assessment is already completed.");
-                }
-
-                if (await _featureChecker.IsEnabledAsync(UnityFlex))
-                {
-                    await _localEventBus.PublishAsync(new PersistScoresheetInstanceEto()
-                    {
-                        CorrelationId = assessmentId,
-                        QuestionId = questionId,
-                        Answer = answer,
-                        QuestionType = questionType
-                    });
-                }
-            }
-            else
-            {
-                throw new AbpValidationException("AssessmentId Not Found: " + assessmentId + ".");
-            }
-        }
+        }      
 
         public async Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto)
         {
