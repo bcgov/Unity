@@ -304,6 +304,9 @@
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
 
+    "Permission:GrantApplicationManagement.ApplicantInfo": "Applicant Info",
+    "Permission:GrantApplicationManagement.ApplicantInfo.Update": "Applicant Info Update",
+
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
     "ApplicantInfoView:PhysicalAddress": "Physical Address",

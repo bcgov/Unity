@@ -43,6 +43,9 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
     public List<WorksheetFieldViewModel>? Properties { get; set; }
 
     [BindProperty]
+    public KeyValuePair<string, string>[]? DynamicFields { get; set; }
+
+    [BindProperty]
     public string? CheckboxKeys { get; set; }
 
     public async Task OnGetAsync(Guid valueId,
@@ -78,7 +81,9 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             UiAnchor = uiAnchor
         };
 
-        Properties = await dataGridReadService.GetPropertiesAsync(dataProps);
+        var (dynamicFields, customFields) = await dataGridReadService.GetPropertiesAsync(dataProps);
+        Properties = customFields;
+        DynamicFields = dynamicFields ?? [];
         CheckboxKeys = string.Join(',', Properties?.Where(s => s.Type == Worksheets.CustomFieldType.Checkbox).Select(s => s.Name) ?? []);
     }
 
@@ -93,7 +98,7 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             {
                 keyValuePairs.TryAdd(key, "false");
             }
-        } 
+        }
 
         var dataProps = new RowInputData()
         {
