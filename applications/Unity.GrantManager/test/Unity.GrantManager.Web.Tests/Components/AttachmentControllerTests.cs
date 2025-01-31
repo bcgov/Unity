@@ -65,7 +65,7 @@ namespace Unity.GrantManager.Components
 
             // Act
             Task<IActionResult> download = attachmentController.DownloadChefsAttachment(formSubmissionId, chefsFileAttachmentId, fileName);
-            var downloadedFile = (FileContentResult) download.Result;
+            var downloadedFile = (FileContentResult) await download;
 
             // assert
             Assert.NotNull(downloadedFile);

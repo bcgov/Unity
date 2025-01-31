@@ -12,5 +12,8 @@ namespace Unity.GrantManager.ApplicationForms
         public string? AvailableChefsFields { get; set; } = "{}";
         public int? Version { get; set; }
         public bool Published { get; set; }
+        public string ReportColumns { get; set; } = string.Empty;
+        public string ReportKeys { get; set; } = string.Empty;
+        public string ReportViewName { get; set; } = string.Empty;
     }
 }

@@ -127,7 +127,9 @@
 
 
 function enableApplicantInfoSaveBtn(inputText) {
-    if (!$("#ApplicantInfoForm").valid() || formHasInvalidCurrencyCustomFields("ApplicantInfoForm")) {
+    if (!$("#ApplicantInfoForm").valid()
+        || !abp.auth.isGranted('GrantApplicationManagement.ApplicantInfo.Update')
+        || formHasInvalidCurrencyCustomFields("ApplicantInfoForm")) {
         $('#saveApplicantInfoBtn').prop('disabled', true);
         return;
     }

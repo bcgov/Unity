@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
@@ -14,6 +15,7 @@ namespace Unity.Flex.Domain.WorksheetLinks
         public string CorrelationProvider { get; private set; } = string.Empty;
         public string UiAnchor { get; private set; } = string.Empty;
 
+        [JsonIgnore]
         public virtual Worksheet Worksheet
         {
             set => _worksheet = value;
