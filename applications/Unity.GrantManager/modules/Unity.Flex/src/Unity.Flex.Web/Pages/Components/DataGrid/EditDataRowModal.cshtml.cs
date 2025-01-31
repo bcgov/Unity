@@ -6,11 +6,13 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using System.Linq;
+using Unity.Modules.Shared.Utils;
 
 namespace Unity.Flex.Web.Pages.Flex;
 
 public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
-    DataGridReadService dataGridReadService) : FlexPageModel
+    DataGridReadService dataGridReadService,
+    BrowserUtils browserUtils) : FlexPageModel
 {
     [BindProperty]
     public Guid? ValueId { get; set; }
@@ -85,6 +87,7 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
     public async Task<IActionResult> OnPostAsync()
     {
         var keyValuePairs = GetKeyValuePairs(Request.Form);
+        var presentationSettings = new PresentationSettings() { BrowserOffsetMinutes = browserUtils.GetBrowserOffset() };
 
         if (CheckboxKeys != null)
         {
@@ -93,7 +96,7 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             {
                 keyValuePairs.TryAdd(key, "false");
             }
-        } 
+        }
 
         var dataProps = new RowInputData()
         {
@@ -119,7 +122,7 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             WorksheetId = result.WorksheetId,
             Row = result.Row,
             IsNew = result.IsNew,
-            Updates = DataGridReadService.ApplyPresentationFormat(keyValuePairs, result.MappedValues),
+            Updates = DataGridReadService.ApplyPresentationFormat(keyValuePairs, result.MappedValues, presentationSettings),
             UiAnchor = UiAnchor
         });
     }

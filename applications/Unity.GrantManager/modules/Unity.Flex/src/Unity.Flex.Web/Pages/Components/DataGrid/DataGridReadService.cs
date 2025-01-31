@@ -18,7 +18,8 @@ namespace Unity.Flex.Web.Pages.Flex
     {
         internal static Dictionary<string, string> ApplyPresentationFormat(
             Dictionary<string, string> keyValuePairs,
-            List<Tuple<string, string, CustomFieldType>> keyValueTypes)
+            List<Tuple<string, string, CustomFieldType>> keyValueTypes,
+            PresentationSettings presentationSettings)
         {
             var formattedKeyValuePairs = new Dictionary<string, string>();
 
@@ -30,7 +31,7 @@ namespace Unity.Flex.Web.Pages.Flex
                 var typeTuple = keyValueTypes.Find(kvt => kvt.Item1 == key);
                 if (typeTuple != null)
                 {
-                    var formattedValue = value.ApplyPresentationFormatting(typeTuple.Item3.ToString(), null);
+                    var formattedValue = value.ApplyPresentationFormatting(typeTuple.Item3.ToString(), null, presentationSettings);
                     formattedKeyValuePairs.Add(key, formattedValue);
                 }
                 else

@@ -7,7 +7,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.Web.Services;
+using Unity.Modules.Shared.Utils;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 {

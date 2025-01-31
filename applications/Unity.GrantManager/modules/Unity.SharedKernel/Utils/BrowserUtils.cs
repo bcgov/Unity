@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace Unity.GrantManager.Web.Services
+namespace Unity.Modules.Shared.Utils
 {
     public class BrowserUtils
     {

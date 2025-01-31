@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
 using Unity.Flex.Worksheets;
+using YamlDotNet.Core.Tokens;
 
 namespace Unity.Flex
 {
@@ -61,5 +65,21 @@ namespace Unity.Flex
                 { "bcaddress", CustomFieldType.BCAddress.ToString() },
                 { "datagrid", CustomFieldType.DataGrid.ToString() }
             };
+
+        internal static bool RequiresDateTimeConversion(this string type)
+        {
+            return type == CustomFieldType.DateTime.ToString();
+        }
+
+        internal static string ApplyDateTimeConversion(this JToken token)
+        {
+            if (DateTime.TryParse(token.ToString(), new CultureInfo("en-CA"), out DateTime parsedDate))
+            {
+                // If the value is a DateTime, keep the raw format
+                return token.ToString(Newtonsoft.Json.Formatting.None).Trim('"');
+            }
+
+            return token.ToString();
+        }
     }
 }
