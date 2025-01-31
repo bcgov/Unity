@@ -6,21 +6,20 @@ namespace Unity.Flex
 {
     public static class DataGridExtensions
     {
-        public static string ApplyPresentationFormatting(this string value, string columnType, string? format)
+        public static string ApplyPresentationFormatting(this string value, string columnType, string? format, PresentationSettings presentationSettings)
         {
             if (value == null) return string.Empty;
 
             return columnType switch
             {
-                var ct when IsDateColumn(ct) && TryParseDate(value, format, out string formattedDate) => formattedDate,
-                var ct when IsDateTimeColumn(ct) && TryParseDateTime(value, format, out string formattedDateTime) => formattedDateTime,
+                var ct when IsDateColumn(ct) && TryParseDate(value, out string formattedDate) => formattedDate,
+                var ct when IsDateTimeColumn(ct) && TryParseDateTime(value, presentationSettings.BrowserOffsetMinutes, out string formattedDateTime) => formattedDateTime,
                 var ct when IsCurrencyColumn(ct) && TryParseCurrency(value, format, out string formattedCurrency) => formattedCurrency,
                 var ct when IsYesNoColumn(ct) && TryFormatYesNo(value, out string formattedYesNo) => formattedYesNo,
                 var ct when IsCheckBoxColumn(ct) && TryFormatCheckbox(value, out string formattedCheckbox) => formattedCheckbox,
                 _ => value
             };
         }
-
 
         public static string ApplyStoreFormatting(this string value, string columnType)
         {
@@ -35,23 +34,27 @@ namespace Unity.Flex
             };
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style",
-            "IDE0060:Remove unused parameter",
-            Justification = "We ignore the format provided from CHEFS for datetime as this does not display correctly")]
-        private static bool TryParseDateTime(string value, string? format, out string formattedDateTime)
+        private static bool TryParseDateTime(string value, int browserOffsetMinutes, out string formattedDateTime)
         {
+            // Apply the browser offset before presenting the data
             const string fixedFormat = "yyyy-MM-dd hh:mm:ss tt";
-            if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
+
+            if (DateTimeOffset.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTimeOffset dateTimeOffset))
             {
+                // Adjust the DateTimeOffset by the browser offset (in minutes)
+                dateTimeOffset = dateTimeOffset.ToOffset(TimeSpan.FromMinutes(-browserOffsetMinutes));
+
+                // Convert the DateTimeOffset to a DateTime
+                DateTime dateTime = dateTimeOffset.DateTime;
+
                 // The format that CHEFS provides vs the provided value don't format correctly
-                format = fixedFormat;
-                var appliedFormat = !string.IsNullOrEmpty(format) ? format : fixedFormat;
-                formattedDateTime = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
+                formattedDateTime = dateTime.ToString(fixedFormat, CultureInfo.InvariantCulture);
                 return true;
             }
             formattedDateTime = string.Empty;
             return false;
         }
+
 
         private static bool IsDateTimeColumn(string columnType)
         {
@@ -97,14 +100,16 @@ namespace Unity.Flex
             return columnType == CustomFieldType.Currency.ToString();
         }
 
-        private static bool TryParseDate(string value, string? format, out string formattedDate)
+        private static bool TryParseDate(string value, out string formattedDate)
         {
+            const string fixedFormat = "yyyy-MM-dd";
+
             if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
             {
-                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "yyyy-MM-dd";
-                formattedDate = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
+                formattedDate = dateTime.ToString(fixedFormat, CultureInfo.InvariantCulture);
                 return true;
             }
+
             formattedDate = string.Empty;
             return false;
         }
@@ -122,7 +127,7 @@ namespace Unity.Flex
             return false;
         }
 
-        private static CultureInfo GetCultureInfoByCurrencyCode(string currencyCode)
+        static CultureInfo GetCultureInfoByCurrencyCode(string currencyCode)
         {
             foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
             {

@@ -43,7 +43,7 @@ namespace Unity.Flex.Web.Pages.Flex
             return formattedKeyValuePairs;
         }
 
-        internal async Task<(KeyValuePair<string, string>[] dynamicFields, List<WorksheetFieldViewModel>? customFields)> GetPropertiesAsync(RowInputData dataProps)
+        internal async Task<(KeyValuePair<string, string>[] dynamicFields, List<WorksheetFieldViewModel>? customFields)> GetPropertiesAsync(RowInputData dataProps, PresentationSettings presentationSettings)
         {
             if (IsFirstRow(dataProps))
             {
@@ -55,7 +55,7 @@ namespace Unity.Flex.Web.Pages.Flex
                 return ([], await GetNewRowAsync(dataProps));
             }
 
-            return await GetExistingRowAsync(dataProps);
+            return await GetExistingRowAsync(dataProps, presentationSettings);
         }
 
         private async Task<List<WorksheetFieldViewModel>> GetFirstRowAsync(RowInputData dataProps)
@@ -80,7 +80,7 @@ namespace Unity.Flex.Web.Pages.Flex
             return DataGridServiceUtils.ExtractCustomColumnsValues(dataGridValue, datagridDefinition, dataProps.Row, true);
         }
 
-        private async Task<(KeyValuePair<string, string>[] dynamicFields, List<WorksheetFieldViewModel> customFields)> GetExistingRowAsync(RowInputData dataProps)
+        private async Task<(KeyValuePair<string, string>[] dynamicFields, List<WorksheetFieldViewModel> customFields)> GetExistingRowAsync(RowInputData dataProps, PresentationSettings presentationSettings)
         {
             if (dataProps.ValueId == null) throw new ArgumentNullException(nameof(dataProps));
             var customFieldValue = await customFieldValueAppService.GetAsync(dataProps.ValueId.Value);
@@ -91,7 +91,7 @@ namespace Unity.Flex.Web.Pages.Flex
 
             var dataGridValue = JsonSerializer.Deserialize<DataGridValue>(customFieldValue.CurrentValue ?? "{}");
 
-            return (DataGridServiceUtils.ExtractDynamicColumnsPairs(dataGridValue, dataProps.Row),
+            return (DataGridServiceUtils.ExtractDynamicColumnsPairs(dataGridValue, dataProps.Row, presentationSettings),
                 DataGridServiceUtils.ExtractCustomColumnsValues(dataGridValue, datagridDefinition, dataProps.Row, false));
         }
 

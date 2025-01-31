@@ -83,7 +83,8 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             UiAnchor = uiAnchor
         };
 
-        var (dynamicFields, customFields) = await dataGridReadService.GetPropertiesAsync(dataProps);
+        PresentationSettings presentationSettings = new() { BrowserOffsetMinutes = browserUtils.GetBrowserOffset() };
+        var (dynamicFields, customFields) = await dataGridReadService.GetPropertiesAsync(dataProps, presentationSettings);
         Properties = customFields;
         DynamicFields = dynamicFields ?? [];
         CheckboxKeys = string.Join(',', Properties?.Where(s => s.Type == Worksheets.CustomFieldType.Checkbox).Select(s => s.Name) ?? []);
