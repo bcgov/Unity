@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Unity.Flex.Worksheets;
-using YamlDotNet.Core.Tokens;
 
 namespace Unity.Flex
 {
@@ -73,7 +72,7 @@ namespace Unity.Flex
 
         internal static string ApplyDateTimeConversion(this JToken token)
         {
-            if (DateTime.TryParse(token.ToString(), new CultureInfo("en-CA"), out DateTime parsedDate))
+            if (DateTime.TryParse(token.ToString(), new CultureInfo("en-CA"), out _))
             {
                 // If the value is a DateTime, keep the raw format
                 return token.ToString(Newtonsoft.Json.Formatting.None).Trim('"');

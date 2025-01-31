@@ -153,7 +153,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return dataColumns;
         }
 
-        private List<DataGridViewModelRow> GenerateDataRows(List<DataGridColumn> columns,
+        private static List<DataGridViewModelRow> GenerateDataRows(List<DataGridColumn> columns,
             DataGridRowsValue? dataGridRowsValue,
             PresentationSettings presentationSettings)
         {
