@@ -125,7 +125,9 @@ namespace Unity.Flex.Web.Pages.Flex
             return cells;
         }
 
-        internal static KeyValuePair<string, string>[] ExtractDynamicColumnsPairs(DataGridValue? dataGridValue, uint rowNumber)
+        internal static KeyValuePair<string, string>[] ExtractDynamicColumnsPairs(DataGridValue? dataGridValue, 
+            uint rowNumber, 
+            PresentationSettings presentationSettings)
         {
             var keyValues = new List<KeyValuePair<string, string>>();
             var gridValue = DeserializeDataGridValue(dataGridValue?.Value?.ToString());
@@ -140,7 +142,7 @@ namespace Unity.Flex.Web.Pages.Flex
 
                 if (cell != null)
                 {
-                    keyValues.Add(new(column.Name, cell.Value.ApplyPresentationFormatting(column.Type, null)));
+                    keyValues.Add(new(column.Name, cell.Value.ApplyPresentationFormatting(column.Type, null, presentationSettings)));
                 }
             }
 
