@@ -14,4 +14,7 @@ public class ApplicationFormVersion : FullAuditedAggregateRoot<Guid>, IMultiTena
     public int? Version { get; set; }
     public bool Published { get; set; }
     public Guid? TenantId { get; set; }
+    public string ReportColumns { get; set; } = string.Empty;
+    public string ReportKeys { get; set; } = string.Empty;
+    public string ReportViewName { get; set; } = string.Empty;
 }

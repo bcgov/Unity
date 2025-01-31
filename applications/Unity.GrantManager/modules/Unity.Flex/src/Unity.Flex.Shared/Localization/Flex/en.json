@@ -31,6 +31,8 @@
     "Worksheet:Configuration:AddCheckboxOptionText": "Add Option",
     "Worksheet:Configuration:ExportWorksheetButtonText": "Export Worksheet",
     "Worksheet:Configuration:AddSelectListOptionText": "Add Option",
-    "Worksheet:Configuration:AddColumnOptionText": "Add Column"
+    "Worksheet:Configuration:AddColumnOptionText": "Add Column",
+    "DataGrids:DynamicColumnsHeader": "Dynamic Columns",
+    "DataGrids:CustomColumnsHeader": "Custom Columns"
   }
 }

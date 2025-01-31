@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -11,6 +12,8 @@ namespace Unity.Flex.Domain.Worksheets
     {
         // Navigation
         public virtual Guid WorksheetId { get; set; }
+
+        [JsonIgnore]
         public virtual Worksheet Worksheet
         {
             set => _worksheet = value;

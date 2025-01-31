@@ -55,7 +55,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
 
             // Assert
-            IQueryable<ApplicationAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationAssignment> queryableAssignment = await _userAssignmentRepository.GetQueryableAsync();
             var assignments = queryableAssignment.ToList();
             assignments.Count.ShouldBe(1);
 
@@ -63,7 +63,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
             await _grantApplicationAppServiceTest.DeleteAssigneeAsync(application.Id, uData.Id);
             await uow.SaveChangesAsync();
 
-            IQueryable<ApplicationAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationAssignment> queryableAssignment2 = await _userAssignmentRepository.GetQueryableAsync();
             var assignments2 = queryableAssignment2.ToList();
             assignments2.Count.ShouldBe(0);
         }

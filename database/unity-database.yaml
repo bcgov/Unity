@@ -170,7 +170,7 @@ objects:
       template.alpha.openshift.io/wait-for-ready: "true"
       # Add the trigger annotation
       image.openshift.io/triggers: >-
-        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${{DATABASE_SERVICE_NAME}\")].image","pause":"true"}]
+        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${{DATABASE_SERVICE_NAME}\")].image","pause":"false"}]
     name: ${DATABASE_SERVICE_NAME}
     labels:
       app: ${DATABASE_SERVICE_NAME}
