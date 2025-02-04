@@ -14,6 +14,6 @@
 
     public class EmailResendOptions
     {
-        public int RetryAttemptsMaximum { get; set; } = 0;
+        public int RetryAttemptsMaximum { get; set; } = 3;
     }
 }

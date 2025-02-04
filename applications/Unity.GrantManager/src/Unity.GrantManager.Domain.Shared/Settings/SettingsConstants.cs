@@ -24,5 +24,15 @@
                 public const string FundingAgreement = "GrantManager.UI.Tabs.FundingAgreement";
             }
         }
+
+        public static class BackgroundJobs
+        {
+            public const string IsJobExecutionEnabled = "GrantManager.BackgroundJobs.IsJobExecutionEnabled";
+            public const string Quartz_IsAutoRegisterEnabled = "GrantManager.BackgroundJobs.Quartz_IsAutoRegisterEnabled";
+            public const string IntakeResync_Expression = "GrantManager.BackgroundJobs.IntakeResync_Expression";
+            public const string IntakeResync_NumDaysToCheck = "GrantManager.BackgroundJobs.IntakeResync_NumDaysToCheck";
+            public const string CasPaymentsReconciliation_ProducerExpression = "GrantManager.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression";
+            public const string CasFinancialNotificationSummary_ProducerExpression = "GrantManager.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression";
+        }
     }
 }

@@ -45,6 +45,37 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 isInherited: false,
                 isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName)
         );
+
+        AddBackgroundJobSettingDefinition(context);
+    }
+
+    private static void AddBackgroundJobSettingDefinition(ISettingDefinitionContext currentContext)
+    {
+        // 24 = 12 am   So 24 + 8 UTC = 8
+        // 23 = 11 pm   So 23 + 8 UTC = 7
+        var backGroundSchedules = new Dictionary<string, string>
+        {
+            { SettingsConstants.BackgroundJobs.IntakeResync_Expression, "0 0 7 1/1 * ? *" },
+            { SettingsConstants.BackgroundJobs.IntakeResync_NumDaysToCheck, "-2" },
+            { SettingsConstants.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression, "0 0 8 1/1 * ? *" },
+            { SettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression, "0 0 9 1/1 * ? *" }
+        };
+
+        foreach (var setting in backGroundSchedules)
+        {
+            AddSettingDefinition(currentContext, setting.Key, setting.Value.ToString());
+        }
+
+        var backgroundJobSettings = new Dictionary<string, bool>
+        {
+            { SettingsConstants.BackgroundJobs.IsJobExecutionEnabled, true },
+            { SettingsConstants.BackgroundJobs.Quartz_IsAutoRegisterEnabled, true }
+        };
+
+        foreach (var setting in backgroundJobSettings)
+        {
+            AddSettingDefinition(currentContext, setting.Key, setting.Value.ToString());
+        }
     }
 
     private static void AddSettingDefinition(ISettingDefinitionContext currentContext, string settingName, string defaultValue = "True")

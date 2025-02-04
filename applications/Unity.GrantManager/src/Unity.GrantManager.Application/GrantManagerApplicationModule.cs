@@ -34,6 +34,8 @@ using Quartz;
 using Volo.Abp.BackgroundJobs;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
+using Unity.GrantManager.Settings;
+using Volo.Abp;
 
 namespace Unity.GrantManager;
 
@@ -131,7 +133,6 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
-        ConfigureBackgroundServices(configuration);
         ConfigureDistributedCache(context, configuration);
 
         context.Services.ConfigureRabbitMQ();
@@ -187,31 +188,52 @@ public class GrantManagerApplicationModule : AbpModule
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 
-    private void ConfigureBackgroundServices(IConfiguration configuration)
+    public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
     {
-        if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"])) return;
+        ISettingManager? settingManager = context.ServiceProvider.GetService<ISettingManager>();
+        if (settingManager != null)
+        {
+            ConfigureBackgroundServices(settingManager);
+        }
+    }
+
+    private void ConfigureBackgroundServices(ISettingManager settingManager)
+    {
+        string isJobExecutionEnabled = GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.IsJobExecutionEnabled);
+        bool isJobExecutionEnabledBool = isJobExecutionEnabled == "True";
+        if (isJobExecutionEnabledBool) return;
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+            options.IsJobExecutionEnabled = isJobExecutionEnabledBool;
         });
+
+        string isAutoRegisterEnabled = GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.Quartz_IsAutoRegisterEnabled);
+        bool isAutoRegisterEnabledBool = isAutoRegisterEnabled == "True";
 
         Configure<AbpBackgroundWorkerQuartzOptions>(options =>
         {
-            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
+            options.IsAutoRegisterEnabled = isAutoRegisterEnabledBool;
         });
 
-        /*
-         * There are Global Retry Options that can be configured, configure if required, or if handled per job 
-        */
+        string intakeConsumerExpression = GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.IntakeResync_Expression);
+        string intakeNumberOfDays = GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.IntakeResync_NumDaysToCheck);
 
+        // There are Global Retry Options that can be configured, configure if required, or if handled per job
         Configure<BackgroundJobsOptions>(options =>
         {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
-            options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
-            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";
-            options.IntakeResync.NumDaysToCheck = configuration.GetValue<string>("BackgroundJobs:IntakeResync:NumDaysToCheck") ?? "-2";
+            options.IsJobExecutionEnabled = isJobExecutionEnabledBool;
+            options.Quartz.IsAutoRegisterEnabled = isAutoRegisterEnabledBool;
+            options.IntakeResync.Expression = intakeConsumerExpression;
+            options.IntakeResync.NumDaysToCheck = intakeNumberOfDays;
         });
+    }
+
+    private static string GetSettingsValue(ISettingManager settingManager, string settingName)
+    {
+        // Fetch the producer expression synchronously
+        var settingValue = settingManager.GetOrNullDefaultAsync(settingName, fallback: true).Result;
+        return !string.IsNullOrEmpty(settingValue) ? settingValue : string.Empty;
     }
 
     private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
