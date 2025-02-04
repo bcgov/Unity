@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.Comments;
-using Unity.GrantManager.Web.Services;
+using Unity.Modules.Shared.Utils;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 {

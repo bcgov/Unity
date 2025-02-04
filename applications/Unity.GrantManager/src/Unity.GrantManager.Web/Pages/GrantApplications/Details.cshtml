@@ -17,6 +17,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
+@using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
 @using Volo.Abp.Settings
@@ -27,11 +28,14 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @inject IFeatureChecker FeatureChecker
+@inject IPermissionChecker PermissionChecker
 @inject ICurrentTenant CurrentTenant
 @inject ISettingProvider SettingProvider
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
+    var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
+    var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
 }
 @section styles
 {
@@ -237,7 +241,7 @@
                 <li class="nav-item">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications"))
+                @if (notificationsFeatureEnabled && readEmailGranted)
                 {
                     <li class="nav-item">
                         <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
@@ -335,6 +339,8 @@
                 @*-------- Details Tab Section END ---------*@
 
                 @*-------- Emails Tab Section ---------*@
+                @if (notificationsFeatureEnabled && readEmailGranted)
+                {
                 <div class="tab-pane" id="emails" role="tabpanel" aria-labelledby="emails-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Emails</h6>
                     <div class="px-3 pb-2" id="applicationEmailsWidget">
@@ -345,6 +351,7 @@
                         @await Component.InvokeAsync("EmailHistoryWidget")
                     </div>
                 </div>
+                }
                 @*-------- Emails Tab Section END ---------*@
 
                 @*-------- Comments Tab Section ---------*@

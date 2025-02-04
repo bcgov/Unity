@@ -21,7 +21,8 @@
         inputOriginalEmailSubject: $($('#OriginalDraftEmailSubject')[0]),
         inputOriginalEmailBody: $($('#OriginalDraftEmailBody')[0]),
         emailSpinner: $('#spinner-modal'),
-        confirmationModal: $('#confirmation-modal')
+        confirmationModal: $('#confirmation-modal'),
+        alertEmailReadonly: $('#email-alert-readonly')
     };
 
     function bindUIEvents() {
@@ -74,6 +75,7 @@
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
         UIElements.btnNewEmail.removeClass('hide');
+        UIElements.alertEmailReadonly.removeClass('hide');
         UIElements.emailForm.trigger("reset");
         enableEmail();
     }
@@ -97,6 +99,7 @@
     function showModalEmail() {
         UIElements.emailForm.addClass('active');
         UIElements.btnNewEmail.addClass('hide');
+        UIElements.alertEmailReadonly.addClass('hide');
     }
 
     function validateEmail(email) {

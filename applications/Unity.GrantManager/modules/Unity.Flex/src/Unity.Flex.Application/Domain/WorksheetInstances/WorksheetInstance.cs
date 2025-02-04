@@ -51,7 +51,7 @@ namespace Unity.Flex.Domain.WorksheetInstances
             WorksheetCorrelationProvider = worksheetCorrelationProvider;
             UiAnchor = correlationAnchor;
             WorksheetId = worksheetId;
-            ReportData = reportData ?? string.Empty;
+            ReportData = reportData ?? "{}";
         }
 
         public WorksheetInstance AddValue(Guid customFieldId, string currentValue)
