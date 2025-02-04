@@ -54,6 +54,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
+                    
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
                 }, context.TenantId);
 
             // - Reviewer
@@ -77,6 +80,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
+                    
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
                 }, context.TenantId);
 
             // - Assessor
@@ -100,6 +106,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
+
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
                 }, context.TenantId);
 
             // - TeamLead
@@ -127,6 +136,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
+
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
                 }, context.TenantId);
 
             // - Approver
@@ -146,6 +158,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.UpdateFinalStateFields,
+
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
                 }, context.TenantId);
 
             // - SystemAdmin
@@ -154,7 +169,6 @@ namespace Unity.GrantManager.Permissions
                 {
                     GrantManagerPermissions.Default,
                     UnitySettingManagementPermissions.UserInterface,
-                    NotificationsPermissions.Settings,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantManagerPermissions.Intakes.Default,
@@ -176,6 +190,10 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
+
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
+                    NotificationsPermissions.Settings,
                 }, context.TenantId);
 
 
@@ -195,6 +213,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
 
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
+
                 }, context.TenantId);
 
             // -L2 Approver
@@ -212,6 +233,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
+
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
                 }, context.TenantId);
 
             // -L3 Approver
@@ -229,6 +253,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ApplicantInfo.Update,
                     GrantApplicationPermissions.ProjectInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Update,
+
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Send,
                 }, context.TenantId);
 
             // -External Assessor
@@ -242,6 +269,8 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.ApplicantInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Default,
+
+                    NotificationsPermissions.Email.Default,
                 }, context.TenantId);
 
         }
