@@ -62,9 +62,7 @@ namespace Unity.GrantManager.Identity
                 var adminAccount = userAccounts.Find(s => s.TenantId == null);
 
                 if (adminAccount == null) return null;
-
-                var tenants = await tenantRepository.GetListAsync();
-
+                
                 return new UserTenantAccountDto()
                 {
                     Id = adminAccount.Id,
