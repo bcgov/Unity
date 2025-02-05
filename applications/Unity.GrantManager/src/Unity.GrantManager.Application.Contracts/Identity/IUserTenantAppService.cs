@@ -6,6 +6,7 @@ namespace Unity.GrantManager.Identity
 {
     public interface IUserTenantAppService : IApplicationService
     {
-        Task<IList<UserTenantAccountDto>> GetUserTenantsAsync(string oidcSub);
+        Task<UserTenantAccountDto?> GetUserAdminAccountAsync(string oidcSub);
+        Task<List<UserTenantAccountDto>> GetUserTenantsAsync(string oidcSub);
     }
 }
