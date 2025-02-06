@@ -93,7 +93,7 @@
                 {
                     data: 'status',
                     render: function (data, _, full, meta) {
-                        if(data === 'Draft') {
+                        if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.Send')) {
                             return generateDeleteButtonContent(full, meta.row);
                         } else {
                             return '';

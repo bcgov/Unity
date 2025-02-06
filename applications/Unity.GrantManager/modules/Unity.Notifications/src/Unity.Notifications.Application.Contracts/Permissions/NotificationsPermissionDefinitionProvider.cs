@@ -9,7 +9,15 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        context.AddGroup(NotificationsPermissions.GroupName, L("Permission:Notifications"));
+        var notificationsPermissionsGroup = context.AddGroup(NotificationsPermissions.GroupName, L("Permission:Notifications"));
+
+        var notificationsPermissions = notificationsPermissionsGroup.AddPermission(
+                NotificationsPermissions.Email.Default, 
+                L($"Permission:{NotificationsPermissions.Email.Default}"));
+        
+        notificationsPermissions.AddChild(
+            NotificationsPermissions.Email.Send,
+            L($"Permission:{NotificationsPermissions.Email.Send}"));
 
         var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
         settingManagement.AddPermission(NotificationsPermissions.Settings, L("Permission:NotificationsPermissions.Settings"));
