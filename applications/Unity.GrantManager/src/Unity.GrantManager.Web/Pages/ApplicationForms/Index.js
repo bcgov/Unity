@@ -60,6 +60,8 @@
             ]
         })
     );
+    
+    dataTable.on('search.dt', () => handleSearch());
 
     createModal.onResult(function () {
         dataTable.ajax.reload();
@@ -88,6 +90,11 @@
         link.click();
         link.remove();
     });
+
+    function handleSearch() {
+        let filter = $('.dataTables_filter input').val();
+        console.info(filter);
+    }
 });
 
 
