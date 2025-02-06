@@ -17,6 +17,10 @@
             paging: true,
             order: [[1, "asc"]],
             searching: true,
+            language: { 
+                search: "",
+                searchPlaceholder: "Search",
+            },
             scrollX: true,
             processing: true,
             ajax: abp.libs.datatables.createAjax(_applicationFormsAppService.getList),
@@ -60,8 +64,10 @@
             ]
         })
     );
-    
+
     dataTable.on('search.dt', () => handleSearch());
+    $('.dataTables_filter input').attr("placeholder", "Search");
+    $('.dataTables_filter label')[0].childNodes[0].remove();
 
     createModal.onResult(function () {
         dataTable.ajax.reload();
