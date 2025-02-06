@@ -43,3 +43,11 @@
 .dataTables_filter {
     display: flex !important;
 }
+
+.ApplicationFormsTable_filter {
+    margin-top: -20px;
+}
+
+input::placeholder {
+    color: #8e8e8e !important;
+}
