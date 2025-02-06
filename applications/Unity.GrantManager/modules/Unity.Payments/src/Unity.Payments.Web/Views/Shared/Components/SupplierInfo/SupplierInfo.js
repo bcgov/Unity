@@ -77,6 +77,7 @@ $(function () {
             data: inputAction,
             responseCallback,
             actionButtons,
+            colReorder: false,
             pagingEnabled: false,
             reorderEnabled: false,
             languageSetValues: {},
