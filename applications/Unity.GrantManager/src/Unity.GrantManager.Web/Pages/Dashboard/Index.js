@@ -131,7 +131,11 @@ fetch('./colorsPalette.json')
 reloadDashboard();
 
 function generateCard(config) {
-    const container = document.getElementById('dashboardContainer'); // Ensure this container exists in your HTML
+    if (document.getElementById(config.chartId)) {
+        return; // Skip if the chart element already exists
+    }
+
+    const container = document.getElementById('dashboardContainer');
 
     const cardDiv = document.createElement('div');
     cardDiv.className = 'col-md-6 col-lg-4 col-sm-12 p-2 card-border-radius';
