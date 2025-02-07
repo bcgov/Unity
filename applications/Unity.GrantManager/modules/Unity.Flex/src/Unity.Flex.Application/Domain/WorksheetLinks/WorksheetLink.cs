@@ -14,6 +14,7 @@ namespace Unity.Flex.Domain.WorksheetLinks
         public Guid CorrelationId { get; private set; }
         public string CorrelationProvider { get; private set; } = string.Empty;
         public string UiAnchor { get; private set; } = string.Empty;
+        public uint? Order { get; private set; } = 0;
 
         [JsonIgnore]
         public virtual Worksheet Worksheet
@@ -33,7 +34,8 @@ namespace Unity.Flex.Domain.WorksheetLinks
             Guid worksheetId,
             Guid correlationId,
             string correlationProvider,
-            string uiAnchor)
+            string uiAnchor,
+            uint order = 0)
       : base(id)
         {
             Id = id;
@@ -41,11 +43,18 @@ namespace Unity.Flex.Domain.WorksheetLinks
             CorrelationProvider = correlationProvider;
             WorksheetId = worksheetId;
             UiAnchor = uiAnchor;
+            Order = order;
         }
 
         public WorksheetLink SetAnchor(string uiAnchor)
         {
             UiAnchor = uiAnchor;
+            return this;
+        }
+
+        public WorksheetLink SetOrder(uint order)
+        {
+            Order = order;
             return this;
         }
     }
