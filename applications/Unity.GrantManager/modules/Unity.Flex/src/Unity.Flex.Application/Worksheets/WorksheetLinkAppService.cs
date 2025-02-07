@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
@@ -51,7 +50,7 @@ namespace Unity.Flex.Worksheets
             List<WorksheetLinkDto> refreshedLinks)
         {
             // Add new
-            foreach (var (worksheetId, anchor, order) in dto.WorksheetAnchors)
+            foreach (var (worksheetId, anchor, _) in dto.WorksheetAnchors)
             {
                 if (worksheetLinks.Find(s => s.CorrelationId == dto.CorrelationId
                     && s.CorrelationProvider == dto.CorrelationProvider
