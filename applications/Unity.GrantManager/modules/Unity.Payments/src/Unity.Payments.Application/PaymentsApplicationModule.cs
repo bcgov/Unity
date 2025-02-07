@@ -7,7 +7,6 @@ using Volo.Abp.AspNetCore.Mvc;
 using Unity.Payments.EntityFrameworkCore;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.BackgroundJobs;
-using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.TenantManagement;
@@ -15,6 +14,9 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.SettingManagement;
+using Unity.GrantManager.Settings;
+using Volo.Abp;
 
 namespace Unity.Payments;
 
@@ -38,16 +40,18 @@ public class PaymentsApplicationModule : AbpModule
         });
     }
 
+    public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
+    {
+        ISettingManager? settingManager = context.ServiceProvider.GetService<ISettingManager>();
+        if (settingManager != null)
+        {
+            ConfigureBackgroundServices(settingManager);
+        }
+    }
+
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        var configuration = context.Services.GetConfiguration();
-
-        Configure<PaymentRequestBackgroundJobsOptions>(options =>
-        {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
-            options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
-            options.FinancialNotificationSummaryOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasFinancialNotificationSummary:ProducerExpression") ?? "";            
-        });
 
         context.Services.ConfigureRabbitMQ();
         context.Services.AddQueueMessageConsumer<InvoiceConsumer, InvoiceMessages>();
@@ -62,7 +66,7 @@ public class PaymentsApplicationModule : AbpModule
         {
             options.FileSets.AddEmbedded<PaymentsApplicationModule>();
         });
-       
+
         context.Services.AddAutoMapperObjectMapper<PaymentsApplicationModule>();
         Configure<AbpAutoMapperOptions>(options =>
         {
@@ -93,5 +97,30 @@ public class PaymentsApplicationModule : AbpModule
 
         LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
+    }
+
+    private void ConfigureBackgroundServices(ISettingManager settingManager)
+    {
+        string isJobExecutionEnabled = GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.IsJobExecutionEnabled);
+        bool isJobExecutionEnabledBool = isJobExecutionEnabled == "True";
+        if (isJobExecutionEnabledBool) return;
+
+        string casPaymentsProducerExpression = GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression);
+        string casFinancialNotificationExpression = GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression);
+
+        // Configure the payment request background job options
+        Configure<PaymentRequestBackgroundJobsOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = isJobExecutionEnabledBool;
+            options.PaymentRequestOptions.ProducerExpression = casPaymentsProducerExpression;
+            options.FinancialNotificationSummaryOptions.ProducerExpression = casFinancialNotificationExpression;
+        });
+    }
+
+    private static string GetSettingsValue(ISettingManager settingManager, string settingName)
+    {
+        // Fetch the producer expression synchronously
+        var settingValue = settingManager.GetOrNullDefaultAsync(settingName, fallback: true).Result;
+        return !string.IsNullOrEmpty(settingValue) ? settingValue : string.Empty;
     }
 }
