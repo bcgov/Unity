@@ -43,6 +43,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         _applicationAssignmentRepository = applicationAssignmentRepository;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.EconomicRegionCount)]
     public virtual async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -68,6 +69,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return economicRegionDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.ApplicationStatusCount)]
     public virtual async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -93,6 +95,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return applicationStatusDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.ApplicationTagsCount)]
     public virtual async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -117,6 +120,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return applicationTagsDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector)]
     public virtual async Task<List<GetSubsectorRequestedAmtDto>> GetRequestedAmountPerSubsectorAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -146,6 +150,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return subSectorRequestedAmtDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount)]
     public virtual async Task<List<GetApplicationAssigneeDto>> GetApplicationAssigneeCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -177,6 +182,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return applicationAssigneeDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.RequestApprovedCount)]
     public virtual async Task<List<GetRequestedApprovedAmtDto>> GetRequestApprovedCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);

@@ -9,6 +9,6 @@ namespace Unity.Flex.WorksheetLinks
         public Guid CorrelationId { get; set; }
         public string CorrelationProvider { get; set; } = string.Empty;
 
-        public Dictionary<Guid, string> WorksheetAnchors { get; set; } = [];
+        public List<(Guid worksheetId, string anchor, uint order)> WorksheetAnchors { get; set; } = [];
     }
 }
