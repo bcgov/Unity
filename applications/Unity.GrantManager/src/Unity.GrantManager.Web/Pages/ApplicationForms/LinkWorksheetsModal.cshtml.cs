@@ -156,7 +156,7 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
 
         if (FundingAgreementInfoSlotId != null && FundingAgreementInfoSlotId != Guid.Empty.ToString())
         {
-            tabLinks.Add(Guid.Parse(FundingAgreementInfoSlotId), FlexConsts.FundingAgreementInfoUiAnchor);
+            tabLinks.Add(new(Guid.Parse(FundingAgreementInfoSlotId), FlexConsts.FundingAgreementInfoUiAnchor, 0));
         }
     }
 }
