@@ -142,6 +142,47 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
     }
 
+    public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
+    {
+        var subject = $"Unity[Comment] {input.Subject}";
+        //HTML format
+        //var htmlBody = $@"
+        // <html>
+        //     <body>
+        //         <h2 style='color: #0a58ca;'>{input.From} mentioned you in a comment.</h2>
+        //         <p>Mentions: {string.Join(", ", input.MentionNamesEmail)}</p>
+        //         <blockquote style='background-color: #f9f9f9; padding: 15px; border-left: 3px solid #ccc;'>
+        //             {input.Body}
+        //         </blockquote>
+        //     </body>
+        // </html>";
+
+        var htmlBody = $@"{input.From} mentioned you in a comment.
+                     {input.Body}";
+        var fromEmail = "NoReply@gov.bc.ca";
+        HttpResponseMessage res = new();
+
+        try
+        {
+            foreach (var email in input.MentionNamesEmail)
+            {
+                var toEmail = email;
+                res = await SendEmailNotification(toEmail, htmlBody, subject, fromEmail);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "EmailNotificationService->SendEmailCommentNotification: Exception occurred while sending email.");
+            
+            res = new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+            };
+        }
+        return res;
+    }
+
+
     /// <summary>
     /// Send Email Notfication
     /// </summary>

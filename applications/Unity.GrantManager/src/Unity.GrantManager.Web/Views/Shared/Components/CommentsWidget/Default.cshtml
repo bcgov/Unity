@@ -1,3 +1,4 @@
+@using System.Text.Json
 @using Unity.GrantManager.Comments;
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
@@ -50,7 +51,7 @@
                 </div>
 
                 <div class="single-comment edit-mode" data-id="@comment.Id" style="display: none;">
-                    <textarea rows="6" maxlength="@MaxCharCount" class="form-control comment-input-mutliple" placeholder="Update the comment" data-id="@comment.Id">@comment.Comment</textarea>
+                    <textarea rows="6" maxlength="@MaxCharCount" class="form-control comment-input-mutliple comment-with-mention" placeholder="Update the comment" data-id="@comment.Id" id="@comment.Id">@comment.Comment</textarea>
                     <div class="comment-button-container">
                         <i class="fl fl-cross edit-comment-cancel-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
                         <i class="fl fl-tick edit-comment-save-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
@@ -60,12 +61,12 @@
         }
     }
 </div>
-
 <div class="row">
     <div class="col-12 mt-2">
         <div class="comments-div">
             <div class="single-comment">
-                <textarea rows="4" maxlength="@MaxCharCount" class="form-control comment-input" placeholder="Add a comment" data-ownerId="@Model.OwnerId" id="addCommentTextArea@(Model.OwnerId)"></textarea>
+                <div id="assigneeListData" data-assignees='@Html.Raw(JsonSerializer.Serialize(Model.AllAssigneeList))'></div>
+                <textarea rows="4" maxlength="@MaxCharCount" class="form-control comment-input comment-with-mention" placeholder="Add a comment" data-ownerId="@Model.OwnerId" id="addCommentTextArea@(Model.OwnerId)"></textarea>
                 <div id="addCommentContainer@(Model.OwnerId)" class="comment-button-container add-comment">
                     <i data-ownerId="@Model.OwnerId" data-type="@Model.CommentType" class="fl fl-cross add-comment-cancel-button comment-btn"></i>
                     <i data-ownerId="@Model.OwnerId" data-type="@Model.CommentType" class="fl fl-tick add-comment-save-button comment-btn"></i>
