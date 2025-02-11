@@ -25,6 +25,11 @@
         alertEmailReadonly: $('#email-alert-readonly')
     };
 
+    let defaultValues = {
+        emailTo: '',
+        emailFrom: ''
+    };
+
     function bindUIEvents() {
         UIElements.btnNewEmail.on('click', handleNewEmail);
         UIElements.btnSend.on('click', handleSendEmail);
@@ -37,12 +42,19 @@
         UIElements.inputEmailFrom.on('change', handleKeyUpTrim);
         UIElements.inputEmailBody.on('change', handleKeyUpTrim);
         UIElements.inputEmailTo.on('change', validateEmailTo);
+
+        UIElements.inputEmailTo.on('input', handleDraftChange);
+        UIElements.inputEmailFrom.on('input', handleDraftChange);
+        UIElements.inputEmailSubject.on('input', handleDraftChange);
+        UIElements.inputEmailBody.on('input', handleDraftChange);
     }
 
     init();
 
     function init() {
         bindUIEvents();
+        defaultValues.emailTo = UIElements.inputOriginalEmailTo.val();
+        defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
         toastr.options.positionClass = 'toast-top-center';
     }
 
@@ -93,7 +105,15 @@
 
     function handleNewEmail() {
         UIElements.inputEmailId.val(emptyGuid);
+        // Support discard to empty email template for new emails
+        UIElements.inputOriginalEmailTo.val(defaultValues.emailTo);
+        UIElements.inputOriginalEmailFrom.val(defaultValues.emailFrom);
+        UIElements.inputOriginalEmailSubject.val("");
+        UIElements.inputOriginalEmailBody.val("");
+
+        handleDraftChange();
         showModalEmail();
+        resetValidationErrors();
     }
 
     function showModalEmail() {
@@ -235,24 +255,48 @@
         return false; // Return false if validation or other conditions fail
     }
 
+    function handleDraftChange() {
+        const isDraftChanged = checkDraftChanges();
+        UIElements.btnSave.attr('disabled', !isDraftChanged);
+        UIElements.btnDiscard.attr('disabled', !isDraftChanged);
+    }
+
+    function checkDraftChanges() {
+        return UIElements.inputEmailTo.val() !== UIElements.inputOriginalEmailTo.val() ||
+               UIElements.inputEmailFrom.val() !== UIElements.inputOriginalEmailFrom.val() ||
+               UIElements.inputEmailSubject.val() !== UIElements.inputOriginalEmailSubject.val() ||
+               UIElements.inputEmailBody.val() !== UIElements.inputOriginalEmailBody.val();
+    }
+
+    function resetValidationErrors() {
+        UIElements.emailForm.find('.field-validation-error').each(function() {
+            $(this).removeClass('field-validation-error').addClass('field-validation-valid').html('');
+        });
+    }
+
     PubSub.subscribe('email_selected', (msg, data) => {
         
-        if(data && data.status === 'Draft') {
-            UIElements.inputEmailId.val(data.id);
-            UIElements.inputOriginalEmailTo.val(data.toAddress);
-            UIElements.inputOriginalEmailFrom.val(data.fromAddress);
-            UIElements.inputOriginalEmailSubject.val(data.subject);
-            UIElements.inputOriginalEmailBody.val(data.body);
-            enableEmail();
-        } else if(data && (data.status === 'Sent' || data.status === 'Initialized')) {
-            disableEmail();
-        }
+        UIElements.inputEmailId.val(data.id);
+        UIElements.inputOriginalEmailTo.val(data.toAddress);
+        UIElements.inputOriginalEmailFrom.val(data.fromAddress);
+        UIElements.inputOriginalEmailSubject.val(data.subject);
+        UIElements.inputOriginalEmailBody.val(data.body);
 
         UIElements.inputEmailTo.val(data.toAddress);
         UIElements.inputEmailFrom.val(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
         UIElements.inputEmailBody.val(data.body);
+
+        if (data && data.status === 'Draft') {
+            // Must run after form inputs are assigned
+            enableEmail();
+            handleDraftChange();
+        } else {
+            disableEmail();
+        }
+
         showModalEmail();
+        resetValidationErrors();
     });
 
     PubSub.subscribe(
