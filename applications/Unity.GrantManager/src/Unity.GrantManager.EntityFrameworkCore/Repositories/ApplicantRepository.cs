@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
@@ -18,6 +20,14 @@ namespace Unity.GrantManager.Repositories
     {
         public ApplicantRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
         {
+        }
+
+        public async Task<List<Applicant>> GetUnmatchedApplicantsAsync()
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Applicants
+                .Where(x => x.OrgName == null)
+                .ToListAsync();
         }
 
         public async Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId)

@@ -7,6 +7,11 @@ using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Events;
 using Volo.Abp;
+using System.Collections.Generic;
+using Unity.GrantManager.Integration.Orgbook;
+using Newtonsoft.Json.Linq;
+using System.Linq;
+using Unity.Modules.Shared.Utils;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -15,6 +20,7 @@ namespace Unity.GrantManager.Applicants;
 [ExposeServices(typeof(ApplicantAppService), typeof(IApplicantAppService))]
 public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IApplicantAddressRepository addressRepository,
+                                 IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
 {
 
@@ -106,6 +112,60 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
 
         return applicantAgent;
+    }
+
+    [RemoteService(true)]
+    public async Task MatchApplicantOrgNamesAsync()
+    {
+        List<Applicant> applicants = await applicantRepository.GetUnmatchedApplicantsAsync();
+        foreach (Applicant applicant in applicants)
+        {
+            // Create match lookups for applicants with org numbers but no org names
+            if (applicant.OrgNumber.IsNullOrEmpty() || !applicant.OrgName.IsNullOrEmpty()) continue;
+            await UpdateApplicantOrgMatchAsync(applicant);
+        }
+    }
+
+    private async Task UpdateApplicantOrgMatchAsync(Applicant applicant)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(applicant.OrgNumber)) return;
+            JObject? result = await orgBookService.GetOrgBookQueryAsync(applicant.OrgNumber);
+            var orgData = result?.SelectToken("results")?.Children().FirstOrDefault();
+            if (orgData == null) return;
+
+            var namesChildren = orgData.SelectToken("names")?.Children();
+            if (namesChildren == null) return;
+
+            foreach (var name in namesChildren)
+            {
+                if (name.SelectToken("type")?.ToString() == "entity_name")
+                {
+                    string nameText = name.SelectToken("text")?.ToString() ?? string.Empty;
+                    double match = nameText.CompareStrings(applicant.ApplicantName ?? string.Empty);
+                    applicant.MatchPercentage = (decimal)match;
+                    if (applicant.OrgName != nameText)
+                    {
+                        applicant.OrgName = nameText;
+                        await applicantRepository.UpdateAsync(applicant);
+                    }
+                }
+                else if (name.SelectToken("type")?.ToString() == "business_number")
+                {
+                    string businessNumber = name.SelectToken("text")?.ToString() ?? string.Empty;
+                    if (businessNumber != applicant.BusinessNumber)
+                    {
+                        applicant.BusinessNumber = businessNumber;
+                        await applicantRepository.UpdateAsync(applicant);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
     }
 
     private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
