@@ -145,18 +145,6 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
     {
         var subject = $"Unity[Comment] {input.Subject}";
-        //HTML format
-        //var htmlBody = $@"
-        // <html>
-        //     <body>
-        //         <h2 style='color: #0a58ca;'>{input.From} mentioned you in a comment.</h2>
-        //         <p>Mentions: {string.Join(", ", input.MentionNamesEmail)}</p>
-        //         <blockquote style='background-color: #f9f9f9; padding: 15px; border-left: 3px solid #ccc;'>
-        //             {input.Body}
-        //         </blockquote>
-        //     </body>
-        // </html>";
-
         var htmlBody = $@"{input.From} mentioned you in a comment.
                      {input.Body}";
         var fromEmail = "NoReply@gov.bc.ca";

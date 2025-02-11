@@ -12,7 +12,6 @@ using Volo.Abp.Identity.Integration;
 using Volo.Abp.Identity;
 using Newtonsoft.Json;
 using Unity.GrantManager.GrantApplications;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 {
@@ -26,8 +25,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
         private readonly CommentAppService _commentAppService;
         private readonly BrowserUtils _browserUtils;
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
-        //public List<SelectListItem> AssigneeList { get; set; } = new();
-        //public List<GrantApplicationAssigneeDto> AllAssigneeList { get; set; } = new();
         public string AllAssignees { get; set; } = string.Empty;
 
         public CommentsWidgetViewComponent(CommentAppService commentAppService, 

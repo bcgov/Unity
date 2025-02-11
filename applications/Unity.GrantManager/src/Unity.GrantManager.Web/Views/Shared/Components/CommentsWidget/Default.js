@@ -48,8 +48,6 @@
         const isEdit = false;
         const tempOwnerId = $(this).data('ownerid');
         const tempType = $(this).data('type');
-
-        //let tempComment = $('#addCommentTextArea' + tempOwnerId).html();
         const tempComment = $('#addCommentTextArea' + tempOwnerId).val();
         const mentions = mentionDataList.filter(person => tempComment.includes(`${person.value}`));
 
