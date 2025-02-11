@@ -95,7 +95,7 @@
                     <div class="multi-slot drag-target multi-target custom-tabs-list" draggable="false" data-target="custom-tabs">
                         @if (Model.CustomTabLinks != null)
                         {
-                            @foreach (var customTab in Model.CustomTabLinks)
+                            @foreach (var customTab in Model.CustomTabLinks.OrderBy(s => s.Order))
                             {
                                 <div class="draggable-card" draggable="true" data-worksheet-id="@customTab.WorksheetId">
                                     <span class="published-form-title">
