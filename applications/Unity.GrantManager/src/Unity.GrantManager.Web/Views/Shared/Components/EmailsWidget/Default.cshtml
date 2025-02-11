@@ -70,8 +70,8 @@
         <fieldset @emailFieldsetState>
             <legend class="d-none">Email Form</legend>
             <input type="hidden" id="EmailId" name="EmailId" />
-            <input type="hidden" id="OriginalDraftEmailTo" />
-            <input type="hidden" id="OriginalDraftEmailFrom" />
+            <input type="hidden" id="OriginalDraftEmailTo" value="@Model.EmailTo" />
+            <input type="hidden" id="OriginalDraftEmailFrom" value="@Model.EmailFrom" />
             <input type="hidden" id="OriginalDraftEmailSubject" />
             <input type="hidden" id="OriginalDraftEmailBody" />
 

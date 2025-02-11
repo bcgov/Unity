@@ -25,6 +25,11 @@
         alertEmailReadonly: $('#email-alert-readonly')
     };
 
+    let defaultValues = {
+        emailTo: '',
+        emailFrom: ''
+    };
+
     function bindUIEvents() {
         UIElements.btnNewEmail.on('click', handleNewEmail);
         UIElements.btnSend.on('click', handleSendEmail);
@@ -48,6 +53,8 @@
 
     function init() {
         bindUIEvents();
+        defaultValues.emailTo = UIElements.inputOriginalEmailTo.val();
+        defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
         toastr.options.positionClass = 'toast-top-center';
     }
 
@@ -98,7 +105,13 @@
 
     function handleNewEmail() {
         UIElements.inputEmailId.val(emptyGuid);
-        handleDraftChange(); // Update button states for new email
+        // Support discard to empty email template for new emails
+        UIElements.inputOriginalEmailTo.val(defaultValues.emailTo);
+        UIElements.inputOriginalEmailFrom.val(defaultValues.emailFrom);
+        UIElements.inputOriginalEmailSubject.val("");
+        UIElements.inputOriginalEmailBody.val("");
+
+        handleDraftChange();
         showModalEmail();
         resetValidationErrors();
     }
