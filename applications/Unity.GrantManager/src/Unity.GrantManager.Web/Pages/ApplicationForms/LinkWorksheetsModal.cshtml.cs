@@ -34,6 +34,9 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     public string? PaymentInfoSlotId { get; set; }
 
     [BindProperty]
+    public string? FundingAgreementInfoSlotId { get; set; }
+
+    [BindProperty]
     public string? CustomTabsSlotIds { get; set; }
 
     [BindProperty]
@@ -53,6 +56,9 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
 
     [BindProperty]
     public WorksheetLinkDto? PaymentInfoLink { get; set; }
+
+    [BindProperty]
+    public WorksheetLinkDto? FundingAgreementInfoLink { get; set; }
 
     [BindProperty]
     public List<WorksheetLinkDto>? CustomTabLinks { get; set; }
@@ -88,6 +94,9 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
 
         PaymentInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.PaymentInfoUiAnchor);
         PaymentInfoSlotId = PaymentInfoLink?.WorksheetId.ToString();
+
+        FundingAgreementInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.FundingAgreementInfoUiAnchor);
+        FundingAgreementInfoSlotId = FundingAgreementInfoLink?.WorksheetId.ToString();
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -137,6 +146,11 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
         if (PaymentInfoSlotId != null && PaymentInfoSlotId != Guid.Empty.ToString())
         {
             tabLinks.Add(Guid.Parse(PaymentInfoSlotId), FlexConsts.PaymentInfoUiAnchor);
+        }
+
+        if (FundingAgreementInfoSlotId != null && FundingAgreementInfoSlotId != Guid.Empty.ToString())
+        {
+            tabLinks.Add(Guid.Parse(FundingAgreementInfoSlotId), FlexConsts.FundingAgreementInfoUiAnchor);
         }
     }
 }

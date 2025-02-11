@@ -1,12 +1,31 @@
 ﻿$(function () {
     $('body').on('click', '#saveFundingAgreementInfoBtn', function () {
         let applicationId = document.getElementById('FundingAgreementInfoViewApplicationId').value;
+        let formVersionId = $("#FundingAgreementInfoView_FormVersionId").val();
         let formData = $("#fundingAgreementInfoForm").serializeArray();
         let fundingAgreementInfoObj = {};
+        let worksheetId = $("#FundingAgreementInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {
-             buildFormData(fundingAgreementInfoObj, input)
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+                Flex.includeCustomFieldObj(fundingAgreementInfoObj, input);
+            } else {
+                buildFormData(fundingAgreementInfoObj, input)
+            }
         });
+
+        // Update checkboxes which are serialized if unchecked
+        $(`#fundingAgreementInfoForm input:checkbox`).each(function () {
+            fundingAgreementInfoObj[this.name] = (this.checked).toString();
+        });
+
+        // Make sure all the custom fields are set in the custom fields object
+        if (typeof Flex === 'function') {
+            Flex?.setCustomFields(fundingAgreementInfoObj);
+        }
+
+        fundingAgreementInfoObj['correlationId'] = formVersionId;
+        fundingAgreementInfoObj['worksheetId'] = worksheetId;
 
         updateFundingAgreementInfo(applicationId, fundingAgreementInfoObj);
     });
@@ -39,7 +58,7 @@
     }
 
     PubSub.subscribe(
-        'fields_fundingAgreementInfo',
+        'fields_fundingagreementinfo',
         () => {
             enableFundingAgreementInfoSaveBtn();
         }
