@@ -9,6 +9,10 @@
     {
       "library": "datatables.net-staterestore-dt@1.4.1",
       "destination": "wwwroot/libs/datatables.net-staterestore-dt/"
+    },
+    {
+      "library": "tributejs@5.1.3",
+      "destination": "wwwroot/libs/tributejs/"
     }
   ]
 }
