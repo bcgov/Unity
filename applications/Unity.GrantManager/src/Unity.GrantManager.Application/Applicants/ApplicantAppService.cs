@@ -12,6 +12,7 @@ using Unity.GrantManager.Integration.Orgbook;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using Unity.Modules.Shared.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -164,7 +165,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            string ExceptionMessage = ex.Message;
+            Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ExceptionMessage);
         }
     }
 
