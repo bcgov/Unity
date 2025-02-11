@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Repositories
         {
         }
 
-        public async Task<List<Applicant>> GetUnmatchedApplicants()
+        public async Task<List<Applicant>> GetUnmatchedApplicantsAsync()
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants

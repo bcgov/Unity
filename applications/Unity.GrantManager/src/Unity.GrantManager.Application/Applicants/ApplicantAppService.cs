@@ -117,7 +117,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(true)]
     public async Task MatchApplicantOrgNamesAsync()
     {
-        List<Applicant> applicants = await applicantRepository.GetUnmatchedApplicants();
+        List<Applicant> applicants = await applicantRepository.GetUnmatchedApplicantsAsync();
         foreach (Applicant applicant in applicants)
         {
             // Create match lookups for applicants with org numbers but no org names
