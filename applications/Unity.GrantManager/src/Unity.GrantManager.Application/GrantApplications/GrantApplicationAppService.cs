@@ -368,7 +368,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
 
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, input);
 
             await _applicationRepository.UpdateAsync(application);
 
