@@ -8,9 +8,13 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 {
     public class PaymentsApprovalModel
     {
-        [DisplayName("ApplicationPaymentStatusRequest:Id")]
         [Required]
         public Guid Id { get; set; }
+
+        [DisplayName("ApplicationPaymentStatusRequest:Id")]
+        [Required]
+        public string ReferenceNumber { get; set; } = string.Empty;
+
         [DisplayName("ApplicationPaymentStatusRequest:Amount")]
         [Required]
         public decimal Amount { get; set; }

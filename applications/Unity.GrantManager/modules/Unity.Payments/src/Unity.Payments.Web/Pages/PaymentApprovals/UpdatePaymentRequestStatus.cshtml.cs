@@ -81,6 +81,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 PaymentsApprovalModel request = new()
                 {
                     Id = payment.Id,
+                    ReferenceNumber = payment.ReferenceNumber,
                     CorrelationId = payment.Id,
                     ApplicantName = payment.PayeeName,
                     Amount = payment.Amount,
