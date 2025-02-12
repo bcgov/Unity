@@ -76,6 +76,23 @@
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
+                        <abp-input asp-for="@Model.ApplicantInfo.UnityApplicantId" onchange="enableApplicantInfoSaveBtn(this)" />
+                    </abp-column>
+                    <abp-column size="_4" class="px-1">
+                        <abp-select asp-for="@Model.ApplicantInfo.FiscalDay" asp-items="@Model.FiscalDayList"
+                                   onchange="enableApplicantInfoSaveBtn(this)">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                    <abp-column size="_4" class="px-1">
+                        <abp-select asp-for="@Model.ApplicantInfo.FiscalMonth" asp-items="@Model.FiscalMonthList"
+                                    onchange="enableApplicantInfoSaveBtn(this)">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                </abp-row>
+                <abp-row class="m-0 p-0">
+                    <abp-column size="_4" class="px-1">
                         <abp-select asp-for="@Model.ApplicantInfo.Sector" asp-items="@Model.ApplicationSectorsList"
                                     id="orgSectorDropdown" onchange="enableApplicantInfoSaveBtn(this)">
                             <option value="">Please choose...</option>
