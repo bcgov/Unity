@@ -42,6 +42,9 @@ namespace Unity.GrantManager.GrantApplications
                 SubSector = applicantInfo.Applicant?.SubSector ?? string.Empty,
                 RedStop = applicantInfo.Applicant?.RedStop ?? false,
                 IndigenousOrgInd = applicantInfo.Applicant?.IndigenousOrgInd ?? string.Empty,
+                UnityApplicantId = applicantInfo.Applicant?.UnityApplicantId ?? string.Empty,
+                FiscalDay = applicantInfo.Applicant?.FiscalDay.ToString() ?? string.Empty,
+                FiscalMonth = applicantInfo.Applicant?.FiscalMonth ?? string.Empty,
 
                 SigningAuthorityBusinessPhone = applicantInfo.SigningAuthorityBusinessPhone ?? string.Empty,
                 SigningAuthorityCellPhone = applicantInfo.SigningAuthorityCellPhone ?? string.Empty,

@@ -7,10 +7,6 @@
         email: item.Email,
     }));
 
-    //For innerHtml textarea change to div
-    //const commentContent = document.getElementsByClassName("comment-content")[0].textContent;
-    //document.getElementById('comment-container').innerHTML = commentContent;
-
     initTribute(mentionDataList);
    
     $('body').on('click', '.edit-button', function () {
