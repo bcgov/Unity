@@ -224,7 +224,13 @@ namespace Unity.Flex.Domain.Services
                 var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
                 foreach (var field in section.Fields.OrderBy(s => s.Order))
                 {
-                    var clonedField = new CustomField(Guid.NewGuid(), field.Key, worksheet.Name, field.Label, field.Type, field.Definition);
+                    var clonedField = new CustomField(Guid.NewGuid(),
+                        field.Key,
+                        clonedWorksheet.Name,
+                        field.Label,
+                        field.Type,
+                        field.Definition);
+
                     clonedSection.CloneField(clonedField);
                 }
                 clonedWorksheet.CloneSection(clonedSection);
