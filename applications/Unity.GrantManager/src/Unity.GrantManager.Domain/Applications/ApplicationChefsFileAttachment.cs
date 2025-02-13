@@ -6,7 +6,6 @@ namespace Unity.GrantManager.Applications;
 
 public class ApplicationChefsFileAttachment : AbstractAttachmentBase
 {
-    [NotMapped]
     public override AttachmentType AttachmentType => AttachmentType.CHEFS;
     public Guid ApplicationId { get; set; }
     public string? ChefsSumbissionId { get; set; }

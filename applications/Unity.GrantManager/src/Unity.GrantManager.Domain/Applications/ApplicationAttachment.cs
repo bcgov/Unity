@@ -6,8 +6,7 @@ namespace Unity.GrantManager.Applications;
 
 public class ApplicationAttachment : AbstractS3Attachment
 {
-    [NotMapped]
-    public override AttachmentType AttachmentType => AttachmentType.Application;
+    public override AttachmentType AttachmentType => AttachmentType.APPLICATION;
     public Guid ApplicationId { get; set; }
 
 }

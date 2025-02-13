@@ -1,9 +1,12 @@
-﻿namespace Unity.GrantManager.Attachments;
+﻿using System.Text.Json.Serialization;
 
+namespace Unity.GrantManager.Attachments;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum AttachmentType
 {
-    Application = 0,
-    Assessment = 1,
+    APPLICATION = 0,
+    ASSESSMENT = 1,
     CHEFS = 2,
-    Email = 3
+    EMAIL = 3
 }

@@ -69,13 +69,48 @@ public class AttachmentAppService(
         await intakeFormSubmissionManager.ResyncSubmissionAttachments(applicationId);
     }
 
+    public async Task<IList<UnityAttachmentDto>> GetAttachmentsAsync(AttachmentType attachmentType, Guid attachedResourceId)
+    {
+        return attachmentType switch
+        {
+            AttachmentType.APPLICATION => await GetAttachmentsInternalAsync(
+                applicationAttachmentRepository,
+                attachment => attachment.ApplicationId == attachedResourceId),
+            AttachmentType.ASSESSMENT => await GetAttachmentsInternalAsync(
+                assessmentAttachmentRepository,
+                attachment => attachment.AssessmentId == attachedResourceId),
+            _ => throw new ArgumentException("Attachment type is not supported", nameof(attachmentType)),
+        };
+    }
+
+    protected internal async Task<IList<UnityAttachmentDto>> GetAttachmentsInternalAsync<T>(
+        IRepository<T, Guid> repository,
+        Func<T, bool> predicate) where T : AbstractS3Attachment
+    {
+        var query = from attachment in await repository.GetQueryableAsync()
+                    join person in await personUserRepository.GetQueryableAsync() on attachment.UserId equals person.Id
+                    where predicate(attachment)
+                    select new UnityAttachmentDto()
+                    {
+                        Id = attachment.Id,
+                        FileName = attachment.FileName,
+                        S3ObjectKey = attachment.S3ObjectKey,
+                        Time = attachment.Time,
+                        AttachedBy = person.FullName,
+                        CreatorId = person.Id,
+                        AttachmentType = attachment.AttachmentType
+                    };
+
+        return query.ToList();
+    }
+
     public async Task<AttachmentMetadataDto> GetAttachmentMetadataAsync(AttachmentType attachmentType, Guid attachmentId)
     {
         return attachmentType switch
         {
-            AttachmentType.Application => await GetMetadataInternalAsync(
+            AttachmentType.APPLICATION => await GetMetadataInternalAsync(
                 attachmentId, applicationAttachmentRepository),
-            AttachmentType.Assessment => await GetMetadataInternalAsync(
+            AttachmentType.ASSESSMENT => await GetMetadataInternalAsync(
                 attachmentId, assessmentAttachmentRepository),
             AttachmentType.CHEFS => await GetMetadataInternalAsync(
                 attachmentId, applicationChefsFileAttachmentRepository),
@@ -84,7 +119,7 @@ public class AttachmentAppService(
     }
 
     protected internal static async Task<AttachmentMetadataDto> GetMetadataInternalAsync<T>(
-        Guid attachmentId, 
+        Guid attachmentId,
         IRepository<T, Guid> repository) where T : AbstractAttachmentBase
     {
         var attachment = await repository.GetAsync(attachmentId) ?? throw new EntityNotFoundException();
@@ -102,14 +137,14 @@ public class AttachmentAppService(
     {
         return updateAttachment.AttachmentType switch
         {
-            AttachmentType.Application => await UpdateMetadataInternalAsync(
+            AttachmentType.APPLICATION => await UpdateMetadataInternalAsync(
                 updateAttachment,
                 applicationAttachmentRepository,
-                AttachmentType.Application),
-            AttachmentType.Assessment => await UpdateMetadataInternalAsync(
+                AttachmentType.APPLICATION),
+            AttachmentType.ASSESSMENT => await UpdateMetadataInternalAsync(
                 updateAttachment,
                 assessmentAttachmentRepository,
-                AttachmentType.Assessment),
+                AttachmentType.ASSESSMENT),
             AttachmentType.CHEFS => await UpdateMetadataInternalAsync(
                 updateAttachment,
                 applicationChefsFileAttachmentRepository,
@@ -124,7 +159,7 @@ public class AttachmentAppService(
         AttachmentType attachmentType) where T : AbstractAttachmentBase
     {
         var attachment = await repository.GetAsync(updateAttachment.Id) ?? throw new EntityNotFoundException();
-        
+
         // Properties to be updated
         attachment.DisplayName = updateAttachment.DisplayName;
 
