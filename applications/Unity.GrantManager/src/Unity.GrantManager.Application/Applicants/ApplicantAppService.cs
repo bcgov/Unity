@@ -134,10 +134,10 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         // Convert UnityApplicantId to int, filter only valid numbers
         var unityIds = applicants
             .Where(a => int.TryParse(a.UnityApplicantId, out _)) // Ensure it's numeric
-            .Select(a => int.Parse(a.UnityApplicantId))
+            .Select(a => int.Parse(a.UnityApplicantId!))
             .ToList();
 
-        int nextId = unityIds.Any() ? unityIds.Max() + 1 : 000001;
+        int nextId = unityIds.Count > 0 ? unityIds.Max() + 1 : 000001;
 
         return nextId;
     }

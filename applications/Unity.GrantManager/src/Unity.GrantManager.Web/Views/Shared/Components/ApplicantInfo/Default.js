@@ -6,7 +6,11 @@
 
     const $unityAppId = $('#applicantInfoUnityApplicantId');
     let previousUnityAppId = $unityAppId.val();
-    console.log(previousUnityAppId);
+
+    $unityAppId.on('input', function () {
+        const currentUnityAppId = $(this).val().trim();
+        $('#saveApplicantInfoBtn').prop('disabled', currentUnityAppId === previousUnityAppId);
+    });
 
     $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
@@ -53,15 +57,22 @@
             ApplicantInfoObj['correlationId'] = formVersionId;
             ApplicantInfoObj['worksheetId'] = worksheetId;
 
-            if (ApplicantInfoObj['UnityApplicantId'] !== null) {
-                if (previousUnityAppId !== ApplicantInfoObj['UnityApplicantId']) {
-                    checkUnityApplicantIdExist(ApplicantInfoObj['UnityApplicantId'], applicationId, ApplicantInfoObj);
+            let currentUnityAppId = ApplicantInfoObj['UnityApplicantId'];
+
+            if (currentUnityAppId !== null) {
+                if (previousUnityAppId !== currentUnityAppId) {
+                    checkUnityApplicantIdExist(currentUnityAppId, applicationId, ApplicantInfoObj);
                 } else {
                     updateApplicantInfo(applicationId, ApplicantInfoObj);
-                    }
-            } else { 
+                }
+            } else {
                 updateApplicantInfo(applicationId, ApplicantInfoObj);
             }
+
+            previousUnityAppId = currentUnityAppId;
+            $('#saveApplicantInfoBtn').prop('disabled', true);
+            PubSub.publish("applicant_info_updated", ApplicantInfoObj);
+
         }
         catch (error) {
             $('.cas-spinner').hide();
@@ -111,9 +122,7 @@
 
 async function generateUnityApplicantIdBtn() {
     try {
-        let nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId().then(data => {
-            return data;
-        });
+        let nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
         document.getElementById('applicantInfoUnityApplicantId').value = nextUnityApplicantId;
         $('#saveApplicantInfoBtn').prop('disabled', false);
     }
@@ -124,9 +133,7 @@ async function generateUnityApplicantIdBtn() {
 
 async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj ) {
     try {
-        let existingApplicant = await unity.grantManager.applicants.applicant.getExistingApplicant(unityAppId).then(data => {
-            return data;
-        });
+        let existingApplicant = await unity.grantManager.applicants.applicant.getExistingApplicant(unityAppId);
 
         if (existingApplicant) {
             Swal.fire({
