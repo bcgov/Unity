@@ -1,3 +1,4 @@
+// Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
     const l = abp.localization.getResource('GrantManager');
     let inputAction = function (requestData, dataTableSettings) {
@@ -41,6 +42,14 @@ $(function () {
                     title: l('AssessmentResultAttachments:DocumentName'),
                     data: 'fileName',
                     className: 'data-table-header',
+                },
+                {
+                    title: 'Label',
+                    data: 'displayName',
+                    className: 'data-table-header',
+                    render: function (data) {
+                        return data ?? '—';
+                    }
                 },
                 {
                     title: l('AssessmentResultAttachments:UploadedDate'),

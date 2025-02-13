@@ -1,3 +1,4 @@
+// Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
     const downloadAll = $("#downloadAll");
     const dt = $('#ChefsAttachmentsTable');
@@ -32,6 +33,14 @@ $(function () {
         return [
             getSelectColumn('Select Attachment', 'rowCount', 'chefs-files'),
             getChefsFileNameColumn(),
+            {
+                title: 'Label',
+                data: 'displayName',
+                className: 'data-table-header',
+                render: function (data) {
+                    return data ?? '—';
+                }
+            },
             getChefsFileDownloadColumn(),
         ]
     }
