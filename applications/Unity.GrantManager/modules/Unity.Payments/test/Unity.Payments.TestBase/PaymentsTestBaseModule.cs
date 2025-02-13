@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.SettingManagement;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
-using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
@@ -12,6 +12,9 @@ using Volo.Abp.Quartz;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.Abp.Threading;
+using Volo.Abp.SettingManagement.EntityFrameworkCore;
+using Volo.Abp.Identity;
+
 
 namespace Unity.Payments;
 
@@ -21,13 +24,30 @@ namespace Unity.Payments;
     typeof(AbpAuthorizationModule),
     typeof(AbpBackgroundWorkersQuartzModule),
     typeof(AbpTenantManagementEntityFrameworkCoreModule),
-    typeof(AbpTenantManagementDomainModule)
+    typeof(AbpTenantManagementDomainModule),
+    typeof(AbpSettingManagementApplicationModule),
+    typeof(AbpSettingManagementDomainModule),
+    typeof(AbpSettingManagementEntityFrameworkCoreModule),
+    typeof(AbpIdentityDomainModule),
+    typeof(AbpIdentityApplicationModule),
+    typeof(AbpAuthorizationModule)
     )]
 public class PaymentsTestBaseModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAlwaysAllowAuthorization();
+
+        // context.Services.AddAbpDbContext<PaymentsDbContext>(options =>
+        // {
+        //     /* Add custom repositories here. */
+        //     options.AddDefaultRepositories(includeAllEntities: true);
+        // });
+ 
+
+
+        // context.Services.AddTransient<ISettingDefinitionRecordRepository, SettingDefinitionRecordRepository>();
+
     }
 
     public override void PreConfigureServices(ServiceConfigurationContext context)
