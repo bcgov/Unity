@@ -97,7 +97,7 @@ $(function () {
                 selector: 'td:not(:nth-child(8))',
             },
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.grantApplications.attachment.getApplicationChefsFileAttachments,
+                unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments,
                 inputAction,
                 responseCallback
             ),
@@ -169,7 +169,7 @@ $(function () {
     $('#resyncSubmissionAttachments').on('click', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         try {
-            unity.grantManager.grantApplications.attachment
+            unity.grantManager.attachments.attachment
                 .resyncSubmissionAttachments(applicationId)
                 .done(function () {
                     abp.notify.success(

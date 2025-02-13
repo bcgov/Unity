@@ -2,7 +2,6 @@
     let ownerId = getAttachmentOwnerId(attachmentType);
     let downloadUrl = `/api/app/attachment/${attachmentType}/${encodeURIComponent(ownerId)}/download/${encodeURIComponent(full.fileName)}`;
     let isCreator = abp.currentUser.id == full.creatorId;
-
     let html = `
         <div class="dropdown" style="float:right;">
             <button class="btn btn-light dropbtn" type="button">
@@ -60,7 +59,7 @@ function deleteAttachment(attachmentType, s3ObjectKey, fileName) {
     });
 }
 
-function updateAttachmentMetadata(attachmentType, attachmentId, fileName, title) {
+function updateAttachmentMetadata(attachmentType, attachmentId) {
     let updateAttachmentModal = new abp.ModalManager({
         viewUrl: '../Attachments/UpdateAttachmentModal'
     });
@@ -75,9 +74,9 @@ function updateAttachmentMetadata(attachmentType, attachmentId, fileName, title)
         attachmentType: attachmentType,
         attachmentId: attachmentId
     });
-};
+}
 
-refreshAttachmentWidget(attachmentType) {
+function refreshAttachmentWidget(attachmentType) {
     switch (attachmentType) {
         case 'Assessment':
             PubSub.publish('refresh_assessment_attachment_list'); break;

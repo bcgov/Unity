@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Attachments;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Xunit;
@@ -13,7 +14,7 @@ namespace Unity.GrantManager.GrantApplications;
 
 public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
 {
-    private readonly AttachmentService _attachmentAppServiceTest;
+    private readonly AttachmentAppService _attachmentAppServiceTest;
     private readonly IRepository<Application, Guid> _applicationsRepository;
     private readonly IRepository<Assessment, Guid> _assessmentsRepository;
 
@@ -21,7 +22,7 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
 
     public AttachmentAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
     {
-        _attachmentAppServiceTest = GetRequiredService<AttachmentService>();
+        _attachmentAppServiceTest = GetRequiredService<AttachmentAppService>();
         _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
         _assessmentsRepository = GetRequiredService<IRepository<Assessment, Guid>>();

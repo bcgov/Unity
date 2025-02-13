@@ -28,7 +28,7 @@ $(function () {
             info: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.grantApplications.attachment.getApplication, inputAction, responseCallback
+                unity.grantManager.attachments.attachment.getApplication, inputAction, responseCallback
             ),
             columnDefs: [
                 {

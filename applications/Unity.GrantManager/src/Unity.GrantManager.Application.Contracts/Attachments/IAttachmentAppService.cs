@@ -2,11 +2,10 @@
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
-using Unity.GrantManager.Attachments;
 
-namespace Unity.GrantManager.Applications;
+namespace Unity.GrantManager.Attachments;
 
-public interface IAttachmentService : IApplicationService
+public interface IAttachmentAppService : IApplicationService
 {        
     Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId);
     Task<IList<AssessmentAttachmentDto>> GetAssessmentAsync(Guid assessmentId);
