@@ -127,6 +127,28 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
+    [RemoteService(true)]
+    public async Task<int> GetNextUnityApplicantIdAsync()
+    {
+        List<Applicant> applicants = await applicantRepository.GetApplicantsWithUnityApplicantIdAsync();
+        // Convert UnityApplicantId to int, filter only valid numbers
+        var unityIds = applicants
+            .Where(a => int.TryParse(a.UnityApplicantId, out _)) // Ensure it's numeric
+            .Select(a => int.Parse(a.UnityApplicantId))
+            .ToList();
+
+        int nextId = unityIds.Any() ? unityIds.Max() + 1 : 000001;
+
+        return nextId;
+    }
+
+    [RemoteService(true)]
+    public async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
+    {
+        if (unityApplicantId.IsNullOrEmpty()) return null;
+        return await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
+    }
+
     private async Task UpdateApplicantOrgMatchAsync(Applicant applicant)
     {
         try
@@ -168,12 +190,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             string ExceptionMessage = ex.Message;
             Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ExceptionMessage);
         }
-    }
-
-    private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
-    {
-        if (unityApplicantId.IsNullOrEmpty()) return null;
-        return await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
     }
 
     private async Task<Applicant> CreateNewApplicantAsync(IntakeMapping intakeMap)
