@@ -27,14 +27,7 @@ public class PaymentsTestBaseModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        var configuration = context.Services.GetConfiguration();
         context.Services.AddAlwaysAllowAuthorization();
-        Configure<PaymentRequestBackgroundJobsOptions>(options =>
-        {
-            options.IsJobExecutionEnabled = false;
-            options.PaymentRequestOptions.ProducerExpression = "0 0 12 * * ? *";
-        });
-        Configure<AbpBackgroundWorkerQuartzOptions>(options => { options.IsAutoRegisterEnabled = false; });
     }
 
     public override void PreConfigureServices(ServiceConfigurationContext context)

@@ -1,7 +1,9 @@
 using System.Threading.Tasks;
 using Quartz;
 using Volo.Abp.BackgroundWorkers.Quartz;
-using Microsoft.Extensions.Options;
+using Unity.GrantManager.Settings;
+using Volo.Abp.SettingManagement;
+using Unity.Modules.Shared.Utils;
 
 namespace Unity.Payments.PaymentRequests;
 
@@ -11,22 +13,22 @@ public class ReconciliationProducer : QuartzBackgroundWorkerBase
     private readonly CasPaymentRequestCoordinator _casPaymentRequestCoordinator;
     
     public ReconciliationProducer(
-        IOptions<PaymentRequestBackgroundJobsOptions> casPaymentsBackgroundJobsOptions,
+        ISettingManager settingManager,
         CasPaymentRequestCoordinator casPaymentRequestCoordinator
         )
     {
-
         JobDetail = JobBuilder
             .Create<ReconciliationProducer>()
             .WithIdentity(nameof(ReconciliationProducer))
             .Build();
         
         _casPaymentRequestCoordinator = casPaymentRequestCoordinator;
+        string casPaymentsProducerExpression = SettingDefinitions.GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression);
 
         Trigger = TriggerBuilder
             .Create()
             .WithIdentity(nameof(ReconciliationProducer))
-            .WithSchedule(CronScheduleBuilder.CronSchedule(casPaymentsBackgroundJobsOptions.Value.PaymentRequestOptions.ProducerExpression)
+            .WithSchedule(CronScheduleBuilder.CronSchedule(casPaymentsProducerExpression)
             .WithMisfireHandlingInstructionIgnoreMisfires())
             .Build();
     }

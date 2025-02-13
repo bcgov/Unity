@@ -51,6 +51,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
 
     private static void AddBackgroundJobSettingDefinition(ISettingDefinitionContext currentContext)
     {
+
         // 24 = 12 am   So 24 + 8 UTC = 8
         // 23 = 11 pm   So 23 + 8 UTC = 7
         var backGroundSchedules = new Dictionary<string, string>
@@ -66,16 +67,6 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
             AddSettingDefinition(currentContext, setting.Key, setting.Value.ToString());
         }
 
-        var backgroundJobSettings = new Dictionary<string, bool>
-        {
-            { SettingsConstants.BackgroundJobs.IsJobExecutionEnabled, true },
-            { SettingsConstants.BackgroundJobs.Quartz_IsAutoRegisterEnabled, true }
-        };
-
-        foreach (var setting in backgroundJobSettings)
-        {
-            AddSettingDefinition(currentContext, setting.Key, setting.Value.ToString());
-        }
     }
 
     private static void AddSettingDefinition(ISettingDefinitionContext currentContext, string settingName, string defaultValue = "True")

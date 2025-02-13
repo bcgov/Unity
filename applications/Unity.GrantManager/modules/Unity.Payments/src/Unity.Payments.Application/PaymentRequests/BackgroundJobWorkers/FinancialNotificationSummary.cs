@@ -1,7 +1,9 @@
 using System.Threading.Tasks;
 using Quartz;
 using Volo.Abp.BackgroundWorkers.Quartz;
-using Microsoft.Extensions.Options;
+using Volo.Abp.SettingManagement;
+using Unity.Modules.Shared.Utils;
+using Unity.GrantManager.Settings;
 
 namespace Unity.Payments.PaymentRequests;
 
@@ -11,22 +13,22 @@ public class FinancialNotificationSummary : QuartzBackgroundWorkerBase
     private readonly FinancialSummaryService _financialSummaryService;
 
     public FinancialNotificationSummary(
-        IOptions<PaymentRequestBackgroundJobsOptions> casPaymentsBackgroundJobsOptions,
+        ISettingManager settingManager,
         FinancialSummaryService financialSummaryService
         )
     {
-
         JobDetail = JobBuilder
             .Create<FinancialNotificationSummary>()
             .WithIdentity(nameof(FinancialNotificationSummary))
             .Build();
 
         _financialSummaryService = financialSummaryService;
+        string casFinancialNotificationExpression = SettingDefinitions.GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression);
 
         Trigger = TriggerBuilder
             .Create()
             .WithIdentity(nameof(FinancialNotificationSummary))
-            .WithSchedule(CronScheduleBuilder.CronSchedule(casPaymentsBackgroundJobsOptions.Value.FinancialNotificationSummaryOptions.ProducerExpression)
+            .WithSchedule(CronScheduleBuilder.CronSchedule(casFinancialNotificationExpression)
             .WithMisfireHandlingInstructionIgnoreMisfires())
             .Build();
     }

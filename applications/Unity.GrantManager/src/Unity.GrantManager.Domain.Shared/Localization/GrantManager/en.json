@@ -220,6 +220,7 @@
     "Setting:GrantManager.Locality.SectorFilter.DisplayName": "SectorFilter",
     "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
 
+    "Permission:UnitySettingManagementPermissions.BackgroundJobs": "Background Jobs",
     "Permission:UnitySettingManagementPermissions.UserInterface": "Application Tabs",
     "Setting:GrantManager.UI.PageTitle": "Application Tabs Configuration",
     "Setting:GrantManager.UI.Tabs.Submission.DisplayName": "Submission",

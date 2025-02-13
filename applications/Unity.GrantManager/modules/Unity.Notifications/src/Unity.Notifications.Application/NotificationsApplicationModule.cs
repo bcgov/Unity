@@ -3,8 +3,6 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Volo.Abp.BackgroundJobs;
-using Unity.Notifications.EmailNotifications;
-using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
@@ -29,8 +27,6 @@ public class NotificationsApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        var configuration = context.Services.GetConfiguration();
-        
         context.Services.AddAutoMapperObjectMapper<NotificationsApplicationModule>();
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
 
@@ -43,12 +39,6 @@ public class NotificationsApplicationModule : AbpModule
            typeof(NotificationsApplicationContractsModule).Assembly,
                   NotificationsRemoteServiceConsts.RemoteServiceName
         );
-
-        Configure<EmailBackgroundJobsOptions>(options =>
-        {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
-            options.EmailResend.RetryAttemptsMaximum = configuration.GetValue<int>("BackgroundJobs:EmailResend:RetryAttemptsMaximum");
-        });
 
         context.Services.ConfigureRabbitMQ();
         context.Services.AddQueueMessageConsumer<EmailConsumer, EmailMessages>();
