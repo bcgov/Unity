@@ -40,7 +40,7 @@ $(function () {
         return {
             title: l('AssessmentResultAttachments:DocumentName'),
             name: 'chefsFileName',
-            data: 'name',
+            data: 'fileName',
             className: 'data-table-header',
             index: 1,
             orderable: false,
