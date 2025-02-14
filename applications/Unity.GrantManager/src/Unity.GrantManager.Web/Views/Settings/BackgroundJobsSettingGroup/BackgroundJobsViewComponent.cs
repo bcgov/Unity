@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Unity.GrantManager.Settings;
 using Unity.Modules.Shared.Utils;
+using Unity.GrantManager.Settings;
+using Unity.Payments.Settings;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.SettingManagement;
@@ -20,8 +21,8 @@ public class BackgroundJobsViewComponent(ISettingManager settingsManager) : AbpV
         {
             IntakeResyncExpression = await Task.Run(() => SettingDefinitions.GetSettingsValue(settingsManager, SettingsConstants.BackgroundJobs.IntakeResync_Expression)),
             IntakeNumberOfDays =  await Task.Run(() => SettingDefinitions.GetSettingsValue(settingsManager, SettingsConstants.BackgroundJobs.IntakeResync_NumDaysToCheck)),
-            CasPaymentsReconciliationProducerExpression =  await Task.Run(() => SettingDefinitions.GetSettingsValue(settingsManager, SettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression)),
-            CasFinancialNotificationSummaryProducerExpression =  await Task.Run(() => SettingDefinitions.GetSettingsValue(settingsManager, SettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression))
+            CasPaymentsReconciliationProducerExpression =  await Task.Run(() => SettingDefinitions.GetSettingsValue(settingsManager, PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression)),
+            CasFinancialNotificationSummaryProducerExpression =  await Task.Run(() => SettingDefinitions.GetSettingsValue(settingsManager, PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression))
         };
 
         return View("~/Views/Settings/BackgroundJobsSettingGroup/Default.cshtml", model);

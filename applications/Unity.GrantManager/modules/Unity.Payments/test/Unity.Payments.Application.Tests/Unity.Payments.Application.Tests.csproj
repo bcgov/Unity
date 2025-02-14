@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Unity.Payments.Application\Unity.Payments.Application.csproj" />
+    <ProjectReference Include="..\..\src\Unity.Payments.Shared\Unity.Payments.Shared.csproj" />
     <ProjectReference Include="..\Unity.Payments.TestBase\Unity.Payments.TestBase.csproj" />    
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

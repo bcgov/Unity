@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Unity.GrantManager.Localization;
+using Unity.Payments.Settings;
 using Volo.Abp.Localization;
 using Volo.Abp.Settings;
 
@@ -58,8 +59,8 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
         {
             { SettingsConstants.BackgroundJobs.IntakeResync_Expression, "0 0 7 1/1 * ? *" },
             { SettingsConstants.BackgroundJobs.IntakeResync_NumDaysToCheck, "-2" },
-            { SettingsConstants.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression, "0 0 8 1/1 * ? *" },
-            { SettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression, "0 0 9 1/1 * ? *" }
+            { PaymentSettingsConstants.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression, "0 0 8 1/1 * ? *" },
+            { PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression, "0 0 9 1/1 * ? *" }
         };
 
         foreach (var setting in backGroundSchedules)

@@ -14,6 +14,8 @@ using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.Abp.Threading;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
+using Volo.Abp.Identity.EntityFrameworkCore;
+using Volo.Abp.BackgroundJobs;
 
 
 namespace Unity.Payments;
@@ -30,24 +32,23 @@ namespace Unity.Payments;
     typeof(AbpSettingManagementEntityFrameworkCoreModule),
     typeof(AbpIdentityDomainModule),
     typeof(AbpIdentityApplicationModule),
-    typeof(AbpAuthorizationModule)
-    )]
+    typeof(AbpAuthorizationModule),
+    typeof(AbpIdentityEntityFrameworkCoreModule)
+)]
 public class PaymentsTestBaseModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAlwaysAllowAuthorization();
+        Configure<AbpBackgroundJobOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = false;
+        });
 
-        // context.Services.AddAbpDbContext<PaymentsDbContext>(options =>
-        // {
-        //     /* Add custom repositories here. */
-        //     options.AddDefaultRepositories(includeAllEntities: true);
-        // });
- 
-
-
-        // context.Services.AddTransient<ISettingDefinitionRecordRepository, SettingDefinitionRecordRepository>();
-
+        Configure<AbpBackgroundWorkerQuartzOptions>(options =>
+        {
+            options.IsAutoRegisterEnabled = true;
+        });
     }
 
     public override void PreConfigureServices(ServiceConfigurationContext context)
