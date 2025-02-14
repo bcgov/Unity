@@ -4,6 +4,14 @@
         $(this).maskMoney('mask', this.value);
     });
 
+    const $unityAppId = $('#applicantInfoUnityApplicantId');
+    let previousUnityAppId = $unityAppId.val();
+
+    $unityAppId.on('input', function () {
+        const currentUnityAppId = $(this).val().trim();
+        $('#saveApplicantInfoBtn').prop('disabled', currentUnityAppId === previousUnityAppId);
+    });
+
     $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
@@ -48,22 +56,23 @@
 
             ApplicantInfoObj['correlationId'] = formVersionId;
             ApplicantInfoObj['worksheetId'] = worksheetId;
-            unity.grantManager.grantApplications.grantApplication
-                .updateProjectApplicantInfo(applicationId, ApplicantInfoObj)
-                .done(function () {
-                    abp.notify.success(
-                        'The Applicant info has been updated.'
-                    );
-                    $('#saveApplicantInfoBtn').prop('disabled', true);
-                    PubSub.publish("refresh_detail_panel_summary");
-                    PubSub.publish('applicant_info_updated', ApplicantInfoObj);
-                    refreshSupplierInfoWidget();
-                })
-                .then(function () {
-                    $('.cas-spinner').hide();
-                }).catch(function () {
-                    $('.cas-spinner').hide();
-                });
+
+            let currentUnityAppId = ApplicantInfoObj['UnityApplicantId'];
+
+            if (currentUnityAppId !== null) {
+                if (previousUnityAppId !== currentUnityAppId) {
+                    checkUnityApplicantIdExist(currentUnityAppId, applicationId, ApplicantInfoObj);
+                } else {
+                    updateApplicantInfo(applicationId, ApplicantInfoObj);
+                }
+            } else {
+                updateApplicantInfo(applicationId, ApplicantInfoObj);
+            }
+
+            previousUnityAppId = currentUnityAppId;
+            $('#saveApplicantInfoBtn').prop('disabled', true);
+            PubSub.publish("applicant_info_updated", ApplicantInfoObj);
+
         }
         catch (error) {
             $('.cas-spinner').hide();
@@ -71,29 +80,6 @@
             $('#saveApplicantInfoBtn').prop('disabled', false);
         }
     });
-
-    function refreshSupplierInfoWidget() {
-        const applicantId = $("#ApplicantInfoViewApplicantId").val();
-        const url = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}`;
-        fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                let supplierInfo = document.getElementById('supplier-info-widget');
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(data, 'text/html');
-                const siteIdValue = doc.querySelector('#SiteId').value;
-
-                if (supplierInfo) {
-                    supplierInfo.innerHTML = data;
-                    PubSub.publish('reload_sites_list', siteIdValue);
-                }
-                $('.cas-spinner').hide();
-            })
-            .catch(error => {
-                $('.cas-spinner').hide();
-                console.error('Error refreshing supplier-info-widget:', error);
-            });
-    }
 
     $('#orgSectorDropdown').change(function () {
         const selectedValue = $(this).val();
@@ -115,6 +101,14 @@
         });
     });
 
+    $unityAppId.on('change', function () {
+        if ($unityAppId.val().trim() !== previousUnityAppId) {
+            $('#saveApplicantInfoBtn').prop('disabled', false);
+        } else {
+            $('#saveApplicantInfoBtn').prop('disabled', true);
+        }
+    })
+
     PubSub.subscribe(
         'fields_applicantinfo',
         () => {
@@ -126,6 +120,61 @@
 });
 
 
+async function generateUnityApplicantIdBtn() {
+    try {
+        let nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
+        document.getElementById('applicantInfoUnityApplicantId').value = nextUnityApplicantId;
+        $('#saveApplicantInfoBtn').prop('disabled', false);
+    }
+    catch (error) {
+        console.log(error);
+    }
+};
+
+async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj ) {
+    try {
+        let existingApplicant = await unity.grantManager.applicants.applicant.getExistingApplicant(unityAppId);
+
+        if (existingApplicant) {
+            Swal.fire({
+                icon: "error",
+                text: "Applicatn ID already exists. Please enter a unique ID.",
+                confirmButtonText: 'Ok',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                }
+            });
+        } else {
+            updateApplicantInfo(appId, appInfoObj);
+        }
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+function refreshSupplierInfoWidget() {
+    const applicantId = $("#ApplicantInfoViewApplicantId").val();
+    const url = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}`;
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            let supplierInfo = document.getElementById('supplier-info-widget');
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            const siteIdValue = doc.querySelector('#SiteId').value;
+
+            if (supplierInfo) {
+                supplierInfo.innerHTML = data;
+                PubSub.publish('reload_sites_list', siteIdValue);
+            }
+            $('.cas-spinner').hide();
+        })
+        .catch(error => {
+            $('.cas-spinner').hide();
+            console.error('Error refreshing supplier-info-widget:', error);
+        });
+}
+
 function enableApplicantInfoSaveBtn(inputText) {
     if (!$("#ApplicantInfoForm").valid()
         || !abp.auth.isGranted('GrantApplicationManagement.ApplicantInfo.Update')
@@ -136,4 +185,22 @@ function enableApplicantInfoSaveBtn(inputText) {
     $('#saveApplicantInfoBtn').prop('disabled', false);
 }
 
+function updateApplicantInfo(appId, appInfoObj) { 
+    return unity.grantManager.grantApplications.grantApplication
+        .updateProjectApplicantInfo(appId, appInfoObj)
+        .done(function () {
+            abp.notify.success(
+                'The Applicant info has been updated.'
+            );
+            $('#saveApplicantInfoBtn').prop('disabled', true);
+            PubSub.publish("refresh_detail_panel_summary");
+            PubSub.publish('applicant_info_updated', appInfoObj);
+            refreshSupplierInfoWidget();
+        })
+        .then(function () {
+            $('.cas-spinner').hide();
+        }).catch(function () {
+            $('.cas-spinner').hide();
+        });
+}
 
