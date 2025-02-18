@@ -15,8 +15,8 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
         string retryMaxSetting = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.EmailMaxRetryAttempts) ?? "3";
-        int maximumRetryAttempts;
-        int.TryParse(retryMaxSetting, out maximumRetryAttempts);
+        var success = int.TryParse(retryMaxSetting, out int maximumRetryAttempts);
+        if (!success) { maximumRetryAttempts = 3; }
 
         var model = new NotificationsSettingViewModel
         {
