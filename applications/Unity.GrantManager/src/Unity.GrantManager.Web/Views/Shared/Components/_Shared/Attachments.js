@@ -82,6 +82,8 @@ function refreshAttachmentWidget(attachmentType) {
             PubSub.publish('refresh_assessment_attachment_list'); break;
         case 'Application':
             PubSub.publish('refresh_application_attachment_list'); break;
+        case 'CHEFS':
+            PubSub.publish('refresh_chefs_attachment_list'); break;
         default: break;
     }
 }

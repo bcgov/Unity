@@ -37,6 +37,11 @@ public class UpdateAttachmentModalModel(IAttachmentAppService attachmentService)
             throw new AbpValidationException("UpdateModel cannot be null.");
         }
 
+        if (string.IsNullOrWhiteSpace(UpdateModel.DisplayName))
+        {
+            UpdateModel.DisplayName = null;
+        }
+
         try
         {
             await attachmentService.UpdateAttachmentMetadataAsync(
@@ -60,10 +65,10 @@ public class UpdateAttachmentViewModel
     [HiddenInput]
     public required Guid AttachmentId { get; set; }
 
-    [HiddenInput]
+    [Display(Name = "Document Name")]
+    [ReadOnlyInput(PlainText = true)]
     public string FileName { get; set; } = string.Empty;
 
-    [Required]
     [Display(Name = "Label")]
     [InputInfoText("Max length 256 characters")]
     [FormControlSize(AbpFormControlSize.Large)]
