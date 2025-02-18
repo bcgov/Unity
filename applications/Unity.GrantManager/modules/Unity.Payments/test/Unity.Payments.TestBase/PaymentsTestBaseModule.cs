@@ -1,39 +1,21 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.SettingManagement;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using Volo.Abp;
-using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.Data;
 using Volo.Abp.Modularity;
 using Volo.Abp.Quartz;
-using Volo.Abp.TenantManagement;
-using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.Abp.Threading;
-using Volo.Abp.SettingManagement.EntityFrameworkCore;
-using Volo.Abp.Identity;
-using Volo.Abp.Identity.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs;
-
 
 namespace Unity.Payments;
 
 [DependsOn(
     typeof(AbpAutofacModule),
     typeof(AbpTestBaseModule),
-    typeof(AbpAuthorizationModule),
-    typeof(AbpBackgroundWorkersQuartzModule),
-    typeof(AbpTenantManagementEntityFrameworkCoreModule),
-    typeof(AbpTenantManagementDomainModule),
-    typeof(AbpSettingManagementApplicationModule),
-    typeof(AbpSettingManagementDomainModule),
-    typeof(AbpSettingManagementEntityFrameworkCoreModule),
-    typeof(AbpIdentityDomainModule),
-    typeof(AbpIdentityApplicationModule),
-    typeof(AbpAuthorizationModule),
-    typeof(AbpIdentityEntityFrameworkCoreModule)
+    typeof(AbpBackgroundWorkersQuartzModule)
 )]
 public class PaymentsTestBaseModule : AbpModule
 {
@@ -47,7 +29,7 @@ public class PaymentsTestBaseModule : AbpModule
 
         Configure<AbpBackgroundWorkerQuartzOptions>(options =>
         {
-            options.IsAutoRegisterEnabled = true;
+            options.IsAutoRegisterEnabled = false;
         });
     }
 

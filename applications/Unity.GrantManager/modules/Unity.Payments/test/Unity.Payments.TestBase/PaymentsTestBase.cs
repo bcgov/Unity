@@ -7,6 +7,8 @@ using Volo.Abp.Uow;
 using Volo.Abp.Testing;
 using NSubstitute;
 using Volo.Abp.Features;
+using Volo.Abp.SettingManagement;
+using Volo.Abp.TenantManagement;
 
 namespace Unity.Payments;
 
@@ -54,9 +56,18 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
     protected override void AfterAddApplication(IServiceCollection services)
     {
         // Because some of the tests rely on the feature check, always set to true for the module tests
-        var featureMock = Substitute.For<IFeatureChecker>();        
+        var featureMock = Substitute.For<IFeatureChecker>();
         featureMock.IsEnabledAsync(Arg.Any<string>()).Returns(true);
         services.AddSingleton(featureMock);
+
+        // We add a mock of this service to satisfy the IOC without having to spin up a whole settings table
+        var settingManagerMock = Substitute.For<ISettingManager>();
+        // Mock required calls
+        services.AddSingleton(settingManagerMock);
+
+        var tenantRepository = Substitute.For<ITenantRepository>();
+        // Mock calls
+        services.AddSingleton(tenantRepository);
 
         base.AfterAddApplication(services);
     }
