@@ -25,38 +25,32 @@ public class AttachmentAppService(
 {
     public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
     {
-        var query = from applicationAttachment in await applicationAttachmentRepository.GetQueryableAsync()
-                    join person in await personUserRepository.GetQueryableAsync() on applicationAttachment.UserId equals person.Id
-                    where applicationAttachment.ApplicationId == applicationId
-                    select new ApplicationAttachmentDto()
-                    {
-                        AttachedBy = person.FullName,
-                        Id = applicationAttachment.Id,
-                        FileName = applicationAttachment.FileName,
-                        S3ObjectKey = applicationAttachment.S3ObjectKey,
-                        Time = applicationAttachment.Time,
-                        CreatorId = person.Id
-                    };
-
-        return query.ToList();
+        return (await GetAttachmentsAsync(AttachmentType.APPLICATION, applicationId))
+            .Select(attachment => new ApplicationAttachmentDto
+            {
+                AttachedBy  = attachment.AttachedBy,
+                Id          = attachment.Id,
+                FileName    = attachment.FileName,
+                S3ObjectKey = attachment.S3ObjectKey,
+                Time        = attachment.Time,
+                CreatorId   = attachment.CreatorId,
+                DisplayName = attachment.DisplayName
+            }).ToList();
     }
 
     public async Task<IList<AssessmentAttachmentDto>> GetAssessmentAsync(Guid assessmentId)
     {
-        var query = from applicationAttachment in await assessmentAttachmentRepository.GetQueryableAsync()
-                    join person in await personUserRepository.GetQueryableAsync() on applicationAttachment.UserId equals person.Id
-                    where applicationAttachment.AssessmentId == assessmentId
-                    select new AssessmentAttachmentDto()
-                    {
-                        AttachedBy = person.FullName,
-                        Id = applicationAttachment.Id,
-                        FileName = applicationAttachment.FileName,
-                        S3ObjectKey = applicationAttachment.S3ObjectKey,
-                        Time = applicationAttachment.Time,
-                        CreatorId = person.Id
-                    };
-
-        return query.ToList();
+        return (await GetAttachmentsAsync(AttachmentType.ASSESSMENT, assessmentId))
+            .Select(attachment => new AssessmentAttachmentDto
+            {
+                AttachedBy  = attachment.AttachedBy,
+                Id          = attachment.Id,
+                FileName    = attachment.FileName,
+                S3ObjectKey = attachment.S3ObjectKey,
+                Time        = attachment.Time,
+                CreatorId   = attachment.CreatorId,
+                DisplayName = attachment.DisplayName
+            }).ToList();
     }
 
     public async Task<List<ApplicationChefsFileAttachment>> GetApplicationChefsFileAttachmentsAsync(Guid applicationId)
@@ -87,18 +81,21 @@ public class AttachmentAppService(
         IRepository<T, Guid> repository,
         Func<T, bool> predicate) where T : AbstractS3Attachment
     {
-        var query = from attachment in await repository.GetQueryableAsync()
-                    join person in await personUserRepository.GetQueryableAsync() on attachment.UserId equals person.Id
+        var attachments = await repository.GetQueryableAsync();
+        var people = await personUserRepository.GetQueryableAsync();
+        var query = from attachment in attachments.AsEnumerable()
+                    join person in people.AsEnumerable() on attachment.UserId equals person.Id
                     where predicate(attachment)
                     select new UnityAttachmentDto()
                     {
-                        Id = attachment.Id,
-                        FileName = attachment.FileName,
-                        S3ObjectKey = attachment.S3ObjectKey,
-                        Time = attachment.Time,
-                        AttachedBy = person.FullName,
-                        CreatorId = person.Id,
-                        AttachmentType = attachment.AttachmentType
+                        Id             = attachment.Id,
+                        FileName       = attachment.FileName,
+                        DisplayName    = attachment.DisplayName,
+                        S3ObjectKey    = attachment.S3ObjectKey,
+                        Time           = attachment.Time,
+                        AttachmentType = attachment.AttachmentType,
+                        AttachedBy     = person.FullName,
+                        CreatorId      = person.Id
                     };
 
         return query.ToList();
@@ -125,10 +122,10 @@ public class AttachmentAppService(
         var attachment = await repository.GetAsync(attachmentId) ?? throw new EntityNotFoundException();
         return new AttachmentMetadataDto
         {
-            Id = attachment.Id,
-            FileName = attachment.FileName,
-            DisplayName = attachment.DisplayName,
-            CreatorId = GetCreatorId(attachment),
+            Id             = attachment.Id,
+            FileName       = attachment.FileName,
+            DisplayName    = attachment.DisplayName,
+            CreatorId      = GetCreatorId(attachment),
             AttachmentType = attachment.AttachmentType
         };
     }
@@ -166,10 +163,10 @@ public class AttachmentAppService(
         var updatedAttachment = await repository.UpdateAsync(attachment, autoSave: true) ?? throw new EntityNotFoundException();
         return new AttachmentMetadataDto
         {
-            Id = updatedAttachment.Id,
-            FileName = updatedAttachment.FileName,
-            DisplayName = updatedAttachment.DisplayName,
-            CreatorId = GetCreatorId(updatedAttachment),
+            Id             = updatedAttachment.Id,
+            FileName       = updatedAttachment.FileName,
+            DisplayName    = updatedAttachment.DisplayName,
+            CreatorId      = GetCreatorId(updatedAttachment),
             AttachmentType = attachmentType
         };
     }

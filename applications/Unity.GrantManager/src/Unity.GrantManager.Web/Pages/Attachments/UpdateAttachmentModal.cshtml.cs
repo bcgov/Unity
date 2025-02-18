@@ -13,15 +13,17 @@ namespace Unity.GrantManager.Web.Pages.Attachments;
 public class UpdateAttachmentModalModel(IAttachmentAppService attachmentService) : AbpPageModel
 {
     [BindProperty]
-    public required UpdateAttachmentViewModel UpdateModel { get; set; }
+    public UpdateAttachmentViewModel? UpdateModel { get; set; }
+    [BindProperty]
+    public AttachmentType EditAttachmentType { get; set; }
 
     public async Task OnGetAsync(AttachmentType attachmentType, Guid attachmentId)
     {
         var attachment = await attachmentService.GetAttachmentMetadataAsync(attachmentType, attachmentId) ?? throw new EntityNotFoundException();
+        EditAttachmentType = attachment.AttachmentType;
         UpdateModel = new UpdateAttachmentViewModel
         {
             AttachmentId = attachment.Id,
-            AttachmentType = attachment.AttachmentType,
             FileName = attachment.FileName ?? string.Empty,
             DisplayName = attachment.DisplayName,
             CreatorId = attachment.CreatorId
@@ -30,13 +32,18 @@ public class UpdateAttachmentModalModel(IAttachmentAppService attachmentService)
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (UpdateModel == null)
+        {
+            throw new AbpValidationException("UpdateModel cannot be null.");
+        }
+
         try
         {
             await attachmentService.UpdateAttachmentMetadataAsync(
                 new UpdateAttachmentMetadataDto
                 {
                     Id = UpdateModel.AttachmentId,
-                    AttachmentType = UpdateModel.AttachmentType,
+                    AttachmentType = EditAttachmentType,
                     DisplayName = UpdateModel.DisplayName
                 });
         }
@@ -53,19 +60,15 @@ public class UpdateAttachmentViewModel
     [HiddenInput]
     public required Guid AttachmentId { get; set; }
 
-    [DisabledInput]
-    public AttachmentType AttachmentType { get; set; }
-
-    [ReadOnlyInput]
-    [Display(Name = "Document File Name")]
+    [HiddenInput]
     public string FileName { get; set; } = string.Empty;
 
     [Required]
     [Display(Name = "Label")]
-    [InputInfoText("Set a descriptive label for a file attachment.")]
+    [InputInfoText("Max length 256 characters")]
     [FormControlSize(AbpFormControlSize.Large)]
     [Placeholder("Enter file label...")]
-    [StringLength(256)]
+    [MaxLength(256)]
     public string? DisplayName { get; set; }
 
     [HiddenInput]
