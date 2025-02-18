@@ -1,6 +1,7 @@
 ﻿// Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
     const l = abp.localization.getResource('GrantManager');
+    const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
         let assessmentId = decodeURIComponent($("#AssessmentId").val());
@@ -46,7 +47,7 @@ $(function () {
                     data: 'displayName',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data ?? '—';
+                        return data ?? nullPlaceholder;
                     }
                 },
                 {

@@ -4,6 +4,7 @@ $(function () {
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
     let selectedAtttachments = [];
+    const nullPlaceholder = 'â€”';
 
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
@@ -38,7 +39,7 @@ $(function () {
                 data: 'displayName',
                 className: 'data-table-header',
                 render: function (data) {
-                    return data ?? '—';
+                    return data ?? nullPlaceholder;
                 }
             },
             getChefsFileDownloadColumn(),
