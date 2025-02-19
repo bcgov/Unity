@@ -1,5 +1,6 @@
 $(function () {
     const l = abp.localization.getResource('Payments');
+    const nullPlaceholder = '—';
     const formatter = createNumberFormatter();
     let dt = $('#PaymentRequestListTable');
     let dataTable;
@@ -19,11 +20,15 @@ $(function () {
         'requestedOn',
         'updatedOn',
         'paidOn',
-        'l1Approval',
-        'l2Approval',
-        'l3Approval',
+        'l1ApproverName',
+        'l2ApproverName',
+        'l3ApproverName',
+        'l1ApprovalDate',
+        'l2ApprovalDate',
+        'l3ApprovalDate',
         'CASResponse',
         'batchName',
+        'paymentRequesterName'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -259,14 +264,18 @@ $(function () {
             getRequestedonColumn(columnIndex++),
             getUpdatedOnColumn(columnIndex++),
             getPaidOnColumn(columnIndex++),
-            getL1ApprovalColumn(columnIndex++),
-            getL2ApprovalColumn(columnIndex++),
-            getL3ApprovalColumn(columnIndex++),
+            getApprovalColumn(columnIndex++, 1),
+            getApprovalColumn(columnIndex++, 2),
+            getApprovalColumn(columnIndex++, 3),
+            getApprovalDateColumn(columnIndex++, 1),
+            getApprovalDateColumn(columnIndex++, 2),
+            getApprovalDateColumn(columnIndex++, 3),
             getDescriptionColumn(columnIndex++),
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
             getCASResponseColumn(columnIndex++),
             getBatchNameColumn(columnIndex++),
+            getPaymentRequesterColumn(columnIndex++)
         ]
     }
 
@@ -455,41 +464,46 @@ $(function () {
         };
     }
 
-    function getL1ApprovalColumn(columnIndex) {
+    function getPaymentRequesterColumn(columnIndex) {
         return {
-            title: l('ApplicationPaymentListTable:L1ApprovalDate'),
-            name: 'l1Approval',
+            title: l(`ApplicationPaymentListTable:PaymentRequesterName`),
+            name: `paymentRequesterName`,
             data: 'expenseApprovals',
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 1)
-                return formatDate(approval?.decisionDate);
+                return formatName(data?.creatorUser);
             }
         };
     }
-    function getL2ApprovalColumn(columnIndex) {
+
+    function getApprovalColumn(columnIndex, level) {
         return {
-            title: l('ApplicationPaymentListTable:L2ApprovalDate'),
-            name: 'l2Approval',
+            title: l(`ApplicationPaymentListTable:L${level}ApproverName`),
+            name: `l${level}ApproverName`,
             data: 'expenseApprovals',
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 2)
-                return formatDate(approval?.decisionDate);
+                const approval = getExpenseApprovalsDetails(data, level);
+                return formatName(approval?.lastModifierUser);
             }
         };
     }
-    function getL3ApprovalColumn(columnIndex) {
+
+    function formatName(userData) {
+        return userData !== null ? `${userData?.name} ${userData?.surname}` : nullPlaceholder;
+    }
+
+    function getApprovalDateColumn(columnIndex, level) {
         return {
-            title: l('ApplicationPaymentListTable:L3ApprovalDate'),
-            name: 'l3Approval',
+            title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
+            name: `l${level}ApprovalDate`,
             data: 'expenseApprovals',
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 3)
+                let approval = getExpenseApprovalsDetails(data, level);
                 return formatDate(approval?.decisionDate);
             }
         };
@@ -551,7 +565,7 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
-                    return "";
+                    return nullPlaceholder;
                 }
             }
         };
@@ -566,7 +580,7 @@ $(function () {
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
             locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString() : '{Not Available}';
+        }).toUTC().toLocaleString() : nullPlaceholder;
     }
 
     /* the resizer needs looking at again after ux2 refactor 
