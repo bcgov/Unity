@@ -25,7 +25,7 @@ public class AttachmentAppService(
 {
     public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
     {
-        return (await GetAttachmentsAsync(AttachmentType.APPLICATION, applicationId))
+        return (await GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.APPLICATION, applicationId)))
             .Select(attachment => new ApplicationAttachmentDto
             {
                 AttachedBy  = attachment.AttachedBy,
@@ -40,7 +40,7 @@ public class AttachmentAppService(
 
     public async Task<IList<AssessmentAttachmentDto>> GetAssessmentAsync(Guid assessmentId)
     {
-        return (await GetAttachmentsAsync(AttachmentType.ASSESSMENT, assessmentId))
+        return (await GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.ASSESSMENT, assessmentId)))
             .Select(attachment => new AssessmentAttachmentDto
             {
                 AttachedBy  = attachment.AttachedBy,
@@ -63,17 +63,22 @@ public class AttachmentAppService(
         await intakeFormSubmissionManager.ResyncSubmissionAttachments(applicationId);
     }
 
-    public async Task<IList<UnityAttachmentDto>> GetAttachmentsAsync(AttachmentType attachmentType, Guid attachedResourceId)
+    public async Task<IList<UnityAttachmentDto>> GetAttachmentsAsync(AttachmentParametersDto attachmentParametersDto)
     {
-        return attachmentType switch
+        if (attachmentParametersDto.AttachedResourceId == Guid.Empty)
+        {
+            return [];
+        }
+
+        return attachmentParametersDto.AttachmentType switch
         {
             AttachmentType.APPLICATION => await GetAttachmentsInternalAsync(
                 applicationAttachmentRepository,
-                attachment => attachment.ApplicationId == attachedResourceId),
+                attachment => attachment.ApplicationId == attachmentParametersDto.AttachedResourceId),
             AttachmentType.ASSESSMENT => await GetAttachmentsInternalAsync(
                 assessmentAttachmentRepository,
-                attachment => attachment.AssessmentId == attachedResourceId),
-            _ => throw new ArgumentException("Attachment type is not supported", nameof(attachmentType)),
+                attachment => attachment.AssessmentId == attachmentParametersDto.AttachedResourceId),
+            _ => throw new ArgumentException("Attachment type is not supported", nameof(attachmentParametersDto)),
         };
     }
 

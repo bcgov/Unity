@@ -2,11 +2,16 @@
 $(function () {
     const l = abp.localization.getResource('GrantManager');
     const nullPlaceholder = '—';
+
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
-        return applicationId;
-    }
+        return {
+            attachmentType: 'APPLICATION',
+            attachedResourceId: applicationId
+        };
+    };
+
     let responseCallback = function (result) {
         if (result) {            
             setTimeout(function () {
@@ -29,7 +34,7 @@ $(function () {
             info: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.attachments.attachment.getApplication, inputAction, responseCallback
+                unity.grantManager.attachments.attachment.getAttachments, inputAction, responseCallback
             ),
             columnDefs: [
                 {

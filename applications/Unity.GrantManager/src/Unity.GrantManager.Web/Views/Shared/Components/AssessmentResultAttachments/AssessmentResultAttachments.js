@@ -5,11 +5,11 @@ $(function () {
 
     let inputAction = function (requestData, dataTableSettings) {
         let assessmentId = decodeURIComponent($("#AssessmentId").val());
-        if (!assessmentId) {
-            return "00000000-0000-0000-0000-000000000000";
-        }
-        return assessmentId;
-    }
+        return {
+            attachmentType: 'ASSESSMENT',
+            attachedResourceId: assessmentId ?? "00000000-0000-0000-0000-000000000000"
+        };
+    };
 
     let responseCallback = function (result) {
         return {
@@ -27,7 +27,7 @@ $(function () {
             info: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.attachments.attachment.getAssessment, inputAction, responseCallback
+                unity.grantManager.attachments.attachment.getAttachments, inputAction, responseCallback
             ),
             columnDefs: [
                 {
