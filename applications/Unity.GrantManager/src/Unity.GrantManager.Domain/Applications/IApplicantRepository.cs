@@ -10,4 +10,5 @@ public interface IApplicantRepository : IRepository<Applicant, Guid>
     Task<List<Applicant>> GetUnmatchedApplicantsAsync();
     Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId);
     Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName);
+    Task<List<Applicant>> GetApplicantsWithUnityApplicantIdAsync();
 }
