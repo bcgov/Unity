@@ -59,53 +59,50 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(false)]
-    public async Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
+    public async Task<ApplicantAgent> CreateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
     {
         var applicant = applicantAgentDto.Applicant;
         var application = applicantAgentDto.Application;
         var intakeMap = applicantAgentDto.IntakeMap;
         var applicantAgent = await applicantAgentRepository.GetByApplicantIdAsync(applicant.Id);
-        bool applicantAgentExists = applicantAgent != null;
-        if(applicantAgent != null) {
-            applicantAgent.Name = intakeMap.ContactName ?? applicantAgent.Name;
-            applicantAgent.Phone = intakeMap.ContactPhone ?? applicantAgent.Phone;
-            applicantAgent.Phone2 = intakeMap.ContactPhone2 ?? applicantAgent.Phone2;
-            applicantAgent.Email = intakeMap.ContactEmail ?? applicantAgent.Email;
-            applicantAgent.Title = intakeMap.ContactTitle ?? applicantAgent.Title;
-        } else {
-            applicantAgent = new ApplicantAgent
-            {
-                ApplicantId = applicant.Id,
-                ApplicationId = application.Id,
-                Name = intakeMap.ContactName ?? string.Empty,
-                Phone = intakeMap.ContactPhone ?? string.Empty,
-                Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
-                Email = intakeMap.ContactEmail ?? string.Empty,
-                Title = intakeMap.ContactTitle ?? string.Empty,
-            };
+
+        var newApplicantAgent = new ApplicantAgent
+        {
+            ApplicantId = applicant.Id,
+            ApplicationId = application.Id
+        };
+
+        if (applicantAgent != null)
+        {
+            newApplicantAgent.Name = intakeMap.ContactName ?? applicantAgent.Name;
+            newApplicantAgent.Phone = intakeMap.ContactPhone ?? applicantAgent.Phone;
+            newApplicantAgent.Phone2 = intakeMap.ContactPhone2 ?? applicantAgent.Phone2;
+            newApplicantAgent.Email = intakeMap.ContactEmail ?? applicantAgent.Email;
+            newApplicantAgent.Title = intakeMap.ContactTitle ?? applicantAgent.Title;
+        }
+        else
+        {
+            newApplicantAgent.Name = intakeMap.ContactName ?? string.Empty;
+            newApplicantAgent.Phone = intakeMap.ContactPhone ?? string.Empty;
+            newApplicantAgent.Phone2 = intakeMap.ContactPhone2 ?? string.Empty;
+            newApplicantAgent.Email = intakeMap.ContactEmail ?? string.Empty;
+            newApplicantAgent.Title = intakeMap.ContactTitle ?? string.Empty;
         }
 
         if (MappingUtil.IsJObject(intakeMap.ApplicantAgent))
         {
-            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
-            applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
-            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
-            applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
-            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
+            newApplicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
+            newApplicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
+            newApplicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
+            newApplicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
+            newApplicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
+            newApplicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
+            newApplicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
         }
 
-        if (applicantAgentExists)
-        {
-            await applicantAgentRepository.UpdateAsync(applicantAgent);
-        }
-        else
-        {
-            await applicantAgentRepository.InsertAsync(applicantAgent);
-        }
+        await applicantAgentRepository.InsertAsync(newApplicantAgent);
 
-        return applicantAgent;
+        return newApplicantAgent;
     }
 
     private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
