@@ -75,7 +75,7 @@
         "PaymentInfoView:ApplicationPaymentListTable.Status": "Status",
         "PaymentInfoView:ApplicationPaymentListTable.Description": "Description",
         "PaymentInfoView:ApplicationPaymentListTable.MailingAddress": "Mailing Address",
-        "PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount": "Masked Bank Account",
+        "PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount": "Bank Account",
         "PaymentInfoView:ApplicationPaymentListTable.SiteNumber": "Site Number",
         "PaymentInfoView:ApplicationPaymentListTable.SupplierNumber": "Supplier Number",
         "PaymentInfoView:ApplicationPaymentListTable.SupplierName": "Supplier Name",

@@ -11,7 +11,8 @@
     const defaultVisibleColumns = [
         'id',
         'amount',
-        'status'
+        'status',
+        'supplierName'
     ];
 
     $('body').on('click', '#savePaymentInfoBtn', function () {
@@ -206,11 +207,11 @@
             getApplicationPaymentPaidOnColumn(),
             getApplicationPaymentDescriptionColumn(),
             getApplicationPaymentCASResponseColumn(),
-            //getMailingAddressColumn(),
-            //getMaskedBankAccountColumn(),
-            //getSiteNumberColumn(),
-            //geSupplierNumberColumn(),
-            //getSupplierNameColumn()
+            getMailingAddressColumn(),
+            getMaskedBankAccountColumn(),
+            getSiteNumberColumn(),
+            geSupplierNumberColumn(),
+            getSupplierNameColumn()
         ]
     }
 
@@ -319,10 +320,10 @@
         return {
             title: l('PaymentInfoView:ApplicationPaymentListTable.MailingAddress'),
             name: 'addressLine1',
-            data: 'addressLine1',
+            data: 'site.addressLine1',
             className: 'data-table-header',
             render: function (data, type, full, meta) {
-                return nullToEmpty(full.addressLine1) + ' ' + nullToEmpty(full.addressLine2) + " " + nullToEmpty(full.addressLine3) + " " + nullToEmpty(full.city) + " " + nullToEmpty(full.province) + " " + nullToEmpty(full.postalCode);
+                return nullToEmpty(full.site.addressLine1) + ' ' + nullToEmpty(full.site.addressLine2) + " " + nullToEmpty(full.site.addressLine3) + " " + nullToEmpty(full.site.city) + " " + nullToEmpty(full.site.province) + " " + nullToEmpty(full.site.postalCode);
             },
             index: 9,
         };
@@ -332,7 +333,7 @@
         return {
             title: l('PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount'),
             name: 'bankAccount',
-            data: 'bankAccount',
+            data: 'site.bankAccount',
             className: 'data-table-header',
             index: 10,
         };
@@ -341,12 +342,9 @@
     function getSiteNumberColumn() {
         return {
             title: l('PaymentInfoView:ApplicationPaymentListTable.SiteNumber'),
-            name: 'siteNumber',
-            data: 'site',
+            name: 'number',
+            data: 'site.number',
             className: 'data-table-header',
-            render: function (data) {
-                return data?.number;
-            },
             index: 11,
         };
     }
@@ -448,4 +446,8 @@ function enablePaymentInfoSaveBtn() {
         return;
     }
     $('#savePaymentInfoBtn').prop('disabled', false);
+}
+
+function nullToEmpty(value) {
+    return value == null ? '' : value;
 }
