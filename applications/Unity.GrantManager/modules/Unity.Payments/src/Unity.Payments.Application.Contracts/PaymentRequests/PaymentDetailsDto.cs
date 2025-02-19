@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using Unity.Payments.Enums;
+using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.Payments.PaymentRequests
@@ -24,6 +25,7 @@ namespace Unity.Payments.PaymentRequests
         public string CorrelationProvider { get; set; } = string.Empty;
         public string? CasResponse { get; set; }
         public string ReferenceNumber { get; set; }
+        public SiteDto? Site { get; set; }
         public Collection<ExpenseApprovalDto> ExpenseApprovals { get; set; } = [];
     }
 }

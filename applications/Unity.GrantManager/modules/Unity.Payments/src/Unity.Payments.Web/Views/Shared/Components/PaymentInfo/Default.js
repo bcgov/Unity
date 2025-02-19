@@ -206,6 +206,11 @@
             getApplicationPaymentPaidOnColumn(),
             getApplicationPaymentDescriptionColumn(),
             getApplicationPaymentCASResponseColumn(),
+            //getMailingAddressColumn(),
+            //getMaskedBankAccountColumn(),
+            //getSiteNumberColumn(),
+            //geSupplierNumberColumn(),
+            //getSupplierNameColumn()
         ]
     }
 
@@ -309,6 +314,62 @@
             }
         };
     }
+
+    function getMailingAddressColumn() { 
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.MailingAddress'),
+            name: 'addressLine1',
+            data: 'addressLine1',
+            className: 'data-table-header',
+            render: function (data, type, full, meta) {
+                return nullToEmpty(full.addressLine1) + ' ' + nullToEmpty(full.addressLine2) + " " + nullToEmpty(full.addressLine3) + " " + nullToEmpty(full.city) + " " + nullToEmpty(full.province) + " " + nullToEmpty(full.postalCode);
+            },
+            index: 9,
+        };
+    }
+
+    function getMaskedBankAccountColumn() { 
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount'),
+            name: 'bankAccount',
+            data: 'bankAccount',
+            className: 'data-table-header',
+            index: 10,
+        };
+    }
+
+    function getSiteNumberColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SiteNumber'),
+            name: 'siteNumber',
+            data: 'site',
+            className: 'data-table-header',
+            render: function (data) {
+                return data?.number;
+            },
+            index: 11,
+        };
+    }
+
+    function geSupplierNumberColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SupplierNumber'),
+            name: 'supplierNumber',
+            data: 'supplierNumber',
+            className: 'data-table-header',
+            index: 12,
+        };
+    }
+    function getSupplierNameColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SupplierName'),
+            name: 'supplierName',
+            data: 'supplierName',
+            className: 'data-table-header',
+            index: 13,
+        };
+    }
+
 
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
