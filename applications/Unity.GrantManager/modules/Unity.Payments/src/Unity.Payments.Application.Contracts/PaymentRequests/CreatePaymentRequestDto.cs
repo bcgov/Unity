@@ -19,6 +19,7 @@ namespace Unity.Payments.PaymentRequests
         public string BatchName { get; set; }
         public decimal BatchNumber { get; set; } = 0;
         public string ReferenceNumber { get;  set; } = string.Empty;
+        public string SubmissionConfirmationCode { get; set; } = string.Empty;
         public string? InvoiceStatus { get;  set; }
         public string? PaymentStatus { get;  set; }
         public string? PaymentNumber { get;  set; }

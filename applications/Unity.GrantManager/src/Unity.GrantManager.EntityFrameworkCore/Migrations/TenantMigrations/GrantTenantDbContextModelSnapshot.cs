@@ -2725,6 +2725,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("SubmissionConfirmationCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("SupplierName")
                         .HasColumnType("text");
 

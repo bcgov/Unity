@@ -6,11 +6,19 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     /// <inheritdoc />
-    public partial class AddExpenseApprovalDecisionUser : Migration
+    public partial class AddPaymentsDecisionUserAndSubmissionNumber : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<string>(
+                name: "SubmissionConfirmationCode",
+                schema: "Payments",
+                table: "PaymentRequests",
+                type: "text",
+                nullable: false,
+                defaultValue: "");
+
             migrationBuilder.AddColumn<Guid>(
                 name: "DecisionUserId",
                 schema: "Payments",
@@ -24,6 +32,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropColumn(
+                name: "SubmissionConfirmationCode",
+                schema: "Payments",
+                table: "PaymentRequests");
+
             migrationBuilder.DropColumn(
                 name: "DecisionUserId",
                 schema: "Payments",

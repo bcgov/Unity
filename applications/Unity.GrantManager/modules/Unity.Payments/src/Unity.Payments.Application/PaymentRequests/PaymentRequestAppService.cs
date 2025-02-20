@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,6 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -121,6 +121,7 @@ namespace Unity.Payments.PaymentRequests
                         CreationTime = result.CreationTime,
                         Status = result.Status,
                         ReferenceNumber = result.ReferenceNumber,
+                        SubmissionConfirmationCode = result.SubmissionConfirmationCode
                     });
                 }
                 catch (Exception ex)
@@ -240,6 +241,7 @@ namespace Unity.Payments.PaymentRequests
                 CreationTime = payment.CreationTime,
                 Status = payment.Status,
                 ReferenceNumber = payment.ReferenceNumber,
+                SubmissionConfirmationCode = payment.SubmissionConfirmationCode
             };
         }
 
@@ -301,7 +303,7 @@ namespace Unity.Payments.PaymentRequests
 
                 foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
                 {
-                    if (expenseApproval.DecisionUserId.HasValue 
+                    if (expenseApproval.DecisionUserId.HasValue
                         && userDictionary.TryGetValue(expenseApproval.DecisionUserId.Value, out var expenseApprovalUserDto))
                     {
                         expenseApproval.DecisionUser = expenseApprovalUserDto;

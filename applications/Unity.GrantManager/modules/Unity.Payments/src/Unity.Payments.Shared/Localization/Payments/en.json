@@ -22,11 +22,11 @@
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
     "ApplicationPaymentRequest:Validations:RemainingAmountExceeded": "Cannot add a payment that exceeds the remaining amount of ",
 
-
     "ApplicationPaymentTable:BatchNumber": "Batch Number",
     "ApplicationPaymentTable:TotalAmount": "Total Amount",
     "ApplicationPaymentTable:Status": "Status",
     "ApplicationPaymentTable:RequestedOn": "Requested On",
+    "ApplicationPaymentListTable:SubmissionConfirmationCode": "Submission Number",
     "ApplicationPaymentListTable:PaymentRequesterName": "Payment Requester",
     "ApplicationPaymentListTable:L1ApproverName": "L1 Approver",
     "ApplicationPaymentListTable:L2ApproverName": "L2 Approver",

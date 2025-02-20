@@ -28,6 +28,7 @@ $(function () {
         'l2ApprovalDate',
         'l3ApproverName',
         'l3ApprovalDate',
+        'submissionConfirmationCode',
         'CASResponse'
     ];
 
@@ -276,7 +277,8 @@ $(function () {
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
             getCASResponseColumn(columnIndex++),
-            getBatchNameColumn(columnIndex++)
+            getBatchNameColumn(columnIndex++),
+            getSubmissionConfirmationCodeColumn(columnIndex++)
         ]
     }
 
@@ -304,6 +306,19 @@ $(function () {
             data: 'payeeName',
             className: 'data-table-header',
             index: columnIndex
+        };
+    }
+
+    function getSubmissionConfirmationCodeColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:SubmissionConfirmationCode'),
+            name: 'submissionConfirmationCode',
+            data: 'submissionConfirmationCode',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                return data?.length > 0 ? data : nullPlaceholder;
+            }
         };
     }
 

@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    [Migration("20250220014634_AddExpenseApprovalDecisionUser")]
-    partial class AddExpenseApprovalDecisionUser
+    [Migration("20250220210608_AddPaymentsDecisionUserAndSubmissionNumber")]
+    partial class AddPaymentsDecisionUserAndSubmissionNumber
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2727,6 +2727,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("SubmissionConfirmationCode")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("SupplierName")
                         .HasColumnType("text");
