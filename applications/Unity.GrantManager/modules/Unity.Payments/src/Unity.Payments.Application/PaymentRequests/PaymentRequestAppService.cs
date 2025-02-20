@@ -258,11 +258,11 @@ namespace Unity.Payments.PaymentRequests
             }
         }
 
-        public async Task<List<PaymentRequestDto>> MapToDtoAndLoadDetailsAsync(List<PaymentRequest> paymentsList)
+        protected internal async Task<List<PaymentRequestDto>> MapToDtoAndLoadDetailsAsync(List<PaymentRequest> paymentsList)
         {
             var paymentDtos = ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(paymentsList);
 
-            // Flatten all LastModifierIds from ExpenseApprovals across all PaymentRequestDtos
+            // Flatten all DecisionUserIds from ExpenseApprovals across all PaymentRequestDtos
             List<Guid> paymentRequesterIds = paymentDtos
                 .Select(payment => payment.CreatorId)
                 .OfType<Guid>()
@@ -272,7 +272,7 @@ namespace Unity.Payments.PaymentRequests
             List<Guid> expenseApprovalCreatorIds = paymentDtos
                 .SelectMany(payment => payment.ExpenseApprovals)
                 .Where(expenseApproval => expenseApproval.Status != ExpenseApprovalStatus.Requested)
-                .Select(expenseApproval => expenseApproval.LastModifierId)
+                .Select(expenseApproval => expenseApproval.DecisionUserId)
                 .OfType<Guid>()
                 .Distinct()
                 .ToList();
@@ -300,10 +300,10 @@ namespace Unity.Payments.PaymentRequests
 
                 foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
                 {
-                    if (expenseApproval.LastModifierId.HasValue 
-                        && userDictionary.TryGetValue(expenseApproval.LastModifierId.Value, out var expenseApprovalUserDto))
+                    if (expenseApproval.DecisionUserId.HasValue 
+                        && userDictionary.TryGetValue(expenseApproval.DecisionUserId.Value, out var expenseApprovalUserDto))
                     {
-                        expenseApproval.LastModifierUser = expenseApprovalUserDto;
+                        expenseApproval.DecisionUser = expenseApprovalUserDto;
                     }
                 }
             }

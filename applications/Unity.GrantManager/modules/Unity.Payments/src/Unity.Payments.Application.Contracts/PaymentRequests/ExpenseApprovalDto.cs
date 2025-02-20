@@ -11,6 +11,7 @@ public class ExpenseApprovalDto : AuditedEntityDto<Guid>
     public ExpenseApprovalStatus Status { get; set; }
 
     public DateTime? DecisionDate { get; set; }
+    public Guid? DecisionUserId { get; set; }
 
-    public PaymentUserDto? LastModifierUser { get; set; }
+    public PaymentUserDto? DecisionUser { get; set; }
 }

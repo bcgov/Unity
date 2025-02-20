@@ -19,7 +19,7 @@ public class PaymentsApplicationAutoMapperProfile : Profile
 
         CreateMap<PaymentRequest, PaymentDetailsDto>();
         CreateMap<ExpenseApproval, ExpenseApprovalDto>()
-            .ForMember(x => x.LastModifierUser, map => map.Ignore());
+            .ForMember(x => x.DecisionUser, map => map.Ignore());
         CreateMap<Site, SiteDto>()
             .ForMember(dest => dest.PaymentGroup, opt => opt.MapFrom(s => s.PaymentGroup.ToString()));
         CreateMap<Supplier, SupplierDto>();

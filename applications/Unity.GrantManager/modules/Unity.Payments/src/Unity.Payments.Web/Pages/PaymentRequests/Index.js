@@ -486,7 +486,7 @@ $(function () {
             index: columnIndex,
             render: function (data) {
                 const approval = getExpenseApprovalsDetails(data, level);
-                return formatName(approval?.lastModifierUser);
+                return formatName(approval?.decisionUser);
             }
         };
     }
