@@ -129,7 +129,7 @@ namespace Unity.GrantManager.Intakes
                 Application = application,
                 IntakeMap = intakeMap
             };
-            await applicantService.CreateOrUpdateApplicantAgentAsync(applicantAgentDto);
+            await applicantService.CreateApplicantAgentAsync(applicantAgentDto);
             return application;
         }
 
