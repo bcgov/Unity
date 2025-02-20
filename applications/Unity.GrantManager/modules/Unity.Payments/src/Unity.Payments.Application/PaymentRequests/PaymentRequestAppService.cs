@@ -249,7 +249,7 @@ namespace Unity.Payments.PaymentRequests
             using (_dataFilter.Disable<ISoftDelete>())
             {
                 var payments = await _paymentRequestsRepository
-                    .GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
+                    .GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, includeDetails: true);
 
                 var mappedPayments = await MapToDtoAndLoadDetailsAsync(payments);
 
@@ -335,11 +335,16 @@ namespace Unity.Payments.PaymentRequests
                 return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
             }
         }
+
         public async Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds)
         {
-            var payments = await _paymentRequestsRepository.GetListAsync(e => paymentIds.Contains(e.Id));
+            var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+            var payments = await paymentsQueryable
+                .Where(e => paymentIds.Contains(e.Id))
+                .Include(pr => pr.Site)
+                .ToListAsync();
 
-            return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(payments));
+            return ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(payments);
         }
 
         public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
