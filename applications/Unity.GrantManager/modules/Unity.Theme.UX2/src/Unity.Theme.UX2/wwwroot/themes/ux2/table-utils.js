@@ -1,3 +1,4 @@
+const nullPlaceholder = '—';
 const FilterDesc = {
     Default: 'Filter',
     With_Filter: 'Filter*'
