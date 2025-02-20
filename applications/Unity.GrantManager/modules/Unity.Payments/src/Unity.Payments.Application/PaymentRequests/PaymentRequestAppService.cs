@@ -17,6 +17,7 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
+using Microsoft.EntityFrameworkCore;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -327,7 +328,8 @@ namespace Unity.Payments.PaymentRequests
         {
             using (_dataFilter.Disable<ISoftDelete>())
             {
-                var payments = await _paymentRequestsRepository.GetListAsync();
+                var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+                var payments = await paymentsQueryable.Include(pr => pr.Site).ToListAsync();
                 var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
 
                 return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));

@@ -2,11 +2,13 @@
     $('body').on('click', '#saveAssessmentResultBtn', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
+        let assessmentResultsCustomForm = $("#assessmentResultsCustomForm").length ? $("#assessmentResultsCustomForm").serializeArray() : [];
+        let combinedData = formData.concat(assessmentResultsCustomForm);
         let assessmentResultObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();     
         let worksheetId = $("#AssessmentInfo_WorksheetId").val();       
 
-        $.each(formData, function (_, input) {
+        $.each(combinedData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(assessmentResultObj, input);
             }

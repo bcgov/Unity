@@ -17,7 +17,8 @@ public class PaymentsApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.ErrorSummary, options => options.Ignore())
             .ForMember(x => x.CreatorUser, map => map.Ignore());
 
-        CreateMap<PaymentRequest, PaymentDetailsDto>();
+        CreateMap<PaymentRequest, PaymentDetailsDto>()
+            .ForMember(dest => dest.Site, opt => opt.MapFrom(src => src.Site));
         CreateMap<ExpenseApproval, ExpenseApprovalDto>()
             .ForMember(x => x.DecisionUser, map => map.Ignore());
         CreateMap<Site, SiteDto>()

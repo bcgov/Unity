@@ -97,7 +97,7 @@
         responseCallback,
         actionButtons,
         pagingEnabled: true,
-        reorderEnabled: false,
+        reorderEnabled: true,
         languageSetValues,
         dataTableName: 'GrantApplicationsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'
