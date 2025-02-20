@@ -10,6 +10,7 @@ $(function () {
         'referenceNumber',
         'applicantName',
         'supplierNumber',
+        'batchName',
         'creationTime',
         'siteNumber',
         'contactNumber',
@@ -20,15 +21,14 @@ $(function () {
         'requestedOn',
         'updatedOn',
         'paidOn',
+        'paymentRequesterName',
         'l1ApproverName',
-        'l2ApproverName',
-        'l3ApproverName',
         'l1ApprovalDate',
+        'l2ApproverName',
         'l2ApprovalDate',
+        'l3ApproverName',
         'l3ApprovalDate',
-        'CASResponse',
-        'batchName',
-        'paymentRequesterName'
+        'CASResponse'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -121,6 +121,7 @@ $(function () {
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
+        scrollX: true,
         dataTableName: 'PaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
@@ -264,18 +265,18 @@ $(function () {
             getRequestedonColumn(columnIndex++),
             getUpdatedOnColumn(columnIndex++),
             getPaidOnColumn(columnIndex++),
+            getPaymentRequesterColumn(columnIndex++),
             getApprovalColumn(columnIndex++, 1),
-            getApprovalColumn(columnIndex++, 2),
-            getApprovalColumn(columnIndex++, 3),
             getApprovalDateColumn(columnIndex++, 1),
+            getApprovalColumn(columnIndex++, 2),
             getApprovalDateColumn(columnIndex++, 2),
+            getApprovalColumn(columnIndex++, 3),
             getApprovalDateColumn(columnIndex++, 3),
             getDescriptionColumn(columnIndex++),
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
             getCASResponseColumn(columnIndex++),
-            getBatchNameColumn(columnIndex++),
-            getPaymentRequesterColumn(columnIndex++)
+            getBatchNameColumn(columnIndex++)
         ]
     }
 
@@ -466,13 +467,13 @@ $(function () {
 
     function getPaymentRequesterColumn(columnIndex) {
         return {
-            title: l(`ApplicationPaymentListTable:PaymentRequesterName`),
-            name: `paymentRequesterName`,
-            data: 'expenseApprovals',
+            title: l('ApplicationPaymentListTable:PaymentRequesterName'),
+            name: 'paymentRequesterName',
+            data: 'creatorUser',
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-                return formatName(data?.creatorUser);
+                return formatName(data);
             }
         };
     }
