@@ -72,6 +72,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 {
                     CorrelationId = application.Id,
                     ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
+                    SubmissionConfirmationCode = application.ReferenceNo,
                     Amount = remainingAmount,
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
@@ -199,6 +200,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     SupplierName = payment.SupplierName ?? string.Empty,
                     SupplierNumber = payment.SupplierNumber ?? string.Empty,
                     PayeeName = payment.ApplicantName ?? string.Empty,
+                    SubmissionConfirmationCode = payment.SubmissionConfirmationCode ?? string.Empty,
                     CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicationCorrelationProvider,
                 });
             }

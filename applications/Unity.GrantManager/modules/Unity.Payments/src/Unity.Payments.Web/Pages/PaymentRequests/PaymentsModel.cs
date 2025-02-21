@@ -24,6 +24,7 @@ namespace Unity.Payments.Web.Pages.Payments
         public bool? Payable { get; set; }
         public bool RenderFormIoToHtml { get; set; } = false;
         public string? ApplicantName { get; set; }
+        public string? SubmissionConfirmationCode { get; set; }
         public decimal PaymentThreshold { get; set; }
 
         [DisplayName("ApplicationPaymentRequest:SiteName")]

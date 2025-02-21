@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250220014359_RemoveApplicationFormVersionFromFullAudit")]
+    partial class RemoveApplicationFormVersionFromFullAudit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2565,9 +2568,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("DecisionDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<Guid?>("DecisionUserId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uuid")
                         .HasColumnName("DeleterId");
@@ -2724,10 +2724,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
-
-                    b.Property<string>("SubmissionConfirmationCode")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("SupplierName")
                         .HasColumnType("text");
