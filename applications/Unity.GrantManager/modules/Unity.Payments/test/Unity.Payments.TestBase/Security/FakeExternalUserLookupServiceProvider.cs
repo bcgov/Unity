@@ -28,14 +28,14 @@ public class FakeExternalUserLookupServiceProvider : IExternalUserLookupServiceP
         throw new NotSupportedException();
     }
 
-    public Task<List<IUserData>> SearchAsync(string sorting = null, string filter = null,
+    public Task<List<IUserData>> SearchAsync(string? sorting = null, string? filter = null,
         int maxResultCount = 2147483647, int skipCount = 0,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotSupportedException();
     }
 
-    public Task<long> GetCountAsync(string filter = null, CancellationToken cancellationToken = new CancellationToken())
+    public Task<long> GetCountAsync(string? filter = null, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotSupportedException();
     }

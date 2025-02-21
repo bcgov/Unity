@@ -26,7 +26,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 type: "uuid",
                 nullable: true);
 
-            migrationBuilder.Sql("UPDATE \"Payments\".\"ExpenseApprovals\" SET \"DecisionUserId\" = \"LastModifierId\"");
+            migrationBuilder.Sql("UPDATE \"Payments\".\"ExpenseApprovals\" SET \"DecisionUserId\" = \"LastModifierId\";");
+            migrationBuilder.Sql("UPDATE \"Payments\".\"PaymentRequests\" t2 SET \"SubmissionConfirmationCode\" = t1.\"ReferenceNo\" FROM public.\"Applications\" t1 WHERE t1.\"Id\" = t2.\"CorrelationId\";");
         }
 
         /// <inheritdoc />

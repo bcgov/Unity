@@ -280,7 +280,7 @@ namespace Unity.Payments.PaymentRequests
                 .Distinct()
                 .ToList();
 
-            // Call external lookup for each User Id and store in a dictionary.
+            // Call external lookup for each distinct User Id and store in a dictionary.
             var userDictionary = new Dictionary<Guid, PaymentUserDto>();
             var allUserIds = paymentRequesterIds.Concat(expenseApprovalCreatorIds).Distinct();
             foreach (var userId in allUserIds)
@@ -292,7 +292,7 @@ namespace Unity.Payments.PaymentRequests
                 }
             }
 
-            // Map back userInfo details to each ExpenseApprovalDto
+            // Map UserInfo details to each ExpenseApprovalDto
             foreach (var paymentRequestDto in paymentDtos)
             {
                 if (paymentRequestDto.CreatorId.HasValue
@@ -401,7 +401,7 @@ namespace Unity.Payments.PaymentRequests
             // Retrieve all payment requests
             var payments = await _paymentRequestsRepository.GetListAsync();
 
-            // Filter paymentsList for the current year
+            // Filter payments for the current year
             var filteredPayments = payments
                 .Where(p => p.CreationTime.Year == currentYear)
                 .OrderByDescending(p => p.CreationTime)
@@ -420,7 +420,7 @@ namespace Unity.Payments.PaymentRequests
                 }
             }
 
-            // If no paymentsList exist or parsing fails, return the initial sequence number
+            // If no payments exist or parsing fails, return the initial sequence number
             return 1;
         }
     }

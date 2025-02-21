@@ -32,7 +32,7 @@ namespace Unity.Payments.Domain.Services
             IPaymentRequestRepository paymentRequestRepository,
             IUnitOfWorkManager unitOfWorkManager,
             IPermissionChecker permissionChecker,
-            ICurrentUser currentUser    )
+            ICurrentUser currentUser)
         {
             _casPaymentRequestCoordinator = casPaymentRequestCoordinator;
             _paymentRequestRepository = paymentRequestRepository;

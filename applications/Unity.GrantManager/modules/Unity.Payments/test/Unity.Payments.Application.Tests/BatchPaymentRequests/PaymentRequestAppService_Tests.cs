@@ -154,7 +154,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         // Assert
         paymentRequests.TotalCount.ShouldBeGreaterThan(0);
         paymentRequests.Items.ShouldNotBeEmpty();
-        paymentRequests.Items.First().InvoiceNumber.ShouldBe("INV-001");
-        //paymentRequests.Items.First().CreatorId.ShouldBe(PaymentsTestData.UserDataMocks.User1.Id);
+        paymentRequests.Items[0].InvoiceNumber.ShouldBe("INV-001");
+        paymentRequests.Items[0].CreatorId.ShouldBe(PaymentsTestData.UserDataMocks.User1.Id);
     }
 }
