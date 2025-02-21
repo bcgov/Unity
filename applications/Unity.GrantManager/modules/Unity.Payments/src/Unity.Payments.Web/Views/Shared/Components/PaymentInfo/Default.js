@@ -244,10 +244,7 @@
             name: 'status',
             data: 'status',
             className: 'data-table-header',
-            index: 3,
-            render: function (data) {
-                return getStatusText(data);
-            }
+            index: 3
         };
     }
 
@@ -395,23 +392,6 @@
         let table = $('#ApplicationPaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
-
-    function getStatusText(data) {
-        switch (data) {
-            case 1:
-                return "Created";
-            case 2:
-                return "Submitted";
-            case 3:
-                return "Approved";
-            case 4:
-                return "Declined";
-            case 5:
-                return "Awaiting Approval"
-            default:
-                return "Created";
-        }
-    }
 
     $('.select-all-application-payments').click(function () {
         if ($(this).is(':checked')) {
