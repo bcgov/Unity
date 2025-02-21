@@ -8,9 +8,9 @@ $(function () {
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'referenceNumber',
+        'batchName',
         'applicantName',
         'supplierNumber',
-        'batchName',
         'creationTime',
         'siteNumber',
         'contactNumber',
@@ -21,14 +21,9 @@ $(function () {
         'requestedOn',
         'updatedOn',
         'paidOn',
-        'paymentRequesterName',
-        'l1ApproverName',
         'l1ApprovalDate',
-        'l2ApproverName',
         'l2ApprovalDate',
-        'l3ApproverName',
         'l3ApprovalDate',
-        'submissionConfirmationCode',
         'CASResponse'
     ];
 
@@ -77,7 +72,6 @@ $(function () {
                 id: 'btn-toggle-filter'
             }
         },
-
         {
             extend: 'csv',
             text: 'Export',
@@ -86,6 +80,11 @@ $(function () {
             exportOptions: {
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
+                format: {
+                    body: function (data, row, column, node) {
+                        return data === nullPlaceholder ? '' : data;
+                    }
+                }
             }
         },
 
@@ -122,9 +121,10 @@ $(function () {
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
-        scrollX: true,
         dataTableName: 'PaymentRequestListTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'});
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        useNullPlaceholder: true
+    });
 
     // Attach the draw event to add custom row coloring logic
     dataTable.on('draw', function () {
@@ -251,9 +251,11 @@ $(function () {
 
     function getColumns() {
         let columnIndex = 0;
-        return [
+        const columns = [
             getSelectColumn('Select Application', 'rowCount', 'payments'),
             getPaymentReferenceColumn(columnIndex++),
+            getBatchNameColumn(columnIndex++),
+            getSubmissionConfirmationCodeColumn(columnIndex++),
             getApplicantNameColumn(columnIndex++),
             getSupplierNumberColumn(columnIndex++),
             getSupplierNameColumn(columnIndex++),
@@ -276,10 +278,10 @@ $(function () {
             getDescriptionColumn(columnIndex++),
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
-            getCASResponseColumn(columnIndex++),
-            getBatchNameColumn(columnIndex++),
-            getSubmissionConfirmationCodeColumn(columnIndex++)
+            getCASResponseColumn(columnIndex++)
         ]
+
+        return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
 
     function getPaymentReferenceColumn(columnIndex) {
@@ -317,7 +319,7 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-                return data?.length > 0 ? data : nullPlaceholder;
+                return data?.length > 0 ? data : null;
             }
         };
     }
@@ -475,7 +477,7 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
-                return '{Not Available}';
+                return null;
             }
         };
     }
@@ -508,7 +510,7 @@ $(function () {
     }
 
     function formatName(userData) {
-        return userData !== null ? `${userData?.name} ${userData?.surname}` : nullPlaceholder;
+        return userData !== null ? `${userData?.name} ${userData?.surname}` : null;
     }
 
     function getApprovalDateColumn(columnIndex, level) {
@@ -547,7 +549,7 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
-                    return "";
+                    return null;
                 }
             }
         };
@@ -564,7 +566,7 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
-                    return "";
+                    return null;
                 }
             }
         };
@@ -581,7 +583,7 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
-                    return nullPlaceholder;
+                    return null;
                 }
             }
         };
@@ -596,7 +598,7 @@ $(function () {
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
             locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString() : nullPlaceholder;
+        }).toUTC().toLocaleString() : null;
     }
 
     /* the resizer needs looking at again after ux2 refactor 
