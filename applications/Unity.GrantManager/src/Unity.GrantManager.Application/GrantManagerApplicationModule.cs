@@ -37,7 +37,7 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 
 namespace Unity.GrantManager;
 
-[DependsOn(    
+[DependsOn(
     typeof(GrantManagerDomainModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
@@ -217,17 +217,31 @@ public class GrantManagerApplicationModule : AbpModule
     private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
     {
         if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
+        var sentinelService = string.Empty;
+        
+        if (Convert.ToBoolean(configuration["Redis:Sentinel"]))
+        {
+            sentinelService = $"{configuration["Redis:SentinelMasterName"]}";
+        }
 
         context.Services.AddStackExchangeRedisCache(options =>
         {
             options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
+            options.Configuration = $"{configuration["Redis:Configuration"]},password={configuration["Redis:Password"]}";
+            if (options.ConfigurationOptions != null)
+            {
+                options.ConfigurationOptions.ServiceName = sentinelService;
+            }
         });
 
         Configure<RedisCacheOptions>(options =>
         {
             options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
+            options.Configuration = $"{configuration["Redis:Configuration"]},password={configuration["Redis:Password"]}";
+            if (options.ConfigurationOptions != null)
+            {
+                options.ConfigurationOptions.ServiceName = sentinelService;
+            }
         });
 
         Configure<AbpDistributedCacheOptions>(options =>

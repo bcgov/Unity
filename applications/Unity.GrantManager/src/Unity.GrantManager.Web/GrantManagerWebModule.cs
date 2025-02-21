@@ -95,7 +95,7 @@ namespace Unity.GrantManager.Web;
     typeof(PaymentsWebModule),
     typeof(AbpBlobStoringModule),
     typeof(NotificationsWebModule),
-    typeof(FlexWebModule)    
+    typeof(FlexWebModule)
 )]
 public class GrantManagerWebModule : AbpModule
 {
@@ -212,26 +212,54 @@ public class GrantManagerWebModule : AbpModule
         if (!Convert.ToBoolean(configuration["DataProtection:IsEnabled"])) return;
         if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
 
-        var configurationOptions = new ConfigurationOptions
+        var runningSentinel = Convert.ToBoolean(configuration["Redis:Sentinel"]);
+        ConfigurationOptions redisConfigurationOptions;
+
+        // Running with Redis Sentinel
+        if (runningSentinel)
         {
-            EndPoints = { $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]}" },
-            Password = configuration["Redis:Password"],
-            ClientName = configuration["Redis:InstanceName"]
-        };
+            var serviceName = configuration["Redis:SentinelMasterName"];
+
+            redisConfigurationOptions = new ConfigurationOptions
+            {
+                EndPoints = { $"{configuration["Redis:Configuration"]}" },
+                ServiceName = serviceName,
+                Password = configuration["Redis:Password"],
+                ClientName = configuration["Redis:InstanceName"],
+                AbortOnConnectFail = false
+            };
+        }
+        else
+        {
+            redisConfigurationOptions = new ConfigurationOptions
+            {
+                EndPoints = { $"{configuration["Redis:Configuration"]}" },
+                Password = configuration["Redis:Password"],
+                ClientName = configuration["Redis:InstanceName"]
+            };
+        }
 
         IDataProtectionBuilder dataProtectionBuilder = context
             .Services
             .AddDataProtection()
             .SetApplicationName("UnityGrantManagerWeb");
 
-        var redis = ConnectionMultiplexer
-          .Connect(configurationOptions);
+        ConnectionMultiplexer redis;
+
+        if (runningSentinel)
+        {
+            redis = ConnectionMultiplexer.SentinelConnect(redisConfigurationOptions);
+        }
+        else
+        {
+            redis = ConnectionMultiplexer.Connect(redisConfigurationOptions);
+        }
 
         dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Unity-DataKeys");
 
         context.Services.AddSession(options =>
         {
-            options.IdleTimeout = TimeSpan.FromHours(8);            
+            options.IdleTimeout = TimeSpan.FromHours(8);
         });
     }
 
@@ -516,7 +544,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        var configuration = context.GetConfiguration();       
+        var configuration = context.GetConfiguration();
 
         if (!env.IsProduction())
         {

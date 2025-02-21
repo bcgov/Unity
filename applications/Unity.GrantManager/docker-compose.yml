@@ -62,7 +62,7 @@ services:
   nginx:
     image: nginx:latest
     ports:
-      - "42080:80"
+      - "44342:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
@@ -78,11 +78,33 @@ services:
     volumes:
       - redis_volume_data:/data
     ports:
-      - 6379:6379
+      - "6379:6379"
     networks:
       - common-network
     command: >
-          --requirepass ${REDIS_PASSWORD}
+        --requirepass ${REDIS_PASSWORD}
+
+  redis-slave:
+    image: redis:latest
+    command: redis-server --slaveof redis 6379 --masterauth ${REDIS_PASSWORD}
+    volumes:
+      - redis_volume_data:/data
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - common-network
+
+  redis-sentinel:
+    image: redis:latest
+    command: redis-sentinel /sentinel.conf
+    volumes:
+      - ./sentinel.conf:/sentinel.conf
+      - redis_volume_data:/data
+    depends_on:
+      - redis
+      - redis-slave
+    networks:
+      - common-network
 
   redis_commander:
     depends_on:
