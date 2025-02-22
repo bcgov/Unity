@@ -1,23 +1,23 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Payment.Shared;
-using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.PaymentConfigurations;
+using Unity.Payments.Domain.PaymentRequests;
+using Unity.Payments.Domain.Services;
+using Unity.Payments.Domain.Shared;
+using Unity.Payments.Enums;
+using Unity.Payments.Permissions;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Data;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
-using System.Linq;
-using Unity.Payments.Domain.Shared;
-using Unity.Payments.Domain.Services;
-using Unity.Payments.Enums;
-using Microsoft.Extensions.Logging;
-using Volo.Abp.Authorization.Permissions;
-using Unity.Payments.Permissions;
-using Volo.Abp.Data;
-using Volo.Abp;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -25,25 +25,30 @@ namespace Unity.Payments.PaymentRequests
     [Authorize]
     public class PaymentRequestAppService : PaymentsAppService, IPaymentRequestAppService
     {
-        private readonly IPaymentRequestRepository _paymentRequestsRepository;
-        private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
         private readonly ICurrentUser _currentUser;
-        private readonly IPaymentsManager _paymentsManager;
-        private readonly IPermissionChecker _permissionChecker;
         private readonly IDataFilter _dataFilter;
+        private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
+        private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
+        private readonly IPaymentsManager _paymentsManager;
+        private readonly IPaymentRequestRepository _paymentRequestsRepository;
+        private readonly IPermissionChecker _permissionChecker;
 
-        public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
-            IPaymentRequestRepository paymentRequestsRepository,
+        public PaymentRequestAppService(
             ICurrentUser currentUser,
+            IDataFilter dataFilter,
+            IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
+            IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentsManager paymentsManager,
-            IPermissionChecker permissionChecker, IDataFilter dataFilter)
+            IPaymentRequestRepository paymentRequestsRepository,
+            IPermissionChecker permissionChecker)
         {
-            _paymentConfigurationRepository = paymentConfigurationRepository;
-            _paymentRequestsRepository = paymentRequestsRepository;
-            _currentUser = currentUser;
-            _paymentsManager = paymentsManager;
-            _permissionChecker = permissionChecker;
-            _dataFilter = dataFilter;
+            _currentUser                       = currentUser;
+            _dataFilter                        = dataFilter;
+            _externalUserLookupServiceProvider = externalUserLookupServiceProvider;
+            _paymentConfigurationRepository    = paymentConfigurationRepository;
+            _paymentsManager                   = paymentsManager;
+            _paymentRequestsRepository         = paymentRequestsRepository;
+            _permissionChecker                 = permissionChecker;
         }
 
         protected virtual async Task<(PaymentConfiguration? Config, decimal Threshold)> GetPaymentConfigurationWithThresholdAsync()
@@ -116,6 +121,7 @@ namespace Unity.Payments.PaymentRequests
                         CreationTime = result.CreationTime,
                         Status = result.Status,
                         ReferenceNumber = result.ReferenceNumber,
+                        SubmissionConfirmationCode = result.SubmissionConfirmationCode
                     });
                 }
                 catch (Exception ex)
@@ -215,7 +221,7 @@ namespace Unity.Payments.PaymentRequests
         {
             List<PaymentRequestStatus> level3Approvals = new() { PaymentRequestStatus.L3Pending, PaymentRequestStatus.L3Declined };
             return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && level3Approvals.Contains(status);
-        }        
+        }
 
         private async Task<PaymentRequestDto> CreatePaymentRequestDtoAsync(Guid paymentRequestId)
         {
@@ -235,6 +241,7 @@ namespace Unity.Payments.PaymentRequests
                 CreationTime = payment.CreationTime,
                 Status = payment.Status,
                 ReferenceNumber = payment.ReferenceNumber,
+                SubmissionConfirmationCode = payment.SubmissionConfirmationCode
             };
         }
 
@@ -244,14 +251,67 @@ namespace Unity.Payments.PaymentRequests
             using (_dataFilter.Disable<ISoftDelete>())
             {
                 var payments = await _paymentRequestsRepository
-                    .GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
+                    .GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, includeDetails: true);
 
-                var mappedPayments = ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments);
+                var mappedPayments = await MapToDtoAndLoadDetailsAsync(payments);
 
                 ApplyErrorSummary(mappedPayments);
 
                 return new PagedResultDto<PaymentRequestDto>(totalCount, mappedPayments);
             }
+        }
+
+        protected internal async Task<List<PaymentRequestDto>> MapToDtoAndLoadDetailsAsync(List<PaymentRequest> paymentsList)
+        {
+            var paymentDtos = ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(paymentsList);
+
+            // Flatten all DecisionUserIds from ExpenseApprovals across all PaymentRequestDtos
+            List<Guid> paymentRequesterIds = paymentDtos
+                .Select(payment => payment.CreatorId)
+                .OfType<Guid>()
+                .Distinct()
+                .ToList();
+
+            List<Guid> expenseApprovalCreatorIds = paymentDtos
+                .SelectMany(payment => payment.ExpenseApprovals)
+                .Where(expenseApproval => expenseApproval.Status != ExpenseApprovalStatus.Requested)
+                .Select(expenseApproval => expenseApproval.DecisionUserId)
+                .OfType<Guid>()
+                .Distinct()
+                .ToList();
+
+            // Call external lookup for each distinct User Id and store in a dictionary.
+            var userDictionary = new Dictionary<Guid, PaymentUserDto>();
+            var allUserIds = paymentRequesterIds.Concat(expenseApprovalCreatorIds).Distinct();
+            foreach (var userId in allUserIds)
+            {
+                var userInfo = await _externalUserLookupServiceProvider.FindByIdAsync(userId);
+                if (userInfo != null)
+                {
+                    userDictionary[userId] = ObjectMapper.Map<IUserData, PaymentUserDto>(userInfo);
+                }
+            }
+
+            // Map UserInfo details to each ExpenseApprovalDto
+            foreach (var paymentRequestDto in paymentDtos)
+            {
+                if (paymentRequestDto.CreatorId.HasValue
+                        && userDictionary.TryGetValue(paymentRequestDto.CreatorId.Value, out var paymentRequestUserDto))
+                {
+                    paymentRequestDto.CreatorUser = paymentRequestUserDto;
+                }
+
+                foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
+                {
+                    if (expenseApproval.DecisionUserId.HasValue
+                        && userDictionary.TryGetValue(expenseApproval.DecisionUserId.Value, out var expenseApprovalUserDto))
+                    {
+                        expenseApproval.DecisionUser = expenseApprovalUserDto;
+                    }
+                }
+            }
+
+            return paymentDtos;
         }
 
         private static void ApplyErrorSummary(List<PaymentRequestDto> mappedPayments)
@@ -277,11 +337,16 @@ namespace Unity.Payments.PaymentRequests
                 return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
             }
         }
+
         public async Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds)
         {
-            var payments = await _paymentRequestsRepository.GetListAsync(e => paymentIds.Contains(e.Id));
+            var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+            var payments = await paymentsQueryable
+                .Where(e => paymentIds.Contains(e.Id))
+                .Include(pr => pr.Site)
+                .ToListAsync();
 
-            return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(payments));
+            return ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(payments);
         }
 
         public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)

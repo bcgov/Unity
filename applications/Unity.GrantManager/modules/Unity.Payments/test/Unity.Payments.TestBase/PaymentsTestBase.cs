@@ -7,6 +7,8 @@ using Volo.Abp.Uow;
 using Volo.Abp.Testing;
 using NSubstitute;
 using Volo.Abp.Features;
+using Volo.Abp.Users;
+using Unity.Payments.Security;
 
 namespace Unity.Payments;
 
@@ -14,6 +16,13 @@ namespace Unity.Payments;
 public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStartupModule>
     where TStartupModule : IAbpModule
 {
+    protected Guid? CurrentUserId { get; set; }
+
+    protected PaymentsTestBase()
+    {
+        CurrentUserId = PaymentsTestData.User1Id;
+    }
+
     protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
     {
         options.UseAutofac();
@@ -57,6 +66,13 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
         var featureMock = Substitute.For<IFeatureChecker>();        
         featureMock.IsEnabledAsync(Arg.Any<string>()).Returns(true);
         services.AddSingleton(featureMock);
+
+        var externalUserLookupMock = Substitute.For<FakeExternalUserLookupServiceProvider>();
+        services.AddSingleton<IExternalUserLookupServiceProvider>(externalUserLookupMock);
+
+        var currentUser = Substitute.For<ICurrentUser>();
+        currentUser.Id.Returns(ci => CurrentUserId);
+        services.AddSingleton(currentUser);
 
         base.AfterAddApplication(services);
     }

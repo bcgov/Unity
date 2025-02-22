@@ -32,6 +32,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual bool IsRecon { get; internal set; }
 
         public virtual string ReferenceNumber { get;  set; } = string.Empty;
+        public virtual string SubmissionConfirmationCode { get; set; } = string.Empty;
 
         // Filled on a recon
         public virtual string? InvoiceStatus { get; private set; }
@@ -93,6 +94,7 @@ namespace Unity.Payments.Domain.PaymentRequests
             CorrelationId = createPaymentRequestDto.CorrelationId;
             CorrelationProvider = createPaymentRequestDto.CorrelationProvider;
             ReferenceNumber = createPaymentRequestDto.ReferenceNumber;
+            SubmissionConfirmationCode = createPaymentRequestDto.SubmissionConfirmationCode;
             BatchName = createPaymentRequestDto.BatchName;
             BatchNumber = createPaymentRequestDto.BatchNumber;
             ExpenseApprovals = GenerateExpenseApprovals(createPaymentRequestDto.Amount, createPaymentRequestDto.PaymentThreshold);
