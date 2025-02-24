@@ -26,10 +26,17 @@
     background-color: #FFF8E9;
     margin-top: 1rem;
     margin-bottom: 1rem;
+    min-height: 3.5rem;
 }
 
 .payment-status-transition-arrow {
     color: #42814A;
+}
+
+.payment-status-transition-ban {
+    color: #FF0909;
+    font-size: 1rem;
+    cursor: pointer;
 }
 
 #PaymentRequestListTable .error-icon {

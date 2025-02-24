@@ -3,10 +3,13 @@ using System.ComponentModel;
 using System;
 using System.Collections.Generic;
 using Unity.Payments.Enums;
+using Volo.Abp.Users;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Unity.Payments.Web.Pages.PaymentApprovals
 {
-    public class PaymentsApprovalModel
+    public class PaymentsApprovalModel : IValidatableObject
     {
         [Required]
         public Guid Id { get; set; }
@@ -35,12 +38,27 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         public List<string> ErrorList { get; set; } = new List<string> { };
 
         public bool IsL3ApprovalRequired { get; set; }
+        public Guid? PreviousApprover { get; set; }
+        public bool IsSameApprover { get; set; }
 
         public PaymentRequestStatus ToStatus { get; set; }
 
         public string StatusText { get; set; } = string.Empty;
 
         public string ToStatusText { get; set; } = string.Empty;
+
+        public IEnumerable<ValidationResult> Validate(
+            ValidationContext validationContext)
+        {
+            var currentUser = validationContext.GetRequiredService<ICurrentUser>();
+            if (IsSameApprover || PreviousApprover == currentUser.Id)
+            {
+                yield return new ValidationResult(
+                    "You cannot approve this payment as you have already approved it as an L1 Approver",
+                    new[] { "Name", "Description" }
+                );
+            }
+        }
 
     }
 }

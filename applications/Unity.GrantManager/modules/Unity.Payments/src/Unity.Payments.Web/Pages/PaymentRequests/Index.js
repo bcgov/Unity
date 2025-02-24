@@ -1,3 +1,9 @@
+let paymentRequestStatusModal = new abp.ModalManager({
+    viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus'
+});
+
+let selectedPaymentIds = [];
+
 $(function () {
     const l = abp.localization.getResource('Payments');
     const nullPlaceholder = '—';
@@ -26,12 +32,6 @@ $(function () {
         'l3ApprovalDate',
         'CASResponse'
     ];
-
-    let paymentRequestStatusModal = new abp.ModalManager({
-        viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
-    });
-
-    let selectedPaymentIds = [];
 
     let actionButtons = [
         {
@@ -504,7 +504,12 @@ $(function () {
             index: columnIndex,
             render: function (data) {
                 const approval = getExpenseApprovalsDetails(data, level);
-                return formatName(approval?.decisionUser);
+                if (approval?.decisionUser !== undefined
+                    && (approval?.decisionUser?.name?.length > 0 || approval?.decisionUser?.surname?.length > 0))
+                {
+                    return formatName(approval?.decisionUser);
+                }
+                return null;
             }
         };
     }
@@ -610,17 +615,21 @@ $(function () {
         table.search($(this).val()).draw();
     });
 
-    paymentRequestStatusModal.onResult(function () {
+    paymentRequestStatusModal.onResult(function (result) {
+        debugger;
+        if (result.success === false) {
+            return result.success === false;
+        } else {
+            abp.notify.success(
+                isApprove ? 'The payment request/s has been successfully approved' : 'The payment request/s has been successfully declined',
+                'Payment Requests'
+            );
+            dataTable.ajax.reload(null, false);
+            $(".select-all-payments").prop("checked", false);
+            payment_approve_buttons.disable();
 
-        abp.notify.success(
-            isApprove ? 'The payment request/s has been successfully approved' : 'The payment request/s has been successfully declined',
-            'Payment Requests'
-        );
-        dataTable.ajax.reload(null, false);
-        $(".select-all-payments").prop("checked", false);
-        payment_approve_buttons.disable();
-
-        selectedPaymentIds = [];
+            selectedPaymentIds = [];
+        }
     });
 
     function getStatusTextColor(status) {

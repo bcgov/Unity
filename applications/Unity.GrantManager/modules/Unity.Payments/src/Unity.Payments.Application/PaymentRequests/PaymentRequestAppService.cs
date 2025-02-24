@@ -344,6 +344,7 @@ namespace Unity.Payments.PaymentRequests
             var payments = await paymentsQueryable
                 .Where(e => paymentIds.Contains(e.Id))
                 .Include(pr => pr.Site)
+                .Include(x => x.ExpenseApprovals)
                 .ToListAsync();
 
             return ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(payments);

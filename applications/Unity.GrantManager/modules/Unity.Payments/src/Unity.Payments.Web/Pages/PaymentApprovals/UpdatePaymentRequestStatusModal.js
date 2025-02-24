@@ -1,5 +1,4 @@
-
-function removeApplicationPayment(applicationId,groupId) {
+function removeApplicationPayment(applicationId, groupId) {
     $('#' + applicationId).remove();
     let applicationCount = $('#ApplicationCount').val();
     let groupCount = $(`#${groupId}_count`).val();
@@ -36,12 +35,10 @@ function checkMaxValue(applicationId, input, amountRemaining) {
     }
 }
 
-function submitPaymentApprovals() {
+//function submitPaymentApprovals() {
     // check for error class divs
-
-        $('#paymentRequestStatus').submit();
-    
-};
+    //$('#paymentRequestStatus').submit();
+//};
 
 function getStatusText(data) {
     switch (data) {
