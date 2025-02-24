@@ -79,7 +79,7 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                                                                                     emailLog.ToAddress,
                                                                                     emailLog.Body,
                                                                                     emailLog.Subject,
-                                                                                    emailLog.FromAddress);
+                                                                                    emailLog.FromAddress, "text");
                 // Update the response
                 emailLog.ChesResponse = JsonConvert.SerializeObject(response);
                 emailLog.ChesStatus = response.StatusCode.ToString();

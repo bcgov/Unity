@@ -118,30 +118,33 @@ function saveComment(ownerId, comment, commentType, mentionList) {
 }
 
 function sendComment(tempIsEdit, tempOwnerId, tempCommentType, tempComment, tempMentionedNamesEmail, tempItemId, mentionList) {
-    const submissionNo = document.getElementsByClassName("reference-no")[0].textContent;
-    const applicantName = document.getElementsByClassName("applicant-name")[0].textContent;
-    const currentUserName = document.getElementById("CurrentUserName").value;
+    const submissionNo = $(".reference-no").first().text();
+    const applicantName = $(".applicant-name").first().text();
+    const currentUserName = $("#CurrentUserName").val();
+    const appId = $("#DetailsViewApplicationId").val();
+
+    const requestData = {
+        subject: `${submissionNo}-${applicantName}`,
+        from: currentUserName,
+        body: tempComment,
+        applicationId: appId,
+        mentionNamesEmail: tempMentionedNamesEmail
+    };
 
     return $.ajax({
         url: `/api/app/email-notification/send-comment-notification`,
         type: "POST",
         contentType: "application/json",
-        data: JSON.stringify({
-            "subject": `${submissionNo}-${applicantName}`,
-            "from": currentUserName,
-            "body": tempComment,
-            "mentionNamesEmail": tempMentionedNamesEmail
-        }),
+        data: JSON.stringify(requestData),
     }).then(response => {
         if (tempIsEdit) {
-            updateComment(tempOwnerId, tempItemId, tempComment, tempCommentType, mentionList)
+            updateComment(tempOwnerId, tempItemId, tempComment, tempCommentType, mentionList);
         } else {
             saveComment(tempOwnerId, tempComment, tempCommentType, mentionList);
         }
-    })
-        .catch(error => {
-            console.error('There was a problem with the post operation:', error);
-        });
+    }).catch(error => {
+        console.error('There was a problem with the post operation:', error);
+    });
 }
 
 function initTribute(mentionData) {
@@ -153,16 +156,14 @@ function initTribute(mentionData) {
         selectTemplate: function (item) {
             if (typeof item === 'undefined') return null;
             if (this.range.isContentEditable(this.current.element)) {
-                return ('<span contenteditable="false"><a class="name-highlighted" href="#"  onclick="return false;">' + item.original.value + '</a><span>');
+                return (`<span contenteditable="false"><a class="name-highlighted" href="#" onclick="return false;">${item.original.value}</a><span>`);
             }
-            return "@" + item.original.value;
+            return `@${item.original.value}`;
         },
         requireLeadingSpace: false,
     })
 
     areaWithMentions.forEach(item => {
-        console.log(item.id)
         tribute.attach(document.getElementById(item.id));
     });
-
 }
