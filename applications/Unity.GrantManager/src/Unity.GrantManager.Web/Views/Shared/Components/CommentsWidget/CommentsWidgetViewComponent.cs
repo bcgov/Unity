@@ -7,7 +7,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.Comments;
-using Unity.GrantManager.Web.Services;
+using Unity.Modules.Shared.Utils;
+using Volo.Abp.Identity.Integration;
+using Volo.Abp.Identity;
+using Newtonsoft.Json;
+using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 {
@@ -20,22 +24,35 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
     {
         private readonly CommentAppService _commentAppService;
         private readonly BrowserUtils _browserUtils;
+        private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
+        public string AllAssignees { get; set; } = string.Empty;
 
         public CommentsWidgetViewComponent(CommentAppService commentAppService, 
-            BrowserUtils browserUtils)
+            BrowserUtils browserUtils, IIdentityUserIntegrationService identityUserIntegrationService)
         {
             _commentAppService = commentAppService;
             _browserUtils = browserUtils;
+            _identityUserLookupAppService = identityUserIntegrationService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, CommentType commentType, Guid currentUserId)
         {
+            var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
+            AllAssignees = JsonConvert.SerializeObject(users);
+
             CommentsWidgetViewModel model = new()
             {
                 CommentType = commentType,
                 OwnerId = ownerId,
                 CurrentUserId = currentUserId,
-                Comments = MapToCommentDisplay(await _commentAppService.GetListAsync(new QueryCommentsByTypeDto() { OwnerId = ownerId, CommentType = commentType })).ToList()
+                Comments = MapToCommentDisplay(await _commentAppService.GetListAsync(new QueryCommentsByTypeDto() { OwnerId = ownerId, CommentType = commentType })).ToList(),
+                AllAssigneeList = users.Items
+                .Select(user => new GrantApplicationAssigneeDto
+                {
+                    Id = user.Id,
+                    FullName = $"{user.Name} {user.Surname}",
+                    Email = user.Email
+                }).ToList()
             };
 
             return View(model);

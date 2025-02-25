@@ -34,6 +34,9 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     public string? PaymentInfoSlotId { get; set; }
 
     [BindProperty]
+    public string? FundingAgreementInfoSlotId { get; set; }
+
+    [BindProperty]
     public string? CustomTabsSlotIds { get; set; }
 
     [BindProperty]
@@ -55,6 +58,9 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     public WorksheetLinkDto? PaymentInfoLink { get; set; }
 
     [BindProperty]
+    public WorksheetLinkDto? FundingAgreementInfoLink { get; set; }
+
+    [BindProperty]
     public List<WorksheetLinkDto>? CustomTabLinks { get; set; }
 
     public async Task OnGetAsync(Guid formVersionId, string formName)
@@ -72,7 +78,9 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
         GetSlotIdAnchors(WorksheetLinks);
 
         CustomTabLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.CustomTab).ToList();
-        CustomTabsSlotIds = string.Join(";", CustomTabLinks.Select(s => s.Id));
+        CustomTabsSlotIds = string.Join(";", CustomTabLinks
+            .OrderBy(s => s.Order)
+            .Select(s => s.WorksheetId));
     }
 
     private void GetSlotIdAnchors(List<WorksheetLinkDto> worksheetLinks)
@@ -88,20 +96,26 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
 
         PaymentInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.PaymentInfoUiAnchor);
         PaymentInfoSlotId = PaymentInfoLink?.WorksheetId.ToString();
+
+        FundingAgreementInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.FundingAgreementInfoUiAnchor);
+        FundingAgreementInfoSlotId = FundingAgreementInfoLink?.WorksheetId.ToString();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var tabLinks = new Dictionary<Guid, string>();
+        var tabLinks = new List<(Guid worksheetId, string anchor, uint order)>();
 
         AddSlotIdAnchors(tabLinks);
 
         if (CustomTabsSlotIds != null && CustomTabsSlotIds != Guid.Empty.ToString())
         {
             var customTabs = CustomTabsSlotIds.Split(';');
-            foreach (var customTabId in customTabs)
+            uint order = 1;
+
+            foreach (var customTabId in customTabs) //this comes in sequenced as we want for custom tabs
             {
-                tabLinks.Add(Guid.Parse(customTabId), FlexConsts.CustomTab);
+                tabLinks.Add(new(Guid.Parse(customTabId), FlexConsts.CustomTab, order));
+                order++;
             }
         }
 
@@ -117,26 +131,32 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
         return new OkObjectResult(new { ChefsFormVersionId });
     }
 
-    private void AddSlotIdAnchors(Dictionary<Guid, string> tabLinks)
+    private void AddSlotIdAnchors(List<(Guid worksheetId, string anchor, uint order)> tabLinks)
     {
+        // We leave the order for the predefined tabs as 0 as they slot into a fixed position
         if (AssessmentInfoSlotId != null && AssessmentInfoSlotId != Guid.Empty.ToString())
         {
-            tabLinks.Add(Guid.Parse(AssessmentInfoSlotId), FlexConsts.AssessmentInfoUiAnchor);
+            tabLinks.Add(new(Guid.Parse(AssessmentInfoSlotId), FlexConsts.AssessmentInfoUiAnchor, 0));
         }
 
         if (ProjectInfoSlotId != null && ProjectInfoSlotId != Guid.Empty.ToString())
         {
-            tabLinks.Add(Guid.Parse(ProjectInfoSlotId), FlexConsts.ProjectInfoUiAnchor);
+            tabLinks.Add(new(Guid.Parse(ProjectInfoSlotId), FlexConsts.ProjectInfoUiAnchor, 0));
         }
 
         if (ApplicantInfoSlotId != null && ApplicantInfoSlotId != Guid.Empty.ToString())
         {
-            tabLinks.Add(Guid.Parse(ApplicantInfoSlotId), FlexConsts.ApplicantInfoUiAnchor);
+            tabLinks.Add(new(Guid.Parse(ApplicantInfoSlotId), FlexConsts.ApplicantInfoUiAnchor, 0));
         }
 
         if (PaymentInfoSlotId != null && PaymentInfoSlotId != Guid.Empty.ToString())
         {
-            tabLinks.Add(Guid.Parse(PaymentInfoSlotId), FlexConsts.PaymentInfoUiAnchor);
+            tabLinks.Add(new(Guid.Parse(PaymentInfoSlotId), FlexConsts.PaymentInfoUiAnchor, 0));
+        }
+
+        if (FundingAgreementInfoSlotId != null && FundingAgreementInfoSlotId != Guid.Empty.ToString())
+        {
+            tabLinks.Add(new(Guid.Parse(FundingAgreementInfoSlotId), FlexConsts.FundingAgreementInfoUiAnchor, 0));
         }
     }
 }

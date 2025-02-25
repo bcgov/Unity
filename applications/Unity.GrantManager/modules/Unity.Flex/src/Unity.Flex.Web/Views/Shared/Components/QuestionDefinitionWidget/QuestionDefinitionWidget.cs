@@ -6,8 +6,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using System;
 using Microsoft.AspNetCore.Http;
-using Unity.Flex.Scoresheets;
 using Unity.Flex.Worksheets.Definitions;
+using Unity.Flex.Scoresheets.Enums;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
 {

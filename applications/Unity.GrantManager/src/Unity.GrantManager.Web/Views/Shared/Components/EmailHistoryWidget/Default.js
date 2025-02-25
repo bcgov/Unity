@@ -24,7 +24,9 @@
             order: [[2, 'desc']],
             searching: false,
             paging: false,
-            select: false,
+            select: {
+                style: 'single'
+            },
             info: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
@@ -93,7 +95,7 @@
                 {
                     data: 'status',
                     render: function (data, _, full, meta) {
-                        if(data === 'Draft') {
+                        if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.Send')) {
                             return generateDeleteButtonContent(full, meta.row);
                         } else {
                             return '';
@@ -108,10 +110,6 @@
     function generateDeleteButtonContent(full, row) {
         return `<button class="btn btn-delete-draft" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
     }
-
-    emailHistoryDataTable.on('click', 'tbody tr', (e) => {
-        e.currentTarget.classList.toggle('selected');
-    });
 
     function rowFormat(d) {
         return '<div class="multi-line">' + d.body + '</div>';

@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Pages.Flex
 {
     public static class DataGridServiceUtils
     {
-        internal static List<WorksheetFieldViewModel> ConvertDataGridValue(DataGridValue? value,
+        internal static List<WorksheetFieldViewModel> ExtractCustomColumnsValues(DataGridValue? value,
             CustomFieldDto datagridDefinition,
             uint rowNumber,
             bool isNew)
@@ -123,6 +123,30 @@ namespace Unity.Flex.Web.Pages.Flex
                 });
             }
             return cells;
+        }
+
+        internal static KeyValuePair<string, string>[] ExtractDynamicColumnsPairs(DataGridValue? dataGridValue, 
+            uint rowNumber, 
+            PresentationSettings presentationSettings)
+        {
+            var keyValues = new List<KeyValuePair<string, string>>();
+            var gridValue = DeserializeDataGridValue(dataGridValue?.Value?.ToString());
+            if (gridValue == null) return [];
+            var gridRowsValue = DeserializeDataGridRowsValue(dataGridValue?.Value?.ToString());
+            if (gridRowsValue == null) return [];
+            var row = gridRowsValue.Rows[(int)rowNumber];
+
+            foreach (var column in dataGridValue?.Columns ?? [])
+            {
+                var cell = row.Cells.Find(s => s.Key == column.Key);
+
+                if (cell != null)
+                {
+                    keyValues.Add(new(column.Name, cell.Value.ApplyPresentationFormatting(column.Type, null, presentationSettings)));
+                }
+            }
+
+            return [.. keyValues];
         }
     }
 

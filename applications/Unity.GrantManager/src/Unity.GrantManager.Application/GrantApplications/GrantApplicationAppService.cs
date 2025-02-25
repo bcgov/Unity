@@ -368,7 +368,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
 
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, input);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -388,6 +388,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         input.ProjectFundingTotal ??= application.ProjectFundingTotal;
     }
 
+    [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -406,6 +407,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             applicant.SubSector = input.SubSector ?? "";
             applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
             applicant.IndigenousOrgInd = input.IndigenousOrgInd ?? "";
+            applicant.UnityApplicantId = input.UnityApplicantId ?? "";
+            applicant.FiscalDay = input.FiscalDay;
+            applicant.FiscalMonth = input.FiscalMonth ?? "";
 
             _ = await _applicantRepository.UpdateAsync(applicant);
 

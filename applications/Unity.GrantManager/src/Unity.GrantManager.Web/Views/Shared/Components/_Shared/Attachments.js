@@ -1,21 +1,28 @@
 ﻿function generateAttachmentButtonContent(data, type, full, meta, attachmentType) {
     let ownerId = getAttachmentOwnerId(attachmentType);
-    let html = '<div class="dropdown" style="float:right;">';
-    html += '<button class="btn btn-light dropbtn" type="button"><i class="fl fl-attachment-more" ></i></button>';
-    html += '<div class="dropdown-content">';
-    html += '<a href="/api/app/attachment/' + attachmentType + '/' + encodeURIComponent(ownerId) + '/download/' + encodeURIComponent(full.fileName);
-    html += '" target="_blank" download="' + data + '" class="fullwidth">';
-    html += '<button class="btn fullWidth" style="margin:10px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
-    if (abp.currentUser.id == full.creatorId) {
-        html += '<button class="btn fullWidth" style="margin:10px" type="button" onclick="deleteAttachment(' + `'${attachmentType}','${data}','${full.fileName}'` + ')">';
-        html += '<i class="fl fl-cancel"></i><span>Delete Attachment</span></button > ';
-    } else {
-        //disable delete button
-        html += '<button class="btn fullWidth" style="margin:10px" disabled type="button" ';
-        html += '"><i class="fl fl-cancel"></i><span>Delete Attachment</span></button>';
-    }
-    html += '</div>';
-    html += '</div>';
+    let downloadUrl = `/api/app/attachment/${attachmentType}/${encodeURIComponent(ownerId)}/download/${encodeURIComponent(full.fileName)}`;
+    let isCreator = abp.currentUser.id == full.creatorId;
+    let html = `
+        <div class="dropdown" style="float:right;">
+            <button class="btn btn-light dropbtn" type="button">
+                <i class="fl fl-attachment-more"></i>
+            </button>
+            <div class="dropdown-content">
+                <a href="${downloadUrl}" target="_blank" download="${data}" class="fullwidth">
+                    <button class="btn fullWidth" style="margin:10px" type="button">
+                        <i class="fl fl-download"></i><span>Download Attachment</span>
+                    </button>
+                </a>
+                <button class="btn fullWidth" style="margin:10px" type="button" ${`onclick="updateAttachmentMetadata('${attachmentType}','${full.id}')"`}>
+                    <i class="fl fl-edit"></i><span>Edit Attachment</span>
+                </button>
+                <button class="btn fullWidth" style="margin:10px" type="button" ${isCreator ? `onclick="deleteAttachment('${attachmentType}','${data}','${full.fileName}')"` : 'disabled'}>
+                    <i class="fl fl-cancel"></i><span>Delete Attachment</span>
+                </button>
+            </div>
+        </div>
+    `;
+
     return html;
 }
 
@@ -40,13 +47,8 @@ function deleteAttachment(attachmentType, s3ObjectKey, fileName) {
             'Attachment is successfully deleted.',
             'Delete Attachment'
         );
-        switch (attachmentType) {
-            case 'Assessment':
-                PubSub.publish('refresh_assessment_attachment_list'); break;
-            case 'Application':
-                PubSub.publish('refresh_application_attachment_list'); break;
-            default: break;
-        }
+
+        refreshAttachmentWidget(attachmentType);
     });
 
     deleteAttachmentModal.open({
@@ -55,5 +57,34 @@ function deleteAttachment(attachmentType, s3ObjectKey, fileName) {
         attachmentType: attachmentType,
         attachmentTypeId: getAttachmentOwnerId(attachmentType),
     });
+}
+
+function updateAttachmentMetadata(attachmentType, attachmentId) {
+    let updateAttachmentModal = new abp.ModalManager({
+        viewUrl: '../Attachments/UpdateAttachmentModal'
+    });
+    updateAttachmentModal.onResult(function () {
+        abp.notify.success(
+            'Attachment is successfully updated.',
+            'Update Attachment'
+        );
+        refreshAttachmentWidget(attachmentType);
+    });
+    updateAttachmentModal.open({
+        attachmentType: attachmentType,
+        attachmentId: attachmentId
+    });
+}
+
+function refreshAttachmentWidget(attachmentType) {
+    switch (attachmentType) {
+        case 'Assessment':
+            PubSub.publish('refresh_assessment_attachment_list'); break;
+        case 'Application':
+            PubSub.publish('refresh_application_attachment_list'); break;
+        case 'CHEFS':
+            PubSub.publish('refresh_chefs_attachment_list'); break;
+        default: break;
+    }
 }
 

@@ -8,10 +8,13 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Reporting.FieldGenerators;
+using Unity.Modules.Shared.Features;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -31,13 +34,17 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IFormsApiService _formApiService;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
+        private readonly IReportingFieldsGeneratorService _reportingFieldsGeneratorService;
+        private readonly IFeatureChecker _featureChecker;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IUnitOfWorkManager unitOfWorkManager,
             IFormsApiService formsApiService,
             IApplicationFormVersionRepository applicationFormVersionRepository,
-            IApplicationFormSubmissionRepository applicationFormSubmissionRepository)
+            IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
+            IReportingFieldsGeneratorService reportingFieldsGeneratorService,
+            IFeatureChecker featureChecker)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
@@ -45,6 +52,8 @@ namespace Unity.GrantManager.ApplicationForms
             _unitOfWorkManager = unitOfWorkManager;
             _formApiService = formsApiService;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
+            _reportingFieldsGeneratorService = reportingFieldsGeneratorService;
+            _featureChecker = featureChecker;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -229,7 +238,8 @@ namespace Unity.GrantManager.ApplicationForms
         {
 
             var applicationFormVersion = await GetApplicationFormVersion(chefsFormVersionId);
-            bool formVersionEsists = true;
+            bool formVersionExists = true;
+
             if (applicationFormVersion == null)
             {
                 applicationFormVersion = (await _applicationFormVersionRepository
@@ -242,7 +252,7 @@ namespace Unity.GrantManager.ApplicationForms
                     applicationFormVersion = new ApplicationFormVersion();
                     applicationFormVersion.ApplicationFormId = applicationFormId;
                     applicationFormVersion.ChefsApplicationFormGuid = chefsFormId;
-                    formVersionEsists = false;
+                    formVersionExists = false;
                 }
 
                 applicationFormVersion.ChefsFormVersionGuid = chefsFormVersionId;
@@ -275,13 +285,19 @@ namespace Unity.GrantManager.ApplicationForms
                 throw new EntityNotFoundException("Application Form Not Registered");
             }
 
-            if (formVersionEsists)
+            if (formVersionExists)
             {
                 applicationFormVersion = await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
             }
             else
             {
                 applicationFormVersion = await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
+            }
+
+            if (await _featureChecker.IsEnabledAsync(FeatureConsts.Reporting)
+                && string.IsNullOrEmpty(applicationFormVersion.ReportViewName))
+            {
+                await _reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
             }
 
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);

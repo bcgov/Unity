@@ -19,7 +19,7 @@ namespace Unity.Flex.WorksheetInstances
 
         public virtual async Task<WorksheetInstanceDto> CreateAsync(CreateWorksheetInstanceDto dto)
         {
-            var newWorksheet = new WorksheetInstance(Guid.NewGuid(), dto.WorksheetId, dto.CorrelationId, dto.CorrelationProvider, dto.SheetCorrelationId, dto.SheetCorrelationProvider, dto.CorrelationAnchor);
+            var newWorksheet = new WorksheetInstance(Guid.NewGuid(), dto.WorksheetId, dto.CorrelationId, dto.CorrelationProvider, dto.SheetCorrelationId, dto.SheetCorrelationProvider, dto.CorrelationAnchor, dto.ReportData);
 
             if (!string.IsNullOrEmpty(dto.CurrentValue)) { newWorksheet.SetValue(dto.CurrentValue); }
 

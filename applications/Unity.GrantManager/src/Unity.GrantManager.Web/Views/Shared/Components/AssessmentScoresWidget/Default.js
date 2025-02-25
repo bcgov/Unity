@@ -310,31 +310,6 @@ function updateSubtotal() {
     }, 500);
 }
 
-
-function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType, discardButtonPrefix) {    
-    const inputField = document.getElementById(inputFieldPrefix + questionId);
-    const saveButton = document.getElementById(saveButtonPrefix + questionId);
-    const discardButton = document.getElementById(discardButtonPrefix + questionId);
-    const assessmentId = $("#AssessmentId").val();
-    let answerValue = inputField.value;
-    if (questionType == 1 && !answerValue) {
-        answerValue = 0;
-    }
-    unity.grantManager.assessments.assessment.saveScoresheetAnswer(assessmentId, questionId, answerValue, questionType)
-        .then(response => {
-            abp.notify.success(
-                'Answer is successfully saved.',
-                'Save Answer'
-            );
-            inputField.setAttribute('data-original-value', inputField.value);
-            saveButton.disabled = true;
-            discardButton.disabled = true;
-            updateSubtotal();
-            PubSub.publish('refresh_review_list_without_sidepanel', assessmentId);            
-        });
-
-}
-
 function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix, discardButtonPrefix) {
     const inputField = document.getElementById(inputFieldPrefix + questionId);
     const saveButton = document.getElementById(saveButtonPrefix + questionId);    

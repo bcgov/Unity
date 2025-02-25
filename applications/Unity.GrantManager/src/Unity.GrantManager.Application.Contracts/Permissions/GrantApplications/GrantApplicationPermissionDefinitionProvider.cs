@@ -12,8 +12,31 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var grantApplicationPermissionsGroup = context.AddGroup(GrantApplicationPermissions.GroupName, L("Permission:GrantApplicationManagement"));
 
             // Dashboard
-            var dashboardPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Dashboard.Default, L("Permission:GrantApplicationManagement.Dashboard.Default"));
-            dashboardPermissions.AddChild(GrantApplicationPermissions.Dashboard.ViewDashboard, L("Permission:GrantApplicationManagement.Dashboard.ViewDashboard"));
+            var dashboardPermissions = grantApplicationPermissionsGroup.AddPermission(
+                GrantApplicationPermissions.Dashboard.Default, 
+                L("Permission:GrantApplicationManagement.Dashboard.Default"));
+
+            var viewDashboard = dashboardPermissions.AddChild(
+                GrantApplicationPermissions.Dashboard.ViewDashboard,
+                L("Permission:GrantApplicationManagement.Dashboard.ViewDashboard"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                L("Permission:GrantApplicationManagement.Dashboard.ApplicationStatusCount"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                L("Permission:GrantApplicationManagement.Dashboard.EconomicRegionCount"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                L("Permission:GrantApplicationManagement.Dashboard.ApplicationTagsCount"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                L("Permission:GrantApplicationManagement.Dashboard.ApplicationAssigneeCount"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                L("Permission:GrantApplicationManagement.Dashboard.RequestedAmountPerSubsector"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.RequestApprovedCount,
+                L("Permission:GrantApplicationManagement.Dashboard.RequestApprovedCount"));
 
             // Application
             grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applications.Default, L("Permission:GrantApplicationManagement.Applications.Default"));
@@ -49,6 +72,10 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var assessmentResultPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.AssessmentResults.Default, L("Permission:GrantApplicationPermissions.AssessmentResults.Default"));
             var updateAssessmentResultPermissions = assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.Edit, L("Permission:GrantApplicationPermissions.AssessmentResults.Edit"));
             updateAssessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields, L("Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields"));
+
+            // Applicant Info
+            var applicantInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ApplicantInfo.Default, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Default}"));
+            applicantInfoPermissions.AddChild(GrantApplicationPermissions.ApplicantInfo.Update, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Update}"));
 
             // Project Info
             var projectInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ProjectInfo.Default, L("Permission:GrantApplicationManagement.ProjectInfo"));

@@ -20,6 +20,7 @@ using Volo.Abp.SettingManagement;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Permissions;
 using Volo.Abp;
+using Volo.Abp.Features;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -34,6 +35,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     private readonly IEmailLogsRepository _emailLogsRepository;
     private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
     private readonly ISettingManager _settingManager;
+    private readonly IFeatureChecker _featureChecker;
 
     public EmailNotificationService(
         IEmailLogsRepository emailLogsRepository,
@@ -41,7 +43,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         IChesClientService chesClientService,
         EmailQueueService emailQueueService,
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
-        ISettingManager settingManager
+        ISettingManager settingManager,
+        IFeatureChecker featureChecker
         )
     {
         _emailLogsRepository = emailLogsRepository;
@@ -50,6 +53,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         _emailQueueService = emailQueueService;
         _externalUserLookupServiceProvider = externalUserLookupServiceProvider;
         _settingManager = settingManager;
+        _featureChecker = featureChecker;
     }
 
     private const string approvalBody =
@@ -141,6 +145,40 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         List<Fact> facts = new() { };
         await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
     }
+
+    public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
+    {
+        HttpResponseMessage res = new();
+
+        try
+        {
+             if (await _featureChecker.IsEnabledAsync("Unity.Notifications"))
+                {
+                    var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+                    var subject = $"Unity[Comment] {input.Subject}";
+                    var htmlBody = $@"{input.From} mentioned you in a comment.
+                         {input.Body}";
+                    var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
+
+                    foreach (var email in input.MentionNamesEmail)
+                        {
+                            var toEmail = email;
+                            res = await SendEmailNotification(toEmail, htmlBody, subject, fromEmail);
+                        }
+                }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "EmailNotificationService->SendEmailCommentNotification: Exception occurred while sending email.");
+            
+            res = new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+            };
+        }
+        return res;
+    }
+
 
     /// <summary>
     /// Send Email Notfication

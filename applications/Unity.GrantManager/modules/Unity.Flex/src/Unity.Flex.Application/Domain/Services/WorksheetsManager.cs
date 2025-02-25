@@ -9,15 +9,20 @@ using Unity.Flex.Domain.Utils;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Reporting.DataGenerators;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets.Values;
+using Unity.Modules.Shared.Features;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Features;
 
 namespace Unity.Flex.Domain.Services
 {
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository,
         IWorksheetRepository worksheetRepository,
-        IWorksheetLinkRepository worksheetLinkRepository) : DomainService
+        IWorksheetLinkRepository worksheetLinkRepository,
+        IReportingDataGeneratorService<Worksheet, WorksheetInstance> reportingService,
+        IFeatureChecker featureChecker) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
@@ -68,6 +73,7 @@ namespace Unity.Flex.Domain.Services
             var worksheet = await worksheetRepository.GetAsync(instance.WorksheetId, true);
             var fieldDefinitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
             var instanceCurrentValue = new WorksheetInstanceValue();
+
             foreach (var field in instance.Values)
             {
                 var fieldDefinition = fieldDefinitions.Find(s => s.Id == field.CustomFieldId);
@@ -75,7 +81,13 @@ namespace Unity.Flex.Domain.Services
                     instanceCurrentValue.Values.Add(new FieldInstanceValue(fieldDefinition.Key,
                         JsonNode.Parse(field.CurrentValue)?["value"]?.ToString() ?? string.Empty));
             }
+
             instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));
+
+            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            {
+                reportingService.GenerateAndSet(worksheet, instance);
+            }
         }
 
         private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)
@@ -183,9 +195,9 @@ namespace Unity.Flex.Domain.Services
 
                         foreach (var field in allFields)
                         {
-                            var match = eventData.CustomFields.Find(s => s.fieldName == field.Name);
+                            var (_, chefsPropertyName, value) = eventData.CustomFields.Find(s => s.fieldName == field.Name);
                             newInstance.AddValue(field.Id,
-                                ValueConverter.Convert(match.value?.ToString() ?? string.Empty, field.Type, match.chefsPropertyName, eventData.VersionData));
+                                ValueConverter.Convert(value?.ToString() ?? string.Empty, field.Type, chefsPropertyName, eventData.VersionData));
                         }
 
                         var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);
@@ -206,12 +218,19 @@ namespace Unity.Flex.Domain.Services
             var highestVersion = worksheetVersions.Max(s => s.Version);
             var clonedWorksheet = new Worksheet(Guid.NewGuid(), $"{versionSplit[0]}-v{highestVersion + 1}", worksheet.Title);
             clonedWorksheet.SetVersion(highestVersion + 1);
+
             foreach (var section in worksheet.Sections.OrderBy(s => s.Order))
             {
                 var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
                 foreach (var field in section.Fields.OrderBy(s => s.Order))
                 {
-                    var clonedField = new CustomField(Guid.NewGuid(), field.Key, worksheet.Name, field.Label, field.Type, field.Definition);
+                    var clonedField = new CustomField(Guid.NewGuid(),
+                        field.Key,
+                        clonedWorksheet.Name,
+                        field.Label,
+                        field.Type,
+                        field.Definition);
+
                     clonedSection.CloneField(clonedField);
                 }
                 clonedWorksheet.CloneSection(clonedSection);
@@ -219,7 +238,7 @@ namespace Unity.Flex.Domain.Services
 
             var result = await worksheetRepository.InsertAsync(clonedWorksheet);
             return result;
-        }       
+        }
 
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)
         {

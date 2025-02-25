@@ -19,6 +19,7 @@ public class UnityThemeUX2GlobalStyleContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder-bs5/css/colReorder.bootstrap5.css");
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.css");
         context.Files.AddIfNotContains("/libs/datatables.net-staterestore-dt/css/stateRestore.dataTables.css");
+        context.Files.AddIfNotContains("/libs/tributejs/dist/tribute.css");
 
         // Add assets for "/themes/ux2/fonts/**/*"
         context.Files.AddRange(new List<BundleFile> {

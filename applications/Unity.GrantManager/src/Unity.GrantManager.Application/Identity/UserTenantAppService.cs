@@ -4,70 +4,84 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Data;
-using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Identity
 {
-    public class UserTenantAppService : GrantManagerAppService, IUserTenantAppService
+    public class UserTenantAppService(IUserAccountsRepository userAccountsRepository,
+        ITenantRepository tenantRepository,
+        ICurrentUser currentUser,
+        IDataFilter dataFilter) : GrantManagerAppService, IUserTenantAppService
     {
-        private readonly IUserAccountsRepository _userAccountsRepository;
-        private readonly ITenantRepository _tenantRepository;
-        private readonly IDataFilter _dataFilter;
-        private readonly ICurrentUser _currentUser;
-
-        public UserTenantAppService(IUserAccountsRepository userAccountsRepository,
-            ITenantRepository tenantRepository,
-            ICurrentUser currentUser,
-            IDataFilter dataFilter)
-        {
-            _userAccountsRepository = userAccountsRepository;
-            _tenantRepository = tenantRepository;
-            _dataFilter = dataFilter;
-            _currentUser = currentUser;
-        }
-
         [RemoteService(false)]
-        public async Task<IList<UserTenantAccountDto>> GetUserTenantsAsync(string oidcSub)
+        public async Task<List<UserTenantAccountDto>> GetUserTenantsAsync(string oidcSub)
         {
-            List<UserTenantAccountDto> userTenantAccounts = new();
+            List<UserTenantAccountDto> userTenantAccounts = [];
 
-            using (_dataFilter.Disable<IMultiTenant>())
+            using (dataFilter.Disable<IMultiTenant>())
             {
-                var userAccounts = await _userAccountsRepository.GetListByOidcSub(oidcSub);
+                var userAccounts = (await userAccountsRepository
+                    .GetListByOidcSub(oidcSub))
+                    .ToList();
 
-                // Still to Optimize
-                var tenants = await _tenantRepository.GetListAsync();
+                var tenants = await tenantRepository.GetListAsync();
 
-                foreach (IdentityUser userAccount in userAccounts)
+                foreach (var tenant in tenants)
                 {
-                    var matchingTenant = tenants.Find(s => s.Id == userAccount.TenantId);
+                    var userAccount = userAccounts.Find(s => s.TenantId == tenant.Id);
 
-                    userTenantAccounts.Add(new UserTenantAccountDto()
+                    if (userAccount != null)
                     {
-                        Id = userAccount.Id,
-                        OidcSub = oidcSub.ToSubjectWithoutIdp(),
-                        TenantName = matchingTenant?.Name ?? null,
-                        TenantId = userAccount.TenantId,
-                        Username = userAccount.UserName,
-                        DisplayName = userAccount.GetProperty("DisplayName")?.ToString() ?? null
-                    });
+                        userTenantAccounts.Add(new UserTenantAccountDto()
+                        {
+                            Id = userAccount.Id,
+                            OidcSub = oidcSub.ToSubjectWithoutIdp(),
+                            TenantName = tenant?.Name ?? null,
+                            TenantId = userAccount.TenantId,
+                            Username = userAccount.UserName,
+                            DisplayName = userAccount.GetProperty("DisplayName")?.ToString() ?? null
+                        });
+                    }
                 }
             }
 
-            return userTenantAccounts
-                .OrderBy(s => s.TenantName).ToList();
+            return [.. userTenantAccounts.OrderBy(s => s.TenantName)];
+        }
+
+        [RemoteService(false)]
+        public async Task<UserTenantAccountDto?> GetUserAdminAccountAsync(string oidcSub)
+        {
+            using (dataFilter.Disable<IMultiTenant>())
+            {
+                var userAccounts = (await userAccountsRepository
+                    .GetListByOidcSub(oidcSub))
+                    .ToList();
+
+                var adminAccount = userAccounts.Find(s => s.TenantId == null);
+
+                if (adminAccount == null) return null;
+                
+                return new UserTenantAccountDto()
+                {
+                    Id = adminAccount.Id,
+                    OidcSub = oidcSub.ToSubjectWithoutIdp(),
+                    TenantName = null,
+                    TenantId = adminAccount.TenantId,
+                    Username = adminAccount.UserName,
+                    DisplayName = adminAccount.GetProperty("DisplayName")?.ToString() ?? null
+                };
+            }
         }
 
         [Authorize]
-        public async Task<IList<UserTenantAccountDto>> GetListAsync()
+        public async Task<List<UserTenantAccountDto>> GetListAsync()
         {
-            var oidcSub = _currentUser.FindClaim("preferred_username");
+            var oidcSub = currentUser.FindClaim("preferred_username");
             if (oidcSub == null)
             {
-                return new List<UserTenantAccountDto>();
+                return [];
             }
 
             return await GetUserTenantsAsync(oidcSub.Value.ToSubjectWithoutIdp() ?? string.Empty);
