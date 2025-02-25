@@ -17,13 +17,7 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
     /// <returns></returns>
     public async Task<HashSet<string>> GetZoneStateSetAsync(Guid formId)
     {
-        var zoneTemplates = await zoneManager.GetAsync(formId.ToString());
-
-        return zoneTemplates.Tabs
-            .Where(zoneTab => zoneTab.IsEnabled)
-            .SelectMany(zoneTab => new[] { zoneTab.Name }
-            .Concat(zoneTab.Zones.Where(zone => zone.IsEnabled).Select(zone => zone.Name)))
-            .ToHashSet();
+        return await zoneManager.GetStateSetAsync("F", formId.ToString());
     }
 
     public async Task<ZoneGroupDefinitionDto> GetAsync(string providerName, string providerKey)

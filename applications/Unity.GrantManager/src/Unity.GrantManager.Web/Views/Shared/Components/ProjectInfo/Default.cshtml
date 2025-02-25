@@ -7,6 +7,7 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.Features
+@using Unity.Modules.Shared
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
@@ -36,136 +37,140 @@
     <form id="projectInfoForm">
         <fieldset name="projectInfo" @(!Model.IsFormEditGranted ? "disabled" : "")>
             <legend class="d-none">@L["ProjectInfoView:ProjectInfoTitle"].Value</legend>
-        <abp-row class="m-0 project-info-form">
-            <abp-row class="m-0 p-0">
-                <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ProjectName" onchange="enableProjectInfoSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_3" class="px-1">
-                    <abp-input type="date" id="startDate" asp-for="@Model.ProjectInfo.ProjectStartDate" onchange="enableProjectInfoSaveBtn(this)" abp-data-datepicker="false" />
-                </abp-column>
-                <abp-column size="_3" class="px-1">
-                    <abp-input type="date" asp-for="@Model.ProjectInfo.ProjectEndDate" onchange="enableProjectInfoSaveBtn(this)"
-                               minDate="@Model.ProjectInfo.ProjectStartDate" abp-data-datepicker="false" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ProjectSummary" onchange="enableProjectInfoSaveBtn(this)" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_4" class="px-1">
-                    <div class="unity-input-group">
-                        <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" class="unity-currency-input" id="RequestedAmountInputPI"
-                                   onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled />
-                    </div>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <div class="unity-input-group">
-                        <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" class="unity-currency-input" id="TotalBudgetInputPI"
-                                   onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" />
-                    </div>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-input class="percentage-mask" asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled />
-                </abp-column>
 
+            <zone-fieldset Id="@UnitySelector.Project.Summary.Default" 
+                permission-requirement=""
+                zone-requirement=""
+                feature-requirement="">
+                <abp-row class="m-0 project-info-form">
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_6" class="px-1">
+                            <abp-input asp-for="@Model.ProjectInfo.ProjectName" onchange="enableProjectInfoSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_3" class="px-1">
+                            <abp-input type="date" id="startDate" asp-for="@Model.ProjectInfo.ProjectStartDate" onchange="enableProjectInfoSaveBtn(this)" abp-data-datepicker="false" />
+                        </abp-column>
+                        <abp-column size="_3" class="px-1">
+                            <abp-input type="date" asp-for="@Model.ProjectInfo.ProjectEndDate" onchange="enableProjectInfoSaveBtn(this)"
+                                       minDate="@Model.ProjectInfo.ProjectStartDate" abp-data-datepicker="false" />
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="px-1">
+                            <abp-input asp-for="@Model.ProjectInfo.ProjectSummary" onchange="enableProjectInfoSaveBtn(this)" />
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_4" class="px-1">
+                            <div class="unity-input-group">
+                                <span class="unity-input-prepend">$</span>
+                                <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" class="unity-currency-input" id="RequestedAmountInputPI"
+                                           onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled />
+                            </div>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <div class="unity-input-group">
+                                <span class="unity-input-prepend">$</span>
+                                <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" class="unity-currency-input" id="TotalBudgetInputPI"
+                                           onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" />
+                            </div>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input class="percentage-mask" asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled />
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_4" class="px-1">
+                            <div class="unity-input-group">
+                                <span class="unity-input-prepend">$</span>
+                                <abp-input asp-for="@Model.ProjectInfo.ProjectFundingTotal" class="unity-currency-input" onchange="enableProjectInfoSaveBtn(this)" />
+                            </div>
+                        </abp-column>
 
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_4" class="px-1">
-                    <div class="unity-input-group">
-                        <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.ProjectFundingTotal" class="unity-currency-input" onchange="enableProjectInfoSaveBtn(this)" />
-                    </div>
-                </abp-column>
+                    </abp-row>
 
-            </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.ProjectInfo.Acquisition" asp-items="@Model.AcquisitionList"
+                                        onchange="enableProjectInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.ProjectInfo.Forestry" asp-items="@Model.ForestryList"
+                                        onchange="enableProjectInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.ProjectInfo.ForestryFocus" asp-items="@Model.ForestryFocusList"
+                                        onchange="enableProjectInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                    </abp-row>
+                </abp-row>
+            </zone-fieldset>
 
-            <abp-row class="m-0 p-0">
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.Acquisition" asp-items="@Model.AcquisitionList"
-                                onchange="enableProjectInfoSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.Forestry" asp-items="@Model.ForestryList"
-                                onchange="enableProjectInfoSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.ForestryFocus" asp-items="@Model.ForestryFocusList"
-                                onchange="enableProjectInfoSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-            </abp-row>
+            <zone-fieldset Id="@UnitySelector.Project.Location.Default">
+                <abp-row class="m-0 p-0">
+                    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                        <div id="ProjectInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                            <h6 class="ps-1 fw-bold">@L["ProjectInfoView:ProjectInfoLocation"].Value</h6>
+                        </div>
+                    </abp-column>
+                </abp-row>
+                <abp-row class="m-0 project-info-form">
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.ProjectInfo.EconomicRegion" asp-items="@Model.EconomicRegionList" id="economicRegions"
+                                        onchange="enableProjectInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.ProjectInfo.RegionalDistrict" asp-items="@Model.RegionalDistrictList" id="regionalDistricts"
+                                        onchange="enableProjectInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.ProjectInfo.Community" asp-items="@Model.CommunityList" id="communities"
+                                        onchange="enableProjectInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                    </abp-row>
 
-        </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_4" class="px-1">
+                            <abp-input class="numeric-mask" type="text" asp-for="@Model.ProjectInfo.CommunityPopulation" onchange="enableProjectInfoSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.ProjectInfo.ElectoralDistrict" asp-items="@Model.ElectoralDistrictList"
+                                        onchange="enableProjectInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.ProjectInfo.Place" onchange="enableProjectInfoSaveBtn(this)" />
+                        </abp-column>
+                    </abp-row>
+                </abp-row>
+            </zone-fieldset>
 
-        <abp-row class="m-0 p-0">
-            <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                <div id="ProjectInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-                    <h6 class="ps-1 fw-bold">@L["ProjectInfoView:ProjectInfoLocation"].Value</h6>
-                </div>
-            </abp-column>
-        </abp-row>
-        <abp-row class="m-0 project-info-form">
-
-            <abp-row class="m-0 p-0">
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.EconomicRegion" asp-items="@Model.EconomicRegionList" id="economicRegions"
-                                onchange="enableProjectInfoSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.RegionalDistrict" asp-items="@Model.RegionalDistrictList" id="regionalDistricts"
-                                onchange="enableProjectInfoSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.Community" asp-items="@Model.CommunityList" id="communities"
-                                onchange="enableProjectInfoSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-            </abp-row>
-
-            <abp-row class="m-0 p-0">
-                <abp-column size="_4" class="px-1">
-                    <abp-input class="numeric-mask" type="text" asp-for="@Model.ProjectInfo.CommunityPopulation" onchange="enableProjectInfoSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.ElectoralDistrict" asp-items="@Model.ElectoralDistrictList"
-                                onchange="enableProjectInfoSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.Place" onchange="enableProjectInfoSaveBtn(this)" />
-                </abp-column>
-            </abp-row>
-        </abp-row>
-
-        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-        {
-            @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
-                     new
-                     {
-                         instanceCorrelationId = Model.ApplicationId,
-                         instanceCorrelationProvider = CorrelationConsts.Application,
-                         sheetCorrelationId = Model.ApplicationFormVersionId,
-                         sheetCorrelationProvider = CorrelationConsts.FormVersion,
-                         uiAnchor = FlexConsts.ProjectInfoUiAnchor                   
-                     })
-        }
+            @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+            {
+                @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
+                         new
+                         {
+                             instanceCorrelationId = Model.ApplicationId,
+                             instanceCorrelationProvider = CorrelationConsts.Application,
+                             sheetCorrelationId = Model.ApplicationFormVersionId,
+                             sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                             uiAnchor = FlexConsts.ProjectInfoUiAnchor
+                         })
+            }
         </fieldset>
     </form>
 </abp-row>

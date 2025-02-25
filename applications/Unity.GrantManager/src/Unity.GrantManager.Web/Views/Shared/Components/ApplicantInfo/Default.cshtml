@@ -6,6 +6,7 @@
 @using Unity.GrantManager.Payments;
 @using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features;
@@ -39,6 +40,7 @@
 
     <form id="ApplicantInfoForm">
         <abp-input type="hidden" id="ApplicantInfoViewApplicantId" asp-for="@Model.ApplicantId" />
+        <zone Id="@UnitySelector.Applicant.Summary.Default">
         <fieldset name="Unity_UI_Applicant_Organization" @IsFieldsetDisabled>
             <legend class="d-none">@L["ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle"].Value</legend>
             <abp-row class="m-0 project-info-form">
@@ -104,14 +106,18 @@
                 </abp-row>
             </abp-row>
         </fieldset>
+        </zone>
 
+        <zone Id="@UnitySelector.Applicant.Supplier.Default">
         @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
         {
             <div id="supplier-info-widget">
                 @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
             </div>
         }
+        </zone>
 
+        <zone Id="@UnitySelector.Applicant.Contact.Default">
         <fieldset name="Unity_UI_Applicant_Contact" @IsFieldsetDisabled>
             <legend class="d-none">@L["ApplicantInfoView:ApplicantInfoContactInfo"].Value</legend>
             <abp-row class="m-0 project-info-location">
@@ -150,7 +156,9 @@
                 </abp-row>
             </abp-row>
         </fieldset>
+        </zone>
 
+        <zone Id="@UnitySelector.Applicant.Authority.Default">
         <fieldset name="Unity_UI_Applicant_SigningAuthority" @IsFieldsetDisabled>
             <legend class="d-none">@L["ApplicantInfoView:SigningAuthorityTitle"].Value</legend>
             <abp-row class="m-0 signin-authority-form">
@@ -190,7 +198,9 @@
                 </abp-row>
             </abp-row>
         </fieldset>
+        </zone>
 
+        <zone Id="@UnitySelector.Applicant.Location.Default">
         <fieldset name="Unity_UI_Applicant_Address" @IsFieldsetDisabled>
             <legend class="d-none">@L["ApplicantInfoView:PhysicalAddress"].Value</legend>
             <abp-row class="m-0 contact-info-form">
@@ -268,6 +278,7 @@
                 </div>
             </abp-row>
         </fieldset>
+        </zone>
 
         @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {

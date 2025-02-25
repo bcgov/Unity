@@ -13,6 +13,7 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -122,7 +123,7 @@
                 @if (IsZoneVisible(SettingsConstants.UI.Tabs.Assessment))
                 {
                     <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.AssessmentResults")" id="assessmentResultWidget">
+                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.AssessmentResultsView")" id="assessmentResultWidget">
                             @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
@@ -166,9 +167,11 @@
                 @if (IsZoneVisible(SettingsConstants.UI.Tabs.Project))
                 {
                     <abp-tab name="nav-project-info" title="Project Info">
+                        <zone Id="@UnitySelector.Project.Default">
                         <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Project}.ProjectInfo")" id="projectInfoWidget">
                             @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
+                        </zone>
                     </abp-tab>
                 }
                 @*-------- Project Info Section END ---------*@
@@ -177,9 +180,11 @@
                 @if (IsZoneVisible(SettingsConstants.UI.Tabs.Applicant))
                 {
                     <abp-tab name="nav-organization-info" title="Applicant Info">
+                        <zone Id="@UnitySelector.Applicant.Default">
                         <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Applicant}.ApplicantInfo")" id="ApplicantInfoWidget">
                             @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
+                        </zone>
                     </abp-tab>
                 }
                 

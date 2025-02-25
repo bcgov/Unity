@@ -9,6 +9,10 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
 using Unity.GrantManager.Permissions;
+using Unity.GrantManager.Zones;
+using Volo.Abp.Authorization.Permissions;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.Settings;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
@@ -23,11 +27,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         private readonly GrantApplicationAppService _grantApplicationAppService;
         private readonly IAuthorizationService _authorizationService;
 
-        public AssessmentResults(GrantApplicationAppService grantApplicationAppService,
-            IAuthorizationService authorizationService)
+        protected readonly IPermissionChecker _permissionChecker;
+        public readonly IZoneManagementAppService _zoneManagementAppService;
+
+        public AssessmentResults(
+            GrantApplicationAppService grantApplicationAppService,
+            IAuthorizationService authorizationService,
+            IPermissionChecker permissionChecker,
+            IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
             _authorizationService = authorizationService;
+            _permissionChecker = permissionChecker;
+            _zoneManagementAppService = zoneManagementAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
@@ -45,28 +57,40 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                 ApplicationFormVersionId = applicationFormVersionId,
                 IsFormEditGranted = isFormEditGranted,
                 IsEditGranted = isEditGranted,
-                IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
+                IsPostEditFieldsAllowed = isPostEditFieldsAllowed
+            };
 
-                AssessmentResults = new()
+            model.ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(application.ApplicationForm.Id);
+
+            if (model.ZoneStateSet.Contains(SettingsConstants.UI.Tabs.Assessment + ".AssessmentApproval"))
+            {
+                model.ApprovalView = new()
                 {
-                    ProjectSummary = application.ProjectSummary,
+                    ApprovedAmount = application.ApprovedAmount,
+                    SubStatus = application.SubStatus,
+                    FinalDecisionDate = application.FinalDecisionDate,
+                    Notes = application.Notes
+                };
+            }
+
+            if (model.ZoneStateSet.Contains(SettingsConstants.UI.Tabs.Assessment + ".AssessmentResults"))
+            {
+                model.AssessmentResultsView = new()
+                {
                     RequestedAmount = application.RequestedAmount,
                     TotalProjectBudget = application.TotalProjectBudget,
                     RecommendedAmount = application.RecommendedAmount,
-                    ApprovedAmount = application.ApprovedAmount,
                     LikelihoodOfFunding = application.LikelihoodOfFunding,
-                    DueDiligenceStatus = application.DueDiligenceStatus,
-                    SubStatus = application.SubStatus,
-                    DeclineRational = application.DeclineRational,
-                    TotalScore = application.TotalScore,
-                    Notes = application.Notes,
-                    AssessmentResultStatus = application.AssessmentResultStatus,
-                    FinalDecisionDate = application.FinalDecisionDate,
-                    DueDate = application.DueDate,
-                    NotificationDate = application.NotificationDate,
                     RiskRanking = application.RiskRanking,
-                }
-            };
+                    DueDiligenceStatus = application.DueDiligenceStatus,
+                    TotalScore = application.TotalScore,
+                    AssessmentResultStatus = application.AssessmentResultStatus,
+                    DeclineRational = application.DeclineRational,
+                    NotificationDate = application.NotificationDate,
+                    DueDate = application.DueDate,
+                    ProjectSummary = application.ProjectSummary,
+                };
+            }
 
             return View(model);
         }

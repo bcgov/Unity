@@ -111,6 +111,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
 
             ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
+            
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {

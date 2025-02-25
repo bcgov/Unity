@@ -16,7 +16,6 @@ public static class DefaultZoneDefinition
                          Name = SettingsConstants.UI.Tabs.Assessment + ".AssessmentApproval",
                          ViewComponentType = "AssessmentApprovalViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 1
                      },
                      new ZoneDefinition {

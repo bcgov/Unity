@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Identity;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -60,5 +63,16 @@ public class ZoneManager : DomainService, IZoneManager, ITransientDependency
     private string SerializeTemplate(ZoneGroupDefinition template)
     {
         return JsonSerializer.Serialize(template, _jsonSerializerOptions);
+    }
+
+    public async Task<HashSet<string>> GetStateSetAsync(string providerName, string providerKey)
+    {
+        var zoneTemplates = await GetAsync(providerName, providerKey);
+
+        return zoneTemplates.Tabs
+            .Where(zoneTab => zoneTab.IsEnabled)
+            .SelectMany(zoneTab => new[] { zoneTab.Name }
+            .Concat(zoneTab.Zones.Where(zone => zone.IsEnabled).Select(zone => zone.Name)))
+            .ToHashSet();
     }
 }
