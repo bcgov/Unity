@@ -140,7 +140,7 @@
                     }
                     <abp-column size="_12" class=" m-0 p-3 payment-error-column">
                         <span><b>Note: </b>Only payments in   @Model.FromStatusText status will appear in this list</span>
-                        @Html.ValidationSummary();
+                        @Html.ValidationSummary()
                     </abp-column>
                     <abp-row class="m-0 p-2 no-payment-msg text-center" id="no-payment-msg" style="display: none;">
                         <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>
@@ -163,6 +163,10 @@
         </abp-modal-footer>
     </abp-modal>
 </form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
 
 <script defer>
     (function () {

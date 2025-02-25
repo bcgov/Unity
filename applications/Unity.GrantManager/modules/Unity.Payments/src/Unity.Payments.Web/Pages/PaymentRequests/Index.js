@@ -3,6 +3,16 @@ let paymentRequestStatusModal = new abp.ModalManager({
 });
 
 let selectedPaymentIds = [];
+let currentPaymentAction; // true for Approve, false for Decline
+
+// new helper function for opening the modal
+function openPaymentStatusModal(isApproval) {
+    currentPaymentAction = isApproval;
+    paymentRequestStatusModal.open({
+        paymentIds: JSON.stringify(selectedPaymentIds),
+        isApprove: isApproval
+    });
+}
 
 $(function () {
     const l = abp.localization.getResource('Payments');
@@ -37,23 +47,15 @@ $(function () {
         {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
-            action: function (e, dt, node, config) {
-                paymentRequestStatusModal.open({
-                    paymentIds: JSON.stringify(selectedPaymentIds),
-                    isApprove: true
-                });
-                isApprove = true;
+            action: function () {
+                openPaymentStatusModal(true);
             }
         },
         {
             text: 'Decline',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
-            action: function (e, dt, node, config) {
-                paymentRequestStatusModal.open({
-                    paymentIds: JSON.stringify(selectedPaymentIds),
-                    isApprove: false
-                });
-                isApprove = false;
+            action: function () {
+                openPaymentStatusModal(false);
             }
         },
         {
@@ -617,17 +619,18 @@ $(function () {
 
     paymentRequestStatusModal.onResult(function (result) {
         debugger;
-        if (result.success === false) {
-            return result.success === false;
+        if (result && result.success === false) {
+            return;
         } else {
             abp.notify.success(
-                isApprove ? 'The payment request/s has been successfully approved' : 'The payment request/s has been successfully declined',
+                currentPaymentAction
+                    ? 'The payment request/s has been successfully approved'
+                    : 'The payment request/s has been successfully declined',
                 'Payment Requests'
             );
             dataTable.ajax.reload(null, false);
             $(".select-all-payments").prop("checked", false);
-            payment_approve_buttons.disable();
-
+            dataTable.buttons(['.payment-status']).disable();
             selectedPaymentIds = [];
         }
     });

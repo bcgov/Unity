@@ -120,7 +120,8 @@ public class UpdatePaymentRequestStatus : AbpPageModel, IValidationEnabled
             indx++;
         }
 
-        DisableSubmit = paymentApprovals.Count == 0 || paymentApprovals.Any(x => x.IsSameApprover);
+        DisableSubmit = paymentApprovals.Count == 0;
+        //|| paymentApprovals.Any(x => x.IsSameApprover);
 
         return Page();
     }

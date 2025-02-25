@@ -1,3 +1,29 @@
+// abp.modals.PaymentRequestStatusModal = function () {
+//     function initModal(modalManager, args) {
+//         var $modal = modalManager.getModal();
+//         var $firstInput = $modal.find('input:not([type=hidden]):first'); if ($firstInput.length) { $firstInput.focus(); }
+//         if ($firstInput.length) { $firstInput.focus(); }
+//         console.log('PaymentRequestStatusModal initialized with args:', args);  
+//     };
+
+//     return {
+//         initModal: initModal
+//     };
+// }
+
+$.validator.addMethod('notpreviousapprover', function (value, element, params) {
+    var previousApprover = $(params[0]).val();
+    // Check if the previous approver is not the current user
+    return previousApprover !== abp.currentUser.id;
+});
+
+$.validator.unobtrusive.adapters.add('notpreviousapprover', [], function (options) {
+    var element = $(options.form).find('input#PaymentGroupings_0__Items_0__PreviousApprover')[0];
+
+    options.rules['notpreviousapprover'] = [element];
+    options.messages['notpreviousapprover'] = options.message;
+});
+
 function removeApplicationPayment(applicationId, groupId) {
     $('#' + applicationId).remove();
     let applicationCount = $('#ApplicationCount').val();
@@ -16,7 +42,7 @@ function removeApplicationPayment(applicationId, groupId) {
         $('#no-payment-msg').css("display", "none");
     }
     if (groupCount - 1 == 0) {
-        
+
         $(`#${groupId}_container .payment-status-transition`).css("display", "none");
     }
 }
@@ -36,8 +62,8 @@ function checkMaxValue(applicationId, input, amountRemaining) {
 }
 
 //function submitPaymentApprovals() {
-    // check for error class divs
-    //$('#paymentRequestStatus').submit();
+// check for error class divs
+//$('#paymentRequestStatus').submit();
 //};
 
 function getStatusText(data) {

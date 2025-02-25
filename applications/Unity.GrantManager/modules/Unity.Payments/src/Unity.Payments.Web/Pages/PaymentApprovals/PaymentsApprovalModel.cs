@@ -51,11 +51,11 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             ValidationContext validationContext)
         {
             var currentUser = validationContext.GetRequiredService<ICurrentUser>();
-            if (IsSameApprover || PreviousApprover == currentUser.Id)
+            if (PreviousApprover == currentUser.Id)
             {
                 yield return new ValidationResult(
-                    "You cannot approve this payment as you have already approved it as an L1 Approver",
-                    new[] { "Name", "Description" }
+                    errorMessage: "You cannot approve this payment as you have already approved it as an L1 Approver",
+                    memberNames: [nameof(PreviousApprover)]
                 );
             }
         }
