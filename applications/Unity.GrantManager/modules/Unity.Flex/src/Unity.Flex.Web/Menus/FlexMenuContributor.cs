@@ -20,7 +20,7 @@ public class FlexMenuContributor : IMenuContributor
     private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         //Add main menu items.
-        context.Menu.AddItem(new ApplicationMenuItem(FlexMenus.Prefix, displayName: "Flex", "~/Flex", icon: "fa fa-globe"));
+        //  context.Menu.AddItem(new ApplicationMenuItem(FlexMenus.Prefix, displayName: "Flex", "~/Flex", icon: "fa fa-globe"));
 
         return Task.CompletedTask;
     }
