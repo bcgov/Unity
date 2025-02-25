@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using Unity.Flex.Worksheets;
+using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications;
-public class ApplicantInfoDto : CustomDataFieldDto
+public class UpdateApplicantInfoDto : CustomDataFieldDto
 {
     public Guid ApplicantId { get; set; }
 
     public OrganizationInfoDto? OrganizationInfo { get; set; }
     public ApplicantSupplierDto? ApplicantSupplier { get; set; }
-    public List<ApplicantAddressDto>? ApplicantAddresses { get; set; }
+    public List<UpdateApplicantAddressDto>? ApplicantAddresses { get; set; }
     public SigningAuthorityDto? SigningAuthority { get; set; }
     public ContactInfoDto? ContactInfo { get; set; }
 }
@@ -26,7 +27,7 @@ public class OrganizationInfoDto
     public string? OrgNumber { get; set; }
     public string? OrgStatus { get; set; }
     public string? OrganizationType { get; set; }
-    public int OrganizationSize { get; set; }
+    public string? OrganizationSize { get; set; }
     public string? Sector { get; set; }
     public string? SubSector { get; set; }
     public string? SectorSubSectorIndustryDesc { get; set; }
@@ -34,7 +35,7 @@ public class OrganizationInfoDto
     public string? IndigenousOrgInd { get; set; }
 }
 
-public class ApplicantAddressDto
+public class UpdateApplicantAddressDto : EntityDto<Guid>
 {
     public AddressType AddressType { get; set; }
     public string? Street { get; set; }
