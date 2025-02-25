@@ -25,6 +25,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentRepository;
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
     private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
+    private readonly IApplicationChefsFileAttachmentRepository _applicationChefsFileAttachmentRepository;
     private readonly IIdentityUserRepository _userRepository;
     private readonly IPersonRepository _personRepository;
 
@@ -40,6 +41,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         IRepository<ApplicationComment, Guid> applicationCommentRepository,
         IApplicationAttachmentRepository applicationAttachmentRepository,
         IAssessmentAttachmentRepository assessmentAttachmentRepository,
+        IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IIdentityUserRepository userRepository,
         IPersonRepository personRepository)
 #pragma warning restore S107 // Methods should not have too many parameters
@@ -53,8 +55,9 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         _assessmentCommentRepository = assessmentCommentRepository;
         _applicationCommentRepository = applicationCommentRepository;
         _applicationAttachmentRepository = applicationAttachmentRepository;
-        _userRepository = userRepository;
         _assessmentAttachmentRepository = assessmentAttachmentRepository;
+        _applicationChefsFileAttachmentRepository = applicationChefsFileAttachmentRepository;
+        _userRepository = userRepository;
         _personRepository = personRepository;
     }
 
@@ -64,6 +67,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         await CreateSeedDataAsync();
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S1854:Unused assignments should be removed", Justification = "Data Seed Contributor")]
     private async Task CreateSeedDataAsync()
     {
         Applicant? applicant1 = await _applicantRepository.FindAsync(GrantManagerTestData.Applicant1_Id);
@@ -173,6 +177,18 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 UserId = GrantManagerTestData.User1_UserId,
                 FileName = "result.pdf",                
                 Time = DateTime.UtcNow
+            },
+            autoSave: true
+        );
+
+        ApplicationChefsFileAttachment? applicationChefsFileAttachment1 = await _applicationChefsFileAttachmentRepository.FindAsync(GrantManagerTestData.ApplicationAttachment1_Id);
+        applicationChefsFileAttachment1 ??= await _applicationChefsFileAttachmentRepository.InsertAsync(
+            new ApplicationChefsFileAttachment
+            {
+                ApplicationId = GrantManagerTestData.Application1_Id,
+                FileName = "test.pdf",
+                ChefsSumbissionId = "00000000-0000-0000-0000-000000000000",
+                ChefsFileId = "00000000-0000-0000-0000-000000000000",
             },
             autoSave: true
         );

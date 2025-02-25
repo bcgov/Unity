@@ -14,6 +14,7 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.AspNetCore.ExceptionHandling;
 
 namespace Unity.Payments;
 
@@ -76,6 +77,12 @@ public class PaymentsApplicationModule : AbpModule
         {
             /* Add custom repositories here. */
             options.AddDefaultRepositories(includeAllEntities: true);
+        });
+
+        Configure<AbpExceptionHandlingOptions>(options =>
+        {
+            options.SendExceptionsDetailsToClients = true;
+            options.SendStackTraceToClients = false;
         });
 
         // Set the max defaults as max - we are using non serverside paging and this effect this

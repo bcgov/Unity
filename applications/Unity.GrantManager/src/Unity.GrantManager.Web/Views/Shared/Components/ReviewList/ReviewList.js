@@ -1,6 +1,5 @@
 const l = abp.localization.getResource('GrantManager');
 const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
-const nullPlaceholder = '—';
 
 const actionButtonConfigMap = {
     Create: { buttonType: 'createButton', order: 1 },
@@ -17,6 +16,7 @@ const finalApplicationStates = [
 ];
 
 $(function () {
+    const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
         const applicationId = pageApplicationId
