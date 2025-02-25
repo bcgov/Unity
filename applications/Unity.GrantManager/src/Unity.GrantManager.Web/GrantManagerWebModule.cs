@@ -73,6 +73,7 @@ using Volo.Abp.VirtualFileSystem;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
 using Unity.Modules.Shared.Utils;
+using Unity.Notifications.Web.Views.Settings;
 
 namespace Unity.GrantManager.Web;
 
@@ -191,6 +192,10 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new BackgroundJobsPageContributor());
+        });
 
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });

@@ -65,7 +65,7 @@ namespace Unity.Payments.Repositories
             var dbSet = await GetDbSetAsync();
             return dbSet.Where(p => p.InvoiceStatus != null 
                                 && FailedStatusList.Contains(p.InvoiceStatus) 
-                                && p.LastModificationTime >= DateTime.Today ).IncludeDetails().ToList();
+                                && p.LastModificationTime >= DateTime.Now.AddDays(-2)).IncludeDetails().ToList();
         }
 
         public override async Task<IQueryable<PaymentRequest>> WithDetailsAsync()

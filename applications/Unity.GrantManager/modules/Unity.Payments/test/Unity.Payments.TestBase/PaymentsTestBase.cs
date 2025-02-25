@@ -63,7 +63,7 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
     protected override void AfterAddApplication(IServiceCollection services)
     {
         // Because some of the tests rely on the feature check, always set to true for the module tests
-        var featureMock = Substitute.For<IFeatureChecker>();        
+        var featureMock = Substitute.For<IFeatureChecker>();
         featureMock.IsEnabledAsync(Arg.Any<string>()).Returns(true);
         services.AddSingleton(featureMock);
 

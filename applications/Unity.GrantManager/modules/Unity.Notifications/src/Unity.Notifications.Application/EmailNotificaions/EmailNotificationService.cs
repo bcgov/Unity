@@ -367,9 +367,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     [Authorize(NotificationsPermissions.Settings)]
     public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
     {
-        if (!settingsDto.DefaultFromAddress.IsNullOrWhiteSpace())
+        await UpdateTenantSettings(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
+        await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
+    }
+
+    private async Task UpdateTenantSettings(string settingKey, string valueString) {
+        if (!valueString.IsNullOrWhiteSpace())
         {
-            await _settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
+            await _settingManager.SetForCurrentTenantAsync(settingKey, valueString);
         }
     }
 }
