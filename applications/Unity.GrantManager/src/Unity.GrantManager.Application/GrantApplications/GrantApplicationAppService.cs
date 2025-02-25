@@ -51,7 +51,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
-    private readonly ISupplierService _iSupplierService;
+    private readonly ISupplierService _supplierService;
 
     public GrantApplicationAppService(
         IApplicationManager applicationManager,
@@ -66,7 +66,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicantAgentRepository applicantAgentRepository,
         IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus,
-        ISupplierService iSupplierService)
+        ISupplierService supplierService)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -79,7 +79,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicantAddressRepository = applicantAddressRepository;
-        _iSupplierService = iSupplierService;
+        _supplierService = supplierService;
         _localEventBus = localEventBus;
     }
 
@@ -301,11 +301,11 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private static void SanitizeAssessmentResultsDisabledInputs(CreateUpdateAssessmentResultsDto input, Application application)
     {
         // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
-        input.TotalProjectBudget ??= application.TotalProjectBudget;
-        input.RecommendedAmount ??= application.RecommendedAmount;
-        input.ApprovedAmount ??= application.ApprovedAmount;
-        input.TotalScore ??= application.TotalScore;
-        input.RequestedAmount ??= application.RequestedAmount;
+        input.TotalProjectBudget    ??= application.TotalProjectBudget;
+        input.RecommendedAmount     ??= application.RecommendedAmount;
+        input.ApprovedAmount        ??= application.ApprovedAmount;
+        input.TotalScore            ??= application.TotalScore;
+        input.RequestedAmount       ??= application.RequestedAmount;
     }
 
     private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
@@ -395,7 +395,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         if (application != null)
         {
-            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+            Applicant applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
             // This applicant should never be null!
 
             applicant.OrganizationType = input.OrganizationType ?? "";
@@ -419,7 +419,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 && !string.IsNullOrEmpty(input.SupplierNumber)
                 && input.OriginalSupplierNumber != input.SupplierNumber)
             {
-                dynamic casSupplierResponse = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
+                dynamic casSupplierResponse = await _supplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
                 UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
                 supplierEto.CorrelationId = applicant.Id;
                 supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
@@ -477,6 +477,117 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             throw new EntityNotFoundException();
         }
     }
+
+    #region APPLICANT INFO
+    [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
+    public async Task<GrantApplicationDto> UpdateApplicantInfoAsync(Guid id, ApplicantInfoDto input)
+    {
+        var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException();
+
+        // ORGANIZATION INFO
+        var applicant = await UpdateOrganizationInfoFields(application.ApplicantId, input?.OrganizationInfo);
+
+        // SUPPLIER
+        await UpsertSupplierAsync(application.ApplicantId, input?.ApplicantSupplier);
+
+        // APPLICANT AGENT
+        var applicantAgent = await UpsertApplicantAgentAsync(application, input?.ContactInfo);
+
+        // APPLICANT ADDRESS
+        if (input?.ApplicantAddresses != null && input.ApplicantAddresses.Count > 0)
+        {
+            await UpsertApplicantAddresses(input.ApplicantId, input.ApplicantAddresses);
+        }
+
+        // SIGNING AUTHORITY
+        MapSigningAuthority(application, input?.SigningAuthority);
+
+        // CUSTOM FIELDS
+        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input?.CustomFields);
+        await _applicationRepository.UpdateAsync(application);
+
+        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+        appDto.ContactFullName      = applicantAgent.Name;
+        appDto.ContactEmail         = applicantAgent.Email;
+        appDto.ContactTitle         = applicantAgent.Title;
+        appDto.ContactBusinessPhone = applicantAgent.Phone;
+        appDto.ContactCellPhone     = applicantAgent.Phone2;
+
+        return appDto;
+    }
+
+    protected internal async Task<Applicant?> UpdateOrganizationInfoFields(Guid applicantId, OrganizationInfoDto? input)
+    {
+        var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == applicantId) ?? throw new EntityNotFoundException();
+        if (input == null) return null;
+
+        applicant.OrganizationType            = input.OrganizationType ?? string.Empty;
+        applicant.OrgName                     = input.OrgName ?? string.Empty;
+        applicant.OrgNumber                   = input.OrgNumber ?? string.Empty;
+        applicant.OrgStatus                   = input.OrgStatus ?? string.Empty;
+        applicant.OrganizationSize            = input.OrganizationSize.ToString();
+        applicant.Sector                      = input.Sector ?? string.Empty;
+        applicant.SubSector                   = input.SubSector ?? string.Empty;
+        applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? string.Empty;
+        applicant.IndigenousOrgInd            = input.IndigenousOrgInd ?? string.Empty;
+
+        return await _applicantRepository.UpdateAsync(applicant);
+    }
+
+    protected internal async Task<ApplicantAgent> UpsertApplicantAgentAsync(Application application, ContactInfoDto? contactInfo)
+    {
+        var applicantAgent = await _applicantAgentRepository
+            .FirstOrDefaultAsync(a => a.ApplicantId == application.ApplicantId)
+            ?? new ApplicantAgent
+            {
+                ApplicantId   = application.ApplicantId,
+                ApplicationId = application.Id
+            };
+
+        applicantAgent.Name   = contactInfo?.ContactFullName ?? string.Empty;
+        applicantAgent.Phone  = contactInfo?.ContactBusinessPhone ?? string.Empty;
+        applicantAgent.Phone2 = contactInfo?.ContactCellPhone ?? string.Empty;
+        applicantAgent.Email  = contactInfo?.ContactEmail ?? string.Empty;
+        applicantAgent.Title  = contactInfo?.ContactTitle ?? string.Empty;
+
+        if (applicantAgent.Id == Guid.Empty)
+        {
+            return await _applicantAgentRepository.InsertAsync(applicantAgent);
+        }
+        return await _applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    protected internal void MapSigningAuthority(Application application, SigningAuthorityDto? signingAuthority)
+    {
+        if (signingAuthority == null) return;
+
+        application.SigningAuthorityFullName      = signingAuthority.SigningAuthorityFullName ?? string.Empty;
+        application.SigningAuthorityTitle         = signingAuthority.SigningAuthorityTitle ?? string.Empty;
+        application.SigningAuthorityEmail         = signingAuthority.SigningAuthorityEmail ?? string.Empty;
+        application.SigningAuthorityBusinessPhone = signingAuthority.SigningAuthorityBusinessPhone ?? string.Empty;
+        application.SigningAuthorityCellPhone     = signingAuthority.SigningAuthorityCellPhone ?? string.Empty;
+    }
+
+    protected internal async Task UpsertSupplierAsync(Guid applicantId, ApplicantSupplierDto? input)
+    {
+        if (input == null
+            || !await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+            || string.IsNullOrEmpty(input.SupplierNumber)
+            || input.OriginalSupplierNumber == input.SupplierNumber)
+        {
+            return;
+        }
+
+        // Integrate with payments module to update / insert supplier
+        // Check that the original supplier number has changed
+        dynamic casSupplierResponse     = await _supplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
+        UpsertSupplierEto supplierEto   = GetEventDtoFromCasResponse(casSupplierResponse);
+        supplierEto.CorrelationId       = applicantId;
+        supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+        await _localEventBus.PublishAsync(supplierEto);
+    }
+    #endregion APPLICANT INFO
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
         string uiAnchor,
@@ -582,6 +693,18 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         };
     }
 #pragma warning restore CS8600
+
+    protected virtual async Task UpsertApplicantAddresses(Guid applicantId, List<ApplicantAddressDto> input)
+    {
+        //List<ApplicantAddress> applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(applicantId);
+        //if (applicantAddresses != null)
+        //{
+        //    await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, applicantId);
+        //    await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, applicantId);
+        //}
+
+        throw new NotImplementedException();
+    }
 
     protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
     {
