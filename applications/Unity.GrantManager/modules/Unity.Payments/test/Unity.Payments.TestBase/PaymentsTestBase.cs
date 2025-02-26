@@ -9,6 +9,8 @@ using NSubstitute;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
 using Unity.Payments.Security;
+using Volo.Abp.SettingManagement;
+using Volo.Abp.TenantManagement;
 
 namespace Unity.Payments;
 
@@ -73,7 +75,15 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
         var currentUser = Substitute.For<ICurrentUser>();
         currentUser.Id.Returns(ci => CurrentUserId);
         services.AddSingleton(currentUser);
+        
+                // We add a mock of this service to satisfy the IOC without having to spin up a whole settings table
+        var settingManagerMock = Substitute.For<ISettingManager>();
+        // Mock required calls
+        services.AddSingleton(settingManagerMock);
 
+        var tenantRepository = Substitute.For<ITenantRepository>();
+        // Mock calls
+        services.AddSingleton(tenantRepository);
         base.AfterAddApplication(services);
     }
 }
