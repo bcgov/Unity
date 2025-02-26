@@ -7,6 +7,8 @@ using Volo.Abp.Uow;
 using Volo.Abp.Testing;
 using NSubstitute;
 using Volo.Abp.Features;
+using Volo.Abp.Users;
+using Unity.Payments.Security;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 
@@ -16,6 +18,13 @@ namespace Unity.Payments;
 public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStartupModule>
     where TStartupModule : IAbpModule
 {
+    protected Guid? CurrentUserId { get; set; }
+
+    protected PaymentsTestBase()
+    {
+        CurrentUserId = PaymentsTestData.User1Id;
+    }
+
     protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
     {
         options.UseAutofac();
@@ -60,7 +69,14 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
         featureMock.IsEnabledAsync(Arg.Any<string>()).Returns(true);
         services.AddSingleton(featureMock);
 
-        // We add a mock of this service to satisfy the IOC without having to spin up a whole settings table
+        var externalUserLookupMock = Substitute.For<FakeExternalUserLookupServiceProvider>();
+        services.AddSingleton<IExternalUserLookupServiceProvider>(externalUserLookupMock);
+
+        var currentUser = Substitute.For<ICurrentUser>();
+        currentUser.Id.Returns(ci => CurrentUserId);
+        services.AddSingleton(currentUser);
+        
+                // We add a mock of this service to satisfy the IOC without having to spin up a whole settings table
         var settingManagerMock = Substitute.For<ISettingManager>();
         // Mock required calls
         services.AddSingleton(settingManagerMock);
@@ -68,7 +84,6 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
         var tenantRepository = Substitute.For<ITenantRepository>();
         // Mock calls
         services.AddSingleton(tenantRepository);
-
         base.AfterAddApplication(services);
     }
 }
