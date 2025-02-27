@@ -12,6 +12,6 @@ public interface IApplicantAppService : IApplicationService
     Task<ApplicantAgent> CreateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto);
     Task<Applicant> RelateSupplierToApplicant(ApplicantSupplierEto applicantSupplierEto);
     Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto);
-    Task<Applicant> UpdateApplicantOrgMatchAsync(Applicant applicant)
+    Task<Applicant> UpdateApplicantOrgMatchAsync(Applicant applicant);
     Task<int> GetNextUnityApplicantIdAsync();
 }
