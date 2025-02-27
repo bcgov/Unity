@@ -117,14 +117,18 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
             //Get payment request info
             var application = await GetAsync(appDto.Id);
-            var paymentInfo = new PaymentInfoDto
+
+            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
             {
-                ApprovedAmount = application.ApprovedAmount,
-            };
-            var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(appDto.Id);
-            paymentInfo.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Paid))
-                                  .Sum(e => e.Amount);
-            appDto.PaymentInfo = paymentInfo;
+                var paymentInfo = new PaymentInfoDto
+                {
+                    ApprovedAmount = application.ApprovedAmount,
+                };
+                var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(appDto.Id);
+                paymentInfo.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Paid))
+                                      .Sum(e => e.Amount);
+                appDto.PaymentInfo = paymentInfo;
+            }
 
             appDtos.Add(appDto);
             rowCounter++;
