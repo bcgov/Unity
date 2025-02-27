@@ -96,7 +96,7 @@ namespace Unity.Payments.PaymentRequests
                     CreatePaymentRequestDto paymentRequestDto = paymentRequestItem.value;
                     int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(paymentRequestDto.CorrelationId) + 1;
                     var sequenceForInvoice = applicationPaymentRequestCount.ToString("D4");
-                    string referenceNumber = GeneratePaymentNumberAsync(sequenceNumber, paymentRequestItem.i, paymentIdPrefix);
+                    string referenceNumber = GeneratePaymentNumberAsync(paymentIdPrefix);
 
                     paymentRequestDto.InvoiceNumber = $"{referenceNumber}-{paymentRequestDto.InvoiceNumber}-{sequenceForInvoice}";
                     paymentRequestDto.ReferenceNumber = referenceNumber;
@@ -385,15 +385,12 @@ namespace Unity.Payments.PaymentRequests
             return PaymentSharedConsts.DefaultThresholdAmount;
         }
 
-        public static string GeneratePaymentNumberAsync(int sequenceNumber, int index, string paymentIdPrefix)
+        public static string GeneratePaymentNumberAsync(string paymentIdPrefix)
         {
             var currentYear = DateTime.UtcNow.Year;
             var yearPart = currentYear.ToString();
 
-            sequenceNumber = sequenceNumber + index;
-            var sequencePart = sequenceNumber.ToString("D6");
-
-            return $"{paymentIdPrefix}-{yearPart}-{sequencePart}";
+            return $"{paymentIdPrefix}-{yearPart}";
         }
 
         private async Task<int> GetNextSequenceNumberAsync(int currentYear)
