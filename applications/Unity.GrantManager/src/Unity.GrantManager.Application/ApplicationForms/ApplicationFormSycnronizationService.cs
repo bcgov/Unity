@@ -78,67 +78,92 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 foreach (var submissionGuid in missingSubmissions)
                 {
-                    if (!Guid.TryParse(applicationFormDto.ChefsApplicationFormGuid, out Guid chefsFormId) ||
-                        !Guid.TryParse(submissionGuid, out Guid chefsSubmissionId))
-                    {
-                        Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions Invalid ChefsFormGuid or SubmissionGuid");
-                        continue;
-                    }
-
-                    JObject? submissionData = await _submissionsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
-                    if (submissionData == null)
-                    {
-                        Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions submissionData is null");
-                        continue;
-                    }
-
-                    JToken? tokenFormVersionId = submissionData.SelectToken("submission.formVersionId");
-                    if (tokenFormVersionId == null)
-                    {
-                        Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions tokenFormVersionId is null");
-                        continue;
-                    }
-
-                    string formVersionId = tokenFormVersionId.ToString();
-                    if (FormVersionsInitializedVersionHash.Contains(formVersionId))
-                    {
-                        Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions FormVersionsInitializedVersionHash VersionID existed {formVersionId}", formVersionId);
-                        continue;
-                    }
-
-                    JToken? tokenVersionVersion = submissionData.SelectToken("version.version");
-                    string tokenVersion = tokenVersionVersion?.ToString() ?? "0";
-
-                    if (!int.TryParse(tokenVersion, out int version))
-                    {
-                        Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions tokenVersio -> version int not parsed");
-                        continue;
-                    }
-
-                    bool formVersionExists = await _applicationFormVersionAppService.FormVersionExists(formVersionId);
-                    string formId = chefsFormId.ToString();
-                    if (!formVersionExists && Guid.TryParse(applicationFormDto.ChefsApplicationFormGuid, out Guid applicationFormIdGuid))
-                    {
-                        // Initialize the form version if it does not exist.
-                        AddFact("Form Version did NOT exist in Unity: ", $"{version}");
-                        AddFact("Version Created: ", "Please Fill in Mapping");
-                        bool published = false;
-                        await _applicationFormVersionAppService.TryInitializeApplicationFormVersion(formId, version, applicationFormIdGuid, formVersionId, published);
-                        FormVersionsInitializedVersionHash.Add(formVersionId);
-                    }
-                    else
-                    {
-                        // Process the form submission.
-                        ApplicationForm applicationForm = ObjectMapper.Map<ApplicationFormDto, ApplicationForm>(applicationFormDto);
-                        var result = await _intakeFormSubmissionManager.ProcessFormSubmissionAsync(applicationForm, submissionData);
-                        AddFact("Synchronizing Data - Form Version: ", $"{version} Unity Application ID: {result}");
-                    }
+                    await ProcessSingleSubmission(submissionGuid, applicationFormDto);
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "ApplicationFormSycnronizationService->SynchronizeFormSubmissions Exception: {Exception}", ex);
             }
+        }
+
+        private async Task ProcessSingleSubmission(string submissionGuid, ApplicationFormDto applicationFormDto)
+        {
+            if (!Guid.TryParse(applicationFormDto.ChefsApplicationFormGuid, out Guid chefsFormId) ||
+                !Guid.TryParse(submissionGuid, out Guid chefsSubmissionId))
+            {
+                Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions Invalid ChefsFormGuid or SubmissionGuid");
+                return;
+            }
+
+            JObject? submissionData = await _submissionsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
+            if (submissionData == null)
+            {
+                Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions submissionData is null");
+                return;
+            }
+
+            string? formVersionId = submissionData.SelectToken("submission.formVersionId")?.ToString();
+            if (formVersionId == null)
+            {
+                Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions tokenFormVersionId is null");
+                return;
+            }
+
+            if (FormVersionsInitializedVersionHash.Contains(formVersionId))
+            {
+                Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions FormVersionsInitializedVersionHash VersionID existed {FormVersionId}", formVersionId);
+                return;
+            }
+
+            var version = GetVersionFromSubmissionData(submissionData);
+            if (version == -1) return;
+
+            await ProcessFormVersion(formVersionId, version, chefsFormId, applicationFormDto, submissionData);
+        }
+
+        private int GetVersionFromSubmissionData(JObject submissionData)
+        {
+            JToken? tokenVersionVersion = submissionData.SelectToken("version.version");
+            string tokenVersion = tokenVersionVersion?.ToString() ?? "0";
+
+            if (!int.TryParse(tokenVersion, out int version))
+            {
+                Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions tokenVersio -> version int not parsed");
+                return -1;
+            }
+            return version;
+        }
+
+        private async Task ProcessFormVersion(string formVersionId, int version, Guid chefsFormId, ApplicationFormDto applicationFormDto, JObject submissionData)
+        {
+            bool formVersionExists = await _applicationFormVersionAppService.FormVersionExists(formVersionId);
+            string formId = chefsFormId.ToString();
+
+            if (!formVersionExists && Guid.TryParse(applicationFormDto.ChefsApplicationFormGuid, out Guid applicationFormIdGuid))
+            {
+                await InitializeFormVersion(formId, version, applicationFormIdGuid, formVersionId);
+            }
+            else
+            {
+                await ProcessSubmission(applicationFormDto, submissionData, version);
+            }
+        }
+
+        private async Task InitializeFormVersion(string formId, int version, Guid applicationFormIdGuid, string formVersionId)
+        {
+            AddFact("Form Version did NOT exist in Unity: ", $"{version}");
+            AddFact("Version Created: ", "Please Fill in Mapping");
+            bool published = false;
+            await _applicationFormVersionAppService.TryInitializeApplicationFormVersion(formId, version, applicationFormIdGuid, formVersionId, published);
+            FormVersionsInitializedVersionHash.Add(formVersionId);
+        }
+
+        private async Task ProcessSubmission(ApplicationFormDto applicationFormDto, JObject submissionData, int version)
+        {
+            ApplicationForm applicationForm = ObjectMapper.Map<ApplicationFormDto, ApplicationForm>(applicationFormDto);
+            var result = await _intakeFormSubmissionManager.ProcessFormSubmissionAsync(applicationForm, submissionData);
+            AddFact("Synchronizing Data - Form Version: ", $"{version} Unity Application ID: {result}");
         }
 
         public async Task<HashSet<string>> GetMissingSubmissions(int numberOfDaysToCheck)
@@ -152,6 +177,9 @@ namespace Unity.GrantManager.ApplicationForms
             if (applicationFormDtoList != null)
             {
                 AddFact("Forms Count: ", "" + applicationFormDtoList.Count);
+                int missingSubmissionsCount = 0;
+                int formsMissingSubmissions = 0;
+
                 foreach (ApplicationFormDto applicationFormDto in applicationFormDtoList)
                 {
                     try
@@ -159,20 +187,21 @@ namespace Unity.GrantManager.ApplicationForms
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
                         HashSet<string> existingSubmissions = GetSubmissionsByForm(applicationFormDto.Id);
                         missingSubmissions = newChefsSubmissions.Except(existingSubmissions).ToHashSet();
-
-                        AddFact("------------------------------------", "----------------------------------------");
-                        AddFact("Application Form Name: ", applicationFormDto.ApplicationFormName);
-                        AddFact("Missing Submissions Count: ", missingSubmissions.Count.ToString());
-
                         if (missingSubmissions.Count > 0)
                         {
+                            formsMissingSubmissions++;
+                            missingSubmissionsCount += missingSubmissions.Count;
+
+                            AddFact("------------------------------------", "----------------------------------------");
+                            AddFact("Application Form Name: ", applicationFormDto.ApplicationFormName ?? string.Empty);
+                            AddFact("Missing Submissions Count: ", missingSubmissions.Count.ToString());
                             await SynchronizeFormSubmissions(missingSubmissions, applicationFormDto);
                         }
                     }
                     catch (HttpRequestException hrex)
                     {
                         string statusCode = hrex.StatusCode.ToString() ?? string.Empty;
-                        AddFact("Application Form ApiException: ", applicationFormDto.ApplicationFormName);
+                        AddFact("Application Form ApiException: ", applicationFormDto.ApplicationFormName ?? string.Empty);
                         AddFact("Status Code: ", statusCode);
                         AddFact("Message: ", hrex.Message);
                     }
@@ -180,7 +209,12 @@ namespace Unity.GrantManager.ApplicationForms
                     {
                         Logger.LogError(ex, "Exception: {Exception}", ex);
                     }
+
                 }
+
+                AddFact("------------------------------------", "----------------------------------------");
+                AddFact("Total Forms Missing Submissions: ", formsMissingSubmissions.ToString());
+                AddFact("Total Missing Submissions Count: ", missingSubmissionsCount.ToString());
             }
 
             string tenantName = "";

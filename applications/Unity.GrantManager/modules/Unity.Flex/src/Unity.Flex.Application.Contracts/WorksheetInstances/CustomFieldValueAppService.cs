@@ -16,6 +16,6 @@ namespace Unity.Flex.WorksheetInstances
         Task ExplicitAddAsync(CustomFieldValueDto value);
 
         [RemoteService(false)]
-        Task SyncWorksheetInstanceValueAsync(Guid worksheetInstanceId);        
+        Task SyncWorksheetInstanceValueAsync(Guid worksheetInstanceId);
     }
 }

@@ -170,6 +170,7 @@ $(function () {
         row,
         isNew,
         uiAnchor) {
+
         let formVersionId = $('#ApplicationFormVersionId').val();
         let applicationId = $('#DetailsViewApplicationId').val();
 
@@ -257,9 +258,11 @@ $(function () {
     function configureTable(table, fieldId) {
         table.buttons().container().prependTo(`#btn-container-${fieldId}`);
         let knownColumns = [];
+
         table.columns().header().to$().each(function (index) {
-            if ($(this).text() != '') {
-                knownColumns.push({ title: $(this).text(), visible: true, index: index + 1 });
+            let isActions = $(this).hasClass('custom-actions-header');
+            if ($(this).text() != '' && !isActions) {
+                knownColumns.push({ title: $(this).text(), visible: true, index: index + 1, isActions: isActions });
             }
         });
 

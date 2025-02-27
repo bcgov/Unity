@@ -8,11 +8,15 @@ using System.Globalization;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using Volo.Abp.Domain.Repositories;
+using Unity.GrantManager.Applicants;
+using Unity.Payments.Integrations.Cas;
 
 namespace Unity.GrantManager.Intakes
 {
     [RemoteService(true)]
     public class ApplicantLookupService(
+                            ISupplierService supplierService,
+                            IApplicantAppService applicantAppService,
                             IApplicantRepository applicantRepository,
                             IApplicantAddressRepository applicantAddressRepository,
                             IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantLookupService
@@ -41,25 +45,54 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        public async Task<string> ApplicantLookupByApplicantName(string unityApplicantName)
+        public async Task<string> ApplicantLookupByBceidBusinesName(string bceidBusinessName, bool createIfNotExists = false)
         {
-            if (string.IsNullOrWhiteSpace(unityApplicantName))
+            if (string.IsNullOrWhiteSpace(bceidBusinessName))
             {
-                throw new ArgumentNullException(nameof(unityApplicantName), "Unity applicant name cannot be null or empty.");
+                throw new ArgumentNullException(nameof(bceidBusinessName), "Unity applicant name cannot be null or empty.");
             }
 
             try
             {
-                Applicant? applicant = await applicantRepository.GetByUnityApplicantNameAsync(unityApplicantName);
-                if (applicant == null)
+                Applicant? applicant = await applicantRepository.GetByUnityApplicantNameAsync(bceidBusinessName);
+                if (applicant == null && createIfNotExists)
+                {
+                    int unityApplicantId = await applicantAppService.GetNextUnityApplicantIdAsync();
+
+                    // Initialize and insert the applicant
+                    var newApplicant = new Applicant
+                    {
+                        ApplicantName = bceidBusinessName,
+                        UnityApplicantId = unityApplicantId.ToString(),
+                        RedStop = false
+                    };
+
+                    applicant = await applicantRepository.InsertAsync(newApplicant);
+                }
+                else if (applicant == null)
                 {
                     throw new KeyNotFoundException("Applicant not found.");
                 }
+
+                // Check if the applicant has an org number, if not, update it
+                if (applicant.OrgNumber == null)
+                {
+                    var updatedApplicant = await applicantAppService.UpdateApplicantOrgMatchAsync(applicant);
+
+                    // If the applicant now has an org number, update the supplier info
+                    if (updatedApplicant != null && updatedApplicant.OrgNumber != null)
+                    {
+                        await supplierService.UpdateApplicantSupplierInfoByBn9(updatedApplicant.BusinessNumber, updatedApplicant.Id);
+                    }
+
+                    applicant = updatedApplicant;
+                }
+
                 return await FormatApplicantJsonAsync(applicant);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "ApplicantService->ApplicantLookupByApplicantName Exception: {Message}", ex.Message);
+                Logger.LogError(ex, "ApplicantService->ApplicantLookupByBceidBusinesName Exception: {Message}", ex.Message);
                 throw new UserFriendlyException("An error occurred while retrieving the applicant.");
             }
         }
@@ -74,7 +107,7 @@ namespace Unity.GrantManager.Intakes
             string operatingDate = applicant.StartedOperatingDate != null
                 ? ((DateOnly)applicant.StartedOperatingDate).ToString("o", CultureInfo.InvariantCulture)
                 : string.Empty;
-            
+
             string bcSocietyNumber = applicant.OrgNumber?.StartsWith('S') == true ? applicant.OrgNumber : string.Empty;
 
             // Fetch address and agent information

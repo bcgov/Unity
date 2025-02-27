@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Repositories
         {
         }
 
-        public async Task<List<Applicant>> GetUnmatchedApplicants()
+        public async Task<List<Applicant>> GetUnmatchedApplicantsAsync()
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
@@ -45,6 +45,13 @@ namespace Unity.GrantManager.Repositories
                 .FirstOrDefaultAsync(a => a.ApplicantName != null &&
                                           a.ApplicantName.ToLower() == unityApplicantNameNormalized);
 
+        }
+        public async Task<List<Applicant>> GetApplicantsWithUnityApplicantIdAsync()
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Applicants
+                .Where(x => x.UnityApplicantId != null)
+                .ToListAsync();
         }
     }
 }

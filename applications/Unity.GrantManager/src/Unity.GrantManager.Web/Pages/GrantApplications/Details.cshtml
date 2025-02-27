@@ -17,6 +17,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
+@using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
 @using Volo.Abp.Settings
@@ -27,11 +28,14 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @inject IFeatureChecker FeatureChecker
+@inject IPermissionChecker PermissionChecker
 @inject ICurrentTenant CurrentTenant
 @inject ISettingProvider SettingProvider
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
+    var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
+    var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
 }
 @section styles
 {
@@ -84,7 +88,7 @@
 
     public string ZoneCssClass(string zoneName) => IsZoneVisible(zoneName) ? string.Empty : "d-none";
 }
-<div id="main-loading">    
+<div id="main-loading">
     <img src="/images/homepage/unity.svg" alt="unity-application-loading">
 </div>
 <div class="m-0 h-100 application-details-container fade-in-load" id="main-container">
@@ -121,21 +125,23 @@
                         <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.AssessmentResults")" id="assessmentResultWidget">
                             @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
-                    @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-                    {
-                        <div id="assessmentResultsCustomWidget">
-                            @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
-                                     new
-                                     {
-                                         instanceCorrelationId = Model.ApplicationId,
-                                         instanceCorrelationProvider = CorrelationConsts.Application,
-                                         sheetCorrelationId = Model.ApplicationFormVersionId,
-                                         sheetCorrelationProvider = CorrelationConsts.FormVersion,
-                                         uiAnchor = FlexConsts.AssessmentInfoUiAnchor
-                                     })
-                        </div>
-                    }
-                    <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.ReviewList")" id="assessmentMainView">
+                        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                        {
+                            <div id="assessmentResultsCustomWidget">
+                                <form id="assessmentResultsCustomForm">
+                                    @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
+                                             new
+                                             {
+                                                 instanceCorrelationId = Model.ApplicationId,
+                                                 instanceCorrelationProvider = CorrelationConsts.Application,
+                                                 sheetCorrelationId = Model.ApplicationFormVersionId,
+                                                 sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                                                 uiAnchor = FlexConsts.AssessmentInfoUiAnchor
+                                             })
+                                </form>
+                            </div>
+                        }
+                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.ReviewList")" id="assessmentMainView">
                             @await Component.InvokeAsync("ReviewList")
                         </div>
                         <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
@@ -178,12 +184,12 @@
                         </div>
                     </abp-tab>
                 }
-                
+
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Funding Agreement Info Section ---------*@
-                @if (await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.FundingAgreement) 
-                    && IsZoneVisible(SettingsConstants.UI.Tabs.FundingAgreement))
+                @if (await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.FundingAgreement)
+                && IsZoneVisible(SettingsConstants.UI.Tabs.FundingAgreement))
                 {
                     <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
                         <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.FundingAgreement}.FundingAgreementInfo")" id="FundingAgreementInfoWidget">
@@ -194,9 +200,9 @@
                 @*-------- Funding Agreement Section END ---------*@
 
                 @*-------- Payments Section ---------*@
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") 
-                    && await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.Payments)
-                    && IsZoneVisible(SettingsConstants.UI.Tabs.Payments))
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments")
+                && await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.Payments)
+                && IsZoneVisible(SettingsConstants.UI.Tabs.Payments))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
                         <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Payments}.PaymentInfo")" id="PaymentInfoWidget">
@@ -235,11 +241,11 @@
                 <li class="nav-item">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications"))
+                @if (notificationsFeatureEnabled && readEmailGranted)
                 {
-                <li class="nav-item">
-                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
-                </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
+                    </li>
                 }
                 <li class="nav-item">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
@@ -276,7 +282,7 @@
                     <div id="reviewDetails" style="display:none">
                         <input type="hidden" id="AssessmentId" value="@Model.AssessmentId" />
                         <div id="assessmentUserDetailsWidget">
-                            <div class="container-fluid float-inline" >
+                            <div class="container-fluid float-inline">
                                 <abp-row>
                                     <abp-column size="_12">
                                         <abp-button icon="fl fl-pdf" icon-type="Other" id="printAssessmentPdf" class="pdf-icon"></abp-button>
@@ -333,6 +339,8 @@
                 @*-------- Details Tab Section END ---------*@
 
                 @*-------- Emails Tab Section ---------*@
+                @if (notificationsFeatureEnabled && readEmailGranted)
+                {
                 <div class="tab-pane" id="emails" role="tabpanel" aria-labelledby="emails-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Emails</h6>
                     <div class="px-3 pb-2" id="applicationEmailsWidget">
@@ -343,6 +351,7 @@
                         @await Component.InvokeAsync("EmailHistoryWidget")
                     </div>
                 </div>
+                }
                 @*-------- Emails Tab Section END ---------*@
 
                 @*-------- Comments Tab Section ---------*@

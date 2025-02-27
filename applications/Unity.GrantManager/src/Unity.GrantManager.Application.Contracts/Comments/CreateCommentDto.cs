@@ -7,6 +7,6 @@ namespace Unity.GrantManager.Comments
         [StringLength(2000)]
         [Required]
         [MinLength(1)]
-        public string Comment { get; set; } = string.Empty;        
+        public string Comment { get; set; } = string.Empty;
     }
 }

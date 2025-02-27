@@ -1,13 +1,37 @@
+const nullPlaceholder = '—';
 const FilterDesc = {
     Default: 'Filter',
     With_Filter: 'Filter*'
 };
+
 function createNumberFormatter() {
     return new Intl.NumberFormat('en-CA', {
         style: 'currency',
         currency: 'CAD',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
+    });
+}
+
+function removePlaceholderFromCvsExportButton(actionButtons, useNullPlaceholder, nullPlaceholder) {
+    if (!useNullPlaceholder) {
+        return actionButtons;
+    }
+    return actionButtons.map(button => {
+        if (button.extend === 'csv') {
+            return {
+                ...button,
+                exportOptions: {
+                    ...button.exportOptions,
+                    format: {
+                        body: function (data, row, column, node) {
+                            return data === nullPlaceholder ? '' : data;
+                        }
+                    }
+                }
+            };
+        }
+        return button;
     });
 }
 
@@ -26,8 +50,12 @@ function initializeDataTable(options) {
         reorderEnabled,
         languageSetValues,
         dataTableName,
-        dynamicButtonContainerId
+        dynamicButtonContainerId,
+        useNullPlaceholder = false
     } = options;
+
+    // If useNullPlaceholder is true, update csv export buttons to include the example format function
+    let updatedActionButtons = removePlaceholderFromCvsExportButton(actionButtons, useNullPlaceholder, nullPlaceholder);
 
     let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
     let filterData = {};
@@ -72,7 +100,7 @@ function initializeDataTable(options) {
             stateDuration: 0,
             oLanguage: languageSetValues,
             dom: 'Blfrtip',
-            buttons: actionButtons,
+            buttons: updatedActionButtons,
             drawCallback: function () {
                 $(`#${dt[0].id}_previous a`).text("<");
                 $(`#${dt[0].id}_next a`).text(">");
@@ -90,7 +118,10 @@ function initializeDataTable(options) {
                 },
                 {
                     targets: '_all',
-                    visible: false // Hide all other columns initially
+                    // Hide all other columns initially
+                    visible: false, 
+                    // Set default content for all cells to placeholder if null
+                    ...(useNullPlaceholder ? { defaultContent: nullPlaceholder } : {})  
                 }
             ],
             processing: true,
@@ -116,7 +147,7 @@ function initializeDataTable(options) {
     );
 
     // Add custom manage columns button that remains sorted alphabetically
-    iDt.button().add(actionButtons.length + 1 ,{
+    iDt.button().add(updatedActionButtons.length + 1 ,{
         text: 'Columns',
         extend: 'collection',
         buttons: getColumnToggleButtonsSorted(listColumns, iDt),

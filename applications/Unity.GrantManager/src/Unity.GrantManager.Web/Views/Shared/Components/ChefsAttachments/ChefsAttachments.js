@@ -1,14 +1,17 @@
+// Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
     const downloadAll = $("#downloadAll");
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
     let selectedAtttachments = [];
+    const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
         return applicationId;
     }
+
     let responseCallback = function (result) {
         if (result.length <= 0) {
             $('.dataTables_paginate').hide();
@@ -32,6 +35,7 @@ $(function () {
         return [
             getSelectColumn('Select Attachment', 'rowCount', 'chefs-files'),
             getChefsFileNameColumn(),
+            getChefsLabelColumn(),
             getChefsFileDownloadColumn(),
         ]
     }
@@ -40,11 +44,39 @@ $(function () {
         return {
             title: l('AssessmentResultAttachments:DocumentName'),
             name: 'chefsFileName',
-            data: 'name',
-            className: 'data-table-header',
+            data: 'fileName',
+            className: 'data-table-header text-break',
             index: 1,
             orderable: false,
+            width: "50%"
         };
+    }
+
+    function getChefsLabelColumn() {
+        return {
+            title: 'Label',
+            data: 'displayName',
+            className: 'data-table-header text-break',
+            width: "50%",
+            render: function (data) {
+                let $cellWrapper   = $('<div>').addClass('d-flex align-items-center');
+                let $textWrapper   = $('<div>').addClass('w-100').append(data ?? nullPlaceholder);
+                let $buttonWrapper = $('<div>').addClass('flex-shrink-1');
+
+                let $editButton = $('<button>')
+                    .addClass('btn btn-sm edit-button px-0 float-end')
+                    .attr({
+                        'aria-label': 'Edit',
+                        'title': 'Edit'
+                    }).append($('<i>').addClass('fl fl-edit'));
+
+                $cellWrapper.append($textWrapper);
+                $buttonWrapper.append($editButton);
+                $cellWrapper.append($buttonWrapper);
+
+                return $cellWrapper.prop('outerHTML');
+            }
+        }
     }
 
     function getChefsFileDownloadColumn() {
@@ -83,18 +115,32 @@ $(function () {
             scrollX: true,
             scrollCollapse: true,
             processing: true,
+            autoWidth: true,
             select: {
                 style: 'multiple',
                 selector: 'td:not(:nth-child(8))',
             },
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.grantApplications.attachment.getApplicationChefsFileAttachments,
+                unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments,
                 inputAction,
                 responseCallback
             ),
             columnDefs: getColumns()
         })
     );
+
+    PubSub.subscribe(
+        'refresh_chefs_attachment_list',
+        (msg, data) => {
+            chefsDataTable.ajax.reload();
+        }
+    );
+
+    chefsDataTable.on('click', 'td button.edit-button', function (event, dt, type, indexes) {
+        event.stopPropagation();
+        let rowData = chefsDataTable.row(event.target.closest('tr')).data();
+        updateAttachmentMetadata('CHEFS', rowData.id);
+    });
 
     chefsDataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
@@ -160,7 +206,7 @@ $(function () {
     $('#resyncSubmissionAttachments').on('click', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         try {
-            unity.grantManager.grantApplications.attachment
+            unity.grantManager.attachments.attachment
                 .resyncSubmissionAttachments(applicationId)
                 .done(function () {
                     abp.notify.success(

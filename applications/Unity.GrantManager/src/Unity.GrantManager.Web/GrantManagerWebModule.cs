@@ -37,7 +37,6 @@ using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
-using Unity.GrantManager.Web.Services;
 using Unity.GrantManager.Web.Settings;
 using Unity.Identity.Web;
 using Unity.Notifications.Web;
@@ -73,6 +72,8 @@ using Volo.Abp.Users;
 using Volo.Abp.VirtualFileSystem;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
+using Unity.Modules.Shared.Utils;
+using Unity.Notifications.Web.Views.Settings;
 
 namespace Unity.GrantManager.Web;
 
@@ -191,6 +192,10 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new BackgroundJobsPageContributor());
+        });
 
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });

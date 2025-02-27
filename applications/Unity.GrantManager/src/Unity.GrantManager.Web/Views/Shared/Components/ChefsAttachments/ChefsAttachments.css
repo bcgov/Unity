@@ -1,6 +1,3 @@
-#ChefsAttachmentsTable_wrapper .dataTables_scrollBody {
-    overflow: unset !important;
-}
 
 #ChefsAttachmentsTable a {
     text-decoration: none;
@@ -31,4 +28,5 @@
 
 #ChefsAttachmentsTable_paginate { 
     display: block !important;
+    padding-top:35px;
 }
