@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using System.Linq;
 using Unity.Modules.Shared.Utils;
 using Microsoft.Extensions.Logging;
+using Unity.Payments.Integrations.Cas;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -20,6 +21,7 @@ namespace Unity.GrantManager.Applicants;
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(ApplicantAppService), typeof(IApplicantAppService))]
 public class ApplicantAppService(IApplicantRepository applicantRepository,
+                                 ISupplierService supplierService,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
@@ -108,8 +110,22 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
 
         await applicantAgentRepository.InsertAsync(newApplicantAgent);
-
         return newApplicantAgent;
+    }
+    
+    public async Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto) {
+        var applicant = applicantAgentDto.Applicant;
+
+        if(applicant.BusinessNumber == null && applicant.MatchPercentage == null) {
+            applicant = await UpdateApplicantOrgMatchAsync(applicant);
+        }
+        
+        if (applicant.SupplierId != null) return;
+
+        if(applicant.BusinessNumber != null) {
+            // This fires a detached process event which may update the supplier if it finds it in CAS via the BN9
+            await supplierService.UpdateApplicantSupplierInfoByBn9(applicant.BusinessNumber, applicant.Id);
+        }
     }
 
     [RemoteService(true)]
@@ -146,17 +162,17 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         return await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
     }
 
-    private async Task UpdateApplicantOrgMatchAsync(Applicant applicant)
+    public async Task<Applicant> UpdateApplicantOrgMatchAsync(Applicant applicant)
     {
         try
         {
-            if (string.IsNullOrEmpty(applicant.OrgNumber)) return;
+            if (string.IsNullOrEmpty(applicant.OrgNumber)) return applicant;
             JObject? result = await orgBookService.GetOrgBookQueryAsync(applicant.OrgNumber);
             var orgData = result?.SelectToken("results")?.Children().FirstOrDefault();
-            if (orgData == null) return;
+            if (orgData == null) return applicant;
 
             var namesChildren = orgData.SelectToken("names")?.Children();
-            if (namesChildren == null) return;
+            if (namesChildren == null) return applicant;
 
             foreach (var name in namesChildren)
             {
@@ -187,6 +203,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             string ExceptionMessage = ex.Message;
             Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ExceptionMessage);
         }
+
+        return applicant;
     }
 
     private async Task<Applicant> CreateNewApplicantAsync(IntakeMapping intakeMap)

@@ -7,36 +7,166 @@ using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
 using Unity.Modules.Shared.Http;
+using Volo.Abp.EventBus.Local;
+using Unity.GrantManager.Payments;
+using Unity.Payments.Suppliers;
+using Unity.Modules.Shared.Correlation;
+using System;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace Unity.Payments.Integrations.Cas
 {
     [IntegrationService]
     [ExposeServices(typeof(SupplierService), typeof(ISupplierService))]
-    public class SupplierService : ApplicationService, ISupplierService
+    public class SupplierService(ILocalEventBus localEventBus,
+                                IResilientHttpRequest resilientHttpRequest,
+                                IOptions<CasClientOptions> casClientOptions,
+                                ICasTokenService iTokenService) : ApplicationService, ISupplierService
     {
-        private readonly ICasTokenService _iTokenService;
-        private readonly IResilientHttpRequest _resilientRestClient;
-        private readonly IOptions<CasClientOptions> _casClientOptions;
+
         private const string CFS_SUPPLIER = "cfs/supplier";
 
-
-        public SupplierService(
-            ICasTokenService iTokenService,
-            IResilientHttpRequest resilientHttpRequest,
-            IOptions<CasClientOptions> casClientOptions)
+        public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {
-            _iTokenService = iTokenService;
-            _resilientRestClient = resilientHttpRequest;
-            _casClientOptions = casClientOptions;
+            // Integrate with payments module to update / insert supplier
+            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+                && !string.IsNullOrEmpty(supplierNumber))
+            {
+                dynamic casSupplierResponse = await GetCasSupplierInformationAsync(supplierNumber);
+                UpdateSupplierInfo(casSupplierResponse, applicantId);
+            }
         }
 
+        public async Task UpdateApplicantSupplierInfoByBn9(string? bn9, Guid applicantId)
+        {
+            // Integrate with payments module to update / insert supplier
+            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+                && !string.IsNullOrEmpty(bn9))
+            {
+                dynamic casSupplierResponse = await GetCasSupplierInformationAsync(bn9);
+                UpdateSupplierInfo(casSupplierResponse, applicantId);
+            }
+        }
+
+        private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
+        {
+            UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
+            supplierEto.CorrelationId = applicantId;
+            supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+            await localEventBus.PublishAsync(supplierEto);
+        }
+
+
+        protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
+        {
+            string lastUpdated = casSupplierResponse.GetProperty("lastupdated").ToString();
+            string suppliernumber = casSupplierResponse.GetProperty("suppliernumber").ToString();
+            string suppliername = casSupplierResponse.GetProperty("suppliername").ToString();
+            string subcategory = casSupplierResponse.GetProperty("subcategory").ToString();
+            string providerid = casSupplierResponse.GetProperty("providerid").ToString();
+            string businessnumber = casSupplierResponse.GetProperty("businessnumber").ToString();
+            string status = casSupplierResponse.GetProperty("status").ToString();
+            string supplierprotected = casSupplierResponse.GetProperty("supplierprotected").ToString();
+            string standardindustryclassification = casSupplierResponse.GetProperty("standardindustryclassification").ToString();
+
+            _ = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime lastUpdatedDate);
+            List<SiteEto> siteEtos = new List<SiteEto>();
+            JArray siteArray = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(casSupplierResponse.GetProperty("supplieraddress").ToString());
+            foreach (dynamic site in siteArray)
+            {
+                siteEtos.Add(GetSiteEto(site));
+            }
+
+            return new UpsertSupplierEto
+            {
+                Number = suppliernumber,
+                Name = suppliername,
+                Subcategory = subcategory,
+                ProviderId = providerid,
+                BusinessNumber = businessnumber,
+                Status = status,
+                SupplierProtected = supplierprotected,
+                StandardIndustryClassification = standardindustryclassification,
+                LastUpdatedInCAS = lastUpdatedDate,
+                SiteEtos = siteEtos
+            };
+        }
+
+        protected static SiteEto GetSiteEto(dynamic site)
+        {
+            string supplierSiteCode = site["suppliersitecode"].ToString();
+            string addressLine1 = site["addressline1"].ToString();
+            string addressLine2 = site["addressline2"].ToString();
+            string city = site["city"].ToString();
+            string province = site["province"].ToString();
+            string country = site["country"].ToString();
+            string postalCode = site["postalcode"].ToString();
+            string emailAddress = site["emailaddress"].ToString();
+            string eftAdvicePref = site["eftadvicepref"].ToString();
+            string accountNumber = site["accountnumber"].ToString();
+            string maskedAccountNumber = accountNumber.Length > 4
+                ? new string('*', accountNumber.Length - 4) + accountNumber[^4..]
+                : accountNumber;
+            string bankAccount = maskedAccountNumber;
+            string providerId = site["providerid"].ToString();
+            string siteStatus = site["status"].ToString();
+            string siteProtected = site["siteprotected"].ToString();
+            string siteLastUpdated = site["lastupdated"].ToString();
+
+            _ = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime siteLastUpdatedDate);
+            return new SiteEto
+            {
+                SupplierSiteCode = supplierSiteCode,
+                AddressLine1 = addressLine1,
+                AddressLine2 = addressLine2,
+                AddressLine3 = addressLine2,
+                City = city,
+                Province = province,
+                Country = country,
+                PostalCode = postalCode,
+                EmailAddress = emailAddress,
+                EFTAdvicePref = eftAdvicePref,
+                BankAccount = bankAccount,
+                ProviderId = providerId,
+                Status = siteStatus,
+                SiteProtected = siteProtected,
+                LastUpdated = siteLastUpdatedDate
+            };
+        }
         public async Task<dynamic> GetCasSupplierInformationAsync(string? supplierNumber)
         {
             if (!string.IsNullOrEmpty(supplierNumber))
             {
-                var authToken = await _iTokenService.GetAuthTokenAsync();
-                var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_SUPPLIER}/{supplierNumber}";
-                var response = await _resilientRestClient.HttpAsync(HttpMethod.Get, resource, authToken);
+                var resource = $"{casClientOptions.Value.CasBaseUrl}/{CFS_SUPPLIER}/{supplierNumber}";
+                return await GetCasSupplierInformationByResourceAsync(resource);
+            }
+            else
+            {
+                throw new UserFriendlyException("CAS Supplier Service: No Supplier Number");
+            }
+        }
+
+        public async Task<dynamic> GetCasSupplierInformationByBn9Async(string? bn9)
+        {
+            if (!string.IsNullOrEmpty(bn9))
+            {
+                var resource = $"{casClientOptions.Value.CasBaseUrl}/{CFS_SUPPLIER}/{bn9}/businessnumber";
+                return await GetCasSupplierInformationByResourceAsync(resource);
+            }
+            else
+            {
+                throw new UserFriendlyException("CAS Supplier Service: No Supplier Number");
+            }
+        }
+
+
+        private async Task<dynamic> GetCasSupplierInformationByResourceAsync(string? resource)
+        {
+            if (!string.IsNullOrEmpty(resource))
+            {
+                var authToken = await iTokenService.GetAuthTokenAsync();
+                var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
 
                 if (response != null)
                 {
@@ -49,7 +179,7 @@ namespace Unity.Payments.Integrations.Cas
                     }
                     else if (response.StatusCode == HttpStatusCode.NotFound)
                     {
-                        throw new UserFriendlyException("You have entered an invalid Supplier #.");
+                        throw new UserFriendlyException("Supplier not Found.");
                     }
                     else if (response.StatusCode != HttpStatusCode.OK)
                     {
