@@ -30,6 +30,8 @@ using Unity.GrantManager.Flex;
 using Unity.Payments.Integrations.Cas;
 using Microsoft.Extensions.Logging;
 using Unity.Flex.Worksheets;
+using Unity.Payments.PaymentRequests;
+using Unity.Payments.Enums;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -52,6 +54,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
     private readonly ISupplierService _iSupplierService;
+    private readonly IPaymentRequestAppService _paymentRequestService;
 
     public GrantApplicationAppService(
         IApplicationManager applicationManager,
@@ -66,7 +69,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicantAgentRepository applicantAgentRepository,
         IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus,
-        ISupplierService iSupplierService)
+        ISupplierService iSupplierService,
+        IPaymentRequestAppService paymentRequestService)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -81,6 +85,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _applicantAddressRepository = applicantAddressRepository;
         _iSupplierService = iSupplierService;
         _localEventBus = localEventBus;
+        _paymentRequestService = paymentRequestService;
     }
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -109,6 +114,18 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.ContactBusinessPhone = grouping.First().ApplicantAgent?.Phone;
             appDto.ContactCellPhone = grouping.First().ApplicantAgent?.Phone2;
             appDto.RowCount = rowCounter;
+
+            //Get payment request info
+            var application = await GetAsync(appDto.Id);
+            var paymentInfo = new PaymentInfoDto
+            {
+                ApprovedAmount = application.ApprovedAmount,
+            };
+            var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(appDto.Id);
+            paymentInfo.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Paid))
+                                  .Sum(e => e.Amount);
+            appDto.PaymentInfo = paymentInfo;
+
             appDtos.Add(appDto);
             rowCounter++;
         }
