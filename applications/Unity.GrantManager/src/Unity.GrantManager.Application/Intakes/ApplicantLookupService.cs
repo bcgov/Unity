@@ -71,10 +71,10 @@ namespace Unity.GrantManager.Intakes
                     });
                 }
 
-                if (applicant.OrgNumber == null)
+                if (applicant.OrgNumber.IsNullOrEmpty() || applicant.BusinessNumber.IsNullOrEmpty())
                 {
                     applicant = await applicantAppService.UpdateApplicantOrgMatchAsync(applicant);
-                    if (applicant?.OrgNumber != null)
+                    if (applicant?.OrgNumber != null && applicant?.BusinessNumber != null)
                     {
                         try
                         {
@@ -128,12 +128,13 @@ namespace Unity.GrantManager.Intakes
                 ApplicantName = applicant.ApplicantName,
                 UnityApplicantId = applicant.UnityApplicantId,
                 BcSocietyNumber = bcSocietyNumber,
+                OrgName = applicant.OrgName,
                 OrgNumber = applicant.OrgNumber,
+                BusinessNumber = applicant.BusinessNumber,
                 Sector = applicant.Sector,
                 OperatingStartDate = operatingDate,
                 FiscalYearDay = applicant.FiscalDay.ToString(),
                 FiscalYearMonth = applicant.FiscalMonth,
-                BusinessNumber = applicant.BusinessNumber,
                 RedStop = applicant.RedStop,
                 IndigenousOrgInd = applicant.IndigenousOrgInd,
                 PhysicalAddressUnit = applicantPhysicalAgent?.Unit ?? "",
