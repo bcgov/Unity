@@ -14,6 +14,8 @@ using Unity.Modules.Shared.Correlation;
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -24,16 +26,21 @@ namespace Unity.Payments.Integrations.Cas
                                 IOptions<CasClientOptions> casClientOptions,
                                 ICasTokenService iTokenService) : ApplicationService, ISupplierService
     {
+        protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
         private const string CFS_SUPPLIER = "cfs/supplier";
 
         public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {
+            Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
+            
             // Integrate with payments module to update / insert supplier
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
                 && !string.IsNullOrEmpty(supplierNumber))
             {
+                Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: Call GET SUPPLIER INFO");
                 dynamic casSupplierResponse = await GetCasSupplierInformationAsync(supplierNumber);
+                Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: Response {CasSupplierResponse}", (string)casSupplierResponse.ToString());
                 UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
         }
