@@ -12,4 +12,5 @@ public interface IApplicantSupplierAppService : IApplicationService
     Task<dynamic> GetSupplierByNumber(string supplierNumber);
     Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId);
     Task<List<Site>> GetSitesBySupplierIdAsync(Guid supplierId);
+    Task UpdateSupplierByBusinessNumberAsync(string businessNumber, Guid applicantId);
 }
