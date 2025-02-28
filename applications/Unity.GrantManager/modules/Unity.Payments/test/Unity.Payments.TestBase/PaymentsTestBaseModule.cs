@@ -1,40 +1,36 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
-using Unity.Payments.PaymentRequests;
 using Volo.Abp;
-using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.Data;
 using Volo.Abp.Modularity;
 using Volo.Abp.Quartz;
-using Volo.Abp.TenantManagement;
-using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.Abp.Threading;
+using Volo.Abp.BackgroundJobs;
 
 namespace Unity.Payments;
 
 [DependsOn(
     typeof(AbpAutofacModule),
     typeof(AbpTestBaseModule),
-    typeof(AbpAuthorizationModule),
-    typeof(AbpBackgroundWorkersQuartzModule),
-    typeof(AbpTenantManagementEntityFrameworkCoreModule),
-    typeof(AbpTenantManagementDomainModule)
-    )]
+    typeof(AbpBackgroundWorkersQuartzModule)
+)]
 public class PaymentsTestBaseModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        var configuration = context.Services.GetConfiguration();
         context.Services.AddAlwaysAllowAuthorization();
-        Configure<PaymentRequestBackgroundJobsOptions>(options =>
+        Configure<AbpBackgroundJobOptions>(options =>
         {
             options.IsJobExecutionEnabled = false;
-            options.PaymentRequestOptions.ProducerExpression = "0 0 12 * * ? *";
         });
-        Configure<AbpBackgroundWorkerQuartzOptions>(options => { options.IsAutoRegisterEnabled = false; });
+
+        Configure<AbpBackgroundWorkerQuartzOptions>(options =>
+        {
+            options.IsAutoRegisterEnabled = false;
+        });
     }
 
     public override void PreConfigureServices(ServiceConfigurationContext context)
