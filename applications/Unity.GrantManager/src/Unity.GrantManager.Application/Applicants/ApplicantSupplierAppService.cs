@@ -35,7 +35,7 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         return await supplierService.GetCasSupplierInformationByBn9Async(bn9);
     }
 
-    public async Task UpdateSupplierByBusinessNumber(string bn9, Guid applicantId)
+    public async Task UpdateSupplierByBusinessNumberAsync(string bn9, Guid applicantId)
     {
         await supplierService.UpdateApplicantSupplierInfoByBn9(bn9, applicantId);
     }
