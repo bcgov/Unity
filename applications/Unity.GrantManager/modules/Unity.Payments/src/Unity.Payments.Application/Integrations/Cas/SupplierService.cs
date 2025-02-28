@@ -44,7 +44,7 @@ namespace Unity.Payments.Integrations.Cas
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
                 && !string.IsNullOrEmpty(bn9))
             {
-                dynamic casSupplierResponse = await GetCasSupplierInformationAsync(bn9);
+                dynamic casSupplierResponse = await GetCasSupplierInformationByBn9Async(bn9);
                 UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
         }

@@ -55,37 +55,36 @@ namespace Unity.GrantManager.Intakes
             try
             {
                 Applicant? applicant = await applicantRepository.GetByUnityApplicantNameAsync(bceidBusinessName);
-                if (applicant == null && createIfNotExists)
+                if (applicant == null)
                 {
-                    int unityApplicantId = await applicantAppService.GetNextUnityApplicantIdAsync();
+                    if (!createIfNotExists)
+                    {
+                        throw new KeyNotFoundException("Applicant not found.");
+                    }
 
-                    // Initialize and insert the applicant
-                    var newApplicant = new Applicant
+                    int unityApplicantId = await applicantAppService.GetNextUnityApplicantIdAsync();
+                    applicant = await applicantRepository.InsertAsync(new Applicant
                     {
                         ApplicantName = bceidBusinessName,
                         UnityApplicantId = unityApplicantId.ToString(),
                         RedStop = false
-                    };
-
-                    applicant = await applicantRepository.InsertAsync(newApplicant);
-                }
-                else if (applicant == null)
-                {
-                    throw new KeyNotFoundException("Applicant not found.");
+                    });
                 }
 
-                // Check if the applicant has an org number, if not, update it
                 if (applicant.OrgNumber == null)
                 {
-                    var updatedApplicant = await applicantAppService.UpdateApplicantOrgMatchAsync(applicant);
-
-                    // If the applicant now has an org number, update the supplier info
-                    if (updatedApplicant != null && updatedApplicant.OrgNumber != null)
+                    applicant = await applicantAppService.UpdateApplicantOrgMatchAsync(applicant);
+                    if (applicant?.OrgNumber != null)
                     {
-                        await supplierService.UpdateApplicantSupplierInfoByBn9(updatedApplicant.BusinessNumber, updatedApplicant.Id);
+                        try
+                        {
+                            await supplierService.UpdateApplicantSupplierInfoByBn9(applicant.BusinessNumber, applicant.Id);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "ApplicantService->ApplicantLookupByBceidBusinesName Exception: {Message}", ex.Message);
+                        }
                     }
-
-                    applicant = updatedApplicant;
                 }
 
                 return await FormatApplicantJsonAsync(applicant);
