@@ -35,9 +35,10 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         return await supplierService.GetCasSupplierInformationByBn9Async(bn9);
     }
 
-    public async Task UpdateSupplierByBusinessNumberAsync(string bn9, Guid applicantId)
+    [HttpPut("api/app/applicant/{applicantId}/bn9/{bn9}")]
+    public async Task<dynamic> UpdateAplicantSupplierByBn9Async(Guid applicantId, string bn9)
     {
-        await supplierService.UpdateApplicantSupplierInfoByBn9(bn9, applicantId);
+        return await supplierService.UpdateApplicantSupplierInfoByBn9(bn9, applicantId);
     }
 
     [HttpPost("api/app/applicant/{applicantId}/site/{siteId}")]

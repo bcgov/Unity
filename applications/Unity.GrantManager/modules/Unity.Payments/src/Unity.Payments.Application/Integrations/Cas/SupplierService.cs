@@ -32,7 +32,7 @@ namespace Unity.Payments.Integrations.Cas
 
         public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {
-            Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
+
             
             // Integrate with payments module to update / insert supplier
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
@@ -45,15 +45,19 @@ namespace Unity.Payments.Integrations.Cas
             }
         }
 
-        public async Task UpdateApplicantSupplierInfoByBn9(string? bn9, Guid applicantId)
+        public async Task<dynamic> UpdateApplicantSupplierInfoByBn9(string? bn9, Guid applicantId)
         {
+            Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {Bn9}, {ApplicantId}", bn9, applicantId);
+            dynamic? casSupplierResponse = null;
             // Integrate with payments module to update / insert supplier
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
                 && !string.IsNullOrEmpty(bn9))
             {
-                dynamic casSupplierResponse = await GetCasSupplierInformationByBn9Async(bn9);
+                casSupplierResponse = await GetCasSupplierInformationByBn9Async(bn9);
+                Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: Response {CasSupplierResponse}", (string)casSupplierResponse.ToString());
                 UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
+            return casSupplierResponse ?? throw new UserFriendlyException("CAS Supplier response is null.");
         }
 
         private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
