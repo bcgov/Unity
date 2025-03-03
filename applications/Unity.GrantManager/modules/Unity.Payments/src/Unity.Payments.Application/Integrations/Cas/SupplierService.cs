@@ -58,8 +58,9 @@ namespace Unity.Payments.Integrations.Cas
                 if (items is JsonElement { ValueKind: JsonValueKind.Array } array && array.GetArrayLength() > 0)
                 {
                     casSupplierResponse = array[0];
+                    Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.toString());
                 }
-
+                Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: Before Update supplier");
                 UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
             return casSupplierResponse ?? throw new UserFriendlyException("CAS Supplier response is null.");
@@ -69,7 +70,10 @@ namespace Unity.Payments.Integrations.Cas
             UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
             supplierEto.CorrelationId = applicantId;
             supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+            string supEt = JsonSerializer.Serialize(supplierEto);
+            Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: Before PublishAsync localEventBus.PublishAsync supplier: {SupEt}", supEt);
             await localEventBus.PublishAsync(supplierEto);
+            Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: After PublishAsync localEventBus.PublishAsync supplier");
         }
 
         protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
