@@ -32,7 +32,7 @@ namespace Unity.Payments.Integrations.Cas
 
         public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {
-
+            Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
             
             // Integrate with payments module to update / insert supplier
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
@@ -54,12 +54,16 @@ namespace Unity.Payments.Integrations.Cas
                 && !string.IsNullOrEmpty(bn9))
             {
                 casSupplierResponse = await GetCasSupplierInformationByBn9Async(bn9);
-                Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: Response {CasSupplierResponse}", (string)casSupplierResponse.ToString());
+                var items = casSupplierResponse.GetProperty("items");
+                if (items is JsonElement { ValueKind: JsonValueKind.Array } array && array.GetArrayLength() > 0)
+                {
+                    casSupplierResponse = array[0];
+                }
+
                 UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
             return casSupplierResponse ?? throw new UserFriendlyException("CAS Supplier response is null.");
         }
-
         private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
         {
             UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
@@ -67,7 +71,6 @@ namespace Unity.Payments.Integrations.Cas
             supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
             await localEventBus.PublishAsync(supplierEto);
         }
-
 
         protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
         {
