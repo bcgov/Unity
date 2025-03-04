@@ -48,23 +48,38 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<dynamic> UpdateApplicantSupplierInfoByBn9(string? bn9, Guid applicantId)
         {
             Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {Bn9}, {ApplicantId}", bn9, applicantId);
-            dynamic? casSupplierResponse = null;
-            // Integrate with payments module to update / insert supplier
-            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
-                && !string.IsNullOrEmpty(bn9))
+            bool paymentsEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+            if (!paymentsEnabled || string.IsNullOrEmpty(bn9))
             {
-                casSupplierResponse = await GetCasSupplierInformationByBn9Async(bn9);
+                throw new UserFriendlyException("Feature is disabled or BN9 is null or empty.");
+            }
+
+            //dynamic casSupplierResponse = await GetCasSupplierInformationByBn9Async(bn9);
+            string casRespString = "{\"items\":[{\"suppliernumber\":\"2184411\",\"suppliername\":\"BLUE BRIDGE THEATRE SOCIETY\",\"subcategory\":\"Business\",\"sin\":null,\"providerid\":null,\"businessnumber\":\"853184497\",\"status\":\"ACTIVE\",\"supplierprotected\":null,\"standardindustryclassification\":null,\"lastupdated\":\"2024-05-16 16:58:21\",\"supplieraddress\":[{\"suppliersitecode\":\"001\",\"addressline1\":\"2657 QUADRA ST\",\"addressline2\":null,\"addressline3\":null,\"city\":\"VICTORIA\",\"province\":\"BC\",\"country\":\"CA\",\"postalcode\":\"V8T4E3\",\"emailaddress\":null,\"accountnumber\":null,\"branchnumber\":null,\"banknumber\":null,\"eftadvicepref\":null,\"providerid\":null,\"status\":\"ACTIVE\",\"siteprotected\":null,\"lastupdated\":\"2017-04-24 18:17:37\"}]}],\"hasMore\":false,\"limit\":0,\"offset\":0,\"count\":1,\"links\":[{\"rel\":\"self\",\"href\":\"https://cfs-prodws.cas.gov.bc.ca:7121/ords/cas/cfs/supplier/853184497/businessnumber\"},{\"rel\":\"describedby\",\"href\":\"https://cfs-prodws.cas.gov.bc.ca:7121/ords/cas/metadata-catalog/cfs/supplier/853184497/item\"}]}";
+            dynamic casSupplierResponse = JsonSerializer.Deserialize<dynamic>(casRespString);
+            try
+            {
                 var items = casSupplierResponse.GetProperty("items");
                 if (items is JsonElement { ValueKind: JsonValueKind.Array } array && array.GetArrayLength() > 0)
                 {
                     casSupplierResponse = array[0];
-                    Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.toString());
+                    Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.ToString());
+                    await UpdateSupplierInfo(casSupplierResponse, applicantId);
                 }
-                Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Before Update supplier");
-                await UpdateSupplierInfo(casSupplierResponse, applicantId);
+                else
+                {
+                    throw new UserFriendlyException("No items found in CAS Supplier response.");
+                }
             }
-            return casSupplierResponse ?? throw new UserFriendlyException("CAS Supplier response is null.");
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "An exception occurred updating the supplier for BN9: {ExceptionMessage}", ex.Message);
+                casSupplierResponse  = "An exception occurred updating the supplier for BN9: " + ex.Message;
+            }
+
+            return casSupplierResponse;
         }
+
         private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
         {
             UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
