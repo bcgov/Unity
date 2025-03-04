@@ -1,6 +1,6 @@
 ﻿namespace Unity.Reporting;
 
-public class ReportingRemoteServiceConsts
+public static class ReportingRemoteServiceConsts
 {
     public const string RemoteServiceName = "Reporting";
 

@@ -2,7 +2,7 @@
 
 namespace Unity.Reporting.Permissions;
 
-public class ReportingPermissions
+public static class ReportingPermissions
 {
     public const string GroupName = "Reporting";
 

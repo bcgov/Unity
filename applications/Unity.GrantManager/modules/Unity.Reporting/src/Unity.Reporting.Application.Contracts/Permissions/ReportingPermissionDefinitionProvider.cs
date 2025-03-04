@@ -8,7 +8,7 @@ public class ReportingPermissionDefinitionProvider : PermissionDefinitionProvide
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        var myGroup = context.AddGroup(ReportingPermissions.GroupName, L("Permission:Reporting"));
+        _ = context.AddGroup(ReportingPermissions.GroupName, L("Permission:Reporting"));
     }
 
     private static LocalizableString L(string name)
