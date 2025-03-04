@@ -41,7 +41,7 @@ namespace Unity.Payments.Integrations.Cas
                 Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Call GET SUPPLIER INFO");
                 dynamic casSupplierResponse = await GetCasSupplierInformationAsync(supplierNumber);
                 Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Response {CasSupplierResponse}", (string)casSupplierResponse.ToString());
-                UpdateSupplierInfo(casSupplierResponse, applicantId);
+                await UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
         }
 
@@ -61,7 +61,7 @@ namespace Unity.Payments.Integrations.Cas
                     Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.toString());
                 }
                 Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Before Update supplier");
-                UpdateSupplierInfo(casSupplierResponse, applicantId);
+                await UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
             return casSupplierResponse ?? throw new UserFriendlyException("CAS Supplier response is null.");
         }
