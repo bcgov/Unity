@@ -32,22 +32,21 @@ namespace Unity.Payments.Integrations.Cas
 
         public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {
-            Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
+            Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
             
             // Integrate with payments module to update / insert supplier
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
                 && !string.IsNullOrEmpty(supplierNumber))
             {
-                Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Call GET SUPPLIER INFO");
                 dynamic casSupplierResponse = await GetCasSupplierInformationAsync(supplierNumber);
-                Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Response {CasSupplierResponse}", (string)casSupplierResponse.ToString());
+                Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: Response {CasSupplierResponse}", (string)casSupplierResponse.ToString());
                 await UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
         }
 
         public async Task<dynamic> UpdateApplicantSupplierInfoByBn9(string? bn9, Guid applicantId)
         {
-            Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {Bn9}, {ApplicantId}", bn9, applicantId);
+            Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: {Bn9}, {ApplicantId}", bn9, applicantId);
             bool paymentsEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
             if (!paymentsEnabled || string.IsNullOrEmpty(bn9))
             {
@@ -63,7 +62,7 @@ namespace Unity.Payments.Integrations.Cas
                 if (items is JsonElement { ValueKind: JsonValueKind.Array } array && array.GetArrayLength() > 0)
                 {
                     casSupplierResponse = array[0];
-                    Logger.LogDebug("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.ToString());
+                    Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.ToString());
                     await UpdateSupplierInfo(casSupplierResponse, applicantId);
                 }
                 else
@@ -86,9 +85,8 @@ namespace Unity.Payments.Integrations.Cas
             supplierEto.CorrelationId = applicantId;
             supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
             string supEt = JsonSerializer.Serialize(supplierEto);
-            Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Before PublishAsync localEventBus.PublishAsync supplier: {SupEt}", supEt);
+            Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: Publishing supplier: {SupEt}", supEt);
             await localEventBus.PublishAsync(supplierEto);
-            Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: After PublishAsync localEventBus.PublishAsync supplier");
         }
 
         protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
