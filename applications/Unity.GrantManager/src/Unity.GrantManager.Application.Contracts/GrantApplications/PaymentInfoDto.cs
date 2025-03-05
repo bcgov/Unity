@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
+﻿
 namespace Unity.GrantManager.GrantApplications;
 
 public class PaymentInfoDto
