@@ -81,12 +81,19 @@ namespace Unity.Payments.Integrations.Cas
 
         private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
         {
-            UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
-            supplierEto.CorrelationId = applicantId;
-            supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
-            string supEt = JsonSerializer.Serialize(supplierEto);
-            Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: Publishing supplier: {SupEt}", supEt);
-            await localEventBus.PublishAsync(supplierEto);
+            try {
+                Logger.LogInformation("SupplierService->UpdateSupplierInfo: GetEventDtoFromCasResponse");
+                UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
+                supplierEto.CorrelationId = applicantId;
+                supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+                string supEt = JsonSerializer.Serialize(supplierEto);
+                Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: Publishing supplier: {SupEt}", supEt);
+                await localEventBus.PublishAsync(supplierEto);
+            }catch(Exception ex)
+            {
+                Logger.LogError(ex, "An exception occurred updating the supplier: {ExceptionMessage}", ex.Message);
+                throw new UserFriendlyException("An exception occurred updating the supplier.");
+            }
         }
 
         protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
