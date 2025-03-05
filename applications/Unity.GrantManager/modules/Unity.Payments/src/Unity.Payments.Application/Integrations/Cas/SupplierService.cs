@@ -32,37 +32,35 @@ namespace Unity.Payments.Integrations.Cas
 
         public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {
-            Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
+            Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
             
             // Integrate with payments module to update / insert supplier
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
                 && !string.IsNullOrEmpty(supplierNumber))
             {
                 dynamic casSupplierResponse = await GetCasSupplierInformationAsync(supplierNumber);
-                Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: Response wtf {CasSupplierResponse}", (string)casSupplierResponse.ToString());
+                Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Response {CasSupplierResponse}", (string)casSupplierResponse.ToString());
                 await UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
         }
 
         public async Task<dynamic> UpdateApplicantSupplierInfoByBn9(string? bn9, Guid applicantId)
         {
-            Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: {Bn9}, {ApplicantId}", bn9, applicantId);
+            Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {Bn9}, {ApplicantId}", bn9, applicantId);
             bool paymentsEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
             if (!paymentsEnabled || string.IsNullOrEmpty(bn9))
             {
                 throw new UserFriendlyException("Feature is disabled or BN9 is null or empty.");
             }
 
-
-            string casRespString = "{\"items\":[{\"suppliernumber\":\"2184411\",\"suppliername\":\"BLUE BRIDGE THEATRE SOCIETY\",\"subcategory\":\"Business\",\"sin\":null,\"providerid\":null,\"businessnumber\":\"853184497\",\"status\":\"ACTIVE\",\"supplierprotected\":null,\"standardindustryclassification\":null,\"lastupdated\":\"2024-05-16 16:58:21\",\"supplieraddress\":[{\"suppliersitecode\":\"001\",\"addressline1\":\"2657 QUADRA ST\",\"addressline2\":null,\"addressline3\":null,\"city\":\"VICTORIA\",\"province\":\"BC\",\"country\":\"CA\",\"postalcode\":\"V8T4E3\",\"emailaddress\":null,\"accountnumber\":null,\"branchnumber\":null,\"banknumber\":null,\"eftadvicepref\":null,\"providerid\":null,\"status\":\"ACTIVE\",\"siteprotected\":null,\"lastupdated\":\"2017-04-24 18:17:37\"}]}],\"hasMore\":false,\"limit\":0,\"offset\":0,\"count\":1,\"links\":[{\"rel\":\"self\",\"href\":\"https://cfs-prodws.cas.gov.bc.ca:7121/ords/cas/cfs/supplier/853184497/businessnumber\"},{\"rel\":\"describedby\",\"href\":\"https://cfs-prodws.cas.gov.bc.ca:7121/ords/cas/metadata-catalog/cfs/supplier/853184497/item\"}]}";
-            dynamic casSupplierResponse = JsonSerializer.Deserialize<dynamic>(casRespString) ?? throw new UserFriendlyException("Deserialization resulted in null.");
+            dynamic casSupplierResponse = await GetCasSupplierInformationByBn9Async(bn9);
             try
             {
                 var items = casSupplierResponse.GetProperty("items");
                 if (items is JsonElement { ValueKind: JsonValueKind.Array } array && array.GetArrayLength() > 0)
                 {
                     casSupplierResponse = array[0];
-                    Logger.LogWarning("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.ToString());
+                    Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.ToString());
                     await UpdateSupplierInfo(casSupplierResponse, applicantId);
                 }
                 else
@@ -81,14 +79,10 @@ namespace Unity.Payments.Integrations.Cas
 
         private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
         {
-            Logger.LogDebug("SupplierService->UpdateSupplierInfo: GetEventDtoFromCasResponse made it in");
             try {
-                Logger.LogWarning("SupplierService->UpdateSupplierInfo: GetEventDtoFromCasResponse");
                 UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
                 supplierEto.CorrelationId = applicantId;
                 supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
-                string supEt = JsonSerializer.Serialize(supplierEto);
-                Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Publishing supplier: {SupEt}", supEt);
                 await localEventBus.PublishAsync(supplierEto);
             }catch(Exception ex)
             {
@@ -99,7 +93,6 @@ namespace Unity.Payments.Integrations.Cas
 
         protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
         {
-            Logger.LogDebug("Made it 1 ");
             string lastUpdated = casSupplierResponse.GetProperty("lastupdated").ToString();
             string suppliernumber = casSupplierResponse.GetProperty("suppliernumber").ToString();
             string suppliername = casSupplierResponse.GetProperty("suppliername").ToString();
@@ -109,7 +102,7 @@ namespace Unity.Payments.Integrations.Cas
             string status = casSupplierResponse.GetProperty("status").ToString();
             string supplierprotected = casSupplierResponse.GetProperty("supplierprotected").ToString();
             string standardindustryclassification = casSupplierResponse.GetProperty("standardindustryclassification").ToString();
-Logger.LogDebug("Made it 2 ");
+
             _ = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime lastUpdatedDate);
             List<SiteEto> siteEtos = new List<SiteEto>();
             JArray siteArray = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(casSupplierResponse.GetProperty("supplieraddress").ToString());
@@ -117,7 +110,7 @@ Logger.LogDebug("Made it 2 ");
             {
                 siteEtos.Add(GetSiteEto(site));
             }
-Logger.LogDebug("Made it 3 ");
+
             return new UpsertSupplierEto
             {
                 Number = suppliernumber,
@@ -131,7 +124,6 @@ Logger.LogDebug("Made it 3 ");
                 LastUpdatedInCAS = lastUpdatedDate,
                 SiteEtos = siteEtos
             };
-            
         }
 
         protected static SiteEto GetSiteEto(dynamic site)
