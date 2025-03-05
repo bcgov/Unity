@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoMapper.Internal.Mappers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,6 +7,8 @@ using Unity.Payments.Codes;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.EntityFrameworkCore;
 using Unity.Payments.Enums;
+using Unity.Payments.PaymentRequests;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -72,6 +75,13 @@ namespace Unity.Payments.Repositories
         {
             // Uses the extension method defined above
             return (await GetQueryableAsync()).IncludeDetails();
+        }
+
+        public async Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdAsync(Guid correlationId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return dbSet.Where(p => p.CorrelationId.Equals(correlationId))
+                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending).IncludeDetails().ToList();
         }
     }
 }

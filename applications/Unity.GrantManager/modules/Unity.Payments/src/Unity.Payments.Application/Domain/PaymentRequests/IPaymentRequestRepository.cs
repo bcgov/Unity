@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Payments.PaymentRequests;
 using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Payments.Domain.PaymentRequests
@@ -12,6 +13,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         Task<List<PaymentRequest>> GetPaymentRequestsBySentToCasStatusAsync();
         Task<PaymentRequest?> GetPaymentRequestByInvoiceNumber(string invoiceNumber);
         Task<List<PaymentRequest>> GetPaymentRequestsByFailedsStatusAsync();
-        
+        Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdAsync(Guid correlationId);
+
     }
 }
