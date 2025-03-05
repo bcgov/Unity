@@ -82,6 +82,7 @@ namespace Unity.Payments.Integrations.Cas
         private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
         {
             try {
+                Logger.LogInformation("SupplierService->UpdateSupplierInfo: GetEventDtoFromCasResponse");
                 UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
                 supplierEto.CorrelationId = applicantId;
                 supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
