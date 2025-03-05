@@ -32,6 +32,8 @@ using Microsoft.Extensions.Logging;
 using Unity.Flex.Worksheets;
 using Unity.Payments.PaymentRequests;
 using Unity.Payments.Enums;
+using Volo.Abp;
+using Unity.Payments.Domain.PaymentRequests;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -55,6 +57,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly ILocalEventBus _localEventBus;
     private readonly ISupplierService _iSupplierService;
     private readonly IPaymentRequestAppService _paymentRequestService;
+    private readonly IPaymentRequestRepository _paymentRequestsRepository;
 
     public GrantApplicationAppService(
         IApplicationManager applicationManager,
@@ -70,7 +73,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus,
         ISupplierService iSupplierService,
-        IPaymentRequestAppService paymentRequestService)
+        IPaymentRequestAppService paymentRequestService,
+        IPaymentRequestRepository paymentRequestsRepository)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -86,6 +90,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _iSupplierService = iSupplierService;
         _localEventBus = localEventBus;
         _paymentRequestService = paymentRequestService;
+        _paymentRequestsRepository = paymentRequestsRepository;
     }
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -440,6 +445,11 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 && !string.IsNullOrEmpty(input.SupplierNumber)
                 && input.OriginalSupplierNumber != input.SupplierNumber)
             {
+                var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(id);
+                if (pendingPayments != null && pendingPayments.Count > 0)
+                {
+                        throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
+                }
                 dynamic casSupplierResponse = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
                 UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
                 supplierEto.CorrelationId = applicant.Id;
