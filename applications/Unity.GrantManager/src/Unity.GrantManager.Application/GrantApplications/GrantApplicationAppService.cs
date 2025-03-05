@@ -446,12 +446,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 && input.OriginalSupplierNumber != input.SupplierNumber)
             {
                 var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(id);
-                if (pendingPayments != null)
+                if (pendingPayments != null && pendingPayments.Count > 0)
                 {
-                    if (pendingPayments.Count > 0)
-                    {
                         throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
-                    }
                 }
                 dynamic casSupplierResponse = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
                 UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);

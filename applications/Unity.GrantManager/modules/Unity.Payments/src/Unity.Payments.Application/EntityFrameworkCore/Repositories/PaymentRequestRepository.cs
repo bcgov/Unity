@@ -1,5 +1,4 @@
-﻿using AutoMapper.Internal.Mappers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,8 +6,6 @@ using Unity.Payments.Codes;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.EntityFrameworkCore;
 using Unity.Payments.Enums;
-using Unity.Payments.PaymentRequests;
-using Volo.Abp;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
