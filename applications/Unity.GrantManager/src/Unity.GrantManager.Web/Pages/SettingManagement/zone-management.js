@@ -92,12 +92,6 @@
                     theme: 'minimal-dark',
                 });
 
-                $('#btn-back').on('click', function (e) {
-                    e.preventDefault();
-                    console.log('button clicked');
-                    location.href = '/ApplicationForms';
-                });
-
                 $('#btn-cancel').on('click', function (e) {
                     e.preventDefault();
                     console.log('cancel button clicked');
