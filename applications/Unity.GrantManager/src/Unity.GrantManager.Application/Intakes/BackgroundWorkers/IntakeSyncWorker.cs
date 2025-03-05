@@ -57,7 +57,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
 
             foreach (var tenant in tenants)
             {
-                using (_currentTenant.Change(tenant.Id))
+                using (_currentTenant.Change(tenant.Id, tenant.Name))
                 {
                     await _applicationFormSynchronizationService.GetMissingSubmissions(numberDaysBack);
                 }
