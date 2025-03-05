@@ -2,6 +2,8 @@
 (function ($) {
     abp.modals = abp.modals || {};
 
+    console.log('test');
+
     abp.modals.ZoneManagement = function () {
         function checkParents($tab, $element, className) {
             let parentName = $element
@@ -50,6 +52,7 @@
         }
 
         this.initDom = function ($el) {
+            console.log('dom');
             function handleCheckboxChange($tab, $checkBox) {
                 let $checkState = $checkBox.is(':checked');
                 if ($checkState) {
@@ -80,12 +83,25 @@
                 });
             });
 
+
             $(function () {
                 $('.custom-scroll-content').mCustomScrollbar({
                     theme: 'minimal-dark',
                 });
                 $('.custom-scroll-container > .col-4').mCustomScrollbar({
                     theme: 'minimal-dark',
+                });
+
+                $('#btn-back').on('click', function (e) {
+                    e.preventDefault();
+                    console.log('button clicked');
+                    location.href = '/ApplicationForms';
+                });
+
+                $('#btn-cancel').on('click', function (e) {
+                    e.preventDefault();
+                    console.log('cancel button clicked');
+                    location.href = '/ApplicationForms';
                 });
             });
         };
