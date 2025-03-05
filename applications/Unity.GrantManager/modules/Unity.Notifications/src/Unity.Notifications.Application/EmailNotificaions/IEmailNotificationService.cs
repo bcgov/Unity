@@ -15,7 +15,7 @@ namespace Unity.Notifications.EmailNotifications
         Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom);
         Task<EmailLog?> GetEmailLogById(Guid id);
         Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input);
-        Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom);
+        Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType);
         Task SendEmailToQueue(EmailLog emailLog);
         string GetApprovalBody();
         string GetDeclineBody();

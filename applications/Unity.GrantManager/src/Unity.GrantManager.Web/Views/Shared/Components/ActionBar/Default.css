@@ -24,3 +24,7 @@
 .action-bar-btn-unavailable {
     display: none;
 }
+
+.margin-left-auto {
+    margin-left: auto;
+}

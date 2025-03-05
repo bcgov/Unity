@@ -65,13 +65,20 @@ namespace Unity.Payments.Repositories
             var dbSet = await GetDbSetAsync();
             return dbSet.Where(p => p.InvoiceStatus != null 
                                 && FailedStatusList.Contains(p.InvoiceStatus) 
-                                && p.LastModificationTime >= DateTime.Today ).IncludeDetails().ToList();
+                                && p.LastModificationTime >= DateTime.Now.AddDays(-2)).IncludeDetails().ToList();
         }
 
         public override async Task<IQueryable<PaymentRequest>> WithDetailsAsync()
         {
             // Uses the extension method defined above
             return (await GetQueryableAsync()).IncludeDetails();
+        }
+
+        public async Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdAsync(Guid correlationId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return dbSet.Where(p => p.CorrelationId.Equals(correlationId))
+                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending).IncludeDetails().ToList();
         }
     }
 }

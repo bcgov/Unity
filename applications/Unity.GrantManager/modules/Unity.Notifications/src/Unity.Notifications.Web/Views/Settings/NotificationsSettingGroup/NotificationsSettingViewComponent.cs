@@ -14,9 +14,14 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
 {
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
+        string retryMaxSetting = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.EmailMaxRetryAttempts) ?? "3";
+        var success = int.TryParse(retryMaxSetting, out int maximumRetryAttempts);
+        if (!success) { maximumRetryAttempts = 3; }
+
         var model = new NotificationsSettingViewModel
         {
-            DefaultFromAddress = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromAddress) ?? ""
+            DefaultFromAddress = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromAddress) ?? "",
+            MaximumRetryAttempts = maximumRetryAttempts
         };
 
         return View("~/Views/Settings/NotificationsSettingGroup/Default.cshtml", model);

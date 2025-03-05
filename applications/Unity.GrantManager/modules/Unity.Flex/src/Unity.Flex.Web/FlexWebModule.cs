@@ -33,10 +33,7 @@ public class FlexWebModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        Configure<AbpNavigationOptions>(options =>
-        {
-            options.MenuContributors.Add(new FlexMenuContributor());
-        });
+        
 
         Configure<AbpVirtualFileSystemOptions>(options =>
         {

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
-using Microsoft.Extensions.Options;
 using System;
 using Volo.Abp.Uow;
 using System.Net.Http;
@@ -14,38 +13,21 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Microsoft.Extensions.Logging;
 using Unity.Notifications.EmailNotifications;
 using Newtonsoft.Json;
+using Volo.Abp.SettingManagement;
+using Unity.Modules.Shared.Utils;
+using Unity.Notifications.Settings;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;
 
-public class EmailConsumer : IQueueConsumer<EmailMessages>
-{
-    private int _retryAttemptMax { get; set; } = 0;
-    private readonly EmailQueueService _emailQueueService;
-    private readonly IEmailLogsRepository _emailLogsRepository;
-    private readonly IUnitOfWorkManager _unitOfWorkManager;
-    private readonly ICurrentTenant _currentTenant;
-    private readonly ILogger<EmailConsumer> _logger;
-    private readonly IEmailNotificationService _emailNotificationService;
-
-    public EmailConsumer(
+public class EmailConsumer(
                     IEmailNotificationService emailNotificationService,
                     IEmailLogsRepository emailLogsRepository,
-                    IOptions<EmailBackgroundJobsOptions> emailBackgroundJobsOptions,
                     EmailQueueService emailQueueService,
                     IUnitOfWorkManager unitOfWorkManager,
                     ICurrentTenant currentTenant,
-                    ILogger<EmailConsumer> logger
-                    )
-    {
-        _emailNotificationService = emailNotificationService;
-        _emailQueueService = emailQueueService;
-        _retryAttemptMax = emailBackgroundJobsOptions.Value.EmailResend.RetryAttemptsMaximum;
-        _emailLogsRepository = emailLogsRepository;
-        _unitOfWorkManager = unitOfWorkManager;
-        _currentTenant = currentTenant;
-        _logger = logger;
-    }
-
+                    ISettingManager settingManager,
+                    ILogger<EmailConsumer> logger) : IQueueConsumer<EmailMessages>
+{
     public async Task<Task> ConsumeAsync(EmailMessages message)
     {
         EmailNotificationEvent emailNotificationEvent = message.EmailNotificationEvent;
@@ -55,10 +37,10 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
         }
 
         // Grab the tenant and switch db context
-        using (_currentTenant.Change(emailNotificationEvent.TenantId))
+        using (currentTenant.Change(emailNotificationEvent.TenantId))
         {
-            var uow = _unitOfWorkManager.Begin(true, false);
-            EmailLog? emailLog = await _emailNotificationService.GetEmailLogById(emailNotificationEvent.Id);
+            var uow = unitOfWorkManager.Begin(true, false);
+            EmailLog? emailLog = await emailNotificationService.GetEmailLogById(emailNotificationEvent.Id);
             if (emailLog != null && emailLog.Id != Guid.Empty && emailLog.ToAddress != null)
             {
                 await ProcessEmailLogAsync(emailLog, emailNotificationEvent, uow);
@@ -72,14 +54,16 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
     {
         try
         {
+            int maxRetryAttempts = SettingDefinitions.GetSettingsValueInt(settingManager, NotificationsSettings.Mailing.EmailMaxRetryAttempts);
+
             // Resend the email - Update the RetryCount
-            if (emailLog.RetryAttempts <= _retryAttemptMax)
+            if (emailLog.RetryAttempts <= maxRetryAttempts)
             {
-                HttpResponseMessage response = await _emailNotificationService.SendEmailNotification(
+                HttpResponseMessage response = await emailNotificationService.SendEmailNotification(
                                                                                     emailLog.ToAddress,
                                                                                     emailLog.Body,
                                                                                     emailLog.Subject,
-                                                                                    emailLog.FromAddress);
+                                                                                    emailLog.FromAddress, "text");
                 // Update the response
                 emailLog.ChesResponse = JsonConvert.SerializeObject(response);
                 emailLog.ChesStatus = response.StatusCode.ToString();
@@ -96,14 +80,14 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                 if (ReprocessBasedOnStatusCode(response.StatusCode))
                 {
                     emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
-                    await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                    await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
                     await uow.SaveChangesAsync(); // Timing of Retry update
                     emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
-                    await _emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
+                    await emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
                 }
                 else
                 {
-                    await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                    await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
                     await uow.SaveChangesAsync();
                 }
             }
@@ -111,7 +95,7 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
         catch (Exception ex)
         {
             string ExceptionMessage = ex.Message;
-            _logger.LogInformation(ex, "Process Delayed Email Exception: {ExceptionMessage}", ExceptionMessage);
+            logger.LogInformation(ex, "Process Delayed Email Exception: {ExceptionMessage}", ExceptionMessage);
         }
     }
 

@@ -7,9 +7,8 @@ using Volo.Abp.AspNetCore.Mvc;
 using Unity.Payments.EntityFrameworkCore;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.BackgroundJobs;
-using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
-using Unity.Payments.PaymentRequests;
+
 using Volo.Abp.TenantManagement;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Unity.Payments.RabbitMQ.QueueMessages;
@@ -39,17 +38,9 @@ public class PaymentsApplicationModule : AbpModule
         });
     }
 
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        var configuration = context.Services.GetConfiguration();
-
-        Configure<PaymentRequestBackgroundJobsOptions>(options =>
-        {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
-            options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
-            options.FinancialNotificationSummaryOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasFinancialNotificationSummary:ProducerExpression") ?? "";            
-        });
-
         context.Services.ConfigureRabbitMQ();
         context.Services.AddQueueMessageConsumer<InvoiceConsumer, InvoiceMessages>();
         context.Services.AddQueueMessageConsumer<ReconciliationConsumer, ReconcilePaymentMessages>();
@@ -63,7 +54,7 @@ public class PaymentsApplicationModule : AbpModule
         {
             options.FileSets.AddEmbedded<PaymentsApplicationModule>();
         });
-       
+
         context.Services.AddAutoMapperObjectMapper<PaymentsApplicationModule>();
         Configure<AbpAutoMapperOptions>(options =>
         {
@@ -101,4 +92,5 @@ public class PaymentsApplicationModule : AbpModule
         LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
+
 }

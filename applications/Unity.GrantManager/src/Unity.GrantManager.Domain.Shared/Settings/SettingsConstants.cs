@@ -24,5 +24,11 @@
                 public const string FundingAgreement = "GrantManager.UI.Tabs.FundingAgreement";
             }
         }
+
+        public static class BackgroundJobs
+        {
+            public const string IntakeResync_Expression = "GrantManager.BackgroundJobs.IntakeResync_Expression";
+            public const string IntakeResync_NumDaysToCheck = "GrantManager.BackgroundJobs.IntakeResync_NumDaysToCheck";
+         }
     }
 }

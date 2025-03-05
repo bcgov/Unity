@@ -250,6 +250,8 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
                     NotificationsPermissions.Settings,
+                    
+                    UnitySettingManagementPermissions.BackgroundJobSettings
                 }, context.TenantId);
 
 
