@@ -121,6 +121,21 @@
             initializeScrollbars();
             initializeCancelButton();
         };
+
+        $('#ZoneManagementForm').on('submit', function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                method: $(this).attr('method'),
+                data: $(this).serialize(),
+                success: function () {
+                    abp.notify.success('Configurations have been successfully saved.');
+                },
+                error: function () {
+                    abp.notify.error('An error occurred while saving configurations.');
+                }
+            });
+        });
     };
 
 })(jQuery);
