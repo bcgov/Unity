@@ -73,5 +73,12 @@ namespace Unity.Payments.Repositories
             // Uses the extension method defined above
             return (await GetQueryableAsync()).IncludeDetails();
         }
+
+        public async Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdAsync(Guid correlationId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return dbSet.Where(p => p.CorrelationId.Equals(correlationId))
+                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending).IncludeDetails().ToList();
+        }
     }
 }

@@ -12,6 +12,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         Task<List<PaymentRequest>> GetPaymentRequestsBySentToCasStatusAsync();
         Task<PaymentRequest?> GetPaymentRequestByInvoiceNumber(string invoiceNumber);
         Task<List<PaymentRequest>> GetPaymentRequestsByFailedsStatusAsync();
-        
+        Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdAsync(Guid correlationId);
+
     }
 }

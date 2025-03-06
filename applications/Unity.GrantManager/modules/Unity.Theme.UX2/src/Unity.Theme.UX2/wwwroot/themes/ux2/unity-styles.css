@@ -774,6 +774,13 @@ div.dataTables_wrapper div.dataTables_filter {
     padding: 13px 20px;
 }
 
+.unt-btn-success {
+    text-transform: none;
+    font-weight: normal;
+    font-size: 14px;
+    padding: 10px 15px;
+}
+
 .unt-btn-primary {
     text-transform: none;
     font-weight: normal;
@@ -807,7 +814,6 @@ div.dataTables_wrapper div.dataTables_filter {
         --bs-btn-color: #5595D9;
         border: 0px;
     }
-
 
 .unt-btn-outline-primary {
     text-transform: none;
