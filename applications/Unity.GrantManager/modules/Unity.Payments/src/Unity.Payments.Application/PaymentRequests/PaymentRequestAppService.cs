@@ -133,7 +133,7 @@ namespace Unity.Payments.PaymentRequests
         private static string GenerateInvoiceNumberAsync(int sequenceNumber, int index, string invoiceNumber, string referenceNumber)
         {
             sequenceNumber = sequenceNumber + index;
-            var sequencePart = sequenceNumber.ToString("D6");
+            var sequencePart = sequenceNumber.ToString("D4");
             return $"{referenceNumber}-{invoiceNumber}-{sequencePart}";
         }
 
