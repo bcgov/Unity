@@ -86,7 +86,7 @@ namespace Unity.Payments.PaymentRequests
             var batchNumber = await GetMaxBatchNumberAsync();
             var batchName = $"{paymentIdPrefix}_UNITY_BATCH_{batchNumber}";
             var currentYear = DateTime.UtcNow.Year;
-            var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
+            var nextSequenceNumber = await GetNextSequenceNumberAsync(currentYear);
 
             foreach (var paymentRequestItem in paymentRequests.Select((value, i) => new { i, value }))
             {
@@ -94,8 +94,11 @@ namespace Unity.Payments.PaymentRequests
                 {
                     // referenceNumber + Chefs Confirmation ID + 6 digit sequence based on sequence number and index
                     CreatePaymentRequestDto paymentRequestDto = paymentRequestItem.value;
-                    string referenceNumber = GenerateReferenceNumberAsync(paymentIdPrefix);
-                    string invoiceNumber = GenerateInvoiceNumberAsync(sequenceNumber, paymentRequestItem.i, paymentRequestDto.InvoiceNumber, referenceNumber);                    
+                    string referenceNumberPrefix = GenerateReferenceNumberPrefixAsync(paymentIdPrefix);
+                    string sequenceNumber = GenerateSequenceNumberAsync(nextSequenceNumber, paymentRequestItem.i);  
+                    string referenceNumber = GenerateReferenceNumberAsync(referenceNumberPrefix, sequenceNumber);
+                    string invoiceNumber = GenerateInvoiceNumberAsync(referenceNumberPrefix, paymentRequestDto.InvoiceNumber, sequenceNumber);
+
                     paymentRequestDto.InvoiceNumber = invoiceNumber;
                     paymentRequestDto.ReferenceNumber = referenceNumber;
                     paymentRequestDto.BatchName = batchName;
@@ -130,14 +133,24 @@ namespace Unity.Payments.PaymentRequests
             return createdPayments;
         }
 
-        private static string GenerateInvoiceNumberAsync(int sequenceNumber, int index, string invoiceNumber, string referenceNumber)
+        private static string GenerateInvoiceNumberAsync(string referenceNumber, string invoiceNumber, string sequencePart)
         {
-            sequenceNumber = sequenceNumber + index;
-            var sequencePart = sequenceNumber.ToString("D6");
             return $"{referenceNumber}-{invoiceNumber}-{sequencePart}";
         }
 
-        private static string GenerateReferenceNumberAsync(string paymentIdPrefix)
+        private static string GenerateReferenceNumberAsync(string referenceNumber,  string sequencePart)
+        {
+            return $"{referenceNumber}-{sequencePart}";
+        }
+
+
+        private static string GenerateSequenceNumberAsync(int sequenceNumber,  int index)
+        {
+            sequenceNumber = sequenceNumber + index;
+            return sequenceNumber.ToString("D4");
+        }
+
+        private static string GenerateReferenceNumberPrefixAsync(string paymentIdPrefix)
         {
             var currentYear = DateTime.UtcNow.Year;
             var yearPart = currentYear.ToString();
