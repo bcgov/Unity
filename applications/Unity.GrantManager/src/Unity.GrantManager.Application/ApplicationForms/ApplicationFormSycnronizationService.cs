@@ -21,6 +21,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
+using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -45,12 +46,15 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
         private List<Fact> _facts = new();
         private readonly RestClient _intakeClient;
+        private readonly ITenantRepository _tenantRepository;
         public List<ApplicationFormDto>? applicationFormDtoList { get; set; }
         public HashSet<string> FormVersionsInitializedVersionHash { get; set; } = new HashSet<string>();
+
 
         public ApplicationFormSycnronizationService(
             ICurrentTenant currentTenant,
             IRepository<ApplicationForm, Guid> repository,
+            ITenantRepository tenantRepository,
             RestClient restClient,
             IConfiguration configuration,
             IStringEncryptionService stringEncryptionService,
@@ -62,6 +66,7 @@ namespace Unity.GrantManager.ApplicationForms
             : base(repository)
         {
             _currentTenant = currentTenant;
+            _tenantRepository = tenantRepository;
             _intakeClient = restClient;
             _configuration = configuration;
             _stringEncryptionService = stringEncryptionService;
@@ -217,18 +222,29 @@ namespace Unity.GrantManager.ApplicationForms
                 AddFact("Total Missing Submissions Count: ", missingSubmissionsCount.ToString());
             }
 
-            string tenantName = "";
-            if (_currentTenant != null && !string.IsNullOrEmpty(_currentTenant.Name))
-            {
-                tenantName = " -- Tenant: " + _currentTenant.Name;
-            }
-
+            string tenantName = await GetTenantNameAsync() ?? "";
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Review Missed Chefs Submissions " + tenantName;
             string activitySubtitle = "Environment: " + envInfo;
             string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
             await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, _facts);
             return missingSubmissions ?? new HashSet<string>();
+        }
+
+        private async Task<string?> GetTenantNameAsync()
+        {
+            string tenantName = "";
+            if (_currentTenant != null && !string.IsNullOrEmpty(_currentTenant.Name))
+            {
+                tenantName = " -- Tenant: " + _currentTenant.Name;
+            } else if (_currentTenant != null && _currentTenant.Id != null)
+            {
+                // Lookup the tenant name
+                Tenant? tenant = await _tenantRepository.FindAsync(_currentTenant.Id.Value);
+                tenantName = tenant != null ? " -- Tenant: " + tenant.Name : " -- Tenant: " + _currentTenant.Id;
+            }   
+
+            return tenantName;
         }
 
         public HashSet<string> GetSubmissionsByForm(Guid applicationFormId)

@@ -15,7 +15,6 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
-using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -23,7 +22,6 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Microsoft.EntityFrameworkCore;
 using Unity.Modules.Shared.Correlation;
-using Unity.GrantManager.Payments;
 using Unity.Flex.WorksheetInstances;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Flex;
@@ -34,6 +32,7 @@ using Unity.Payments.PaymentRequests;
 using Unity.Payments.Enums;
 using Volo.Abp;
 using Unity.Payments.Domain.PaymentRequests;
+using Unity.GrantManager.Payments;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -450,11 +449,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 {
                         throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
                 }
-                dynamic casSupplierResponse = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
-                UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
-                supplierEto.CorrelationId = applicant.Id;
-                supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
-                await _localEventBus.PublishAsync(supplierEto);
+                await _iSupplierService.UpdateApplicantSupplierInfo(input.SupplierNumber, application.ApplicantId);
             }
 
             var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId);
@@ -534,85 +529,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
     }
-
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-    protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
-    {
-        string lastUpdated = casSupplierResponse.GetProperty("lastupdated").ToString();
-        string suppliernumber = casSupplierResponse.GetProperty("suppliernumber").ToString();
-        string suppliername = casSupplierResponse.GetProperty("suppliername").ToString();
-        string subcategory = casSupplierResponse.GetProperty("subcategory").ToString();
-        string providerid = casSupplierResponse.GetProperty("providerid").ToString();
-        string businessnumber = casSupplierResponse.GetProperty("businessnumber").ToString();
-        string status = casSupplierResponse.GetProperty("status").ToString();
-        string supplierprotected = casSupplierResponse.GetProperty("supplierprotected").ToString();
-        string standardindustryclassification = casSupplierResponse.GetProperty("standardindustryclassification").ToString();
-
-        _ = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime lastUpdatedDate);
-        List<SiteEto> siteEtos = new List<SiteEto>();
-        JArray siteArray = JsonConvert.DeserializeObject<dynamic>(casSupplierResponse.GetProperty("supplieraddress").ToString());
-        foreach (dynamic site in siteArray)
-        {
-            siteEtos.Add(GetSiteEto(site));
-        }
-
-        return new UpsertSupplierEto
-        {
-            Number = suppliernumber,
-            Name = suppliername,
-            Subcategory = subcategory,
-            ProviderId = providerid,
-            BusinessNumber = businessnumber,
-            Status = status,
-            SupplierProtected = supplierprotected,
-            StandardIndustryClassification = standardindustryclassification,
-            LastUpdatedInCAS = lastUpdatedDate,
-            SiteEtos = siteEtos
-        };
-    }
-
-    protected static SiteEto GetSiteEto(dynamic site)
-    {
-        string supplierSiteCode = site["suppliersitecode"].ToString();
-        string addressLine1 = site["addressline1"].ToString();
-        string addressLine2 = site["addressline2"].ToString();
-        string city = site["city"].ToString();
-        string province = site["province"].ToString();
-        string country = site["country"].ToString();
-        string postalCode = site["postalcode"].ToString();
-        string emailAddress = site["emailaddress"].ToString();
-        string eftAdvicePref = site["eftadvicepref"].ToString();
-        string accountNumber = site["accountnumber"].ToString();
-        string maskedAccountNumber = accountNumber.Length > 4 
-            ? new string('*', accountNumber.Length - 4) + accountNumber[^4..] 
-            : accountNumber;
-        string bankAccount = maskedAccountNumber;
-        string providerId = site["providerid"].ToString();
-        string siteStatus = site["status"].ToString();
-        string siteProtected = site["siteprotected"].ToString();
-        string siteLastUpdated = site["lastupdated"].ToString();
-
-        _ = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime siteLastUpdatedDate);
-        return new SiteEto
-        {
-            SupplierSiteCode = supplierSiteCode,
-            AddressLine1 = addressLine1,
-            AddressLine2 = addressLine2,
-            AddressLine3 = addressLine2,
-            City = city,
-            Province = province,
-            Country = country,
-            PostalCode = postalCode,
-            EmailAddress = emailAddress,
-            EFTAdvicePref = eftAdvicePref,
-            BankAccount = bankAccount,
-            ProviderId = providerId,
-            Status = siteStatus,
-            SiteProtected = siteProtected,
-            LastUpdated = siteLastUpdatedDate
-        };
-    }
-#pragma warning restore CS8600
 
     protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
     {
