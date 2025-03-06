@@ -13,6 +13,8 @@ using Newtonsoft.Json.Linq;
 using System.Linq;
 using Unity.Modules.Shared.Utils;
 using Microsoft.Extensions.Logging;
+using Unity.Payments.Integrations.Cas;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -20,10 +22,12 @@ namespace Unity.GrantManager.Applicants;
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(ApplicantAppService), typeof(IApplicantAppService))]
 public class ApplicantAppService(IApplicantRepository applicantRepository,
+                                 ISupplierService supplierService,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
-{
+{   
+    protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
     public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
@@ -108,8 +112,22 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
 
         await applicantAgentRepository.InsertAsync(newApplicantAgent);
-
         return newApplicantAgent;
+    }
+    
+    public async Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto) {
+        var applicant = applicantAgentDto.Applicant;
+
+        if(applicant.BusinessNumber == null && applicant.MatchPercentage == null) {
+            applicant = await UpdateApplicantOrgMatchAsync(applicant);
+        }
+        
+        if (applicant.SupplierId != null) return;
+
+        if(applicant.BusinessNumber != null) {
+            // This fires a detached process event which may update the supplier if it finds it in CAS via the BN9
+            await supplierService.UpdateApplicantSupplierInfoByBn9(applicant.BusinessNumber, applicant.Id);
+        }
     }
 
     [RemoteService(true)]
@@ -146,46 +164,62 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         return await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
     }
 
-    private async Task UpdateApplicantOrgMatchAsync(Applicant applicant)
+    public async Task<Applicant> UpdateApplicantOrgMatchAsync(Applicant applicant)
     {
         try
         {
-            if (string.IsNullOrEmpty(applicant.OrgNumber)) return;
-            JObject? result = await orgBookService.GetOrgBookQueryAsync(applicant.OrgNumber);
+            string? orgbookLookup = string.IsNullOrEmpty(applicant.OrgNumber) ? applicant.ApplicantName : applicant.OrgNumber;
+            if (string.IsNullOrEmpty(orgbookLookup)) return applicant;
+
+            JObject? result = await orgBookService.GetOrgBookQueryAsync(orgbookLookup);
             var orgData = result?.SelectToken("results")?.Children().FirstOrDefault();
-            if (orgData == null) return;
+            if (orgData == null) return applicant;
 
-            var namesChildren = orgData.SelectToken("names")?.Children();
-            if (namesChildren == null) return;
-
-            foreach (var name in namesChildren)
-            {
-                if (name.SelectToken("type")?.ToString() == "entity_name")
-                {
-                    string nameText = name.SelectToken("text")?.ToString() ?? string.Empty;
-                    double match = nameText.CompareStrings(applicant.ApplicantName ?? string.Empty);
-                    applicant.MatchPercentage = (decimal)match;
-                    if (applicant.OrgName != nameText)
-                    {
-                        applicant.OrgName = nameText;
-                        await applicantRepository.UpdateAsync(applicant);
-                    }
-                }
-                else if (name.SelectToken("type")?.ToString() == "business_number")
-                {
-                    string businessNumber = name.SelectToken("text")?.ToString() ?? string.Empty;
-                    if (businessNumber != applicant.BusinessNumber)
-                    {
-                        applicant.BusinessNumber = businessNumber;
-                        await applicantRepository.UpdateAsync(applicant);
-                    }
-                }
-            }
+            await UpdateApplicantOrgNumberAsync(applicant, orgData);
+            await UpdateApplicantNamesAsync(applicant, orgData.SelectToken("names")?.Children());
         }
         catch (Exception ex)
         {
-            string ExceptionMessage = ex.Message;
-            Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ExceptionMessage);
+            Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ex.Message);
+        }
+
+        return applicant;
+    }
+
+    private async Task UpdateApplicantOrgNumberAsync(Applicant applicant, JToken orgData)
+    {
+        var orgNumber = orgData.SelectToken("source_id");
+        if (applicant.OrgNumber == null && orgNumber != null)
+        {
+            applicant.OrgNumber = orgNumber.ToString();
+            await applicantRepository.UpdateAsync(applicant);
+        }
+    }
+
+    private async Task UpdateApplicantNamesAsync(Applicant applicant, IEnumerable<JToken>? namesChildren)
+    {
+        if (namesChildren == null) return;
+
+        foreach (var name in namesChildren)
+        {
+            string nameType = name.SelectToken("type")?.ToString() ?? string.Empty;
+            string nameText = name.SelectToken("text")?.ToString() ?? string.Empty;
+
+            if (nameType == "entity_name")
+            {
+                double match = nameText.CompareStrings(applicant.ApplicantName ?? string.Empty);
+                applicant.MatchPercentage = (decimal)match;
+                if (applicant.OrgName != nameText)
+                {
+                    applicant.OrgName = nameText;
+                    await applicantRepository.UpdateAsync(applicant);
+                }
+            }
+            else if (nameType == "business_number" && nameText != applicant.BusinessNumber)
+            {
+                applicant.BusinessNumber = nameText;
+                await applicantRepository.UpdateAsync(applicant);
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Events;
 using Unity.Payments.Suppliers;
@@ -12,6 +13,7 @@ namespace Unity.Payments.Handlers
 {
     public class UpsertSupplierHandler(ISupplierAppService supplierAppService,
                                        SiteAppService siteAppService,
+                                       ILogger<UpsertSupplierHandler> logger,
                                        ILocalEventBus localEventBus) : ILocalEventHandler<UpsertSupplierEto>, ITransientDependency
     {
 
@@ -32,6 +34,7 @@ namespace Unity.Payments.Handlers
 
         private async Task<SupplierDto> GetSupplierFromEvent(UpsertSupplierEto eventData) {
             var existing = await supplierAppService.GetBySupplierNumberAsync(eventData.Number);
+            logger.LogInformation("Upserting supplier from event data: {Existing}", existing);
 
             // This is subject to some business rules and a domain implementation
             if (existing != null)
