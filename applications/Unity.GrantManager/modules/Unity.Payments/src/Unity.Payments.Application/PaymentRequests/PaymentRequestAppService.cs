@@ -92,13 +92,11 @@ namespace Unity.Payments.PaymentRequests
             {
                 try
                 {
-                    // referenceNumber + Chefs Confirmation ID + 4 digit sequence based on invoice number count
+                    // referenceNumber + Chefs Confirmation ID + 6 digit sequence based on sequence number and index
                     CreatePaymentRequestDto paymentRequestDto = paymentRequestItem.value;
-                    int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(paymentRequestDto.CorrelationId) + 1;
-                    var sequenceForInvoice = applicationPaymentRequestCount.ToString("D4");
-                    string referenceNumber = GeneratePaymentNumberAsync(paymentIdPrefix);
-
-                    paymentRequestDto.InvoiceNumber = $"{referenceNumber}-{paymentRequestDto.InvoiceNumber}-{sequenceForInvoice}";
+                    string referenceNumber = GenerateReferenceNumberAsync(paymentIdPrefix);
+                    string invoiceNumber = GenerateInvoiceNumberAsync(sequenceNumber, paymentRequestItem.i, paymentRequestDto.InvoiceNumber, referenceNumber);                    
+                    paymentRequestDto.InvoiceNumber = invoiceNumber;
                     paymentRequestDto.ReferenceNumber = referenceNumber;
                     paymentRequestDto.BatchName = batchName;
                     paymentRequestDto.BatchNumber = batchNumber;
@@ -130,6 +128,20 @@ namespace Unity.Payments.PaymentRequests
                 }
             }
             return createdPayments;
+        }
+
+        private static string GenerateInvoiceNumberAsync(int sequenceNumber, int index, string invoiceNumber, string referenceNumber)
+        {
+            sequenceNumber = sequenceNumber + index;
+            var sequencePart = sequenceNumber.ToString("D6");
+            return $"{referenceNumber}-{invoiceNumber}-{sequencePart}";
+        }
+
+        private static string GenerateReferenceNumberAsync(string paymentIdPrefix)
+        {
+            var currentYear = DateTime.UtcNow.Year;
+            var yearPart = currentYear.ToString();
+            return $"{paymentIdPrefix}-{yearPart}";
         }
 
         private async Task<decimal> GetMaxBatchNumberAsync()
@@ -383,14 +395,6 @@ namespace Unity.Payments.PaymentRequests
             }
 
             return PaymentSharedConsts.DefaultThresholdAmount;
-        }
-
-        public static string GeneratePaymentNumberAsync(string paymentIdPrefix)
-        {
-            var currentYear = DateTime.UtcNow.Year;
-            var yearPart = currentYear.ToString();
-
-            return $"{paymentIdPrefix}-{yearPart}";
         }
 
         private async Task<int> GetNextSequenceNumberAsync(int currentYear)
