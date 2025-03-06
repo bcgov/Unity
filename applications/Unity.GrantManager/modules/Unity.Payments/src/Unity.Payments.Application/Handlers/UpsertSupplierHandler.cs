@@ -19,7 +19,6 @@ namespace Unity.Payments.Handlers
 
         public async Task HandleEventAsync(UpsertSupplierEto eventData)
         {
-            logger.LogInformation("HandleEvent UpsertSupplier");
             SupplierDto supplierDto = await GetSupplierFromEvent(eventData);
             await InsertSitesFromEventDtoAsync(supplierDto.Id, eventData);
 
@@ -34,8 +33,6 @@ namespace Unity.Payments.Handlers
         }
 
         private async Task<SupplierDto> GetSupplierFromEvent(UpsertSupplierEto eventData) {
-            string evtDataStr = System.Text.Json.JsonSerializer.Serialize(eventData);
-            logger.LogInformation("Upserting supplier from event data: {EventData}", evtDataStr);
             var existing = await supplierAppService.GetBySupplierNumberAsync(eventData.Number);
             logger.LogInformation("Upserting supplier from event data: {Existing}", existing);
 

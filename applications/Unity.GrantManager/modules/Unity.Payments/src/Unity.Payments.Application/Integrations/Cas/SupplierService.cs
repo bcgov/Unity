@@ -39,7 +39,6 @@ namespace Unity.Payments.Integrations.Cas
                 && !string.IsNullOrEmpty(supplierNumber))
             {
                 dynamic casSupplierResponse = await GetCasSupplierInformationAsync(supplierNumber);
-                Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: Response {CasSupplierResponse}", (string)casSupplierResponse.ToString());
                 await UpdateSupplierInfo(casSupplierResponse, applicantId);
             }
         }
@@ -60,7 +59,6 @@ namespace Unity.Payments.Integrations.Cas
                 if (items is JsonElement { ValueKind: JsonValueKind.Array } array && array.GetArrayLength() > 0)
                 {
                     casSupplierResponse = array[0];
-                    Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {CasSupplierResponse}", (string)casSupplierResponse.ToString());
                     await UpdateSupplierInfo(casSupplierResponse, applicantId);
                 }
                 else
