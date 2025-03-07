@@ -527,34 +527,6 @@ $(function () {
         };
     }
 
-    function getApprovalDateColumn2(columnIndex, level) {
-        return {
-            title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
-            name: `l${level}ApprovalDate`,
-            data: 'expenseApprovals',
-            className: 'data-table-header',
-            index: columnIndex,
-            render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, level);
-                return formatDate(approval?.decisionDate);
-            }
-        };
-    }
-
-    function getApprovalDateColumn3(columnIndex, level) {
-        return {
-            title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
-            name: `l${level}ApprovalDate`,
-            data: 'expenseApprovals',
-            className: 'data-table-header',
-            index: columnIndex,
-            render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, level);
-                return formatDate(approval?.decisionDate);
-            }
-        };
-    }
-
     function getDescriptionColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:Description'),
