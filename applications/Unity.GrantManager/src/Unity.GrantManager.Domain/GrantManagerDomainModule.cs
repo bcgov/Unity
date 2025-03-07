@@ -31,10 +31,10 @@ namespace Unity.GrantManager;
     typeof(AbpPermissionManagementDomainIdentityModule),
     typeof(AbpSettingManagementDomainModule),
     typeof(AbpTenantManagementDomainModule),
-    typeof(AbpEmailingModule)
+    typeof(AbpEmailingModule),
+    typeof(AbpCachingModule),
+    typeof(NotificationsDomainModule)
 )]
-[DependsOn(typeof(AbpCachingModule))]
-[DependsOn(typeof(NotificationsDomainModule))]
 public class GrantManagerDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
