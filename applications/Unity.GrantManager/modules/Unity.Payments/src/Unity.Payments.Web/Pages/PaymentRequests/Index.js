@@ -250,7 +250,7 @@ $(function () {
     }
 
     function getColumns() {
-        let columnIndex = 0;
+        let columnIndex = 1;
         const columns = [
             getSelectColumn('Select Application', 'rowCount', 'payments'),
             getPaymentReferenceColumn(columnIndex++),
@@ -261,7 +261,7 @@ $(function () {
             getSupplierNameColumn(columnIndex++),
             getSiteNumberColumn(columnIndex++),
             getContractNumberColumn(columnIndex++),
-            getInvoiceNumberColumn(columnIndex),
+            getInvoiceNumberColumn(columnIndex++),
             getPayGroupColumn(columnIndex++),
             getAmountColumn(columnIndex++),
             getStatusColumn(columnIndex++),
@@ -514,6 +514,34 @@ $(function () {
     }
 
     function getApprovalDateColumn(columnIndex, level) {
+        return {
+            title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
+            name: `l${level}ApprovalDate`,
+            data: 'expenseApprovals',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                let approval = getExpenseApprovalsDetails(data, level);
+                return formatDate(approval?.decisionDate);
+            }
+        };
+    }
+
+    function getApprovalDateColumn2(columnIndex, level) {
+        return {
+            title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
+            name: `l${level}ApprovalDate`,
+            data: 'expenseApprovals',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                let approval = getExpenseApprovalsDetails(data, level);
+                return formatDate(approval?.decisionDate);
+            }
+        };
+    }
+
+    function getApprovalDateColumn3(columnIndex, level) {
         return {
             title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
             name: `l${level}ApprovalDate`,
