@@ -41,8 +41,13 @@ namespace Unity.GrantManager.Integrations.Orgbook
             }
         }
 
-        public async Task<JsonDocument> GetOrgBookAutocompleteQueryAsync(string orgBookQuery)
+        public async Task<JsonDocument> GetOrgBookAutocompleteQueryAsync(string? orgBookQuery)
         {
+            if (orgBookQuery == null)
+            {
+                return JsonDocument.Parse("{}");
+            }
+
             var response = await _resilientRestClient
                 .HttpAsync(Method.Get, $"{orgbook_base_api}/search/autocomplete?q={orgBookQuery}&inactive=true&revoked=true");
 
