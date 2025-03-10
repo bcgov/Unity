@@ -1,15 +1,20 @@
 ﻿using Newtonsoft.Json;
 using RestSharp;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager.Emails;
 using Unity.GrantManager.Integration.Orgbook;
 using Unity.GrantManager.Integrations.Exceptions;
 using Unity.GrantManager.Integrations.Http;
 using Volo.Abp;
+using Volo.Abp.Application.Services;
+using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Integrations.Orgbook
 {
-    [IntegrationService]
-    public class OrgBookService : GrantManagerAppService, IOrgBookService
+
+    [ExposeServices(typeof(OrgBookService), typeof(IOrgBookService))]
+    public class OrgBookService : ApplicationService, IOrgBookService
     {
         private readonly IResilientHttpRequest _resilientRestClient;
 
@@ -29,6 +34,22 @@ namespace Unity.GrantManager.Integrations.Orgbook
             {
                 string content = response.Content;
                 return JsonConvert.DeserializeObject<dynamic>(content)!;
+            }
+            else
+            {
+                throw new IntegrationServiceException("GetOrgBookByNumberAsync -> No Response");
+            }
+        }
+
+        public async Task<JsonDocument> GetOrgBookAutocompleteQueryAsync(string orgBookQuery)
+        {
+            var response = await _resilientRestClient
+                .HttpAsync(Method.Get, $"{orgbook_base_api}/search/autocomplete?q={orgBookQuery}&inactive=true&revoked=true");
+
+            if (response != null && response.Content != null)
+            {
+
+                return JsonDocument.Parse(response.Content);
             }
             else
             {

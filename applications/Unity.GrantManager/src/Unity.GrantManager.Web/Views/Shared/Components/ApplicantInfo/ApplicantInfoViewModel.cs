@@ -167,6 +167,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.PostalCode")]
             public string? MailingAddressPostalCode { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Search")]
+            public string? Search { get; set; }
+
+            public string? SelectedOrgBookId { get; set; }
+
+            public string? SelectedOrgBookText { get; set; }
+
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)
