@@ -14,7 +14,7 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
         /// Generate a list of keys and matched values for reporting data for a checkboxgroup component
         /// </summary>
         /// <returns>Dictionary of unique keys with any matching values for the keys</returns>
-        public Dictionary<string, List<string>> Generate()
+        public (Dictionary<string, List<string>> keyValuePairs, bool compressArray) Generate()
         {
             var values = new Dictionary<string, List<string>>();
             JObject dataValue = JObject.Parse(value.CurrentValue);
@@ -26,7 +26,7 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
                 values.Add($"{customField.Key}-{option.Key}", [option.Value.ToString()]);
             }
 
-            return values;
-        }
+            return (values, true);
+        }        
     }
 }

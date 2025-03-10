@@ -24,12 +24,12 @@ namespace Unity.Flex.Reporting.DataGenerators
         {
             try
             {
-                var reportData = new Dictionary<string, List<string>>();
+                var reportData = new Dictionary<string, object?>();
                 var reportingKeys = worksheet.ReportKeys.Split(ReportingConsts.ReportFieldDelimiter);
 
                 foreach (var reportKey in reportingKeys)
                 {
-                    reportData.Add(reportKey, []);
+                    reportData.Add(reportKey, null);
                 }
 
                 var definitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
@@ -43,11 +43,20 @@ namespace Unity.Flex.Reporting.DataGenerators
                             .Create(definition, value)
                             .Generate();
 
-                        foreach (var keyValue in from keyValue in keyValues
+                        var compressArray = keyValues.compressArray;
+
+                        foreach (var keyValue in from keyValue in keyValues.keyValuePairs
                                                  where reportData.ContainsKey(keyValue.Key)
                                                  select keyValue)
                         {
-                            reportData[keyValue.Key] = keyValue.Value;
+                            if (compressArray)
+                            {
+                                reportData[keyValue.Key] = keyValue.Value[0];
+                            }
+                            else
+                            {
+                                reportData[keyValue.Key] = keyValue.Value;
+                            }                         
                         }
                     }
                 }
