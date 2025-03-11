@@ -64,16 +64,6 @@ namespace Unity.GrantManager.Events
                     }
                     break;
 
-                case EmailAction.SendApproval:
-                    string approvalBody = emailNotificationService.GetApprovalBody();
-                    await InitializeAndSendEmailToQueue(emailTo, approvalBody, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId, eventData.EmailFrom);
-                    break;
-
-                case EmailAction.SendDecline:
-                    string declineBody = emailNotificationService.GetDeclineBody();
-                    await InitializeAndSendEmailToQueue(emailTo, declineBody, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId, eventData.EmailFrom);
-                    break;
-
                 case EmailAction.SendCustom:
                     await HandleSendCustomEmail(eventData);
                     break;
