@@ -6,12 +6,11 @@ using System.Text.Json;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
-using Volo.Abp.Application.Services;
 
 namespace Unity.Flex.Reporting.DataGenerators
 {
     [RemoteService(false)]
-    public class WorksheetsReportingDataGeneratorService : ApplicationService,
+    public class WorksheetsReportingDataGeneratorService : ReportingDataGeneratorServiceBase,
         IReportingDataGeneratorService<Worksheet, WorksheetInstance>
     {
         /// <summary>
@@ -43,21 +42,7 @@ namespace Unity.Flex.Reporting.DataGenerators
                             .Create(definition, value)
                             .Generate();
 
-                        var compressArray = keyValues.compressArray;
-
-                        foreach (var keyValue in from keyValue in keyValues.keyValuePairs
-                                                 where reportData.ContainsKey(keyValue.Key)
-                                                 select keyValue)
-                        {
-                            if (compressArray)
-                            {
-                                reportData[keyValue.Key] = keyValue.Value[0];
-                            }
-                            else
-                            {
-                                reportData[keyValue.Key] = keyValue.Value;
-                            }                         
-                        }
+                        ExtractKeyValueData(reportData, keyValues);
                     }
                 }
 

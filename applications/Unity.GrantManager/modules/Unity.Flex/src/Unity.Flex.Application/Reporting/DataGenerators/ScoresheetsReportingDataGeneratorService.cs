@@ -6,12 +6,11 @@ using System.Text.Json;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp;
-using Volo.Abp.Application.Services;
 
 namespace Unity.Flex.Reporting.DataGenerators
 {
     [RemoteService(false)]
-    public class ScoresheetsReportingDataGeneratorService : ApplicationService,
+    public class ScoresheetsReportingDataGeneratorService : ReportingDataGeneratorServiceBase,
         IReportingDataGeneratorService<Scoresheet, ScoresheetInstance>
     {
         public void GenerateAndSet(Scoresheet scoresheet, ScoresheetInstance instanceValue)
@@ -38,21 +37,7 @@ namespace Unity.Flex.Reporting.DataGenerators
                             .Create(answer)
                             .Generate();
 
-                        var compressArray = keyValues.compressArray;
-
-                        foreach (var keyValue in from keyValue in keyValues.keyValuePairs
-                                                 where reportData.ContainsKey(keyValue.Key)
-                                                 select keyValue)
-                        {
-                            if (compressArray)
-                            {
-                                reportData[keyValue.Key] = keyValue.Value[0];
-                            }
-                            else
-                            {
-                                reportData[keyValue.Key] = keyValue.Value;
-                            }
-                        }
+                        ExtractKeyValueData(reportData, keyValues);
                     }
                 }
 
