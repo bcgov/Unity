@@ -85,7 +85,7 @@ $(function () {
             name: 'chefsFileDownload',
             data: 'chefsFileId',
             render: function (data, type, full, meta) {
-                let html = '<a href="/api/app/attachment/chefs/' + encodeURIComponent(full.chefsSumbissionId) + '/download/' + encodeURIComponent(data) + '/' + encodeURIComponent(full.name) + '" target = "_blank" download = "' + full.name + '" >';
+                let html = '<a href="/api/app/attachment/chefs/' + encodeURIComponent(full.chefsSumbissionId) + '/download/' + encodeURIComponent(data) + '/' + encodeURIComponent(full.fileName) + '" target = "_blank" download = "' + full.fileName + '" >';
                 html += '<button class="btn" type="button"><i class="fl fl-download"></i><span>Download</span></button></a>';
                 return html;
             },

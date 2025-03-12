@@ -96,8 +96,9 @@ namespace Unity.GrantManager.Web;
     typeof(PaymentsWebModule),
     typeof(AbpBlobStoringModule),
     typeof(NotificationsWebModule),
-    typeof(FlexWebModule)    
+    typeof(FlexWebModule)
 )]
+
 public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -236,7 +237,7 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddSession(options =>
         {
-            options.IdleTimeout = TimeSpan.FromHours(8);            
+            options.IdleTimeout = TimeSpan.FromHours(8);
         });
     }
 
@@ -521,7 +522,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        var configuration = context.GetConfiguration();       
+        var configuration = context.GetConfiguration();
 
         if (!env.IsProduction())
         {

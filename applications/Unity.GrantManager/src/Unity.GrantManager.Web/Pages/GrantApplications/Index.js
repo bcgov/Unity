@@ -1077,7 +1077,7 @@
             data: 'paymentInfo',
             className: 'data-table-header',
             render: function (data) {
-                return payoutDefinition(data.approvedAmount, data.totalPaid);
+                return payoutDefinition(data?.approvedAmount ?? 0, data?.totalPaid ?? 0);
             },
             index: 62
         }

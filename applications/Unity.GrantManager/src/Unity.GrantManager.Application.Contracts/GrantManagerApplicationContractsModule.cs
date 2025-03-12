@@ -6,6 +6,7 @@ using Volo.Abp.ObjectExtending;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications;
+using Unity.Reporting;
 
 namespace Unity.GrantManager;
 
@@ -19,7 +20,8 @@ namespace Unity.GrantManager;
     typeof(AbpObjectExtendingModule),
     typeof(NotificationsApplicationContractsModule)    
 )]
-public class GrantManagerApplicationContractsModule : AbpModule
+[DependsOn(typeof(ReportingApplicationContractsModule))]
+    public class GrantManagerApplicationContractsModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

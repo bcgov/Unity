@@ -1,4 +1,15 @@
 -- This script sets up the metabaseuploaddb with the necessary privileges for the metabase_dbuser role.
+DO $$
+DECLARE
+    db_name TEXT := 'metabaseuploaddb';
+BEGIN
+    -- Check if the database exists and print the appropriate message
+    IF NOT EXISTS (SELECT FROM pg_database WHERE datname = db_name) THEN
+        RAISE NOTICE 'Database does not exist. You need to create it manually: CREATE DATABASE %;', db_name;
+    ELSE
+        RAISE NOTICE 'Database "%" already exists.', db_name;
+    END IF;
+END $$;
 
 DO $$ 
 DECLARE 

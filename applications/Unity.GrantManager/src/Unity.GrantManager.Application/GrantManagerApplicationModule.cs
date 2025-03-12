@@ -34,6 +34,7 @@ using Quartz;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Volo.Abp.BackgroundJobs;
+using Unity.Reporting;
 
 namespace Unity.GrantManager;
 
@@ -50,7 +51,8 @@ namespace Unity.GrantManager;
     typeof(PaymentsApplicationModule),
     typeof(FlexApplicationModule)
     )]
-public class GrantManagerApplicationModule : AbpModule
+[DependsOn(typeof(ReportingApplicationModule))]
+    public class GrantManagerApplicationModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
