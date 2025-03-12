@@ -53,5 +53,13 @@ namespace Unity.GrantManager.Repositories
                 .Where(x => x.UnityApplicantId != null)
                 .ToListAsync();
         }
+
+        public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Applicants
+                .Where(x => x.SiteId == siteId)
+                .ToListAsync();
+        }
     }
 }

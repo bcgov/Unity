@@ -34,6 +34,7 @@ namespace Unity.Payments.Domain.Suppliers
         /* Supplier */
         public virtual Supplier? Supplier { get; set; }
         public virtual Guid SupplierId { get; set; }
+        public virtual bool MarkDeletedInUse { get; set; }
 
         protected Site()
         {
@@ -76,6 +77,52 @@ namespace Unity.Payments.Domain.Suppliers
             Province = siteDto?.Province;
             PostalCode = siteDto?.PostalCode;
             LastUpdatedInCas = siteDto?.LastUpdatedInCas;
+            MarkDeletedInUse = siteDto?.MarkDeletedInUse ?? false;
+        }
+
+        public static bool SiteMatchesSiteDto(Site site, SiteDto siteDto)
+        {
+            return site.Number == siteDto.Number &&
+                   site.SupplierId == siteDto.SupplierId &&
+                   site.EmailAddress == siteDto.EmailAddress &&
+                   site.EFTAdvicePref == siteDto.EFTAdvicePref &&
+                   site.BankAccount == siteDto.BankAccount &&
+                   site.ProviderId == siteDto.ProviderId &&
+                   site.Status == siteDto.Status &&
+                   site.SiteProtected == siteDto.SiteProtected &&
+                   site.PaymentGroup == siteDto.PaymentGroup &&
+                   site.AddressLine1 == siteDto.AddressLine1 &&
+                   site.AddressLine2 == siteDto.AddressLine2 &&
+                   site.AddressLine3 == siteDto.AddressLine3 &&
+                   site.Country == siteDto.Country &&
+                   site.City == siteDto.City &&
+                   site.Province == siteDto.Province &&
+                   site.PostalCode == siteDto.PostalCode &&
+                   site.LastUpdatedInCas == siteDto.LastUpdatedInCas &&
+                   site.MarkDeletedInUse == siteDto.MarkDeletedInUse;
+        }
+
+        public Site UpdateSiteBySiteDto(Site site, SiteDto siteDto)
+        {
+            site.Number = siteDto.Number;
+            site.SupplierId = siteDto.SupplierId;
+            site.EmailAddress = siteDto.EmailAddress;
+            site.EFTAdvicePref = siteDto.EFTAdvicePref;
+            site.BankAccount = siteDto.BankAccount;
+            site.ProviderId = siteDto.ProviderId;
+            site.Status = siteDto.Status;
+            site.SiteProtected = siteDto.SiteProtected;
+            site.PaymentGroup = siteDto.PaymentGroup;
+            site.AddressLine1 = siteDto.AddressLine1;
+            site.AddressLine2 = siteDto?.AddressLine2;
+            site.AddressLine3 = siteDto?.AddressLine3;
+            site.Country = siteDto?.Country;
+            site.City = siteDto?.City;
+            site.Province = siteDto?.Province;
+            site.PostalCode = siteDto?.PostalCode;
+            site.LastUpdatedInCas = siteDto?.LastUpdatedInCas;
+            site.MarkDeletedInUse = siteDto?.MarkDeletedInUse ?? false;
+            return site;
         }
 
         public void SetNumber(string number)
