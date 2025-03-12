@@ -13,8 +13,7 @@ namespace Unity.Payments.PaymentRequests
         Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId);
         Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId);
         Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds);
-
         Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests);
-
+        Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId);
     }
 }

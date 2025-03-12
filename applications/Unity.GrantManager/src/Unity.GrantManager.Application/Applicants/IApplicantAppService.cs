@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Unity.Payments.Events;
@@ -14,4 +16,5 @@ public interface IApplicantAppService : IApplicationService
     Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto);
     Task<Applicant> UpdateApplicantOrgMatchAsync(Applicant applicant);
     Task<int> GetNextUnityApplicantIdAsync();
+    Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId);
 }
