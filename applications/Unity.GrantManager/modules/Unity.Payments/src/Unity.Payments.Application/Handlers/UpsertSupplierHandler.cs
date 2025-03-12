@@ -105,7 +105,7 @@ namespace Unity.Payments.Handlers
                 };
         }
 
-        private UpdateSupplierDto GetUpdateSupplierDtoFromEvent(UpsertSupplierEto eventData)
+        private static UpdateSupplierDto GetUpdateSupplierDtoFromEvent(UpsertSupplierEto eventData)
         {
             return new UpdateSupplierDto()
             {
