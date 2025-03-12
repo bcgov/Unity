@@ -250,7 +250,7 @@ $(function () {
     }
 
     function getColumns() {
-        let columnIndex = 0;
+        let columnIndex = 1;
         const columns = [
             getSelectColumn('Select Application', 'rowCount', 'payments'),
             getPaymentReferenceColumn(columnIndex++),
@@ -261,7 +261,7 @@ $(function () {
             getSupplierNameColumn(columnIndex++),
             getSiteNumberColumn(columnIndex++),
             getContractNumberColumn(columnIndex++),
-            getInvoiceNumberColumn(columnIndex),
+            getInvoiceNumberColumn(columnIndex++),
             getPayGroupColumn(columnIndex++),
             getAmountColumn(columnIndex++),
             getStatusColumn(columnIndex++),

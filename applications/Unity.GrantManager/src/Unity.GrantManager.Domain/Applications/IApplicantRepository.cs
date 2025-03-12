@@ -11,4 +11,5 @@ public interface IApplicantRepository : IRepository<Applicant, Guid>
     Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId);
     Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName);
     Task<List<Applicant>> GetApplicantsWithUnityApplicantIdAsync();
+    Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId);
 }

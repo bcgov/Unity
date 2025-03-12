@@ -182,6 +182,9 @@ $(function () {
             render: function (data, type, full, meta) {
                 let checked = UIElements.siteId.val() == data ? 'checked' : '';
                 let disabled = UIElements.hasEditSupplier.val() == 'False' ? 'disabled' : '';
+                if(full.markDeletedInUse) {
+                    return 'Deleted-In Use';
+                }
                 return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
             },
             index: columnIndex

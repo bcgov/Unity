@@ -30,6 +30,17 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         return await supplierService.GetCasSupplierInformationAsync(supplierNumber);
     }
 
+    public async Task<dynamic> GetSupplierByBusinessNumber(string bn9)
+    {
+        return await supplierService.GetCasSupplierInformationByBn9Async(bn9);
+    }
+
+    [HttpPut("api/app/applicant/{applicantId}/bn9/{bn9}")]
+    public async Task<dynamic> UpdateAplicantSupplierByBn9Async(Guid applicantId, string bn9)
+    {
+        return await supplierService.UpdateApplicantSupplierInfoByBn9(bn9, applicantId);
+    }
+
     [HttpPost("api/app/applicant/{applicantId}/site/{siteId}")]
     public async Task DefaultApplicantSite(Guid applicantId, Guid siteId)
     {
@@ -58,5 +69,4 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
             IncludeDetails = true
         });
     }
-
 }

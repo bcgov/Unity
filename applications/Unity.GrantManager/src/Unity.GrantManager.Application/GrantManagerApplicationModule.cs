@@ -31,9 +31,10 @@ using Volo.Abp.Caching;
 using Volo.Abp.Quartz;
 using System;
 using Quartz;
-using Volo.Abp.BackgroundJobs;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
+using Volo.Abp.BackgroundJobs;
+using Unity.Reporting;
 
 namespace Unity.GrantManager;
 
@@ -50,7 +51,8 @@ namespace Unity.GrantManager;
     typeof(PaymentsApplicationModule),
     typeof(FlexApplicationModule)
     )]
-public class GrantManagerApplicationModule : AbpModule
+[DependsOn(typeof(ReportingApplicationModule))]
+    public class GrantManagerApplicationModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -186,7 +188,6 @@ public class GrantManagerApplicationModule : AbpModule
         LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
-
     private void ConfigureBackgroundServices(IConfiguration configuration)
     {
         if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"])) return;
@@ -204,13 +205,10 @@ public class GrantManagerApplicationModule : AbpModule
         /*
          * There are Global Retry Options that can be configured, configure if required, or if handled per job 
         */
-
         Configure<BackgroundJobsOptions>(options =>
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
-            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";
-            options.IntakeResync.NumDaysToCheck = configuration.GetValue<string>("BackgroundJobs:IntakeResync:NumDaysToCheck") ?? "-2";
         });
     }
 

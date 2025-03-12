@@ -24,4 +24,5 @@ public class SiteDto : AuditedEntityDto<Guid>
     public string? SiteProtected { get; set; }
     public string? BankAccount { get; set; }
     public DateTime? LastUpdatedInCas { get; set; }
+    public bool MarkDeletedInUse { get; set; } = false;
 }

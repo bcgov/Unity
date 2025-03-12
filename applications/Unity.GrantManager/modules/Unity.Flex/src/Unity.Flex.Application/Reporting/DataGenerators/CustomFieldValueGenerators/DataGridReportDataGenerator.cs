@@ -16,18 +16,18 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
         /// Generate the keys and values for a datagrid for reporting
         /// </summary>
         /// <returns>Dictionary of unique keys with any matching values for the keys</returns>
-        public Dictionary<string, List<string>> Generate()
+        public (Dictionary<string, List<string>> keyValuePairs, bool compressArray) Generate()
         {
             var values = new Dictionary<string, List<string>>();
             JObject dataValue = JObject.Parse(value.CurrentValue);
 
             var rowsValue = JsonSerializer.Deserialize<DataGridRowsValue>(dataValue["value"]?.ToString() ?? string.Empty);
 
-            if (rowsValue == null) return values;
+            if (rowsValue == null) return (values, false);
 
             var definition = JsonSerializer.Deserialize<DataGridDefinition>(customField.Definition);
 
-            if (definition == null) return values;
+            if (definition == null) return (values, false);
 
             var dynamicDataGrid = definition.Dynamic;
             var dynamicKeyColumn = "DynamicColumns";
@@ -53,10 +53,10 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
             // We have some special handling for dynamic columns
             if (dynamicDataGrid)
             {
-                return CaterForDynamicColumns(values, definition.Columns, customField.Key, dynamicColumn);
+                return (CaterForDynamicColumns(values, definition.Columns, customField.Key, dynamicColumn), false);
             }
 
-            return values;
+            return (values, false);
         }
 
         private static Dictionary<string, List<string>> CaterForDynamicColumns(Dictionary<string, List<string>> values,

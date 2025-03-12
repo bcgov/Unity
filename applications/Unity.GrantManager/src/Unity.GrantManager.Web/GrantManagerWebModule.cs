@@ -73,6 +73,7 @@ using Volo.Abp.VirtualFileSystem;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
 using Unity.Modules.Shared.Utils;
+using Unity.Notifications.Web.Views.Settings;
 
 namespace Unity.GrantManager.Web;
 
@@ -95,8 +96,9 @@ namespace Unity.GrantManager.Web;
     typeof(PaymentsWebModule),
     typeof(AbpBlobStoringModule),
     typeof(NotificationsWebModule),
-    typeof(FlexWebModule)    
+    typeof(FlexWebModule)
 )]
+
 public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -191,6 +193,10 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new BackgroundJobsPageContributor());
+        });
 
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
@@ -231,7 +237,7 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddSession(options =>
         {
-            options.IdleTimeout = TimeSpan.FromHours(8);            
+            options.IdleTimeout = TimeSpan.FromHours(8);
         });
     }
 
@@ -516,7 +522,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        var configuration = context.GetConfiguration();       
+        var configuration = context.GetConfiguration();
 
         if (!env.IsProduction())
         {
