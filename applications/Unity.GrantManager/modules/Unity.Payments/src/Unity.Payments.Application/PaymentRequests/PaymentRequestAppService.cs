@@ -174,6 +174,11 @@ namespace Unity.Payments.PaymentRequests
             return batchNumber;
         }
 
+        public Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId)
+        {
+            return _paymentRequestsRepository.GetPaymentRequestCountBySiteId(siteId);
+        }
+
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
         {
             List<PaymentRequestDto> updatedPayments = [];

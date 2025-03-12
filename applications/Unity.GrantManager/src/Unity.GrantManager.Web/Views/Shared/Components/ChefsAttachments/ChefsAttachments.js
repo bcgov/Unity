@@ -177,7 +177,7 @@ $(function () {
                     selectedAtttachments.push({
                         FormSubmissionId: data.chefsSumbissionId,
                         ChefsFileId: data.chefsFileId,
-                        Filename: data.name
+                        Filename: data.fileName
                     });
                 }
             }

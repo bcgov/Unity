@@ -197,33 +197,41 @@ namespace Unity.Payments.Integrations.Cas
             if (!string.IsNullOrEmpty(resource))
             {
                 var authToken = await iTokenService.GetAuthTokenAsync();
-                var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
-
-                if (response != null)
+                try
                 {
-                    if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
-                    {
-                        var contentString = ResilientHttpRequest.ContentToString(response.Content);
-                        var result = JsonSerializer.Deserialize<dynamic>(contentString)
-                            ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
-                        return result;
-                    }
-                    else if (response.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        throw new UserFriendlyException("Supplier not Found.");
-                    }
-                    else if (response.StatusCode != HttpStatusCode.OK)
-                    {
-                        throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);
-                    }
-                    else
-                    {
-                        throw new UserFriendlyException("The CAS Supplier Number was not found.");
+                    using (var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken)) {
+                        if (response != null)
+                        {
+                            if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
+                            {
+                                var contentString = await response.Content.ReadAsStringAsync();
+                                var result = JsonSerializer.Deserialize<dynamic>(contentString)
+                                    ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
+                                return result;
+                            }
+                            else if (response.StatusCode == HttpStatusCode.NotFound)
+                            {
+                                throw new UserFriendlyException("Supplier not Found.");
+                            }
+                            else if (response.StatusCode != HttpStatusCode.OK)
+                            {
+                                throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);
+                            }
+                            else
+                            {
+                                throw new UserFriendlyException("The CAS Supplier Number was not found.");
+                            }
+                        }
+                        else
+                        {
+                            throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: Null response");
+                        }
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: Null response");
+                    Logger.LogError(ex, "An exception occurred while fetching CAS Supplier Information: {ExceptionMessage}", ex.Message);
+                    throw new UserFriendlyException("An error occurred while fetching CAS Supplier Information.");
                 }
             }
             else
