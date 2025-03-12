@@ -102,7 +102,7 @@ namespace Unity.Payments.Domain.Suppliers
                    site.MarkDeletedInUse == siteDto.MarkDeletedInUse;
         }
 
-        public Site UpdateSiteBySiteDto(Site site, SiteDto siteDto)
+        public static Site UpdateSiteBySiteDto(Site site, SiteDto siteDto)
         {
             site.Number = siteDto.Number;
             site.SupplierId = siteDto.SupplierId;

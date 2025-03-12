@@ -81,7 +81,7 @@ namespace Unity.Payments.Handlers
             return supplierDto;
         }
 
-        private SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId)
+        private static SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId)
         {
             return new()
                 {
@@ -123,7 +123,7 @@ namespace Unity.Payments.Handlers
             };
         }
 
-        private CreateSupplierDto GetCreateSupplierDtoFromEvent(UpsertSupplierEto eventData)
+        private static CreateSupplierDto GetCreateSupplierDtoFromEvent(UpsertSupplierEto eventData)
         {
             return new CreateSupplierDto()
             {

@@ -13,6 +13,8 @@ namespace Unity.Payments.Suppliers
     [Authorize]
     public class SiteAppService : PaymentsAppService, ISiteAppService
     {
+        private const string SITE_ID_KEY = "SiteId";
+        private const string SUPLIER_ID_KEY = "SupplierId";
         private readonly ISiteRepository siteRepository;
         private readonly ILogger<SiteAppService> logger;
 
@@ -31,8 +33,7 @@ namespace Unity.Payments.Suppliers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error fetching site with ID {SiteId}", id);
-                throw new BusinessException("Error fetching site").WithData("SiteId", id);
+                throw new BusinessException("Error fetching site").WithData(SITE_ID_KEY, id);
             }
         }
 
@@ -62,8 +63,7 @@ namespace Unity.Payments.Suppliers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error marking site with ID {SiteId} as deleted in use", id);
-                throw new BusinessException("Error marking site as deleted in use").WithData("SiteId", id);
+                throw new BusinessException("Error marking site as deleted in use").WithData(SITE_ID_KEY, id);
             }
         }
 
@@ -77,7 +77,7 @@ namespace Unity.Payments.Suppliers
                 if (!Site.SiteMatchesSiteDto(site, siteDto))
                 {
                     siteDto.MarkDeletedInUse = false; // Reset the MarkDeletedInUse flag
-                    Site updateSite = site.UpdateSiteBySiteDto(site, siteDto);
+                    Site updateSite = Site.UpdateSiteBySiteDto(site, siteDto);
                     await siteRepository.UpdateAsync(updateSite, true);
                 }
 
@@ -85,15 +85,17 @@ namespace Unity.Payments.Suppliers
             }
             catch (BusinessException ex)
             {
-                // Log BusinessExceptions for specific error handling
-                logger.LogWarning(ex, "Business exception occurred during site update");
-                throw;
+                // Log BusinessExceptions with context and rethrow with additional data
+                logger.LogWarning(ex, "Business exception occurred while updating site {SiteId}", siteDto.Id);
+                throw new BusinessException("Error updating site: " + ex.Message)
+                    .WithData(SITE_ID_KEY, siteDto.Id)
+                    .WithData("OriginalError", ex.Message);
             }
             catch (Exception ex)
             {
                 // General exception logging
-                logger.LogError(ex, "Error updating site with ID {SiteId}", siteDto.Id);
-                throw new BusinessException("Error updating site").WithData("SiteId", siteDto.Id);
+                logger.LogError(ex, "Error updating site {SiteId}", siteDto.Id);
+                throw new BusinessException("Error updating site").WithData(SITE_ID_KEY, siteDto.Id);
             }
         }
 
@@ -106,7 +108,7 @@ namespace Unity.Payments.Suppliers
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error fetching sites for supplier with ID {SupplierId}", supplierId);
-                throw new BusinessException("Error fetching sites by supplier").WithData("SupplierId", supplierId);
+                throw new BusinessException("Error fetching sites by supplier").WithData(SUPLIER_ID_KEY, supplierId);
             }
         }
 
@@ -125,7 +127,7 @@ namespace Unity.Payments.Suppliers
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error deleting sites for supplier with ID {SupplierId}", supplierId);
-                throw new BusinessException("Error deleting sites by supplier").WithData("SupplierId", supplierId);
+                throw new BusinessException("Error deleting sites by supplier").WithData(SUPLIER_ID_KEY, supplierId);
             }
         }
 
@@ -137,9 +139,7 @@ namespace Unity.Payments.Suppliers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error deleting site with ID {SiteId}", id);
-                throw new BusinessException("Error deleting site").WithData("SiteId", id);
-            }
+                throw new BusinessException("Error deleting site").WithData(SITE_ID_KEY, id);            }
         }
     }
 }
