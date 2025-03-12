@@ -33,6 +33,7 @@ namespace Unity.Payments.Suppliers
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error fetching site");
                 throw new BusinessException("Error fetching site").WithData(SITE_ID_KEY, id);
             }
         }
@@ -63,6 +64,7 @@ namespace Unity.Payments.Suppliers
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error marking site as deleted in use");
                 throw new BusinessException("Error marking site as deleted in use").WithData(SITE_ID_KEY, id);
             }
         }
@@ -139,6 +141,7 @@ namespace Unity.Payments.Suppliers
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error deleting site {SiteId}", id);
                 throw new BusinessException("Error deleting site").WithData(SITE_ID_KEY, id);            }
         }
     }
