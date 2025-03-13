@@ -286,4 +286,11 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             });
         }
     }
+
+    public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
+    {
+        List<Applicant> applicants = await applicantRepository.GetApplicantsBySiteIdAsync(siteId);
+        return applicants;
+    }
+
 }

@@ -1,6 +1,5 @@
 ﻿$(function () {
     let worksheetsModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/LinkWorksheetsModal');
-    let uiConfigurationModal = new abp.ModalManager(abp.appPath + 'SettingManagement/ZoneManagementModal');
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
@@ -67,7 +66,7 @@
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
         linkWorksheets: $('#btn-link-worksheets'),
-        uiConfiguration: $('#btn-ui-configuration')
+        uiConfigurationTab: $('#nav-ui-configuration')
     };
 
     init();
@@ -82,7 +81,8 @@
         let availableChefsFields = JSON.parse(availableChefFieldsString)
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
-        setupTooltips();        
+        setupTooltips();
+        initializeUIConfiguration();
     }
 
     function setupTooltips() {
@@ -103,15 +103,32 @@
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
         UIElements.selectVersionList.on('change', handleSelectVersion);
         UIElements.linkWorksheets.on('click', handleLinkWorksheets);
-        UIElements.uiConfiguration.on('click', handleUiConfigurationModal);
     }
 
     function handleLinkWorksheets() {
         worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });        
     }
 
-    function handleUiConfigurationModal() {
-        uiConfigurationModal.open({ providerName: 'F', providerKey: $('#applicationFormId').val(), providerKeyDisplayName: 'Test.Display.Name' });
+    function initializeUIConfiguration() {
+        const providerName = 'F';
+        const providerKey = $('#applicationFormId').val();
+        const providerKeyDisplayName = 'Test.Display.Name';
+
+        $.ajax({
+            url: abp.appPath + 'SettingManagement/ZoneManagement',
+            type: 'GET',
+            data: {
+                providerName: providerName,
+                providerKey: providerKey,
+                providerKeyDisplayName: providerKeyDisplayName
+            },
+            success: function (response) {
+                UIElements.uiConfigurationTab.html(response);
+            },
+            error: function () {
+                abp.notify.error('Failed to load UI Configuration.');
+            }
+        });
     }
 
     function handleEdit() {

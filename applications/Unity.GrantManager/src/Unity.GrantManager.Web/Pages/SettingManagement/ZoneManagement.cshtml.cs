@@ -8,7 +8,7 @@ using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.Web.Pages.SettingManagement
 {
-    public class ZoneManagementModalModel : GrantManagerPageModel
+    public class ZoneManagementModel : GrantManagerPageModel
     {
         [Required]
         [HiddenInput]
@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Web.Pages.SettingManagement
         protected IZoneManagementAppService UiSettingsAppService { get; }
         protected ILocalEventBus LocalEventBus { get; }
 
-        public ZoneManagementModalModel(IZoneManagementAppService uiSettingsAppService, ILocalEventBus localEventBus)
+        public ZoneManagementModel(IZoneManagementAppService uiSettingsAppService, ILocalEventBus localEventBus)
         {
             UiSettingsAppService = uiSettingsAppService;
             LocalEventBus = localEventBus;

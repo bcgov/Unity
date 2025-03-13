@@ -35,7 +35,7 @@ namespace Unity.Flex.Reporting
                     if (worksheet != null)
                     {                        
                         var dbContext = await worksheetRepository.GetDbContextAsync();
-                        FormattableString sql = $@"CALL generate_worksheets_view({viewGenerationEvent.WorksheetId});";
+                        FormattableString sql = $@"CALL ""Reporting"".generate_worksheets_view({viewGenerationEvent.WorksheetId});";
                         await dbContext.Database.ExecuteSqlAsync(sql);
                     }
 
