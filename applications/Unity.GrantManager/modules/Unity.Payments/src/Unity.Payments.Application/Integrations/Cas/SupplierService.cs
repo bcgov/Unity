@@ -230,8 +230,9 @@ namespace Unity.Payments.Integrations.Cas
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "An exception occurred while fetching CAS Supplier Information: {ExceptionMessage}", ex.Message);
-                    throw new UserFriendlyException("An error occurred while fetching CAS Supplier Information.");
+                    string ExceptionMessage = ex.Message;
+                    Logger.LogError(ex, "An exception occurred while fetching CAS Supplier Information: {ExceptionMessage}", ExceptionMessage);
+                    throw new UserFriendlyException($"Failed to fetch supplier information from CAS. Exception:  {ExceptionMessage}");
                 }
             }
             else
