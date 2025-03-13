@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,6 +28,7 @@ namespace Unity.GrantManager.Intakes
                                              IReportingDataGenerator _reportingDataGenerator,
                                              IFeatureChecker featureChecker) : DomainService, IIntakeFormSubmissionManager
     {
+        protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
         {
@@ -129,8 +132,17 @@ namespace Unity.GrantManager.Intakes
                 Application = application,
                 IntakeMap = intakeMap
             };
+            
             await applicantService.CreateApplicantAgentAsync(applicantAgentDto);
-            await applicantService.RelateDefaultSupplierAsync(applicantAgentDto);
+
+            try {
+                await applicantService.RelateDefaultSupplierAsync(applicantAgentDto);
+            } catch (Exception ex) {
+                // This was failing with SSL Certificate errors, so we're catching the exception and logging it
+                string MessageException = ex.Message;
+                logger.LogError(ex, "Error Relating Default Supplier {MessageException}", MessageException);
+            }
+            
             return application;
         }
 
