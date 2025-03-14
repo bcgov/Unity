@@ -12,8 +12,9 @@ ARG YARN_VERSION=1.22.19
 ARG NODE_DOWNLOAD_URL=https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz
 ARG NODE_DOWNLOAD_SHA=2cb75f2bc04b0a3498733fbee779b2f76fe3f655188b4ac69ef2887b6721da2d
 
-ADD --checksum=sha256:${NODE_DOWNLOAD_SHA} ${NODE_DOWNLOAD_URL} nodejs.tar.gz
-RUN tar -xzf "nodejs.tar.gz" -C /usr/local --strip-components=1 \
+RUN curl -SL --compressed "${NODE_DOWNLOAD_URL}" --output nodejs.tar.gz \
+    && echo "${NODE_DOWNLOAD_SHA} nodejs.tar.gz" | sha256sum -c - \
+    && tar -xzf "nodejs.tar.gz" -C /usr/local --strip-components=1 \
     && rm nodejs.tar.gz \
     && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
     # NODE SMOKE TESTS
@@ -30,9 +31,6 @@ COPY ["src/Unity.GrantManager.Domain/Unity.GrantManager.Domain.csproj", "src/Uni
 COPY ["src/Unity.GrantManager.Application.Contracts/Unity.GrantManager.Application.Contracts.csproj", "src/Unity.GrantManager.Application.Contracts/"]
 COPY ["src/Unity.GrantManager.HttpApi/Unity.GrantManager.HttpApi.csproj", "src/Unity.GrantManager.HttpApi/"]
 COPY ["src/Unity.GrantManager.EntityFrameworkCore/Unity.GrantManager.EntityFrameworkCore.csproj", "src/Unity.GrantManager.EntityFrameworkCore/"]
-# CAS Dev/Test Certs changed
-COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
-COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
 
 COPY ["NuGet.Config", "NuGet.Config"]
 
@@ -57,10 +55,10 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" \
 
 FROM base AS final
 WORKDIR /app
-
 COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
-COPY --from=publish /app/publish .
-
+# CAS Dev/Test Certs changed
+COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
 
 RUN mkdir -p /.aspnet && \
     mkdir -p /.dotnet && \
@@ -72,4 +70,5 @@ RUN mkdir -p /.aspnet && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
     update-ca-certificates
 
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]
