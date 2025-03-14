@@ -52,8 +52,11 @@ FROM base AS final
 WORKDIR /app
 COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
 
+COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
 COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
-RUN chmod 644 /usr/local/share/ca-certificates/cas.crt && update-ca-certificates
+RUN chmod 644 /usr/local/share/ca-certificates/cas.crt && \
+    chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
+    update-ca-certificates
 
 COPY --from=publish /app/publish .
 
