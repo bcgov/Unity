@@ -31,9 +31,6 @@ COPY ["src/Unity.GrantManager.Domain/Unity.GrantManager.Domain.csproj", "src/Uni
 COPY ["src/Unity.GrantManager.Application.Contracts/Unity.GrantManager.Application.Contracts.csproj", "src/Unity.GrantManager.Application.Contracts/"]
 COPY ["src/Unity.GrantManager.HttpApi/Unity.GrantManager.HttpApi.csproj", "src/Unity.GrantManager.HttpApi/"]
 COPY ["src/Unity.GrantManager.EntityFrameworkCore/Unity.GrantManager.EntityFrameworkCore.csproj", "src/Unity.GrantManager.EntityFrameworkCore/"]
-# CAS Dev/Test Certs changed
-COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
-COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
 
 COPY ["NuGet.Config", "NuGet.Config"]
 
@@ -59,6 +56,9 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" \
 FROM base AS final
 WORKDIR /app
 COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
+# CAS Dev/Test Certs changed
+COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
 
 RUN mkdir -p /.aspnet && \
     mkdir -p /.dotnet && \
