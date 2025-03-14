@@ -65,9 +65,9 @@ COPY --from=publish /app/publish .
 RUN mkdir -p /.aspnet && \
     mkdir -p /.dotnet && \
     mkdir -p /app/logs && \
-    chmod 777 /.aspnet && \
-    chmod 777 /.dotnet && \    
-    chmod 777 /app/logs &&\
+    chmod 755 /.aspnet && \
+    chmod 755 /.dotnet && \
+    chmod 755 /app/logs && \
     chmod 644 /usr/local/share/ca-certificates/cas.crt && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
     update-ca-certificates
