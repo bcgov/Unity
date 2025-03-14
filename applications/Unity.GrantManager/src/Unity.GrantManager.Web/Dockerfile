@@ -12,8 +12,9 @@ ARG YARN_VERSION=1.22.19
 ARG NODE_DOWNLOAD_URL=https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz
 ARG NODE_DOWNLOAD_SHA=2cb75f2bc04b0a3498733fbee779b2f76fe3f655188b4ac69ef2887b6721da2d
 
-ADD --checksum=sha256:${NODE_DOWNLOAD_SHA} ${NODE_DOWNLOAD_URL} nodejs.tar.gz
-RUN tar -xzf "nodejs.tar.gz" -C /usr/local --strip-components=1 \
+RUN curl -SL --compressed "${NODE_DOWNLOAD_URL}" --output nodejs.tar.gz \
+    && echo "${NODE_DOWNLOAD_SHA} nodejs.tar.gz" | sha256sum -c - \
+    && tar -xzf "nodejs.tar.gz" -C /usr/local --strip-components=1 \
     && rm nodejs.tar.gz \
     && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
     # NODE SMOKE TESTS
@@ -57,9 +58,7 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" \
 
 FROM base AS final
 WORKDIR /app
-
 COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
-COPY --from=publish /app/publish .
 
 RUN mkdir -p /.aspnet && \
     mkdir -p /.dotnet && \
@@ -71,4 +70,5 @@ RUN mkdir -p /.aspnet && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
     update-ca-certificates
 
-    ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]
