@@ -59,15 +59,14 @@ COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotne
 COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
 COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
 COPY --from=publish /app/publish .
-
 RUN chmod 644 /usr/local/share/ca-certificates/cas.crt && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
     update-ca-certificates && \
     mkdir -p /.aspnet && \
     mkdir -p /.dotnet && \
-    chmod 777 /.aspnet && \
-    chmod 777 /.dotnet && \
+    chmod 700 /.aspnet && \
+    chmod 700 /.dotnet && \
     mkdir -p /app/logs && \
-    chmod 777 /app/logs
+    chmod 700 /app/logs
 
 ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]
