@@ -61,7 +61,6 @@ WORKDIR /app
 COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
 COPY --from=publish /app/publish .
 
-
 RUN mkdir -p /.aspnet && \
     mkdir -p /.dotnet && \
     mkdir -p /app/logs && \
@@ -72,4 +71,4 @@ RUN mkdir -p /.aspnet && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
     update-ca-certificates
 
-ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]
+    ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]
