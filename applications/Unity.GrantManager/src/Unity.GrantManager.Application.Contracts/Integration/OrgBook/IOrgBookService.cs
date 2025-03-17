@@ -9,5 +9,6 @@ namespace Unity.GrantManager.Integration.Orgbook
         Task<dynamic?> GetOrgBookQueryAsync(string orgBookQuery);
 
         Task<JsonDocument> GetOrgBookAutocompleteQueryAsync(string? orgBookQuery);
+        Task<JsonDocument> GetOrgBookDetailsQueryAsync(string? orgBookId);
     }
 }

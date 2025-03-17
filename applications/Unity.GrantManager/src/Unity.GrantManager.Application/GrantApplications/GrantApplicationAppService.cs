@@ -410,6 +410,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             applicant.UnityApplicantId = input.UnityApplicantId ?? "";
             applicant.FiscalDay = input.FiscalDay;
             applicant.FiscalMonth = input.FiscalMonth ?? "";
+            applicant.NonRegOrgName = input.NonRegOrgName ?? "";
 
             _ = await _applicantRepository.UpdateAsync(applicant);
 

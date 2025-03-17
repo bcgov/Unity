@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Integrations.Orgbook
     {
         private readonly IResilientHttpRequest _resilientRestClient;
 
-        private readonly string orgbook_base_api = "https://orgbook.gov.bc.ca/api/v4";
+        private readonly string orgbook_base_api = "https://orgbook.gov.bc.ca/api";
         private readonly string orgbook_query_match = "inactive=any&latest=any&revoked=any&ordering=-score";
 
         public OrgBookService(IResilientHttpRequest resilientRestClient) {
@@ -28,7 +28,7 @@ namespace Unity.GrantManager.Integrations.Orgbook
         public async Task<dynamic?> GetOrgBookQueryAsync(string orgBookQuery)
         {
             var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/search/topic?q={orgBookQuery}&{orgbook_query_match}");
+                .HttpAsync(Method.Get, $"{orgbook_base_api}/v4/search/topic?q={orgBookQuery}&{orgbook_query_match}");
 
             if (response != null && response.Content != null)
             {
@@ -49,7 +49,28 @@ namespace Unity.GrantManager.Integrations.Orgbook
             }
 
             var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/search/autocomplete?q={orgBookQuery}&inactive=true&revoked=true");
+                .HttpAsync(Method.Get, $"{orgbook_base_api}/v4/search/autocomplete?q={orgBookQuery}&inactive=true&revoked=true");
+
+            if (response != null && response.Content != null)
+            {
+
+                return JsonDocument.Parse(response.Content);
+            }
+            else
+            {
+                throw new IntegrationServiceException("GetOrgBookByNumberAsync -> No Response");
+            }
+        }
+
+        public async Task<JsonDocument> GetOrgBookDetailsQueryAsync(string? orgBookId)
+        {
+            if (orgBookId == null)
+            {
+                return JsonDocument.Parse("{}");
+            }
+
+            var response = await _resilientRestClient
+                .HttpAsync(Method.Get, $"{orgbook_base_api}/v2/topic/ident/registration.registries.ca/{orgBookId}/formatted");
 
             if (response != null && response.Content != null)
             {

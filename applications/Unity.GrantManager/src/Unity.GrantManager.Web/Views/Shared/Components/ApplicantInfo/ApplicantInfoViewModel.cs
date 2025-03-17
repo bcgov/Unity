@@ -81,7 +81,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             public bool RedStop { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd")]
-            [SelectItems(nameof(IndigenousList))]
             public string? IndigenousOrgInd { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactFullName")]
@@ -174,6 +173,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             public string? SelectedOrgBookId { get; set; }
 
             public string? SelectedOrgBookText { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.NonRegOrgName")]
+            public string? NonRegOrgName { get; set; }
 
         }
 

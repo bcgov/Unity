@@ -9,6 +9,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Unity.GrantManager.Locality;
+using Unity.Flex;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 {
@@ -85,7 +86,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 IndigenousOrgInd = applicantInfoDto.IndigenousOrgInd,
                 UnityApplicantId = applicantInfoDto.UnityApplicantId,
                 FiscalDay = applicantInfoDto.FiscalDay,
-                FiscalMonth = applicantInfoDto.FiscalMonth
+                FiscalMonth = applicantInfoDto.FiscalMonth,
+                NonRegOrgName = applicantInfoDto.NonRegOrgName
             };
 
             if (applicantInfoDto.ApplicantAddresses.Count != 0)
