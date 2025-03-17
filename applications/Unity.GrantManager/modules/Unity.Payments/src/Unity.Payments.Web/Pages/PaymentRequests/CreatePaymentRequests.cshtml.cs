@@ -162,6 +162,15 @@ namespace Unity.Payments.Web.Pages.Payments
 
         private async Task<SupplierDto?> GetSupplierByApplicationAync(GrantApplicationDto application)
         {
+            if(application.Applicant.SupplierId != Guid.Empty)
+            {
+                SupplierDto? supplierDto =  await _iSupplierAppService.GetAsync(application.Applicant.SupplierId);
+                if (supplierDto != null)
+                {
+                    return supplierDto;
+                }
+            }
+
             return await _iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
             {
                 CorrelationId = application.Applicant.Id,
