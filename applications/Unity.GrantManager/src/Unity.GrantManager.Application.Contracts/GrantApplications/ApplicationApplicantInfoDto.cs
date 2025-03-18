@@ -23,5 +23,6 @@ namespace Unity.GrantManager.GrantApplications
         public GrantApplicationState ApplicationStatusCode { get; set; }
         public List<ApplicantAddressDto> ApplicantAddresses { get; set; } = new List<ApplicantAddressDto>();
         public Guid ApplicationFormId { get; set; }
+        public string NonRegOrgName { get; set; } = string.Empty;
     }
 }
