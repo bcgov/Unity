@@ -63,7 +63,13 @@
             const organizationType = $('#orgTypeDropdown').val();
             ApplicantInfoObj['organizationType'] = organizationType;
             const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
-            ApplicantInfoObj['IndigenousOrgInd'] = indigenousOrgInd == true ? "Yes" : "No";
+            if (indigenousOrgInd == true) {
+                ApplicantInfoObj['IndigenousOrgInd'] = "Yes";
+            }
+            else {
+                ApplicantInfoObj['IndigenousOrgInd'] =  "No";
+            }
+            
 
 
             ApplicantInfoObj['correlationId'] = formVersionId;
@@ -130,11 +136,11 @@
 
     $('.unity-currency-input').maskMoney();
 
-    var $orgBookSelect = $('.auto-complete-select');
+    let $orgBookSelect = $('.auto-complete-select');
 
     $orgBookSelect.on('select2:select', function (e) {
-        var selectedData = e.params.data;
-        var orgBookId = selectedData.id;
+        let selectedData = e.params.data;
+        let orgBookId = selectedData.id;
 
         abp.ajax({
             url: '/api/app/org-book/org-book-details-query/' + orgBookId,
@@ -143,10 +149,10 @@
            
             $('#ApplicantInfo_OrgName').val(response.names[0].text);
             $('#ApplicantInfo_OrgNumber').val(orgBookId);
-            var entry_status = getAttributeObjectByType("entity_status", response.attributes);
-            var org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
+            let entry_status = getAttributeObjectByType("entity_status", response.attributes);
+            let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
             $('#orgBookStatusDropdown').val(org_status);
-            var entity_type = getAttributeObjectByType("entity_type", response.attributes);
+            let entity_type = getAttributeObjectByType("entity_type", response.attributes);
             $('#orgTypeDropdown').val(entity_type.value);
 
           

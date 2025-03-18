@@ -2,11 +2,9 @@
 using RestSharp;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.GrantManager.Emails;
 using Unity.GrantManager.Integration.Orgbook;
 using Unity.GrantManager.Integrations.Exceptions;
 using Unity.GrantManager.Integrations.Http;
-using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 
