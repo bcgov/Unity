@@ -56,7 +56,7 @@ namespace Unity.GrantManager.Integrations.Orgbook
             }
             else
             {
-                throw new IntegrationServiceException("GetOrgBookByNumberAsync -> No Response");
+                throw new IntegrationServiceException("Failed to connect to Org Book");
             }
         }
 
@@ -77,7 +77,7 @@ namespace Unity.GrantManager.Integrations.Orgbook
             }
             else
             {
-                throw new IntegrationServiceException("GetOrgBookByNumberAsync -> No Response");
+                throw new IntegrationServiceException("Failed to connect to Org Book");
             }
         }
     }
