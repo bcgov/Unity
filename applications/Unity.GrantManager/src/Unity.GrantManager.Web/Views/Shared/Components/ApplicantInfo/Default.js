@@ -63,7 +63,7 @@
             const organizationType = $('#orgTypeDropdown').val();
             ApplicantInfoObj['organizationType'] = organizationType;
             const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
-            if (indigenousOrgInd == true) {
+            if (indigenousOrgInd) {
                 ApplicantInfoObj['IndigenousOrgInd'] = "Yes";
             }
             else {
