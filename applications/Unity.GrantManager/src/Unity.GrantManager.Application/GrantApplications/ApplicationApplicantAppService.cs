@@ -36,6 +36,7 @@ namespace Unity.GrantManager.GrantApplications
                 OrganizationType = applicantInfo.Applicant?.OrganizationType ?? string.Empty,
                 OrgNumber = applicantInfo.Applicant?.OrgNumber ?? string.Empty,
                 OrgStatus = applicantInfo.Applicant?.OrgStatus ?? string.Empty,
+                NonRegOrgName = applicantInfo.Applicant?.NonRegOrgName ?? string.Empty,
 
                 Sector = applicantInfo.Applicant?.Sector ?? string.Empty,
                 SectorSubSectorIndustryDesc = applicantInfo.Applicant?.SectorSubSectorIndustryDesc ?? string.Empty,

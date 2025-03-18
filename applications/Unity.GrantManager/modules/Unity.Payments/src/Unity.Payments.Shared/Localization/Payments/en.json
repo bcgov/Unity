@@ -64,6 +64,7 @@
     "ApplicantInfoView:ApplicantInfo.SiteInfo:City": "City",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:Province": "Province",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:PostalCode": "Postal Code",
+    "ApplicantInfoView:ApplicantInfo.Search": "Search In BC Registries (Registered Socities Only)",
 
     "PaymentInfoView:PaymentInfoTitle": "Payment Summary",
     "PaymentInfoView:PaymentInfo.RequestedAmount": "Requested Amount",

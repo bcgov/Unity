@@ -54,6 +54,24 @@
                 $('.cas-spinner').show();
             }
 
+            const orgName = $('#ApplicantInfo_OrgName').val();
+            ApplicantInfoObj['orgName'] = orgName;
+            const orgNumber = $('#ApplicantInfo_OrgNumber').val();
+            ApplicantInfoObj['orgNumber'] = orgNumber;
+            const orgStatus = $('#orgBookStatusDropdown').val();
+            ApplicantInfoObj['orgStatus'] = orgStatus;
+            const organizationType = $('#orgTypeDropdown').val();
+            ApplicantInfoObj['organizationType'] = organizationType;
+            const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
+            if (indigenousOrgInd) {
+                ApplicantInfoObj['IndigenousOrgInd'] = "Yes";
+            }
+            else {
+                ApplicantInfoObj['IndigenousOrgInd'] =  "No";
+            }
+            
+
+
             ApplicantInfoObj['correlationId'] = formVersionId;
             ApplicantInfoObj['worksheetId'] = worksheetId;
 
@@ -117,6 +135,35 @@
     );
 
     $('.unity-currency-input').maskMoney();
+
+    let $orgBookSelect = $('.auto-complete-select');
+
+    $orgBookSelect.on('select2:select', function (e) {
+        let selectedData = e.params.data;
+        let orgBookId = selectedData.id;
+
+        abp.ajax({
+            url: '/api/app/org-book/org-book-details-query/' + orgBookId,
+            type: 'GET'
+        }).done(function (response) {
+           
+            $('#ApplicantInfo_OrgName').val(response.names[0].text);
+            $('#ApplicantInfo_OrgNumber').val(orgBookId);
+            let entry_status = getAttributeObjectByType("entity_status", response.attributes);
+            let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
+            $('#orgBookStatusDropdown').val(org_status);
+            let entity_type = getAttributeObjectByType("entity_type", response.attributes);
+            $('#orgTypeDropdown').val(entity_type.value);
+
+          
+            enableApplicantInfoSaveBtn();
+            
+        });
+    });
+
+    function getAttributeObjectByType(type, attributes) {
+        return attributes.find(attr => attr.type === type);
+    }
 });
 
 
