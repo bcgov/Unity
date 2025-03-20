@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Linq;
-using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Features;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
-using Unity.Payments.Permissions;
 
 namespace Unity.Payments.Suppliers
 {
     [RequiresFeature("Unity.Payments")]
     public class SupplierAppService(ISupplierRepository supplierRepository) : PaymentsAppService, ISupplierAppService
     {
-
-        [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
         public virtual async Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto)
         {
             Supplier supplier = new Supplier(Guid.NewGuid(),
@@ -37,7 +33,6 @@ namespace Unity.Payments.Suppliers
             return ObjectMapper.Map<Supplier, SupplierDto>(result);
         }
 
-        [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
         public virtual async Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto)
         {
             var supplier = await supplierRepository.GetAsync(id);
