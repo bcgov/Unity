@@ -10,7 +10,6 @@ using Unity.Payments.Permissions;
 namespace Unity.Payments.Suppliers
 {
     [RequiresFeature("Unity.Payments")]
-    [Authorize]
     public class SupplierAppService(ISupplierRepository supplierRepository) : PaymentsAppService, ISupplierAppService
     {
 
