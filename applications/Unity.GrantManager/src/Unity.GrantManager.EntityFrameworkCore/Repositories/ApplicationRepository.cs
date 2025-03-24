@@ -1,3 +1,4 @@
+using Amazon.S3.Model;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -56,8 +57,17 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
           .Include(s => s.Applicant)
             .ThenInclude(s => s.ApplicantAddresses)
           .Include(s => s.ApplicantAgent)
-          .Include(s => s.ApplicationStatus)          
-          .FirstAsync(s => s.Id == id);                   
+          .Include(s => s.ApplicationStatus)
+          .FirstAsync(s => s.Id == id);
+    }
+
+    public async Task<List<Application>> GetListByIdsAsync(Guid[] ids)
+    {
+        return await (await GetQueryableAsync())
+            .AsNoTracking()
+            .Include(s => s.ApplicationStatus)
+            .Where(s => ids.Contains(s.Id))
+            .ToListAsync();
     }
 
     /// <summary>

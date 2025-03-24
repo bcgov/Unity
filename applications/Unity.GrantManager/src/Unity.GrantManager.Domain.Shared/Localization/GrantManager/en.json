@@ -70,6 +70,7 @@
 
     "ApplicationList:OpenButton": "Open",
     "ApplicationList:AssignButton": "Assign",
+    "ApplicationList:ApproveButton": "Approve",
     "ApplicationList:StatusButton": "Status",
     "ApplicationList:ApprovedButton": "Approved",
     "ApplicationList:NotApprovedButton": "Not approved",
