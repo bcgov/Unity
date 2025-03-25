@@ -81,7 +81,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             public bool RedStop { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd")]
-            [SelectItems(nameof(IndigenousList))]
             public string? IndigenousOrgInd { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactFullName")]
@@ -167,6 +166,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.PostalCode")]
             public string? MailingAddressPostalCode { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Search")]
+            public string? Search { get; set; }
+
+            public string? SelectedOrgBookId { get; set; }
+
+            public string? SelectedOrgBookText { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.NonRegOrgName")]
+            public string? NonRegOrgName { get; set; }
+
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

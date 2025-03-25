@@ -53,8 +53,10 @@ pgBackRest:
   # If retention-full-type set to 'time' then the number defined in retention will take that many days worth of full backups before expiration
   retention: "2" # Ideally a number to keep backups for 2 working days
   retentionS3: "30" # Ideally a larger number such as backups for 30 days
-  retentionFullType: count
-  retentionFullTypeS3: time
+  retentionFullType: count # Type of retention for full backups
+  retentionFullTypeS3: time # Type of retention for full backups
+  retentionArchive: "2" # Number of backups worth of continuous WAL to retain
+  retentionArchiveType: full # Type of retention for WAL archives
   repos:
     schedules:
       full: 0 6 * * 0 # Full backup every Sunday at 10:00 PM PST

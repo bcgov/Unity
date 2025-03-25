@@ -3,6 +3,7 @@ using RestSharp;
 using RestSharp.Authenticators;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Integration.Chefs;
@@ -29,7 +30,7 @@ namespace Unity.GrantManager.Integrations.Chefs
             _stringEncryptionService = stringEncryptionService;
         }
 
-        public async Task<dynamic?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
+        public async Task<JsonDocument?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
         {
             var applicationForm = (await _applicationFormRepository
                 .GetQueryableAsync())
@@ -50,7 +51,7 @@ namespace Unity.GrantManager.Integrations.Chefs
                && response.IsSuccessStatusCode)
             {
                 string content = response.Content;
-                return JsonConvert.DeserializeObject<dynamic>(content)!;
+                return JsonDocument.Parse(content);                
             }
             else
             {

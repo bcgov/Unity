@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
@@ -51,7 +52,15 @@ namespace Unity.GrantManager.Intakes
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault() ?? throw new ApplicationFormSetupException("Application Form Not Registered");
 
-            JObject submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
+            JsonDocument submissionDocument = await _submissionsIntService
+                .GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) 
+                ?? throw new InvalidFormDataSubmissionException();
+
+            // Serialize JsonDocument to a JSON string
+            string jsonString = submissionDocument.RootElement.GetRawText();
+
+            // Parse the JSON string into a JObject
+            JObject submissionData = JObject.Parse(jsonString);
 
             bool validSubmission = await ValidateSubmission(eventSubscriptionDto, submissionData);
             if (!validSubmission) {

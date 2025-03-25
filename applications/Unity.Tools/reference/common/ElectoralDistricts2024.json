@@ -1,0 +1,374 @@
+[
+  {
+    "name": "Abbotsford South",
+    "key": "abbotsfordSouth"
+  },
+  {
+    "name": "Abbotsford West",
+    "key": "abbotsfordWest"
+  },
+  {
+    "name": "Abbotsford-Mission",
+    "key": "abbotsfordMission"
+  },
+  {
+    "name": "Boundary-Similkameen",
+    "key": "boundarySimilkameen"
+  },
+  {
+    "name": "Bulkley Valley-Stikine",
+    "key": "bulkleyStikine"
+  },
+  {
+    "name": "Burnaby Centre",
+    "key": "burnabyCentre"
+  },
+  {
+    "name": "Burnaby East",
+    "key": "burnabyEast"
+  },
+  {
+    "name": "Burnaby North",
+    "key": "burnabyNorth"
+  },
+  {
+    "name": "Burnaby South-Metrotown",
+    "key": "burnabyMetrotown"
+  },
+  {
+    "name": "Burnaby-New Westminster",
+    "key": "burnabyNewWest"
+  },
+  {
+    "name": "Cariboo-Chilcotin",
+    "key": "caribooChilcotin"
+  },
+  {
+    "name": "Chilliwack North",
+    "key": "chilliwackNorth"
+  },
+  {
+    "name": "Chilliwack-Cultus Lake",
+    "key": "chilliwackCultus"
+  },
+  {
+    "name": "Columbia River-Revelstoke",
+    "key": "columbiaRevelstoke"
+  },
+  {
+    "name": "Coquitlam-Burke Mountain",
+    "key": "coquitlamBurke"
+  },
+  {
+    "name": "Coquitlam-Maillardville",
+    "key": "coquitlamMaillard"
+  },
+  {
+    "name": "Courtenay-Comox",
+    "key": "courtenayComox"
+  },
+  {
+    "name": "Cowichan Valley",
+    "key": "cowichanValley"
+  },
+  {
+    "name": "Delta North",
+    "key": "deltaNorth"
+  },
+  {
+    "name": "Delta South",
+    "key": "deltaSouth"
+  },
+  {
+    "name": "Esquimalt-Colwood",
+    "key": "esquimaltColwood"
+  },
+  {
+    "name": "Fraser-Nicola",
+    "key": "fraserNicola"
+  },
+  {
+    "name": "Juan de Fuca-Malahat",
+    "key": "juanFucaMalahat"
+  },
+  {
+    "name": "Kamloops Centre",
+    "key": "kamloopsCentre"
+  },
+  {
+    "name": "Kamloops-North Thompson",
+    "key": "kamloopsNorth"
+  },
+  {
+    "name": "Kelowna Centre",
+    "key": "kelownaCentre"
+  },
+  {
+    "name": "Kelowna-Lake Country-Coldstream",
+    "key": "kelownaLakeCold"
+  },
+  {
+    "name": "Kelowna-Mission",
+    "key": "kelownaMission"
+  },
+  {
+    "name": "Kootenay Central",
+    "key": "kootenayCentral"
+  },
+  {
+    "name": "Kootenay-Monashee",
+    "key": "kootenayMonashee"
+  },
+  {
+    "name": "Kootenay-Rockies",
+    "key": "kootenayRockies"
+  },
+  {
+    "name": "Ladysmith-Oceanside",
+    "key": "ladysmithOceanside"
+  },
+  {
+    "name": "Langford-Highlands",
+    "key": "langfordHighlands"
+  },
+  {
+    "name": "Langley-Abbotsford",
+    "key": "langleyAbbotsford"
+  },
+  {
+    "name": "Langley-Walnut Grove",
+    "key": "langleyWalnut"
+  },
+  {
+    "name": "Langley-Willowbrook",
+    "key": "langleyWillow"
+  },
+  {
+    "name": "Maple Ridge East",
+    "key": "mapleRidgeEast"
+  },
+  {
+    "name": "Maple Ridge-Pitt Meadows",
+    "key": "mapleRidgePitt"
+  },
+  {
+    "name": "Mid Island-Pacific Rim",
+    "key": "midIslandPacific"
+  },
+  {
+    "name": "Nanaimo-Gabriola Island",
+    "key": "nanaimoGabriola"
+  },
+  {
+    "name": "Nanaimo-Lantzville",
+    "key": "nanaimoLantzville"
+  },
+  {
+    "name": "Nechako Lakes",
+    "key": "nechakoLakes"
+  },
+  {
+    "name": "New Westminster-Coquitlam",
+    "key": "newWestCoquitlam"
+  },
+  {
+    "name": "North Coast-Haida Gwaii",
+    "key": "northCoastHaida"
+  },
+  {
+    "name": "North Island",
+    "key": "northIsland"
+  },
+  {
+    "name": "North Vancouver-Lonsdale",
+    "key": "northVanLonsdale"
+  },
+  {
+    "name": "North Vancouver-Seymour",
+    "key": "northVanSeymour"
+  },
+  {
+    "name": "Oak Bay-Gordon Head",
+    "key": "oakBayGordon"
+  },
+  {
+    "name": "Peace River North",
+    "key": "peaceRiverNorth"
+  },
+  {
+    "name": "Peace River South",
+    "key": "peaceRiverSouth"
+  },
+  {
+    "name": "Penticton-Summerland",
+    "key": "pentictonSummer"
+  },
+  {
+    "name": "Port Coquitlam",
+    "key": "portCoquitlam"
+  },
+  {
+    "name": "Port Moody-Burquitlam",
+    "key": "portMoodyBurquit"
+  },
+  {
+    "name": "Powell River-Sunshine Coast",
+    "key": "powellSunshine"
+  },
+  {
+    "name": "Prince George-Mackenzie",
+    "key": "princeGeorgeMac"
+  },
+  {
+    "name": "Prince George-North Cariboo",
+    "key": "princeGeorgeNC"
+  },
+  {
+    "name": "Prince George-Valemoun",
+    "key": "princeGeorgeVal"
+  },
+  {
+    "name": "Richmond Centre",
+    "key": "richmondCentre"
+  },
+  {
+    "name": "Richmond-Bridgeport",
+    "key": "richmondBridge"
+  },
+  {
+    "name": "Richmond-Queensborough",
+    "key": "richmondQueens"
+  },
+  {
+    "name": "Richmond-Steveston",
+    "key": "richmondSteveston"
+  },
+  {
+    "name": "Saanich North and the Islands",
+    "key": "saanichNorthIsles"
+  },
+  {
+    "name": "Saanich South",
+    "key": "saanichSouth"
+  },
+  {
+    "name": "Salmon Arm-Shuswap",
+    "key": "salmonShuswap"
+  },
+  {
+    "name": "Skeena",
+    "key": "skeena"
+  },
+  {
+    "name": "Surrey City Centre",
+    "key": "surreyCentre"
+  },
+  {
+    "name": "Surrey North",
+    "key": "surreyNorth"
+  },
+  {
+    "name": "Surrey South",
+    "key": "surreySouth"
+  },
+  {
+    "name": "Surrey-Cloverdale",
+    "key": "surreyCloverdale"
+  },
+  {
+    "name": "Surrey-Fleetwood",
+    "key": "surreyFleetwood"
+  },
+  {
+    "name": "Surrey-Guildford",
+    "key": "surreyGuildford"
+  },
+  {
+    "name": "Surrey-Newton",
+    "key": "surreyNewton"
+  },
+  {
+    "name": "Surrey-Panorama",
+    "key": "surreyPanorama"
+  },
+  {
+    "name": "Surrey-Serpentine River",
+    "key": "surreySerpentine"
+  },
+  {
+    "name": "Surrey-White Rock",
+    "key": "surreyWhiteRock"
+  },
+  {
+    "name": "Vancouver-Fraserview",
+    "key": "vancouverFraser"
+  },
+  {
+    "name": "Vancouver-Hastings",
+    "key": "vancouverHastings"
+  },
+  {
+    "name": "Vancouver-Kensington",
+    "key": "vancouverKensing"
+  },
+  {
+    "name": "Vancouver-Langara",
+    "key": "vancouverLangara"
+  },
+  {
+    "name": "Vancouver-Little Mountain",
+    "key": "vancouverLittle"
+  },
+  {
+    "name": "Vancouver-Point Grey",
+    "key": "vancouverPoint"
+  },
+  {
+    "name": "Vancouver-Quilchena",
+    "key": "vancouverQuilch"
+  },
+  {
+    "name": "Vancouver-Renfrew",
+    "key": "vancouverRenfrew"
+  },
+  {
+    "name": "Vancouver-South Granville",
+    "key": "vancouverSouthGran"
+  },
+  {
+    "name": "Vancouver-Strathcona",
+    "key": "vancouverStrath"
+  },
+  {
+    "name": "Vancouver-West End",
+    "key": "vancouverWestEnd"
+  },
+  {
+    "name": "Vancouver-Yaletown",
+    "key": "vancouverYaletown"
+  },
+  {
+    "name": "Vernon-Lumby",
+    "key": "vernonLumby"
+  },
+  {
+    "name": "Victoria-Beacon Hill",
+    "key": "victoriaBeacon"
+  },
+  {
+    "name": "Victoria-Swan Lake",
+    "key": "victoriaSwanLake"
+  },
+  {
+    "name": "West Kelowna-Peachland",
+    "key": "westKelownaPeach"
+  },
+  {
+    "name": "West Vancouver-Capilano",
+    "key": "westVanCapilano"
+  },
+  {
+    "name": "West Vancouver-Sea to Sky",
+    "key": "westVanSeaSky"
+  }
+]

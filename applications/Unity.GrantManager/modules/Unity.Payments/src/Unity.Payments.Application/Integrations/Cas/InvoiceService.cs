@@ -69,9 +69,10 @@ namespace Unity.Payments.Integrations.Cas
 
             if (site != null && site.Supplier != null && site.Supplier.Number != null && accountDistributionCode != null)
             {
-                var currentMonth = DateTime.UtcNow.ToString("MMM").Trim('.');
-                var currentDay = DateTime.UtcNow.ToString("dd");
-                var currentYear = DateTime.UtcNow.ToString("yyyy");
+                // This can not be UTC Now it is sent to cas and can not be in the future - this is not being stored in Unity as a date
+                var currentMonth = DateTime.Now.ToString("MMM").Trim('.');
+                var currentDay = DateTime.Now.ToString("dd");
+                var currentYear = DateTime.Now.ToString("yyyy");
                 var dateStringDayMonYear = $"{currentDay}-{currentMonth}-{currentYear}";
 
                 casInvoice.SupplierNumber = site.Supplier.Number; // This is from each Applicant
@@ -176,7 +177,7 @@ namespace Unity.Payments.Integrations.Cas
             {
                 if(response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                 {
-                    var contentString = Unity.Modules.Shared.Http.ResilientHttpRequest.ContentToString(response.Content);
+                    var contentString = ResilientHttpRequest.ContentToString(response.Content);
                     var result = JsonSerializer.Deserialize<InvoiceResponse>(contentString)
                         ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
                     result.CASHttpStatusCode = response.StatusCode;
