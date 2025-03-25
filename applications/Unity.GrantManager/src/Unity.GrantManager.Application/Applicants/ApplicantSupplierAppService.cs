@@ -69,5 +69,4 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
             IncludeDetails = true
         });
     }
-
 }
