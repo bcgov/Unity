@@ -4,12 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
-using Unity.Flex.Worksheets.Values;
 using Volo.Abp;
 
 namespace Unity.Flex.Reporting.DataGenerators
@@ -26,7 +24,7 @@ namespace Unity.Flex.Reporting.DataGenerators
 
                 var reportingKeys = scoresheet.ReportKeys.Split(ReportingConsts.ReportFieldDelimiter);
                 var answers = instanceValue.Answers.ToList();
-               
+
                 foreach (var reportKey in reportingKeys)
                 {
                     reportData.Add(reportKey, null);
@@ -64,96 +62,91 @@ namespace Unity.Flex.Reporting.DataGenerators
         public static int CalculateTotalScore(Scoresheet scoresheet)
         {
             var totalScore = 0;
+
             foreach (var section in scoresheet.Sections)
             {
                 foreach (var field in section.Fields)
                 {
-                    if (field.Type == QuestionType.Number) // Type = 1
+                    if (field.Type == QuestionType.Number)
                     {
-                        if (field.Answers != null && field.Answers.Count > 0)
-                        {
-                            var firstAnswer = field.Answers[0];
-                            Console.WriteLine($"  -> Number Type Field. First Answer Question: {field.Answers[0].Question}");
-                            if (!string.IsNullOrEmpty(firstAnswer?.CurrentValue))
-                            {
-                                var obj = JsonConvert.DeserializeObject<Dictionary<string, object>>(firstAnswer.CurrentValue);
-
-                                if (obj != null && obj.TryGetValue("value", out object value) && value is string valueStr && int.TryParse(valueStr, out int result))
-                                {
-                                    totalScore += result;
-                                }
-                            }
-
-                        }
+                        totalScore += CalculateNumberFieldScore(field);
                     }
-                    else if (field.Type == QuestionType.YesNo) // Type = 6
+                    else if (field.Type == QuestionType.YesNo)
                     {
-                        if (field.Answers != null && field.Answers.Count > 0)
-                        {
-                            var answer = field.Answers[0];
-
-                            // Parse CurrentValue JSON
-                            var currentValueObj = !string.IsNullOrEmpty(answer.CurrentValue)
-                                                    ? JsonConvert.DeserializeObject<CurrentValueJson>(answer.CurrentValue)
-                                                    : null;
-                            string userResponse = currentValueObj?.Value ?? "Unknown";
-
-                            // Parse Definition JSON
-                            var definitionObj = (answer.Question?.Definition != null)
-                                                 ? JsonConvert.DeserializeObject<QuestionYesNoDefinition>(answer.Question.Definition)
-                                                 : null;
-                            int yesValue = definitionObj?.YesValue ?? 0;
-                            int noValue = definitionObj?.NoValue ?? 0;
-
-                            // Compare values
-                            int assignedValue = userResponse.Equals("Yes", StringComparison.OrdinalIgnoreCase) ? yesValue : noValue;
-
-                            Console.WriteLine($"  -> Yes/No Type Field. User Answer: {userResponse}, Assigned Value: {assignedValue}");
-
-                            totalScore = totalScore + assignedValue;
-                        }
+                        totalScore += CalculateYesNoFieldScore(field);
                     }
-                    else if (field.Type == QuestionType.SelectList) // Type = 12
+                    else if (field.Type == QuestionType.SelectList)
                     {
-                        if (field.Answers != null && field.Answers.Count > 0)
-                        {
-                            var answer = field.Answers[0];
-
-                            // Parse CurrentValue JSON
-                            var currentValueObj = !string.IsNullOrEmpty(answer.CurrentValue)
-                    ? JsonConvert.DeserializeObject<CurrentValueJson>(answer.CurrentValue)
-                    : null;
-                            string selectedOption = currentValueObj?.Value ?? "Unknown";
-
-                            // Parse Definition JSON
-                            var definitionObj = (answer.Question?.Definition != null)
-                                                ? JsonConvert.DeserializeObject<QuestionDefinitionSelectList>(answer.Question.Definition)
-                                                : null;
-
-                            // Find the option that matches the selected value
-                            var matchedOption = definitionObj?.Options?.FirstOrDefault(opt => opt.Value == selectedOption);
-
-                            if (matchedOption != null)
-                            {
-                                Console.WriteLine($"  -> Select List Type Field. Selected Option: {selectedOption}, Key: {matchedOption.Key}, Numeric Value: {matchedOption.NumericValue}");
-                                totalScore = totalScore + matchedOption.NumericValue;
-
-                            }
-
-
-                            else
-                            {
-                                Console.WriteLine("  -> Select List Type Field. No matching option found.");
-                            }
-                        }
+                        totalScore += CalculateSelectListFieldScore(field);
                     }
                 }
             }
+
             return totalScore;
+        }
+
+        private static int CalculateNumberFieldScore(Question field)
+        {
+            if (field.Answers == null || field.Answers.Count == 0)
+                return 0;
+
+            var firstAnswer = field.Answers[0];
+            if (string.IsNullOrEmpty(firstAnswer?.CurrentValue))
+                return 0;
+
+            var obj = JsonConvert.DeserializeObject<Dictionary<string, object>>(firstAnswer.CurrentValue);
+
+            if (obj != null && obj.TryGetValue("value", out object? value) && value is string valueStr && int.TryParse(valueStr, out int result))
+            {
+                return result;
+            }
+
+            return 0;
+        }
+
+        private static int CalculateYesNoFieldScore(Question field)
+        {
+            if (field.Answers == null || field.Answers.Count == 0)
+                return 0;
+
+            var answer = field.Answers[0];
+            var currentValueObj = !string.IsNullOrEmpty(answer.CurrentValue)
+                                    ? JsonConvert.DeserializeObject<CurrentValueJson>(answer.CurrentValue)
+                                    : null;
+            string userResponse = currentValueObj?.Value ?? "Unknown";
+
+            var definitionObj = (answer.Question?.Definition != null)
+                                 ? JsonConvert.DeserializeObject<QuestionYesNoDefinition>(answer.Question.Definition)
+                                 : null;
+            int yesValue = definitionObj?.YesValue ?? 0;
+            int noValue = definitionObj?.NoValue ?? 0;
+
+            return userResponse.Equals("Yes", StringComparison.OrdinalIgnoreCase) ? yesValue : noValue;
+        }
+
+        private static int CalculateSelectListFieldScore(Question field)
+        {
+            if (field.Answers == null || field.Answers.Count == 0)
+                return 0;
+
+            var answer = field.Answers[0];
+            var currentValueObj = !string.IsNullOrEmpty(answer.CurrentValue)
+                                    ? JsonConvert.DeserializeObject<CurrentValueJson>(answer.CurrentValue)
+                                    : null;
+            string selectedOption = currentValueObj?.Value ?? "Unknown";
+
+            var definitionObj = (answer.Question?.Definition != null)
+                                ? JsonConvert.DeserializeObject<QuestionDefinitionSelectList>(answer.Question.Definition)
+                                : null;
+
+            var matchedOption = definitionObj?.Options?.FirstOrDefault(opt => opt.Value == selectedOption);
+
+            return matchedOption?.NumericValue ?? 0;
+
         }
     }
 
-    public class CurrentValue
+        public class CurrentValue
     {
         [JsonPropertyName("value")]
         public int Value { get; set; }
@@ -162,7 +155,7 @@ namespace Unity.Flex.Reporting.DataGenerators
     class CurrentValueJson
     {
         [JsonProperty("value")]
-        public string Value { get; set; }
+        public string? Value { get; set; }
     }
 
     class QuestionYesNoDefinition 
@@ -177,16 +170,16 @@ namespace Unity.Flex.Reporting.DataGenerators
     class QuestionDefinitionSelectList
     {
         [JsonProperty("options")]
-        public List<SelectListOption> Options { get; set; }
+        public List<SelectListOption>? Options { get; set; }
     }
 
     class SelectListOption
     {
         [JsonProperty("key")]
-        public string Key { get; set; }
+        public string? Key { get; set; }
 
         [JsonProperty("value")]
-        public string Value { get; set; }
+        public string? Value { get; set; }
 
         [JsonProperty("numeric_value")]
         public int NumericValue { get; set; }
