@@ -7,6 +7,7 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -54,6 +55,14 @@ namespace Unity.GrantManager.Controllers
         private async Task<dynamic> HandleIntakeEventAsync(EventSubscription eventSubscription)
         {
             EventSubscriptionDto eventSubscriptionDto = ObjectMapper.Map<EventSubscription, EventSubscriptionDto>(eventSubscription);
+
+            Logger.LogInformation("Handling Intake Event Of Type: {Type}", eventSubscription.SubscriptionEvent?.ToString() ?? "UNDEFINED");
+
+            if (eventSubscription.SubscriptionEvent == ChefsEventTypesConsts.FORM_SUBMITTED)
+            {
+                await DelayAsync();                
+            }            
+
             return eventSubscription.SubscriptionEvent switch
             {
                 ChefsEventTypesConsts.FORM_SUBMITTED => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
@@ -61,6 +70,12 @@ namespace Unity.GrantManager.Controllers
                 ChefsEventTypesConsts.FORM_DRAFT_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
                 _ => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
             };
+        }
+
+        private async Task DelayAsync()
+        {
+            Logger.LogInformation("Delaying Intake Event For Processing By 5 Seconds");
+            await Task.Delay(5000); // Delay for 5 seconds
         }
     }
 }
