@@ -8,34 +8,28 @@ using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
+using System;
+using Volo.Abp.BackgroundJobs;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Controllers
 {
     [ApiController]
     [Route("api/chefs/event")]
     [AllowAnonymous]
-    public class EventSubscriptionController : AbpControllerBase
+    public class EventSubscriptionController(IIntakeSubmissionAppService intakeSubmissionAppService,
+                                       IChefsEventSubscriptionService iChefsEventSubscriptionService,
+                                       ITenantRepository tenantRepository,
+                                       IBackgroundJobManager backgroundJobManager,
+                                       ICurrentTenant currentTenant) : AbpControllerBase
     {
-        private readonly IIntakeSubmissionAppService _intakeSubmissionAppService;
-        private readonly IChefsEventSubscriptionService _iChefsEventSubscriptionService;
-        private readonly ITenantRepository _tenantRepository;
-
-        public EventSubscriptionController(IIntakeSubmissionAppService intakeSubmissionAppService,
-                                           IChefsEventSubscriptionService iChefsEventSubscriptionService,
-                                           ITenantRepository tenantRepository)
-        {
-            _intakeSubmissionAppService = intakeSubmissionAppService;
-            _iChefsEventSubscriptionService = iChefsEventSubscriptionService;
-            _tenantRepository = tenantRepository;
-        }
-
         [HttpPost]
         [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
         public async Task<dynamic> PostEventSubscriptionAsync([FromBody] EventSubscription eventSubscription)
         {
             if (CurrentTenant.Id == null)
             {
-                var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
+                var defaultTenant = await tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
                 using (CurrentTenant.Change(defaultTenant.Id, defaultTenant.Name))
                 {
                     return await HandleIntakeEventAsync(eventSubscription);
@@ -60,22 +54,25 @@ namespace Unity.GrantManager.Controllers
 
             if (eventSubscription.SubscriptionEvent == ChefsEventTypesConsts.FORM_SUBMITTED)
             {
-                await DelayAsync();                
-            }            
+                var args = new IntakeSubmissionBackgroundJobArgs
+                {
+                    EventSubscriptionDto = eventSubscriptionDto,
+                    TenantId = currentTenant.Id,
+                    ProcessDelayMs = 10000 // Could be moved to a configuration setting
+                };
+
+                await backgroundJobManager.EnqueueAsync(args);
+
+                // Return a response immediately
+                return new EventSubscriptionConfirmationDto() { ConfirmationId = Guid.NewGuid(), ExceptionMessage = "Processing.." };
+            }
 
             return eventSubscription.SubscriptionEvent switch
             {
-                ChefsEventTypesConsts.FORM_SUBMITTED => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
-                ChefsEventTypesConsts.FORM_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
-                ChefsEventTypesConsts.FORM_DRAFT_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
-                _ => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
+                ChefsEventTypesConsts.FORM_PUBLISHED => await iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
+                ChefsEventTypesConsts.FORM_DRAFT_PUBLISHED => await iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
+                _ => await intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
             };
-        }
-
-        private async Task DelayAsync()
-        {
-            Logger.LogInformation("Delaying Intake Event For Processing By 5 Seconds");
-            await Task.Delay(5000); // Delay for 5 seconds
         }
     }
 }
