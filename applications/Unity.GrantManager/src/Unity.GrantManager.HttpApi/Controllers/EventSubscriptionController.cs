@@ -56,10 +56,12 @@ namespace Unity.GrantManager.Controllers
         {
             EventSubscriptionDto eventSubscriptionDto = ObjectMapper.Map<EventSubscription, EventSubscriptionDto>(eventSubscription);
 
+            Logger.LogInformation("Handling Intake Event Of Type: {Type}", eventSubscription.SubscriptionEvent?.ToString() ?? "UNDEFINED");
+
             if (eventSubscription.SubscriptionEvent == ChefsEventTypesConsts.FORM_SUBMITTED)
             {
                 await DelayAsync();                
-            }
+            }            
 
             return eventSubscription.SubscriptionEvent switch
             {
@@ -72,7 +74,7 @@ namespace Unity.GrantManager.Controllers
 
         private async Task DelayAsync()
         {
-            Logger.LogInformation("Delaying for 5 seconds");
+            Logger.LogInformation("Delaying Intake Event For Processing By 5 Seconds");
             await Task.Delay(5000); // Delay for 5 seconds
         }
     }
