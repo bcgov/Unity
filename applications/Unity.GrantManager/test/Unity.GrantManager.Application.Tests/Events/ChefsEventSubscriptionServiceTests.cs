@@ -3,6 +3,7 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
@@ -71,7 +72,7 @@ namespace Unity.GrantManager.Events
 
         public class SubmissionApiServiceMock : ISubmissionsApiService
         {
-            public Task<dynamic?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
+            public Task<JsonDocument?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
             {
                 throw new NotImplementedException();
             }
