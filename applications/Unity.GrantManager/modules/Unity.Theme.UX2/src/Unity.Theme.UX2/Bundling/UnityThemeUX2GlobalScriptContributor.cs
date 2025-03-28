@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 
 namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
@@ -30,5 +31,7 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/echarts/echarts.min.js");
         context.Files.AddIfNotContains("/libs/jszip/dist/jszip.min.js");
         context.Files.AddIfNotContains("/libs/tributejs/dist/tribute.js");
+        context.Files.AddIfNotContains("/libs/tui-editor/toastui-editor-all.min.js");
+
     }
 }

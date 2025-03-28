@@ -10,3 +10,12 @@ public class NotificationsSettingScriptBundleContributor : BundleContributor
         context.Files.AddIfNotContains("/Views/Settings/NotificationsSettingGroup/Default.js");
     }
 }
+
+public class NotificationsSettingStyleBundleContributor : BundleContributor
+{
+    public override void ConfigureBundle(BundleConfigurationContext context)
+    {
+        context.Files
+          .AddIfNotContains("/Views/Settings/NotificationsSettingGroup/Default.css");
+    }
+}
