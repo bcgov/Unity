@@ -21,6 +21,8 @@ namespace Unity.GrantManager.Locks
                 if (disposing)
                 {
                     semaphore.Release();
+                    _cancellationTokenSource.Cancel();
+                    _cancellationTokenSource.Dispose();
                 }
                 _disposed = true;
             }
@@ -37,6 +39,8 @@ namespace Unity.GrantManager.Locks
             if (!_disposed)
             {
                 semaphore.Release();
+                _cancellationTokenSource.Cancel();
+                _cancellationTokenSource.Dispose();
                 _disposed = true;
             }
             await ValueTask.CompletedTask;
