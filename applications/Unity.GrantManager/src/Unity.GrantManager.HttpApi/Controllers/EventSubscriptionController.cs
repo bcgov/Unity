@@ -58,7 +58,6 @@ namespace Unity.GrantManager.Controllers
                 {
                     EventSubscriptionDto = eventSubscriptionDto,
                     TenantId = currentTenant.Id,
-                    ProcessDelayMs = 10000 // Could be moved to a configuration setting
                 };
 
                 await backgroundJobManager.EnqueueAsync(args);
