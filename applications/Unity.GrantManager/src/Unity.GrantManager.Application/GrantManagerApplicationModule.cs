@@ -35,10 +35,17 @@ using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Volo.Abp.BackgroundJobs;
 using Unity.Reporting;
+using Volo.Abp.DistributedLocking;
+using Medallion.Threading.Redis;
+using Medallion.Threading;
+using StackExchange.Redis;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.GrantManager.Locks;
 
 namespace Unity.GrantManager;
 
-[DependsOn(    
+[DependsOn(
     typeof(GrantManagerDomainModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
@@ -49,10 +56,11 @@ namespace Unity.GrantManager;
     typeof(AbpBackgroundWorkersQuartzModule),
     typeof(NotificationsApplicationModule),
     typeof(PaymentsApplicationModule),
-    typeof(FlexApplicationModule)
-    )]
-[DependsOn(typeof(ReportingApplicationModule))]
-    public class GrantManagerApplicationModule : AbpModule
+    typeof(FlexApplicationModule),
+    typeof(ReportingApplicationModule),
+    typeof(AbpDistributedLockingModule)
+)]
+public class GrantManagerApplicationModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -135,6 +143,7 @@ namespace Unity.GrantManager;
 
         ConfigureBackgroundServices(configuration);
         ConfigureDistributedCache(context, configuration);
+        ConfigureDistributedLocking(context, configuration);
 
         context.Services.ConfigureRabbitMQ();
 
@@ -188,6 +197,21 @@ namespace Unity.GrantManager;
         LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
+
+    private static void ConfigureDistributedLocking(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"]))
+        {
+            context.Services.AddSingleton<IDistributedLockProvider, InMemoryDistributedLockProvider>();
+            return;
+        }
+
+        var redisConnectionString = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
+        var redisConnection = ConnectionMultiplexer.Connect(redisConnectionString);
+
+        context.Services.AddSingleton<IDistributedLockProvider>(new RedisDistributedSynchronizationProvider(redisConnection.GetDatabase()));
+    }
+
     private void ConfigureBackgroundServices(IConfiguration configuration)
     {
         if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"])) return;
