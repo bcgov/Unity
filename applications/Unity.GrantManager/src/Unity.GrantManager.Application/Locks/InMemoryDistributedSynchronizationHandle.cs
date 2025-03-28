@@ -39,7 +39,7 @@ namespace Unity.GrantManager.Locks
             if (!_disposed)
             {
                 semaphore.Release();
-                _cancellationTokenSource.Cancel();
+                await _cancellationTokenSource.CancelAsync();
                 _cancellationTokenSource.Dispose();
                 _disposed = true;
             }
