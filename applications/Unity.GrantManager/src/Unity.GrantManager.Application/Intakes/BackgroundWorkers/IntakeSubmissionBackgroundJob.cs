@@ -24,11 +24,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
                         return;
                     }
 
-                    Logger.LogInformation("Was {X} Millseconds Before Processing", args.ProcessDelayMs);
-
-                    await Task.Delay(args.ProcessDelayMs); // Delay
-
-                    Logger.LogInformation("Processing Intake In Background");
+                    Logger.LogInformation("Processing intake in background for submissionId {Id}", args.EventSubscriptionDto.SubmissionId);
 
                     await intakeSubmissionAppService.CreateIntakeSubmissionAsync(args.EventSubscriptionDto);
                 }

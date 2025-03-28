@@ -7,6 +7,5 @@ namespace Unity.GrantManager.Intakes
     {
         public EventSubscriptionDto? EventSubscriptionDto { get; set; }
         public Guid? TenantId { get; set; }
-        public int ProcessDelayMs { get; set; }
     }
 }
