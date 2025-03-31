@@ -118,10 +118,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     public async Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto) {
         var applicant = applicantAgentDto.Applicant;
 
-        if(applicant.BusinessNumber == null && applicant.MatchPercentage == null) {
+        if (applicant.BusinessNumber == null 
+            && applicant.MatchPercentage == null 
+            && !string.IsNullOrEmpty(applicant.OrgNumber)
+            && !applicant.OrgNumber.Contains("No Data", StringComparison.OrdinalIgnoreCase))
+        {
             applicant = await UpdateApplicantOrgMatchAsync(applicant);
         }
-        
+
         if (applicant.SupplierId != null) return;
 
         if(applicant.BusinessNumber != null) {
