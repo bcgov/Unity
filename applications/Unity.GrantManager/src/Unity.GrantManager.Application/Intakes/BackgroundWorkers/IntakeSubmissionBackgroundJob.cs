@@ -14,7 +14,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
     {
         public override async Task ExecuteAsync(IntakeSubmissionBackgroundJobArgs args)
         {
-            logger.LogInformation("Executing intake submission background job for confirmation id: {confirmationId}", args.ConfirmationId);
+            logger.LogInformation("Executing intake submission background job for confirmation id: {ConfirmationId}", args.ConfirmationId);
 
             using (currentTenant.Change(args.TenantId))
             {
@@ -32,7 +32,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Error processing intake submission for confirmation id: {confirmationId}", args.ConfirmationId);
+                    logger.LogError(ex, "Error processing intake submission for confirmation id: {ConfirmationId}", args.ConfirmationId);
                 }
             }
         }
