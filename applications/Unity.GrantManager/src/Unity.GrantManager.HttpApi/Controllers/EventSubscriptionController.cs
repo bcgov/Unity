@@ -54,17 +54,23 @@ namespace Unity.GrantManager.Controllers
 
             if (eventSubscription.SubscriptionEvent == ChefsEventTypesConsts.FORM_SUBMITTED)
             {
+                var confirmationId = Guid.NewGuid();
+
                 var args = new IntakeSubmissionBackgroundJobArgs
                 {
                     EventSubscriptionDto = eventSubscriptionDto,
                     TenantId = currentTenant.Id,
+                    ConfirmationId = confirmationId
                 };
 
                 await backgroundJobManager.EnqueueAsync(args);
 
                 // Return a response immediately
-                return new EventSubscriptionConfirmationDto() { ConfirmationId = Guid.NewGuid(), ExceptionMessage = "Processing.." };
+                return new EventSubscriptionConfirmationDto() { ConfirmationId = confirmationId, ExceptionMessage = "Processing.." };
             }
+
+            // Not specifcifiying the event type will default to creating an intake submission
+            // This processing type will also be inline and not queued
 
             return eventSubscription.SubscriptionEvent switch
             {
