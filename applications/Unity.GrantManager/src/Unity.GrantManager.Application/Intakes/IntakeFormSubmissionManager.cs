@@ -57,7 +57,7 @@ namespace Unity.GrantManager.Intakes
             intakeMap.ConfirmationId = formSubmission.submission.confirmationId;
             using var uow = _unitOfWorkManager.Begin();
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
-            _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
+            await _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
 
             var newSubmission = new ApplicationFormSubmission
             {
