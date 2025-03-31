@@ -11,9 +11,9 @@ jobs:
     steps:
       - name: Check branch
         run: |
-          if [[ ${GITHUB_HEAD_REF} =~ ^feature/ ]] && ! [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]] && ! [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]; then
+          if [[ ${GITHUB_HEAD_REF} =~ ^feature/ ]] || [[ ${GITHUB_HEAD_REF} == 'test' ]] || [[ ${GITHUB_HEAD_REF} == 'main' ]] || [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]] || [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]; then
             echo ""
-            echo "Notice: Pull Request into dev should come from a merged 'feature/*', 'hotfix/*', or 'bugfix/*' branch"
+            echo "Notice: Pull Request into dev should come from a merged 'feature/*', 'hotfix/*', 'bugfix/*', 'test', or 'main' branch"
             echo "Notice: The dev branch is for new features, hotfixes, bugfixes and accepts merge, squash or rebase commits"
             exit 0
           fi
