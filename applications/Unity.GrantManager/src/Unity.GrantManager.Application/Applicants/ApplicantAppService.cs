@@ -118,8 +118,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     public async Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto) {
         var applicant = applicantAgentDto.Applicant;
 
-        if(applicant.BusinessNumber == null && applicant.MatchPercentage == null) {
-            applicant = await UpdateApplicantOrgMatchAsync(applicant);
+        if(applicant.BusinessNumber == null && applicant.MatchPercentage == null && applicant.OrgNumber != null) {
+            applicant = await UpdateApplicantOrgMatchByOrgNumberAsync(applicant);
         }
         
         if (applicant.SupplierId != null) return;
@@ -181,6 +181,32 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         catch (Exception ex)
         {
             Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ex.Message);
+        }
+
+        return applicant;
+    }
+
+    public async Task<Applicant> UpdateApplicantOrgMatchByOrgNumberAsync(Applicant applicant)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(applicant.OrgNumber) ||
+                applicant.OrgNumber.Contains("No Data", StringComparison.OrdinalIgnoreCase)) return applicant;
+            string? orgbookLookup = applicant.OrgNumber;
+
+            JObject? result = await orgBookService.GetOrgBookQueryAsync(orgbookLookup);
+            var orgData = result?.SelectToken("results")?.Children().FirstOrDefault();
+            if (orgData == null) return applicant;
+
+            IEnumerable<JToken>? namesChildren = orgData.SelectToken("names")?.Children();
+            if (namesChildren == null) return applicant;
+
+            await UpdateApplicantOrgNumberAsync(applicant, orgData);
+            await UpdateApplicantNamesAsync(applicant, namesChildren);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogInformation(ex, "UpdateApplicantOrgMatchByOrgNumberAsync: Exception: {ExceptionMessage}", ex.Message);
         }
 
         return applicant;
