@@ -1,0 +1,19 @@
+name: Test - Branch Protection
+
+on:
+  pull_request:
+    branches:
+      - test
+
+jobs:
+  check-test-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch
+        run: |
+          if [[ ${GITHUB_HEAD_REF} != 'dev' ]] && [[ ${GITHUB_HEAD_REF} != 'main' ]] && ! [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]] && ! [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]; then
+            echo ""
+            echo "Error: Pull Request into test must come from a merged 'dev', 'main', 'hotfix/*', or 'bugfix/*' branch"
+            echo "Quick Fix: Edit the PR into base: target the dev or main branch, or rename source branch and try again."
+            exit 1
+          fi

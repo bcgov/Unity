@@ -1,0 +1,19 @@
+name: Main - Branch Protection
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-main-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch
+        run: |
+          if [[ ${GITHUB_HEAD_REF} != 'test' ]] && ! [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]]; then
+            echo ""
+            echo "Error: Pull Request into main must come from a merged 'test' or 'hotfix/*' source branch"
+            echo "Fix: Rename the source branch to hotfix/* or close this PR and target a different base using a new PR."
+            exit 1
+          fi

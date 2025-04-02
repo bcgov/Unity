@@ -237,6 +237,10 @@
             data: 'referenceNo',
             name: 'referenceNo',
             className: 'data-table-header',
+            render: function (data, type, row) {
+                console.log(row);
+                return `<a href="/GrantApplications/Details?ApplicationId=${row.id}">${data}</a>`;
+            },
             index: 2
         }
     }
