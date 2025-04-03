@@ -4,7 +4,7 @@
 
     const listColumns = getColumns();
     const defaultVisibleColumns = ['EntityName', 'PropertyName', 'OriginalValue', 'NewValue', 'ChangeTime', 'UserName'];
-    let actionButtons = [];
+    let actionButtons = [...commonTableActionButtons('Payment History')];
 
     let responseCallback = function (result) {
         if (result + "" == "undefined") {
@@ -39,19 +39,9 @@
         reorderEnabled: true,
         languageSetValues: {},
         dataTableName: 'AuditHistoryTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'});
-
-    dataTable.on('search.dt', () => handleSearch());      
-
-    $('#search').on('input', function () {
-        let table = $('#AuditHistoryTable').DataTable();
-        table.search($(this).val()).draw();
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        externalSearchId: 'search-payment-history',
     });
-
-    function handleSearch() {
-        let filter = $('.dataTables_filter input').val();
-        console.info(filter);
-    }
 
     function getColumns() {
         return [
