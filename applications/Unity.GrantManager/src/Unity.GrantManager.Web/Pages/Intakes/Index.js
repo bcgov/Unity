@@ -15,15 +15,7 @@
             className: 'btn-light rounded-1',
             action: (e, dt, node, config) => createIntakeBtn(e)
         },
-        {
-            text: 'Filter',
-            id: "btn-toggle-filter",
-            className: 'btn-secondary custom-table-btn m-0',
-            action: function (e, dt, node, config) { },
-            attr: {
-                id: 'btn-toggle-filter'
-            }
-        }
+        ...commonTableActionButtons(l('Intake'))
     ];
 
     const listColumns = [
@@ -63,6 +55,8 @@
         },
         {
             title: l('Actions'),
+            orderable: false,
+            className: 'notexport text-center',
             name: 'rowActions',
             index: 4,
             rowAction: {
@@ -110,7 +104,8 @@
         languageSetValues: {},
         dataTableName: 'IntakesTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
-        useNullPlaceholder: true
+        useNullPlaceholder: true,
+        externalSearchId: 'search-intakes'
     });
 
     dataTable.on('search.dt', () => handleSearch());

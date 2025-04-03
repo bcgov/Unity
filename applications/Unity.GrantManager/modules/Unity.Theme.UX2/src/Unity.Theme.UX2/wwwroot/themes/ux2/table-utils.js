@@ -51,13 +51,16 @@ function initializeDataTable(options) {
         languageSetValues,
         dataTableName,
         dynamicButtonContainerId,
-        useNullPlaceholder = false
+        useNullPlaceholder = false,
+        externalSearchId = 'search',
+        listColumnDefs
     } = options;
 
     // If useNullPlaceholder is true, update csv export buttons to include the example format function
     let updatedActionButtons = removePlaceholderFromCvsExportButton(actionButtons, useNullPlaceholder, nullPlaceholder);
 
-    let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
+    let displayColumns = Array.isArray(listColumns) && listColumns.length > 0 ? listColumns : [];
+    let visibleColumnsIndex = defaultVisibleColumns.map((name) => displayColumns.find(obj => obj.name === name || obj.data === name)?.index ?? 0);
     let filterData = {};
 
     let iDt = dt.DataTable(
@@ -71,6 +74,7 @@ function initializeDataTable(options) {
             paging: pagingEnabled,
             order: [[defaultSortColumn, 'desc']],
             searching: true,
+            externalSearchInputId: `#${externalSearchId}`, 
             iDisplayLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
@@ -110,8 +114,8 @@ function initializeDataTable(options) {
             },
             initComplete: function () {
             },
-            columns: listColumns,
-            columnDefs: [
+           columns: displayColumns,
+           columnDefs: [
                 {
                     targets: visibleColumnsIndex,
                     visible: true
@@ -122,18 +126,20 @@ function initializeDataTable(options) {
                     visible: false, 
                     // Set default content for all cells to placeholder if null
                     ...(useNullPlaceholder ? { defaultContent: nullPlaceholder } : {})  
-                }
+                },
+                // Add listColumnDefs if not null or empty
+                ...(Array.isArray(listColumnDefs) && listColumnDefs.length > 0 ? listColumnDefs : [])
             ],
             processing: true,
             stateSaveParams: function (settings, data) {
-                let searchValue = $('#search').val();
+                let searchValue = $(settings.oInit.externalSearchInputId).val();
                 data.search.search = searchValue;
 
                 let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
                 $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
             },
             stateLoadParams: function (settings, data) {
-                $('#search').val(data.search.search);
+                $(settings.oInit.externalSearchInputId).val(data.search.search);
 
                 data.columns.forEach((column, index) => {
                     if(settings.aoColumns[index] +"" != "undefined") {
@@ -173,6 +179,8 @@ function initializeDataTable(options) {
 
     searchFilter(iDt);
 
+    setExternalSearchFilter(iDt);
+
     return iDt;
 }
 
@@ -209,7 +217,7 @@ function init(iDt) {
 
 function initializeFilterButtonPopover(iDt) {
     const UIElements = {
-        search: $('#search'),
+        search: $(iDt.init().externalSearchInputId),
         btnToggleFilter: $('#btn-toggle-filter')
     };
 
@@ -240,10 +248,8 @@ function initializeFilterButtonPopover(iDt) {
         placement: 'bottom'
     });
 
-    
-
     UIElements.btnToggleFilter.on('shown.bs.popover', function () {
-        const searchElement = $('#search');
+        const searchElement = $(iDt.init().externalSearchInputId);
         const trToggleElement = $(".tr-toggle-filter");
         const popoverElement = $('.popover.custom-popover');
         const customFilterElement = $('.custom-filter-input');
@@ -333,6 +339,7 @@ function getColumnToggleButtonsSorted(listColumns, dataTable) {
     const res = listColumns
         .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
         .filter(obj => !exludeIndxs.includes(obj.index))
+        .filter(obj => obj.title !== 'Actions')
         .sort((a, b) => a.title.localeCompare(b.title))
         .map(a => ({
             text: a.title,
@@ -344,13 +351,26 @@ function getColumnToggleButtonsSorted(listColumns, dataTable) {
                 } else {
                     node.removeClass('dt-button-active');
                 }
-
             },
             className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable),
             extend: 'columnToggle',
             columns: a.index
         }));
     return res;
+}
+
+function setExternalSearchFilter(dataTableInstance) {
+    let searchId = dataTableInstance.init().externalSearchInputId;
+
+    // Exclude default search inputs that have custom logic
+    if (searchId !== false && searchId !== '#search') {
+        $('.dataTables_filter input').attr("placeholder", "Search");
+        $('.dataTables_filter label')[0].childNodes[0].remove();
+
+        $(searchId).on('input', function () {
+            dataTableInstance.search($(this).val()).draw();
+        });
+    }
 }
 
 function updateFilter(dt, dtName, filterData) {
@@ -409,7 +429,7 @@ function updateFilter(dt, dtName, filterData) {
 }
 
 function searchFilter(iDt) {
-    let searchValue = $('#search').val();
+    let searchValue = $(iDt.init().externalSearchInputId).val();
     if (searchValue) {
         iDt.search(searchValue).draw();
     }
@@ -420,7 +440,7 @@ function searchFilter(iDt) {
 }
 
 function updateFilterButton(dt) {
-    let searchValue = $('#search').val();
+    let searchValue = $(dt.init().externalSearchInputId).val();
     let columnFiltersApplied = false;
     dt.columns().every(function () {
         let search = this.search();
@@ -441,4 +461,46 @@ $('.data-table-select-all').click(function () {
         PubSub.publish('datatable_select_all', false);
     }
    
+});
+
+function commonTableActionButtons(exportTitle) {
+    return [
+        {
+            text: 'Filter',
+            id: "btn-toggle-filter",
+            className: 'btn-secondary custom-table-btn m-0',
+            action: function (e, dt, node, config) { },
+            attr: {
+                id: 'btn-toggle-filter'
+            }
+        },
+        {
+            extend: 'csv',
+            text: 'Export',
+            title: exportTitle,
+            className: 'custom-table-btn flex-none btn btn-secondary hidden-export-btn d-none',
+            exportOptions: {
+                columns: ':visible:not(.notexport)',
+                orthogonal: 'fullName',
+                format: {
+                    body: function (data, row, column, node) {
+                        return data === nullPlaceholder ? '' : data;
+                    }
+                }
+            }
+        }
+    ];
+}
+
+// Toggle hidden export buttons for Ctrl+Alt+Shift+E globally
+$(document).keydown(function (e) {
+    if (e.ctrlKey && e.altKey &&
+        e.shiftKey && e.key === 'E') {
+        // Toggle d-none class on elements with hidden-export class
+        $('.hidden-export-btn').toggleClass('d-none');
+
+        // Prevent default behavior
+        e.preventDefault();
+        return false;
+    }
 });

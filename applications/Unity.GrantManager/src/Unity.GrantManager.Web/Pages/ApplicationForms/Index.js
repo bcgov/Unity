@@ -15,7 +15,7 @@
         {
             title: l('Actions'),
             orderable: false,
-            className: 'notexport text-center actioncol',
+            className: 'notexport text-center',
             data: null,
             name: 'rowActions',
             index: 0,
@@ -107,15 +107,7 @@
                 }
             ]
         },
-        {
-            text: 'Filter',
-            id: "btn-toggle-filter",
-            className: 'btn-secondary custom-table-btn m-0',
-            action: function (e, dt, node, config) { },
-            attr: {
-                id: 'btn-toggle-filter'
-            }
-        }
+        ...commonTableActionButtons(l('ApplicationForms'))
     ];
 
     let dataTable = initializeDataTable({
@@ -133,7 +125,8 @@
         languageSetValues: {},
         dataTableName: 'ApplicationFormsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
-        useNullPlaceholder: true
+        useNullPlaceholder: true,
+        externalSearchId: 'search-forms',
     });
 
     dataTable.on('search.dt', () => handleSearch());
