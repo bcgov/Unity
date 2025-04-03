@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
-                .Where(x => x.OrgName == null)
+                .Where(x => x.MatchPercentage == null)
                 .ToListAsync();
         }
 

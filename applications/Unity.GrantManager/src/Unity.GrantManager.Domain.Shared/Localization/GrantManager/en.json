@@ -353,7 +353,7 @@
     "ApplicantInfoView:ApplicantInfo.PostalCode": "Postal Code",
     "ApplicantInfoView:ApplicantInfo.NonRegOrgName": "Non-Registered Organization Name",
     "ApplicantInfoView:ApplicantInfo.OrgBookSearchPlaceholder": "Start typing to search for your registered organization name",
-    "ApplicantInfoView:ApplicantInfo.OrgBookSearch": "Search in BC Registries (Registered Societies Only)",
+    "ApplicantInfoView:ApplicantInfo.OrgBookSearch": "Search in BC Registries",
 
     "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement",
     "FundingAgreementInfoView:FundingAgreementInfoContract": "Contract",

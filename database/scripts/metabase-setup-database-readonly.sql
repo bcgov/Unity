@@ -6,7 +6,7 @@ DO $$
 DECLARE 
     db_name TEXT;
     schema TEXT;
-    schema_list TEXT[] := ARRAY['public', 'Flex', 'Notifications', 'Payments'];
+    schema_list TEXT[] := ARRAY['public', 'Flex', 'Notifications', 'Payments', 'Reporting'];
     existing_schemas TEXT := '';
 BEGIN
     -- Get the name of the current database
