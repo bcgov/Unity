@@ -366,7 +366,7 @@ function updateFilter(dt, dtName, filterData) {
             let column = this;
             if (column.visible()) {
                 let title = column.header().textContent;
-                if (title) {
+                if (title && title !== 'Actions') {
 
                     let filterValue = filterData[title] ? filterData[title] : '';
 

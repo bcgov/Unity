@@ -6,57 +6,124 @@
     /**
      * Intakes: List All
      */
-    let dataTable = $('#IntakesTable').DataTable(
-        abp.libs.datatables.normalizeConfiguration({
-            serverSide: false,
-            paging: true,
-            order: [[1, "asc"]],
-            searching: true,
-            scrollX: true,
-            processing: true,
-            ajax: abp.libs.datatables.createAjax(unity.grantManager.intakes.intake.getList),
-            columnDefs: [
-                {
-                    title: l('Intake'),
-                    data: "intakeName"
-                },
-                {
-                    title: l('Common:StartDate'),
-                    data: "startDate",
-                    render: (data) => luxon
-                        .DateTime
-                        .fromISO(data, {
-                            locale: abp.localization.currentCulture.name
-                        }).toLocaleString(luxon.DateTime.DATE_SHORT)
-                },
-                {
-                    title: l('Common:EndDate'),
-                    data: "endDate",
-                    render: (data) => luxon
-                        .DateTime
-                        .fromISO(data, {
-                            locale: abp.localization.currentCulture.name
-                        }).toLocaleString(luxon.DateTime.DATE_SHORT)
-                },
-                {
-                    title: l("Budget"),
-                    data: "budget"
-                },
-                {
-                    title: l('Common:Command:Edit'),
-                    rowAction: {
-                        items:
-                            [
-                                {
-                                    text: l('Common:Command:Edit'),
-                                    action: (data) => updateModal.open({ id: data.record.id })
-                                }
-                            ]
-                    }
-                }
-            ]
-        })
-    );
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
+    let actionButtons = [
+        {
+            text: '<i class="fl fl-add-to align-middle"></i> <span>' + l('Common:Command:Create') + '</span>',
+            titleAttr: l('Common:Command:Create'),
+            id: 'CreateIntakeButton',
+            className: 'btn-light rounded-1',
+            action: (e, dt, node, config) => createIntakeBtn(e)
+        },
+        {
+            text: 'Filter',
+            id: "btn-toggle-filter",
+            className: 'btn-secondary custom-table-btn m-0',
+            action: function (e, dt, node, config) { },
+            attr: {
+                id: 'btn-toggle-filter'
+            }
+        }
+    ];
+
+    const listColumns = [
+        {
+            title: l('Intake'),
+            name: "intakeName",
+            data: "intakeName",
+            index: 0
+        },
+        {
+            title: l('Common:StartDate'),
+            name: "startDate",
+            data: "startDate",
+            index: 1,
+            render: (data) => luxon
+                .DateTime
+                .fromISO(data, {
+                    locale: abp.localization.currentCulture.name
+                }).toLocaleString(luxon.DateTime.DATE_SHORT)
+        },
+        {
+            title: l('Common:EndDate'),
+            name: "endDate",
+            data: "endDate",
+            index: 2,
+            render: (data) => luxon
+                .DateTime
+                .fromISO(data, {
+                    locale: abp.localization.currentCulture.name
+                }).toLocaleString(luxon.DateTime.DATE_SHORT)
+        },
+        {
+            title: l("Budget"),
+            name: "budget",
+            data: "budget",
+            index: 3
+        },
+        {
+            title: l('Actions'),
+            name: 'rowActions',
+            index: 4,
+            rowAction: {
+                items:
+                    [
+                        {
+                            text: l('Common:Command:Edit'),
+                            action: (data) => updateModal.open({ id: data.record.id })
+                        }
+                    ]
+            }
+        }
+    ];
+
+    const defaultVisibleColumns = [
+        'intakeName',
+        'startDate',
+        'endDate',
+        'budget',
+        'rowActions'
+    ];
+
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
+
+    let dt = $('#IntakesTable');
+
+    let dataTable = initializeDataTable({
+        dt,
+        defaultVisibleColumns,
+        listColumns,
+        maxRowsPerPage: 25,
+        defaultSortColumn: 0,
+        dataEndpoint: unity.grantManager.intakes.intake.getList,
+        data: {},
+        responseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        reorderEnabled: false,
+        languageSetValues: {},
+        dataTableName: 'IntakesTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        useNullPlaceholder: true
+    });
+
+    dataTable.on('search.dt', () => handleSearch());
+    $('.dataTables_filter input').attr("placeholder", "Search");
+    $('.dataTables_filter label')[0].childNodes[0].remove();
+
+    $('#search').on('input', function () {
+        dataTable.search($(this).val()).draw();
+    });
+
+    function handleSearch() {
+        let filter = $('.dataTables_filter input').val();
+    }
 
     createModal.onResult(function () {
         dataTable.ajax.reload();
@@ -66,10 +133,9 @@
         dataTable.ajax.reload();
     });
 
-    $('#CreateIntakeButton').click(function (e) {
+    function createIntakeBtn(e) {
         e.preventDefault();
         createModal.open();
-    });
-
+    };
 });
 
