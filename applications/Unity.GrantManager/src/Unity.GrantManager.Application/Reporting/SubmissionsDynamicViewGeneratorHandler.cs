@@ -34,7 +34,7 @@ namespace Unity.GrantManager.Reporting
                     if (applicationFormVersion != null)
                     {
                         var dbContext = await applicationFormVersionRepository.GetDbContextAsync();
-                        FormattableString sql = $@"CALL generate_submissions_view({viewGenerationEvent.ApplicationFormVersionId});";
+                        FormattableString sql = $@"CALL ""Reporting"".generate_submissions_view({viewGenerationEvent.ApplicationFormVersionId});";
                         await dbContext.Database.ExecuteSqlAsync(sql);
                     }
 

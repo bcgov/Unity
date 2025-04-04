@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
-                .Where(x => x.OrgName == null)
+                .Where(x => x.MatchPercentage == null)
                 .ToListAsync();
         }
 
@@ -51,6 +51,14 @@ namespace Unity.GrantManager.Repositories
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
                 .Where(x => x.UnityApplicantId != null)
+                .ToListAsync();
+        }
+
+        public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Applicants
+                .Where(x => x.SiteId == siteId)
                 .ToListAsync();
         }
     }

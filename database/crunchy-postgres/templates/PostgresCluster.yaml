@@ -110,6 +110,8 @@ spec:
         # Support both PVC and s3 backups
         repo1-retention-full: {{ .Values.pgBackRest.retention | quote }}
         repo1-retention-full-type: {{ .Values.pgBackRest.retentionFullType }}
+        repo1-retention-archive: {{ .Values.pgBackRest.retentionArchive | quote }}
+        repo1-retention-archive-type: {{ .Values.pgBackRest.retentionArchiveType }}
         {{- if .Values.pgBackRest.s3.enabled }}
         repo2-retention-full: {{ .Values.pgBackRest.retentionS3 | quote }}
         repo2-retention-full-type: {{ .Values.pgBackRest.retentionFullTypeS3 }}

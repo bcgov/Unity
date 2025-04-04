@@ -17,10 +17,11 @@ namespace Unity.GrantManager;
     typeof(AbpPermissionManagementHttpApiModule),
     typeof(UnityTenantManagementHttpApiModule),
     typeof(AbpFeatureManagementHttpApiModule),
-    typeof(AbpSettingManagementHttpApiModule)
+    typeof(AbpSettingManagementHttpApiModule),
+    typeof(NotificationsHttpApiModule)
     )]
-[DependsOn(typeof(NotificationsHttpApiModule))]
-    public class GrantManagerHttpApiModule : AbpModule
+
+public class GrantManagerHttpApiModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

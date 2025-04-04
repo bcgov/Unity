@@ -855,6 +855,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<decimal?>("MatchPercentage")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("NonRegOrgName")
+                        .HasColumnType("text");
+
                     b.Property<string>("NonRegisteredBusinessName")
                         .HasColumnType("text");
 

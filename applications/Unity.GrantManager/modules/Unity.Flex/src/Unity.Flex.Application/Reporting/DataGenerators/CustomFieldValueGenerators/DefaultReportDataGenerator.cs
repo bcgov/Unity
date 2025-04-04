@@ -12,14 +12,16 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
         /// Default key values pairing for the reporting data generation
         /// </summary>
         /// <returns>Dictionary with keys and matched values for reporting data</returns>
-        public Dictionary<string, List<string>> Generate()
+        public (Dictionary<string, List<string>> keyValuePairs, bool compressArray) Generate()
         {
             JObject dataValue = JObject.Parse(value.CurrentValue);
 
-            return new Dictionary<string, List<string>>
+            var keyValuePairings = new Dictionary<string, List<string>>
             {
                 { customField.Key, new List<string>() { dataValue["value"]?.ToString() ?? string.Empty } }
             };
+
+            return (keyValuePairings, true);
         }
     }
 }

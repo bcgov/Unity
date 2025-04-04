@@ -10,9 +10,9 @@ namespace Unity.Flex.Reporting.DataGenerators.AnswerGenerators
         /// Default key values pairing for the reporting data generation
         /// </summary>
         /// <returns>Dictionary with keys and matched values for reporting data</returns>
-        public Dictionary<string, List<string>> Generate()
+        public (Dictionary<string, List<string>> keyValuePairs, bool compressArray) Generate()
         {
-            return new Dictionary<string, List<string>>
+            var keyValues = new Dictionary<string, List<string>>
             {
                 {
                     answer.Question!.Name, new List<string>()
@@ -21,6 +21,8 @@ namespace Unity.Flex.Reporting.DataGenerators.AnswerGenerators
                     }
                 }
             };
+
+            return (keyValues, true);
         }
     }
 }

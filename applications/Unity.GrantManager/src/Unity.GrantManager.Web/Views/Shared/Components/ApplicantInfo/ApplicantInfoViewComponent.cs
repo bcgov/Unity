@@ -85,7 +85,8 @@ public class ApplicantInfoViewComponent : AbpViewComponent
             IndigenousOrgInd = applicantInfoDto.IndigenousOrgInd,
             UnityApplicantId = applicantInfoDto.UnityApplicantId,
             FiscalDay = applicantInfoDto.FiscalDay,
-            FiscalMonth = applicantInfoDto.FiscalMonth
+            FiscalMonth = applicantInfoDto.FiscalMonth,
+            NonRegOrgName = applicantInfoDto.NonRegOrgName
         };
 
         if (applicantInfoDto.ApplicantAddresses.Count != 0)

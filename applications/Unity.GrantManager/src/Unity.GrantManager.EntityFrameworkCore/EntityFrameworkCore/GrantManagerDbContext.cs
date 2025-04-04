@@ -162,6 +162,5 @@ public class GrantManagerDbContext :
             var entityBuilder = modelBuilder.Entity(type);
             entityBuilder.TryConfigureExtraProperties();
         }
-
     }
 }
