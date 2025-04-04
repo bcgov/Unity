@@ -16,11 +16,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         [Route("Refresh")]
         public IActionResult ApplicantInfo(Guid applicationId, Guid applicationFormVersionId)
         {
-        if (!ModelState.IsValid)
-        {
-            logger.LogWarning("Invalid model state for ApplicantInfoController: Refresh");
-            return ViewComponent("ApplicantInfo");
-        }
+            if (!ModelState.IsValid)
+            {
+                logger.LogWarning("Invalid model state for ApplicantInfoController: Refresh");
+                return ViewComponent("ApplicantInfo");
+            }
             return ViewComponent("ApplicantInfo", new { applicationId, applicationFormVersionId });
         }
     }

@@ -74,6 +74,24 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ZoneGroupDefinition, ZoneGroupDefinitionDto>().ReverseMap();
         CreateMap<ZoneTabDefinition, ZoneTabDefinitionDto>().ReverseMap();
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
+
+        // APPLICANT INFO MAPPINGS
+        CreateMap<ApplicantAddress, UpdateApplicantAddressDto>();
+        CreateMap<Application, ApplicantInfoDto>()
+            .ForMember(dest => dest.ApplicantId, opt => opt.MapFrom(src => src.ApplicantId))
+            .ForMember(dest => dest.OrganizationInfo, opt => opt.MapFrom(src => src.Applicant))
+            .ForMember(dest => dest.ApplicantSupplier, opt => opt.Ignore())
+            .ForMember(dest => dest.ApplicantAddresses, opt => opt.MapFrom(src => src.Applicant.ApplicantAddresses))
+            .ForMember(dest => dest.SigningAuthority, opt => opt.MapFrom(src => src.ApplicantAgent))
+            .ForMember(dest => dest.ContactInfo, opt => opt.MapFrom(src => src.ApplicantAgent));
+        
+        CreateMap<Applicant, OrganizationInfoDto>();
+        CreateMap<OrganizationInfoDto, Applicant>();
+
+        CreateMap<ApplicantAgent, SigningAuthorityDto>()
+            .ForMember(dest => dest.ApplicationId, opt => opt.MapFrom(src => src.ApplicationId));
+        CreateMap<ApplicantAgent, ContactInfoDto>()
+            .ForMember(dest => dest.ApplicantAgentId, opt => opt.MapFrom(src => src.Id));
     }
 }
 

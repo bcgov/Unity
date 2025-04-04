@@ -1,10 +1,11 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Auditing;
 
 namespace Unity.GrantManager.GrantApplications;
 
 [Serializable]
-public class ApplicantAddressDto : EntityDto<Guid>
+public class ApplicantAddressDto : EntityDto<Guid>, IHasCreationTime
 {
     public Guid ApplicantId { get; set; }
     public string Street { get; set; } = string.Empty;

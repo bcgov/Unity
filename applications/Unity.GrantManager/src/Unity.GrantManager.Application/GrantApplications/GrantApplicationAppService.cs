@@ -480,7 +480,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     #region APPLICANT INFO
     [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
-    public async Task<GrantApplicationDto> UpdateApplicantInfoAsync(Guid id, UpdateApplicantInfoDto input)
+    public async Task<GrantApplicationDto> UpdateApplicantInfoAsync(Guid id, ApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException();
 
@@ -548,8 +548,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         applicantAgent.Name   = contactInfo?.ContactFullName ?? string.Empty;
         applicantAgent.Phone  = contactInfo?.ContactBusinessPhone ?? string.Empty;
         applicantAgent.Phone2 = contactInfo?.ContactCellPhone ?? string.Empty;
-        applicantAgent.Email = contactInfo?.ContactEmail ?? string.Empty;
-        applicantAgent.Title = contactInfo?.ContactTitle ?? string.Empty;
+        applicantAgent.Email  = contactInfo?.ContactEmail ?? string.Empty;
+        applicantAgent.Title  = contactInfo?.ContactTitle ?? string.Empty;
 
         if (applicantAgent.Id == Guid.Empty)
         {
@@ -571,12 +571,12 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 };
 
             dbAddress.AddressType = updatedAddress.AddressType;
-            dbAddress.Street = updatedAddress.Street ?? string.Empty;
-            dbAddress.Street2 = updatedAddress.Street2 ?? string.Empty;
-            dbAddress.Unit = updatedAddress.Unit ?? string.Empty;
-            dbAddress.City = updatedAddress.City ?? string.Empty;
-            dbAddress.Province = updatedAddress.Province ?? string.Empty;
-            dbAddress.Postal = updatedAddress.PostalCode ?? string.Empty;
+            dbAddress.Street      = updatedAddress.Street ?? string.Empty;
+            dbAddress.Street2     = updatedAddress.Street2 ?? string.Empty;
+            dbAddress.Unit        = updatedAddress.Unit ?? string.Empty;
+            dbAddress.City        = updatedAddress.City ?? string.Empty;
+            dbAddress.Province    = updatedAddress.Province ?? string.Empty;
+            dbAddress.Postal      = updatedAddress.PostalCode ?? string.Empty;
 
             if (dbAddress.Id == Guid.Empty)
             {

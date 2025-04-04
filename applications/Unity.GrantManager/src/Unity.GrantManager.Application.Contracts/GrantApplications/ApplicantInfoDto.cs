@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Unity.Flex.Worksheets;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications;
-public class UpdateApplicantInfoDto : CustomDataFieldDto
+public class ApplicantInfoDto : CustomDataFieldDto
 {
     public Guid ApplicantId { get; set; }
 
@@ -23,6 +24,7 @@ public class ApplicantSupplierDto
 
 public class OrganizationInfoDto
 {
+    public Guid? ApplicantId { get; set; }
     public string? OrgName { get; set; }
     public string? OrgNumber { get; set; }
     public string? OrgStatus { get; set; }
@@ -37,6 +39,7 @@ public class OrganizationInfoDto
 
 public class UpdateApplicantAddressDto : EntityDto<Guid>
 {
+    public Guid ApplicantId { get; set; }
     public AddressType AddressType { get; set; }
     public string? Street { get; set; }
     public string? Street2 { get; set; }
@@ -46,36 +49,34 @@ public class UpdateApplicantAddressDto : EntityDto<Guid>
     public string? PostalCode { get; set; }
 }
 
-public class ProjectLocationDto
-{
-    public string? PhysicalAddressStreet { get; set; }
-    public string? PhysicalAddressStreet2 { get; set; }
-    public string? PhysicalAddressUnit { get; set; }
-    public string? PhysicalAddressCity { get; set; }
-    public string? PhysicalAddressProvince { get; set; }
-    public string? PhysicalAddressPostalCode { get; set; }
-    public string? MailingAddressStreet { get; set; }
-    public string? MailingAddressStreet2 { get; set; }
-    public string? MailingAddressUnit { get; set; }
-    public string? MailingAddressCity { get; set; }
-    public string? MailingAddressProvince { get; set; }
-    public string? MailingAddressPostalCode { get; set; }
-}
-
 public class SigningAuthorityDto
 {
+    public Guid? ApplicationId { get; set; }
     public string? SigningAuthorityFullName { get; set; }
     public string? SigningAuthorityTitle { get; set; }
+
+    [EmailAddress]
     public string? SigningAuthorityEmail { get; set; }
+    
+    [Phone]
     public string? SigningAuthorityBusinessPhone { get; set; }
+
+    [Phone]
     public string? SigningAuthorityCellPhone { get; set; }
 }
 
 public class ContactInfoDto
 {
+    public Guid? ApplicantAgentId { get; set; }
     public string? ContactFullName { get; set; }
     public string? ContactTitle { get; set; }
+
+    [EmailAddress]
     public string? ContactEmail { get; set; }
+    
+    [Phone]
     public string? ContactBusinessPhone { get; set; }
+    
+    [Phone]
     public string? ContactCellPhone { get; set; }
 }
