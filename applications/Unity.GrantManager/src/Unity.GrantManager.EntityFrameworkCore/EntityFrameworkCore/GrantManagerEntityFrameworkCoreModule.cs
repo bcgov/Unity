@@ -25,10 +25,10 @@ namespace Unity.GrantManager.EntityFrameworkCore;
     typeof(AbpBackgroundJobsEntityFrameworkCoreModule),
     typeof(AbpAuditLoggingEntityFrameworkCoreModule),
     typeof(AbpTenantManagementEntityFrameworkCoreModule),
-    typeof(AbpFeatureManagementEntityFrameworkCoreModule)
+    typeof(AbpFeatureManagementEntityFrameworkCoreModule),
+    typeof(NotificationsEntityFrameworkCoreModule)
     )]
-[DependsOn(typeof(NotificationsEntityFrameworkCoreModule))]
-    public class GrantManagerEntityFrameworkCoreModule : AbpModule
+public class GrantManagerEntityFrameworkCoreModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

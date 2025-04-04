@@ -729,7 +729,8 @@ function isKnownAnchor(anchor) {
     if (anchor === 'projectinfo'
         || anchor === 'applicantinfo'
         || anchor === 'assessmentinfo'
-        || anchor === 'paymentinfo') {
+        || anchor === 'paymentinfo'
+        || anchor === 'fundingagreementinfo') {
         return true;
     }
 }

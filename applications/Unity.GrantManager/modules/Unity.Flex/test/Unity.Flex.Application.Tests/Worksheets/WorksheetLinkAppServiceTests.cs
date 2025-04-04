@@ -37,10 +37,10 @@ namespace Unity.Flex.Worksheets
             {
                 CorrelationId = Guid.NewGuid(),
                 CorrelationProvider = correlationProviderForm,
-                WorksheetAnchors = new System.Collections.Generic.Dictionary<Guid, string> {
-                    { worksheetDb.Id, correlationProviderWs },
-                    { worksheetDb2.Id, correlationProviderWs }
-                }
+                WorksheetAnchors = [
+                    new ( worksheetDb.Id, correlationProviderWs, 1 ),
+                    new ( worksheetDb2.Id, correlationProviderWs, 2 )
+                ]
             });
 
             // Assert
@@ -68,9 +68,9 @@ namespace Unity.Flex.Worksheets
             {
                 CorrelationId = correlationId,
                 CorrelationProvider = correlationProviderForm,
-                WorksheetAnchors = new System.Collections.Generic.Dictionary<Guid, string> {
-                    { worksheetDb.Id, correlationProviderWs },                    
-                }
+                WorksheetAnchors = [
+                    new ( worksheetDb.Id, correlationProviderWs, 1 )
+                ]
             });
 
             // Assert

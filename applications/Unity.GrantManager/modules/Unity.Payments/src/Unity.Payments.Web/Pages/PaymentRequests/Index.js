@@ -1,5 +1,6 @@
 $(function () {
     const l = abp.localization.getResource('Payments');
+    const nullPlaceholder = '—';
     const formatter = createNumberFormatter();
     let dt = $('#PaymentRequestListTable');
     let dataTable;
@@ -7,6 +8,7 @@ $(function () {
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'referenceNumber',
+        'batchName',
         'applicantName',
         'supplierNumber',
         'creationTime',
@@ -19,11 +21,10 @@ $(function () {
         'requestedOn',
         'updatedOn',
         'paidOn',
-        'l1Approval',
-        'l2Approval',
-        'l3Approval',
-        'CASResponse',
-        'batchName',
+        'l1ApprovalDate',
+        'l2ApprovalDate',
+        'l3ApprovalDate',
+        'CASResponse'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -71,7 +72,6 @@ $(function () {
                 id: 'btn-toggle-filter'
             }
         },
-
         {
             extend: 'csv',
             text: 'Export',
@@ -80,6 +80,11 @@ $(function () {
             exportOptions: {
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
+                format: {
+                    body: function (data, row, column, node) {
+                        return data === nullPlaceholder ? '' : data;
+                    }
+                }
             }
         },
 
@@ -117,7 +122,9 @@ $(function () {
         reorderEnabled: true,
         languageSetValues: {},
         dataTableName: 'PaymentRequestListTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'});
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        useNullPlaceholder: true
+    });
 
     // Attach the draw event to add custom row coloring logic
     dataTable.on('draw', function () {
@@ -243,31 +250,38 @@ $(function () {
     }
 
     function getColumns() {
-        let columnIndex = 0;
-        return [
+        let columnIndex = 1;
+        const columns = [
             getSelectColumn('Select Application', 'rowCount', 'payments'),
             getPaymentReferenceColumn(columnIndex++),
+            getBatchNameColumn(columnIndex++),
+            getSubmissionConfirmationCodeColumn(columnIndex++),
             getApplicantNameColumn(columnIndex++),
             getSupplierNumberColumn(columnIndex++),
             getSupplierNameColumn(columnIndex++),
             getSiteNumberColumn(columnIndex++),
             getContractNumberColumn(columnIndex++),
-            getInvoiceNumberColumn(columnIndex),
+            getInvoiceNumberColumn(columnIndex++),
             getPayGroupColumn(columnIndex++),
             getAmountColumn(columnIndex++),
             getStatusColumn(columnIndex++),
             getRequestedonColumn(columnIndex++),
             getUpdatedOnColumn(columnIndex++),
             getPaidOnColumn(columnIndex++),
-            getL1ApprovalColumn(columnIndex++),
-            getL2ApprovalColumn(columnIndex++),
-            getL3ApprovalColumn(columnIndex++),
+            getPaymentRequesterColumn(columnIndex++),
+            getApprovalColumn(columnIndex++, 1),
+            getApprovalDateColumn(columnIndex++, 1),
+            getApprovalColumn(columnIndex++, 2),
+            getApprovalDateColumn(columnIndex++, 2),
+            getApprovalColumn(columnIndex++, 3),
+            getApprovalDateColumn(columnIndex++, 3),
             getDescriptionColumn(columnIndex++),
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
-            getCASResponseColumn(columnIndex++),
-            getBatchNameColumn(columnIndex++),
+            getCASResponseColumn(columnIndex++)
         ]
+
+        return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
 
     function getPaymentReferenceColumn(columnIndex) {
@@ -294,6 +308,19 @@ $(function () {
             data: 'payeeName',
             className: 'data-table-header',
             index: columnIndex
+        };
+    }
+
+    function getSubmissionConfirmationCodeColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:SubmissionConfirmationCode'),
+            name: 'submissionConfirmationCode',
+            data: 'submissionConfirmationCode',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                return data?.length > 0 ? data : null;
+            }
         };
     }
 
@@ -450,46 +477,51 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
-                return '{Not Available}';
+                return null;
             }
         };
     }
 
-    function getL1ApprovalColumn(columnIndex) {
+    function getPaymentRequesterColumn(columnIndex) {
         return {
-            title: l('ApplicationPaymentListTable:L1ApprovalDate'),
-            name: 'l1Approval',
-            data: 'expenseApprovals',
+            title: l('ApplicationPaymentListTable:PaymentRequesterName'),
+            name: 'paymentRequesterName',
+            data: 'creatorUser',
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 1)
-                return formatDate(approval?.decisionDate);
+                return formatName(data);
             }
         };
     }
-    function getL2ApprovalColumn(columnIndex) {
+
+    function getApprovalColumn(columnIndex, level) {
         return {
-            title: l('ApplicationPaymentListTable:L2ApprovalDate'),
-            name: 'l2Approval',
+            title: l(`ApplicationPaymentListTable:L${level}ApproverName`),
+            name: `l${level}ApproverName`,
             data: 'expenseApprovals',
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 2)
-                return formatDate(approval?.decisionDate);
+                const approval = getExpenseApprovalsDetails(data, level);
+                return formatName(approval?.decisionUser);
             }
         };
     }
-    function getL3ApprovalColumn(columnIndex) {
+
+    function formatName(userData) {
+        return userData !== null ? `${userData?.name} ${userData?.surname}` : null;
+    }
+
+    function getApprovalDateColumn(columnIndex, level) {
         return {
-            title: l('ApplicationPaymentListTable:L3ApprovalDate'),
-            name: 'l3Approval',
+            title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
+            name: `l${level}ApprovalDate`,
             data: 'expenseApprovals',
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 3)
+                let approval = getExpenseApprovalsDetails(data, level);
                 return formatDate(approval?.decisionDate);
             }
         };
@@ -517,7 +549,7 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
-                    return "";
+                    return null;
                 }
             }
         };
@@ -534,7 +566,7 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
-                    return "";
+                    return null;
                 }
             }
         };
@@ -551,7 +583,7 @@ $(function () {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
-                    return "";
+                    return null;
                 }
             }
         };
@@ -566,7 +598,7 @@ $(function () {
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
             locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString() : '{Not Available}';
+        }).toUTC().toLocaleString() : null;
     }
 
     /* the resizer needs looking at again after ux2 refactor 

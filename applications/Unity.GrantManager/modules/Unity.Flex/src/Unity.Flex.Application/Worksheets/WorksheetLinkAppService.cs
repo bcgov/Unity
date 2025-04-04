@@ -36,28 +36,34 @@ namespace Unity.Flex.Worksheets
         {
             var worksheetLinks = await worksheetLinkRepository.GetListByCorrelationAsync(dto.CorrelationId, dto.CorrelationProvider);
             var refreshedLinks = new List<WorksheetLinkDto>();
-            
+
             await UpdateAndDeleteLinksAsync(worksheetLinkRepository, worksheetInstanceRepository, dto, worksheetLinks, refreshedLinks);
             await AddAndUnorphanLinksAsync(worksheetLinkRepository, worksheetInstanceRepository, dto, worksheetLinks, refreshedLinks);
 
             return refreshedLinks;
         }
 
-        private static async Task AddAndUnorphanLinksAsync(IWorksheetLinkRepository worksheetLinkRepository, IWorksheetInstanceRepository worksheetInstanceRepository, UpdateWorksheetLinksDto dto, List<WorksheetLink> worksheetLinks, List<WorksheetLinkDto> refreshedLinks)
+        private static async Task AddAndUnorphanLinksAsync(IWorksheetLinkRepository worksheetLinkRepository,
+            IWorksheetInstanceRepository worksheetInstanceRepository,
+            UpdateWorksheetLinksDto dto,
+            List<WorksheetLink> worksheetLinks,
+            List<WorksheetLinkDto> refreshedLinks)
         {
             // Add new
-            foreach (var wsAnchor in dto.WorksheetAnchors)
+            foreach (var (worksheetId, anchor, _) in dto.WorksheetAnchors)
             {
                 if (worksheetLinks.Find(s => s.CorrelationId == dto.CorrelationId
                     && s.CorrelationProvider == dto.CorrelationProvider
-                        && s.WorksheetId == wsAnchor.Key) == null)
+                        && s.WorksheetId == worksheetId) == null)
                 {
-                    var newLink = new WorksheetLink(Guid.NewGuid(), wsAnchor.Key, dto.CorrelationId, dto.CorrelationProvider, wsAnchor.Value);
+                    var newLink = new WorksheetLink(Guid.NewGuid(), worksheetId, dto.CorrelationId, dto.CorrelationProvider, anchor);
 
-                    var worksheetInstances = await worksheetInstanceRepository.GetByWorksheetCorrelationAsync(wsAnchor.Key, ORPHANED, dto.CorrelationId, dto.CorrelationProvider);
+                    var worksheetInstances = await worksheetInstanceRepository
+                        .GetByWorksheetCorrelationAsync(worksheetId, ORPHANED, dto.CorrelationId, dto.CorrelationProvider);
+
                     foreach (var worksheetInstance in worksheetInstances)
                     {
-                        worksheetInstance.SetAnchor(wsAnchor.Value);
+                        worksheetInstance.SetAnchor(anchor);
                     }
 
                     refreshedLinks.Add(MapWorksheetLink(newLink));
@@ -66,24 +72,38 @@ namespace Unity.Flex.Worksheets
             }
         }
 
-        private async Task UpdateAndDeleteLinksAsync(IWorksheetLinkRepository worksheetLinkRepository, IWorksheetInstanceRepository worksheetInstanceRepository, UpdateWorksheetLinksDto dto, List<WorksheetLink> worksheetLinks, List<WorksheetLinkDto> refreshedLinks)
+        private async Task UpdateAndDeleteLinksAsync(IWorksheetLinkRepository worksheetLinkRepository,
+            IWorksheetInstanceRepository worksheetInstanceRepository,
+            UpdateWorksheetLinksDto dto,
+            List<WorksheetLink> worksheetLinks,
+            List<WorksheetLinkDto> refreshedLinks)
         {
             // Update or delete
             foreach (var link in worksheetLinks)
             {
                 var worksheetInstances = await worksheetInstanceRepository.GetByWorksheetCorrelationAsync(link.WorksheetId, link.UiAnchor, dto.CorrelationId, dto.CorrelationProvider);
 
-                if (dto.WorksheetAnchors.TryGetValue(link.WorksheetId, out string? value))
+                var linkExists = true;
+                var worksheetLink = dto.WorksheetAnchors.Find(s => s.worksheetId == link.WorksheetId);
+                if (worksheetLink.Equals(default((Guid worksheetId, string anchor, uint order)))) // check for default value, i.e. not found
                 {
-                    if (link.UiAnchor != value)
+                    linkExists = false;
+                }
+
+                if (linkExists)
+                {
+                    if (link.UiAnchor != worksheetLink.anchor)
                     {
                         foreach (var worksheetInstance in worksheetInstances)
                         {
-                            worksheetInstance.SetAnchor(value);
+                            worksheetInstance.SetAnchor(worksheetLink.anchor);
                         }
 
-                        link.SetAnchor(value);
+                        link.SetAnchor(worksheetLink.anchor);
+                        link.SetOrder(worksheetLink.order);
                     }
+
+                    link.SetOrder(worksheetLink.order);
                     refreshedLinks.Add(MapWorksheetLink(link));
                 }
                 else
@@ -120,7 +140,8 @@ namespace Unity.Flex.Worksheets
                 CorrelationId = link.CorrelationId,
                 CorrelationProvider = link.CorrelationProvider,
                 UiAnchor = link.UiAnchor,
-                WorksheetId = link.WorksheetId
+                WorksheetId = link.WorksheetId,
+                Order = link.Order
             };
         }
     }

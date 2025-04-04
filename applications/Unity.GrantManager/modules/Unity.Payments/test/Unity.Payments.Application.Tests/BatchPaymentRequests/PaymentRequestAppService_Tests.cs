@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 
 using Unity.Payments.Domain.PaymentRequests;
@@ -8,12 +10,15 @@ using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Unity.Payments.Enums;
 using Volo.Abp.Uow;
+using Volo.Abp.Users;
 using Xunit;
 
 namespace Unity.Payments.PaymentRequests;
 
 public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
 {
+    private readonly ICurrentUser _currentUser;
+    private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
     private readonly IPaymentRequestAppService _paymentRequestAppService;
     private readonly IPaymentRequestRepository _paymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
@@ -21,6 +26,8 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
 
     public PaymentRequestAppService_Tests()
     {
+        _currentUser = ServiceProvider.GetRequiredService<ICurrentUser>();
+        _externalUserLookupServiceProvider = GetRequiredService<IExternalUserLookupServiceProvider>();
         _paymentRequestAppService = GetRequiredService<IPaymentRequestAppService>();
         _paymentRequestRepository = GetRequiredService<IPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
@@ -109,5 +116,45 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
 
         // Assert           
         paymentRequests.TotalCount.ShouldBeGreaterThan(0);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetListAsync_ReturnsPagedPaymentsList()
+    {
+        // Arrange
+        using var uow = _unitOfWorkManager.Begin();
+        var supplier = new Supplier(Guid.NewGuid(), "supp", "123", Guid.NewGuid(), "A");
+        supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
+        var addedSupplier = await _supplierRepository.InsertAsync(supplier);
+        CreatePaymentRequestDto paymentRequestDto = new CreatePaymentRequestDto
+        {
+            InvoiceNumber = "INV-001",
+            Amount = 100,
+            PayeeName = "Test Payee",
+            ContractNumber = "0000000000",
+            SupplierNumber = "SUP-001",
+            SiteId = addedSupplier.Sites[0].Id,
+            CorrelationId = Guid.NewGuid(),
+            CorrelationProvider = "TestProvider",
+            ReferenceNumber = "UP-XXXX-000001",
+            BatchName = "UNITY_BATCH_1",
+            BatchNumber = 1
+        };
+        _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
+
+        // Act
+        var paymentRequests = await _paymentRequestAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto
+        {
+            MaxResultCount = 10,
+            SkipCount = 0,
+            Sorting = "CreationTime desc"
+        });
+
+        // Assert
+        paymentRequests.TotalCount.ShouldBeGreaterThan(0);
+        paymentRequests.Items.ShouldNotBeEmpty();
+        paymentRequests.Items[0].InvoiceNumber.ShouldBe("INV-001");
+        paymentRequests.Items[0].CreatorId.ShouldBe(PaymentsTestData.UserDataMocks.User1.Id);
     }
 }

@@ -11,7 +11,8 @@
     const defaultVisibleColumns = [
         'id',
         'amount',
-        'status'
+        'status',
+        'supplierName'
     ];
 
     $('body').on('click', '#savePaymentInfoBtn', function () {
@@ -206,6 +207,11 @@
             getApplicationPaymentPaidOnColumn(),
             getApplicationPaymentDescriptionColumn(),
             getApplicationPaymentCASResponseColumn(),
+            getMailingAddressColumn(),
+            getMaskedBankAccountColumn(),
+            getSiteNumberColumn(),
+            geSupplierNumberColumn(),
+            getSupplierNameColumn()
         ]
     }
 
@@ -238,10 +244,7 @@
             name: 'status',
             data: 'status',
             className: 'data-table-header',
-            index: 3,
-            render: function (data) {
-                return getStatusText(data);
-            }
+            index: 3
         };
     }
 
@@ -310,6 +313,59 @@
         };
     }
 
+    function getMailingAddressColumn() { 
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.MailingAddress'),
+            name: 'addressLine1',
+            data: 'site.addressLine1',
+            className: 'data-table-header',
+            render: function (data, type, full, meta) {
+                return nullToEmpty(full.site.addressLine1) + ' ' + nullToEmpty(full.site.addressLine2) + " " + nullToEmpty(full.site.addressLine3) + " " + nullToEmpty(full.site.city) + " " + nullToEmpty(full.site.province) + " " + nullToEmpty(full.site.postalCode);
+            },
+            index: 9,
+        };
+    }
+
+    function getMaskedBankAccountColumn() { 
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount'),
+            name: 'bankAccount',
+            data: 'site.bankAccount',
+            className: 'data-table-header',
+            index: 10,
+        };
+    }
+
+    function getSiteNumberColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SiteNumber'),
+            name: 'number',
+            data: 'site.number',
+            className: 'data-table-header',
+            index: 11,
+        };
+    }
+
+    function geSupplierNumberColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SupplierNumber'),
+            name: 'supplierNumber',
+            data: 'supplierNumber',
+            className: 'data-table-header',
+            index: 12,
+        };
+    }
+    function getSupplierNameColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SupplierName'),
+            name: 'supplierName',
+            data: 'supplierName',
+            className: 'data-table-header',
+            index: 13,
+        };
+    }
+
+
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
             locale: abp.localization.currentCulture.name,
@@ -336,23 +392,6 @@
         let table = $('#ApplicationPaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
-
-    function getStatusText(data) {
-        switch (data) {
-            case 1:
-                return "Created";
-            case 2:
-                return "Submitted";
-            case 3:
-                return "Approved";
-            case 4:
-                return "Declined";
-            case 5:
-                return "Awaiting Approval"
-            default:
-                return "Created";
-        }
-    }
 
     $('.select-all-application-payments').click(function () {
         if ($(this).is(':checked')) {
@@ -387,4 +426,8 @@ function enablePaymentInfoSaveBtn() {
         return;
     }
     $('#savePaymentInfoBtn').prop('disabled', false);
+}
+
+function nullToEmpty(value) {
+    return value == null ? '' : value;
 }

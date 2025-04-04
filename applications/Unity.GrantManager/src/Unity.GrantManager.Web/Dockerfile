@@ -46,21 +46,29 @@ RUN abp install-libs
 FROM build AS publish
 ARG UNITY_BUILD_VERSION
 ARG UNITY_BUILD_REVISION
-RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -p:Version=${UNITY_BUILD_VERSION:-0.0.0} -p:SourceRevisionId=${UNITY_BUILD_REVISION:-0000000} -p:UseAppHost=false -o /app/publish
+RUN dotnet publish "Unity.GrantManager.Web.csproj" \
+    -c Release \
+    -p:Version=${UNITY_BUILD_VERSION:-0.0.0} \
+    -p:SourceRevisionId=${UNITY_BUILD_REVISION:-0000000} \
+    -p:UseAppHost=false \
+    -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
+# CAS Dev/Test Certs changed
+COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
+
+RUN mkdir -p /.aspnet && \
+    mkdir -p /.dotnet && \
+    mkdir -p /app/logs && \
+    chmod 755 /.aspnet && \
+    chmod 755 /.dotnet && \
+    chmod 755 /app/logs && \
+    chmod 644 /usr/local/share/ca-certificates/cas.crt && \
+    chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
+    update-ca-certificates
+
 COPY --from=publish /app/publish .
-
-## TODO: Replace with volume
-RUN mkdir -p /.aspnet \
-    && mkdir -p /.dotnet \
-    && chmod 777 /.aspnet \
-    && chmod 777 /.dotnet
-
-## Logfile volume mount point
-RUN mkdir -p /app/logs \
-    && chmod 777 /app/logs
-
 ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]

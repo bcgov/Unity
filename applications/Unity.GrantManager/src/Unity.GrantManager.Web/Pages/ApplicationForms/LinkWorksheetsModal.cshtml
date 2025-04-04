@@ -16,6 +16,7 @@
     <abp-input type="hidden" id="ApplicantInfoSlotId" asp-for="@Model.ApplicantInfoSlotId" />
     <abp-input type="hidden" id="ProjectInfoSlotId" asp-for="@Model.ProjectInfoSlotId" />
     <abp-input type="hidden" id="PaymentInfoSlotId" asp-for="@Model.PaymentInfoSlotId" />
+    <abp-input type="hidden" id="FundingAgreementInfoSlotId" asp-for="@Model.FundingAgreementInfoSlotId" />
     <abp-input type="hidden" id="CustomTabsSlotIds" asp-for="@Model.CustomTabsSlotIds" />
     <abp-modal size="ExtraLarge" id="worksheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="Link Worksheets"></abp-modal-header>
@@ -45,7 +46,7 @@
                                 </span>
                             </div>
                         }
-                    </div>                    
+                    </div>
                     <div class="slot-title">Project Info:</div>
                     <div class="single-slot drag-target single-target" draggable="false" data-target="projectInfo">
                         @if (Model.ProjectInfoLink != null)
@@ -79,18 +80,29 @@
                             </div>
                         }
                     </div>
+                    <div class="slot-title">Funding Agreement:</div>
+                    <div class="single-slot drag-target single-target" draggable="false" data-target="fundingAgreementInfo">
+                        @if (Model.FundingAgreementInfoLink != null)
+                        {
+                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.FundingAgreementInfoLink.WorksheetId">
+                                <span class="published-form-title">
+                                    @Model.FundingAgreementInfoLink.Worksheet.Title (@Model.FundingAgreementInfoLink.Worksheet.Name)
+                                </span>
+                            </div>
+                        }
+                    </div>
                     <div class="slot-title">Additional Tabs:</div>
                     <div class="multi-slot drag-target multi-target custom-tabs-list" draggable="false" data-target="custom-tabs">
                         @if (Model.CustomTabLinks != null)
                         {
-                            @foreach (var customTab in Model.CustomTabLinks)
+                            @foreach (var customTab in Model.CustomTabLinks.OrderBy(s => s.Order))
                             {
                                 <div class="draggable-card" draggable="true" data-worksheet-id="@customTab.WorksheetId">
                                     <span class="published-form-title">
                                         @customTab.Worksheet.Title (@customTab.Worksheet.Name)
                                     </span>
                                 </div>
-                            }                            
+                            }
                         }
                     </div>
                 </div>
@@ -102,8 +114,8 @@
             </div>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+            <button type="submit" class="btn unt-btn-primary btn-primary">@AbpModalButtons.Save</button>
+            <button type="button" class="btn unt-btn-link btn-link" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
         </abp-modal-footer>
     </abp-modal>
 </form>

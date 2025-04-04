@@ -1,7 +1,10 @@
 using System.Threading.Tasks;
 using Quartz;
 using Volo.Abp.BackgroundWorkers.Quartz;
-using Microsoft.Extensions.Options;
+using Volo.Abp.SettingManagement;
+using Unity.Modules.Shared.Utils;
+using Unity.Payments.Settings;
+using System;
 
 namespace Unity.Payments.PaymentRequests;
 
@@ -11,24 +14,32 @@ public class ReconciliationProducer : QuartzBackgroundWorkerBase
     private readonly CasPaymentRequestCoordinator _casPaymentRequestCoordinator;
     
     public ReconciliationProducer(
-        IOptions<PaymentRequestBackgroundJobsOptions> casPaymentsBackgroundJobsOptions,
+        ISettingManager settingManager,
         CasPaymentRequestCoordinator casPaymentRequestCoordinator
         )
     {
-
-        JobDetail = JobBuilder
-            .Create<ReconciliationProducer>()
-            .WithIdentity(nameof(ReconciliationProducer))
-            .Build();
-        
         _casPaymentRequestCoordinator = casPaymentRequestCoordinator;
+        string casPaymentsProducerExpression = "";
+        try { 
+            casPaymentsProducerExpression = SettingDefinitions.GetSettingsValue(settingManager, PaymentSettingsConstants.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression);
+        } catch
+        {
+            casPaymentsProducerExpression = "0 0 9 1/1 * ? *";
+        }
 
-        Trigger = TriggerBuilder
-            .Create()
-            .WithIdentity(nameof(ReconciliationProducer))
-            .WithSchedule(CronScheduleBuilder.CronSchedule(casPaymentsBackgroundJobsOptions.Value.PaymentRequestOptions.ProducerExpression)
-            .WithMisfireHandlingInstructionIgnoreMisfires())
-            .Build();
+        if(!casPaymentsProducerExpression.IsNullOrEmpty()) {
+            JobDetail = JobBuilder
+                .Create<ReconciliationProducer>()
+                .WithIdentity(nameof(ReconciliationProducer))
+                .Build();
+
+            Trigger = TriggerBuilder
+                .Create()
+                .WithIdentity(nameof(ReconciliationProducer))
+                .WithSchedule(CronScheduleBuilder.CronSchedule(casPaymentsProducerExpression)
+                .WithMisfireHandlingInstructionIgnoreMisfires())
+                .Build();
+        }
     }
 
     public override async Task Execute(IJobExecutionContext context)

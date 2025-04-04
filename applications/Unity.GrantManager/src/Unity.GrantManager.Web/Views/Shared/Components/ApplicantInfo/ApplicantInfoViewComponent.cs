@@ -83,6 +83,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 SectorSubSectorIndustryDesc = applicantInfoDto.SectorSubSectorIndustryDesc,
                 RedStop = applicantInfoDto.RedStop,
                 IndigenousOrgInd = applicantInfoDto.IndigenousOrgInd,
+                UnityApplicantId = applicantInfoDto.UnityApplicantId,
+                FiscalDay = applicantInfoDto.FiscalDay,
+                FiscalMonth = applicantInfoDto.FiscalMonth,
+                NonRegOrgName = applicantInfoDto.NonRegOrgName
             };
 
             if (applicantInfoDto.ApplicantAddresses.Count != 0)

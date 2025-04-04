@@ -90,6 +90,9 @@
             case 'paymentInfo':
                 $('#PaymentInfoSlotId').val(null);
                 break;
+            case 'fundingAgreementInfo':
+                $('#FundingAgreementInfoSlotId').val(null);
+                break;
         }
     }
 
@@ -106,6 +109,9 @@
                 break;
             case 'paymentInfo':
                 $('#PaymentInfoSlotId').val(draggedEl.dataset.worksheetId);
+                break;
+            case 'fundingAgreementInfo':
+                $('#FundingAgreementInfoSlotId').val(draggedEl.dataset.worksheetId);
                 break;
         }
     }

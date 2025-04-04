@@ -4,7 +4,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Applications;
 
-public class ApplicationFormVersion : FullAuditedAggregateRoot<Guid>, IMultiTenant
+public class ApplicationFormVersion : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid ApplicationFormId { get; set; }
     public string? ChefsApplicationFormGuid { get; set; }

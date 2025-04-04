@@ -57,6 +57,16 @@ namespace Unity.GrantManager.Permissions
                     
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
+
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
                 }, context.TenantId);
 
             // - Reviewer
@@ -83,6 +93,16 @@ namespace Unity.GrantManager.Permissions
                     
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
+
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
                 }, context.TenantId);
 
             // - Assessor
@@ -109,6 +129,16 @@ namespace Unity.GrantManager.Permissions
 
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
+
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
                 }, context.TenantId);
 
             // - TeamLead
@@ -139,6 +169,16 @@ namespace Unity.GrantManager.Permissions
 
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
+
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
                 }, context.TenantId);
 
             // - Approver
@@ -161,6 +201,16 @@ namespace Unity.GrantManager.Permissions
 
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
+
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
                 }, context.TenantId);
 
             // - SystemAdmin
@@ -177,6 +227,12 @@ namespace Unity.GrantManager.Permissions
                     //Dashboard 
                     GrantApplicationPermissions.Dashboard.Default,
                     GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
 
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
@@ -194,6 +250,8 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
                     NotificationsPermissions.Settings,
+                    
+                    UnitySettingManagementPermissions.BackgroundJobSettings
                 }, context.TenantId);
 
 
@@ -216,6 +274,15 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
 
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
                 }, context.TenantId);
 
             // -L2 Approver
@@ -236,6 +303,16 @@ namespace Unity.GrantManager.Permissions
 
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
+
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
                 }, context.TenantId);
 
             // -L3 Approver
@@ -256,6 +333,16 @@ namespace Unity.GrantManager.Permissions
 
                     NotificationsPermissions.Email.Default,
                     NotificationsPermissions.Email.Send,
+
+                    //Dashboard 
+                    GrantApplicationPermissions.Dashboard.Default,
+                    GrantApplicationPermissions.Dashboard.ViewDashboard,
+                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
                 }, context.TenantId);
 
             // -External Assessor

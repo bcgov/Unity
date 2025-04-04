@@ -294,7 +294,8 @@ namespace Unity.GrantManager.ApplicationForms
                 applicationFormVersion = await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
             }
 
-            if (await _featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            if (await _featureChecker.IsEnabledAsync(FeatureConsts.Reporting)
+                && string.IsNullOrEmpty(applicationFormVersion.ReportViewName))
             {
                 await _reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
             }

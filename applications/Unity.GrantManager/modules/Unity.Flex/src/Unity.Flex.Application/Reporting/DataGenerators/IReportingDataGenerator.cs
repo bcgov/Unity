@@ -4,6 +4,7 @@ namespace Unity.Flex.Reporting.DataGenerators
 {
     public interface IReportingDataGenerator
     {
-        Dictionary<string, List<string>> Generate();
+        // Return an array of values matched to the key and a flag to indicate array handling
+        (Dictionary<string, List<string>> keyValuePairs, bool compressArray) Generate();
     }
 }

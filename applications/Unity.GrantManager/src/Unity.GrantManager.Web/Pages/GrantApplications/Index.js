@@ -97,7 +97,7 @@
         responseCallback,
         actionButtons,
         pagingEnabled: true,
-        reorderEnabled: false,
+        reorderEnabled: true,
         languageSetValues,
         dataTableName: 'GrantApplicationsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'
@@ -215,7 +215,8 @@
             getIndigenousColumn(),
             getFyeDayColumn(),
             getFyeMonthColumn(),
-            getApplicantIdColumn()
+            getApplicantIdColumn(),
+            getPayoutColumn()
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -236,6 +237,10 @@
             data: 'referenceNo',
             name: 'referenceNo',
             className: 'data-table-header',
+            render: function (data, type, row) {
+                console.log(row);
+                return `<a href="/GrantApplications/Details?ApplicationId=${row.id}">${data}</a>`;
+            },
             index: 2
         }
     }
@@ -1069,6 +1074,19 @@
         }
     }
 
+    function getPayoutColumn() {
+        return {
+            title: 'Payout',
+            name: 'paymentInfo',
+            data: 'paymentInfo',
+            className: 'data-table-header',
+            render: function (data) {
+                return payoutDefinition(data?.approvedAmount ?? 0, data?.totalPaid ?? 0);
+            },
+            index: 62
+        }
+    }
+
 
     window.addEventListener('resize', () => {
     });
@@ -1121,3 +1139,12 @@
         }
     });
 });
+function payoutDefinition(approvedAmount, totalPaid) {
+    if ((approvedAmount > 0 && totalPaid > 0) && (approvedAmount  === totalPaid)) {
+        return 'Fully Paid';
+    } else if (totalPaid === 0) {
+        return '';
+    } else {
+        return 'Partially Paid';
+    }
+}

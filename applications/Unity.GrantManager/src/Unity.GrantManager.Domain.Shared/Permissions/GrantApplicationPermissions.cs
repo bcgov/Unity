@@ -19,8 +19,8 @@ namespace Unity.GrantManager.Permissions
             public const string Default                     = GroupName + ".Dashboard";
             public const string ViewDashboard               = Default + ".ViewDashboard";
 
-            public const string EconomicRegionCount         = Default + ".EconomicRegionCount";
             public const string ApplicationStatusCount      = Default + ".ApplicationStatusCount";
+            public const string EconomicRegionCount         = Default + ".EconomicRegionCount";
             public const string ApplicationTagsCount        = Default + ".ApplicationTagsCount";
             public const string ApplicationAssigneeCount    = Default + ".ApplicationAssigneeCount";
             public const string RequestedAmountPerSubsector = Default + ".RequestedAmountPerSubsector";

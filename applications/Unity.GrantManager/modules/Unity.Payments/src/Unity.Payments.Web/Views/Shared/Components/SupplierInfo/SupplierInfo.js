@@ -6,7 +6,10 @@ $(function () {
         navOrgInfoTab: $('#nav-organization-info-tab'),
         applicantId: $("#ApplicantId"),
         siteId: $("#SiteId"),
-        hasEditSupplier: $("#HasEditSupplierInfo")
+        originalSupplierNumber: $("#OriginalSupplierNumber"),
+        supplierNumber: $("#SupplierNumber"),
+        hasEditSupplier: $("#HasEditSupplierInfo"),
+        refreshSitesBtn: $("#btn-refresh-sites")
     };
 
     function init() {
@@ -23,6 +26,54 @@ $(function () {
             if (dataTable) {
                 dataTable.columns.adjust(); 
             }
+        });
+            
+        UIElements.refreshSitesBtn.on('click', function () { 
+            let originalSupplierNumber = UIElements.originalSupplierNumber.val();
+            // Check if supplier Number matches the original supplier number
+            if(originalSupplierNumber == "") {
+                Swal.fire({
+                    title: "Action Complete",
+                    text: "The Supplier # must be saved before refreshing the site list",
+                    confirmButtonText: 'Ok',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    }
+                });
+                return;
+            }
+
+            $.ajax({
+                url: `/api/app/supplier/sites-by-supplier-number?supplierNumber=${originalSupplierNumber}`,
+                method: 'GET',
+                success: function(response) {
+                    let dt = $('#SiteInfoTable').DataTable();
+                    if (dt) {
+                        dt.clear();
+                        dt.rows.add(response);
+                        dt.draw();
+                        dt.columns.adjust();
+                        let message = "The site list has been updated. Please re-select your default site";
+                        
+                        if(response.length == 0) {
+                            message = "No sites were found for the supplier";
+                        }
+
+                        Swal.fire({
+                            title: "Action Complete",
+                            text: message,
+                            confirmButtonText: 'Ok',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            }
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading sites:', error);
+                    abp.notify.error('Failed to refresh sites');
+                }
+            });
         });
     }
 
@@ -77,8 +128,9 @@ $(function () {
             data: inputAction,
             responseCallback,
             actionButtons,
+            colReorder: false,
             pagingEnabled: false,
-            reorderEnabled: true,
+            reorderEnabled: false,
             languageSetValues: {},
             dataTableName: 'SiteInfoTable',
             dynamicButtonContainerId: 'siteDynamicButtonContainerId'});
@@ -181,6 +233,9 @@ $(function () {
             render: function (data, type, full, meta) {
                 let checked = UIElements.siteId.val() == data ? 'checked' : '';
                 let disabled = UIElements.hasEditSupplier.val() == 'False' ? 'disabled' : '';
+                if(full.markDeletedInUse) {
+                    return 'Deleted-In Use';
+                }
                 return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
             },
             index: columnIndex
