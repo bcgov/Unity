@@ -176,6 +176,7 @@ $(function () {
                 [
                     {
                         title: l("Actions"),
+                        sortable: false,
                         orderable: false,
                         className: 'notexport text-center',
                         name: 'rowActions',

@@ -108,18 +108,6 @@
         externalSearchId: 'search-intakes'
     });
 
-    dataTable.on('search.dt', () => handleSearch());
-    $('.dataTables_filter input').attr("placeholder", "Search");
-    $('.dataTables_filter label')[0].childNodes[0].remove();
-
-    $('#search').on('input', function () {
-        dataTable.search($(this).val()).draw();
-    });
-
-    function handleSearch() {
-        let filter = $('.dataTables_filter input').val();
-    }
-
     createModal.onResult(function () {
         dataTable.ajax.reload();
     });

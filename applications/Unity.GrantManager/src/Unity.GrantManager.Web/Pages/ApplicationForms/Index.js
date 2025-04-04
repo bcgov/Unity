@@ -129,14 +129,6 @@
         externalSearchId: 'search-forms',
     });
 
-    dataTable.on('search.dt', () => handleSearch());
-    $('.dataTables_filter input').attr("placeholder", "Search");
-    $('.dataTables_filter label')[0].childNodes[0].remove();
-
-    $('#search').on('input', function () {
-        dataTable.search($(this).val()).draw();
-    });
-
     createModal.onResult(function () {
         dataTable.ajax.reload();
     });
@@ -164,10 +156,6 @@
         link.click();
         link.remove();
     };
-
-    function handleSearch() {
-        let filter = $('.dataTables_filter input').val();
-    }
 });
 
 

@@ -53,14 +53,15 @@ function initializeDataTable(options) {
         dynamicButtonContainerId,
         useNullPlaceholder = false,
         externalSearchId = 'search',
-        listColumnDefs
+        disableColumnSelect = false,
+        listColumnDefs,
     } = options;
 
     // If useNullPlaceholder is true, update csv export buttons to include the example format function
     let updatedActionButtons = removePlaceholderFromCvsExportButton(actionButtons, useNullPlaceholder, nullPlaceholder);
     let tableColumns = assignColumnIndices(listColumns);
     let visibleColumns = getVisibleColumnIndexes(tableColumns, defaultVisibleColumns);
-    debugger;
+
     let filterData = {};
 
     let iDt = dt.DataTable(
@@ -153,12 +154,14 @@ function initializeDataTable(options) {
     );
 
     // Add custom manage columns button that remains sorted alphabetically
-    iDt.button().add(updatedActionButtons.length + 1 ,{
-        text: 'Columns',
-        extend: 'collection',
-        buttons: getColumnToggleButtonsSorted(tableColumns, iDt),
-        className: 'custom-table-btn flex-none btn btn-secondary'
-    });
+    if (!disableColumnSelect) {
+        iDt.button().add(updatedActionButtons.length + 1, {
+            text: 'Columns',
+            extend: 'collection',
+            buttons: getColumnToggleButtonsSorted(tableColumns, iDt),
+            className: 'custom-table-btn flex-none btn btn-secondary'
+        });
+    }
 
     iDt.buttons().container().prependTo(`#${dynamicButtonContainerId}`);
     $(`#${dataTableName}_wrapper`).append(`<div class="length-menu-footer ${dataTableName}"></div>`);
@@ -230,7 +233,7 @@ function getVisibleColumnIndexes(columns, visibleColumnsArray) {
         indexes.push(0);
     }
 
-    return indexes.sort((a, b) => a - b);
+    return indexes.sort();
 }
 
 function setTableHeighDynamic(tableName) {
@@ -302,8 +305,6 @@ function initializeFilterButtonPopover(iDt) {
         const trToggleElement = $(".tr-toggle-filter");
         const popoverElement = $('.popover.custom-popover');
         const customFilterElement = $('.custom-filter-input');
-
-
 
         popoverElement.find('#showFilter').on('click', () => {
             trToggleElement.toggle();
@@ -410,7 +411,8 @@ function setExternalSearchFilter(dataTableInstance) {
         $('.dataTables_filter label')[0].childNodes[0].remove();
 
         $(searchId).on('input', function () {
-            dataTableInstance.search($(this).val()).draw();
+            let filter = dataTableInstance.search($(this).val()).draw();
+            console.info(`Filter on #${searchId}: ${filter}`);
         });
     }
 }
