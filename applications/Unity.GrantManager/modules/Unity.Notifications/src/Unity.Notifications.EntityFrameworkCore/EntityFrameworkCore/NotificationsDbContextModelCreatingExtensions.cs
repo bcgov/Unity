@@ -42,16 +42,16 @@ public static class NotificationsDbContextModelCreatingExtensions
 
             b.ConfigureByConvention();
         });
-        modelBuilder.Entity<SubscriptionGroupSubscriber>(b =>
+        modelBuilder.Entity<SubscriptionGroupSubscription>(b =>
         {
             b.ToTable(NotificationsDbProperties.DbTablePrefix + "SubscriptionGroupSubscribers",
                 NotificationsDbProperties.DbSchema);
 
-            b.HasOne(ts => ts.Subscribers)
+            b.HasOne(ts => ts.Subscriber)
              .WithMany()
-             .HasForeignKey(ts => ts.SubscriberID);
+             .HasForeignKey(ts => ts.SubscriberId);
 
-            b.HasOne(ts => ts.SubscriptionGroups)
+            b.HasOne(ts => ts.SubscriptionGroup)
                 .WithMany()
                 .HasForeignKey(ts => ts.GroupId);
 
@@ -59,7 +59,7 @@ public static class NotificationsDbContextModelCreatingExtensions
         });
         modelBuilder.Entity<TemplateVariable>(b =>
         {
-            b.ToTable(NotificationsDbProperties.DbTablePrefix + "TemplateVariable",
+            b.ToTable(NotificationsDbProperties.DbTablePrefix + "TemplateVariables",
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
@@ -88,7 +88,6 @@ public static class NotificationsDbContextModelCreatingExtensions
             b.HasOne(ts => ts.SubscriptionGroup)
                .WithMany() 
                .HasForeignKey(ts => ts.SubscriptionGroupId);
-
         });
     }
 }
