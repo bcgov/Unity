@@ -1,6 +1,7 @@
 ﻿@model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
 
 <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
+<abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
 
 <div class="container-fluid px-0">
     <abp-tabs name="NotificationSettings">
@@ -40,7 +41,7 @@
             <div class="container mt-3">
                 <h3>Email Templates</h3>
 
-                <button class="btn btn-primary mb-3" id="addCardBtn">+ Add Template</button>
+                <button class="btn btn-primary mb-3 ms-auto" id="addCardBtn">+ Add Template</button>
 
                 <div id="cardContainer" class="v-scroll"></div>
             </div>

@@ -46,93 +46,139 @@
 
         checkFormChanges();
 
-        let cardCount = 0;
+        const editorInstances = {};
 
         function createCard(data = null) {
             const isPopulated = data !== null;
-            const id = data?.id || `new-${cardCount}`;
-            const cardId = `collapseDetails${cardCount}`;
-            const formId = `form${cardCount}`;
-            const wrapperId = `cardWrapper${cardCount}`;
+            const id = data?.id?.toString() || generateTempId(); // ✅ Always a string
+            const cardId = `collapseDetails-${id}`;
+            const formId = `form-${id}`;
+            const wrapperId = `cardWrapper-${id}`;
+            const editorId = `editor-${id}`;
             const note = data?.notes || '';
             const type = data?.type || 'Automatic';
             const lastEdited = data?.lastEdited || new Date().toLocaleDateString('en-GB');
             const disabled = isPopulated ? 'disabled' : '';
 
             const cardHtml = `
-                <div class="card mb-3 shadow-sm" id="${wrapperId}" data-id="${id}">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                       <strong class="template-title">${data?.templateName || 'Untitled Template'}</strong>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="text-muted small text-end me-3">
-                                <div>Type<br /><span class="fw-normal">${type}</span></div>
-                            </div>
-                            <div class="text-muted small text-end me-3">
-                                <div>Last Edited<br /><span class="fw-normal">${lastEdited}</span></div>
-                            </div>
-                            <button class="btn btn-sm btn-link text-decoration-none" type="button"
-                                data-bs-toggle="collapse" data-bs-target="#${cardId}" aria-expanded="false"
-                                aria-controls="${cardId}">
-                                <i class="bi bi-chevron-down"></i>
-                            </button>
-                        </div>
+        <div class="card mb-3 shadow-sm" id="${wrapperId}" data-id="${id}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong class="template-title">${data?.templateName || 'Untitled Template'}</strong>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-muted small text-end me-3">
+                        <div>Type<br /><span class="fw-normal">${type}</span></div>
                     </div>
-                    <div class="collapse" id="${cardId}">
-                        <div class="card-body">
-                            <form id="${formId}">
-                                <div class="mb-3">
-                                    <label class="form-label">Template Name</label>
-                                    <input type="text" class="form-control form-input" name="templateName" value="${data?.templateName || ''}" ${disabled}>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Send From</label>
-                                    <select class="form-select form-input" name="sendFrom" ${disabled}>
-                                        <option value="">Select sender</option>
-                                        <option value="noreply@example.com" ${data?.sendFrom === 'noreply@example.com' ? 'selected' : ''}>noreply@example.com</option>
-                                        <option value="support@example.com" ${data?.sendFrom === 'support@example.com' ? 'selected' : ''}>support@example.com</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Subject</label>
-                                    <input type="text" class="form-control form-input" name="subject" value="${data?.subject || ''}" ${disabled}>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Body</label>
-                                    <div id="editor${cardCount}" class="tui-editor-body"></div>
-                                </div>
-                                <div class="d-flex gap-2">
-                                   <button type="submit" class="btn btn-primary saveBtn" disabled>SAVE CHANGES</button>
-                                    <button type="button" class="btn btn-outline-secondary discardBtn d-none">DISCARD CHANGES</button>
-                                    ${isPopulated ? `<button type="button" class="btn btn-secondary editBtn">Edit</button>` : ''}
-                                     <button type="button" class="btn btn-outline-danger deleteCardBtn ms-auto">DELETE THIS TEMPLATE</button>
-                                </div>
-                            </form>
-                        </div>
+                    <div class="text-muted small text-end me-3">
+                        <div>Last Edited<br /><span class="fw-normal">${lastEdited}</span></div>
                     </div>
+                    <button class="btn btn-sm btn-link text-decoration-none" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#${cardId}" aria-expanded="false"
+                        aria-controls="${cardId}">
+                        <i class="unt-icon-sm fa-solid fa-chevron-down"></i>
+                    </button>
                 </div>
-            `;
+            </div>
+            <div class="collapse" id="${cardId}">
+                <div class="card-body">
+                    <form id="${formId}">
+                        <div class="mb-3">
+                            <label class="form-label">Template Name</label>
+                            <input type="text" class="form-control form-input" name="templateName" value="${data?.templateName || ''}" ${disabled}>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Send From</label>
+                            <select class="form-select form-input" name="sendFrom" ${disabled}>
+                                <option value="">Select sender</option>
+                                <option value="noreply@example.com" ${data?.sendFrom === 'noreply@example.com' ? 'selected' : ''}>noreply@example.com</option>
+                                <option value="support@example.com" ${data?.sendFrom === 'support@example.com' ? 'selected' : ''}>support@example.com</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-control form-input" name="subject" value="${data?.subject || ''}" ${disabled}>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Body</label>
+                            <div id="${editorId}" class="tui-editor-body"></div>
+                        </div>
+                         <div class="mb-3">
+                         <p><b>NOTE</b>: Selecting text will let your customize it: replace it with a variable, make it bold, italic, change the alignment, add a link, create a list, etc.</p>
+                         </div>
+                         <div class="mb-3">
+                         <hr>
+                         <button type="button" class="btn btn-outline-primary deleteCardBtn">DELETE THIS TEMPLATE</button>
+                         <hr>
+                         
+                         </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary saveBtn" disabled>SAVE CHANGES</button>
+                            <button type="button" class="btn btn-outline-secondary discardBtn d-none">DISCARD CHANGES</button>
+                            ${isPopulated ? `<button type="button" class="btn btn-secondary editBtn">EDIT THIS TEMPLATE</button>` : ''}
+                           
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
 
             $("#cardContainer").append(cardHtml);
 
-            $(`#editor${cardCount}`).tuiEditor({
+            // Initialize viewer/editor in viewer mode
+            editorInstances[id] = new toastui.Editor.factory({
+                el: document.querySelector(`#${editorId}`),
+                height: '250px',
                 initialEditType: 'wysiwyg',
                 previewStyle: 'vertical',
-                height: '300px',
-                initialValue: data?.body || ''
+                initialValue: data?.body,
+                toolbarItems: [
+                    ['heading', 'bold', 'italic', 'strike'],
+                    ['hr', 'quote', 'link'],
+                    ['ul', 'ol', 'task', 'indent', 'outdent']
+                ],
+                viewer: true,
+                contentEditable: false
             });
 
-           
+            // === EVENT HANDLERS ===
 
-
-            // Save handler
             $(`#${formId}`).on("submit", function (e) {
                 e.preventDefault();
                 const formData = $(this).serializeArray();
                 alert(`Saved: ${formData[0].value}`);
-                // Here you can call a POST/PUT API to save the data
+                // You can also grab editorInstances[id].getMarkdown()
+            });
+            $(`#${cardId}`).on('show.bs.collapse', function () {
+                $(`#${wrapperId} .btn[data-bs-target="#${cardId}"] i`)
+                    .removeClass('fa-chevron-down')
+                    .addClass('fa-chevron-up');
+            });
+
+            $(`#${cardId}`).on('hide.bs.collapse', function () {
+                $(`#${wrapperId} .btn[data-bs-target="#${cardId}"] i`)
+                    .removeClass('fa-chevron-up')
+                    .addClass('fa-chevron-down');
             });
 
             $(`#${wrapperId}`).on("click", ".editBtn", function () {
+                const editorEl = document.querySelector(`#${editorId}`);
+                const currentEditor = editorInstances[id];
+                const content = data?.body;
+                currentEditor.destroy();
+
+                editorInstances[id] = new toastui.Editor({
+                    el: editorEl,
+                    height: '250px',
+                    initialEditType: 'wysiwyg',
+                    previewStyle: 'vertical',
+                    initialValue: content,
+                    toolbarItems: [
+                        ['heading', 'bold', 'italic', 'strike'],
+                        ['hr', 'quote', 'link'],
+                        ['ul', 'ol', 'task', 'indent', 'outdent']
+                    ]
+                });
+
                 const card = $(`#${wrapperId}`);
                 card.find(".form-input").prop('disabled', false);
                 card.find(".saveBtn").prop('disabled', false);
@@ -140,10 +186,31 @@
                 $(this).addClass("d-none");
             });
 
-            // Discard button resets fields (optional: reload original values)
             $(`#${wrapperId}`).on("click", ".discardBtn", function () {
                 const form = $(`#${formId}`)[0];
                 form.reset();
+
+                const editorEl = document.querySelector(`#${editorId}`);
+                const currentEditor = editorInstances[id];
+               
+                const content = data?.body;
+                currentEditor.destroy();
+
+                editorInstances[id] = new toastui.Editor.factory({
+                    el: editorEl,
+                    height: '250px',
+                    initialEditType: 'wysiwyg',
+                    previewStyle: 'vertical',
+                    initialValue: content,
+                    toolbarItems: [
+                        ['heading', 'bold', 'italic', 'strike'],
+                        ['hr', 'quote', 'link'],
+                        ['ul', 'ol', 'task', 'indent', 'outdent']
+                    ],
+                    viewer: true,
+                    contentEditable: false
+                });
+
                 $(`#${wrapperId} .form-input`).prop('disabled', true);
                 $(`#${wrapperId} .saveBtn`).prop('disabled', true);
                 $(`#${wrapperId} .discardBtn`).addClass("d-none");
@@ -155,7 +222,6 @@
                 $(`#${wrapperId} .template-title`).text(newTitle);
             });
 
-            // Delete handler
             $(`#${wrapperId}`).on("click", ".deleteCardBtn", function () {
                 if (isPopulated) {
                     const confirmDelete = confirm("Are you sure you want to delete this report?");
@@ -176,17 +242,18 @@
                     $(`#${wrapperId}`).remove();
                 }
             });
-
-            cardCount++;
         }
 
         function loadCardsFromService() {
             let data = [
-                { "id": 1, "notes": "Report A", "type": "Automatic", "lastEdited": "20/02/24" },
-                { "id": 2, "notes": "Report B", "type": "Manual", "lastEdited": "21/02/24" }
+                { "id": 1, "notes": "Report A", "type": "Automatic", "lastEdited": "20/02/24", body: '# hello 1' },
+                { "id": 2, "notes": "Report B", "type": "Manual", "lastEdited": "21/02/24", body: '# hello 2' }
             ];
                 data.forEach(item => createCard(item));
            
+        }
+        function generateTempId() {
+            return `temp-${Math.random().toString(36).substring(2, 10)}`;
         }
 
         $(document).ready(function () {
