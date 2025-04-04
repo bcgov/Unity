@@ -35,8 +35,8 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
+        // TODO: Fix Permission Configurations - bool allRequirementsSatisfied = await CheckRequirementsAsync();
         bool allRequirementsSatisfied = true;
-            //await CheckRequirementsAsync(output);
         if (!allRequirementsSatisfied)
         {
             if (TagHelper.RenderMode == ConditionalRenderOutput.Suppress)
@@ -75,7 +75,8 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     {
         var legend = new TagBuilder("legend");
         legend.AddCssClass("d-none");
-        // TODO: Use localizer
+        // TODO: Configure localizer
+        // var legendText = _localizer.GetLocalizedText(TagHelper.Id);
         legend.InnerHtml.Append(TagHelper.Id);
 
         output.PreContent.AppendHtml(legend);
@@ -86,8 +87,12 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         var debugAlert = new TagBuilder("div");
         debugAlert.AddCssClass("alert");
         debugAlert.AddCssClass("alert-info");
+        debugAlert.AddCssClass("font-monospace");
+        debugAlert.AddCssClass("m-2");
         debugAlert.Attributes.Add("role", "alert");
-        debugAlert.InnerHtml.SetHtmlContent($"This is a Unity Zone for: {TagHelper.Id}");
+
+        debugAlert.InnerHtml.SetHtmlContent($"Unity ZoneId : {TagHelper.Id}");
+        
         output.PreElement.AppendHtml(debugAlert);
     }
 

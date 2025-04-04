@@ -83,12 +83,8 @@
         }
 
         @* Zone Section : Application Assessment Result *@
-        @if (Model.AssessmentResultsView != null)
-        {
-        <fieldset name="Unity_GrantManager_Application_AssessmentResults" 
-            class="@ZoneCssClass("GrantManager.UI.Tabs.Assessment.AssessmentResults")">
-            <legend class="d-none">@L["AssessmentResultsView:AssessmentResultsTitle"].Value</legend>
-            
+
+        <zone-fieldset id="@UnitySelector.Review.Results.Default" abp-if=@(Model.AssessmentResultsView != null)>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
                     <div class="d-flex align-items-stretch justify-content-start">
@@ -171,11 +167,9 @@
                     </abp-row>
                 </abp-column>
             </abp-row>
-        </fieldset>
-        }
+        </zone-fieldset>
     </form>
 </abp-row>
-
 
 <script defer>
     (function () {

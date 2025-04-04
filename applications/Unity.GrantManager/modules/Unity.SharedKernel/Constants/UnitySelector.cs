@@ -105,7 +105,16 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManger.ApplicationManagement.Review.Results.Update";
             public const string Delete  = "Unity.GrantManger.ApplicationManagement.Review.Results.Delete";
         }
+
+        public static partial class Worksheet
+        {
+            public const string Default = "Unity.GrantManger.ApplicationManagement.Review.Worksheet";
+            public const string Create  = "Unity.GrantManger.ApplicationManagement.Review.Worksheet.Create";
+            public const string Update  = "Unity.GrantManger.ApplicationManagement.Review.Worksheet.Update";
+            public const string Delete  = "Unity.GrantManger.ApplicationManagement.Review.Worksheet.Delete";
+        }
     }
+
     // TODO: Review this
     public static partial class Attachment
     {

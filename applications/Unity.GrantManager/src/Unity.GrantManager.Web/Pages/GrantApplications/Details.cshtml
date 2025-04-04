@@ -123,11 +123,13 @@
                 @if (IsZoneVisible(SettingsConstants.UI.Tabs.Assessment))
                 {
                     <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.AssessmentResultsView")" id="assessmentResultWidget">
-                            @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                        </div>
-                        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-                        {
+                        <zone id="@UnitySelector.Review.Approval.Default">
+                            <div class="w-100 px-2" id="assessmentResultWidget">
+                                @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                            </div>
+                        </zone>
+                        
+                        <zone id="@UnitySelector.Review.Worksheet.Default" feature-requirement="Unity.Flex">
                             <div id="assessmentResultsCustomWidget">
                                 <form id="assessmentResultsCustomForm">
                                     @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
@@ -141,10 +143,14 @@
                                              })
                                 </form>
                             </div>
-                        }
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.ReviewList")" id="assessmentMainView">
-                            @await Component.InvokeAsync("ReviewList")
-                        </div>
+                        </zone>
+
+                        <zone id="@UnitySelector.Review.ReviewList.Default">
+                            <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.ReviewList")" id="assessmentMainView">
+                                @await Component.InvokeAsync("ReviewList")
+                            </div>
+                        </zone>
+
                         <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
                             <abp-column size="_12">
                                 <abp-row>
