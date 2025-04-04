@@ -72,7 +72,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicantAgentRepository applicantAgentRepository,
         IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus,
-        ISupplierService iSupplierService)
+        ISupplierService iSupplierService,
+        IPaymentRequestAppService paymentRequestService,
+        IPaymentRequestRepository paymentRequestsRepository)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -513,8 +515,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         // ORGANIZATION INFO
         await UpdateOrganizationInfo(application.ApplicantId, input?.OrganizationInfo);
 
-        // SUPPLIER - TODO REVIEW - MAY BE DEPRECATED
-        await UpsertSupplierAsync(application.ApplicantId, input?.ApplicantSupplier);
+        // SUPPLIER - TODO REVIEW - MAY BE REPLACED
+        //await UpsertSupplierAsync(application.ApplicantId, input?.ApplicantSupplier);
 
         // APPLICANT AGENT
         var applicantAgent = await CreateOrUpdateApplicantAgentAsync(application, input?.ContactInfo);
@@ -626,24 +628,24 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         application.SigningAuthorityCellPhone     = signingAuthority.SigningAuthorityCellPhone ?? string.Empty;
     }
 
-    protected internal async Task UpsertSupplierAsync(Guid applicantId, ApplicantSupplierDto? input)
-    {
-        if (input == null
-            || !await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
-            || string.IsNullOrEmpty(input.SupplierNumber)
-            || input.OriginalSupplierNumber == input.SupplierNumber)
-        {
-            return;
-        }
+    //protected internal async Task UpsertSupplierAsync(Guid applicantId, ApplicantSupplierDto? input)
+    //{
+    //    if (input == null
+    //        || !await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+    //        || string.IsNullOrEmpty(input.SupplierNumber)
+    //        || input.OriginalSupplierNumber == input.SupplierNumber)
+    //    {
+    //        return;
+    //    }
 
-        // Integrate with payments module to update / insert supplier
-        // Check that the original supplier number has changed
-        dynamic casSupplierResponse     = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
-        UpsertSupplierEto supplierEto   = GetEventDtoFromCasResponse(casSupplierResponse);
-        supplierEto.CorrelationId       = applicantId;
-        supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
-        await _localEventBus.PublishAsync(supplierEto);
-    }
+    //    // Integrate with payments module to update / insert supplier
+    //    // Check that the original supplier number has changed
+    //    dynamic casSupplierResponse     = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
+    //    UpsertSupplierEto supplierEto   = GetEventDtoFromCasResponse(casSupplierResponse);
+    //    supplierEto.CorrelationId       = applicantId;
+    //    supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+    //    await _localEventBus.PublishAsync(supplierEto);
+    //}
     #endregion APPLICANT INFO
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
