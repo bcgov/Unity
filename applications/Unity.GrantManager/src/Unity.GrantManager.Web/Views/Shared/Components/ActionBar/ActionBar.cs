@@ -43,6 +43,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
             context.Files
             .AddIfNotContains("/Pages/PaymentApprovals/UpdatePaymentRequestStatusModal.js");
+            context.Files
+            .AddIfNotContains("/Pages/Approve/ApproveApplicationsPollingModal.js");
         }
     }
 }
