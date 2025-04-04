@@ -3,7 +3,6 @@
     let dataTable;
 
     const listColumns = getColumns();
-    const defaultVisibleColumns = ['EntityName', 'PropertyName', 'OriginalValue', 'NewValue', 'ChangeTime', 'UserName'];
     let actionButtons = [...commonTableActionButtons('Payment History')];
 
     let responseCallback = function (result) {
@@ -27,7 +26,6 @@
 
     dataTable = initializeDataTable({
         dt,
-        defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 20,
         defaultSortColumn: 0,

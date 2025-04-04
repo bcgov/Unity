@@ -122,12 +122,12 @@ $(function () {
         ...commonTableActionButtons(l('Roles'))
     ];
 
-    let _$table = $('#IdentityRolesTable');
+    let dt = $('#IdentityRolesTable');
     let listColumns = abp.ui.extensions.tableColumns.get('identity.role').columns.toArray();
     let defaultVisibleColumns = listColumns.map((item) => { return item['data']; });
 
     _dataTable = initializeDataTable({
-        dt: _$table,
+        dt,
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 25,
@@ -148,8 +148,7 @@ $(function () {
         dataTableName: 'IdentityRolesTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-roles',
-        listColumns
+        externalSearchId: 'search-roles'
     });
 
     _createModal.onResult(function () {

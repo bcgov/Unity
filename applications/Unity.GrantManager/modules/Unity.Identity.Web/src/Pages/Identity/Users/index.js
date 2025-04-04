@@ -263,8 +263,7 @@ $(function () {
         dataTableName: 'UsersTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-users',
-        listColumns
+        externalSearchId: 'search-users'
     });
 
     _editModal.onResult(function () {
