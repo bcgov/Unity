@@ -13,6 +13,7 @@ using Unity.GrantManager.Zones;
 using Volo.Abp.Authorization.Permissions;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Settings;
+using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
@@ -62,7 +63,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
             model.ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(application.ApplicationForm.Id);
 
-            if (model.ZoneStateSet.Contains(SettingsConstants.UI.Tabs.Assessment + ".AssessmentApproval"))
+            if (model.ZoneStateSet.Contains(UnitySelector.Review.Approval.Default))
             {
                 model.ApprovalView = new()
                 {
@@ -73,7 +74,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                 };
             }
 
-            if (model.ZoneStateSet.Contains(SettingsConstants.UI.Tabs.Assessment + ".AssessmentResults"))
+            if (model.ZoneStateSet.Contains(UnitySelector.Review.Results.Default))
             {
                 model.AssessmentResultsView = new()
                 {

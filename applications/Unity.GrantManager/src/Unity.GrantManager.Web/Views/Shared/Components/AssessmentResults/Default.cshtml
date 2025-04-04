@@ -22,7 +22,7 @@
     var zoneCheck = UnitySelector.Applicant.Contact.Default;
     var zoneId = UnitySelector.Applicant.Contact.Default.ElementId();
 
-    //Model.ZoneStateSet.Contains(SettingsConstants.UI.Tabs.Assessment + ".AssessmentResults");
+    //Model.ZoneStateSet.Contains(UnitySelector.Review.Results.Default);
 }
 
 @functions
@@ -44,12 +44,7 @@
     </abp-column>
     <form id="assessmentResultForm">
         @* Zone Section : Approval *@
-        @if (Model.ApprovalView != null)
-        {
-        <fieldset name="Unity_GrantManager_Application_Approval" 
-            class="@ZoneCssClass("GrantManager.UI.Tabs.Assessment.AssessmentApproval")" @(!Model.IsFormEditGranted ? "disabled" : "")>
-            <legend class="d-none">@L["AssessmentResultsView:ApprovalTitle"].Value</legend>
-
+        <zone-fieldset id="@UnitySelector.Review.Approval.Default" abp-if=@(Model.ApprovalView != null)>
             <abp-row class="m-0 assessment-result-form">
                 <abp-column size="_12" class="px-0">
                     <abp-row class="m-0">
@@ -79,11 +74,9 @@
                     </abp-row>
                 </abp-column>
             </abp-row>
-        </fieldset>
-        }
+        </zone-fieldset>
 
         @* Zone Section : Application Assessment Result *@
-
         <zone-fieldset id="@UnitySelector.Review.Results.Default" abp-if=@(Model.AssessmentResultsView != null)>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">

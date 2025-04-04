@@ -21,6 +21,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName)
         );
 
+        // TODO - Remove Tab Settings
         var tabSettings = new Dictionary<string, bool>
         {
             { SettingsConstants.UI.Tabs.Submission, true },
