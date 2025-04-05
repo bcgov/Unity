@@ -9,23 +9,42 @@ public class ZoneChecker : IZoneChecker, IScopedDependency
     private IZoneManagementAppService _zoneManager { get; set; }
     public Guid FormId { get; set; }
     public HashSet<string> ZoneGrants { get; } = [];
-
-    // TODO: How to handle scoped context for a single formId or providerKey
-    // TODO: GetOrAdd
-    // TODO: ConcurrentHashset
+    private bool _isZoneGrantsLoaded;
+    private Guid _lastLoadedFormId = Guid.Empty;
 
     public ZoneChecker(IZoneManagementAppService zoneManager)
     {
         _zoneManager = zoneManager;
     }
 
-    public Task<HashSet<string>> GetOrNullAsync(string name)
+    public async Task<HashSet<string>> GetOrNullAsync(string name)
     {
-        throw new NotImplementedException();
+        await EnsureZoneGrantsLoadedAsync();
+        return ZoneGrants.Contains(name) ? ZoneGrants : null;
     }
 
-    public Task<bool> IsEnabledAsync(string name)
+    public async Task<bool> IsEnabledAsync(string name)
     {
-        throw new NotImplementedException();
+        await EnsureZoneGrantsLoadedAsync();
+        return ZoneGrants.Contains(name);
+    }
+
+    private async Task EnsureZoneGrantsLoadedAsync()
+    {
+        if (FormId == Guid.Empty)
+            return;
+
+        // Reload zone grants if this is the first load or if FormId has changed
+        if (!_isZoneGrantsLoaded || _lastLoadedFormId != FormId)
+        {
+            var zoneGrants = await _zoneManager.GetZoneStateSetAsync(FormId);
+            ZoneGrants.Clear();
+            foreach (var zone in zoneGrants)
+            {
+                ZoneGrants.Add(zone);
+            }
+            _isZoneGrantsLoaded = true;
+            _lastLoadedFormId = FormId;
+        }
     }
 }
