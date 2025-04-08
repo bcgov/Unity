@@ -1,8 +1,4 @@
-﻿.unity-app-main-container {
-    background-color: white;
-}
-
-.spinner-loader {
+﻿.spinner-loader {
     display: flex;
     align-items: center;
     justify-content: center;
