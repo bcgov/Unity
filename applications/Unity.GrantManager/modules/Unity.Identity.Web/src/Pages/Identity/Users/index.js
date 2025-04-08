@@ -179,6 +179,7 @@ $(function () {
                         sortable: false,
                         orderable: false,
                         className: 'notexport text-center',
+                        data: null,
                         name: 'rowActions',
                         index: 0,
                         rowAction: {

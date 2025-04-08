@@ -57,6 +57,7 @@
             title: l('Actions'),
             orderable: false,
             className: 'notexport text-center',
+            data: null,
             name: 'rowActions',
             index: 4,
             rowAction: {
