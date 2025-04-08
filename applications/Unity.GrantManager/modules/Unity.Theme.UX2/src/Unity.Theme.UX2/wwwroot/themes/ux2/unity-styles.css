@@ -437,7 +437,8 @@ td.dt-editable {
     padding-left: 20px;
 }
 
-#btn-toggle-filter {
+#btn-toggle-filter,
+[id$="_btn-toggle-filter"] {
     margin: auto;
 }
 

@@ -42,6 +42,7 @@ function initializeDataTable(options) {
         listColumns,
         maxRowsPerPage,
         defaultSortColumn,
+        defaultSortDirection = 'desc',
         dataEndpoint,
         data,
         responseCallback,
@@ -55,6 +56,7 @@ function initializeDataTable(options) {
         externalSearchId = 'search',
         disableColumnSelect = false,
         listColumnDefs,
+        selectType,
     } = options;
 
     // If useNullPlaceholder is true, update csv export buttons to include the example format function
@@ -63,6 +65,8 @@ function initializeDataTable(options) {
     let visibleColumns = getVisibleColumnIndexes(tableColumns, defaultVisibleColumns);
 
     let filterData = {};
+    const filterButton = actionButtons.find(button => button.text === 'Filter');
+    const setToggleFilterButtonId = filterButton?.id ? `#${filterButton.id}` : 'btn-toggle-filter';
 
     let iDt = dt.DataTable(
        abp.libs.datatables.normalizeConfiguration({
@@ -73,9 +77,10 @@ function initializeDataTable(options) {
             },
             serverSide: false,
             paging: pagingEnabled,
-            order: [[defaultSortColumn, 'desc']],
+            order: [[defaultSortColumn, defaultSortDirection]],
             searching: true,
             externalSearchInputId: `#${externalSearchId}`,
+            toggleFilterButtonId: setToggleFilterButtonId,
             iDisplayLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
@@ -94,7 +99,7 @@ function initializeDataTable(options) {
                     };
                 }
             ),
-            select: {
+            select: selectType ?? {
                 style: 'multiple',
                 selector: 'td:not(:nth-child(8))',
             },
@@ -137,7 +142,7 @@ function initializeDataTable(options) {
                 data.search.search = searchValue;
 
                 let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
-                $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
+                $(settings.oInit.toggleFilterButtonId).text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
             },
             stateLoadParams: function (settings, data) {
                 $(settings.oInit.externalSearchInputId).val(data.search.search);
@@ -169,13 +174,13 @@ function initializeDataTable(options) {
     $(`#${dataTableName}_length`).appendTo(`.${dataTableName}`);
     init(iDt);
 
-    updateFilter(iDt, dt[0].id, filterData);
+    updateFilter(iDt, filterData);
 
     iDt.on('column-reorder.dt', function (e, settings) {
-        updateFilter(iDt, dt[0].id, filterData);
+        updateFilter(iDt, filterData);
     });
     iDt.on('column-visibility.dt', function (e, settings, deselectedcolumn, state) {
-        updateFilter(iDt, dt[0].id, filterData);
+        updateFilter(iDt, filterData);
     });
 
     initializeFilterButtonPopover(iDt);
@@ -183,7 +188,7 @@ function initializeDataTable(options) {
     searchFilter(iDt);
 
     setExternalSearchFilter(iDt);
-
+    console.log("Created: #" + dt[0].id);
     return iDt;
 }
 
@@ -268,15 +273,22 @@ function init(iDt) {
 }
 
 function initializeFilterButtonPopover(iDt) {
+    let dataTableId = getDataTableId(iDt);
+    const UISelectors = {
+        showFilterToggle: `${dataTableId}_showFilter`,
+        clearFilterButton: `${dataTableId}_btnClearFilter`
+    };
+
     const UIElements = {
         search: $(iDt.init().externalSearchInputId),
-        btnToggleFilter: $('#btn-toggle-filter')
+        btnToggleFilter: $(iDt.init().toggleFilterButtonId)
     };
 
     UIElements.btnToggleFilter.on('click', function() {
         UIElements.btnToggleFilter.popover('toggle');
     });
 
+    
     UIElements.btnToggleFilter.popover({
         html: true,
         container: 'body',
@@ -291,10 +303,10 @@ function initializeFilterButtonPopover(iDt) {
             const isChecked = $(".tr-toggle-filter").is(':visible');
             return `
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="showFilter" ${isChecked ? 'checked' : ''}>
-                        <label class="form-check-label" for="showFilter">Show Filter Row</label>
+                        <input class="form-check-input" type="checkbox" id="${UISelectors.showFilterToggle}" ${isChecked ? 'checked' : ''}>
+                        <label class="form-check-label" for="${UISelectors.showFilterToggle}">Show Filter Row</label>
                     </div>
-                    <abp-button id="btnClearFilter" class="btn btn-primary" text="Clear Filter" type="button">CLEAR FILTER</abp-button>
+                    <abp-button id="${UISelectors.clearFilterButton}" class="btn btn-primary" text="Clear Filter" type="button">CLEAR FILTER</abp-button>
                    `;
         },
         placement: 'bottom'
@@ -306,11 +318,11 @@ function initializeFilterButtonPopover(iDt) {
         const popoverElement = $('.popover.custom-popover');
         const customFilterElement = $('.custom-filter-input');
 
-        popoverElement.find('#showFilter').on('click', () => {
+        popoverElement.find(`#${UISelectors.showFilterToggle}`).on('click', () => {
             trToggleElement.toggle();
         });
 
-        popoverElement.find('#btnClearFilter').on('click', () => {
+        popoverElement.find(`#${UISelectors.clearFilterButton}`).on('click', () => {
             searchElement.val('');
             customFilterElement.val('');
 
@@ -337,18 +349,13 @@ function initializeFilterButtonPopover(iDt) {
 
     UIElements.btnToggleFilter.on('hide.bs.popover', function () {
         const popoverElement = $('.popover.custom-popover');
-        popoverElement.find('#showFilter').off('click');
-        popoverElement.find('#btnClearFilter').off('click');
+        popoverElement.find(`#${UISelectors.showFilterToggle}`).off('click');
+        popoverElement.find(`#${UISelectors.clearFilterButton}`).off('click');
 
         // Remove document event listeners when popover is hidden
         $(document).off('click.popover');
         $(document).off('mouseenter.popover');
     });
-}
-
-function toggleFilterRow() {
-    $(this).popover('toggle');
-    $('#dtFilterRow').toggleClass('hidden');
 }
 
 function findColumnByTitle(title, dataTable) {
@@ -408,7 +415,12 @@ function setExternalSearchFilter(dataTableInstance) {
     // Exclude default search inputs that have custom logic
     if (searchId !== false && searchId !== '#search') {
         $('.dataTables_filter input').attr("placeholder", "Search");
-        $('.dataTables_filter label')[0].childNodes[0].remove();
+
+        // Check if the label exists before trying to access its child nodes
+        const labelElement = $('.dataTables_filter label')[0];
+        if (labelElement && labelElement.childNodes[0]) {
+            labelElement.childNodes[0].remove();
+        }
 
         $(searchId).on('input', function () {
             let filter = dataTableInstance.search($(this).val()).draw();
@@ -417,16 +429,24 @@ function setExternalSearchFilter(dataTableInstance) {
     }
 }
 
-function updateFilter(dt, dtName, filterData) {
+function updateFilter(iDt, filterData) {
+    let dtName = getDataTableId(iDt);
     let optionsOpen = false;
-    $("#tr-filter").each(function () {
+    let tableRowFilterId = `#${dtName}_tr-filter`;
+
+    $(tableRowFilterId).each(function () {
         if ($(this).is(":visible"))
             optionsOpen = true;
     })
-    $('.tr-toggle-filter').remove();
-    let newRow = $("<tr class='tr-toggle-filter' id='tr-filter'>");
 
-    dt.columns().every(function () {
+    debugger;
+
+    $('.tr-toggle-filter').remove();
+    let newRow = $("<tr class='tr-toggle-filter'>");
+    newRow.attr('id', `${dtName}_tr-filter`);
+    debugger;
+
+    iDt.columns().every(function () {
             let column = this;
             if (column.visible()) {
                 let title = column.header().textContent;
@@ -450,7 +470,7 @@ function updateFilter(dt, dtName, filterData) {
                     newCell.find("input").on("keyup", function () {
                         if (column.search() !== this.value) {
                             column.search(this.value).draw();
-                            updateFilterButton(dt);
+                            updateFilterButton(iDt);
                         }
                     });
 
@@ -463,7 +483,7 @@ function updateFilter(dt, dtName, filterData) {
             }
         });
 
-    updateFilterButton(dt);
+    updateFilterButton(iDt);
 
     $(`#${dtName} thead`).after(newRow);
 
@@ -478,7 +498,7 @@ function searchFilter(iDt) {
         iDt.search(searchValue).draw();
     }
 
-    if ($('#btn-toggle-filter').text() === FilterDesc.With_Filter) {
+    if ($(iDt.init().toggleFilterButtonId).text() === FilterDesc.With_Filter) {
         $(".tr-toggle-filter").show();
     }
 }
@@ -494,7 +514,7 @@ function updateFilterButton(dt) {
     });
 
     let hasFilter = columnFiltersApplied || searchValue !== '';
-    $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
+    $(dt.init().toggleFilterButtonId).text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
 }
 
 $('.data-table-select-all').click(function () {
@@ -507,15 +527,30 @@ $('.data-table-select-all').click(function () {
 
 });
 
-function commonTableActionButtons(exportTitle) {
+function getDataTableId(initializedDataTable) {
+    if (!initializedDataTable || !initializedDataTable.context || !initializedDataTable.context[0]) {
+        console.error("Invalid DataTable instance provided.");
+        return null;
+    }
+    return initializedDataTable.context[0].sTableId;
+}
+
+// Function to get the ID of the filter button from a jQuery element
+function getFilterButtonId(dataTableElement, includeHash = false) {
+    const dataTableId = dataTableElement?.[0]?.id || '';
+    const baseId = dataTableId || 'btn-toggle-filter';
+    return `${includeHash ? '#' : ''}${baseId}`;
+}
+
+function commonTableActionButtons(exportTitle, filterButtonId=null) {
     return [
         {
             text: 'Filter',
-            id: "btn-toggle-filter",
+            id: filterButtonId,
             className: 'btn-secondary custom-table-btn m-0',
             action: function (e, dt, node, config) { },
             attr: {
-                id: 'btn-toggle-filter'
+                id: filterButtonId
             }
         },
         {
