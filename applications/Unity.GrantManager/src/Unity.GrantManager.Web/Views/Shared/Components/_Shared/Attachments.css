@@ -32,3 +32,19 @@
 .spinner-loading {
     color: #9f9d9c;
 }
+
+.attachments__title-button-split {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 8px;
+}
+
+.attachments__title-header {
+    display: inline-block;
+}
+
+.attachments__button-section {
+    display: flex;
+}

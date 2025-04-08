@@ -1,29 +1,12 @@
-
 #ChefsAttachmentsTable a {
     text-decoration: none;
     --bs-btn-active-color: var(--bc-colors-white-primary-500);
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
 }
 
-.attachments__title-button-split {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 8px;
-}
-
 .sorting_disabled:before,
 .sorting_disabled:after {
     content: "" !important;
-}
-
-.submission-title {
-    display: inline-block;
-}
-
-.submission-button-section {
-    display: flex;
 }
 
 #ChefsAttachmentsTable_paginate { 
