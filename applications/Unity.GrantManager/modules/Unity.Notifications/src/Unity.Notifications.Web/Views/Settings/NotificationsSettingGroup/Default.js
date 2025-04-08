@@ -86,19 +86,15 @@
                     <form id="${formId}">
                         <div class="mb-3">
                             <label class="form-label">Template Name</label>
-                            <input type="text" class="form-control form-input" name="templateName" value="${data?.name || ''}" ${disabled}>
+                            <input type="text" class="form-control form-input" name="templateName" value="${data?.name || ''}" ${disabled} required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Send From</label>
-                            <select class="form-select form-input" name="sendFrom" ${disabled}>
-                                <option value="">Select sender</option>
-                                <option value="noreply@example.com" ${data?.sendFrom === 'noreply@example.com' ? 'selected' : ''}>noreply@example.com</option>
-                                <option value="support@example.com" ${data?.sendFrom === 'support@example.com' ? 'selected' : ''}>support@example.com</option>
-                            </select>
+                            <input type="text" class="form-control form-input" name="sendFrom" value="${data?.sendFrom || ''}" ${disabled} required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Subject</label>
-                            <input type="text" class="form-control form-input" name="subject" value="${data?.subject || ''}" ${disabled}>
+                            <input type="text" class="form-control form-input" name="subject" value="${data?.subject || ''}" ${disabled} required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Body</label>
@@ -142,69 +138,82 @@
             });
 
 
+            function extractFormData(formDataArray) {
+                return {
+                    name: formDataArray[0].value,
+                    sendFrom: formDataArray[1].value,
+                    subject: formDataArray[2].value
+                };
+            }
+
+            function buildTemplatePayload(data, editor) {
+                return JSON.stringify({
+                    name: data.name,
+                    description: "",
+                    subject: data.subject,
+                    bodyText: editor.getMarkdown(),
+                    bodyHTML: editor.getHTML(),
+                    sendFrom: data.sendFrom
+                });
+            }
+
+            function handleSuccess(message) {
+                abp.notify.success(message);
+                $("#cardContainer").empty();
+                loadCardsFromService();
+            }
+
+            function handleError(message) {
+                abp.notify.error(message);
+            }
+
+            function saveTemplate(payload) {
+                $.ajax({
+                    url: `/api/app/template`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: payload,
+                    success: function (response) {
+                        console.log(response);
+                        handleSuccess('Template saved successfully.');
+                    },
+                    error: function () {
+                        handleError('Failed to save template.');
+                    }
+                });
+            }
+
+            function updateTemplate(id, payload) {
+                $.ajax({
+                    url: `/api/app/template/${id}/template`,
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: payload,
+                    success: function (response) {
+                        console.log(response);
+                        handleSuccess('Template updated successfully.');
+                    },
+                    error: function () {
+                        handleError('Failed to update the template.');
+                    }
+                });
+            }
+
             $(`#${formId}`).on("submit", function (e) {
                 e.preventDefault();
-                const formData = $(this).serializeArray();
-                console.log(formData)
+
+                const formDataArray = $(this).serializeArray();
+                const formData = extractFormData(formDataArray);
+                const editor = editorInstances[id];
+                const payload = buildTemplatePayload(formData, editor);
+
                 if (id.includes("temp")) {
-
-
-                    $.ajax({
-                        url: `/api/app/template`,
-                        method: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({
-                            "name": formData[0].value,
-                            "description": "",
-                            "subject": formData[2].value,
-                            "bodyText": editorInstances[id].getMarkdown(),
-                            "bodyHTML": editorInstances[id].getHTML(),
-                            "sendFrom": formData[1].value
-                        }),
-                        success: function (response) {
-                            console.log(response)
-                            abp.notify.success(
-                                'Template saved successfully.',
-                            );
-                            $("#cardContainer").empty(); 
-                            loadCardsFromService();
-                        },
-                        error: function (xhr, status, error) {
-                            abp.notify.error(
-                                'Failed to save template.',
-                            );
-                        }
-                    });
+                    saveTemplate(payload);
+                } else {
+                    updateTemplate(id, payload);
                 }
-                else {
-                    $.ajax({
-                        url: `/api/app/template/${id}/template`,
-                        method: 'PUT',
-                        contentType: 'application/json',
-                        data: JSON.stringify({
-                            "name": formData[0].value,
-                            "description": "",
-                            "subject": formData[2].value,
-                            "bodyText": editorInstances[id].getMarkdown(),
-                            "bodyHTML": editorInstances[id].getHTML(),
-                            "sendFrom": formData[1].value
-                        }),
-                        success: function (response) {
-                            abp.notify.success(
-                                'Template updated successfully.',
-                            );
-                            $("#cardContainer").empty(); 
-                            loadCardsFromService();
-                        },
-                        error: function (xhr, status, error) {
-                            abp.notify.success(
-                                'Failed to update the template.',
-                            );
-                        }
-                    });
-                }
-               
             });
+
             $(`#${cardId}`).on('show.bs.collapse', function () {
                 $(`#${wrapperId} .btn[data-bs-target="#${cardId}"] i`)
                     .removeClass('fa-chevron-down')
