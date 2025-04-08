@@ -15,6 +15,8 @@ using Unity.Modules.Shared.Utils;
 using Microsoft.Extensions.Logging;
 using Unity.Payments.Integrations.Cas;
 using Microsoft.Extensions.Logging.Abstractions;
+using Unity.Payments.Suppliers;
+using Unity.Payments.Domain.Suppliers;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -23,6 +25,7 @@ namespace Unity.GrantManager.Applicants;
 [ExposeServices(typeof(ApplicantAppService), typeof(IApplicantAppService))]
 public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  ISupplierService supplierService,
+                                 ISiteAppService siteAppService,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
@@ -65,6 +68,17 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
         ArgumentNullException.ThrowIfNull(applicant);
         applicant.SupplierId = applicantSupplierEto.SupplierId;
+        applicant.SiteId = null; // Reset site id to null
+        // lookup sites if there is only one then set it as default
+        if (applicant.SupplierId != null)
+        {
+            List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(applicant.SupplierId.Value);
+            if (sites.Count == 1)
+            {
+                applicant.SiteId = sites.FirstOrDefault()?.Id;
+            }
+        }
+
         await applicantRepository.UpdateAsync(applicant);
         return applicant;
     }
@@ -118,10 +132,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     public async Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto) {
         var applicant = applicantAgentDto.Applicant;
 
-        if(applicant.BusinessNumber == null && applicant.MatchPercentage == null) {
+        if (applicant.BusinessNumber == null 
+            && applicant.MatchPercentage == null 
+            && !string.IsNullOrEmpty(applicant.OrgNumber)
+            && !applicant.OrgNumber.Contains("No Data", StringComparison.OrdinalIgnoreCase))
+        {
             applicant = await UpdateApplicantOrgMatchAsync(applicant);
         }
-        
+
         if (applicant.SupplierId != null) return;
 
         if(applicant.BusinessNumber != null) {

@@ -47,7 +47,7 @@ namespace Unity.GrantManager.Integrations.Orgbook
             }
 
             var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/v4/search/autocomplete?q={orgBookQuery}&inactive=true&revoked=true");
+                .HttpAsync(Method.Get, $"{orgbook_base_api}/v3/search/autocomplete?q={orgBookQuery}&revoked=false&inactive=");
 
             if (response != null && response.Content != null)
             {
