@@ -89,10 +89,10 @@
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
-            id: "btn-toggle-filter",
+            id: `${dt[0].id}_btn-toggle-filter`,
             action: function (e, dt, node, config) {},
             attr: {
-                id: 'btn-toggle-filter'
+                id: `${dt[0].id}_btn-toggle-filter`
             }
         },
         {
@@ -146,7 +146,7 @@
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
-        dataTableName: 'ApplicationPaymentRequestListTable',
+        dataTableName: dt[0].id,
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     dataTable.on('search.dt', () => handleSearch());

@@ -106,18 +106,6 @@ $(function () {
         const listColumns = getColumns();
         const defaultVisibleColumns = ['number','paymentGroup','addressLine1','bankAccount','status','id'];
 
-        let actionButtons = [
-            {
-                text: 'Filter',
-                className: 'custom-table-btn flex-none btn btn-secondary',
-                id: "btn-toggle-filter",
-                action: function (e, dt, node, config) { },
-                attr: {
-                    id: 'btn-toggle-filter'
-                }
-            }
-        ];
-
         dataTable = initializeDataTable({
             dt,
             defaultVisibleColumns,
@@ -127,26 +115,15 @@ $(function () {
             dataEndpoint: unity.grantManager.applicants.applicantSupplier.getSitesBySupplierId,
             data: inputAction,
             responseCallback,
-            actionButtons,
+            actionButtons: [...commonTableActionButtons('Assessment Attachments', 'SiteInfoTable_btn-toggle-filter')],
             colReorder: false,
             pagingEnabled: false,
             reorderEnabled: false,
             languageSetValues: {},
             dataTableName: 'SiteInfoTable',
+            externalSearchId: 'SiteInfoTable_SearchId',
             dynamicButtonContainerId: 'siteDynamicButtonContainerId'});
-    
-        dataTable.on('search.dt', () => handleSearch());
-        
-        $('#search').on('input', function () {
-            let table = $('#SiteInfoTable').DataTable();
-            table.search($(this).val()).draw();
-        });
-        
-        function handleSearch() {
-            let filter = $('.dataTables_filter input').val();
-            console.info(filter);
-        }
-    
+
         function getColumns() {
             let columnIndex = 0;
 

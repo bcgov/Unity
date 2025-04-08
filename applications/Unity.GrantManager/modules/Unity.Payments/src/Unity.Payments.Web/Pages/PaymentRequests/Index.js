@@ -66,10 +66,10 @@ $(function () {
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
-            id: "btn-toggle-filter",
+            id: `${dt[0].id}_btn-toggle-filter`,
             action: function (e, dt, node, config) { },
             attr: {
-                id: 'btn-toggle-filter'
+                id: `${dt[0].id}_btn-toggle-filter`
             }
         },
         {
@@ -121,7 +121,7 @@ $(function () {
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
-        dataTableName: 'PaymentRequestListTable',
+        dataTableName: dt[0].id,
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true
     });

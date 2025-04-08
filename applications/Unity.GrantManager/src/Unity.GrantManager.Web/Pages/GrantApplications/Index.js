@@ -48,6 +48,15 @@
 
     let actionButtons = [
         {
+            text: 'Filter',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            id: `${dt[0].id}_btn-toggle-filter`,
+            action: function (e, dt, node, config) { },
+            attr: {
+                id: `${dt[0].id}_btn-toggle-filter`
+            }
+        },
+        {
             extend: 'csv',
             text: 'Export',
             className: 'custom-table-btn flex-none btn btn-secondary',
