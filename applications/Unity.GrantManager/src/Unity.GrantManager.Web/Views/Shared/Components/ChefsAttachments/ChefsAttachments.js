@@ -2,9 +2,7 @@
 $(function () {
     const downloadAll = $("#downloadAll");
     const dt = $('#ChefsAttachmentsTable');
-    let chefsDataTable;
     let selectedAtttachments = [];
-    const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
@@ -104,30 +102,22 @@ $(function () {
         return newData;
     }
 
-    chefsDataTable = dt.DataTable(
-        abp.libs.datatables.normalizeConfiguration({
-            serverSide: false,
-            paging: true,
-            order: [[1, 'desc']],
-            searching: true,
-            iDisplayLength: 25,
-            lengthMenu: [10, 25, 50, 100],
-            scrollX: true,
-            scrollCollapse: true,
-            processing: true,
-            autoWidth: true,
-            select: {
-                style: 'multiple',
-                selector: 'td:not(:nth-child(8))',
-            },
-            ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments,
-                inputAction,
-                responseCallback
-            ),
-            columnDefs: getColumns()
-        })
-    );
+    const filterButtonId = getFilterButtonId(dt);
+    const chefsDataTable = initializeDataTable({
+        dt,
+        listColumns: getColumns(),
+        dataEndpoint: unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments,
+        data: inputAction,
+        responseCallback,
+        actionButtons: [...commonTableActionButtons('CHEFS Attachments', filterButtonId)],
+        pagingEnabled: true,
+        reorderEnabled: false,
+        defaultSortColumn: 1,
+        dataTableName: dt[0].id,
+        dynamicButtonContainerId: 'ChefsAttachments_ButtonContainerId',
+        externalSearchId: 'ChefsAttachments_SearchId',
+        disableColumnSelect: true
+    });
 
     PubSub.subscribe(
         'refresh_chefs_attachment_list',
