@@ -1,7 +1,7 @@
 ﻿(function ($) {
     $(function () {
         console.info("Notifications Setting Management UI Loaded");
-
+         loadCardsFromService();
         const NotificationUiElements = {
             settingForm: $("#NotificationsSettingsForm"),
             saveButton: $("#NotificationsSaveButton"),
@@ -50,20 +50,23 @@
 
         function createCard(data = null) {
             const isPopulated = data !== null;
-            const id = data?.id?.toString() || generateTempId(); // ✅ Always a string
+            const id = data?.id?.toString() || generateTempId();
             const cardId = `collapseDetails-${id}`;
             const formId = `form-${id}`;
             const wrapperId = `cardWrapper-${id}`;
             const editorId = `editor-${id}`;
-            const note = data?.notes || '';
             const type = data?.type || 'Automatic';
-            const lastEdited = data?.lastEdited || new Date().toLocaleDateString('en-GB');
+            const lastEdited = data?.lastModificationTime
+                ? new Date(data.lastModificationTime).toLocaleDateString('en-CA')
+                : data?.creationTime
+                    ? new Date(data.creationTime).toLocaleDateString('en-CA')
+                    : new Date().toLocaleDateString('en-CA');
             const disabled = isPopulated ? 'disabled' : '';
 
             const cardHtml = `
         <div class="card mb-3 shadow-sm" id="${wrapperId}" data-id="${id}">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <strong class="template-title">${data?.templateName || 'Untitled Template'}</strong>
+                <strong class="template-title">${data?.name || 'Untitled Template'}</strong>
                 <div class="d-flex align-items-center gap-3">
                     <div class="text-muted small text-end me-3">
                         <div>Type<br /><span class="fw-normal">${type}</span></div>
@@ -83,7 +86,7 @@
                     <form id="${formId}">
                         <div class="mb-3">
                             <label class="form-label">Template Name</label>
-                            <input type="text" class="form-control form-input" name="templateName" value="${data?.templateName || ''}" ${disabled}>
+                            <input type="text" class="form-control form-input" name="templateName" value="${data?.name || ''}" ${disabled}>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Send From</label>
@@ -102,16 +105,16 @@
                             <div id="${editorId}" class="tui-editor-body"></div>
                         </div>
                          <div class="mb-3">
-                         <p><b>NOTE</b>: Selecting text will let your customize it: replace it with a variable, make it bold, italic, change the alignment, add a link, create a list, etc.</p>
+                         <p><b>NOTE</b>:<span class="note-text"> Selecting text will let your customize it: replace it with a variable, make it bold, italic, change the alignment, add a link, create a list, etc.</span></p>
                          </div>
                          <div class="mb-3">
                          <hr>
-                         <button type="button" class="btn btn-outline-primary deleteCardBtn">DELETE THIS TEMPLATE</button>
+                         <button type="button" class="btn btn-outline-primary deleteCardBtn">X DELETE THIS TEMPLATE</button>
                          <hr>
                          
                          </div>
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary saveBtn" disabled>SAVE CHANGES</button>
+                            ${isPopulated ? `<button type="submit" class="btn btn-primary  saveBtn" disabled>SAVE CHANGES</button>` : `<button type="submit" class="btn btn-primary saveBtn">SAVE CHANGES</button>`}
                             <button type="button" class="btn btn-outline-secondary discardBtn d-none">DISCARD CHANGES</button>
                             ${isPopulated ? `<button type="button" class="btn btn-secondary editBtn">EDIT THIS TEMPLATE</button>` : ''}
                            
@@ -123,30 +126,84 @@
     `;
 
             $("#cardContainer").append(cardHtml);
-
-            // Initialize viewer/editor in viewer mode
             editorInstances[id] = new toastui.Editor.factory({
                 el: document.querySelector(`#${editorId}`),
                 height: '250px',
                 initialEditType: 'wysiwyg',
                 previewStyle: 'vertical',
-                initialValue: data?.body,
+                initialValue: data?.bodyHTML,
                 toolbarItems: [
                     ['heading', 'bold', 'italic', 'strike'],
                     ['hr', 'quote', 'link'],
                     ['ul', 'ol', 'task', 'indent', 'outdent']
                 ],
-                viewer: true,
+                viewer: isPopulated,
                 contentEditable: false
             });
 
-            // === EVENT HANDLERS ===
 
             $(`#${formId}`).on("submit", function (e) {
                 e.preventDefault();
                 const formData = $(this).serializeArray();
-                alert(`Saved: ${formData[0].value}`);
-                // You can also grab editorInstances[id].getMarkdown()
+                console.log(formData)
+                if (id.includes("temp")) {
+
+
+                    $.ajax({
+                        url: `/api/app/template`,
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            "name": formData[0].value,
+                            "description": "",
+                            "subject": formData[2].value,
+                            "bodyText": editorInstances[id].getMarkdown(),
+                            "bodyHTML": editorInstances[id].getHTML(),
+                            "sendFrom": formData[1].value
+                        }),
+                        success: function (response) {
+                            console.log(response)
+                            abp.notify.success(
+                                'Template saved successfully.',
+                            );
+                            $("#cardContainer").empty(); 
+                            loadCardsFromService();
+                        },
+                        error: function (xhr, status, error) {
+                            abp.notify.error(
+                                'Failed to save template.',
+                            );
+                        }
+                    });
+                }
+                else {
+                    $.ajax({
+                        url: `/api/app/template/${id}/template`,
+                        method: 'PUT',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            "name": formData[0].value,
+                            "description": "",
+                            "subject": formData[2].value,
+                            "bodyText": editorInstances[id].getMarkdown(),
+                            "bodyHTML": editorInstances[id].getHTML(),
+                            "sendFrom": formData[1].value
+                        }),
+                        success: function (response) {
+                            abp.notify.success(
+                                'Template updated successfully.',
+                            );
+                            $("#cardContainer").empty(); 
+                            loadCardsFromService();
+                        },
+                        error: function (xhr, status, error) {
+                            abp.notify.success(
+                                'Failed to update the template.',
+                            );
+                        }
+                    });
+                }
+               
             });
             $(`#${cardId}`).on('show.bs.collapse', function () {
                 $(`#${wrapperId} .btn[data-bs-target="#${cardId}"] i`)
@@ -165,7 +222,7 @@
                 const currentEditor = editorInstances[id];
                 const content = data?.body;
                 currentEditor.destroy();
-
+              
                 editorInstances[id] = new toastui.Editor({
                     el: editorEl,
                     height: '250px',
@@ -178,7 +235,6 @@
                         ['ul', 'ol', 'task', 'indent', 'outdent']
                     ]
                 });
-
                 const card = $(`#${wrapperId}`);
                 card.find(".form-input").prop('disabled', false);
                 card.find(".saveBtn").prop('disabled', false);
@@ -193,7 +249,7 @@
                 const editorEl = document.querySelector(`#${editorId}`);
                 const currentEditor = editorInstances[id];
                
-                const content = data?.body;
+                const content = data?.bodyHTML;
                 currentEditor.destroy();
 
                 editorInstances[id] = new toastui.Editor.factory({
@@ -224,20 +280,37 @@
 
             $(`#${wrapperId}`).on("click", ".deleteCardBtn", function () {
                 if (isPopulated) {
-                    const confirmDelete = confirm("Are you sure you want to delete this report?");
-                    if (confirmDelete) {
-                        $.ajax({
-                            url: `/api/reports/${id}`,
-                            type: 'DELETE',
-                            success: function () {
-                                $(`#${wrapperId}`).remove();
-                                alert("Deleted successfully.");
-                            },
-                            error: function () {
-                                alert("Error deleting the report.");
-                            }
-                        });
-                    }
+                    Swal.fire({
+                        title: "Delete Template",
+                        text: "Are you sure you want to delete this template?",
+                        showCancelButton: true,
+                        confirmButtonText: "Confirm",
+                        customClass: {
+                            confirmButton: 'btn btn-primary',
+                            cancelButton: 'btn btn-secondary'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: `/api/app/template/${id}/template`,
+                                type: 'DELETE',
+                                success: function () {
+                                    $(`#${wrapperId}`).remove();
+                                    abp.notify.success(
+                                        'Template deleted successfully.',
+                                    );
+                                },
+                                error: function () {
+                                    abp.notify.error(
+                                        'Error deleting the template.',
+                                    );
+                                }
+                            });
+                        }
+                    });
+                       
+                
+                   
                 } else {
                     $(`#${wrapperId}`).remove();
                 }
@@ -245,20 +318,30 @@
         }
 
         function loadCardsFromService() {
-            let data = [
-                { "id": 1, "notes": "Report A", "type": "Automatic", "lastEdited": "20/02/24", body: '# hello 1' },
-                { "id": 2, "notes": "Report B", "type": "Manual", "lastEdited": "21/02/24", body: '# hello 2' }
-            ];
-                data.forEach(item => createCard(item));
+            $.ajax({
+                url: `/api/app/template/templates-by-tenent`,
+                type: 'GET',
+                success: function (response) {
+                    response.forEach(item => createCard(item));
+
+                },
+                error: function () {
+                    abp.notify.error(
+                        'unable to load the templates.',
+                    );
+                }
+            });
+                
            
         }
         function generateTempId() {
             return `temp-${Math.random().toString(36).substring(2, 10)}`;
         }
 
-        $(document).ready(function () {
-            $("#addCardBtn").click(() => createCard());
-            loadCardsFromService(); // Load cards initially
+        $("#CreateNewTemplate").on("click", function () {
+            createCard();
         });
+           
+        
     });
 })(jQuery);

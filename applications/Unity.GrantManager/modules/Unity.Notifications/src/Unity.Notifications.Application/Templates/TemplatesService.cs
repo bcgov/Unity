@@ -32,21 +32,24 @@ public class TemplateService : ApplicationService, ITemplateService
         // When being called here the current tenant is in context - verified by looking at the tenant id
         return await _templatesRepository.InsertAsync(
             new EmailTemplate(Guid.NewGuid(),
-            "name-TBD",
+            template.Name,
             template.Description,
             template.Subject,
             template.BodyText,
-            template.BodyHTML, "send-from"));
+            template.BodyHTML, template.SendFrom));
     }
 
-    public async Task<EmailTemplate?> UpdateTemplate(Guid id, string name, string description, string subject, string bodyText, string? bodyHTML)
+    public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
     {
+        
         EmailTemplate template = await _templatesRepository.GetAsync(id);
 
-        template.Description = description;
-        template.Subject = subject;
-        template.BodyText = bodyText;
-        template.BodyHTML = bodyHTML != null ? bodyHTML : "";
+        template.Description = templateDto.Description;
+        template.Subject = templateDto.Subject;
+        template.BodyText = templateDto.BodyText;
+        template.BodyHTML = templateDto.BodyHTML != null ? templateDto.BodyHTML : "";
+        template.Name = templateDto.Name;
+        template.SendFrom = templateDto.SendFrom;
 
         // When being called here the current tenant is in context - verified by looking at the tenant id
         EmailTemplate updatedTemplate = await _templatesRepository.UpdateAsync(template, autoSave: true);
