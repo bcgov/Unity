@@ -14,15 +14,16 @@ public class UnityZoneTagHelper(UnityZoneTagHelperService tagHelperService)
     public ConditionalRenderOutput RenderMode { get; set; } = ConditionalRenderOutput.Hide;
 
     public string? PermissionRequirement { get; set; }
+    public string? UpdatePermissionRequirement { get; set; }
     public string? ZoneRequirement { get; set; }
     public string? FeatureRequirement { get; set; }
 
     [HtmlAttributeName("check-if")]
-    public bool Condition { get; set; }
+    public bool Condition { get; set; } = true;
 }
 
 /// <summary>
-/// 
+/// Choose whether the zone should not be rendered, or renderd but not displayed.
 /// </summary>
 public enum ConditionalRenderOutput
 {

@@ -17,7 +17,7 @@ public class ZoneChecker : IZoneChecker, IScopedDependency
         _zoneManager = zoneManager;
     }
 
-    public async Task<HashSet<string>> GetOrNullAsync(string name)
+    public async Task<HashSet<string>?> GetOrNullAsync(string name)
     {
         await EnsureZoneGrantsLoadedAsync();
         return ZoneGrants.Contains(name) ? ZoneGrants : null;

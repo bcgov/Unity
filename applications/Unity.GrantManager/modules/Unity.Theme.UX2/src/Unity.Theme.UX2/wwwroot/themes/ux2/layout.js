@@ -56,6 +56,19 @@ $(function () {
             createTooltipOnOverflow(this, tooltipTarget);
         });
     });
+
+    // Toggle hidden export buttons for Ctrl+Alt+Shift+Z globally
+    $(document).keydown(function (e) {
+        if (e.ctrlKey && e.altKey &&
+            e.shiftKey && e.key === 'Z') {
+            // Toggle d-none class on elements with hidden-export class
+            $('.zone-debugger-alert').toggleClass('d-none');
+
+            // Prevent default behavior
+            e.preventDefault();
+            return false;
+        }
+    });
 });
 
 window.addEventListener('DOMContentLoaded', (event) => {

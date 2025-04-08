@@ -35,6 +35,14 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
+        if (!TagHelper.Condition)
+        {
+            output.SuppressOutput();
+        }
+
+        // Set Requirement IDs
+        TagHelper.PermissionRequirement = TagHelper.PermissionRequirement ?? TagHelper.Id;
+        TagHelper.ZoneRequirement = TagHelper.ZoneRequirement ?? TagHelper.Id;
         // TODO: Fix Permission Configurations - bool allRequirementsSatisfied = await CheckRequirementsAsync();
         bool allRequirementsSatisfied = true;
         if (!allRequirementsSatisfied)
@@ -61,6 +69,14 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         {
             output.TagName = "fieldset";
             output.Attributes.Add("name", TagHelper.Id);
+            
+            // Toggle fieldset enabled/disabled on edit permission
+            if (!string.IsNullOrWhiteSpace(TagHelper.UpdatePermissionRequirement)
+                && !await PermissionChecker.IsGrantedAsync(TagHelper.UpdatePermissionRequirement))
+            {
+                output.Attributes.Add("disabled", "disabled");
+            }
+
             AddFieldsetLegend(output);
         }
 
@@ -75,6 +91,9 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     {
         var legend = new TagBuilder("legend");
         legend.AddCssClass("d-none");
+        legend.AddCssClass("h6");
+        legend.AddCssClass("ps-1");
+        legend.AddCssClass("fw-bold");
         // TODO: Configure localizer
         // var legendText = _localizer.GetLocalizedText(TagHelper.Id);
         legend.InnerHtml.Append(TagHelper.Id);
@@ -87,11 +106,21 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         var debugAlert = new TagBuilder("div");
         debugAlert.AddCssClass("alert");
         debugAlert.AddCssClass("alert-info");
+        debugAlert.AddCssClass("zone-debugger-alert");
         debugAlert.AddCssClass("font-monospace");
         debugAlert.AddCssClass("m-2");
+        debugAlert.AddCssClass("d-none");
         debugAlert.Attributes.Add("role", "alert");
 
-        debugAlert.InnerHtml.SetHtmlContent($"Unity ZoneId : {TagHelper.Id}");
+        var debugMessage = "<dl class=\"row\">";
+        debugMessage += $"<dt class=\"col-sm-3\">ZoneID</dt><dd class=\"col-sm-9\">{TagHelper.Id}</dd>";
+        debugMessage += $"<dt class=\"col-sm-3\">ZoneRequirement</dt><dd class=\"col-sm-9\">{TagHelper.ZoneRequirement ?? "N/A"}</dd>";
+        debugMessage += $"<dt class=\"col-sm-3\">FeatureRequirement</dt><dd class=\"col-sm-9\">{TagHelper.FeatureRequirement ?? "N/A"}</dd>";
+        debugMessage += $"<dt class=\"col-sm-3\">ReadPermissionRequirement</dt><dd class=\"col-sm-9\">{TagHelper.PermissionRequirement ?? "N/A"}</dd>";
+        debugMessage += $"<dt class=\"col-sm-3\">UpdatePermissionRequirement</dt><dd class=\"col-sm-9\">{TagHelper.UpdatePermissionRequirement ?? "N/A"}</dd>";
+        debugMessage += "</dl>";
+
+        debugAlert.InnerHtml.SetHtmlContent(debugMessage);
         
         output.PreElement.AppendHtml(debugAlert);
     }
@@ -104,24 +133,18 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
             return false;
         }
 
-        var permissionRequirement = TagHelper.PermissionRequirement ?? TagHelper.Id;
-        if (!await PermissionChecker.IsGrantedAsync(permissionRequirement))
+        if (!string.IsNullOrWhiteSpace(TagHelper.PermissionRequirement)
+            && !await PermissionChecker.IsGrantedAsync(TagHelper.PermissionRequirement))
         {
             return false;
         }
 
-        var zoneRequirement = TagHelper.ZoneRequirement ?? TagHelper.Id;
-        if (!await ZoneChecker.IsEnabledAsync(zoneRequirement))
+        if (!string.IsNullOrWhiteSpace(TagHelper.ZoneRequirement)
+            && !await ZoneChecker.IsEnabledAsync(TagHelper.ZoneRequirement))
         {
             return false;
         }
 
         return true;
-    }
-
-    protected async Task<bool> IsEnabledAsync(string featureName)
-    {
-        return await PermissionChecker.IsGrantedAsync(TagHelper.PermissionRequirement ?? TagHelper.Id);
-        // && await ZoneChecker.IsGrantedAsync(TagHelper.PermissionRequirement ?? TagHelper.Id)
     }
 }
