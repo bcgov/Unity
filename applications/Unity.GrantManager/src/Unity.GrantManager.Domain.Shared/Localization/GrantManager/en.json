@@ -376,7 +376,11 @@
     "ApplicationContact:Email": "Email",
     "ApplicationContact:MobilePhone": "Mobile Phone Number",
     "ApplicationContact:WorkPhone": "Work Phone Number",
-    "ApplicationContact:Delete": "Delete This Contact"
+    "ApplicationContact:Delete": "Delete This Contact",
+
+    "ApplicationBatchApprovalRequest:Title": "Approve Applications",
+    "ApplicationBatchApprovalRequest:SubmitButtonText": "Approve",
+    "ApplicationBatchApprovalRequest:CancelButtonText": "Cancel"
   }
 }
 

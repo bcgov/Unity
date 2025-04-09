@@ -192,4 +192,12 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
             FinalDecisionDate = finalDecisionDate;
         }
     }
+
+    public void ValidateMinAndChangeApprovedAmount(decimal approvedAmount)
+    {
+        if ((ApprovedAmount != approvedAmount) && approvedAmount <= 0m)
+        {
+            throw new BusinessException("Approved amount cannot be 0.");
+        }
+    }
 }
