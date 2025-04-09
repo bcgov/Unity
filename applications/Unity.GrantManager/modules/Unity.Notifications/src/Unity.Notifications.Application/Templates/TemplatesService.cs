@@ -27,16 +27,16 @@ public class TemplateService : ApplicationService, ITemplateService
         _currentTenant = currentTenant;
     }
 
-    public async Task<EmailTemplate?> CreateAsync(EmailTempateDto template)
+    public async Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto)
     {
         // When being called here the current tenant is in context - verified by looking at the tenant id
         return await _templatesRepository.InsertAsync(
             new EmailTemplate(Guid.NewGuid(),
-            template.Name,
-            template.Description,
-            template.Subject,
-            template.BodyText,
-            template.BodyHTML, template.SendFrom));
+            templateDto.Name,
+            templateDto.Description,
+            templateDto.Subject,
+            templateDto.BodyText,
+            templateDto.BodyHTML, templateDto.SendFrom));
     }
 
     public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
@@ -53,7 +53,7 @@ public class TemplateService : ApplicationService, ITemplateService
 
         // When being called here the current tenant is in context - verified by looking at the tenant id
         EmailTemplate updatedTemplate = await _templatesRepository.UpdateAsync(template, autoSave: true);
-        return template;
+        return updatedTemplate;
     }
 
     public async Task<List<EmailTemplate>> GetTemplatesByTenent()

@@ -7,8 +7,8 @@ namespace Unity.Notifications.Templates
 {
     public interface ITemplateService : IApplicationService
     {
-        Task<EmailTemplate?> CreateAsync(EmailTempateDto dto);
-        Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto template);
+        Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto);
+        Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto);
         Task<List<EmailTemplate>> GetTemplatesByTenent();
         Task<EmailTemplate?> GetTemplateById(Guid id);
         Task DeleteTemplate(Guid id);

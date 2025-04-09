@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 
 namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;

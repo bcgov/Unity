@@ -56,11 +56,15 @@
             const wrapperId = `cardWrapper-${id}`;
             const editorId = `editor-${id}`;
             const type = data?.type || 'Automatic';
-            const lastEdited = data?.lastModificationTime
-                ? new Date(data.lastModificationTime).toLocaleDateString('en-CA')
-                : data?.creationTime
-                    ? new Date(data.creationTime).toLocaleDateString('en-CA')
-                    : new Date().toLocaleDateString('en-CA');
+            let lastEdited;
+
+            if (data?.lastModificationTime) {
+                lastEdited = new Date(data.lastModificationTime).toLocaleDateString('en-CA');
+            } else if (data?.creationTime) {
+                lastEdited = new Date(data.creationTime).toLocaleDateString('en-CA');
+            } else {
+                lastEdited = new Date().toLocaleDateString('en-CA');
+            }
             const disabled = isPopulated ? 'disabled' : '';
 
             const cardHtml = `
@@ -344,7 +348,9 @@
            
         }
         function generateTempId() {
-            return `temp-${Math.random().toString(36).substring(2, 10)}`;
+            const array = new Uint32Array(1);
+            window.crypto.getRandomValues(array);
+            return `temp-${array[0].toString(36)}`;
         }
 
         $("#CreateNewTemplate").on("click", function () {
