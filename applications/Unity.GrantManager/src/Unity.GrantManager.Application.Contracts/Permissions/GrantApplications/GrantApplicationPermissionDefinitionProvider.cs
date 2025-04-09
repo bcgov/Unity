@@ -1,4 +1,5 @@
 ﻿using Unity.GrantManager.Localization;
+using Unity.Modules.Shared;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
@@ -69,9 +70,18 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Confirm, L("Permission:GrantApplicationPermissions.Assessments.Confirm"));
 
             // Assessment Results
-            var assessmentResultPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.AssessmentResults.Default, L("Permission:GrantApplicationPermissions.AssessmentResults.Default"));
+            var assessmentResultPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.AssessmentResults.Default, L(UnitySelector.Review.Default));
+
+            var assessmentResultApprovalPermissions = assessmentResultPermissions.AddChild(UnitySelector.Review.Approval.Default,L(UnitySelector.Review.Approval.Default));
+            assessmentResultApprovalPermissions.AddChild(UnitySelector.Review.Approval.Update, L(UnitySelector.Review.Approval.Update));
+            
+            var applicationResultsPermissions = assessmentResultPermissions.AddChild(UnitySelector.Review.Results.Default, L(UnitySelector.Review.Results.Default));
+            var applicationResultsUpdatePermissions = applicationResultsPermissions.AddChild(UnitySelector.Review.Results.Update, L(UnitySelector.Review.Results.Update));
+            applicationResultsUpdatePermissions.AddChild(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields, L("Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields"));
+
+            assessmentResultPermissions.AddChild(UnitySelector.Review.ReviewList.Default, L(UnitySelector.Review.ReviewList.Default));
+
             var updateAssessmentResultPermissions = assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.Edit, L("Permission:GrantApplicationPermissions.AssessmentResults.Edit"));
-            updateAssessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields, L("Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields"));
 
             // Applicant Info
             var applicantInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ApplicantInfo.Default, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Default}"));
