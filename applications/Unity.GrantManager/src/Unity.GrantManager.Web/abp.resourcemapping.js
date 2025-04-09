@@ -31,6 +31,7 @@ module.exports = {
         '@node_modules/sortablejs': '@libs/sortablejs',
         '@node_modules/jszip': '@libs/jszip',
         '@node_modules/tributejs': '@libs/tributejs',
-        '@node_modules/tui-editor': '@libs/tui-editor'
+        '@node_modules/tui-editor': '@libs/tui-editor',
+        '@node_modules/tinymce': '@libs/tinymce'
     },
 };

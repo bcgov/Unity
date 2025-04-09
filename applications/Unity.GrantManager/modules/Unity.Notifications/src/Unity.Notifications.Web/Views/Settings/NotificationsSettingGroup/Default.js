@@ -45,7 +45,7 @@
 
         checkFormChanges();
 
-        const editorInstances = {};
+        let editorInstances = {};
 
         function createCard(data = null) {
             const isPopulated = data !== null;
@@ -101,7 +101,9 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Body</label>
-                            <div id="${editorId}" class="tui-editor-body"></div>
+                           
+                            <textarea id="${editorId}"></textarea>
+                            
                         </div>
                          <div class="mb-3">
                          <p><b>NOTE</b>:<span class="note-text"> Selecting text will let your customize it: replace it with a variable, make it bold, italic, change the alignment, add a link, create a list, etc.</span></p>
@@ -125,21 +127,47 @@
     `;
 
             $("#cardContainer").append(cardHtml);
-            editorInstances[id] = new toastui.Editor.factory({
-                el: document.querySelector(`#${editorId}`),
-                height: '250px',
-                initialEditType: 'wysiwyg',
-                previewStyle: 'vertical',
-                initialValue: data?.bodyHTML,
-                toolbarItems: [
-                    ['heading', 'bold', 'italic', 'strike'],
-                    ['hr', 'quote', 'link'],
-                    ['ul', 'ol', 'task', 'indent', 'outdent']
-                ],
-                viewer: isPopulated,
-                contentEditable: false
-            });
+            // editorInstances[id] =
+            console.log("tinymce", tinymce)
+            if (tinymce.get(editorId)) {
+                tinymce.get(editorId).remove(); // remove existing instance
+            }
 
+            function getToolbarOptions() {
+                return 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image | code preview';
+            }
+
+            function getPlugins() {
+                return 'lists link image preview code';
+            }
+
+            function setupEditor(editor, id, editorId, data, isPopulated) {
+                editor.on('init', function () {
+                    editor.mode.set(isPopulated ? 'readonly' : 'design');
+                    if (data && data.bodyHTML) {
+                        editor.setContent(data.bodyHTML);
+                    }
+                    editorInstances[id] = editor;
+                    console.log(`Editor initialized: ${editorId}`);
+                });
+            }
+
+            function initTinyMCE(editorId, id, data, isPopulated) {
+                tinymce.init({
+                    license_key: 'gpl',
+                    selector: `#${editorId}`,
+                    plugins: getPlugins(),
+                    toolbar: getToolbarOptions(),
+                    setup: function (editor) {
+                        setupEditor(editor, id, editorId, data, isPopulated);
+                    }
+                });
+            }
+          
+
+            initTinyMCE(editorId, id, data, isPopulated)
+            
+           
 
             function extractFormData(formDataArray) {
                 return {
@@ -154,8 +182,8 @@
                     name: data.name,
                     description: "",
                     subject: data.subject,
-                    bodyText: editor.getMarkdown(),
-                    bodyHTML: editor.getHTML(),
+                    bodyText: editor.getContent({ format: 'text' }),
+                    bodyHTML: editor.getContent(),
                     sendFrom: data.sendFrom
                 });
             }
@@ -164,12 +192,20 @@
                 abp.notify.success(message);
                 $("#cardContainer").empty();
                 loadCardsFromService();
-                return false;
+                return true;
             }
 
             function handleError(message) {
                 abp.notify.error(message);
                 return false;
+            }
+
+            function onSaveTemplateSuccess() {
+                handleSuccess('Template saved successfully.');
+            }
+
+            function onSaveTemplateError() {
+                handleError('Failed to save template.');
             }
 
             function saveTemplate(payload) {
@@ -178,9 +214,8 @@
                     method: 'POST',
                     contentType: 'application/json',
                     data: payload,
-                    success: handleSuccess('Template saved successfully.'),
-                   
-                    error:handleError('Failed to save template.')
+                    success: onSaveTemplateSuccess,
+                    error: onSaveTemplateError
                 });
             }
 
@@ -190,8 +225,8 @@
                     method: 'PUT',
                     contentType: 'application/json',
                     data: payload,
-                    success:handleSuccess('Template updated successfully.'),
-                    error: handleError('Failed to update the template.')
+                    success: onSaveTemplateSuccess,
+                    error: onSaveTemplateError
                     
                 });
             }
@@ -224,23 +259,11 @@
             });
 
             $(`#${wrapperId}`).on("click", ".editBtn", function () {
-                const editorEl = document.querySelector(`#${editorId}`);
                 const currentEditor = editorInstances[id];
-                const content = data?.body;
                 currentEditor.destroy();
               
-                editorInstances[id] = new toastui.Editor({
-                    el: editorEl,
-                    height: '250px',
-                    initialEditType: 'wysiwyg',
-                    previewStyle: 'vertical',
-                    initialValue: content,
-                    toolbarItems: [
-                        ['heading', 'bold', 'italic', 'strike'],
-                        ['hr', 'quote', 'link'],
-                        ['ul', 'ol', 'task', 'indent', 'outdent']
-                    ]
-                });
+                initTinyMCE(editorId, id, data, false)
+
                 const card = $(`#${wrapperId}`);
                 card.find(".form-input").prop('disabled', false);
                 card.find(".saveBtn").prop('disabled', false);
@@ -251,27 +274,10 @@
             $(`#${wrapperId}`).on("click", ".discardBtn", function () {
                 const form = $(`#${formId}`)[0];
                 form.reset();
-
-                const editorEl = document.querySelector(`#${editorId}`);
                 const currentEditor = editorInstances[id];
-               
-                const content = data?.bodyHTML;
                 currentEditor.destroy();
 
-                editorInstances[id] = new toastui.Editor.factory({
-                    el: editorEl,
-                    height: '250px',
-                    initialEditType: 'wysiwyg',
-                    previewStyle: 'vertical',
-                    initialValue: content,
-                    toolbarItems: [
-                        ['heading', 'bold', 'italic', 'strike'],
-                        ['hr', 'quote', 'link'],
-                        ['ul', 'ol', 'task', 'indent', 'outdent']
-                    ],
-                    viewer: true,
-                    contentEditable: false
-                });
+                initTinyMCE(editorId, id, data, true)
 
                 $(`#${wrapperId} .form-input`).prop('disabled', true);
                 $(`#${wrapperId} .saveBtn`).prop('disabled', true);
@@ -344,6 +350,7 @@
         }
 
         function handleLoadCardsSuccess(response) {
+            editorInstances = {};
             response.forEach(item => createCard(item));
         }
 
