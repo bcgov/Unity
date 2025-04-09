@@ -49,7 +49,6 @@ public static class DefaultZoneDefinition
                          Name = UnitySelector.Project.Location.Default,
                          ViewComponentType = "ProjectLocationViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 2
                      },
                  ]
@@ -70,21 +69,18 @@ public static class DefaultZoneDefinition
                          Name = UnitySelector.Applicant.Contact.Default,
                          ViewComponentType = "ApplicantContactInfoViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 2
                      },
                      new ZoneDefinition {
                          Name = UnitySelector.Applicant.Authority.Default,
                          ViewComponentType = "ApplicantSigningAuthorityViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 3
                      },
                      new ZoneDefinition {
                          Name = UnitySelector.Applicant.Location.Default,
                          ViewComponentType = "ApplicantPhysicalAddressViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 4
                      },
                  ]
