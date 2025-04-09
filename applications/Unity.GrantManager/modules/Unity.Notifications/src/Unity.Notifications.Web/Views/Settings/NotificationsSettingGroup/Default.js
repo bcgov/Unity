@@ -158,6 +158,8 @@
                     selector: `#${editorId}`,
                     plugins: getPlugins(),
                     toolbar: getToolbarOptions(),
+                    statusbar: false,
+                    promotion: false,
                     setup: function (editor) {
                         setupEditor(editor, id, editorId, data, isPopulated);
                     }
