@@ -1,6 +1,5 @@
 ﻿(function ($) {
     $(function () {
-        console.info("Notifications Setting Management UI Loaded");
          loadCardsFromService();
         const NotificationUiElements = {
             settingForm: $("#NotificationsSettingsForm"),
@@ -165,10 +164,12 @@
                 abp.notify.success(message);
                 $("#cardContainer").empty();
                 loadCardsFromService();
+                return false;
             }
 
             function handleError(message) {
                 abp.notify.error(message);
+                return false;
             }
 
             function saveTemplate(payload) {
@@ -177,13 +178,9 @@
                     method: 'POST',
                     contentType: 'application/json',
                     data: payload,
-                    success: function (response) {
-                        console.log(response);
-                        handleSuccess('Template saved successfully.');
-                    },
-                    error: function () {
-                        handleError('Failed to save template.');
-                    }
+                    success: handleSuccess('Template saved successfully.'),
+                   
+                    error:handleError('Failed to save template.')
                 });
             }
 
@@ -193,13 +190,9 @@
                     method: 'PUT',
                     contentType: 'application/json',
                     data: payload,
-                    success: function (response) {
-                        console.log(response);
-                        handleSuccess('Template updated successfully.');
-                    },
-                    error: function () {
-                        handleError('Failed to update the template.');
-                    }
+                    success:handleSuccess('Template updated successfully.'),
+                    error: handleError('Failed to update the template.')
+                    
                 });
             }
 
@@ -293,59 +286,69 @@
 
             $(`#${wrapperId}`).on("click", ".deleteCardBtn", function () {
                 if (isPopulated) {
-                    Swal.fire({
-                        title: "Delete Template",
-                        text: "Are you sure you want to delete this template?",
-                        showCancelButton: true,
-                        confirmButtonText: "Confirm",
-                        customClass: {
-                            confirmButton: 'btn btn-primary',
-                            cancelButton: 'btn btn-secondary'
-                        }
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            $.ajax({
-                                url: `/api/app/template/${id}/template`,
-                                type: 'DELETE',
-                                success: function () {
-                                    $(`#${wrapperId}`).remove();
-                                    abp.notify.success(
-                                        'Template deleted successfully.',
-                                    );
-                                },
-                                error: function () {
-                                    abp.notify.error(
-                                        'Error deleting the template.',
-                                    );
-                                }
-                            });
-                        }
-                    });
-                       
-                
-                   
+                    showDeleteConfirmation(id, wrapperId);
                 } else {
                     $(`#${wrapperId}`).remove();
                 }
             });
+
+            function showDeleteConfirmation(id, wrapperId) {
+                const swalOptions = {
+                    title: "Delete Template",
+                    text: "Are you sure you want to delete this template?",
+                    showCancelButton: true,
+                    confirmButtonText: "Confirm",
+                    customClass: {
+                        confirmButton: 'btn btn-primary',
+                        cancelButton: 'btn btn-secondary'
+                    }
+                };
+            
+                Swal.fire(swalOptions).then(handleResult.bind(null, id, wrapperId));
+            }
+            function handleResult(id, wrapperId, result) {
+                handleDeleteConfirmation(result, id, wrapperId);
+            }
+            
+            function handleDeleteConfirmation(result, id, wrapperId) {
+                if (!result.isConfirmed) return;
+                deleteTemplate(id, wrapperId);
+            }
+            function handleDeleteSuccess() {
+                    $(`#${wrapperId}`).remove();
+                    abp.notify.success('Template deleted successfully.');
+
+            }
+
+            function handleDeleteError() {
+                abp.notify.error('Error deleting the template.'); 
+            }
+
+            function deleteTemplate(id, wrapperId) {
+                $.ajax({
+                    url: `/api/app/template/${id}/template`,
+                    type: 'DELETE',
+                    success: handleDeleteSuccess,
+                    error: handleDeleteError
+                });
+            }
         }
 
         function loadCardsFromService() {
             $.ajax({
                 url: `/api/app/template/templates-by-tenent`,
                 type: 'GET',
-                success: function (response) {
-                    response.forEach(item => createCard(item));
-
-                },
-                error: function () {
-                    abp.notify.error(
-                        'unable to load the templates.',
-                    );
-                }
+                success: handleLoadCardsSuccess,
+                error: handleLoadCardsError
             });
-                
-           
+        }
+
+        function handleLoadCardsSuccess(response) {
+            response.forEach(item => createCard(item));
+        }
+
+        function handleLoadCardsError() {
+            abp.notify.error('Unable to load the templates.');
         }
         function generateTempId() {
             const array = new Uint32Array(1);
