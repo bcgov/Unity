@@ -62,7 +62,16 @@ $(function () {
         if (e.ctrlKey && e.altKey &&
             e.shiftKey && e.key === 'Z') {
             // Toggle d-none class on elements with hidden-export class
-            $('.zone-debugger-alert').toggleClass('d-none');
+            $('.zone-debugger-alert').each(function () {
+                if ($(this).hasClass('d-none')) {
+                    $(this).removeClass('d-none').hide().fadeIn(500);
+                } else {
+                    $(this).fadeOut(function () {
+                        $(this).addClass('d-none');
+                    });
+                }
+            });
+
 
             // Prevent default behavior
             e.preventDefault();

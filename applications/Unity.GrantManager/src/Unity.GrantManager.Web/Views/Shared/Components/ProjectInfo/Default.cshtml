@@ -38,10 +38,7 @@
         <fieldset name="projectInfo" @(!Model.IsFormEditGranted ? "disabled" : "")>
             <legend class="d-none">@L["ProjectInfoView:ProjectInfoTitle"].Value</legend>
 
-            <zone-fieldset Id="@UnitySelector.Project.Summary.Default" 
-                permission-requirement=""
-                zone-requirement=""
-                feature-requirement="">
+            <zone-fieldset Id="@UnitySelector.Project.Summary.Default" form-id="@Model.ApplicationFormId">
                 <abp-row class="m-0 project-info-form">
                     <abp-row class="m-0 p-0">
                         <abp-column size="_6" class="px-1">
@@ -112,7 +109,7 @@
                 </abp-row>
             </zone-fieldset>
 
-            <zone-fieldset Id="@UnitySelector.Project.Location.Default">
+            <zone-fieldset Id="@UnitySelector.Project.Location.Default" form-id="@Model.ApplicationFormId">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
                         <div id="ProjectInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">

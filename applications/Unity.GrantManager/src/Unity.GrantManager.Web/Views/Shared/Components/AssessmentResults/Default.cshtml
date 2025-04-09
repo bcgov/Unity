@@ -36,15 +36,20 @@
 
 <abp-row class="px-1 pb-2 mb-4 assessment-results-container">
     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
+        @if (IsZoneVisible(UnitySelector.Review.Approval.Default))
+        {
         <div id="AssessementResultsTitleRegion" class="d-flex align-items-stretch justify-content-start">
             <h6 class="ps-1 fw-bold">@L["AssessmentResultsView:ApprovalTitle"].Value</h6>
         </div>
+        }
         <abp-button text="Save" id="saveAssessmentResultBtn" class="floating-save-btn"
                     icon-type="Other" icon="fl fl-save" button-type="Primary" disabled="true" />
     </abp-column>
     <form id="assessmentResultForm">
         @* Zone Section : Approval *@
-        <zone-fieldset id="@UnitySelector.Review.Approval.Default" check-if=@(Model.ApprovalView != null)>
+        <zone-fieldset id="@UnitySelector.Review.Approval.Default" form-id="@Model.ApplicationFormId"
+            update-permission-requirement="@UnitySelector.Review.Approval.Update"
+            check-if=@(Model.ApprovalView != null)>
             <abp-row class="m-0 assessment-result-form">
                 <abp-column size="_12" class="px-0">
                     <abp-row class="m-0">
@@ -77,7 +82,7 @@
         </zone-fieldset>
 
         @* Zone Section : Application Assessment Result *@
-        <zone-fieldset id="@UnitySelector.Review.Results.Default"
+        <zone-fieldset id="@UnitySelector.Review.Results.Default" form-id="@Model.ApplicationFormId"
             update-permission-requirement="@UnitySelector.Review.Results.Update"
             check-if=@(Model.AssessmentResultsView != null)>
             <abp-row class="m-0 p-0">

@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Html;
+﻿using AspNetCoreGeneratedDocument;
+using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Zones;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Microsoft.AspNetCore.Razor.TagHelpers;
@@ -19,6 +21,13 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     private IPermissionChecker PermissionChecker { get; }
     private IZoneChecker ZoneChecker { get; }
 
+    private bool _featureState = true;
+    private bool _zoneState = true;
+    private bool _readRermissionState = true;
+    private bool _updateRermissionState = true;
+
+    private bool _allRequirementsSatisfied => _featureState && _zoneState;
+
     public UnityZoneTagHelperService(
         IHtmlGenerator htmlGenerator,
         IAbpTagHelperLocalizer tagHelperLocalizer,
@@ -35,44 +44,33 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
-        if (!TagHelper.Condition)
-        {
-            output.SuppressOutput();
-        }
-
         // Set Requirement IDs
         TagHelper.PermissionRequirement = TagHelper.PermissionRequirement ?? TagHelper.Id;
         TagHelper.ZoneRequirement = TagHelper.ZoneRequirement ?? TagHelper.Id;
-        // TODO: Fix Permission Configurations - bool allRequirementsSatisfied = await CheckRequirementsAsync();
-        bool allRequirementsSatisfied = true;
-        if (!allRequirementsSatisfied)
-        {
-            if (TagHelper.RenderMode == ConditionalRenderOutput.Suppress)
-            {
-                output.SuppressOutput();
-                return;
-            }
 
-            if (TagHelper.RenderMode == ConditionalRenderOutput.Hide)
-            {
-                output.Attributes.AddClass("d-none");
-            }
+        await CheckRequirementsAsync();
+
+        if (!TagHelper.Condition || !_allRequirementsSatisfied)
+        {
+            output.SuppressOutput();
+            await CheckRequirementsAsync();
+            AppendDebugHeader(output);
+            return;
         }
 
         if (output.TagName == "zone")
         {
             output.TagName = "div";
-            output.Attributes.Add("id", TagHelper.Id);
+            output.Attributes.Add("id", TagHelper.ElementId);
         }
 
         if (output.TagName == "zone-fieldset")
         {
             output.TagName = "fieldset";
-            output.Attributes.Add("name", TagHelper.Id);
+            output.Attributes.Add("name", TagHelper.ElementId);
             
             // Toggle fieldset enabled/disabled on edit permission
-            if (!string.IsNullOrWhiteSpace(TagHelper.UpdatePermissionRequirement)
-                && !await PermissionChecker.IsGrantedAsync(TagHelper.UpdatePermissionRequirement))
+            if (!_updateRermissionState)
             {
                 output.Attributes.Add("disabled", "disabled");
             }
@@ -90,13 +88,8 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     protected virtual void AddFieldsetLegend(TagHelperOutput output)
     {
         var legend = new TagBuilder("legend");
-        legend.AddCssClass("d-none");
-        legend.AddCssClass("h6");
-        legend.AddCssClass("ps-1");
-        legend.AddCssClass("fw-bold");
-        // TODO: Configure localizer
-        // var legendText = _localizer.GetLocalizedText(TagHelper.Id);
-        legend.InnerHtml.Append(TagHelper.Id);
+        legend.AddCssClass("h6 ps-1 fw-bold d-none");
+        legend.InnerHtml.Append(TagHelper.ElementId);
 
         output.PreContent.AppendHtml(legend);
     }
@@ -104,47 +97,55 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     protected virtual void AppendDebugHeader(TagHelperOutput output)
     {
         var debugAlert = new TagBuilder("div");
-        debugAlert.AddCssClass("alert");
-        debugAlert.AddCssClass("alert-info");
-        debugAlert.AddCssClass("zone-debugger-alert");
-        debugAlert.AddCssClass("font-monospace");
-        debugAlert.AddCssClass("m-2");
-        debugAlert.AddCssClass("d-none");
+        debugAlert.AddCssClass("alert shadow-sm alert-info zone-debugger-alert font-monospace m-2 d-none");
         debugAlert.Attributes.Add("role", "alert");
 
-        var debugMessage = "<dl class=\"row\">";
-        debugMessage += $"<dt class=\"col-sm-3\">ZoneID</dt><dd class=\"col-sm-9\">{TagHelper.Id}</dd>";
-        debugMessage += $"<dt class=\"col-sm-3\">ZoneRequirement</dt><dd class=\"col-sm-9\">{TagHelper.ZoneRequirement ?? "N/A"}</dd>";
-        debugMessage += $"<dt class=\"col-sm-3\">FeatureRequirement</dt><dd class=\"col-sm-9\">{TagHelper.FeatureRequirement ?? "N/A"}</dd>";
-        debugMessage += $"<dt class=\"col-sm-3\">ReadPermissionRequirement</dt><dd class=\"col-sm-9\">{TagHelper.PermissionRequirement ?? "N/A"}</dd>";
-        debugMessage += $"<dt class=\"col-sm-3\">UpdatePermissionRequirement</dt><dd class=\"col-sm-9\">{TagHelper.UpdatePermissionRequirement ?? "N/A"}</dd>";
-        debugMessage += "</dl>";
+        var debugMessage = $@"
+            <dl class=""row"">
+                <dt class=""col-sm-3"">Zone Element ID</dt><dd class=""col-sm-9"">{TagHelper.ElementId}</dd>
+                <dt class=""col-sm-3"">Form ID</dt><dd class=""col-sm-9"">
+                    <a href=""/ApplicationForms/Mapping?ApplicationId={TagHelper.FormId}"" target=""_blank"" rel=""noopener noreferrer"">{TagHelper.FormId}<i class=""fa fa-external-link small"" aria-hidden=""true""></i></a>
+                </dd>
+                <dt class=""col-sm-3"">FeatureRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_featureState)}{TagHelper.FeatureRequirement ?? "N/A"}{(TagHelper.Id == TagHelper.FeatureRequirement ? " (Inherited)" : string.Empty)}</dd>
+                <dt class=""col-sm-3"">ZoneRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_zoneState)}{TagHelper.ZoneRequirement ?? "N/A"}{(TagHelper.Id == TagHelper.ZoneRequirement ? " (Inherited)" : string.Empty)}</dd>
+                <dt class=""col-sm-3"">ReadPermissionRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_readRermissionState)}{TagHelper.PermissionRequirement ?? "N/A"}{(TagHelper.Id == TagHelper.PermissionRequirement ? " (Inherited)" : string.Empty)}</dd>
+                <hr/>
+                <dt class=""col-sm-3"">UpdatePermissionRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_updateRermissionState)}{TagHelper.UpdatePermissionRequirement ?? "N/A"}</dd>
+            </dl>";
 
         debugAlert.InnerHtml.SetHtmlContent(debugMessage);
-        
         output.PreElement.AppendHtml(debugAlert);
     }
 
-    protected async Task<bool> CheckRequirementsAsync()
+    private string StatusBadge(bool condition)
+        => (condition ? "<span class=\"badge text-bg-primary\">PASS</span> " : "<span class=\"badge text-bg-secondary\">FAIL</span> ");
+
+    protected async Task CheckRequirementsAsync()
     {
         if (!string.IsNullOrWhiteSpace(TagHelper.FeatureRequirement) 
             && !await FeatureChecker.IsEnabledAsync(TagHelper.FeatureRequirement))
         {
-            return false;
+            _featureState = false;
         }
 
         if (!string.IsNullOrWhiteSpace(TagHelper.PermissionRequirement)
             && !await PermissionChecker.IsGrantedAsync(TagHelper.PermissionRequirement))
         {
-            return false;
+            _readRermissionState = false;
         }
 
-        if (!string.IsNullOrWhiteSpace(TagHelper.ZoneRequirement)
-            && !await ZoneChecker.IsEnabledAsync(TagHelper.ZoneRequirement))
+        // Skip zone checks if FormId is null
+        if (TagHelper.FormId != Guid.Empty
+            && !string.IsNullOrWhiteSpace(TagHelper.ZoneRequirement)
+            && !await ZoneChecker.IsEnabledAsync(TagHelper.ZoneRequirement, TagHelper.FormId))
         {
-            return false;
+            _zoneState = false;
         }
 
-        return true;
+        if (!string.IsNullOrWhiteSpace(TagHelper.UpdatePermissionRequirement)
+                && !await PermissionChecker.IsGrantedAsync(TagHelper.UpdatePermissionRequirement))
+        {
+            _updateRermissionState = false;
+        }
     }
 }
