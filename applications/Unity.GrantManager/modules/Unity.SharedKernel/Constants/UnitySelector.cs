@@ -105,7 +105,6 @@ public static partial class UnitySelector
         }
     }
 
-    // TODO: Review this
     public static partial class Attachment
     {
         public const string Default     = "Unity.GrantManager.ApplicationManagement.Attachment";
