@@ -115,6 +115,130 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             }
         }
 
+        private void AddStandardPermissionGroups(PermissionGroupDefinition grantApplicationPermissionsGroup)
+        {
+            #region APPLICANT PERMISSIONS
+            var upx_Applicant                                     = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Applicant.Default, L(UnitySelector.Applicant.Default));
+            var upx_Applicant_Authority                           = upx_Applicant.AddChild(UnitySelector.Applicant.Authority.Default);
+            var upx_Applicant_Authority_Create                    = upx_Applicant_Authority.AddChild(UnitySelector.Applicant.Authority.Create);
+            var upx_Applicant_Authority_Update                    = upx_Applicant_Authority.AddChild(UnitySelector.Applicant.Authority.Update);
+            var upx_Applicant_Authority_Delete                    = upx_Applicant_Authority.AddChild(UnitySelector.Applicant.Authority.Delete);
+            var upx_Applicant_Contact                             = upx_Applicant.AddChild(UnitySelector.Applicant.Contact.Default);
+            var upx_Applicant_Contact_Create                      = upx_Applicant_Contact.AddChild(UnitySelector.Applicant.Contact.Create);
+            var upx_Applicant_Contact_Update                      = upx_Applicant_Contact.AddChild(UnitySelector.Applicant.Contact.Update);
+            var upx_Applicant_Contact_Delete                      = upx_Applicant_Contact.AddChild(UnitySelector.Applicant.Contact.Delete);
+            var upx_Applicant_Location                            = upx_Applicant.AddChild(UnitySelector.Applicant.Location.Default);
+            var upx_Applicant_Location_Create                     = upx_Applicant_Location.AddChild(UnitySelector.Applicant.Location.Create);
+            var upx_Applicant_Location_Update                     = upx_Applicant_Location.AddChild(UnitySelector.Applicant.Location.Update);
+            var upx_Applicant_Location_Delete                     = upx_Applicant_Location.AddChild(UnitySelector.Applicant.Location.Delete);
+            var upx_Applicant_Summary                             = upx_Applicant.AddChild(UnitySelector.Applicant.Summary.Default);
+            var upx_Applicant_Summary_Create                      = upx_Applicant_Summary.AddChild(UnitySelector.Applicant.Summary.Create);
+            var upx_Applicant_Summary_Update                      = upx_Applicant_Summary.AddChild(UnitySelector.Applicant.Summary.Update);
+            var upx_Applicant_Summary_Delete                      = upx_Applicant_Summary.AddChild(UnitySelector.Applicant.Summary.Delete);
+            var upx_Applicant_Supplier                            = upx_Applicant.AddChild(UnitySelector.Applicant.Supplier.Default);
+            var upx_Applicant_Supplier_Create                     = upx_Applicant_Supplier.AddChild(UnitySelector.Applicant.Supplier.Create);
+            var upx_Applicant_Supplier_Update                     = upx_Applicant_Supplier.AddChild(UnitySelector.Applicant.Supplier.Update);
+            var upx_Applicant_Supplier_Delete                     = upx_Applicant_Supplier.AddChild(UnitySelector.Applicant.Supplier.Delete);
+            #endregion
+
+            #region APPLICATION INFO PERMISSIONS
+            var upx_Application                                   = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Application.Default, L(UnitySelector.Application.Default));
+            var upx_Application_Scoresheet                        = upx_Application.AddChild(UnitySelector.Application.Scoresheet.Default);
+            var upx_Application_Scoresheet_Create                 = upx_Application_Scoresheet.AddChild(UnitySelector.Application.Scoresheet.Create);
+            var upx_Application_Scoresheet_Update                 = upx_Application_Scoresheet.AddChild(UnitySelector.Application.Scoresheet.Update);
+            var upx_Application_Scoresheet_Delete                 = upx_Application_Scoresheet.AddChild(UnitySelector.Application.Scoresheet.Delete);
+            var upx_Application_Summary                           = upx_Application.AddChild(UnitySelector.Application.Summary.Default);
+            var upx_Application_Summary_Create                    = upx_Application_Summary.AddChild(UnitySelector.Application.Summary.Create);
+            var upx_Application_Summary_Update                    = upx_Application_Summary.AddChild(UnitySelector.Application.Summary.Update);
+            var upx_Application_Summary_Delete                    = upx_Application_Summary.AddChild(UnitySelector.Application.Summary.Delete);
+            #endregion
+
+            #region REVIEW & ASSESSMENT PERMISSIONS
+            var upx_Review                                        = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Review.Default, L(UnitySelector.Review.Default));
+            var upx_Review_Approval                               = upx_Review.AddChild(UnitySelector.Review.Approval.Default);
+            var upx_Review_Approval_Create                        = upx_Review_Approval.AddChild(UnitySelector.Review.Approval.Create);
+            var upx_Review_Approval_Update                        = upx_Review_Approval.AddChild(UnitySelector.Review.Approval.Update);
+            var upx_Review_Approval_Delete                        = upx_Review_Approval.AddChild(UnitySelector.Review.Approval.Delete);
+            var upx_Review_AssessmentResults                      = upx_Review.AddChild(UnitySelector.Review.AssessmentResults.Default);
+            var upx_Review_AssessmentResults_Create               = upx_Review_AssessmentResults.AddChild(UnitySelector.Review.AssessmentResults.Create);
+            var upx_Review_AssessmentResults_Update               = upx_Review_AssessmentResults.AddChild(UnitySelector.Review.AssessmentResults.Update);
+            var upx_Review_AssessmentResults_Delete               = upx_Review_AssessmentResults.AddChild(UnitySelector.Review.AssessmentResults.Delete);
+            var upx_Review_AssessmentResults_EditFinalStateFields = upx_Review.AddChild(UnitySelector.Review.AssessmentResults.EditFinalStateFields);
+            var upx_Review_AssessmentReviewList                   = upx_Review.AddChild(UnitySelector.Review.AssessmentReviewList.Default);
+            var upx_Review_AssessmentReviewList_Create            = upx_Review_AssessmentReviewList.AddChild(UnitySelector.Review.AssessmentReviewList.Create);
+            var upx_Review_AssessmentReviewList_Update            = upx_Review_AssessmentReviewList.AddChild(UnitySelector.Review.AssessmentReviewList.Update);
+            var upx_Review_AssessmentReviewList_Delete            = upx_Review_AssessmentReviewList.AddChild(UnitySelector.Review.AssessmentReviewList.Delete);
+            var upx_Review_AssessmentReviewList_SendBack          = upx_Review_AssessmentReviewList.AddChild(UnitySelector.Review.AssessmentReviewList.SendBack);
+            var upx_Review_AssessmentReviewList_Complete          = upx_Review_AssessmentReviewList.AddChild(UnitySelector.Review.AssessmentReviewList.Complete);
+            var upx_Review_Worksheet                              = upx_Review.AddChild(UnitySelector.Review.Worksheet.Default);
+            var upx_Review_Worksheet_Create                       = upx_Review_Worksheet.AddChild(UnitySelector.Review.Worksheet.Create);
+            var upx_Review_Worksheet_Update                       = upx_Review_Worksheet.AddChild(UnitySelector.Review.Worksheet.Update);
+            var upx_Review_Worksheet_Delete                       = upx_Review_Worksheet.AddChild(UnitySelector.Review.Worksheet.Delete);
+            #endregion
+
+            #region ATTACHMENT PERMISSIONS
+            var upx_Attachment                                    = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Attachment.Default, L(UnitySelector.Attachment.Default));
+            var upx_Attachment_Review                             = upx_Attachment.AddChild(UnitySelector.Attachment.Review.Default);
+            var upx_Attachment_Review_Create                      = upx_Attachment_Review.AddChild(UnitySelector.Attachment.Review.Create);
+            var upx_Attachment_Review_Update                      = upx_Attachment_Review.AddChild(UnitySelector.Attachment.Review.Update);
+            var upx_Attachment_Review_Delete                      = upx_Attachment_Review.AddChild(UnitySelector.Attachment.Review.Delete);
+            var upx_Attachment_Notification                       = upx_Attachment.AddChild(UnitySelector.Attachment.Notification.Default);
+            var upx_Attachment_Notification_Create                = upx_Attachment_Notification.AddChild(UnitySelector.Attachment.Notification.Create);
+            var upx_Attachment_Notification_Update                = upx_Attachment_Notification.AddChild(UnitySelector.Attachment.Notification.Update);
+            var upx_Attachment_Notification_Delete                = upx_Attachment_Notification.AddChild(UnitySelector.Attachment.Notification.Delete);
+            var upx_Attachment_Submission                         = upx_Attachment.AddChild(UnitySelector.Attachment.Submission.Default);
+            var upx_Attachment_Submission_Create                  = upx_Attachment_Submission.AddChild(UnitySelector.Attachment.Submission.Create);
+            var upx_Attachment_Submission_Update                  = upx_Attachment_Submission.AddChild(UnitySelector.Attachment.Submission.Update);
+            var upx_Attachment_Submission_Delete                  = upx_Attachment_Submission.AddChild(UnitySelector.Attachment.Submission.Delete);
+            #endregion
+
+            #region FUNDING PERMISSIONS
+            var upx_Funding                                       = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Funding.Default, L(UnitySelector.Funding.Default));
+            var upx_Funding_Agreement                             = upx_Funding.AddChild(UnitySelector.Funding.Agreement.Default);
+            var upx_Funding_Agreement_Create                      = upx_Funding_Agreement.AddChild(UnitySelector.Funding.Agreement.Create);
+            var upx_Funding_Agreement_Update                      = upx_Funding_Agreement.AddChild(UnitySelector.Funding.Agreement.Update);
+            var upx_Funding_Agreement_Delete                      = upx_Funding_Agreement.AddChild(UnitySelector.Funding.Agreement.Delete);
+            #endregion
+
+            var upx_History                                       = grantApplicationPermissionsGroup.AddPermission(UnitySelector.History.Default, L(UnitySelector.History.Default));
+            
+            var upx_Notification                                  = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Notification.Default, L(UnitySelector.Notification.Default));
+            var upx_Notification_Create                           = upx_Notification.AddChild(UnitySelector.Notification.Create);
+            var upx_Notification_Update                           = upx_Notification.AddChild(UnitySelector.Notification.Update);
+            var upx_Notification_Delete                           = upx_Notification.AddChild(UnitySelector.Notification.Delete);
+            var upx_Notification_Draft                            = upx_Notification.AddChild(UnitySelector.Notification.Draft.Default);
+            var upx_Notification_Draft_Create                     = upx_Notification_Draft.AddChild(UnitySelector.Notification.Draft.Create);
+            var upx_Notification_Draft_Delete                     = upx_Notification_Draft.AddChild(UnitySelector.Notification.Draft.Delete);
+            var upx_Notification_Draft_Update                     = upx_Notification_Draft.AddChild(UnitySelector.Notification.Draft.Update);
+
+            #region PAYMENT PERMISSIONS
+            var upx_Payment                                       = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Payment.Default, L(UnitySelector.Payment.Default));
+            var upx_Payment_Summary                               = upx_Payment.AddChild(UnitySelector.Payment.Summary.Default);
+            var upx_Payment_Summary_Create                        = upx_Payment_Summary.AddChild(UnitySelector.Payment.Summary.Create);
+            var upx_Payment_Summary_Update                        = upx_Payment_Summary.AddChild(UnitySelector.Payment.Summary.Update);
+            var upx_Payment_Summary_Delete                        = upx_Payment_Summary.AddChild(UnitySelector.Payment.Summary.Delete);
+            var upx_Payment_PaymentList                           = upx_Payment.AddChild(UnitySelector.Payment.PaymentList.Default);
+            var upx_Payment_PaymentList_Create                    = upx_Payment_PaymentList.AddChild(UnitySelector.Payment.PaymentList.Create);
+            var upx_Payment_PaymentList_Update                    = upx_Payment_PaymentList.AddChild(UnitySelector.Payment.PaymentList.Update);
+            var upx_Payment_PaymentList_Delete                    = upx_Payment_PaymentList.AddChild(UnitySelector.Payment.PaymentList.Delete);
+            #endregion
+
+            #region PROJECT PERMISSIONS
+            var upx_Project                                       = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Project.Default, L(UnitySelector.Project.Default));
+            var upx_Project_Location                              = upx_Project.AddChild(UnitySelector.Project.Location.Default);
+            var upx_Project_Location_Create                       = upx_Project_Location.AddChild(UnitySelector.Project.Location.Create);
+            var upx_Project_Location_Update                       = upx_Project_Location.AddChild(UnitySelector.Project.Location.Update);
+            var upx_Project_Location_Delete                       = upx_Project_Location.AddChild(UnitySelector.Project.Location.Delete);
+            var upx_Project_Summary                               = upx_Project.AddChild(UnitySelector.Project.Summary.Default);
+            var upx_Project_Summary_Create                        = upx_Project_Summary.AddChild(UnitySelector.Project.Summary.Create);
+            var upx_Project_Summary_Update                        = upx_Project_Summary.AddChild(UnitySelector.Project.Summary.Update);
+            var upx_Project_Summary_Delete                        = upx_Project_Summary.AddChild(UnitySelector.Project.Summary.Delete);
+            #endregion
+
+            var upx_Comment                                       = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Comment.Default, L(UnitySelector.Comment.Default));
+            var upx_Flex                                          = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Flex.Default, L(UnitySelector.Flex.Default));
+        }
+
         private static LocalizableString L(string name)
         {
             return LocalizableString.Create<GrantManagerResource>(name);

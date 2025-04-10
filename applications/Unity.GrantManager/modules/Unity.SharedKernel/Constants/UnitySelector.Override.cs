@@ -7,7 +7,7 @@ public static partial class UnitySelector
     {
         public static partial class AssessmentResults
         {
-            public const string EditFinalStateFields = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResult";
+            public const string EditFinalStateFields = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.EditFinalStateFields";
         }
 
         public static partial class AssessmentReviewList
