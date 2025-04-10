@@ -7,7 +7,8 @@ using Volo.Abp.Settings;
 namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
 
 [Widget(
-    ScriptTypes = [typeof(NotificationsSettingScriptBundleContributor)],
+    ScriptTypes = new[] { typeof(NotificationsSettingScriptBundleContributor) },
+    StyleTypes = new[] { typeof(NotificationsSettingStyleBundleContributor) },
     AutoInitialize = true
 )]
 public class NotificationsSettingViewComponent(ISettingProvider settingProvider) : AbpViewComponent
@@ -27,3 +28,5 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
         return View("~/Views/Settings/NotificationsSettingGroup/Default.cshtml", model);
     }
 }
+
+
