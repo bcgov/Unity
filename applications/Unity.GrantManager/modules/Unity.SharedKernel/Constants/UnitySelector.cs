@@ -91,19 +91,21 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManger.ApplicationManagement.Review.Approval.Update";
             public const string Delete  = "Unity.GrantManger.ApplicationManagement.Review.Approval.Delete";
         }
-        public static partial class ReviewList
+
+        public static partial class AssessmentResults
         {
-            public const string Default = "Unity.GrantManger.ApplicationManagement.Review.ReviewList";
-            public const string Create  = "Unity.GrantManger.ApplicationManagement.Review.ReviewList.Create";
-            public const string Update  = "Unity.GrantManger.ApplicationManagement.Review.ReviewList.Update";
-            public const string Delete  = "Unity.GrantManger.ApplicationManagement.Review.ReviewList.Delete";
+            public const string Default = "Unity.GrantManger.ApplicationManagement.Review.AssessmentResults";
+            public const string Create  = "Unity.GrantManger.ApplicationManagement.Review.AssessmentResults.Create";
+            public const string Update  = "Unity.GrantManger.ApplicationManagement.Review.AssessmentResults.Update";
+            public const string Delete  = "Unity.GrantManger.ApplicationManagement.Review.AssessmentResults.Delete";
         }
-        public static partial class Results
+
+        public static partial class AssessmentReviewList
         {
-            public const string Default = "Unity.GrantManger.ApplicationManagement.Review.Results";
-            public const string Create  = "Unity.GrantManger.ApplicationManagement.Review.Results.Create";
-            public const string Update  = "Unity.GrantManger.ApplicationManagement.Review.Results.Update";
-            public const string Delete  = "Unity.GrantManger.ApplicationManagement.Review.Results.Delete";
+            public const string Default = "Unity.GrantManger.ApplicationManagement.Review.AssessmentReviewList";
+            public const string Create  = "Unity.GrantManger.ApplicationManagement.Review.AssessmentReviewList.Create";
+            public const string Update  = "Unity.GrantManger.ApplicationManagement.Review.AssessmentReviewList.Update";
+            public const string Delete  = "Unity.GrantManger.ApplicationManagement.Review.AssessmentReviewList.Delete";
         }
 
         public static partial class Worksheet

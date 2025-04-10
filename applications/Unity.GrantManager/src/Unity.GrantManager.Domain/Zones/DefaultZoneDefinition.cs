@@ -20,13 +20,13 @@ public static class DefaultZoneDefinition
                          SortOrder = 1
                      },
                      new ZoneDefinition {
-                         Name = UnitySelector.Review.Results.Default,
+                         Name = UnitySelector.Review.AssessmentResults.Default,
                          ViewComponentType = "AssessmentResults",
                          IsEnabled = true,
                          SortOrder = 2
                      },
                      new ZoneDefinition {
-                         Name = UnitySelector.Review.ReviewList.Default,
+                         Name = UnitySelector.Review.AssessmentReviewList.Default,
                          ViewComponentType = "ReviewList",
                          IsEnabled = true,
                          SortOrder = 3

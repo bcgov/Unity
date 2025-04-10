@@ -74,7 +74,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                 };
             }
 
-            if (model.ZoneStateSet.Contains(UnitySelector.Review.Results.Default))
+            if (model.ZoneStateSet.Contains(UnitySelector.Review.AssessmentResults.Default))
             {
                 model.AssessmentResultsView = new()
                 {

@@ -75,11 +75,11 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var assessmentResultApprovalPermissions = assessmentResultPermissions.AddChild(UnitySelector.Review.Approval.Default,L(UnitySelector.Review.Approval.Default));
             assessmentResultApprovalPermissions.AddChild(UnitySelector.Review.Approval.Update, L(UnitySelector.Review.Approval.Update));
             
-            var applicationResultsPermissions = assessmentResultPermissions.AddChild(UnitySelector.Review.Results.Default, L(UnitySelector.Review.Results.Default));
-            var applicationResultsUpdatePermissions = applicationResultsPermissions.AddChild(UnitySelector.Review.Results.Update, L(UnitySelector.Review.Results.Update));
+            var applicationResultsPermissions = assessmentResultPermissions.AddChild(UnitySelector.Review.AssessmentResults.Default, L(UnitySelector.Review.AssessmentResults.Default));
+            var applicationResultsUpdatePermissions = applicationResultsPermissions.AddChild(UnitySelector.Review.AssessmentResults.Update, L(UnitySelector.Review.AssessmentResults.Update));
             applicationResultsUpdatePermissions.AddChild(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields, L("Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields"));
 
-            assessmentResultPermissions.AddChild(UnitySelector.Review.ReviewList.Default, L(UnitySelector.Review.ReviewList.Default));
+            assessmentResultPermissions.AddChild(UnitySelector.Review.AssessmentReviewList.Default, L(UnitySelector.Review.AssessmentReviewList.Default));
 
             var updateAssessmentResultPermissions = assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.Edit, L("Permission:GrantApplicationPermissions.AssessmentResults.Edit"));
 
