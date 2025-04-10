@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
-using Unity.Payments.Permissions;
+using Unity.Modules.Shared;
 using Unity.Notifications.Permissions;
+using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.PermissionManagement;
-using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.Permissions
 {
@@ -20,14 +20,53 @@ namespace Unity.GrantManager.Permissions
             _permissionDataSeeder = permissionDataSeeder;
         }
 
+        public readonly List<string> ReviewAndAssessment_CommonPermissions = [
+            UnitySelector.Review.Approval.Default,
+            UnitySelector.Review.Approval.Update.Default,
+
+            UnitySelector.Review.AssessmentResults.Default,
+            UnitySelector.Review.AssessmentResults.Update.Default,
+            UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields,
+
+            UnitySelector.Review.AssessmentReviewList.Default,
+            UnitySelector.Review.AssessmentReviewList.Create,
+            UnitySelector.Review.AssessmentReviewList.Update.SendBack,
+            UnitySelector.Review.AssessmentReviewList.Update.Complete,
+        ];
+
+        public readonly List<string> Dashboard_CommonPermissions = [
+            GrantApplicationPermissions.Dashboard.Default,
+            GrantApplicationPermissions.Dashboard.ViewDashboard,
+            GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+            GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+            GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+            GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+            GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+            GrantApplicationPermissions.Dashboard.RequestApprovedCount,
+        ];
+
+        public readonly List<string> ApplicantInfo_CommonPermissions = [
+            GrantApplicationPermissions.ApplicantInfo.Default,
+            GrantApplicationPermissions.ApplicantInfo.Update,
+        ];
+
+        public readonly List<string> ProjectInfo_CommonPermissions = [
+            GrantApplicationPermissions.ProjectInfo.Default,
+            GrantApplicationPermissions.ProjectInfo.Update,
+        ];
+
+        public readonly List<string> Notifications_CommonPermissions = [
+            NotificationsPermissions.Email.Default,
+            NotificationsPermissions.Email.Send,
+        ];
+
         public async Task SeedAsync(DataSeedContext context)
         {
             // Default permission grants based on role
 
             // - Program Manager
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager,
-                new List<string>
-                {
+            [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Assignments.AssignInitial,
@@ -49,103 +88,48 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
 
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-                    
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
-
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
-                }, context.TenantId);
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
+                    .. Dashboard_CommonPermissions
+            ], context.TenantId);
 
             // - Reviewer
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Reviewer,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
 
-                    // Assessments
-                    UnitySelector.Review.AssessmentReviewList.Default,
-                    UnitySelector.Review.AssessmentReviewList.Create,
-                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
-
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-                    
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
-
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
-                }, context.TenantId);
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
+                    .. Dashboard_CommonPermissions
+                ], context.TenantId);
 
             // - Assessor
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Assessor,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
 
-                    // Assessments
-                    UnitySelector.Review.AssessmentReviewList.Default,
-                    UnitySelector.Review.AssessmentReviewList.Create,
-                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
-
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
-
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
-                }, context.TenantId);
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
+                    .. Dashboard_CommonPermissions
+                ], context.TenantId);
 
             // - TeamLead
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.TeamLead,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Assignments.AssignInitial,
@@ -154,70 +138,32 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
-                    
-                    // Assessments
-                    UnitySelector.Review.AssessmentReviewList.Default,
-                    UnitySelector.Review.AssessmentReviewList.Create,
-                    UnitySelector.Review.AssessmentReviewList.Update.SendBack,
-                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
 
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
-
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
-                }, context.TenantId);
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
+                    .. Dashboard_CommonPermissions
+                ], context.TenantId);
 
             // - Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Approver,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Approvals.Complete,
                     GrantApplicationPermissions.Comments.Add,
 
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.UpdateFinalStateFields,
-
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
-
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
-                }, context.TenantId);
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
+                    .. Dashboard_CommonPermissions
+                ], context.TenantId);
 
             // - SystemAdmin
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.SystemAdmin,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     UnitySettingManagementPermissions.UserInterface,
                     GrantManagerPermissions.Organizations.Default,
@@ -225,131 +171,66 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
 
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
 
-                    // Assessments
-                    UnitySelector.Review.AssessmentReviewList.Default,
-                    UnitySelector.Review.AssessmentReviewList.Create,
-                    UnitySelector.Review.AssessmentReviewList.Update.SendBack,
-                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
-
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
                     NotificationsPermissions.Settings,
-                    
+                    .. Dashboard_CommonPermissions,
+
                     UnitySettingManagementPermissions.BackgroundJobSettings
-                }, context.TenantId);
+                ], context.TenantId);
 
 
             // -L1 Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L1Approver,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
                     PaymentsPermissions.Payments.L1ApproveOrDecline,
 
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
-
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
-                }, context.TenantId);
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
+                    .. Dashboard_CommonPermissions
+                ], context.TenantId);
 
             // -L2 Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L2Approver,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
                     PaymentsPermissions.Payments.L2ApproveOrDecline,
 
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
-
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
-                }, context.TenantId);
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
+                    .. Dashboard_CommonPermissions
+                ], context.TenantId);
 
             // -L3 Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L3Approver,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
                     PaymentsPermissions.Payments.L3ApproveOrDecline,
 
-                    UnitySelector.Review.AssessmentResults.Default,
-                    UnitySelector.Review.AssessmentResults.Update.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ApplicantInfo.Update,
-                    GrantApplicationPermissions.ProjectInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Update,
-
-                    NotificationsPermissions.Email.Default,
-                    NotificationsPermissions.Email.Send,
-
-                    //Dashboard 
-                    GrantApplicationPermissions.Dashboard.Default,
-                    GrantApplicationPermissions.Dashboard.ViewDashboard,
-                    GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-                    GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-                    GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-                    GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-                    GrantApplicationPermissions.Dashboard.RequestApprovedCount,
-                }, context.TenantId);
+                    .. ReviewAndAssessment_CommonPermissions,
+                    .. ApplicantInfo_CommonPermissions,
+                    .. ProjectInfo_CommonPermissions,
+                    .. Notifications_CommonPermissions,
+                    .. Dashboard_CommonPermissions
+                ], context.TenantId);
 
             // -External Assessor
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ExternalAssessor,
-                new List<string>
-                {
+                [
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
@@ -359,7 +240,7 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.ProjectInfo.Default,
 
                     NotificationsPermissions.Email.Default,
-                }, context.TenantId);
+                ], context.TenantId);
 
         }
     }

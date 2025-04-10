@@ -66,17 +66,6 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- REVIEW & ASSESSMENT PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_ReviewAndAssessment_Permissions();
 
-            // Assessments
-            var assessmentPermissions = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Review.AssessmentReviewList.Default, L("Permission:UnitySelector.Review.AssessmentReviewList.Default"));
-            assessmentPermissions.AddChild(UnitySelector.Review.AssessmentReviewList.Create, L("Permission:UnitySelector.Review.AssessmentReviewList.Create"));
-            assessmentPermissions.AddChild(UnitySelector.Review.AssessmentReviewList.Update.SendBack, L("Permission:UnitySelector.Review.AssessmentReviewList.Update.SendBack"));
-            assessmentPermissions.AddChild(UnitySelector.Review.AssessmentReviewList.Update.Complete, L("Permission:UnitySelector.Review.AssessmentReviewList.Update.Complete"));
-
-            // Assessment Results
-            var assessmentResultPermissions = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Review.AssessmentResults.Default, L("Permission:UnitySelector.Review.AssessmentResults.Default"));
-            var updateAssessmentResultPermissions = assessmentResultPermissions.AddChild(UnitySelector.Review.AssessmentResults.Update.Default, L("Permission:UnitySelector.Review.AssessmentResults.Update.Default"));
-            updateAssessmentResultPermissions.AddChild(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields, L("Permission:UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields"));
-
             // Applicant Info
             var applicantInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ApplicantInfo.Default, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Default}"));
             applicantInfoPermissions.AddChild(GrantApplicationPermissions.ApplicantInfo.Update, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Update}"));
@@ -125,7 +114,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var upx_Review_Approval                                 = upx_Review.AddUnityChild(UnitySelector.Review.Approval.Default);
             var upx_Review_Approval_Update                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Update.Default);
-            var upx_Review_Approval_UpdateFinalStateFields          = upx_Review_Approval_Update.AddUnityChild(UnitySelector.Review.Approval.Update.UpdateFinalStateFields);
+            //var upx_Review_Approval_UpdateFinalStateFields          = upx_Review_Approval_Update.AddUnityChild(UnitySelector.Review.Approval.Update.UpdateFinalStateFields);
 
             var upx_Review_AssessmentResults                        = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentResults.Default);
             var upx_Review_AssessmentResults_Update                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.Default);

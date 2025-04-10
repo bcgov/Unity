@@ -102,6 +102,17 @@ internal static class PolicyRegistrant
             options.AddPolicy(GrantManagerPermissions.ApplicationForms.Default,
             policy => policy.RequireClaim("Permission", GrantManagerPermissions.ApplicationForms.Default)));
 
+        //-- R&A - Approval
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(UnitySelector.Review.AssessmentResults.Default,
+            policy => policy.RequireClaim("Permission", UnitySelector.Review.Approval.Default)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(UnitySelector.Review.AssessmentResults.Update.Default,
+            policy => policy.RequireClaim("Permission", UnitySelector.Review.Approval.Update.Default)));
+        //context.Services.AddAuthorization(options =>
+        //    options.AddPolicy(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields,
+        //    policy => policy.RequireClaim("Permission", UnitySelector.Review.Approval.Update.UpdateFinalStateFields)));
+
         //-- R&A - Assessment Results
         context.Services.AddAuthorization(options =>
             options.AddPolicy(UnitySelector.Review.AssessmentResults.Default,
