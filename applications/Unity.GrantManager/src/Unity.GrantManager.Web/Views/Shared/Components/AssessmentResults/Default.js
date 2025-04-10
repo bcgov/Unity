@@ -227,7 +227,7 @@ function enableAssessmentResultsSaveBtn() {
         return;
     }
 
-    if (abp.auth.isGranted('GrantApplicationManagement.AssessmentResults.Update')) {
+    if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update')) {
         $('#saveAssessmentResultBtn').prop('disabled', false);
     }
 }

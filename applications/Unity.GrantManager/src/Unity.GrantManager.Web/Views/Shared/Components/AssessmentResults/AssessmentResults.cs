@@ -1,19 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.AspNetCore.Mvc;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
-using Unity.GrantManager.GrantApplications;
-using System.Linq;
-using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Authorization;
-using Unity.GrantManager.Permissions;
+using System.Linq;
+using System.Threading.Tasks;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Zones;
-using Volo.Abp.Authorization.Permissions;
-using Unity.GrantManager.Applications;
-using Unity.GrantManager.Settings;
 using Unity.Modules.Shared;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.Authorization.Permissions;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
@@ -47,9 +44,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         {
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
             bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-            bool isFormEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
+            bool isFormEditGranted = await _authorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
             bool isEditGranted = isFormEditGranted && !finalDecisionState;
-            bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
+            bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields) && finalDecisionState);
 
             AssessmentResultsPageModel model = new()
             {

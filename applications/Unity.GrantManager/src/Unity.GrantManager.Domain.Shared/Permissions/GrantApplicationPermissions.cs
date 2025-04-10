@@ -63,13 +63,6 @@ namespace Unity.GrantManager.Permissions
             public const string Add = Default + ".Add";
         }
 
-        public static class AssessmentResults
-        {
-            public const string Default = GroupName + ".AssessmentResults";
-            public const string Edit = Default + Operation.Update;
-            public const string EditFinalStateFields = Default + ".EditFinalStateFields";
-        }
-
         public static class ApplicantInfo
         {
             public const string Default = GroupName + ".ApplicantInfo";
