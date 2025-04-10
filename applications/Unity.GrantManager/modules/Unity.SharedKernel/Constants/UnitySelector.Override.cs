@@ -7,13 +7,13 @@ public static partial class UnitySelector
     {
         public static partial class AssessmentResults
         {
-            public const string EditFinalStateFields = "Unity.GrantManger.ApplicationManagement.Review.AssessmentResult";
+            public const string EditFinalStateFields = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResult";
         }
 
         public static partial class AssessmentReviewList
         {
-            public const string SendBack = "Unity.GrantManger.ApplicationManagement.Review.AssessmentReviewList.SendBack";
-            public const string Complete = "Unity.GrantManger.ApplicationManagement.Review.AssessmentReviewList.Complete";
+            public const string SendBack = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.SendBack";
+            public const string Complete = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Complete";
         }
     }
 }
