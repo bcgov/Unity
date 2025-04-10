@@ -144,7 +144,7 @@
             function setupEditor(editor, id, editorId, data, isPopulated) {
                 editor.on('init', function () {
                     editor.mode.set(isPopulated ? 'readonly' : 'design');
-                    if (data && data.bodyHTML) {
+                    if (data?.bodyHTML) {
                         editor.setContent(data.bodyHTML);
                     }
                     editorInstances[id] = editor;
