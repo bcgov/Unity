@@ -20,7 +20,9 @@ public class UnityThemeUX2GlobalStyleContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.css");
         context.Files.AddIfNotContains("/libs/datatables.net-staterestore-dt/css/stateRestore.dataTables.css");
         context.Files.AddIfNotContains("/libs/tributejs/dist/tribute.css");
-        context.Files.AddIfNotContains("/libs/tui-editor/toastui-editor.min.css");
+        context.Files.AddIfNotContains("/libs/tinymce/skins/ui/oxide/content.css");
+        context.Files.AddIfNotContains("/libs/tinymce/skins/content/default/content.css");
+        context.Files.AddIfNotContains("/libs/tinymce/skins/ui/oxide/skin.css");
 
         // Add assets for "/themes/ux2/fonts/**/*"
         context.Files.AddRange(new List<BundleFile> {
