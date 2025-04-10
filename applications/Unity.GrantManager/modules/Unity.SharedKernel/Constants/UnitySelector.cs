@@ -76,7 +76,10 @@ public static partial class UnitySelector
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Review.Approval";
             public const string Create  = "Unity.GrantManager.ApplicationManagement.Review.Approval.Create";
-            public const string Update  = "Unity.GrantManager.ApplicationManagement.Review.Approval.Update";
+            public static partial class Update // Supports Override
+            {
+                public const string Default  = "Unity.GrantManager.ApplicationManagement.Review.Approval.Update";
+            }
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Review.Approval.Delete";
         }
 
@@ -84,7 +87,10 @@ public static partial class UnitySelector
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults";
             public const string Create  = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Create";
-            public const string Update  = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update";
+            public static partial class Update // Supports Override
+            {
+                public const string Default  = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update";
+            }
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Delete";
         }
 
@@ -92,7 +98,10 @@ public static partial class UnitySelector
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList";
             public const string Create  = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create";
-            public const string Update  = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Update";
+            public static partial class Update // Supports Override
+            {
+                public const string Default  = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Update";
+            }
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Delete";
         }
 

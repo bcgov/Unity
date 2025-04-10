@@ -5,15 +5,29 @@ public static partial class UnitySelector
 {
     public static partial class Review
     {
+        public static partial class Approval
+        {
+            public static partial class Update
+            {
+                public const string UpdateFinalStateFields  = "Unity.GrantManager.ApplicationManagement.Review.Approval.Update.UpdateFinalStateFields";
+            }
+        }
+
         public static partial class AssessmentResults
         {
-            public const string EditFinalStateFields = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.EditFinalStateFields";
+            public static partial class Update
+            {
+                public const string UpdateFinalStateFields = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update.UpdateFinalStateFields";
+            }
         }
 
         public static partial class AssessmentReviewList
         {
-            public const string SendBack = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.SendBack";
-            public const string Complete = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Complete";
+            public static partial class Update
+            {
+                public const string SendBack = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Update.SendBack";
+                public const string Complete = "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Update.Complete";
+            }
         }
     }
 }

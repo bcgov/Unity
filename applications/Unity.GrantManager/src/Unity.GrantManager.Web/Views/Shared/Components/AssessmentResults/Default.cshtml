@@ -48,7 +48,7 @@
     <form id="assessmentResultForm">
         @* Zone Section : Approval *@
         <zone-fieldset id="@UnitySelector.Review.Approval.Default" form-id="@Model.ApplicationFormId"
-            update-permission-requirement="@UnitySelector.Review.Approval.Update"
+            update-permission-requirement="@UnitySelector.Review.Approval.Update.Default"
             check-if=@(Model.ApprovalView != null)>
             <abp-row class="m-0 assessment-result-form">
                 <abp-column size="_12" class="px-0">
@@ -83,7 +83,7 @@
 
         @* Zone Section : Application Assessment Result *@
         <zone-fieldset id="@UnitySelector.Review.AssessmentResults.Default" form-id="@Model.ApplicationFormId"
-            update-permission-requirement="@UnitySelector.Review.AssessmentResults.Update"
+            update-permission-requirement="@UnitySelector.Review.AssessmentResults.Update.Default"
             check-if=@(Model.AssessmentResultsView != null)>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">

@@ -63,14 +63,6 @@ namespace Unity.GrantManager.Permissions
             public const string Add = Default + ".Add";
         }
 
-        public static class Assessments
-        {
-            public const string Default = GroupName + ".Assessments";
-            public const string Create = Default + Operation.Create;
-            public const string SendBack = Default + ".SendBack";
-            public const string Confirm = Default + ".Confirm";
-        }
-
         public static class AssessmentResults
         {
             public const string Default = GroupName + ".AssessmentResults";

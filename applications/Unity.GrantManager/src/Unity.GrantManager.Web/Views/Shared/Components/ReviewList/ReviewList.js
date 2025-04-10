@@ -186,9 +186,10 @@ $(function () {
         }
     });
 
-    if (abp.auth.isGranted('GrantApplicationManagement.Assessments.Create')) {
+    if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create')) {
         CreateAssessmentButton();
     }
+
     async function CreateAssessmentButton() {
         let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
         createButtons.container().prependTo("#AdjudicationTeamLeadActionBar");

@@ -7,6 +7,7 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.PermissionManagement;
+using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.Permissions
 {
@@ -80,9 +81,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Comments.Add,
 
                     // Assessments
-                    GrantApplicationPermissions.Assessments.Default,
-                    GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.Confirm,
+                    UnitySelector.Review.AssessmentReviewList.Default,
+                    UnitySelector.Review.AssessmentReviewList.Create,
+                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
@@ -116,9 +117,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Comments.Add,
 
                     // Assessments
-                    GrantApplicationPermissions.Assessments.Default,
-                    GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.Confirm,
+                    UnitySelector.Review.AssessmentReviewList.Default,
+                    UnitySelector.Review.AssessmentReviewList.Create,
+                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
@@ -155,10 +156,10 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     
                     // Assessments
-                    GrantApplicationPermissions.Assessments.Default,
-                    GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.SendBack,
-                    GrantApplicationPermissions.Assessments.Confirm,
+                    UnitySelector.Review.AssessmentReviewList.Default,
+                    UnitySelector.Review.AssessmentReviewList.Create,
+                    UnitySelector.Review.AssessmentReviewList.Update.SendBack,
+                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
@@ -235,10 +236,10 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Dashboard.RequestApprovedCount,
 
                     // Assessments
-                    GrantApplicationPermissions.Assessments.Default,
-                    GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.SendBack,
-                    GrantApplicationPermissions.Assessments.Confirm,
+                    UnitySelector.Review.AssessmentReviewList.Default,
+                    UnitySelector.Review.AssessmentReviewList.Create,
+                    UnitySelector.Review.AssessmentReviewList.Update.SendBack,
+                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,

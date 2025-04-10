@@ -129,7 +129,6 @@
 
                         <zone id="@UnitySelector.Review.Worksheet.Default" form-id="@Model.ApplicationFormId"
                             zone-requirement="@UnitySelector.Review.Default"
-                              permission-requirement="GrantApplicationManagement.Assessments"
                             feature-requirement="Unity.Flex">
                             <div id="assessmentResultsCustomWidget">
                                 <form id="assessmentResultsCustomForm">
@@ -146,7 +145,7 @@
                             </div>
                         </zone>
 
-                        <zone id="@UnitySelector.Review.AssessmentReviewList.Default" form-id="@Model.ApplicationFormId" permission-requirement="GrantApplicationManagement.Assessments">
+                        <zone id="@UnitySelector.Review.AssessmentReviewList.Default" form-id="@Model.ApplicationFormId">
                             <div class="w-100 px-2" id="assessmentMainView">
                                 @await Component.InvokeAsync("ReviewList")
                             </div>

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 using Unity.TenantManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -103,17 +104,17 @@ internal static class PolicyRegistrant
 
         // Assessments
         context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.Default,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Default)));
+            options.AddPolicy(UnitySelector.Review.AssessmentReviewList.Default,
+            policy => policy.RequireClaim("Permission", UnitySelector.Review.AssessmentReviewList.Default)));
         context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.Create,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Create)));
+            options.AddPolicy(UnitySelector.Review.AssessmentReviewList.Create,
+            policy => policy.RequireClaim("Permission", UnitySelector.Review.AssessmentReviewList.Create)));
         context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.SendBack,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.SendBack)));
+            options.AddPolicy(UnitySelector.Review.AssessmentReviewList.Update.SendBack,
+            policy => policy.RequireClaim("Permission", UnitySelector.Review.AssessmentReviewList.Update.SendBack)));
         context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.Confirm,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Confirm)));
+            options.AddPolicy(UnitySelector.Review.AssessmentReviewList.Update.Complete,
+            policy => policy.RequireClaim("Permission", UnitySelector.Review.AssessmentReviewList.Update.Complete)));
 
         // Tenancy
         context.Services.AddAuthorization(options =>
