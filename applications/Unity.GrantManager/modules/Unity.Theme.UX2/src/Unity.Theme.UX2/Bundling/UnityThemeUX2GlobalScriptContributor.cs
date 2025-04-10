@@ -38,7 +38,7 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/tinymce/models/dom/model.js");
         context.Files.AddIfNotContains("/libs/tinymce/plugins/link/plugin.js");
         context.Files.AddIfNotContains("/libs/tinymce/plugins/image/plugin.js");
-        context.Files.AddIfNotContains("/libs/tinymce/plugins/image/plugin.js");
+        context.Files.AddIfNotContains("/libs/tinymce/plugins/preview/plugin.js");
         context.Files.AddIfNotContains("/libs/tinymce/plugins/code/plugin.js");
 
     }
