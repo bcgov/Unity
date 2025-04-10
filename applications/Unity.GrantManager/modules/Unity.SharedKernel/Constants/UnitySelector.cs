@@ -12,18 +12,6 @@ public static partial class UnitySelector
     public static string[] GetAll() => ReflectionHelper.GetPublicConstantsRecursively(typeof(UnitySelector));
     public static string ElementId(this string value) => value.Replace('.', '_');
 
-
-    // public const string Default         = "Unity.GrantManger.ApplicationManagement";
-
-    public enum Operation
-    {
-        Read,
-        Create,
-        Update,
-        Delete
-    }
-    public static string On(this string value, Operation action) => $"{value}.{action.ToString()}";
-
     public static partial class Applicant
     {
         public const string Default     = "Unity.GrantManger.ApplicationManagement.Applicant";
