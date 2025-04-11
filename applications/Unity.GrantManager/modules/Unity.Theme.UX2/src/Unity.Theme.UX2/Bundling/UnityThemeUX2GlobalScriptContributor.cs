@@ -40,6 +40,5 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/tinymce/plugins/image/plugin.js");
         context.Files.AddIfNotContains("/libs/tinymce/plugins/preview/plugin.js");
         context.Files.AddIfNotContains("/libs/tinymce/plugins/code/plugin.js");
-
     }
 }
