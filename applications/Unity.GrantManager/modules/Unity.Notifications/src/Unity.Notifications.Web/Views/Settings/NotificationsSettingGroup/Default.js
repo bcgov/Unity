@@ -1,6 +1,6 @@
 ﻿(function ($) {
     $(function () {
-         loadCardsFromService();
+        loadCardsFromService();
         const NotificationUiElements = {
             settingForm: $("#NotificationsSettingsForm"),
             saveButton: $("#NotificationsSaveButton"),
@@ -152,7 +152,7 @@
                 });
             }
 
-            function initTinyMCE(editorId, id, data, isPopulated) {
+            function initTinyMCE(editorId, id, data, isPopulated) {                               
                 tinymce.init({
                     license_key: 'gpl',
                     selector: `#${editorId}`,
@@ -160,16 +160,18 @@
                     toolbar: getToolbarOptions(),
                     statusbar: false,
                     promotion: false,
+                    content_css: false,
+                    skin: false,
                     setup: function (editor) {
                         setupEditor(editor, id, editorId, data, isPopulated);
                     }
                 });
             }
-          
+
 
             initTinyMCE(editorId, id, data, isPopulated)
-            
-           
+
+
 
             function extractFormData(formDataArray) {
                 return {
@@ -229,7 +231,7 @@
                     data: payload,
                     success: onSaveTemplateSuccess,
                     error: onSaveTemplateError
-                    
+
                 });
             }
 
@@ -263,7 +265,7 @@
             $(`#${wrapperId}`).on("click", ".editBtn", function () {
                 const currentEditor = editorInstances[id];
                 currentEditor.destroy();
-              
+
                 initTinyMCE(editorId, id, data, false)
 
                 const card = $(`#${wrapperId}`);
@@ -311,25 +313,25 @@
                         cancelButton: 'btn btn-secondary'
                     }
                 };
-            
+
                 Swal.fire(swalOptions).then(handleResult.bind(null, id, wrapperId));
             }
             function handleResult(id, wrapperId, result) {
                 handleDeleteConfirmation(result, id, wrapperId);
             }
-            
+
             function handleDeleteConfirmation(result, id, wrapperId) {
                 if (!result.isConfirmed) return;
                 deleteTemplate(id, wrapperId);
             }
             function handleDeleteSuccess() {
-                    $(`#${wrapperId}`).remove();
-                    abp.notify.success('Template deleted successfully.');
+                $(`#${wrapperId}`).remove();
+                abp.notify.success('Template deleted successfully.');
 
             }
 
             function handleDeleteError() {
-                abp.notify.error('Error deleting the template.'); 
+                abp.notify.error('Error deleting the template.');
             }
 
             function deleteTemplate(id, wrapperId) {
@@ -368,7 +370,7 @@
         $("#CreateNewTemplate").on("click", function () {
             createCard();
         });
-           
-        
+
+
     });
 })(jQuery);
