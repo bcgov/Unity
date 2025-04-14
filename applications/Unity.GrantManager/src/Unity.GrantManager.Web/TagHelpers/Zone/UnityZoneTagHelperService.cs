@@ -26,7 +26,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     private bool _readRermissionState = true;
     private bool _updateRermissionState = true;
 
-    private bool _allRequirementsSatisfied => _featureState && _zoneState;
+    private bool _allRequirementsSatisfied => _featureState && _zoneState && _readRermissionState;
 
     public UnityZoneTagHelperService(
         IFeatureChecker featureChecker,

@@ -175,11 +175,9 @@
                 @if (IsZoneVisible(UnitySelector.Project.Default))
                 {
                     <abp-tab name="nav-project-info" title="Project Info">
-                        <zone Id="@UnitySelector.Project.Default">
-                            <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Project.Summary.Default)" id="projectInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Project.Summary.Default)" id="projectInfoWidget">
                             @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
-                        </zone>
                     </abp-tab>
                 }
                 @*-------- Project Info Section END ---------*@
@@ -188,11 +186,9 @@
                 @if (IsZoneVisible(UnitySelector.Applicant.Default))
                 {
                     <abp-tab name="nav-organization-info" title="Applicant Info">
-                        <zone Id="@UnitySelector.Applicant.Default">
                         <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Applicant.Summary.Default)" id="ApplicantInfoWidget">
                             @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
-                        </zone>
                     </abp-tab>
                 }
 

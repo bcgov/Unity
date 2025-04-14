@@ -78,6 +78,9 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Comments.Add,
             policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Comments.Add));
 
+        authorizationBuilder.AddPolicy(UnitySelector.Review.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Default));
+        
         // R&A - Approval Policies
         authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentResults.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Approval.Default));
