@@ -3,7 +3,6 @@
 namespace Unity.GrantManager.Permissions
 {
     public static class GrantApplicationPermissions
-
     {
         public const string GroupName = "GrantApplicationManagement";
         
@@ -62,21 +61,6 @@ namespace Unity.GrantManager.Permissions
         {
             public const string Default = GroupName + ".Comments";
             public const string Add = Default + ".Add";
-        }
-
-        public static class Assessments
-        {
-            public const string Default = GroupName + ".Assessments";
-            public const string Create = Default + Operation.Create;
-            public const string SendBack = Default + ".SendBack";
-            public const string Confirm = Default + ".Confirm";
-        }
-
-        public static class AssessmentResults
-        {
-            public const string Default = GroupName + ".AssessmentResults";
-            public const string Edit = Default + Operation.Update;
-            public const string EditFinalStateFields = Default + ".EditFinalStateFields";
         }
 
         public static class ApplicantInfo

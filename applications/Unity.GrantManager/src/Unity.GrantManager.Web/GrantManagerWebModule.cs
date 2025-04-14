@@ -75,8 +75,6 @@ using Microsoft.AspNetCore.DataProtection;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Web.Views.Settings;
 using Unity.Notifications.Web.Bundling;
-using Polly;
-using Volo.Abp.Bundling;
 
 namespace Unity.GrantManager.Web;
 
