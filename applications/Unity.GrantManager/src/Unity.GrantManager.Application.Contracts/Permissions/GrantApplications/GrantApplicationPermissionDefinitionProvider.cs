@@ -105,6 +105,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S125:Sections of code should not be commented out", Justification = "Configuration Code")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Configuration Code")]
     public static class PermissionGroupDefinitionExtensions
     {
         public static void AddApplication_ReviewAndAssessment_Permissions(this PermissionGroupDefinition grantApplicationPermissionsGroup)

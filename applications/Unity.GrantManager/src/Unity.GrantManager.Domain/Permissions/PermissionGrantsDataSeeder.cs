@@ -21,6 +21,7 @@ namespace Unity.GrantManager.Permissions
         }
 
         public readonly List<string> ReviewAndAssessment_CommonPermissions = [
+            UnitySelector.Review.Default,
             UnitySelector.Review.Approval.Default,
             UnitySelector.Review.Approval.Update.Default,
 
@@ -32,17 +33,9 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Review.AssessmentReviewList.Create,
             UnitySelector.Review.AssessmentReviewList.Update.SendBack,
             UnitySelector.Review.AssessmentReviewList.Update.Complete,
-        ];
 
-        public readonly List<string> Dashboard_CommonPermissions = [
-            GrantApplicationPermissions.Dashboard.Default,
-            GrantApplicationPermissions.Dashboard.ViewDashboard,
-            GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
-            GrantApplicationPermissions.Dashboard.EconomicRegionCount,
-            GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
-            GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
-            GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
-            GrantApplicationPermissions.Dashboard.RequestApprovedCount,
+            UnitySelector.Review.Worksheet.Default,
+            UnitySelector.Review.Worksheet.Update,
         ];
 
         public readonly List<string> ApplicantInfo_CommonPermissions = [
@@ -58,6 +51,17 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> Notifications_CommonPermissions = [
             NotificationsPermissions.Email.Default,
             NotificationsPermissions.Email.Send,
+        ];
+
+        public readonly List<string> Dashboard_CommonPermissions = [
+            GrantApplicationPermissions.Dashboard.Default,
+            GrantApplicationPermissions.Dashboard.ViewDashboard,
+            GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+            GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+            GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+            GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+            GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+            GrantApplicationPermissions.Dashboard.RequestApprovedCount,
         ];
 
         public async Task SeedAsync(DataSeedContext context)
@@ -235,7 +239,15 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
 
+                    UnitySelector.Review.Default,
+                    UnitySelector.Review.Approval.Default,
                     UnitySelector.Review.AssessmentResults.Default,
+                    UnitySelector.Review.AssessmentReviewList.Default,
+                    UnitySelector.Review.AssessmentReviewList.Create,
+                    UnitySelector.Review.AssessmentReviewList.Update.SendBack,
+                    UnitySelector.Review.AssessmentReviewList.Update.Complete,
+                    UnitySelector.Review.Worksheet.Default,
+
                     GrantApplicationPermissions.ApplicantInfo.Default,
                     GrantApplicationPermissions.ProjectInfo.Default,
 

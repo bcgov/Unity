@@ -118,7 +118,6 @@ public static partial class UnitySelector
     {
         public const string Default     = "Unity.GrantManager.ApplicationManagement.Attachment";
 
-        // TODO: Should this be under Attachment or under Review?
         public static partial class Review
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Attachment.Review";

@@ -3,27 +3,15 @@
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
-@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Settings
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
-@using Unity.Modules.Shared.Correlation
-@using Volo.Abp.Features
-@using Volo.Abp.Authorization.Permissions
 @using Unity.Modules.Shared
+@using Volo.Abp.Authorization.Permissions
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
-@inject IFeatureChecker FeatureChecker
 @inject IPermissionChecker PermissionChecker
 @model AssessmentResultsPageModel
-@{
-    string IsFieldsetDisabled = "disabled";
-
-    var zoneCheck = UnitySelector.Applicant.Contact.Default;
-    var zoneId = UnitySelector.Applicant.Contact.Default.ElementId();
-
-    //Model.ZoneStateSet.Contains(UnitySelector.Review.AssessmentResults.Default);
-}
 
 @functions
 {

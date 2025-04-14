@@ -1,7 +1,5 @@
-﻿using AspNetCoreGeneratedDocument;
-using Microsoft.AspNetCore.Html;
+﻿using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using System;
 using System.Threading.Tasks;
@@ -15,8 +13,6 @@ namespace Unity.GrantManager.Web.TagHelpers;
 
 public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 {
-    private IHtmlGenerator HtmlGenerator;
-    private IAbpTagHelperLocalizer _localizer { get; }
     private IFeatureChecker FeatureChecker { get; }
     private IPermissionChecker PermissionChecker { get; }
     private IZoneChecker ZoneChecker { get; }
@@ -29,14 +25,10 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     private bool _allRequirementsSatisfied => _featureState && _zoneState;
 
     public UnityZoneTagHelperService(
-        IHtmlGenerator htmlGenerator,
-        IAbpTagHelperLocalizer tagHelperLocalizer,
         IFeatureChecker featureChecker,
         IPermissionChecker permissionChecker,
         IZoneChecker zoneChecker)
     {
-        HtmlGenerator = htmlGenerator;
-        _localizer = tagHelperLocalizer;
         FeatureChecker = featureChecker;
         PermissionChecker = permissionChecker;
         ZoneChecker = zoneChecker;
@@ -68,7 +60,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         {
             output.TagName = "fieldset";
             output.Attributes.Add("name", TagHelper.ElementId);
-            
+
             // Toggle fieldset enabled/disabled on edit permission
             if (!_updateRermissionState)
             {
@@ -117,12 +109,12 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         output.PreElement.AppendHtml(debugAlert);
     }
 
-    private string StatusBadge(bool condition)
+    private static string StatusBadge(bool condition)
         => (condition ? "<span class=\"badge text-bg-primary\">PASS</span> " : "<span class=\"badge text-bg-secondary\">FAIL</span> ");
 
     protected async Task CheckRequirementsAsync()
     {
-        if (!string.IsNullOrWhiteSpace(TagHelper.FeatureRequirement) 
+        if (!string.IsNullOrWhiteSpace(TagHelper.FeatureRequirement)
             && !await FeatureChecker.IsEnabledAsync(TagHelper.FeatureRequirement))
         {
             _featureState = false;
