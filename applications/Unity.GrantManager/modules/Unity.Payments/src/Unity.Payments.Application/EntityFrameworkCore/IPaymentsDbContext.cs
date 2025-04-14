@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.Payments.Domain;
+using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Suppliers;
@@ -11,7 +12,7 @@ namespace Unity.Payments.EntityFrameworkCore;
 [ConnectionStringName(PaymentsDbProperties.ConnectionStringName)]
 public interface IPaymentsDbContext : IEfCoreDbContext
 {
-
+    public DbSet<AccountCoding> AccountCoding { get; }
     public DbSet<PaymentRequest> PaymentRequests { get;  }
     public DbSet<ExpenseApproval> ExpenseApproval { get;  }
     public DbSet<Supplier> Suppliers { get;  }

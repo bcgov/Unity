@@ -19,6 +19,143 @@ $(function () {
         bindLimitedInputFields(/^[a-zA-Z0-9]+$/, [UIElements.inputPaymentIdPrefix[0].id]);
     }
 
+    let createModal = new abp.ModalManager(abp.appPath + 'PaymentConfigurations/CreateModal');
+    let updateModal = new abp.ModalManager(abp.appPath + 'PaymentConfigurations/UpdateModal');
+    const l = abp.localization.getResource('GrantManager');
+    /**
+     * List All
+     */
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
+    let actionButtons = [
+        {
+            text: '<i class="fl fl-add-to align-middle"></i> <span>' + l('Common:Command:Create') + '</span>',
+            titleAttr: l('Common:Command:Create'),
+            id: 'CreateButton',
+            className: 'btn-light rounded-1',
+            action: (e, dt, node, config) => createIntakeBtn(e)
+        },
+        ...commonTableActionButtons(l('Intake'))
+    ];
+
+    const listColumns = [
+        {
+            title: 'Ministry Client',
+            name: "ministryClient",
+            data: "ministryClient",
+            index: 0
+        },
+        {
+            title: 'Responsibility',
+            name: "responsibility", 
+            data: "responsibility",
+            index: 1
+        },
+        {
+            title: 'Service Line',
+            name: "serviceLine", 
+            data: "serviceLine",
+            index: 2
+        },
+        {
+            title: 'Stob',
+            name: "stob", 
+            data: "stob",
+            index: 3
+        },
+        {
+            title: 'Project #',
+            name: "projectNumber", 
+            data: "projectNumber",
+            index: 4
+        },  
+        {
+            title: 'Default',
+            orderable: false,
+            className: 'notexport text-center',
+            name: 'rowActions',
+            index: 5,
+            rowAction: {
+                items:
+                    [
+                        {
+                            text: 'Edit',
+                            action: (data) => updateModal.open({ id: data.record.id })
+                        }
+                    ]
+            }
+        },
+        {
+            title: '',
+            orderable: false,
+            className: 'notexport text-center',
+            name: 'defaultRadio',
+            index: 6,
+            rowAction: {
+                items:
+                    [
+                        {
+                            text: 'Edit',
+                            action: (data) => updateModal.open({ id: data.record.id })
+                        }
+                    ]
+            }
+        }
+    ];
+
+    const defaultVisibleColumns = [
+        'ministryClient',
+        'responsibility',
+        'serviceLine',
+        'stob',
+        'projectNumber',
+        'rowActions',
+        'defaultRadio'
+    ];
+
+
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
+
+    let dt = $('#AccountCodesDataTable');
+
+    let dataTable = initializeDataTable({
+        dt,
+        defaultVisibleColumns,
+        listColumns,
+        maxRowsPerPage: 25,
+        defaultSortColumn: 0,
+        dataEndpoint: unity.grantManager.payments.accountCoding.getList,
+        data: {},
+        responseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        reorderEnabled: false,
+        languageSetValues: {},
+        dataTableName: 'IntakesTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        useNullPlaceholder: true,
+        externalSearchId: 'search-intakes'
+    });
+
+    createModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
+    updateModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
+    function createIntakeBtn(e) {
+        e.preventDefault();
+        createModal.open();
+    };
+
+
     function displayStatusMessage() {
         let statusMessage = UIElements.statusMessage.val();
         if (statusMessage != "") {

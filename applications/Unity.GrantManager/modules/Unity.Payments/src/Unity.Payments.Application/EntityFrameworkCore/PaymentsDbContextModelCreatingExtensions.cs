@@ -5,6 +5,7 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentConfigurations;
+using Unity.Payments.Domain.AccountCodings;
 
 namespace Unity.Payments.EntityFrameworkCore;
 
@@ -59,6 +60,14 @@ public static class PaymentsDbContextModelCreatingExtensions
         modelBuilder.Entity<Site>(b =>
         {
             b.ToTable(PaymentsDbProperties.DbTablePrefix + "Sites",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<AccountCoding>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "AccountCodings",
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();

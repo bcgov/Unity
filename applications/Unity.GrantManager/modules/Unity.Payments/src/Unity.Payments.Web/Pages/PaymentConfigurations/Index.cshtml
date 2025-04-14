@@ -18,6 +18,24 @@
 
 <div class="input-area card mb-3 payment-config">
 
+    <div class="container-fluid px-0">
+        <div class="action-bar p-2 filter-search-action-bar">
+            <div class="unity-page-titlebar">
+                <h4>Account Codes</h4>
+            </div>
+            <div class="filter-search-action-bar_search-wrapper">
+                <input type="search" id="search-intakes" placeholder="Search" class="tbl-search">
+            </div>
+
+            <div class="btn-group" id="app_custom_buttons"></div>
+
+            <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+        </div>
+        <div class="p-3 pt-0">
+            <abp-table id="AccountCodesDataTable"></abp-table>
+        </div>
+    </div>
+Make this a modal
     <abp-dynamic-form abp-model="PaymentConfiguration" id="paymentConfigForm" class="payment-form" asp-page="/PaymentConfigurations/Index">
         <h4>Account Coding</h4>
         <abp-form-content />
