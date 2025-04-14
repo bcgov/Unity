@@ -40,6 +40,7 @@ using Medallion.Threading.Redis;
 using Medallion.Threading;
 using StackExchange.Redis;
 using Unity.GrantManager.Locks;
+using Unity.GrantManager.Zones;
 
 namespace Unity.GrantManager;
 
@@ -144,6 +145,7 @@ public class GrantManagerApplicationModule : AbpModule
         ConfigureDistributedLocking(context, configuration);
 
         context.Services.ConfigureRabbitMQ();
+        context.Services.AddScoped<IZoneChecker, ZoneChecker>();
 
         _ = context.Services.AddSingleton(provider =>
         {
