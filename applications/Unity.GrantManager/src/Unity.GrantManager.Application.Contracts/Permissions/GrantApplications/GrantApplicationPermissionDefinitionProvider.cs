@@ -70,6 +70,9 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var applicantInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ApplicantInfo.Default, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Default}"));
             applicantInfoPermissions.AddChild(GrantApplicationPermissions.ApplicantInfo.Update, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Update}"));
 
+            //-- APPLICANT INFO PERMISSIONS
+            grantApplicationPermissionsGroup.AddApplication_ApplicantInfo_Permissions();
+
             // Project Info
             var projectInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ProjectInfo.Default, L("Permission:GrantApplicationManagement.ProjectInfo"));
             var updateProjectInfoPermissions = projectInfoPermissions.AddChild(GrantApplicationPermissions.ProjectInfo.Update, L("Permission:GrantApplicationManagement.ProjectInfo.Update"));
@@ -140,6 +143,34 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             // var upx_Review_AssessmentReviewList_Delete              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Delete);
             // var upx_Review_Worksheet_Create                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Create);
             // var upx_Review_Worksheet_Delete                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Delete);
+        }
+
+        public static void AddApplication_ApplicantInfo_Permissions(this PermissionGroupDefinition grantApplicationPermissionsGroup)
+        {
+            #region APPLICANT INFO PERMISSIONS
+            var upx_Applicant                                     = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Applicant.Default, L(UnitySelector.Applicant.Default));
+            var upx_Applicant_Authority                           = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Authority.Default);
+            var upx_Applicant_Authority_Update                    = upx_Applicant_Authority.AddUnityChild(UnitySelector.Applicant.Authority.Update);
+            var upx_Applicant_Contact                             = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Contact.Default);
+            var upx_Applicant_Contact_Create                      = upx_Applicant_Contact.AddUnityChild(UnitySelector.Applicant.Contact.Create);
+            var upx_Applicant_Contact_Update                      = upx_Applicant_Contact.AddUnityChild(UnitySelector.Applicant.Contact.Update);
+            var upx_Applicant_Location                            = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Location.Default);
+            var upx_Applicant_Location_Update                     = upx_Applicant_Location.AddUnityChild(UnitySelector.Applicant.Location.Update);
+            var upx_Applicant_Summary                             = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Summary.Default);
+            var upx_Applicant_Summary_Update                      = upx_Applicant_Summary.AddUnityChild(UnitySelector.Applicant.Summary.Update);
+            var upx_Applicant_Supplier                            = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Supplier.Default);
+            var upx_Applicant_Supplier_Update                     = upx_Applicant_Supplier.AddUnityChild(UnitySelector.Applicant.Supplier.Update);
+            #endregion
+            
+            // var upx_Applicant_Authority_Create                    = upx_Applicant_Authority.AddUnityChild(UnitySelector.Applicant.Authority.Create);
+            // var upx_Applicant_Authority_Delete                    = upx_Applicant_Authority.AddUnityChild(UnitySelector.Applicant.Authority.Delete);
+            // var upx_Applicant_Contact_Delete                      = upx_Applicant_Contact.AddUnityChild(UnitySelector.Applicant.Contact.Delete);
+            // var upx_Applicant_Location_Create                     = upx_Applicant_Location.AddUnityChild(UnitySelector.Applicant.Location.Create);
+            // var upx_Applicant_Location_Delete                     = upx_Applicant_Location.AddUnityChild(UnitySelector.Applicant.Location.Delete);
+            // var upx_Applicant_Summary_Create                      = upx_Applicant_Summary.AddUnityChild(UnitySelector.Applicant.Summary.Create);
+            // var upx_Applicant_Summary_Delete                      = upx_Applicant_Summary.AddUnityChild(UnitySelector.Applicant.Summary.Delete);
+            // var upx_Applicant_Supplier_Create                     = upx_Applicant_Supplier.AddUnityChild(UnitySelector.Applicant.Supplier.Create);
+            // var upx_Applicant_Supplier_Delete                     = upx_Applicant_Supplier.AddUnityChild(UnitySelector.Applicant.Supplier.Delete);
         }
 
         public static PermissionDefinition AddUnityChild(this PermissionDefinition parent, string name)

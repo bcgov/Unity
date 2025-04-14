@@ -6,6 +6,7 @@
 @using Unity.GrantManager.Payments;
 @using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features;
@@ -26,21 +27,17 @@
 <div id="orgApplicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
 
 <abp-row class="px-1 pb-2 mb-4 project-info-container">
-
-
-
-    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
-        <div id="ApplicantInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-            <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle"].Value</h6>
-        </div>
+    <div class="save-button-container">
         <abp-button text="Save" id="saveApplicantInfoBtn" class="floating-save-btn" icon-type="Other" icon="fl fl-save"
-                    button-type="Primary" disabled="true" abp-if="@IsViewEditable" />
-    </abp-column>
+            button-type="Primary" disabled="true" abp-if="@IsViewEditable" />
+    </div>
 
     <form id="ApplicantInfoForm">
         <abp-input type="hidden" id="ApplicantInfoViewApplicantId" asp-for="@Model.ApplicantId" />
-        <fieldset name="Unity_UI_Applicant_Organization" @IsFieldsetDisabled>
-            <legend class="d-none">@L["ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle"].Value</legend>
+
+        @* Zone Section : Applicant Info Summary *@
+        <zone-fieldset id="@UnitySelector.Applicant.Summary.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+            update-permission-requirement="@UnitySelector.Applicant.Summary.Update">
             <abp-row class="m-0 project-info-form">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_12" class="px-1 mb-4">
@@ -158,17 +155,19 @@
                     </abp-row>
                 </abp-row>
             </abp-row>
-        </fieldset>
+        </zone-fieldset>
 
-        @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
-        {
+        @* Zone Section : Supplier *@
+        <zone id="@UnitySelector.Applicant.Supplier.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+            feature-requirement="@PaymentConsts.UnityPaymentsFeature">
             <div id="supplier-info-widget">
                 @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
             </div>
-        }
+        </zone>
 
-        <fieldset name="Unity_UI_Applicant_Contact" @IsFieldsetDisabled>
-            <legend class="d-none">@L["ApplicantInfoView:ApplicantInfoContactInfo"].Value</legend>
+        @* Zone Section : Contact Info *@
+        <zone-fieldset id="@UnitySelector.Applicant.Contact.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+            update-permission-requirement="@UnitySelector.Applicant.Contact.Update">
             <abp-row class="m-0 project-info-location">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
@@ -204,10 +203,11 @@
                     </abp-column>
                 </abp-row>
             </abp-row>
-        </fieldset>
+        </zone-fieldset>
 
-        <fieldset name="Unity_UI_Applicant_SigningAuthority" @IsFieldsetDisabled>
-            <legend class="d-none">@L["ApplicantInfoView:SigningAuthorityTitle"].Value</legend>
+        @* Zone Section : Signing Authority *@
+        <zone-fieldset id="@UnitySelector.Applicant.Authority.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+            update-permission-requirement="@UnitySelector.Applicant.Authority.Update">
             <abp-row class="m-0 signin-authority-form">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
@@ -244,10 +244,11 @@
                     </abp-column>
                 </abp-row>
             </abp-row>
-        </fieldset>
+        </zone-fieldset>
 
-        <fieldset name="Unity_UI_Applicant_Address" @IsFieldsetDisabled>
-            <legend class="d-none">@L["ApplicantInfoView:PhysicalAddress"].Value</legend>
+        @* Zone Section : Address *@
+        <zone-fieldset id="@UnitySelector.Applicant.Location.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+            update-permission-requirement="@UnitySelector.Applicant.Location.Update">
             <abp-row class="m-0 contact-info-form">
                 <div class="d-flex">
                     <abp-row class="m-0 physical-address-form pe-2">
@@ -322,20 +323,20 @@
                     </abp-row>
                 </div>
             </abp-row>
-        </fieldset>
+        </zone-fieldset>
 
-        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-        {
+        @* Zone Section : Worksheet *@
+        <zone id="@UnitySelector.Applicant.Default" feature-requirement="Unity.Flex" form-id="@Model.ApplicationFormId" show-legend="false">
             @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
-                     new
-                     {
-                         instanceCorrelationId = Model.ApplicationId,
-                         instanceCorrelationProvider = CorrelationConsts.Application,
-                         sheetCorrelationId = Model.ApplicationFormVersionId,
-                         sheetCorrelationProvider = CorrelationConsts.FormVersion,
-                         uiAnchor = FlexConsts.ApplicantInfoUiAnchor
-                     })
-        }
+                new
+                {
+                    instanceCorrelationId = Model.ApplicationId,
+                    instanceCorrelationProvider = CorrelationConsts.Application,
+                    sheetCorrelationId = Model.ApplicationFormVersionId,
+                    sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                    uiAnchor = FlexConsts.ApplicantInfoUiAnchor
+                })
+        </zone>
     </form>
 </abp-row>
 <abp-row class="px-1 pb-2 mb-4 summary-container">

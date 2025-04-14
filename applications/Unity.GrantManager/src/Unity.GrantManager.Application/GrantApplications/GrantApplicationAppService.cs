@@ -28,7 +28,6 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.PaymentRequests;
-using Unity.Payments.Suppliers;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.DependencyInjection;
@@ -618,15 +617,15 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    protected internal void MapSigningAuthority(Application application, SigningAuthorityDto? signingAuthority)
+    protected internal static void MapSigningAuthority(Application application, SigningAuthorityDto? signingAuthority)
     {
         if (signingAuthority == null) return;
 
-        application.SigningAuthorityFullName      = signingAuthority.SigningAuthorityFullName ?? string.Empty;
-        application.SigningAuthorityTitle         = signingAuthority.SigningAuthorityTitle ?? string.Empty;
-        application.SigningAuthorityEmail         = signingAuthority.SigningAuthorityEmail ?? string.Empty;
+        application.SigningAuthorityFullName = signingAuthority.SigningAuthorityFullName ?? string.Empty;
+        application.SigningAuthorityTitle = signingAuthority.SigningAuthorityTitle ?? string.Empty;
+        application.SigningAuthorityEmail = signingAuthority.SigningAuthorityEmail ?? string.Empty;
         application.SigningAuthorityBusinessPhone = signingAuthority.SigningAuthorityBusinessPhone ?? string.Empty;
-        application.SigningAuthorityCellPhone     = signingAuthority.SigningAuthorityCellPhone ?? string.Empty;
+        application.SigningAuthorityCellPhone = signingAuthority.SigningAuthorityCellPhone ?? string.Empty;
     }
 
     //protected internal async Task UpsertSupplierAsync(Guid applicantId, ApplicantSupplierDto? input)

@@ -41,6 +41,19 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> ApplicantInfo_CommonPermissions = [
             GrantApplicationPermissions.ApplicantInfo.Default,
             GrantApplicationPermissions.ApplicantInfo.Update,
+
+            UnitySelector.Applicant.Default,
+            UnitySelector.Applicant.Authority.Default,
+            UnitySelector.Applicant.Authority.Update,
+            UnitySelector.Applicant.Contact.Default,
+            UnitySelector.Applicant.Contact.Create,
+            UnitySelector.Applicant.Contact.Update,
+            UnitySelector.Applicant.Location.Default,
+            UnitySelector.Applicant.Location.Update,
+            UnitySelector.Applicant.Summary.Default,
+            UnitySelector.Applicant.Summary.Update,
+            UnitySelector.Applicant.Supplier.Default,
+            UnitySelector.Applicant.Supplier.Update
         ];
 
         public readonly List<string> ProjectInfo_CommonPermissions = [
