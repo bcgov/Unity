@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.Localization;
 using Unity.GrantManager.Zones;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Microsoft.AspNetCore.Razor.TagHelpers;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers;
@@ -17,6 +19,8 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     private IPermissionChecker PermissionChecker { get; }
     private IZoneChecker ZoneChecker { get; }
 
+    protected IStringLocalizer<GrantManagerResource> L { get; }
+
     private bool _featureState = true;
     private bool _zoneState = true;
     private bool _readRermissionState = true;
@@ -27,11 +31,13 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
     public UnityZoneTagHelperService(
         IFeatureChecker featureChecker,
         IPermissionChecker permissionChecker,
-        IZoneChecker zoneChecker)
+        IZoneChecker zoneChecker,
+        IStringLocalizer<GrantManagerResource> stringLocalizer)
     {
         FeatureChecker = featureChecker;
         PermissionChecker = permissionChecker;
         ZoneChecker = zoneChecker;
+        L = stringLocalizer;
     }
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
@@ -79,9 +85,23 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
     protected virtual void AddFieldsetLegend(TagHelperOutput output)
     {
+        // Create the legend element with default CSS classes
         var legend = new TagBuilder("legend");
-        legend.AddCssClass("h6 ps-1 fw-bold d-none");
-        legend.InnerHtml.Append(TagHelper.ElementId);
+        legend.AddCssClass("h6 ps-1 pb-3 pt-2 mt-3 fw-bold");
+
+        // Hide the legend if ShowLegend is false
+        if (!TagHelper.ShowLegend)
+        {
+            legend.AddCssClass("d-none");
+        }
+
+        // Determine the legend content based on localization availability
+        var localizedDisplayName = L[$"{TagHelper.Id}:DisplayName"];
+        var legendContent = localizedDisplayName.ResourceNotFound
+            ? L[TagHelper.Id]
+            : localizedDisplayName;
+
+        legend.InnerHtml.Append(legendContent);
 
         output.PreContent.AppendHtml(legend);
     }

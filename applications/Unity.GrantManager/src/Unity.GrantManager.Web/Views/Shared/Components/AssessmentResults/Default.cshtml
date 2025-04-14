@@ -23,21 +23,15 @@
 <input type="hidden" id="AssessmentResultViewApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 
 <abp-row class="px-1 pb-2 mb-4 assessment-results-container">
-    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
-        @if (IsZoneVisible(UnitySelector.Review.Approval.Default))
-        {
-        <div id="AssessementResultsTitleRegion" class="d-flex align-items-stretch justify-content-start">
-            <h6 class="ps-1 fw-bold">@L["AssessmentResultsView:ApprovalTitle"].Value</h6>
-        </div>
-        }
+    <div class="save-button-container">
         <abp-button text="Save" id="saveAssessmentResultBtn" class="floating-save-btn"
                     icon-type="Other" icon="fl fl-save" button-type="Primary" disabled="true" />
-    </abp-column>
+    </div>
     <form id="assessmentResultForm">
         @* Zone Section : Approval *@
         <zone-fieldset id="@UnitySelector.Review.Approval.Default" form-id="@Model.ApplicationFormId"
             update-permission-requirement="@UnitySelector.Review.Approval.Update.Default"
-            check-if=@(Model.ApprovalView != null)>
+            check-if=@(Model.ApprovalView != null) show-legend="true">
             <abp-row class="m-0 assessment-result-form">
                 <abp-column size="_12" class="px-0">
                     <abp-row class="m-0">
@@ -71,15 +65,8 @@
 
         @* Zone Section : Application Assessment Result *@
         <zone-fieldset id="@UnitySelector.Review.AssessmentResults.Default" form-id="@Model.ApplicationFormId"
-            update-permission-requirement="@UnitySelector.Review.AssessmentResults.Update.Default"
+            update-permission-requirement="@UnitySelector.Review.AssessmentResults.Update.Default" show-legend="true"
             check-if=@(Model.AssessmentResultsView != null)>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                    <div class="d-flex align-items-stretch justify-content-start">
-                        <h6 class="ps-1 fw-bold">@L["AssessmentResultsView:AssessmentResultsTitle"].Value</h6>
-                    </div>
-                </abp-column>
-            </abp-row>
             <abp-row class="m-0 assessment-result-form">
                 <abp-column size="_12" class="px-0">
                     <abp-row class="m-0">

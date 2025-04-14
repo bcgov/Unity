@@ -20,6 +20,7 @@ public class UnityZoneTagHelper(UnityZoneTagHelperService tagHelperService)
     public string? UpdatePermissionRequirement { get; set; }
     public string? ZoneRequirement { get; set; }
     public string? FeatureRequirement { get; set; }
+    public bool ShowLegend { get; set; } = false; // Can be removed once all zones are updated
 
     public Guid FormId { get; set; } = Guid.Empty;
 
