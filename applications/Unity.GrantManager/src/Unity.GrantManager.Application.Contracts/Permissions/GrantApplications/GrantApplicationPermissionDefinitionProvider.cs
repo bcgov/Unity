@@ -128,8 +128,8 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var upx_Review_AssessmentReviewList_SendBack            = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.SendBack);
             var upx_Review_AssessmentReviewList_Complete            = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.Complete);
 
-            var upx_Review_Worksheet                                = upx_Review.AddUnityChild(UnitySelector.Review.Worksheet.Default);
-            var upx_Review_Worksheet_Update                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Update);
+            //var upx_Review_Worksheet                                = upx_Review.AddUnityChild(UnitySelector.Review.Worksheet.Default);
+            //var upx_Review_Worksheet_Update                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Update);
             #endregion
 
             // Available Permission Hooks

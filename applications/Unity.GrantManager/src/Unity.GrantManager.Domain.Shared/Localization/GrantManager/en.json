@@ -161,18 +161,22 @@
 
     "Intakes": "Intakes",
 
-    "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
-    "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
-    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment",
-    "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
-
-    "Permission:GrantApplicationPermissions.AssessmentResults.Default": "Review and Assessment",
-    "Permission:GrantApplicationPermissions.AssessmentResults.Edit": "Assessment Results Update",
-    "Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields": "Edit Fields After Approval",
-
-    "Unity.GrantManager.ApplicationManagement.Review": "Review and Assessment",
     "Unity.GrantManager.ApplicationManagement.Review.Approval": "Approval",
     "Unity.GrantManager.ApplicationManagement.Review.Approval.Update": "Edit Approval Fields",
+
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults": "Application Assessment Results",
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update": "Edit Application Assessment Result",
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update.UpdateFinalStateFields": "Edit Application Assessment Result After Approval",
+
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList": "Assessment List",
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create": "Create Assessment",
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Update.SendBack": "Send Back Assessment",
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Update.Complete": "Complete Assessment",
+
+    "Unity.GrantManager.ApplicationManagement.Review.Worksheet": "Review and Assessment Worksheet",
+    "Unity.GrantManager.ApplicationManagement.Review.Worksheet.Update": "Edit Review and Assessment Worksheet",
+
+    "Unity.GrantManager.ApplicationManagement.Review": "Review and Assessment",
     "Unity.GrantManager.ApplicationManagement.Review.Results": "Application Assessment Results",
     "Unity.GrantManager.ApplicationManagement.Review.Results.Update": "Edit Application Assessment Results",
     "Unity.GrantManager.ApplicationManagement.Review.ReviewList": "Assessment List",
