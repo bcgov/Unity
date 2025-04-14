@@ -44,7 +44,10 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 L($"Setting:{SettingsConstants.UI.Zones}.Description"),
                 isVisibleToClients: false,
                 isInherited: false,
-                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName)
+                isEncrypted: false)
+            .WithProviders(
+                TenantSettingValueProvider.ProviderName, 
+                FormSettingValueProvider.ProviderName)
         );
 
         AddBackgroundJobSettingDefinition(context);
@@ -83,7 +86,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 description,
                 isVisibleToClients: true,
                 isInherited: false,
-                isEncrypted: false)
+                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName)
         );
     }
 

@@ -16,11 +16,6 @@
     margin: 0.25rem;
 }
 
-#AbpContentToolbar {
-    display: flex !important;
-    background-color: transparent;
-}
-
 #IdentityRolesWrapper {
     background-color: transparent;
 }

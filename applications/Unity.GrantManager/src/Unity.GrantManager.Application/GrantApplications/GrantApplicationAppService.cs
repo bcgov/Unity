@@ -22,6 +22,7 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
@@ -286,7 +287,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     }
 
-    [Authorize(GrantApplicationPermissions.AssessmentResults.Edit)]
+    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -336,12 +337,12 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
     {
-        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
+        return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
     }
 
     private async Task<bool> CurrentUserCanUpdateFieldsPostFinalDecisionAsync()
     {
-        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
+        return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields);
     }
 
     [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
@@ -449,7 +450,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(id);
                 if (pendingPayments != null && pendingPayments.Count > 0)
                 {
-                        throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
+                    throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
                 }
                 await _iSupplierService.UpdateApplicantSupplierInfo(input.SupplierNumber, application.ApplicantId);
             }

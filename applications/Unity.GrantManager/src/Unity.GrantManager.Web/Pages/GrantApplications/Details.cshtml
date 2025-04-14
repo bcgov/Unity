@@ -13,6 +13,7 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -119,14 +120,17 @@
                 @*-------- Submission Section END ---------*@
 
                 @*-------- Review & Assessment Section ---------*@
-                @if (IsZoneVisible(SettingsConstants.UI.Tabs.Assessment))
+                @if (IsZoneVisible(UnitySelector.Review.Default))
                 {
                     <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.AssessmentResults")" id="assessmentResultWidget">
+                        <div class="w-100 px-2" id="assessmentResultWidget">
                             @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
-                        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-                        {
+
+                        <zone id="@UnitySelector.Review.Worksheet.Default" form-id="@Model.ApplicationFormId"
+                            zone-requirement="@UnitySelector.Review.Default"
+                            permission-requirement="@UnitySelector.Review.Default"
+                            feature-requirement="Unity.Flex">
                             <div id="assessmentResultsCustomWidget">
                                 <form id="assessmentResultsCustomForm">
                                     @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
@@ -140,10 +144,14 @@
                                              })
                                 </form>
                             </div>
-                        }
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Assessment}.ReviewList")" id="assessmentMainView">
-                            @await Component.InvokeAsync("ReviewList")
-                        </div>
+                        </zone>
+
+                        <zone id="@UnitySelector.Review.AssessmentReviewList.Default" form-id="@Model.ApplicationFormId">
+                            <div class="w-100 px-2" id="assessmentMainView">
+                                @await Component.InvokeAsync("ReviewList")
+                            </div>
+                        </zone>
+
                         <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
                             <abp-column size="_12">
                                 <abp-row>
@@ -157,7 +165,6 @@
 
                                     </abp-column>
                                 </abp-row>
-
                             </abp-column>
                         </abp-row>
                     </abp-tab>
@@ -165,10 +172,10 @@
                 @*-------- Review & Assessment Section END ---------*@
 
                 @*-------- Project Info Section ---------*@
-                @if (IsZoneVisible(SettingsConstants.UI.Tabs.Project))
+                @if (IsZoneVisible(UnitySelector.Project.Default))
                 {
                     <abp-tab name="nav-project-info" title="Project Info">
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Project}.ProjectInfo")" id="projectInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Project.Summary.Default)" id="projectInfoWidget">
                             @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
@@ -176,10 +183,10 @@
                 @*-------- Project Info Section END ---------*@
 
                 @*-------- Applicant Info Section ---------*@
-                @if (IsZoneVisible(SettingsConstants.UI.Tabs.Applicant))
+                @if (IsZoneVisible(UnitySelector.Applicant.Default))
                 {
                     <abp-tab name="nav-organization-info" title="Applicant Info">
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Applicant}.ApplicantInfo")" id="ApplicantInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Applicant.Summary.Default)" id="ApplicantInfoWidget">
                             @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
@@ -188,11 +195,10 @@
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Funding Agreement Info Section ---------*@
-                @if (await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.FundingAgreement)
-                && IsZoneVisible(SettingsConstants.UI.Tabs.FundingAgreement))
+                @if (IsZoneVisible(UnitySelector.Funding.Default))
                 {
                     <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.FundingAgreement}.FundingAgreementInfo")" id="FundingAgreementInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Funding.Agreement.Default)" id="FundingAgreementInfoWidget">
                             @await Component.InvokeAsync("FundingAgreementInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
@@ -201,11 +207,10 @@
 
                 @*-------- Payments Section ---------*@
                 @if (await FeatureChecker.IsEnabledAsync("Unity.Payments")
-                && await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.Payments)
-                && IsZoneVisible(SettingsConstants.UI.Tabs.Payments))
+                && IsZoneVisible(UnitySelector.Payment.Default))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
-                        <div class="w-100 px-2 @ZoneCssClass($"{SettingsConstants.UI.Tabs.Payments}.PaymentInfo")" id="PaymentInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Payment.Summary.Default)" id="PaymentInfoWidget">
                             @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>

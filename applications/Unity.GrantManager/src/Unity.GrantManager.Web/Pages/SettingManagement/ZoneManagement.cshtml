@@ -29,7 +29,7 @@
                                                 <abp-input asp-for="@tabGroup.IsEnabled"
                                                            abp-id-name="@Model.GroupTemplate.Tabs[i].IsEnabled"
                                                            check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
-                                                           label="@L[$"Setting:{tabGroup.Name}.DisplayName"].Value"
+                                                           label="@L[$"{tabGroup.Name}"].Value"
                                                            class="fw-bold"
                                                            group-data-zone-name="@tabGroup.Name" />
                                                 <input asp-for="@tabGroup.Name" abp-id-name="@Model.GroupTemplate.Tabs[i].Name" hidden />
@@ -42,7 +42,7 @@
                                                     <abp-input asp-for="@zone.IsEnabled"
                                                                abp-id-name="@Model.GroupTemplate.Tabs[i].Zones[j].IsEnabled"
                                                                check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
-                                                               label="@(L[$"Setting:{zone.Name}.DisplayName"].Value)"
+                                                               label="@(L[$"{zone.Name}"].Value)"
                                                                group-data-zone-name="@zone.Name"
                                                                group-data-parent-name="@tabGroup.Name"
                                                                group-style="margin-inline-start: 25px"
