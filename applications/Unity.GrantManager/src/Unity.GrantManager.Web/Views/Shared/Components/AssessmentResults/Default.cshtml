@@ -13,12 +13,6 @@
 @inject IPermissionChecker PermissionChecker
 @model AssessmentResultsPageModel
 
-@functions
-{
-    public bool IsZoneVisible(string zoneName) => Model.ZoneStateSet.Contains(zoneName);
-    public string ZoneCssClass(string zoneName) => IsZoneVisible(zoneName) ? string.Empty : "d-none";
-}
-
 <input type="hidden" id="AssessmentResultViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="AssessmentResultViewApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 
@@ -32,6 +26,8 @@
         <zone-fieldset id="@UnitySelector.Review.Approval.Default" form-id="@Model.ApplicationFormId"
             update-permission-requirement="@UnitySelector.Review.Approval.Update.Default"
             check-if=@(Model.ApprovalView != null) show-legend="true">
+            @if (Model?.ApprovalView != null) // To handle CS8602 - Handled by Zone
+            {
             <abp-row class="m-0 assessment-result-form">
                 <abp-column size="_12" class="px-0">
                     <abp-row class="m-0">
@@ -61,12 +57,15 @@
                     </abp-row>
                 </abp-column>
             </abp-row>
+            }
         </zone-fieldset>
 
         @* Zone Section : Application Assessment Result *@
         <zone-fieldset id="@UnitySelector.Review.AssessmentResults.Default" form-id="@Model.ApplicationFormId"
             update-permission-requirement="@UnitySelector.Review.AssessmentResults.Update.Default" show-legend="true"
             check-if=@(Model.AssessmentResultsView != null)>
+            @if (Model?.AssessmentResultsView != null) // To handle CS8602 - Handled by Zone
+            {
             <abp-row class="m-0 assessment-result-form">
                 <abp-column size="_12" class="px-0">
                     <abp-row class="m-0">
@@ -142,6 +141,7 @@
                     </abp-row>
                 </abp-column>
             </abp-row>
+            }
         </zone-fieldset>
     </form>
 </abp-row>
