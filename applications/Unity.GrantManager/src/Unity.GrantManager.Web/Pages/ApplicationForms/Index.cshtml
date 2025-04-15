@@ -25,24 +25,19 @@
 }
 
 <div class="container-fluid px-0">
-    <div class="unity-page-titlebar">
-        <h4>@L["ApplicationForms"]</h4>
-        <div class="d-flex">
-            <abp-button id="CreateApplicationFormButton"
-                text="@L["Common:Command:Create"].Value"
-                icon-type="Other"
-                icon="fl fl-add-to"
-                button-type="Light" class="me-2" />
-            <abp-dropdown id="FormsManageDropdown">
-                <abp-dropdown-button button-type="Secondary" text="@L["ApplicationForms:APIConfiguration"].Value" icon-type="Other" icon="fl fl-settings" />
-                <abp-dropdown-menu>
-                    <abp-dropdown-item id="SetApiTokenBtn">@L["ApplicationForms:UpdateAPIToken"].Value</abp-dropdown-item>
-                    <abp-dropdown-item id="GetApiTokenBtn">@L["ApplicationForms:DownloadAPIConfiguration"].Value</abp-dropdown-item>
-                </abp-dropdown-menu>
-            </abp-dropdown>
+    <div class="action-bar p-2 search-action-bar">
+        <div class="unity-page-titlebar">
+            <h4>@L["ApplicationForms"]</h4>
         </div>
+        <div class="search-action-bar_search-wrapper">
+            <input type="search" id="search-forms" placeholder="Search" class="tbl-search">
+        </div>
+
+        <div class="btn-group" id="app_custom_buttons"></div>
+
+        <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
     </div>
-    <div class="p-3">
+    <div class="p-3 pt-0">
         <abp-table id="ApplicationFormsTable"></abp-table>
     </div>
 </div>

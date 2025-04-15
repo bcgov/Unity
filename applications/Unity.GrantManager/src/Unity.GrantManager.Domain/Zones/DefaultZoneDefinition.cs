@@ -1,4 +1,5 @@
 ﻿using Unity.GrantManager.Settings;
+using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.Zones;
 public static class DefaultZoneDefinition
@@ -8,25 +9,24 @@ public static class DefaultZoneDefinition
         Name = "ApplicationDetailsMainZone",
         Tabs = [
              new ZoneTabDefinition {
-                 Name = SettingsConstants.UI.Tabs.Assessment,
+                 Name = UnitySelector.Review.Default,
                  IsEnabled = true,
                  SortOrder = 1,
                  Zones = [
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Assessment + ".AssessmentApproval",
+                         Name = UnitySelector.Review.Approval.Default,
                          ViewComponentType = "AssessmentApprovalViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 1
                      },
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Assessment + ".AssessmentResults",
+                         Name = UnitySelector.Review.AssessmentResults.Default,
                          ViewComponentType = "AssessmentResults",
                          IsEnabled = true,
                          SortOrder = 2
                      },
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Assessment + ".ReviewList",
+                         Name = UnitySelector.Review.AssessmentReviewList.Default,
                          ViewComponentType = "ReviewList",
                          IsEnabled = true,
                          SortOrder = 3
@@ -34,54 +34,54 @@ public static class DefaultZoneDefinition
                  ]
              },
              new ZoneTabDefinition {
-                 Name = SettingsConstants.UI.Tabs.Project,
+                 Name = UnitySelector.Project.Default,
                  IsEnabled = true,
                  SortOrder = 2,
                  ElementId = "nav-project-info",
                  Zones = [
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Project + ".ProjectInfo",
+                         Name = UnitySelector.Project.Summary.Default,
                          ViewComponentType = "ProjectInfoViewComponent",
                          IsEnabled = true,
                          SortOrder = 1
                      },
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Project + ".ProjectLocation",
+                         Name = UnitySelector.Project.Location.Default,
                          ViewComponentType = "ProjectLocationViewComponent",
                          IsEnabled = true,
                          IsConfigurationDisabled = true,
                          SortOrder = 2
                      },
                  ]
-             },
-             new ZoneTabDefinition {
-                 Name = SettingsConstants.UI.Tabs.Applicant,
+             },                     
+             new ZoneTabDefinition { 
+                 Name = UnitySelector.Applicant.Default,
                  IsEnabled = true,
                  SortOrder = 3,
                  ElementId = "nav-organization-info",
                  Zones = [
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Applicant + ".ApplicantInfo",
+                         Name = UnitySelector.Applicant.Summary.Default,
                          ViewComponentType = "ApplicantInfoViewComponent",
                          IsEnabled = true,
                          SortOrder = 1
                      },
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Applicant + ".ContactInfo",
+                         Name = UnitySelector.Applicant.Contact.Default,
                          ViewComponentType = "ApplicantContactInfoViewComponent",
                          IsEnabled = true,
                          IsConfigurationDisabled = true,
                          SortOrder = 2
                      },
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Applicant + ".SigningAuthority",
+                         Name = UnitySelector.Applicant.Authority.Default,
                          ViewComponentType = "ApplicantSigningAuthorityViewComponent",
                          IsEnabled = true,
                          IsConfigurationDisabled = true,
                          SortOrder = 3
                      },
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Applicant + ".PhysicalAddress",
+                         Name = UnitySelector.Applicant.Location.Default,
                          ViewComponentType = "ApplicantPhysicalAddressViewComponent",
                          IsEnabled = true,
                          IsConfigurationDisabled = true,
@@ -90,13 +90,13 @@ public static class DefaultZoneDefinition
                  ]
              },
              new ZoneTabDefinition {
-                 Name = SettingsConstants.UI.Tabs.FundingAgreement,
+                 Name = UnitySelector.Funding.Default,
                  IsEnabled = true,
                  SortOrder = 4,
                  ElementId = "nav-funding-agreement-info",
                  Zones = [
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.FundingAgreement + ".FundingAgreementInfo",
+                         Name = UnitySelector.Funding.Agreement.Default,
                          ViewComponentType = "FundingAgreementInfoViewComponent",
                          IsEnabled = true,
                          SortOrder = 1
@@ -104,19 +104,19 @@ public static class DefaultZoneDefinition
                  ]
              },
              new ZoneTabDefinition {
-                 Name = SettingsConstants.UI.Tabs.Payments,
+                 Name = UnitySelector.Payment.Default,
                  IsEnabled = true,
                  SortOrder = 5,
                  ElementId = "nav-payment-info",
                  Zones = [
                      new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Payments + ".PaymentInfo",
+                         Name = UnitySelector.Payment.Summary.Default,
                          ViewComponentType = "PaymentInfoViewComponent",
                          IsEnabled = true,
                          SortOrder = 1
                      },
                       new ZoneDefinition {
-                         Name = SettingsConstants.UI.Tabs.Payments + ".PaymentList",
+                         Name = UnitySelector.Payment.PaymentList.Default,
                          ViewComponentType = "PaymentListViewComponent",
                          IsEnabled = true,
                          IsConfigurationDisabled = true,

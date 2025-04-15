@@ -13,8 +13,8 @@ using Unity.Flex.Worksheets.Definitions;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
-using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
+using Unity.Modules.Shared;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -346,7 +346,7 @@ namespace Unity.GrantManager.Assessments
 
         private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(AssessmentAction triggerAction)
         {
-            return new OperationAuthorizationRequirement { Name = $"{GrantApplicationPermissions.Assessments.Default}.{triggerAction}" };
+            return new OperationAuthorizationRequirement { Name = $"{UnitySelector.Review.AssessmentReviewList.Default}.{triggerAction}" };
         }
         #endregion ASSESSMENT WORKFLOW
 
@@ -385,7 +385,7 @@ namespace Unity.GrantManager.Assessments
             {
                 throw new AbpValidationException(ex.Message, ex);
             }
-        }      
+        }
 
         public async Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto)
         {
@@ -417,7 +417,8 @@ namespace Unity.GrantManager.Assessments
                     throw new AbpValidationException("AssessmentId Not Found: " + dto.AssessmentId + ".");
                 }
 
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 throw new AbpValidationException(ex.Message, ex);
             }
