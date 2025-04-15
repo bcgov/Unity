@@ -1,4 +1,4 @@
-﻿.batch-approval-modal-body {
+﻿.batch-approval-card {
     max-height: 65vh;
     overflow: auto;
 }
@@ -93,3 +93,24 @@
         margin: 0 0.5rem;
         margin-top: 2px;
     }
+
+
+.approval-note-prefix {
+    font-weight: 700;
+    color: var(--bc-colors-blue-text-links);
+    text-transform: uppercase;
+    border: 3px solid var(--bc-colors-blue-text-links);
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    padding: 0.025rem 0.5rem;
+    line-height: 1.75rem;
+}
+
+.approval-note-error {
+    color: var(--lpx-danger);
+    border-color: var(--lpx-danger);
+}
+
+.batch-approval-summary {
+    text-align: center;
+}

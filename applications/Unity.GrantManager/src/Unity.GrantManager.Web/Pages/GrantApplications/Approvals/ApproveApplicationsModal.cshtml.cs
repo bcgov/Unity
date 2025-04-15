@@ -1,4 +1,6 @@
+using Amazon.S3.Model;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -18,31 +20,31 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
     public List<BulkApplicationApproval>? BulkApplicationApprovals { get; set; }
 
     [TempData]
-    public List<string>? PopupMessages { get; set; }
-
-    [TempData]
-    public string? PopupTitle { get; set; }
-
-    [TempData]
     public int ApplicationsCount { get; set; }
 
     [TempData]
     public bool Invalid { get; set; }
 
-    private const int _maxBatchCount = 50;
+    [TempData]
+    public int MaxBatchCount { get; set; }
+
+    [TempData]
+    public string? MaxBatchCountExceededError { get; set; }
+
+    [TempData]
+    public bool MaxBatchCountExceeded { get; set; }
 
     public async void OnGet(string applicationIds)
     {
-        PopupMessages = [];
-        Invalid = false;
+        MaxBatchCount = BatchApprovalConsts.MaxBatchCount;        
         BulkApplicationApprovals = [];
+        MaxBatchCountExceededError = L["ApplicationBatchApprovalRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount.ToString()].Value;
 
         Guid[] applicationGuids = ParseApplicationIds(applicationIds);
 
         if (!ValidCount(applicationGuids))
         {
-            PopupMessages.Add($"You can only approve {_maxBatchCount} applications at a time. Please select fewer applications.");
-            Invalid = true;
+            MaxBatchCountExceeded = true;
         }
 
         // Load the applications by Id
@@ -68,40 +70,37 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
             BulkApplicationApprovals.Add(bulkApproval);
         }
 
-        Invalid = applications.Exists(s => !s.IsValid);
+        Invalid = applications.Exists(s => !s.IsValid) || MaxBatchCountExceeded;
         ApplicationsCount = applications.Count;
     }
 
-    private static List<KeyValuePair<string, bool>> SetNotesForApplication(BulkApprovalDto application)
+    private List<ApprovalNote> SetNotesForApplication(BulkApprovalDto application)
     {
-        var notes = new List<KeyValuePair<string, bool>>
+        var notes = new List<ApprovalNote>
         {
-            new("DECISION_DATE_DEFAULTED", false),
-            new("APPROVED_AMOUNT_DEFAULTED", false),
-            new("INVALID_STATUS", false),
-            new("INVALID_PERMISSIONS", false),
-            new("INVALID_APPROVED_AMOUNT", false)
+            new("DECISION_DATE_DEFAULTED", false, L.GetString("ApplicationBatchApprovalRequest:DecisionDateDefaulted"), false),
+            new("APPROVED_AMOUNT_DEFAULTED", false, L.GetString("ApplicationBatchApprovalRequest:ApprovedAmountDefaulted"), false),
+            new("INVALID_STATUS", false, L.GetString("ApplicationBatchApprovalRequest:InvalidStatus"), true),
+            new("INVALID_PERMISSIONS", false, L.GetString("ApplicationBatchApprovalRequest:InvalidPermissions"), true),
+            new("INVALID_APPROVED_AMOUNT", false, L.GetString("ApplicationBatchApprovalRequest:InvalidApprovedAmount"), true)
         };
-
 
         if (application.FinalDecisionDate == null)
         {
-            notes[0] = new KeyValuePair<string, bool>("DECISION_DATE_DEFAULTED", true);
+            notes[0] = new ApprovalNote(notes[0].Key, true, notes[0].Description, notes[0].IsError);
         }
 
         if (application.ApprovedAmount == 0m)
         {
-            notes[1] = new KeyValuePair<string, bool>("APPROVED_AMOUNT_DEFAULTED", true);
+            notes[0] = new ApprovalNote(notes[1].Key, true, notes[1].Description, notes[1].IsError);
         }
 
         foreach (var validation in application.ValidationMessages)
         {
-            for (int i = 2; i < notes.Count; i++)
+            var index = notes.FindIndex(note => note.Key == validation);
+            if (index != -1)
             {
-                if (notes[i].Key == validation)
-                {
-                    notes[i] = new KeyValuePair<string, bool>(notes[i].Key, true);
-                }
+                notes[index] = new ApprovalNote(validation, true, notes[index].Description, notes[index].IsError);
             }
         }
 
@@ -155,10 +154,10 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         return JsonConvert.DeserializeObject<Guid[]>(applicationIds ?? string.Empty) ?? [];
     }
 
-    private static bool ValidCount(Guid[] applicationGuids)
+    private bool ValidCount(Guid[] applicationGuids)
     {
         // Soft check in the UI for max approvals in one batch, this is subject to be tweaked later after performance testing
-        return applicationGuids.Length <= _maxBatchCount;
+        return applicationGuids.Length <= MaxBatchCount;
     }
 
     public class BulkApplicationApproval
@@ -183,6 +182,22 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         [DisplayName("Decision Date")]
         public DateTime DecisionDate { get; set; }
         public bool IsValid { get; set; }
-        public List<KeyValuePair<string, bool>> Notes { get; set; }
+        public List<ApprovalNote> Notes { get; set; }
+    }
+
+    public class ApprovalNote
+    {
+        public ApprovalNote(string key, bool active, string description, bool isError)
+        {
+            Key = key;
+            Active = active;
+            Description = description;
+            IsError = isError;
+        }
+
+        public string Key { get; set; }
+        public bool Active { get; set; }
+        public string Description { get; set; }
+        public bool IsError { get; set; }
     }
 }

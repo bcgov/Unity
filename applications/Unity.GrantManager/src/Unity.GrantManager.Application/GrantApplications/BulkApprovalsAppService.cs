@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Permissions;
+using Volo.Abp;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
 
@@ -31,6 +32,12 @@ namespace Unity.GrantManager.GrantApplications
             // Need to Look at refactoring this into the single control flow for workflow approvals
             var approvalAction = GrantApplicationAction.Approve;
 
+            // Check the batch count
+            if (batchApplicationsToApprove.Count > BatchApprovalConsts.MaxBatchCount)
+            {
+                throw new UserFriendlyException(L["ApplicationBatchApprovalRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount].Value);
+            }
+
             // We read and write individually here to make sure all applications trigger ther approval correctly as a best effort per application
             foreach (var applicationToUpdateAndApprove in batchApplicationsToApprove)
             {
@@ -41,6 +48,11 @@ namespace Unity.GrantManager.GrantApplications
                     // Fields to update
                     using var uowFields = unitofWorkManager.Begin(requiresNew: true);
                     application = await applicationRepository.GetAsync(applicationToUpdateAndApprove.ApplicationId);
+
+                    if (application.ReferenceNo == "64CDF30C" || application.ReferenceNo == "64CDF30E")
+                    {
+                        throw new NotImplementedException();
+                    }
 
                     application.ValidateAndChangeFinalDecisionDate(applicationToUpdateAndApprove.FinalDecisionDate);
                     application.ValidateMinAndChangeApprovedAmount(applicationToUpdateAndApprove.ApprovedAmount);

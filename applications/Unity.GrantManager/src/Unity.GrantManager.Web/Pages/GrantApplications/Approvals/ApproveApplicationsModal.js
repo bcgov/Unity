@@ -61,11 +61,33 @@ function runValidations() {
         isValid = false;
     }
 
+    if (!validBatchCount()) {
+        isValid = false;
+        setMaxCountError(true);
+    } else {
+        setMaxCountError(false);
+    }
+
     if (isValid) {
         enableBulkApprovalSubmit();
     } else {
         disableBulkApprovalSubmit();
     }
+}
+
+function setMaxCountError(visible) {
+    const summary = $('#batch-approval-summary');
+    if (visible) {
+        summary.css('display', 'block');
+    } else {
+        summary.css('display', 'none');
+    }
+}
+
+function validBatchCount() {
+    let applicationsCount = $('#ApplicationsCount').val();
+    let maxBatchCount = $('#MaxBatchCount').val();
+    return applicationsCount <= maxBatchCount;
 }
 
 function enableBulkApprovalSubmit() {
