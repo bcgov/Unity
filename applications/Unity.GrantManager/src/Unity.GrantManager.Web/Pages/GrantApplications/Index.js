@@ -236,7 +236,7 @@
             title: 'Submission #',
             data: 'referenceNo',
             name: 'referenceNo',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             render: function (data, type, row) {
                 console.log(row);
                 return `<a href="/GrantApplications/Details?ApplicationId=${row.id}">${data}</a>`;

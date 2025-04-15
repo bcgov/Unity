@@ -316,10 +316,14 @@ $(function () {
             title: l('ApplicationPaymentListTable:SubmissionConfirmationCode'),
             name: 'submissionConfirmationCode',
             data: 'submissionConfirmationCode',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: function (data) {
-                return data?.length > 0 ? data : null;
+            render: function (data, type, row) {
+                if (row.correlationProvider === 'Application' && data?.length > 0) {
+                    return `<a href="/GrantApplications/Details?ApplicationId=${row.correlationId}">${data}</a>`;
+                }
+
+                return data || null;
             }
         };
     }
