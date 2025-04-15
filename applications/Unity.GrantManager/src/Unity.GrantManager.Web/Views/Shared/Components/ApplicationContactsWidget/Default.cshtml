@@ -1,8 +1,13 @@
+@using Unity.Modules.Shared
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidget;
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
 
 @model ApplicationContactsWidgetViewModel
 @{
     Layout = null;
+    var editGranted = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.Contact.Update);
 }
 
 <div>
@@ -42,7 +47,7 @@
                 @if(!(Model.IsReadOnly)) {
                     <div class="pe-2">
                         <abp-button id="@contact.Id" data-id="@contact.Id" class="contact-edit-btn" icon-type="Other" icon="fl fl-edit"
-                            button-type="Light" />
+                            button-type="Light" abp-if="@editGranted"/>
                     </div>
                 }
             </div>
