@@ -184,6 +184,13 @@ function initializeDataTable(options) {
 
     setExternalSearchFilter(iDt);
 
+    // Prevent row selection when clicking on a link inside a cell
+    iDt.on('user-select', function (e, dt, type, cell, originalEvent) {
+        if (originalEvent.target.nodeName.toLowerCase() === 'a') {
+            e.preventDefault();
+        }
+    });
+
     return iDt;
 }
 

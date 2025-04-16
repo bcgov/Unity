@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.Settings;
 
@@ -8,6 +10,7 @@ namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
 
 [Widget(
     ScriptTypes = [typeof(NotificationsSettingScriptBundleContributor)],
+    StyleTypes = [typeof(NotificationsSettingStyleBundleContributor)],
     AutoInitialize = true
 )]
 public class NotificationsSettingViewComponent(ISettingProvider settingProvider) : AbpViewComponent
@@ -26,4 +29,25 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
 
         return View("~/Views/Settings/NotificationsSettingGroup/Default.cshtml", model);
     }
+
+    public class NotificationsSettingScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context
+                .Files
+                .AddIfNotContains("/Views/Settings/NotificationsSettingGroup/Default.js");
+        }
+    }
+
+    public class NotificationsSettingStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+           context.Files
+                .AddIfNotContains("/Views/Settings/NotificationsSettingGroup/Default.css");
+        }
+    }
 }
+
+
