@@ -7,5 +7,6 @@ namespace Unity.Flex.Reporting
     public interface IScoresheetReportingDataGeneratorAppService : IApplicationService
     {
         Task Generate(Guid scoresheetInstanceId);
+        Task Sync();
     }
 }

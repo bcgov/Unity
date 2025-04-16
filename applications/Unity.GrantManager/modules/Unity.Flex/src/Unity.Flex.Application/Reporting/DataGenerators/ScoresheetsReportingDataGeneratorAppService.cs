@@ -5,6 +5,7 @@ using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Entities;
 
 namespace Unity.Flex.Reporting.DataGenerators
 {
@@ -16,9 +17,14 @@ namespace Unity.Flex.Reporting.DataGenerators
     {
         public async Task Generate(Guid scoresheetInstanceId)
         {
-            var scoresheetInstance = await scoresheetInstanceRepository.GetAsync(scoresheetInstanceId, true);
+            var scoresheetInstance = await scoresheetInstanceRepository.GetWithAnswersAsync(scoresheetInstanceId) ?? throw new EntityNotFoundException();
             var scoresheet = await scoresheetRepository.GetAsync(scoresheetInstance.ScoresheetId);
             reportingDataGeneratorService.GenerateAndSet(scoresheet, scoresheetInstance);
+        }
+
+        public Task Sync()
+        {
+            throw new NotImplementedException();
         }
     }
 }

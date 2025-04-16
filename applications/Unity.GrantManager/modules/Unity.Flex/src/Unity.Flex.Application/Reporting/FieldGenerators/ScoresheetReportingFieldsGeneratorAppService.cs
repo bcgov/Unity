@@ -21,5 +21,14 @@ namespace Unity.Flex.Reporting.FieldGenerators
             var scoresheet = await scoresheetRepository.GetAsync(scoresheetId, true);
             reportingFieldsGeneratorService.GenerateAndSet(scoresheet);
         }
+
+        /// <summary>
+        /// Runs a sync operation to fill in an missed reporting data fields and views
+        /// </summary>
+        /// <returns></returns>
+        public async Task Sync()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

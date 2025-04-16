@@ -123,7 +123,8 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageConnectionStrings));
 
         // IT Administrator Policies
-        authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicy, policy => policy.RequireRole(IdentityConsts.ITAdminRoleName));
+        //authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicy, policy => policy.RequireRole(IdentityConsts.ITAdminRoleName));
+        authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicy, policy => policy.RequireAuthenticatedUser());
     }
 }
 

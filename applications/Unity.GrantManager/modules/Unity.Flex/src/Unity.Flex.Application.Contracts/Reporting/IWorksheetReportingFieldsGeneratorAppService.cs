@@ -7,5 +7,6 @@ namespace Unity.Flex.Reporting
     public interface IWorksheetReportingFieldsGeneratorAppService : IApplicationService
     {
         Task Generate(Guid worksheetId);
+        Task Sync();
     }
 }
