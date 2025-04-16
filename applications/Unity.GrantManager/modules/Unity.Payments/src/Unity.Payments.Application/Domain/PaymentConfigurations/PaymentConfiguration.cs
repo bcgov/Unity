@@ -1,5 +1,4 @@
 ﻿using System;
-using Unity.Payments.Domain.AccountCodings;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -10,12 +9,6 @@ namespace Unity.Payments.Domain.PaymentConfigurations
         public Guid? TenantId { get; set; }
         public string PaymentIdPrefix { get; set; } = string.Empty;
         public decimal? PaymentThreshold { get; set; }
-        public string? MinistryClient { get; private set; }
-        public string? Responsibility { get; private set; }
-        public string? ServiceLine { get; private set; }
-        public string? Stob { get; private set; }
-        public string? ProjectNumber { get; private set; }
-
 
         protected PaymentConfiguration()
         {
@@ -24,21 +17,10 @@ namespace Unity.Payments.Domain.PaymentConfigurations
 
         public PaymentConfiguration(
             decimal? paymentThreshold,
-            string paymentIdPrefix,
-            AccountCoding accountCoding)
+            string paymentIdPrefix)
         {
             PaymentThreshold = paymentThreshold;
-            PaymentIdPrefix = paymentIdPrefix;
-            SetAccountCoding(accountCoding);
-        }
-
-        public void SetAccountCoding(AccountCoding accountCoding)
-        {
-            MinistryClient = accountCoding.MinistryClient;
-            Responsibility = accountCoding.Responsibility;
-            ServiceLine = accountCoding.ServiceLine;
-            Stob = accountCoding.Stob;
-            ProjectNumber = accountCoding.ProjectNumber;
+            PaymentIdPrefix = paymentIdPrefix;            
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Unity.Payments.Domain.Exceptions;
 using Volo.Abp;
@@ -9,15 +11,18 @@ using Volo.Abp.MultiTenancy;
 namespace Unity.Payments.Domain.AccountCodings
 {
     public class AccountCoding : FullAuditedAggregateRoot<Guid>, IMultiTenant
-    {
+    {        
         public Guid? TenantId { get; set; }
 
-        // Account Coding Fields
-        public virtual string? MinistryClient { get; private set; } = string.Empty;
-        public virtual string? Responsibility { get; private set; } = string.Empty;
-        public virtual string? ServiceLine { get; private set; } = string.Empty;
-        public virtual string? Stob { get; private set; } = string.Empty;
-        public virtual string? ProjectNumber { get; private set; } = string.Empty;
+        public string MinistryClient { get; set; } = string.Empty;
+
+        public string Responsibility { get; set; } = string.Empty;
+
+        public string ServiceLine { get; set; } = string.Empty;
+
+        public string Stob { get; set; } = string.Empty;
+
+        public string ProjectNumber { get; set; } = string.Empty;
 
         // Constructor for ORM
         protected AccountCoding()

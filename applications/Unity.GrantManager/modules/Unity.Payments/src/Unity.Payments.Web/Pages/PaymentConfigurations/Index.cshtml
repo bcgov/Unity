@@ -1,7 +1,7 @@
 ﻿@page
-@model Unity.Payments.Web.Pages.PaymentConfigurations.CreatePaymentConfigurationModel
+
 @{
-    ViewBag.PageTitle = "Payment Configuration";
+    ViewBag.PageTitle = "Account Codes";
 }
 @section styles {
     <abp-style-bundle>
@@ -14,8 +14,6 @@
     </abp-script-bundle>
 }
 
-<input id="status-message" type="hidden" asp-for="StatusMessage" />
-
 <div class="input-area card mb-3 payment-config">
 
     <div class="container-fluid px-0">
@@ -24,7 +22,7 @@
                 <h4>Account Codes</h4>
             </div>
             <div class="filter-search-action-bar_search-wrapper">
-                <input type="search" id="search-intakes" placeholder="Search" class="tbl-search">
+                <input type="search" id="search-data-table" placeholder="Search" class="tbl-search">
             </div>
 
             <div class="btn-group" id="app_custom_buttons"></div>
@@ -35,48 +33,5 @@
             <abp-table id="AccountCodesDataTable"></abp-table>
         </div>
     </div>
-Make this a modal
-    <abp-dynamic-form abp-model="PaymentConfiguration" id="paymentConfigForm" class="payment-form" asp-page="/PaymentConfigurations/Index">
-        <h4>Account Coding</h4>
-        <abp-form-content />
-        <abp-row>
-            <abp-column size="_12" class="p-3">
-                <label class="form-label">Account Coding</label>
-                <input id="account-coding" type="text" value="" readonly="" class="valid form-control readonly" aria-invalid="false">
-            </abp-column>
 
-            <h4 class="pt-2 p-3">Payment Settings</h4>
-            <label class="form-label note"><b>NOTE:</b> All payments above the approval payment threshold will require an additional level of approval before they can be submitted to CAS.</label>
-
-            <abp-column size="_6" class="mb-3 p-3 dm-approval">
-                <label class="form-label" for="PaymentThreshold">Approval Payment Threshold</label><span> * </span><br />
-                <span class="currencyinput">
-                    $
-                    <input type="number" data-val="true" data-val-range="The field Payment Threshold Amount must be 0 or greater."
-                           data-val-range-max="1.7976931348623157E+308"
-                           data-val-range-min="0" data-val-required="The Payment Threshold Amount field is required."
-                           id="PaymentThreshold" name="PaymentThreshold"
-                           value="@Model.PaymentThreshold" class="form-control currency">
-                    <span class="text-danger field-validation-valid" data-valmsg-for="PaymentThreshold" data-valmsg-replace="true">
-                    </span>
-                </span>
-            </abp-column>
-
-            <abp-column size="_6" class="mb-3 p-3 dm-approval">
-                <label class="form-label" for="PaymentIdPrefix">Payment Id Prefix</label><span> * </span>
-
-                <input type="text" data-val="true" data-val-required="The Payment Id Prefix field is required."
-                       maxlength="4"                       
-                       id="PaymentIdPrefix" name="PaymentIdPrefix"
-                       value="@Model.PaymentIdPrefix" class="form-control payment-prefix">
-                <span class="text-danger field-validation-valid" data-valmsg-for="PaymentIdPrefix" data-valmsg-replace="true">
-            </abp-column>
-
-            <abp-column size="_12" class="p-3 submit-section">
-                <abp-button class="btn-primary" text="SAVE CHANGES" type="submit"></abp-button>
-                <abp-button id="resetButton" class="btn-secondary pl-1" text="DISCARD CHANGES"></abp-button>
-            </abp-column>
-        </abp-row>
-
-    </abp-dynamic-form>
 </div>

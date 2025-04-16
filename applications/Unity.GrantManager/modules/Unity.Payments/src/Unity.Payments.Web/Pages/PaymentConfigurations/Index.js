@@ -1,26 +1,7 @@
 $(function () {
-    const UIElements = {
-        inputMinistryClient: $('input[name="PaymentConfiguration.MinistryClient"]'),
-        inputResponsibility: $('input[name="PaymentConfiguration.Responsibility"]'),
-        inputServiceLine: $('input[name="PaymentConfiguration.ServiceLine"]'),
-        inputStob: $('input[name="PaymentConfiguration.Stob"]'),
-        inputProjectNumber: $('input[name="PaymentConfiguration.ProjectNumber"]'),
-        readOnlyAccountCoding: $('#account-coding'),
-        statusMessage: $('#status-message'),
-        inputPaymentIdPrefix: $('#PaymentIdPrefix')
-    };
 
-    init();
-
-    function init() {
-        bindUIEvents();
-        setAccountCodingDisplay();
-        displayStatusMessage();
-        bindLimitedInputFields(/^[a-zA-Z0-9]+$/, [UIElements.inputPaymentIdPrefix[0].id]);
-    }
-
-    let createModal = new abp.ModalManager(abp.appPath + 'PaymentConfigurations/CreateModal');
-    let updateModal = new abp.ModalManager(abp.appPath + 'PaymentConfigurations/UpdateModal');
+    let createModal = new abp.ModalManager(abp.appPath + 'AccountCoding/CreateModal');
+    let updateModal = new abp.ModalManager(abp.appPath + 'AccountCoding/UpdateModal');
     const l = abp.localization.getResource('GrantManager');
     /**
      * List All
@@ -36,44 +17,44 @@ $(function () {
         },
         ...commonTableActionButtons(l('Intake'))
     ];
-
+    let index = 0;
     const listColumns = [
         {
             title: 'Ministry Client',
             name: "ministryClient",
             data: "ministryClient",
-            index: 0
+            index: index
         },
         {
             title: 'Responsibility',
             name: "responsibility", 
             data: "responsibility",
-            index: 1
+            index: index++
         },
         {
             title: 'Service Line',
             name: "serviceLine", 
             data: "serviceLine",
-            index: 2
+            index: index++
         },
         {
             title: 'Stob',
             name: "stob", 
             data: "stob",
-            index: 3
+            index: index++
         },
         {
             title: 'Project #',
             name: "projectNumber", 
             data: "projectNumber",
-            index: 4
+            index: index++
         },  
         {
-            title: 'Default',
+            title: 'Action',
             orderable: false,
             className: 'notexport text-center',
             name: 'rowActions',
-            index: 5,
+            index: index++,
             rowAction: {
                 items:
                     [
@@ -85,11 +66,11 @@ $(function () {
             }
         },
         {
-            title: '',
+            title: 'Default',
             orderable: false,
             className: 'notexport text-center',
             name: 'defaultRadio',
-            index: 6,
+            index: index++,
             rowAction: {
                 items:
                     [
@@ -136,10 +117,10 @@ $(function () {
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
-        dataTableName: 'IntakesTable',
+        dataTableName: 'AccountCodesDataTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-intakes'
+        externalSearchId: 'search-data-table'
     });
 
     createModal.onResult(function () {
@@ -153,60 +134,32 @@ $(function () {
     function createIntakeBtn(e) {
         e.preventDefault();
         createModal.open();
-    };
+        createModal.onOpen(function () {
 
+            const UIElements = {
+                inputMinistryClient: $('input[name="AccountCoding.MinistryClient"]'),
+                inputResponsibility: $('input[name="AccountCoding.Responsibility"]'),
+                inputServiceLine: $('input[name="AccountCoding.ServiceLine"]'),
+                inputStob: $('input[name="AccountCoding.Stob"]'),
+                inputProjectNumber: $('input[name="AccountCoding.ProjectNumber"]'),
+                readOnlyAccountCoding: $('#account-coding')
+            };
 
-    function displayStatusMessage() {
-        let statusMessage = UIElements.statusMessage.val();
-        if (statusMessage != "") {
-            if (statusMessage.indexOf('error') > 0) {
-                abp.notify.error(
-                    UIElements.statusMessage.val(),
-                    'Error Occurred'
-                );
-            } else {
-                abp.notify.success(
-                    UIElements.statusMessage.val(),
-                    'Save Successful'
-                );
+            UIElements.inputMinistryClient.on('keyup', setAccountCodingDisplay);
+            UIElements.inputResponsibility.on('keyup', setAccountCodingDisplay);
+            UIElements.inputServiceLine.on('keyup', setAccountCodingDisplay);
+            UIElements.inputStob.on('keyup', setAccountCodingDisplay);
+            UIElements.inputProjectNumber.on('keyup', setAccountCodingDisplay);
+            
+            function setAccountCodingDisplay() {
+                let currentAccount = $(UIElements.inputMinistryClient).val() + "." +
+                    $(UIElements.inputResponsibility).val() + "." +
+                    $(UIElements.inputServiceLine).val() + "." +
+                    $(UIElements.inputStob).val() + "." +
+                    $(UIElements.inputProjectNumber).val();
+                
+                $(UIElements.readOnlyAccountCoding).val(currentAccount);
             }
-        }
-    }
-
-    function bindUIEvents() {
-        UIElements.inputMinistryClient.on('keyup', setAccountCodingDisplay);
-        UIElements.inputResponsibility.on('keyup', setAccountCodingDisplay);
-        UIElements.inputServiceLine.on('keyup', setAccountCodingDisplay);
-        UIElements.inputStob.on('keyup', setAccountCodingDisplay);
-        UIElements.inputProjectNumber.on('keyup', setAccountCodingDisplay);
-    }
-
-    function bindLimitedInputFields(regex, fieldIds) {
-        fieldIds.forEach((id) => {
-            let inputElement = document.getElementById(id);
-            inputElement.addEventListener('input', function (_) {
-                let value = inputElement.value;
-                let lastChar = value.charAt(value.length - 1);
-
-                if (!regex.test(lastChar)) {
-                    inputElement.value = value.slice(0, -1);
-                }
-
-                inputElement.value = inputElement.value.toUpperCase();
-            });
         });
-    }
-
-    function setAccountCodingDisplay() {
-        let currentAccount = $(UIElements.inputMinistryClient).val() + "." +
-            $(UIElements.inputResponsibility).val() + "." +
-            $(UIElements.inputServiceLine).val() + "." +
-            $(UIElements.inputStob).val() + "." +
-            $(UIElements.inputProjectNumber).val();
-        $(UIElements.readOnlyAccountCoding).val(currentAccount);
-    }
-    $('#resetButton').click(function () {
-        $('#paymentConfigForm')[0].reset();
-        setAccountCodingDisplay();
-    });
+    };
 });

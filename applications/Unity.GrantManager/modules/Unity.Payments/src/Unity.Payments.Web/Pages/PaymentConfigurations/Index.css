@@ -11,12 +11,6 @@
 	overflow: scroll;
 }
 
-.field-validation-error {
-	float: inline-start;
-    display: block;
-    max-width: 332px;
-    width: 332px;
-}
 
 .readonly {
 	color: var(--bc-colors-grey-text-500);
@@ -73,6 +67,22 @@
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.field-validation-error {
+	float: inline-start;
+    display: block;
+    max-width: 100%;
+    width: 100%;
+}
+
+.modal-dialog {
+    max-width: 850px !important;
+    min-width: 850px !important;
+}
+
+input.form-control:focus, input.form-control:active, textarea.form-control:focus, textarea.form-control:active, .form-select:focus, .form-select:active {
+	font-weight: inherit !important;
 }
 
 @media only screen and (max-width: 850px) {
