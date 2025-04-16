@@ -170,13 +170,6 @@
             update-permission-requirement="@UnitySelector.Applicant.Contact.Update">
             <abp-row class="m-0 project-info-location">
                 <abp-row class="m-0 p-0">
-                    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                        <div id="ContactInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-                            <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:ApplicantInfoContactInfo"].Value</h6>
-                        </div>
-                    </abp-column>
-                </abp-row>
-                <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
                         <abp-input asp-for="@Model.ApplicantInfo.ContactFullName"
                                    onchange="enableApplicantInfoSaveBtn(this)" />

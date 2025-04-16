@@ -67,22 +67,28 @@ public static class DefaultZoneDefinition
                          SortOrder = 1
                      },
                      new ZoneDefinition {
+                         Name = UnitySelector.Applicant.Supplier.Default,
+                         ViewComponentType = "SupplierInfoViewComponent",
+                         IsEnabled = true,
+                         SortOrder = 2
+                     },
+                     new ZoneDefinition {
                          Name = UnitySelector.Applicant.Contact.Default,
                          ViewComponentType = "ApplicantContactInfoViewComponent",
                          IsEnabled = true,
-                         SortOrder = 2
+                         SortOrder = 3
                      },
                      new ZoneDefinition {
                          Name = UnitySelector.Applicant.Authority.Default,
                          ViewComponentType = "ApplicantSigningAuthorityViewComponent",
                          IsEnabled = true,
-                         SortOrder = 3
+                         SortOrder = 4
                      },
                      new ZoneDefinition {
                          Name = UnitySelector.Applicant.Location.Default,
                          ViewComponentType = "ApplicantPhysicalAddressViewComponent",
                          IsEnabled = true,
-                         SortOrder = 4
+                         SortOrder = 5
                      },
                  ]
              },
