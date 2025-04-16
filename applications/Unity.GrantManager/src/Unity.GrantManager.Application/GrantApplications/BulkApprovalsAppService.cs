@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Permissions;
-using Volo.Abp;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
 
