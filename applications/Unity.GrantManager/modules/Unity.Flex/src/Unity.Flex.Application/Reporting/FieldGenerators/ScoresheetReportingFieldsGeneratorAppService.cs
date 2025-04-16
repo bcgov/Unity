@@ -2,11 +2,12 @@
 using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Flex.Reporting.FieldGenerators
 {
-    [Authorize]
+    [Authorize(IdentityConsts.ITAdminPolicy)]
     public class ScoresheetReportingFieldsGeneratorAppService(IReportingFieldsGeneratorService<Scoresheet> reportingFieldsGeneratorService,
         IScoresheetRepository scoresheetRepository) : ApplicationService, IScoresheetReportingFieldsGeneratorAppService
     {

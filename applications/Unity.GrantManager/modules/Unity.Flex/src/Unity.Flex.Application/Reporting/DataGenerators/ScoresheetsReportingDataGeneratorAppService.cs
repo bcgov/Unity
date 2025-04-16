@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Flex.Reporting.DataGenerators
 {
+    [Authorize(IdentityConsts.ITAdminPolicy)]
     public class ScoresheetsReportingDataGeneratorAppService(IReportingDataGeneratorService<Scoresheet, ScoresheetInstance> reportingDataGeneratorService,
         IScoresheetInstanceRepository scoresheetInstanceRepository,
         IScoresheetRepository scoresheetRepository)

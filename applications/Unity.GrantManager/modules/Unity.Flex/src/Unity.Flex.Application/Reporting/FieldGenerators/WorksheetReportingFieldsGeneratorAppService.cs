@@ -2,11 +2,12 @@
 using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Worksheets;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Flex.Reporting.FieldGenerators
 {
-    [Authorize]
+    [Authorize(IdentityConsts.ITAdminPolicy)]
     public class WorksheetReportingFieldsGeneratorAppService(IReportingFieldsGeneratorService<Worksheet> reportingFieldsGeneratorService,
         IWorksheetRepository worksheetRepository) : ApplicationService, IWorksheetReportingFieldsGeneratorAppService
     {

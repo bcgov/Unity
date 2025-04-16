@@ -2,11 +2,12 @@
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Reporting.FieldGenerators
 {
-    [Authorize]
+    [Authorize(IdentityConsts.ITAdminPolicy)]
     public class FormVersionReportingFieldsGeneratorAppService(IReportingFieldsGeneratorService reportingFieldsGeneratorService,
         IApplicationFormVersionRepository applicationFormVersionRepository) : ApplicationService, IFormVersionReportingFieldsGeneratorAppService
     {

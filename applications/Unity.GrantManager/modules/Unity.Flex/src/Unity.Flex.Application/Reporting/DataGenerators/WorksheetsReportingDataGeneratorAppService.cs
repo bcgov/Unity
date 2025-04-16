@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Flex.Reporting.DataGenerators
 {
+    [Authorize(IdentityConsts.ITAdminPolicy)]
     public class WorksheetsReportingDataGeneratorAppService(IReportingDataGeneratorService<Worksheet, WorksheetInstance> reportingDataGeneratorService,
         IWorksheetInstanceRepository worksheetInstanceRepository,
         IWorksheetRepository worksheetRepository)

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
+using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -120,6 +121,9 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageFeatures));
         authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.ManageConnectionStrings,
             policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageConnectionStrings));
+
+        // IT Administrator Policies
+        authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicy, policy => policy.RequireRole(IdentityConsts.ITAdminRoleName));
     }
 }
 

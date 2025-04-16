@@ -3,12 +3,13 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 
 namespace Unity.GrantManager.Reporting.DataGenerators
 {
-    [Authorize]
+    [Authorize(IdentityConsts.ITAdminPolicy)]
     public class SubmissionReportingDataGeneratorAppService(IReportingDataGenerator reportingDataGenerator,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IApplicationFormVersionRepository applicationFormVersionRepository) : ApplicationService, ISubmissionReportingDataGeneratorAppService
