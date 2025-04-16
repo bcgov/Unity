@@ -164,10 +164,11 @@
 
     "Unity.GrantManager.ApplicationManagement.Review.Approval": "Approval",
     "Unity.GrantManager.ApplicationManagement.Review.Approval.Update": "Edit Approval Fields",
+    "Unity.GrantManager.ApplicationManagement.Review.Approval.Update.UpdateFinalStateFields": "Edit Approval fields after approval",
 
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults": "Application Assessment Results",
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update": "Edit Application Assessment Result",
-    "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update.UpdateFinalStateFields": "Edit Application Assessment Result After Approval",
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update.UpdateFinalStateFields": "Edit Application Assessment Result after approval",
 
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList": "Assessment List",
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create": "Create Assessment",
