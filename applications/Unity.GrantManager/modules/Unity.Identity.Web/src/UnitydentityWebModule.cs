@@ -69,6 +69,8 @@ public class UnitydentityWebModule : AbpModule
             options.Conventions.AuthorizePage("/Identity/Roles/Index", IdentityPermissions.Roles.Default);
             options.Conventions.AuthorizePage("/Identity/Roles/CreateModal", IdentityPermissions.Roles.Create);
             options.Conventions.AuthorizePage("/Identity/Roles/EditModal", IdentityPermissions.Roles.Update);
+
+            options.Conventions.AuthorizePage("/Identity/Roles/PermissionRoleMatrix", IdentityPermissions.Roles.Default);
         });
 
         Configure<DynamicJavaScriptProxyOptions>(options =>

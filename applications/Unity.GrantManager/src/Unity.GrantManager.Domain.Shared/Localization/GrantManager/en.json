@@ -192,11 +192,14 @@
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary": "Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update": "Edit Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact": "Contact Info",
+    "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Create": "Add Contact Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update": "Edit Contact Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Authority": "Signing Authority",
     "Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update": "Edit Signing Authority",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location": "Address",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location.Update": "Edit Address",
+    "Unity.GrantManager.ApplicationManagement.Applicant.Supplier": "Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Update": "Edit Supplier Info",
 
     "Unity.GrantManager.ApplicationManagement.Funding": "Funding",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Funding Agreement",
@@ -412,7 +415,16 @@
     "ApplicationContact:Email": "Email",
     "ApplicationContact:MobilePhone": "Mobile Phone Number",
     "ApplicationContact:WorkPhone": "Work Phone Number",
-    "ApplicationContact:Delete": "Delete This Contact"
+    "ApplicationContact:Delete": "Delete This Contact",
+
+    "Permission:GrantApplicationPermissions.AssessmentResults.Default": "Assessment Results",
+    "Permission:GrantApplicationPermissions.AssessmentResults.Edit": "Assessment Results Update",
+    "Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields": "Edit Fields After Approval",
+    "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
+    "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
+    "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
+    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment",
+    "Permission:GrantApplicationPermissions.Assessments.SendToTeamLead": "Send To Team Lead"
   }
 }
 

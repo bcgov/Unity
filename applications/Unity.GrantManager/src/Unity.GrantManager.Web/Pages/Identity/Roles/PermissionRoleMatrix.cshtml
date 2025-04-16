@@ -1,0 +1,131 @@
+﻿@page
+
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+
+@model Unity.GrantManager.Web.Pages.Identity.Roles.PermissionRoleMatrixModel
+
+@inject IPageLayout PageLayout
+@inject IStringLocalizer<GrantManagerResource> L
+
+@{
+    PageLayout.Content.Title = "Permission-Role Matrix";
+    ViewBag.PageTitle = "Permission-Role Matrix";
+    int rowCount = 1;
+    int maxDepth = Model.PermissionRoleMatrix.Max(item => item.Depth);
+    int headerLevel = maxDepth + 1;
+}
+
+@section scripts {
+    <abp-script src="/Pages/Identity/Roles/PermissionRoleMatrix.js" />
+}
+
+<div class="container-fluid px-0">
+    <div class="action-bar p-2 filter-search-action-bar">
+        <div class="unity-page-titlebar">
+            <h4>Permission-Role Matrix</h4>
+        </div>
+        <div class="filter-search-action-bar_search-wrapper">
+            <input type="search" id="search" placeholder="Search" class="tbl-search">
+        </div>
+
+        <div class="btn-group" id="app_custom_buttons">
+        </div>
+
+        <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+    <div class="p-3 pt-0">
+        <table id="permissionTable" class="table table-bordered">
+        @if (!Model.IsExpanded)
+        {
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>L</th>
+                        <th>Permission Group</th>
+                        <th>Permission</th>
+                        <th>Description</th>
+                        @foreach (var role in Model.PermissionRoleMatrix.FirstOrDefault()?.RolePermissions.Keys)
+                        {
+                            <th>@role</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var permission in Model.PermissionRoleMatrix)
+                    {
+                        <tr>
+                            <td>@rowCount.ToString("D2")</td>
+                            @{
+                                rowCount++;
+                            }
+                            <td>@permission.Depth.ToString("D1")</td>
+                            <td>@permission.GroupName</td>
+                            <td>@permission.PermissionName</td>
+                            <td>@(L[permission.PermissionDisplayName].Value)</td>
+                            @foreach (var hasPermission in permission.RolePermissions.Values)
+                            {
+                                <td>@(hasPermission ? "TRUE" : string.Empty)</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+        }
+        else
+        {
+                <thead>
+                    <tr>
+                        <th rowspan="2" data-dt-order="disable">#</th>
+                        <th rowspan="2" data-dt-order="disable">L</th>
+                        <th rowspan="2">Permission Group</th>
+                        <th colspan="@headerLevel" data-dt-order="disable">Permission</th>
+                        <th rowspan="2">Description</th>
+                        @foreach (var role in Model.PermissionRoleMatrix.FirstOrDefault()?.RolePermissions.Keys)
+                        {
+                            <th rowspan="2">@role</th>
+                        }
+                    </tr>
+                    <tr>
+                        @for (int groupLevel = 1; groupLevel < headerLevel + 1; groupLevel++)
+                        {
+                            <th>Level @groupLevel</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var permission in Model.PermissionRoleMatrix)
+                    {
+                        <tr>
+                            <td>
+                                @rowCount.ToString("D2")
+                            </td>
+                            @{
+                                rowCount++;
+                            }
+                            <td>@permission.Depth.ToString("D1")</td>
+                            <td>@permission.GroupName</td>
+                            @for (int i = 0; i < permission.Depth; i++)
+                            {
+                                <td></td>
+                            }
+
+                            <td>@permission.PermissionName</td>
+
+                            @for (int j = permission.Depth; j < maxDepth; j++)
+                            {
+                                <td></td>
+                            }
+
+                            <td>@permission.PermissionDisplayName</td>
+
+                            @foreach (var hasPermission in permission.RolePermissions.Values)
+                            {
+                                <td>@(hasPermission ? "TRUE" : string.Empty)</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+        }
+        </table>
+    </div>

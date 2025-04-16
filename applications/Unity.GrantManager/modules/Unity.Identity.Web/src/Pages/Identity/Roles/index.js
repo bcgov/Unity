@@ -119,6 +119,13 @@ $(function () {
 
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
+        {
+            text: '<i class="fl fl-multi-select align-middle"></i><span>View Role Matrix</span>',
+            className: 'btn-light rounded-1',
+            action: function (e, dt, button, config) {
+                window.location = '/Identity/Roles/PermissionRoleMatrix'
+            }
+        },
         ...commonTableActionButtons(l('Roles'))
     ];
 
