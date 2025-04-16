@@ -46,7 +46,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
             bool isFormEditGranted = await _authorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
             bool isEditGranted = isFormEditGranted && !finalDecisionState;
-            bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields) && finalDecisionState);
 
             AssessmentResultsPageModel model = new()
             {
@@ -54,9 +53,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                 ApplicationFormId = application.ApplicationForm.Id,
                 ApplicationFormVersionId = applicationFormVersionId,
                 IsFormEditGranted = isFormEditGranted,
-                IsEditGranted = isEditGranted,
-                IsPostEditFieldsAllowed = isPostEditFieldsAllowed
+                IsEditGranted = isEditGranted
             };
+            
+            model.IsPostEditFieldsAllowed_Approval = isEditGranted || (await _authorizationService.IsGrantedAsync(UnitySelector.Review.Approval.Update.UpdateFinalStateFields) && finalDecisionState);
+            model.IsPostEditFieldsAllowed_AssessmentResults = isEditGranted || (await _authorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields) && finalDecisionState);
 
             model.ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(application.ApplicationForm.Id);
 

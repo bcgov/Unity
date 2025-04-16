@@ -35,7 +35,7 @@
                             <div class="unity-input-group">
                                 <span class="unity-input-prepend">$</span>
                                 <abp-input asp-for="@Model.ApprovalView.ApprovedAmount"
-                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" id="approvedAmountInput" disabled="@(!Model.IsPostEditFieldsAllowed)" />
+                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" id="approvedAmountInput" disabled="@(!Model.IsPostEditFieldsAllowed_Approval)" />
                             </div>
                         </abp-column>
                         <abp-column size="_4" class="px-1">
@@ -73,7 +73,7 @@
                             <div class="unity-input-group">
                                 <span class="unity-input-prepend">$</span>
                                 <abp-input asp-for="@Model.AssessmentResultsView.RequestedAmount" id="RequestedAmountInputAR"
-                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsPostEditFieldsAllowed)" />
+                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsPostEditFieldsAllowed_AssessmentResults)" />
                             </div>
                         </abp-column>
                         <abp-column size="_4" class="px-1">
@@ -114,7 +114,7 @@
                     <abp-row class="m-0">
                         <abp-column size="_4" class="px-1">
                             <abp-input type="number" asp-for="@Model.AssessmentResultsView.TotalScore"
-                                       onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsPostEditFieldsAllowed)" min="0" max="2147483647" />
+                                       onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsPostEditFieldsAllowed_AssessmentResults)" min="0" max="2147483647" />
                         </abp-column>
                         <abp-column size="_4" class="px-1">
                             <abp-select asp-for="@Model.AssessmentResultsView.AssessmentResultStatus" asp-items="@Model.AssessmentResultStatusList"
