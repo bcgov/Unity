@@ -32,12 +32,6 @@ namespace Unity.GrantManager.GrantApplications
             // Need to Look at refactoring this into the single control flow for workflow approvals
             var approvalAction = GrantApplicationAction.Approve;
 
-            // Check the batch count
-            if (batchApplicationsToApprove.Count > BatchApprovalConsts.MaxBatchCount)
-            {
-                throw new UserFriendlyException(L["ApplicationBatchApprovalRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount].Value);
-            }
-
             // We read and write individually here to make sure all applications trigger ther approval correctly as a best effort per application
             foreach (var applicationToUpdateAndApprove in batchApplicationsToApprove)
             {
