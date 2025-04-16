@@ -82,10 +82,12 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Default));
         
         // R&A - Approval Policies
-        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentResults.Default,
+        authorizationBuilder.AddPolicy(UnitySelector.Review.Approval.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Approval.Default));
-        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentResults.Update.Default,
+        authorizationBuilder.AddPolicy(UnitySelector.Review.Approval.Update.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Approval.Update.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.Approval.Update.UpdateFinalStateFields,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Approval.Update.UpdateFinalStateFields));
 
         // R&A - Assessment Results Policies
         authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentResults.Default,

@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.Bundling;
 using Volo.Abp.Settings;
 
 namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;

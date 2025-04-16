@@ -298,17 +298,23 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         if (application.IsInFinalDecisionState())
         {
-            if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.Approval.Update.UpdateFinalStateFields))
             {
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+                application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+            }
+
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields)) // User allowed to edit specific fields past approval
+            {
+                application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
             }
         }
         else
         {
-            if (await CurrentUsCanUpdateAssessmentFieldsAsync())
+            if (await CurrentUserCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+                application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+                application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.RecommendedAmount,
                     input.DeclineRational);
@@ -334,14 +340,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         input.RequestedAmount       ??= application.RequestedAmount;
     }
 
-    private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
+    private async Task<bool> CurrentUserCanUpdateAssessmentFieldsAsync()
     {
         return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
-    }
-
-    private async Task<bool> CurrentUserCanUpdateFieldsPostFinalDecisionAsync()
-    {
-        return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields);
     }
 
     [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]

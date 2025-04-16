@@ -118,7 +118,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var upx_Review_Approval                                 = upx_Review.AddUnityChild(UnitySelector.Review.Approval.Default);
             var upx_Review_Approval_Update                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Update.Default);
-            //var upx_Review_Approval_UpdateFinalStateFields          = upx_Review_Approval_Update.AddUnityChild(UnitySelector.Review.Approval.Update.UpdateFinalStateFields);
+            var upx_Review_Approval_UpdateFinalStateFields          = upx_Review_Approval_Update.AddUnityChild(UnitySelector.Review.Approval.Update.UpdateFinalStateFields);
 
             var upx_Review_AssessmentResults                        = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentResults.Default);
             var upx_Review_AssessmentResults_Update                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.Default);
@@ -126,6 +126,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var upx_Review_AssessmentReviewList                     = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Default);
             var upx_Review_AssessmentReviewList_Create              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Create);
+            
             // Assessment Review Transitions are implied update functions but not in the update hierarchy at this time
             // var upx_Review_AssessmentReviewList_Update           = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.Default);
             var upx_Review_AssessmentReviewList_SendBack            = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.SendBack);
