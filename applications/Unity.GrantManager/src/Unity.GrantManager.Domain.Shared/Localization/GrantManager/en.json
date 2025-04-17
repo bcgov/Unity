@@ -70,6 +70,7 @@
 
     "ApplicationList:OpenButton": "Open",
     "ApplicationList:AssignButton": "Assign",
+    "ApplicationList:ApproveButton": "Approve",
     "ApplicationList:StatusButton": "Status",
     "ApplicationList:ApprovedButton": "Approved",
     "ApplicationList:NotApprovedButton": "Not approved",
@@ -412,7 +413,16 @@
     "ApplicationContact:Email": "Email",
     "ApplicationContact:MobilePhone": "Mobile Phone Number",
     "ApplicationContact:WorkPhone": "Work Phone Number",
-    "ApplicationContact:Delete": "Delete This Contact"
+    "ApplicationContact:Delete": "Delete This Contact",
+
+    "ApplicationBatchApprovalRequest:Title": "Approve Applications",
+    "ApplicationBatchApprovalRequest:SubmitButtonText": "Approve",
+    "ApplicationBatchApprovalRequest:CancelButtonText": "Cancel",
+    "ApplicationBatchApprovalRequest:DecisionDateDefaulted": "Decision Date has been defaulted",
+    "ApplicationBatchApprovalRequest:ApprovedAmountDefaulted": "Approved Amount has been defaulted",
+    "ApplicationBatchApprovalRequest:InvalidStatus": "The assessment for the selected item is not in the Assessment Completed state",
+    "ApplicationBatchApprovalRequest:InvalidPermissions": "Invalid permissions",
+    "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
+    "ApplicationBatchApprovalRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer"
   }
 }
-
