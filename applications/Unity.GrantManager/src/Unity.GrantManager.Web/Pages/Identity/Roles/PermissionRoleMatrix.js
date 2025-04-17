@@ -1,6 +1,7 @@
 ﻿$(document).ready(function () {
     const urlParams = new URLSearchParams(window.location.search);
     const isExpanded = urlParams.get('Render') === 'Expanded';
+    const exportTitle = `${abp.currentTenant.name}_${(new Date()).toISOString().slice(0, 10)}_Permission-Role Matrix`;
 
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let localTable = $('#permissionTable').DataTable({
@@ -37,6 +38,7 @@
             {
                 extend: 'copy',
                 text: 'Copy',
+                title: exportTitle,
                 className: 'custom-table-btn flex-none btn btn-secondary',
                 exportOptions: {
                     columns: ':visible:not(.notexport)'
@@ -45,6 +47,7 @@
             {
                 extend: 'csv',
                 text: 'Export',
+                title: exportTitle,
                 className: 'custom-table-btn flex-none btn btn-secondary',
                 exportOptions: {
                     columns: ':visible:not(.notexport)'
@@ -63,7 +66,7 @@
 
     localTable.buttons().container().prependTo('#dynamicButtonContainerId');
     $("#search").on('input', function () {
-        let filter = localTable.search($(this).val()).draw();
+        localTable.search($(this).val()).draw();
     });
 
     init(localTable);
