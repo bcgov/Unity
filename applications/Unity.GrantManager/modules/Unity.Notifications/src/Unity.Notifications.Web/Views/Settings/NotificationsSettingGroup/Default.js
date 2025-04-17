@@ -46,6 +46,7 @@
         checkFormChanges();
 
         let editorInstances = {};
+      
 
         function createCard(data = null) {
             const isPopulated = data !== null;
@@ -56,7 +57,8 @@
             const editorId = `editor-${id}`;
             const type = data?.type || 'Automatic';
             let lastEdited;
-
+            const dropdownItems = [];
+            getTemplateVariables();
             if (data?.lastModificationTime) {
                 lastEdited = new Date(data.lastModificationTime).toLocaleDateString('en-CA');
             } else if (data?.creationTime) {
@@ -127,6 +129,7 @@
     `;
 
             $("#cardContainer").append(cardHtml);
+            $(`#${wrapperId}`).data('original-name', data?.name || '');
             // editorInstances[id] =
             console.log("tinymce", tinymce)
             if (tinymce.get(editorId)) {
@@ -134,14 +137,29 @@
             }
 
             function getToolbarOptions() {
-                return 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image | code preview';
+                return 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image | code preview | variablesDropdownButton';
             }
 
             function getPlugins() {
                 return 'lists link image preview code';
             }
+           
 
             function setupEditor(editor, id, editorId, data, isPopulated) {
+                editor.ui.registry.addMenuButton('variablesDropdownButton', {
+                    text: 'VARIABLES',
+                    fetch: function (callback) {
+                        const items = dropdownItems.map(item => ({
+                            type: 'menuitem',
+                            text: item.text,
+                            onAction: () => {
+                                editor.insertContent(`{${item.value}}`);
+                            }
+                        }));
+                        callback(items);
+                    }
+                });
+               
                 editor.on('init', function () {
                     editor.mode.set(isPopulated ? 'readonly' : 'design');
                     if (data?.bodyHTML) {
@@ -234,6 +252,27 @@
 
                 });
             }
+
+            $(`#${formId} input[name="templateName"]`).on('input', function () {
+                const templateInput = $(this);
+                const newTitle = templateInput.val().trim() || 'Untitled Template';
+                $(`#${wrapperId} .template-title`).text(newTitle);
+
+                // Check if name is unique
+                checkTemplateNameUnique(newTitle, id, function (isUnique) {
+                    if (!isUnique) {
+                        templateInput.addClass("is-invalid");
+                        if (!$(`#${formId} .template-name-feedback`).length) {
+                            templateInput.after(`<div class="invalid-feedback template-name-feedback">Template name must be unique.</div>`);
+                        }
+                        $(`#${formId} .saveBtn`).prop("disabled", true);
+                    } else {
+                        templateInput.removeClass("is-invalid");
+                        $(`#${formId} .template-name-feedback`).remove();
+                        $(`#${formId} .saveBtn`).prop("disabled", false);
+                    }
+                });
+            });
 
             $(`#${formId}`).on("submit", function (e) {
                 e.preventDefault();
@@ -342,6 +381,46 @@
                     error: handleDeleteError
                 });
             }
+            function checkTemplateNameUnique(name, currentId, callback) {
+                $.ajax({
+                    url: `/api/app/template/template-by-name?name=${encodeURIComponent(name)}`,
+                    type: 'GET',
+                    success: function (response) {
+                        // Assume response: { isUnique: true/false }
+                        // If editing an existing template, allow current name
+                        const isSameAsCurrent = !currentId.includes('temp') && name === $(`#${wrapperId}`).data('original-name');
+                        let isExist = false;
+                        if (response?.id) {
+                            isExist = true;
+                        }
+
+                        callback(!isExist || isSameAsCurrent);
+                    },
+                    error: function () {
+                        callback(false); // Assume not unique if error
+                    }
+                });
+            }
+
+            function getTemplateVariables() {
+                $.ajax({
+                    url: `/api/app/template/template-variables`,
+                    type: 'GET',
+                    success: function (response) {
+                        $.map(response, function (item) {
+                            dropdownItems.push(  {
+                                text: item.name,
+                                value: item.token
+                            });
+                        });
+                    },
+                    error: function () {
+                      
+                    }
+                });
+            }
+
+           
         }
 
         function loadCardsFromService() {
@@ -371,6 +450,8 @@
             createCard();
         });
 
-
+      
+           
+        
     });
 })(jQuery);

@@ -12,5 +12,8 @@ namespace Unity.Notifications.Templates
         Task<List<EmailTemplate>> GetTemplatesByTenent();
         Task<EmailTemplate?> GetTemplateById(Guid id);
         Task DeleteTemplate(Guid id);
+        Task<EmailTemplate?> GetTemplateByName(string name);
+
+        Task<List<TemplateVariable>> GetTemplateVariables();
     }
 }

@@ -89,5 +89,12 @@ public static class NotificationsDbContextModelCreatingExtensions
                .WithMany() 
                .HasForeignKey(ts => ts.SubscriptionGroupId);
         });
+        modelBuilder.Entity<TemplateVariable>(b =>
+        {
+            b.ToTable(NotificationsDbProperties.DbTablePrefix + "TemplateVariables",
+                NotificationsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+        });
     }
 }
