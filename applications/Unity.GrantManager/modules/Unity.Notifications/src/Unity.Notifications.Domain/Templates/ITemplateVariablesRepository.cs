@@ -5,7 +5,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Notifications.Templates
 {
-    public interface ITemplateVariablesRepository : IBasicRepository<TemplateVariable, Guid>
+    public interface ITemplateVariablesRepository : IRepository<TemplateVariable, Guid>
     {
      
     }

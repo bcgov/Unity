@@ -153,7 +153,7 @@
                             type: 'menuitem',
                             text: item.text,
                             onAction: () => {
-                                editor.insertContent(`{${item.value}}`);
+                                editor.insertContent(`{{${item.value}}}`);
                             }
                         }));
                         callback(items);
