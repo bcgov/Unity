@@ -1,3 +1,4 @@
+using DeviceDetectorNET;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -33,7 +34,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
     [TempData]
     public bool MaxBatchCountExceeded { get; set; }
 
-    public async void OnGet(string applicationIds)
+    public async Task OnGetAsync(string applicationIds)
     {
         MaxBatchCount = BatchApprovalConsts.MaxBatchCount;
         BulkApplicationApprovals = [];
@@ -45,9 +46,17 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         {
             MaxBatchCountExceeded = true;
         }
+        
+        if (applicationGuids.Length == 0)
+        {
+            return;
+        }
+
+        // Testing for some errors
+        Guid firstApplicationGuid = applicationGuids[0];
 
         // Load the applications by Id
-        var applications = await bulkApprovalsAppService.GetApplicationsForBulkApproval(applicationGuids);
+        var applications = await bulkApprovalsAppService.GetApplicationsForBulkApproval(firstApplicationGuid);
         var offsetMinutes = browserUtils.GetBrowserOffset();
 
         foreach (var application in applications)
