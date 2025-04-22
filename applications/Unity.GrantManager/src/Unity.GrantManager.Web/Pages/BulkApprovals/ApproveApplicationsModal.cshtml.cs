@@ -33,7 +33,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
     [TempData]
     public bool MaxBatchCountExceeded { get; set; }
 
-    public async void OnGet(string applicationIds)
+    public async Task OnGetAsync(string applicationIds)
     {
         MaxBatchCount = BatchApprovalConsts.MaxBatchCount;
         BulkApplicationApprovals = [];
