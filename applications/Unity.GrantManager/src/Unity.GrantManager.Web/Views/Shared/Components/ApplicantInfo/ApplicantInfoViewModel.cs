@@ -82,7 +82,7 @@ public class ApplicantInfoViewModel : PageModel
         public string? IndigenousOrgInd { get; set; }
 
         [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactFullName")]
-        [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]
+        [MaxLength(600, ErrorMessage = "Must be a maximum of 600 characters")]
         public string? ContactFullName { get; set; }
 
         [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactTitle")]

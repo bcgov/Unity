@@ -35,15 +35,16 @@ public class ApplicantInfoViewComponent : AbpViewComponent
     {
         var applicantInfoDto = await _applicationAppicantService.GetByApplicationIdAsync(applicationId);
         //var newApplicantInfoDto = await _applicationAppicantService.GetApplicantInfoAsync(applicationId);
+        
         List<SectorDto> Sectors = [.. (await _applicationSectorAppService.GetListAsync())];
 
         ApplicantInfoViewModel model = new()
         {
-            ApplicationId = applicationId,
-            ApplicationFormId = applicantInfoDto.ApplicationFormId,
+            ApplicationId            = applicationId,
+            ApplicationFormId        = applicantInfoDto.ApplicationFormId,
             ApplicationFormVersionId = applicationFormVersionId,
-            ApplicationSectors = Sectors,
-            ApplicantId = applicantInfoDto.ApplicantId
+            ApplicationSectors       = Sectors,
+            ApplicantId              = applicantInfoDto.ApplicantId
         };
 
         model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
@@ -63,30 +64,30 @@ public class ApplicantInfoViewComponent : AbpViewComponent
 
         model.ApplicantInfo = new()
         {
-            Sector = applicantInfoDto.Sector,
-            SubSector = applicantInfoDto.SubSector,
-            ContactFullName = applicantInfoDto.ContactFullName,
-            ContactTitle = applicantInfoDto.ContactTitle,
-            ContactEmail = applicantInfoDto.ContactEmail,
-            ContactBusinessPhone = applicantInfoDto.ContactBusinessPhone,
-            ContactCellPhone = applicantInfoDto.ContactCellPhone,
-            OrgName = applicantInfoDto.OrganizationName,
-            OrgNumber = applicantInfoDto.OrgNumber,
-            OrgStatus = applicantInfoDto.OrgStatus,
-            OrganizationType = applicantInfoDto.OrganizationType,
-            SigningAuthorityFullName = applicantInfoDto.SigningAuthorityFullName,
-            SigningAuthorityTitle = applicantInfoDto.SigningAuthorityTitle,
-            SigningAuthorityEmail = applicantInfoDto.SigningAuthorityEmail,
+            Sector                        = applicantInfoDto.Sector,
+            SubSector                     = applicantInfoDto.SubSector,
+            ContactFullName               = applicantInfoDto.ContactFullName,
+            ContactTitle                  = applicantInfoDto.ContactTitle,
+            ContactEmail                  = applicantInfoDto.ContactEmail,
+            ContactBusinessPhone          = applicantInfoDto.ContactBusinessPhone,
+            ContactCellPhone              = applicantInfoDto.ContactCellPhone,
+            OrgName                       = applicantInfoDto.OrganizationName,
+            OrgNumber                     = applicantInfoDto.OrgNumber,
+            OrgStatus                     = applicantInfoDto.OrgStatus,
+            OrganizationType              = applicantInfoDto.OrganizationType,
+            SigningAuthorityFullName      = applicantInfoDto.SigningAuthorityFullName,
+            SigningAuthorityTitle         = applicantInfoDto.SigningAuthorityTitle,
+            SigningAuthorityEmail         = applicantInfoDto.SigningAuthorityEmail,
             SigningAuthorityBusinessPhone = applicantInfoDto.SigningAuthorityBusinessPhone,
-            SigningAuthorityCellPhone = applicantInfoDto.SigningAuthorityCellPhone,
-            OrganizationSize = applicantInfoDto.OrganizationSize,
-            SectorSubSectorIndustryDesc = applicantInfoDto.SectorSubSectorIndustryDesc,
-            RedStop = applicantInfoDto.RedStop,
-            IndigenousOrgInd = applicantInfoDto.IndigenousOrgInd,
-            UnityApplicantId = applicantInfoDto.UnityApplicantId,
-            FiscalDay = applicantInfoDto.FiscalDay,
-            FiscalMonth = applicantInfoDto.FiscalMonth,
-            NonRegOrgName = applicantInfoDto.NonRegOrgName
+            SigningAuthorityCellPhone     = applicantInfoDto.SigningAuthorityCellPhone,
+            OrganizationSize              = applicantInfoDto.OrganizationSize,
+            SectorSubSectorIndustryDesc   = applicantInfoDto.SectorSubSectorIndustryDesc,
+            RedStop                       = applicantInfoDto.RedStop,
+            IndigenousOrgInd              = applicantInfoDto.IndigenousOrgInd,
+            UnityApplicantId              = applicantInfoDto.UnityApplicantId,
+            FiscalDay                     = applicantInfoDto.FiscalDay,
+            FiscalMonth                   = applicantInfoDto.FiscalMonth,
+            NonRegOrgName                 = applicantInfoDto.NonRegOrgName
         };
 
         if (applicantInfoDto.ApplicantAddresses.Count != 0)
@@ -98,11 +99,11 @@ public class ApplicantInfoViewComponent : AbpViewComponent
 
             if (physicalAddress != null)
             {
-                model.ApplicantInfo.PhysicalAddressStreet = physicalAddress.Street;
-                model.ApplicantInfo.PhysicalAddressStreet2 = physicalAddress.Street2;
-                model.ApplicantInfo.PhysicalAddressUnit = physicalAddress.Unit;
-                model.ApplicantInfo.PhysicalAddressCity = physicalAddress.City;
-                model.ApplicantInfo.PhysicalAddressProvince = physicalAddress.Province;
+                model.ApplicantInfo.PhysicalAddressStreet     = physicalAddress.Street;
+                model.ApplicantInfo.PhysicalAddressStreet2    = physicalAddress.Street2;
+                model.ApplicantInfo.PhysicalAddressUnit       = physicalAddress.Unit;
+                model.ApplicantInfo.PhysicalAddressCity       = physicalAddress.City;
+                model.ApplicantInfo.PhysicalAddressProvince   = physicalAddress.Province;
                 model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
             }
 
@@ -113,11 +114,11 @@ public class ApplicantInfoViewComponent : AbpViewComponent
 
             if (mailingAddress != null)
             {
-                model.ApplicantInfo.MailingAddressStreet = mailingAddress.Street;
-                model.ApplicantInfo.MailingAddressStreet2 = mailingAddress.Street2;
-                model.ApplicantInfo.MailingAddressUnit = mailingAddress.Unit;
-                model.ApplicantInfo.MailingAddressCity = mailingAddress.City;
-                model.ApplicantInfo.MailingAddressProvince = mailingAddress.Province;
+                model.ApplicantInfo.MailingAddressStreet     = mailingAddress.Street;
+                model.ApplicantInfo.MailingAddressStreet2    = mailingAddress.Street2;
+                model.ApplicantInfo.MailingAddressUnit       = mailingAddress.Unit;
+                model.ApplicantInfo.MailingAddressCity       = mailingAddress.City;
+                model.ApplicantInfo.MailingAddressProvince   = mailingAddress.Province;
                 model.ApplicantInfo.MailingAddressPostalCode = mailingAddress.Postal;
             }
         }
