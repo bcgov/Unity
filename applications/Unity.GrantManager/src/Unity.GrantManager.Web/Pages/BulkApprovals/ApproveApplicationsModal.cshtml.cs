@@ -10,7 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.Modules.Shared.Utils;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
-namespace Unity.GrantManager.Web.Pages.GrantApplications.Approvals;
+namespace Unity.GrantManager.Web.Pages.BulkApprovals;
 
 public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApprovalsAppService,
     BrowserUtils browserUtils) : AbpPageModel
@@ -35,7 +35,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
 
     public async void OnGet(string applicationIds)
     {
-        MaxBatchCount = BatchApprovalConsts.MaxBatchCount;        
+        MaxBatchCount = BatchApprovalConsts.MaxBatchCount;
         BulkApplicationApprovals = [];
         MaxBatchCountExceededError = L["ApplicationBatchApprovalRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount.ToString()].Value;
 

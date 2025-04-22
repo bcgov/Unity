@@ -42,11 +42,6 @@ namespace Unity.GrantManager.GrantApplications
                     using var uowFields = unitofWorkManager.Begin(requiresNew: true);
                     application = await applicationRepository.GetAsync(applicationToUpdateAndApprove.ApplicationId);
 
-                    if (application.ReferenceNo == "64CDF30C" || application.ReferenceNo == "64CDF30E")
-                    {
-                        throw new NotImplementedException();
-                    }
-
                     application.ValidateAndChangeFinalDecisionDate(applicationToUpdateAndApprove.FinalDecisionDate);
                     application.ValidateMinAndChangeApprovedAmount(applicationToUpdateAndApprove.ApprovedAmount);
                     application.ApprovedAmount = applicationToUpdateAndApprove.ApprovedAmount;
