@@ -51,11 +51,8 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
             return;
         }
 
-        // Testing for some errors
-        Guid[] firstApplicationId = [applicationGuids[0]];
-
         // Load the applications by Id
-        var applications = await bulkApprovalsAppService.GetApplicationsForBulkApproval(firstApplicationId);
+        var applications = await bulkApprovalsAppService.GetApplicationsForBulkApproval(applicationGuids);
         var offsetMinutes = browserUtils.GetBrowserOffset();
 
         foreach (var application in applications)
