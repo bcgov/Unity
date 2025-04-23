@@ -1,4 +1,3 @@
-using DeviceDetectorNET;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
