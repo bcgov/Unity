@@ -3,19 +3,17 @@ using System.Threading.Tasks;
 using Unity.Notifications.Templates;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.MultiTenancy;
 using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Notifications;
 
 public class NotificationsDataSeedContributor : IDataSeedContributor, ITransientDependency
 {    
-    private readonly ICurrentTenant _currentTenant;
     private readonly ITemplateVariablesRepository _templateVariablesRepository;
 
-    public NotificationsDataSeedContributor(ICurrentTenant currentTenant, ITemplateVariablesRepository templateVariablesRepository)
+    public NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository)
     {        
-        _currentTenant = currentTenant;
+
         _templateVariablesRepository = templateVariablesRepository;
     }
 
