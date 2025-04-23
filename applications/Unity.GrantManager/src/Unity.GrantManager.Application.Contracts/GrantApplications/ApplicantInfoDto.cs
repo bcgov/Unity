@@ -16,7 +16,6 @@ public class ApplicantInfoDto : CustomDataFieldDto
     public string ApplicantName { get; set; } = string.Empty;
     public GrantApplicationState ApplicationStatusCode { get; set; }
 
-    // Nullable for zones
     public ApplicantSummaryDto? ApplicantSummary { get; set; }
     public ApplicantSupplierDto? ApplicantSupplier { get; set; }
     public List<ApplicantAddressDto>? ApplicantAddresses { get; set; }
@@ -36,8 +35,8 @@ public class ApplicantSummaryDto
 {
     public string? OrgName { get; set; }
     public string? OrgNumber { get; set; }
-    public string? OrgStatus { get; set; } // TODO
-    public string? OrganizationType { get; set; } // TODO
+    public string? OrgStatus { get; set; }
+    public string? OrganizationType { get; set; }
 
     public string? NonRegOrgName { get; set; }
     public string? OrganizationSize { get; set; }
@@ -47,8 +46,8 @@ public class ApplicantSummaryDto
     public string? FiscalDay { get; set; }
     public string? FiscalMonth { get; set; }
 
-    public string? Sector { get; set; } // TODO
-    public string? SubSector { get; set; } // TODO
+    public string? Sector { get; set; }
+    public string? SubSector { get; set; }
     public bool RedStop { get; set; } = false;
     public string? SectorSubSectorIndustryDesc { get; set; }
 }
@@ -56,16 +55,11 @@ public class ApplicantSummaryDto
 public class SigningAuthorityDto
 {
     public Guid? ApplicationId { get; set; }
+
     public string? SigningAuthorityFullName { get; set; }
     public string? SigningAuthorityTitle { get; set; }
-
-    //[EmailAddress]
     public string? SigningAuthorityEmail { get; set; }
-    
-    //[Phone]
     public string? SigningAuthorityBusinessPhone { get; set; }
-
-    //[Phone]
     public string? SigningAuthorityCellPhone { get; set; }
 }
 
@@ -76,13 +70,7 @@ public class ContactInfoDto
 
     public string? Name { get; set; }
     public string? Title { get; set; }
-
-    // [EmailAddress]
     public string? Email { get; set; }
-    
-    // [Phone]
     public string? Phone { get; set; }
-    
-    // [Phone]
     public string? Phone2 { get; set; }
 }

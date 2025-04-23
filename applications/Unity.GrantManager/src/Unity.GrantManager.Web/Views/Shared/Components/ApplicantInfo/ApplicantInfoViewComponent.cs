@@ -27,24 +27,20 @@ public class ApplicantInfoViewComponent(
 {
     public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
     {
-        var applicantInfoDto    = await applicationAppicantService.GetByApplicationIdAsync(applicationId);
-        var newApplicantInfoDto = await applicationAppicantService.GetApplicantInfoTabAsync(applicationId);
-
-        if (applicantInfoDto == null || newApplicantInfoDto == null)
-        {
-            throw new InvalidOperationException("Applicant information could not be retrieved.");
-        }
-
+        var applicantInfoDto = await applicationAppicantService.GetApplicantInfoTabAsync(applicationId)
+            ?? throw new InvalidOperationException("Applicant information could not be retrieved.");
+        
         ApplicantInfoViewModel viewModel = new()
         {
             ApplicationId            = applicationId,
-            ApplicationFormId        = newApplicantInfoDto.ApplicationFormId,
+            ApplicantId              = applicantInfoDto.ApplicantId,
+            ApplicationFormId        = applicantInfoDto.ApplicationFormId,
             ApplicationFormVersionId = applicationFormVersionId,
-            ApplicantId              = newApplicantInfoDto.ApplicantId,
-            ApplicantSummary         = ObjectMapper.Map<ApplicantSummaryDto, ApplicantSummaryViewModel>(newApplicantInfoDto.ApplicantSummary ?? new ApplicantSummaryDto()),
-            ApplicantAddresses       = ObjectMapper.Map<List<ApplicantAddressDto>, List<ApplicantAddressViewModel>>(newApplicantInfoDto.ApplicantAddresses ?? []),
-            ContactInfo              = ObjectMapper.Map<ContactInfoDto, ContactInfoViewModel>(newApplicantInfoDto.ContactInfo ?? new ContactInfoDto()),
-            SigningAuthority         = ObjectMapper.Map<SigningAuthorityDto, SigningAuthorityViewModel>(newApplicantInfoDto.SigningAuthority ?? new SigningAuthorityDto())
+
+            ApplicantSummary         = ObjectMapper.Map<ApplicantSummaryDto, ApplicantSummaryViewModel>(applicantInfoDto.ApplicantSummary ?? new ApplicantSummaryDto()),
+            ApplicantAddresses       = ObjectMapper.Map<List<ApplicantAddressDto>, List<ApplicantAddressViewModel>>(applicantInfoDto.ApplicantAddresses ?? []),
+            ContactInfo              = ObjectMapper.Map<ContactInfoDto, ContactInfoViewModel>(applicantInfoDto.ContactInfo ?? new ContactInfoDto()),
+            SigningAuthority         = ObjectMapper.Map<SigningAuthorityDto, SigningAuthorityViewModel>(applicantInfoDto.SigningAuthority ?? new SigningAuthorityDto())
         };
 
         // MAP SECTOR OPTIONS
@@ -53,9 +49,9 @@ public class ApplicantInfoViewComponent(
         viewModel.ApplicationSectorsList.AddRange(viewModel.ApplicationSectors.Select(sector =>
             new SelectListItem { Value = sector.SectorName, Text = sector.SectorName }));
 
-        if (viewModel.ApplicationSectors.Count > 0 && newApplicantInfoDto.ApplicantSummary != null)
+        if (viewModel.ApplicationSectors.Count > 0 && applicantInfoDto.ApplicantSummary != null)
         {
-            var applicationSector = viewModel.ApplicationSectors.FirstOrDefault(x => x.SectorName == newApplicantInfoDto.ApplicantSummary.Sector);
+            var applicationSector = viewModel.ApplicationSectors.FirstOrDefault(x => x.SectorName == applicantInfoDto.ApplicantSummary.Sector);
             var subSectors = applicationSector?.SubSectors ?? [];
 
             viewModel.ApplicationSubSectorsList.AddRange(subSectors.Select(subSector =>
@@ -63,16 +59,16 @@ public class ApplicantInfoViewComponent(
         }
 
         // MAP SPECIFIC ADDRESSES
-        if (newApplicantInfoDto.ApplicantAddresses?.Count > 0)
+        if (applicantInfoDto.ApplicantAddresses?.Count > 0)
         {
-            var physicalAddress = newApplicantInfoDto.ApplicantAddresses
+            var physicalAddress = applicantInfoDto.ApplicantAddresses
                 .Where(address => address.AddressType == AddressType.PhysicalAddress)
                 .OrderByDescending(address => address.CreationTime)
                 .FirstOrDefault();
 
             MapAddress(physicalAddress, viewModel.PhysicalAddress);
 
-            var mailingAddress = newApplicantInfoDto.ApplicantAddresses
+            var mailingAddress = applicantInfoDto.ApplicantAddresses
                 .Where(address => address.AddressType == AddressType.MailingAddress)
                 .OrderByDescending(address => address.CreationTime)
                 .FirstOrDefault();
@@ -83,15 +79,15 @@ public class ApplicantInfoViewComponent(
         return View(viewModel);
     }
 
-    private void MapAddress(ApplicantAddressDto? sourceAddress, ApplicantAddressViewModel targetAddress)
+    private static void MapAddress(ApplicantAddressDto? sourceAddress, ApplicantAddressViewModel targetAddress)
     {
         if (sourceAddress == null) return;
 
-        targetAddress.Street = sourceAddress.Street;
-        targetAddress.Street2 = sourceAddress.Street2;
-        targetAddress.Unit = sourceAddress.Unit;
-        targetAddress.City = sourceAddress.City;
-        targetAddress.Province = sourceAddress.Province;
+        targetAddress.Street     = sourceAddress.Street;
+        targetAddress.Street2    = sourceAddress.Street2;
+        targetAddress.Unit       = sourceAddress.Unit;
+        targetAddress.City       = sourceAddress.City;
+        targetAddress.Province   = sourceAddress.Province;
         targetAddress.PostalCode = sourceAddress.Postal;
     }
 }

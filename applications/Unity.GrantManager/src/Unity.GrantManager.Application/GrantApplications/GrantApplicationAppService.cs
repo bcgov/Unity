@@ -144,6 +144,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
 
+
     private static string MapSubstatusDisplayValue(string subStatus)
     {
         if (subStatus == null) { return string.Empty; }
@@ -332,11 +333,11 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private static void SanitizeAssessmentResultsDisabledInputs(CreateUpdateAssessmentResultsDto input, Application application)
     {
         // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
-        input.TotalProjectBudget    ??= application.TotalProjectBudget;
-        input.RecommendedAmount     ??= application.RecommendedAmount;
-        input.ApprovedAmount        ??= application.ApprovedAmount;
-        input.TotalScore            ??= application.TotalScore;
-        input.RequestedAmount       ??= application.RequestedAmount;
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RecommendedAmount ??= application.RecommendedAmount;
+        input.ApprovedAmount ??= application.ApprovedAmount;
+        input.TotalScore ??= application.TotalScore;
+        input.RequestedAmount ??= application.RequestedAmount;
     }
 
     private async Task<bool> CurrentUserCanUpdateAssessmentFieldsAsync()
@@ -421,7 +422,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         if (application != null)
         {
-            Applicant applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
             // This applicant should never be null!
 
             applicant.OrganizationType = input.OrganizationType ?? "";

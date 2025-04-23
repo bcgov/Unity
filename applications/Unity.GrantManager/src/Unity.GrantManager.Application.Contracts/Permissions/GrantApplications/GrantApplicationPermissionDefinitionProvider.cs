@@ -135,15 +135,6 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //var upx_Review_Worksheet                                = upx_Review.AddUnityChild(UnitySelector.Review.Worksheet.Default);
             //var upx_Review_Worksheet_Update                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Update);
             #endregion
-
-            // Available Permission Hooks
-            // var upx_Review_Approval_Create                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Create);
-            // var upx_Review_Approval_Delete                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Delete);
-            // var upx_Review_AssessmentResults_Create                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Create);
-            // var upx_Review_AssessmentResults_Delete                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Delete);
-            // var upx_Review_AssessmentReviewList_Delete              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Delete);
-            // var upx_Review_Worksheet_Create                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Create);
-            // var upx_Review_Worksheet_Delete                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Delete);
         }
 
         public static void AddApplication_ApplicantInfo_Permissions(this PermissionGroupDefinition grantApplicationPermissionsGroup)
@@ -159,19 +150,11 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var upx_Applicant_Location_Update                     = upx_Applicant_Location.AddUnityChild(UnitySelector.Applicant.Location.Update);
             var upx_Applicant_Summary                             = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Summary.Default);
             var upx_Applicant_Summary_Update                      = upx_Applicant_Summary.AddUnityChild(UnitySelector.Applicant.Summary.Update);
+            
+            // TODO: Replace with Payments Module Permission
             var upx_Applicant_Supplier                            = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Supplier.Default);
             var upx_Applicant_Supplier_Update                     = upx_Applicant_Supplier.AddUnityChild(UnitySelector.Applicant.Supplier.Update);
             #endregion
-            
-            // var upx_Applicant_Authority_Create                    = upx_Applicant_Authority.AddUnityChild(UnitySelector.Applicant.Authority.Create);
-            // var upx_Applicant_Authority_Delete                    = upx_Applicant_Authority.AddUnityChild(UnitySelector.Applicant.Authority.Delete);
-            // var upx_Applicant_Contact_Delete                      = upx_Applicant_Contact.AddUnityChild(UnitySelector.Applicant.Contact.Delete);
-            // var upx_Applicant_Location_Create                     = upx_Applicant_Location.AddUnityChild(UnitySelector.Applicant.Location.Create);
-            // var upx_Applicant_Location_Delete                     = upx_Applicant_Location.AddUnityChild(UnitySelector.Applicant.Location.Delete);
-            // var upx_Applicant_Summary_Create                      = upx_Applicant_Summary.AddUnityChild(UnitySelector.Applicant.Summary.Create);
-            // var upx_Applicant_Summary_Delete                      = upx_Applicant_Summary.AddUnityChild(UnitySelector.Applicant.Summary.Delete);
-            // var upx_Applicant_Supplier_Create                     = upx_Applicant_Supplier.AddUnityChild(UnitySelector.Applicant.Supplier.Create);
-            // var upx_Applicant_Supplier_Delete                     = upx_Applicant_Supplier.AddUnityChild(UnitySelector.Applicant.Supplier.Delete);
         }
 
         public static PermissionDefinition AddUnityChild(this PermissionDefinition parent, string name)

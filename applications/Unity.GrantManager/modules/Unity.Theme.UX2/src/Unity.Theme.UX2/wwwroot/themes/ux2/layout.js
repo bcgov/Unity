@@ -81,6 +81,89 @@ $(function () {
             }
         });
     }
+
+    $.fn.serializeZoneFieldsets = function (includeDisabled = false, camelCase = true) {
+        const $form = $(this);
+        // Initialize result object
+        const obj = {};
+        // Collection phase: Gather all field data in a single pass
+        const data = [];
+
+        // 1. Get standard form fields
+        Array.prototype.push.apply(data, $(this).serializeArray());
+
+        // 2. Add unchecked checkboxes (serializeArray ignores them)
+        $form.find("input[type=checkbox]").each(function () {
+            if (!$(this).is(':checked')) {
+                data.push({ name: this.name, value: this.checked });
+            }
+        });
+
+        // TODO-TOGGLE
+        // 3. Add disabled fields (also ignored by serializeArray)
+        if (includeDisabled) {
+            $form.find(':disabled[name]').each(function () {
+                const value = $(this).is(":checkbox") ?
+                    $(this).is(':checked') :
+                    $(this).val();
+
+                data.push({ name: this.name, value: value });
+            });
+        }
+
+
+        // Convert field names to camelCase if required
+        if (camelCase) {
+            data.forEach(item => item.name = toCamelCaseInternal(item.name));
+        }
+
+        // Transformation phase: Convert flat data to nested object structure
+        data.forEach(field => {
+            const nameParts = field.name.split('.');
+            let current = obj;
+
+            // Navigate through the object hierarchy
+            for (let i = 0; i < nameParts.length - 1; i++) {
+                const part = nameParts[i];
+                if (!current[part]) {
+                    current[part] = {};
+                }
+                current = current[part];
+            }
+
+            // Set the final property value
+            const lastPart = nameParts[nameParts.length - 1];
+            if (!current[lastPart] || Object.keys(current[lastPart]).length === 0) {
+                current[lastPart] = field.value;
+            }
+        });
+
+        return obj;
+    };
+
+    var toCamelCaseInternal = function (str) {
+        var regexs = [
+            /(^[A-Z])/, // first char of string
+            /((\.)[A-Z])/ // first char after a dot (.)
+        ];
+
+        regexs.forEach(
+            function (regex) {
+                var infLoopAvoider = 0;
+
+                while (regex.test(str)) {
+                    str = str
+                        .replace(regex, function ($1) { return $1.toLowerCase(); });
+
+                    if (infLoopAvoider++ > 1000) {
+                        break;
+                    }
+                }
+            }
+        );
+
+        return str;
+    };
 });
 
 window.addEventListener('DOMContentLoaded', (event) => {
