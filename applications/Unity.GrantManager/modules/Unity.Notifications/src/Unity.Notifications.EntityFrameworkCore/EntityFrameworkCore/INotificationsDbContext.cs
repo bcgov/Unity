@@ -12,4 +12,5 @@ public interface INotificationsDbContext : IEfCoreDbContext
     // Add DbSet for each Aggregate Root here.
     public DbSet<EmailLog> EmailLogs { get; set; }
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
+    public DbSet<TemplateVariable> TemplateVariables { get; set; }
 }

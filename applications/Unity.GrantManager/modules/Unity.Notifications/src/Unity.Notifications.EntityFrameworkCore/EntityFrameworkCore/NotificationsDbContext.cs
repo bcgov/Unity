@@ -11,6 +11,7 @@ public class NotificationsDbContext : AbpDbContext<NotificationsDbContext>, INot
 {
     public DbSet<EmailLog> EmailLogs { get; set; }
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
+    public DbSet<TemplateVariable> TemplateVariables { get; set; }
 
     // Add DbSet for each Aggregate Root here.
     public NotificationsDbContext(DbContextOptions<NotificationsDbContext> options)

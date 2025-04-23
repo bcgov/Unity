@@ -10,7 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.Modules.Shared.Utils;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
-namespace Unity.GrantManager.Web.Pages.GrantApplications.Approvals;
+namespace Unity.GrantManager.Web.Pages.BulkApprovals;
 
 public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApprovalsAppService,
     BrowserUtils browserUtils) : AbpPageModel
@@ -33,9 +33,9 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
     [TempData]
     public bool MaxBatchCountExceeded { get; set; }
 
-    public async void OnGet(string applicationIds)
+    public async Task OnGetAsync(string applicationIds)
     {
-        MaxBatchCount = BatchApprovalConsts.MaxBatchCount;        
+        MaxBatchCount = BatchApprovalConsts.MaxBatchCount;
         BulkApplicationApprovals = [];
         MaxBatchCountExceededError = L["ApplicationBatchApprovalRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount.ToString()].Value;
 
@@ -45,9 +45,17 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         {
             MaxBatchCountExceeded = true;
         }
+        
+        if (applicationGuids.Length == 0)
+        {
+            return;
+        }
+
+        // Testing for some errors
+        Guid[] firstApplicationId = [applicationGuids[0]];
 
         // Load the applications by Id
-        var applications = await bulkApprovalsAppService.GetApplicationsForBulkApproval(applicationGuids);
+        var applications = await bulkApprovalsAppService.GetApplicationsForBulkApproval(firstApplicationId);
         var offsetMinutes = browserUtils.GetBrowserOffset();
 
         foreach (var application in applications)
