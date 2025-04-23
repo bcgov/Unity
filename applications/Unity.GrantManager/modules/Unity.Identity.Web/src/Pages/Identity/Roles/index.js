@@ -80,6 +80,7 @@ $(function () {
                         orderable: false,
                         className: 'notexport text-center',
                         name: 'rowActions',
+                        data: 'id',
                         index: 0,
                         rowAction: {
                             items: abp.ui.extensions.entityActions.get('identity.role').actions.toArray()
