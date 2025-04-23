@@ -108,27 +108,27 @@ namespace Unity.GrantManager.Components
             var expectedMailingAddressProvince = "some province";
             var expectedMailingAddressPostalCode = "some postal";
 
-            resultModel!.ApplicantInfo!.ContactFullName.ShouldBe(expectedFullName);
-            resultModel!.ApplicantInfo!.ContactTitle.ShouldBe(expectedTitle);
-            resultModel!.ApplicantInfo!.ContactEmail.ShouldBe(expectedEmail);
-            resultModel!.ApplicantInfo!.ContactBusinessPhone.ShouldBe(expectedBusinessPhone);
-            resultModel!.ApplicantInfo!.ContactCellPhone.ShouldBe(expectedCellPhone);
-            resultModel!.ApplicantInfo!.SigningAuthorityFullName.ShouldBe(expectedSigningAuthorityFullName);
-            resultModel!.ApplicantInfo!.SigningAuthorityTitle.ShouldBe(expectedSigningAuthorityTitle);
-            resultModel!.ApplicantInfo!.SigningAuthorityEmail.ShouldBe(expectedSigningAuthorityEmail);
-            resultModel!.ApplicantInfo!.SigningAuthorityBusinessPhone.ShouldBe(expectedSigningAuthorityBusinessPhone);
-            resultModel!.ApplicantInfo!.SigningAuthorityCellPhone.ShouldBe(expectedSigningAuthorityCellPhone);
+            resultModel!.ContactInfo!.Name.ShouldBe(expectedFullName);
+            resultModel!.ContactInfo!.Title.ShouldBe(expectedTitle);
+            resultModel!.ContactInfo!.Email.ShouldBe(expectedEmail);
+            resultModel!.ContactInfo!.Phone.ShouldBe(expectedBusinessPhone);
+            resultModel!.ContactInfo!.Phone2.ShouldBe(expectedCellPhone);
+            resultModel!.SigningAuthority!.SigningAuthorityFullName.ShouldBe(expectedSigningAuthorityFullName);
+            resultModel!.SigningAuthority!.SigningAuthorityTitle.ShouldBe(expectedSigningAuthorityTitle);
+            resultModel!.SigningAuthority!.SigningAuthorityEmail.ShouldBe(expectedSigningAuthorityEmail);
+            resultModel!.SigningAuthority!.SigningAuthorityBusinessPhone.ShouldBe(expectedSigningAuthorityBusinessPhone);
+            resultModel!.SigningAuthority!.SigningAuthorityCellPhone.ShouldBe(expectedSigningAuthorityCellPhone);
 
-            resultModel!.ApplicantInfo!.PhysicalAddressStreet.ShouldBe(expectedPhysicalAddressStreet);
-            resultModel!.ApplicantInfo!.PhysicalAddressCity.ShouldBe(expectedPhysicalAddressCity);
-            resultModel!.ApplicantInfo!.PhysicalAddressUnit.ShouldBe(expectedPhysicalAddressUnit);
-            resultModel!.ApplicantInfo!.PhysicalAddressProvince.ShouldBe(expectedPhysicalAddressProvince);
-            resultModel!.ApplicantInfo!.PhysicalAddressPostalCode.ShouldBe(expectedPhysicalAddressPostalCode);
-            resultModel!.ApplicantInfo!.MailingAddressStreet.ShouldBe(expectedMailingAddressStreet);
-            resultModel!.ApplicantInfo!.MailingAddressCity.ShouldBe(expectedMailingAddressCity);
-            resultModel!.ApplicantInfo!.MailingAddressUnit.ShouldBe(expectedMailingAddressUnit);
-            resultModel!.ApplicantInfo!.MailingAddressProvince.ShouldBe(expectedMailingAddressProvince);
-            resultModel!.ApplicantInfo!.MailingAddressPostalCode.ShouldBe(expectedMailingAddressPostalCode);
+            resultModel!.PhysicalAddress.Street.ShouldBe(expectedPhysicalAddressStreet);
+            resultModel!.PhysicalAddress.City.ShouldBe(expectedPhysicalAddressCity);
+            resultModel!.PhysicalAddress.Unit.ShouldBe(expectedPhysicalAddressUnit);
+            resultModel!.PhysicalAddress.Province.ShouldBe(expectedPhysicalAddressProvince);
+            resultModel!.PhysicalAddress.PostalCode.ShouldBe(expectedPhysicalAddressPostalCode);
+            resultModel!.MailingAddress.Street.ShouldBe(expectedMailingAddressStreet);
+            resultModel!.MailingAddress.City.ShouldBe(expectedMailingAddressCity);
+            resultModel!.MailingAddress.Unit.ShouldBe(expectedMailingAddressUnit);
+            resultModel!.MailingAddress.Province.ShouldBe(expectedMailingAddressProvince);
+            resultModel!.MailingAddress.PostalCode.ShouldBe(expectedMailingAddressPostalCode);
         }
     }
 }

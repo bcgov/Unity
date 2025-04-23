@@ -6,9 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Locality;
+using Unity.Modules.Shared;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using static Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo.ApplicantInfoViewModel;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
 
@@ -17,113 +19,80 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
     RefreshUrl = "Widget/ApplicantInfo/Refresh",
     ScriptTypes = [typeof(ApplicantInfoScriptBundleContributor)],
     StyleTypes = [typeof(ApplicantInfoStyleBundleContributor)],
+    RequiredPolicies = new[] { UnitySelector.Applicant.Default },
     AutoInitialize = true)]
-public class ApplicantInfoViewComponent : AbpViewComponent
+public class ApplicantInfoViewComponent(
+    IApplicationApplicantAppService applicationAppicantService,
+    ISectorService applicationSectorAppService) : AbpViewComponent
 {
-    private readonly IApplicationApplicantAppService _applicationAppicantService;
-    private readonly ISectorService _applicationSectorAppService;
-
-    public ApplicantInfoViewComponent(
-        IApplicationApplicantAppService applicationAppicantService,
-        ISectorService applicationSectorAppService)
-    {
-        _applicationAppicantService = applicationAppicantService;
-        _applicationSectorAppService = applicationSectorAppService;
-    }
-
     public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
     {
-        var applicantInfoDto = await _applicationAppicantService.GetByApplicationIdAsync(applicationId);
-        //var newApplicantInfoDto = await _applicationAppicantService.GetApplicantInfoAsync(applicationId);
-        
-        List<SectorDto> Sectors = [.. (await _applicationSectorAppService.GetListAsync())];
+        var applicantInfoDto    = await applicationAppicantService.GetByApplicationIdAsync(applicationId);
+        var newApplicantInfoDto = await applicationAppicantService.GetApplicantInfoTabAsync(applicationId);
 
-        ApplicantInfoViewModel model = new()
+        if (applicantInfoDto == null || newApplicantInfoDto == null)
         {
-            ApplicationId            = applicationId,
-            ApplicationFormId        = applicantInfoDto.ApplicationFormId,
-            ApplicationFormVersionId = applicationFormVersionId,
-            ApplicationSectors       = Sectors,
-            ApplicantId              = applicantInfoDto.ApplicantId
-        };
-
-        model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
-            new SelectListItem { Value = Sector.SectorName, Text = Sector.SectorName }));
-
-
-        if (Sectors.Count > 0)
-        {
-            List<SubSectorDto> SubSectors = [];
-
-            SectorDto? applicationSector = Sectors.Find(x => x.SectorName == applicantInfoDto.Sector);
-            SubSectors = applicationSector?.SubSectors ?? SubSectors;
-
-            model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
-                new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
+            throw new InvalidOperationException("Applicant information could not be retrieved.");
         }
 
-        model.ApplicantInfo = new()
+        ApplicantInfoViewModel viewModel = new()
         {
-            Sector                        = applicantInfoDto.Sector,
-            SubSector                     = applicantInfoDto.SubSector,
-            ContactFullName               = applicantInfoDto.ContactFullName,
-            ContactTitle                  = applicantInfoDto.ContactTitle,
-            ContactEmail                  = applicantInfoDto.ContactEmail,
-            ContactBusinessPhone          = applicantInfoDto.ContactBusinessPhone,
-            ContactCellPhone              = applicantInfoDto.ContactCellPhone,
-            OrgName                       = applicantInfoDto.OrganizationName,
-            OrgNumber                     = applicantInfoDto.OrgNumber,
-            OrgStatus                     = applicantInfoDto.OrgStatus,
-            OrganizationType              = applicantInfoDto.OrganizationType,
-            SigningAuthorityFullName      = applicantInfoDto.SigningAuthorityFullName,
-            SigningAuthorityTitle         = applicantInfoDto.SigningAuthorityTitle,
-            SigningAuthorityEmail         = applicantInfoDto.SigningAuthorityEmail,
-            SigningAuthorityBusinessPhone = applicantInfoDto.SigningAuthorityBusinessPhone,
-            SigningAuthorityCellPhone     = applicantInfoDto.SigningAuthorityCellPhone,
-            OrganizationSize              = applicantInfoDto.OrganizationSize,
-            SectorSubSectorIndustryDesc   = applicantInfoDto.SectorSubSectorIndustryDesc,
-            RedStop                       = applicantInfoDto.RedStop,
-            IndigenousOrgInd              = applicantInfoDto.IndigenousOrgInd,
-            UnityApplicantId              = applicantInfoDto.UnityApplicantId,
-            FiscalDay                     = applicantInfoDto.FiscalDay,
-            FiscalMonth                   = applicantInfoDto.FiscalMonth,
-            NonRegOrgName                 = applicantInfoDto.NonRegOrgName
+            ApplicationId            = applicationId,
+            ApplicationFormId        = newApplicantInfoDto.ApplicationFormId,
+            ApplicationFormVersionId = applicationFormVersionId,
+            ApplicantId              = newApplicantInfoDto.ApplicantId,
+            ApplicantSummary         = ObjectMapper.Map<ApplicantSummaryDto, ApplicantSummaryViewModel>(newApplicantInfoDto.ApplicantSummary ?? new ApplicantSummaryDto()),
+            ApplicantAddresses       = ObjectMapper.Map<List<ApplicantAddressDto>, List<ApplicantAddressViewModel>>(newApplicantInfoDto.ApplicantAddresses ?? []),
+            ContactInfo              = ObjectMapper.Map<ContactInfoDto, ContactInfoViewModel>(newApplicantInfoDto.ContactInfo ?? new ContactInfoDto()),
+            SigningAuthority         = ObjectMapper.Map<SigningAuthorityDto, SigningAuthorityViewModel>(newApplicantInfoDto.SigningAuthority ?? new SigningAuthorityDto())
         };
 
-        if (applicantInfoDto.ApplicantAddresses.Count != 0)
+        // MAP SECTOR OPTIONS
+        var sectors = await applicationSectorAppService.GetListAsync();
+        viewModel.ApplicationSectors = sectors.ToList();
+        viewModel.ApplicationSectorsList.AddRange(viewModel.ApplicationSectors.Select(sector =>
+            new SelectListItem { Value = sector.SectorName, Text = sector.SectorName }));
+
+        if (viewModel.ApplicationSectors.Count > 0 && newApplicantInfoDto.ApplicantSummary != null)
         {
-            ApplicantAddressDto? physicalAddress = applicantInfoDto.ApplicantAddresses
+            var applicationSector = viewModel.ApplicationSectors.FirstOrDefault(x => x.SectorName == newApplicantInfoDto.ApplicantSummary.Sector);
+            var subSectors = applicationSector?.SubSectors ?? [];
+
+            viewModel.ApplicationSubSectorsList.AddRange(subSectors.Select(subSector =>
+                new SelectListItem { Value = subSector.SubSectorName, Text = subSector.SubSectorName }));
+        }
+
+        // MAP SPECIFIC ADDRESSES
+        if (newApplicantInfoDto.ApplicantAddresses?.Count > 0)
+        {
+            var physicalAddress = newApplicantInfoDto.ApplicantAddresses
                 .Where(address => address.AddressType == AddressType.PhysicalAddress)
                 .OrderByDescending(address => address.CreationTime)
                 .FirstOrDefault();
 
-            if (physicalAddress != null)
-            {
-                model.ApplicantInfo.PhysicalAddressStreet     = physicalAddress.Street;
-                model.ApplicantInfo.PhysicalAddressStreet2    = physicalAddress.Street2;
-                model.ApplicantInfo.PhysicalAddressUnit       = physicalAddress.Unit;
-                model.ApplicantInfo.PhysicalAddressCity       = physicalAddress.City;
-                model.ApplicantInfo.PhysicalAddressProvince   = physicalAddress.Province;
-                model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
-            }
+            MapAddress(physicalAddress, viewModel.PhysicalAddress);
 
-            ApplicantAddressDto? mailingAddress = applicantInfoDto.ApplicantAddresses
+            var mailingAddress = newApplicantInfoDto.ApplicantAddresses
                 .Where(address => address.AddressType == AddressType.MailingAddress)
                 .OrderByDescending(address => address.CreationTime)
                 .FirstOrDefault();
 
-            if (mailingAddress != null)
-            {
-                model.ApplicantInfo.MailingAddressStreet     = mailingAddress.Street;
-                model.ApplicantInfo.MailingAddressStreet2    = mailingAddress.Street2;
-                model.ApplicantInfo.MailingAddressUnit       = mailingAddress.Unit;
-                model.ApplicantInfo.MailingAddressCity       = mailingAddress.City;
-                model.ApplicantInfo.MailingAddressProvince   = mailingAddress.Province;
-                model.ApplicantInfo.MailingAddressPostalCode = mailingAddress.Postal;
-            }
+            MapAddress(mailingAddress, viewModel.MailingAddress);
         }
 
-        return View(model);
+        return View(viewModel);
+    }
+
+    private void MapAddress(ApplicantAddressDto? sourceAddress, ApplicantAddressViewModel targetAddress)
+    {
+        if (sourceAddress == null) return;
+
+        targetAddress.Street = sourceAddress.Street;
+        targetAddress.Street2 = sourceAddress.Street2;
+        targetAddress.Unit = sourceAddress.Unit;
+        targetAddress.City = sourceAddress.City;
+        targetAddress.Province = sourceAddress.Province;
+        targetAddress.PostalCode = sourceAddress.Postal;
     }
 }
 

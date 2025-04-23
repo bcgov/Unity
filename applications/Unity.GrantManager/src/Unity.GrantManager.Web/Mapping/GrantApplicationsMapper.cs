@@ -2,6 +2,7 @@
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Web.Pages.ApplicationContact;
+using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
 
 namespace Unity.GrantManager.Web.Mapping
@@ -15,6 +16,12 @@ namespace Unity.GrantManager.Web.Mapping
                 ForMember(dest => dest.SubmissionDate, opt => opt.MapFrom(s => s.SubmissionDate==null ? "" : s.SubmissionDate.Value.ToShortDateString()));
             CreateMap<ContactModalViewModel, ApplicationContactDto>();
             CreateMap<ApplicationContactDto, ContactModalViewModel>();
+
+            CreateMap<ApplicantAddressDto, ApplicantInfoViewModel.ApplicantAddressViewModel>();
+            CreateMap<ApplicantSupplierDto, ApplicantInfoViewModel.ApplicantSupplierViewModel>();
+            CreateMap<ContactInfoDto, ApplicantInfoViewModel.ContactInfoViewModel>();
+            CreateMap<ApplicantSummaryDto, ApplicantInfoViewModel.ApplicantSummaryViewModel>();
+            CreateMap<SigningAuthorityDto, ApplicantInfoViewModel.SigningAuthorityViewModel>();
         }
     }
 }

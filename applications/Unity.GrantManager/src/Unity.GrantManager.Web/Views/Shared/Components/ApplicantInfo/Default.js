@@ -4,6 +4,10 @@
         $(this).maskMoney('mask', this.value);
     });
 
+    $('#ApplicantInfoForm').on('change', ':input', function () {
+        enableApplicantInfoSaveBtn(this);
+    });
+
     const $unityAppId = $('#applicantInfoUnityApplicantId');
     let previousUnityAppId = $unityAppId.val();
 

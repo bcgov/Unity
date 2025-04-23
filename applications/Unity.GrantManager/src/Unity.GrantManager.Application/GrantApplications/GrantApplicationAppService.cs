@@ -144,7 +144,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
 
-
     private static string MapSubstatusDisplayValue(string subStatus)
     {
         if (subStatus == null) { return string.Empty; }
@@ -508,13 +507,13 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     }
 
     #region APPLICANT INFO
-    [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
+    [Authorize(UnitySelector.Applicant.Default)]
     public async Task<GrantApplicationDto> UpdateApplicantInfoAsync(Guid id, ApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException();
 
         // ORGANIZATION INFO
-        await UpdateOrganizationInfo(application.ApplicantId, input?.OrganizationInfo);
+        await UpdateOrganizationInfo(application.ApplicantId, input?.ApplicantSummary);
 
         // SUPPLIER - TODO REVIEW - MAY BE REPLACED
         //await UpsertSupplierAsync(application.ApplicantId, input?.ApplicantSupplier);
@@ -523,13 +522,17 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var applicantAgent = await CreateOrUpdateApplicantAgentAsync(application, input?.ContactInfo);
 
         // APPLICANT ADDRESS
-        if (input?.ApplicantAddresses != null && input.ApplicantAddresses.Count > 0)
+        if (input?.ApplicantAddresses != null 
+            && input.ApplicantAddresses.Count > 0 
+            && await AuthorizationService.IsGrantedAnyAsync(
+                UnitySelector.Applicant.Location.Create, 
+                UnitySelector.Applicant.Location.Update))
         {
             await UpsertApplicantAddresses(application.ApplicantId, input.ApplicantAddresses);
         }
 
         // SIGNING AUTHORITY
-        MapSigningAuthority(application, input?.SigningAuthority);
+        await MapSigningAuthority(application, input?.SigningAuthority);
 
         // CUSTOM FIELDS
         await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input?.CustomFields);
@@ -537,19 +540,27 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
 
-        appDto.ContactFullName = applicantAgent.Name;
-        appDto.ContactEmail = applicantAgent.Email;
-        appDto.ContactTitle = applicantAgent.Title;
-        appDto.ContactBusinessPhone = applicantAgent.Phone;
-        appDto.ContactCellPhone = applicantAgent.Phone2;
+        if (applicantAgent != null)
+        {
+            appDto.ContactFullName = applicantAgent.Name;
+            appDto.ContactEmail = applicantAgent.Email;
+            appDto.ContactTitle = applicantAgent.Title;
+            appDto.ContactBusinessPhone = applicantAgent.Phone;
+            appDto.ContactCellPhone = applicantAgent.Phone2;
+        }
 
         return appDto;
     }
 
-    protected internal async Task<Applicant?> UpdateOrganizationInfo(Guid applicantId, OrganizationInfoDto? input)
+    protected internal async Task<Applicant?> UpdateOrganizationInfo(Guid applicantId, ApplicantSummaryDto? input)
     {
-        var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == applicantId) ?? throw new EntityNotFoundException();
-        if (input == null) return null;
+        if (input == null || !await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Update))
+        {
+            return null;
+        }
+
+        var applicant = await _applicantRepository.GetAsync(applicantId) 
+            ?? throw new EntityNotFoundException();
 
         applicant.OrganizationType            = input.OrganizationType ?? string.Empty;
         applicant.OrgName                     = input.OrgName ?? string.Empty;
@@ -559,13 +570,19 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         applicant.Sector                      = input.Sector ?? string.Empty;
         applicant.SubSector                   = input.SubSector ?? string.Empty;
         applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? string.Empty;
-        applicant.IndigenousOrgInd = input.IndigenousOrgInd ?? string.Empty;
+        applicant.IndigenousOrgInd            = input.IndigenousOrgInd ?? string.Empty;
 
         return await _applicantRepository.UpdateAsync(applicant);
     }
 
-    protected internal async Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(Application application, ContactInfoDto? contactInfo)
+    protected internal async Task<ApplicantAgent?> CreateOrUpdateApplicantAgentAsync(Application application, ContactInfoDto? input)
     {
+        if (input == null 
+            || !await AuthorizationService.IsGrantedAnyAsync(UnitySelector.Applicant.Contact.Create, UnitySelector.Applicant.Contact.Update))
+        {
+            return null;
+        }
+
         var applicantAgent = await _applicantAgentRepository
             .FirstOrDefaultAsync(a => a.ApplicantId == application.ApplicantId)
             ?? new ApplicantAgent
@@ -574,22 +591,27 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 ApplicationId = application.Id
             };
 
-        applicantAgent.Name   = contactInfo?.ContactFullName ?? string.Empty;
-        applicantAgent.Phone  = contactInfo?.ContactBusinessPhone ?? string.Empty;
-        applicantAgent.Phone2 = contactInfo?.ContactCellPhone ?? string.Empty;
-        applicantAgent.Email  = contactInfo?.ContactEmail ?? string.Empty;
-        applicantAgent.Title  = contactInfo?.ContactTitle ?? string.Empty;
+        applicantAgent.Name   = input?.Name ?? string.Empty;
+        applicantAgent.Phone  = input?.Phone ?? string.Empty;
+        applicantAgent.Phone2 = input?.Phone2 ?? string.Empty;
+        applicantAgent.Email  = input?.Email ?? string.Empty;
+        applicantAgent.Title  = input?.Title ?? string.Empty;
 
         if (applicantAgent.Id == Guid.Empty)
         {
             return await _applicantAgentRepository.InsertAsync(applicantAgent);
         }
+
         return await _applicantAgentRepository.UpdateAsync(applicantAgent);
     }
 
-    protected internal async Task UpsertApplicantAddresses(Guid applicantId, List<UpdateApplicantAddressDto> updatedAddresses)
+    protected internal async Task UpsertApplicantAddresses(Guid applicantId, List<ApplicantAddressDto> updatedAddresses)
     {
-        List<ApplicantAddress> applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(applicantId);
+        // TODO: ADD PERMISSION
+        // UnitySelector.Applicant.Location.Create
+        // UnitySelector.Applicant.Location.Update
+
+        var applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(applicantId);
         foreach (var updatedAddress in updatedAddresses)
         {
             ApplicantAddress? dbAddress = applicantAddresses.FirstOrDefault(a => a.Id == updatedAddress.Id && a.AddressType == updatedAddress.AddressType)
@@ -605,7 +627,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             dbAddress.Unit        = updatedAddress.Unit ?? string.Empty;
             dbAddress.City        = updatedAddress.City ?? string.Empty;
             dbAddress.Province    = updatedAddress.Province ?? string.Empty;
-            dbAddress.Postal      = updatedAddress.PostalCode ?? string.Empty;
+            dbAddress.Postal      = updatedAddress.Postal ?? string.Empty;
 
             if (dbAddress.Id == Guid.Empty)
             {
@@ -618,9 +640,12 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    protected internal static void MapSigningAuthority(Application application, SigningAuthorityDto? signingAuthority)
+    protected internal async Task MapSigningAuthority(Application application, SigningAuthorityDto? signingAuthority)
     {
-        if (signingAuthority == null) return;
+        if (signingAuthority == null || !await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Authority.Update)) 
+        { 
+            return; 
+        }
 
         application.SigningAuthorityFullName = signingAuthority.SigningAuthorityFullName ?? string.Empty;
         application.SigningAuthorityTitle = signingAuthority.SigningAuthorityTitle ?? string.Empty;

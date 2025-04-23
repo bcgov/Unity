@@ -76,17 +76,23 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
 
         // APPLICANT INFO MAPPINGS
-        CreateMap<ApplicantAddress, UpdateApplicantAddressDto>();
+        CreateMap<ApplicantAddress, ApplicantAddressDto>();
         CreateMap<Application, ApplicantInfoDto>()
-            .ForMember(dest => dest.ApplicantId, opt => opt.MapFrom(src => src.ApplicantId))
-            .ForMember(dest => dest.OrganizationInfo, opt => opt.MapFrom(src => src.Applicant))
+            //.ForMember(dest => dest.ApplicantId, opt => opt.MapFrom(src => src.ApplicantId))
+            //.ForMember(dest => dest.ApplicantSummary, opt => opt.MapFrom(src => src.Applicant))
             .ForMember(dest => dest.ApplicantSupplier, opt => opt.Ignore())
             .ForMember(dest => dest.ApplicantAddresses, opt => opt.MapFrom(src => src.Applicant.ApplicantAddresses))
-            .ForMember(dest => dest.SigningAuthority, opt => opt.MapFrom(src => src.ApplicantAgent))
+            //.ForMember(dest => dest.SigningAuthority, opt => opt.MapFrom(src => src.Applicant))
             .ForMember(dest => dest.ContactInfo, opt => opt.MapFrom(src => src.ApplicantAgent));
         
-        CreateMap<Applicant, OrganizationInfoDto>();
-        CreateMap<OrganizationInfoDto, Applicant>();
+        CreateMap<Applicant, ApplicantSummaryDto>()
+            .ReverseMap();
+        
+        CreateMap<Application, SigningAuthorityDto>()
+            .ReverseMap();
+
+        CreateMap<ApplicantAgent, ContactInfoDto>();
+            //.ForMember(dest => dest, opt => opt.MapFrom(src => src.ApplicantAgent));
 
         CreateMap<ApplicantAgent, SigningAuthorityDto>()
             .ForMember(dest => dest.ApplicationId, opt => opt.MapFrom(src => src.ApplicationId));

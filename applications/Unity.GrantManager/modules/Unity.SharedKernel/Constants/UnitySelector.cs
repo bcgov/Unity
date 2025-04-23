@@ -43,6 +43,8 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Delete";
         }
+
+        // TODO: Move to payments module permission
         public static partial class Supplier
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier";
