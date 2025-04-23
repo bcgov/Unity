@@ -36,7 +36,7 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
             new EmailTempateVariableDto { Name = "Contact Full Name", Token = "contact_full_name", MapTo = "contactFullName" },
             new EmailTempateVariableDto { Name = "Contact Title", Token = "contact_title", MapTo = "contactTitle" },
             new EmailTempateVariableDto { Name = "Decline Rationale", Token = "decline_rationale", MapTo = "declineRational" },
-            new EmailTempateVariableDto { Name = "Organization Name", Token = "organization_name", MapTo = "organizationName" },
+            new EmailTempateVariableDto { Name = "Registered Organization Name", Token = "organization_name", MapTo = "organizationName" },
             new EmailTempateVariableDto { Name = "Project Start Date", Token = "project_start_date", MapTo = "projectStartDate" },
             new EmailTempateVariableDto { Name = "Project End Date", Token = "project_end_date", MapTo = "projectEndDate" },
             new EmailTempateVariableDto { Name = "Project Name", Token = "project_name", MapTo = "projectName" },
