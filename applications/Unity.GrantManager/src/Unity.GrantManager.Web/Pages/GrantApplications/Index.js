@@ -237,8 +237,7 @@
             data: 'referenceNo',
             name: 'referenceNo',
             className: 'data-table-header text-nowrap',
-            render: function (data, type, row) {
-                console.log(row);
+            render: function (data, type, row) {                
                 return `<a href="/GrantApplications/Details?ApplicationId=${row.id}">${data}</a>`;
             },
             index: 2
@@ -425,7 +424,7 @@
 
     function getOrganizationNumberColumn() {
         return {
-            title: 'Organization Number',
+            title: l('ApplicantInfoView:ApplicantInfo.OrgNumber'),
             name: 'orgNumber',
             data: 'applicant.orgNumber',
             className: 'data-table-header',
@@ -791,7 +790,7 @@
 
     function getOrganizationNameColumn() {
         return {
-            title: 'Organization Name',
+            title: l('Summary:Application.OrganizationName'),
             name: 'organizationName',
             data: 'organizationName',
             className: 'data-table-header',

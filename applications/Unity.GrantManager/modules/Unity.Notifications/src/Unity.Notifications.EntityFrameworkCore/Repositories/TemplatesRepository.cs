@@ -31,6 +31,12 @@ namespace Unity.Notifications.Repositories
             return await dbSet.Where(x => x.TenantId == tenentId).ToListAsync();
         }
 
-       
+        public async Task<EmailTemplate?> GetByNameAsync(string name)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .FirstOrDefaultAsync(s => s.Name == name);
+        }
     }
 }

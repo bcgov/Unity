@@ -56,8 +56,19 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
           .Include(s => s.Applicant)
             .ThenInclude(s => s.ApplicantAddresses)
           .Include(s => s.ApplicantAgent)
-          .Include(s => s.ApplicationStatus)          
-          .FirstAsync(s => s.Id == id);                   
+          .Include(s => s.ApplicationStatus)
+          .FirstAsync(s => s.Id == id);
+    }
+
+    public async Task<List<Application>> GetListByIdsAsync(Guid[] ids)
+    {
+        return await (await GetQueryableAsync())
+            .AsNoTracking()
+            .Include(s => s.ApplicationStatus)
+            .Include(s => s.Applicant)
+            .Include(s => s.ApplicationForm)
+            .Where(s => ids.Contains(s.Id))
+            .ToListAsync();
     }
 
     /// <summary>

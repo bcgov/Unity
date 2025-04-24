@@ -15,16 +15,19 @@ public class TemplateService : ApplicationService, ITemplateService
 
     private readonly ITemplatesRepository _templatesRepository;
     private readonly ICurrentTenant _currentTenant;
+    private readonly ITemplateVariablesRepository _templateVariablesRepository;
 
 
     public TemplateService(
          ITemplatesRepository templatesRepository,
-        ICurrentTenant currentTenant
+        ICurrentTenant currentTenant,
+         ITemplateVariablesRepository templateVariablesRepository
 
         )
     {
         _templatesRepository = templatesRepository;
         _currentTenant = currentTenant;
+        _templateVariablesRepository = templateVariablesRepository;
     }
 
     public async Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto)
@@ -69,5 +72,16 @@ public class TemplateService : ApplicationService, ITemplateService
     public async Task DeleteTemplate(Guid id)
     {
         await _templatesRepository.DeleteAsync(id);
+    }
+    public async Task<EmailTemplate?> GetTemplateByName(string name)
+    {
+        var data =  await _templatesRepository.GetByNameAsync(name);
+        return data;
+    } 
+    
+    public async Task<List<TemplateVariable>> GetTemplateVariables()
+    {
+        var data =  await _templateVariablesRepository.GetListAsync();
+        return data;
     }
 }

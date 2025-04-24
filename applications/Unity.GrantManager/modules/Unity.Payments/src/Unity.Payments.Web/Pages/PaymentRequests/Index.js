@@ -424,10 +424,8 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-
-                let statusText = getStatusText(data);
                 let statusColor = getStatusTextColor(data);
-                return '<span style="color:' + statusColor + ';">' + statusText + '</span>';
+                return `<span style="color:${statusColor};">` + l(`Enum:PaymentRequestStatus.${data}`) + '</span>';
             }
         };
     }
@@ -653,57 +651,11 @@ $(function () {
             case "Paid":
                 return "#42814A";
 
-            case "PaymentFailed":
+            case "Failed":
                 return "#CE3E39";
 
             default:
                 return "#053662";
-        }
-    }
-
-    function getStatusText(status) {
-
-        switch (status) {
-
-            case "L1Pending":
-                return "L1 Pending";
-
-            case "L1Approved":
-                return "L1 Approved";
-
-            case "L1Declined":
-                return "L1 Declined";
-
-            case "L2Pending":
-                return "L2 Pending";
-
-            case "L2Approved":
-                return "L2 Approved";
-
-            case "L2Declined":
-                return "L2 Declined";
-
-            case "L3Pending":
-                return "L3 Pending";
-
-            case "L3Approved":
-                return "L3 Approved";
-
-            case "L3Declined":
-                return "L3 Declined";
-
-            case "Submitted":
-                return "Submitted to CAS";
-
-            case "Paid":
-                return "Paid";
-
-            case "PaymentFailed":
-                return "Payment Failed";
-
-
-            default:
-                return "Created";
         }
     }
 

@@ -9,5 +9,6 @@ namespace Unity.Notifications.Templates
     {
         Task<EmailTemplate?> GetByIdAsync(Guid id, bool includeDetails = false);
         Task<List<EmailTemplate>> GetByTenentIdAsync(Guid? tenentId);
+        Task<EmailTemplate?> GetByNameAsync(string name);
     }
 }

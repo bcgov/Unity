@@ -146,12 +146,12 @@ namespace Unity.GrantManager.Intakes
         [Browsable(true)]
         public string? OrganizationType { get; set; }
 
-        [DisplayName("Organization Name")]
+        [DisplayName("Registered Organization Name")]
         [MapFieldType("String")]
         [Browsable(true)]
         public string? OrgName { get; set; }
 
-        [DisplayName("Organization Number")]
+        [DisplayName("Registered Organization Number")]
         [MapFieldType("String")]
         [Browsable(true)]
         public string? OrgNumber { get; set; }

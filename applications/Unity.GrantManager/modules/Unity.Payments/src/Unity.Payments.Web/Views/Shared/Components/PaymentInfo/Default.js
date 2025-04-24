@@ -244,7 +244,11 @@
             name: 'status',
             data: 'status',
             className: 'data-table-header',
-            index: 3
+            index: 3,
+            render: function (data) {
+                let statusColor = getPaymentStatusTextColor(data);
+                return `<span style="color:${statusColor};">` + l(`Enum:PaymentRequestStatus.${data}`) + '</span>';
+            }
         };
     }
 
@@ -430,4 +434,38 @@ function enablePaymentInfoSaveBtn() {
 
 function nullToEmpty(value) {
     return value == null ? '' : value;
+}
+
+function getPaymentStatusTextColor(status) {
+    switch (status) {
+        case "L1Pending":
+            return "#053662";
+
+        case "L1Declined":
+            return "#CE3E39";
+
+        case "L2Pending":
+            return "#053662";
+
+        case "L2Declined":
+            return "#CE3E39";
+
+        case "L3Pending":
+            return "#053662";
+
+        case "L3Declined":
+            return "#CE3E39";
+
+        case "Submitted":
+            return "#5595D9";
+
+        case "Paid":
+            return "#42814A";
+
+        case "Failed":
+            return "#CE3E39";
+
+        default:
+            return "#053662";
+    }
 }
