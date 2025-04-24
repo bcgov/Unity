@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Features;
@@ -19,7 +20,25 @@ namespace Unity.Payments.PaymentConfigurations
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(paymentConfiguration);
         }
 
-        public virtual async Task<PaymentConfigurationDto> CreateAsync(CreatePaymentConfigurationDto createPaymentConfigurationDto)
+        public virtual Task<string> GetAccountDistributionCode(AccountCoding accountCoding)
+        {
+            string accountDistributionCode = "";
+            if (accountCoding != null
+				&& accountCoding.Responsibility != null
+				&& accountCoding.ServiceLine != null
+				&& accountCoding.Stob != null
+				&& accountCoding.MinistryClient != null
+				&& accountCoding.ProjectNumber != null)
+            {
+                string accountDistributionPostFix = "000000.0000";
+                accountDistributionCode = 
+                 $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{accountDistributionPostFix}"; 
+            }
+
+            return Task.FromResult(accountDistributionCode);
+        }
+
+        public virtual async Task<PaymentConfigurationDto> CreateAsync(CreatePaymentConfigurationDto createUpdatePaymentConfigurationDto)
         {
             PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync();
 
@@ -30,8 +49,8 @@ namespace Unity.Payments.PaymentConfigurations
 
             var newPaymentConfiguration = await paymentConfigurationRepository.InsertAsync(new PaymentConfiguration
             (
-                createPaymentConfigurationDto.PaymentThreshold,
-                createPaymentConfigurationDto.PaymentIdPrefix
+                createUpdatePaymentConfigurationDto.PaymentThreshold,
+                createUpdatePaymentConfigurationDto.PaymentIdPrefix
             ));
 
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(newPaymentConfiguration);

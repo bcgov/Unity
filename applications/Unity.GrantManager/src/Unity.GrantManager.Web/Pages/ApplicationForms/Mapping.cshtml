@@ -8,6 +8,7 @@
 @using Unity.GrantManager.Permissions;
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
 @using Volo.Abp.Authorization.Permissions;
+@using Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration;
 
 @model MappingModel
 @inject IAuthorizationService AuthorizationService
@@ -198,7 +199,11 @@
         <div class="tab-pane fade" id="nav-ui-configuration" role="tabpanel" aria-labelledby="nav-ui-configuration-tab"></div>
         
         <!--Tab Content: Payment Configuration-->
-        <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab"></div>
+        <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
+            <div id="paymentConfigurationWidget">
+                @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model.ApplicationFormDto?.Id})
+            </div>
+        </div>
     </div>
 
     <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">

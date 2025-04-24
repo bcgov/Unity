@@ -37,12 +37,105 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 {
                     table.PrimaryKey("PK_AccountCodings", x => x.Id);
                     table.UniqueConstraint("UK_AccountCodings", x => new { x.MinistryClient, x.Responsibility, x.ServiceLine, x.Stob, x.ProjectNumber });
-                });
+            });
+
+            migrationBuilder.AddColumn<string>(
+                    name: "DefaultAccountCodingId",
+                    table: "PaymentConfigurations",
+                    type: "uuid",
+                    nullable: false,
+                    schema: "Payments",
+                    defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentConfiguration_DefaultAccountCodingId",
+                schema: "Payments",
+                table: "PaymentConfigurations",
+                column: "DefaultAccountCodingId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_PaymentConfiguration_AccountCodings_Id",
+                schema: "Payments",
+                table: "PaymentConfigurations",
+                column: "DefaultAccountCodingId",
+                principalSchema: "Payments",
+                principalTable: "AccountCodings",
+                principalColumn: "Id");
+
+            migrationBuilder.AddColumn<string>(
+                    name: "PreventPayment",
+                    table: "ApplicationForms",
+                    type: "bool",
+                    nullable: false,
+                    defaultValue: false);
+
+            migrationBuilder.AddColumn<string>(
+                    name: "AccountCodingId",
+                    table: "ApplicationForms",
+                    type: "uuid",
+                    nullable: true,
+                    defaultValue: null);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ApplicationForms_AccountCodingId",
+                table: "ApplicationForms",
+                column: "AccountCodingId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_ApplicationForms_AccountCodings_Id",
+                table: "ApplicationForms",
+                column: "AccountCodingId",
+                principalSchema: "Payments",
+                principalTable: "AccountCodings",
+                principalColumn: "Id");
+        
+            migrationBuilder.DropColumn(
+                name: "MinistryClient",
+                table: "PaymentConfigurations",
+                schema: "Payments");
+
+            migrationBuilder.DropColumn(
+                name: "Responsibility",
+                table: "PaymentConfigurations",
+                schema: "Payments");
+
+            migrationBuilder.DropColumn(
+                name: "ServiceLine",
+                table: "PaymentConfigurations",
+                schema: "Payments");
+
+            migrationBuilder.DropColumn(
+                name: "Stob",
+                table: "PaymentConfigurations",
+                schema: "Payments");
+
+            migrationBuilder.DropColumn(
+                name: "ProjectNumber",
+                table: "PaymentConfigurations",
+                schema: "Payments");
+
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_ApplicationForms_AccountCodings_Id",
+                table: "ApplicationForms");
+
+            migrationBuilder.DropColumn(
+                    name: "PreventPayment",
+                    table: "ApplicationForms");
+
+            migrationBuilder.DropColumn(
+                    name: "DefaultAccountCodingId",
+                    table: "PaymentConfigurations",
+                    schema: "Payments");
+
+            migrationBuilder.DropColumn(
+                    name: "AccountCodingId",
+                    table: "ApplicationForms");                    
+
             migrationBuilder.DropTable(
                 name: "AccountCodings");
         }

@@ -18,58 +18,63 @@ $(function () {
         ...commonTableActionButtons(l('Intake'))
     ];
     let index = 0;
-    const listColumns = [
+    const listColumns = [   
         {
             title: 'Ministry Client',
             name: "ministryClient",
             data: "ministryClient",
-            index: index
+            visible: true,
+            index: index++
         },
         {
             title: 'Responsibility',
             name: "responsibility", 
             data: "responsibility",
+            visible: true,
             index: index++
         },
         {
             title: 'Service Line',
             name: "serviceLine", 
             data: "serviceLine",
+            visible: true,
             index: index++
         },
         {
             title: 'Stob',
             name: "stob", 
             data: "stob",
+            visible: true,
             index: index++
         },
         {
             title: 'Project #',
             name: "projectNumber", 
             data: "projectNumber",
+            visible: true,
             index: index++
-        },  
-        {
-            title: 'Action',
-            orderable: false,
-            className: 'notexport text-center',
-            name: 'rowActions',
-            index: index++,
-            rowAction: {
-                items:
-                    [
-                        {
-                            text: 'Edit',
-                            action: (data) => updateModal.open({ id: data.record.id })
-                        }
-                    ]
-            }
         },
         {
             title: 'Default',
             orderable: false,
+            visible: true,
             className: 'notexport text-center',
             name: 'defaultRadio',
+            index: index++,
+            data: 'id',
+            render: function (data, type, full, meta) {
+                let checked = '';//UIElements.siteId.val() == data ? 'checked' : '' -------- '${data}';
+
+                return `<input type="radio" name="default-site" onclick="saveDefault()" ${checked} />`;
+            }
+        },
+        {
+            title: 'Action',
+            orderable: false,
+            data: 'id',
+            className: 'notexport text-center',
+            name: 'rowActions',
+            visible: true,
             index: index++,
             rowAction: {
                 items:
@@ -80,7 +85,7 @@ $(function () {
                         }
                     ]
             }
-        }
+        }        
     ];
 
     const defaultVisibleColumns = [
@@ -89,8 +94,8 @@ $(function () {
         'serviceLine',
         'stob',
         'projectNumber',
-        'rowActions',
-        'defaultRadio'
+        'defaultRadio',
+        'rowActions',        
     ];
 
 

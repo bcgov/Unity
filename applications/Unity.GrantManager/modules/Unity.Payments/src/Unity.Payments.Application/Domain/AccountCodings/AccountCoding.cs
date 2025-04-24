@@ -1,6 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Unity.Payments.Domain.Exceptions;
 using Volo.Abp;
@@ -31,11 +29,11 @@ namespace Unity.Payments.Domain.AccountCodings
         }
 
         public AccountCoding(
-            string? ministryClient,
-            string? responsibility,
-            string? serviceLine,
-            string? stob,
-            string? projectNumber) 
+            string ministryClient,
+            string responsibility,
+            string serviceLine,
+            string stob,
+            string projectNumber) 
         {
             MinistryClient = ministryClient;
             Responsibility = responsibility;

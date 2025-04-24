@@ -129,5 +129,14 @@ namespace Unity.GrantManager.ApplicationForms
             appForm.ScoresheetId = dto.ScoresheetId;
             await _applicationFormRepository.UpdateAsync(appForm);
         }
+
+        public async Task SavePaymentConfiguration(FormPaymentConfigurationDto dto)
+        {
+            ApplicationForm appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);
+            appForm.AccountCodingId = dto.AccountCodingId;
+            appForm.Payable = dto.Payable;
+            appForm.PreventPayment = dto.PreventPayment;
+            await _applicationFormRepository.UpdateAsync(appForm);
+        }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Unity.Payments.Domain.AccountCodings;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -11,7 +10,7 @@ namespace Unity.GrantManager.Payments
             CrudAppService<
             AccountCoding,
             AccountCodingDto,
-            System.Guid,
+            Guid,
             PagedAndSortedResultRequestDto,
             CreateUpdateAccountCodingDto>, IAccountCodingAppService
     {
