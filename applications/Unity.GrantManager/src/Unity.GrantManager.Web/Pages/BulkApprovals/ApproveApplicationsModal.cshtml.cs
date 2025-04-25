@@ -45,7 +45,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         {
             MaxBatchCountExceeded = true;
         }
-        
+
         if (applicationGuids.Length == 0)
         {
             return;
@@ -140,7 +140,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         {
             bulkApprovals.Add(new BulkApprovalDto()
             {
-                ApplicantName = application.ApplicantName,
+                ApplicantName = application.ApplicantName ?? string.Empty,
                 ApplicationId = application.ApplicationId,
                 ApprovedAmount = application.ApprovedAmount,
                 FinalDecisionDate = application.DecisionDate,
@@ -173,7 +173,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
 
         public Guid ApplicationId { get; set; }
         public string ReferenceNo { get; set; } = string.Empty;
-        public string ApplicantName { get; set; } = string.Empty;
+        public string? ApplicantName { get; set; } = string.Empty;
         public string FormName { get; set; } = string.Empty;
         public string ApplicationStatus { get; set; } = string.Empty;
 
