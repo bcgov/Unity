@@ -102,13 +102,28 @@
     "ApplicationPaymentStatusRequest:L2ApproveOrDeclineTitle": "Approve/Decline L2 Payment Requests",
     "ApplicationPaymentStatusRequest:L3ApproveOrDeclineTitle": "Approve/Decline L3 Payment Requests",
 
-
     "Permission:Payments": "Payments",
     "Permission:Payments.Default": "Payments",
     "Permission:Payments.L1ApproveOrDecline": "Approve/Decline L1 Payments",
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
     "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
     "Permission:Payments.RequestPayment": "Request Payment",
-    "Permission:Payments.EditSupplierInfo": "Update Supplier Info"
+    "Permission:Payments.EditSupplierInfo": "Update Supplier Info",
+
+    "Enum:PaymentRequestStatus.L1Pending": "L1 Pending",
+    "Enum:PaymentRequestStatus.L1Approved": "L1 Approved",
+    "Enum:PaymentRequestStatus.L1Declined": "L1 Declined",
+    "Enum:PaymentRequestStatus.L2Pending": "L2 Pending",
+    "Enum:PaymentRequestStatus.L2Approved": "L2 Approved",
+    "Enum:PaymentRequestStatus.L2Declined": "L2 Declined",
+    "Enum:PaymentRequestStatus.L3Pending": "L3 Pending",
+    "Enum:PaymentRequestStatus.L3Approved": "L3 Approved",
+    "Enum:PaymentRequestStatus.L3Declined": "L3 Declined",
+    "Enum:PaymentRequestStatus.Submitted": "Submitted to CAS",
+    "Enum:PaymentRequestStatus.Validated": "Validated",
+    "Enum:PaymentRequestStatus.NotValidated": "Not Validated",
+    "Enum:PaymentRequestStatus.Paid": "Paid",
+    "Enum:PaymentRequestStatus.Failed": "Payment Failed",
+    "Enum:PaymentRequestStatus.PaymentFailed": "Payment Failed"
   }
 }
