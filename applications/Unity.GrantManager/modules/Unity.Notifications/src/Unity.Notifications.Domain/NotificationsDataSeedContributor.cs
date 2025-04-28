@@ -18,6 +18,11 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
 
     public async Task SeedAsync(DataSeedContext context)
     {
+        List<TemplateVariable> variableList = await _templateVariablesRepository.GetListAsync();
+        if (variableList.Count > 0)
+        {
+            return; // already seeded
+        }
         var EmailTempateVariableDtos = new List<EmailTempateVariableDto>
         {
             new EmailTempateVariableDto { Name = "Applicant name", Token = "applicant_name", MapTo = "applicant.applicantName" },
