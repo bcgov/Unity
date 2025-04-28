@@ -26,7 +26,6 @@
         },
         {
             title: l('Actions'),
-            data: 'tenantId',
             orderable: false,
             className: 'notexport text-center',
             name: 'rowActions',
