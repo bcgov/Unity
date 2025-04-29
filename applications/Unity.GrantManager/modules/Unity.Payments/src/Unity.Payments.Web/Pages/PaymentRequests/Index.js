@@ -113,7 +113,7 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 11,
+        defaultSortColumn: 13,
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
         data: {},
         responseCallback,
@@ -140,7 +140,7 @@ $(function () {
     });
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
-    let history_button = dataTable.buttons(['.history']);    
+    let history_button = dataTable.buttons(['.history']);
 
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
@@ -437,9 +437,7 @@ $(function () {
             data: 'creationTime',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
         };
     }
     function getUpdatedOnColumn(columnIndex) {
@@ -449,9 +447,7 @@ $(function () {
             data: 'lastModificationTime',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
         };
     }
     function getPaidOnColumn(columnIndex) {
@@ -461,9 +457,7 @@ $(function () {
             data: 'paidOn',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
         };
     }
 
