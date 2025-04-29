@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Web.Exceptions;
-using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Identity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Claims;
