@@ -81,7 +81,7 @@ internal static class PolicyRegistrant
 
         authorizationBuilder.AddPolicy(UnitySelector.Review.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Default));
-        
+
         // R&A - Approval Policies
         authorizationBuilder.AddPolicy(UnitySelector.Review.Approval.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Approval.Default));
@@ -123,8 +123,11 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageConnectionStrings));
 
         // IT Administrator Policies
-        //authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicy, policy => policy.RequireRole(IdentityConsts.ITAdminRoleName));
-        authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicy, policy => policy.RequireAuthenticatedUser());
+        authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicyName,
+        policy => policy.RequireAssertion(context =>
+            context.User.IsInRole(IdentityConsts.ITAdminRoleName) ||
+            context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITAdminPermissionName)
+        ));
     }
 }
 

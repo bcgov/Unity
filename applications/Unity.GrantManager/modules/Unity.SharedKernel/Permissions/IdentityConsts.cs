@@ -2,7 +2,8 @@
 {
     public static class IdentityConsts
     {
-        public const string ITAdminPolicy = "ITAdministrator";
+        public const string ITAdminPolicyName = "ITAdministrator";
         public const string ITAdminRoleName = "ITAdministrator";
+        public const string ITAdminPermissionName = "ITAdministrator";
     }
 }

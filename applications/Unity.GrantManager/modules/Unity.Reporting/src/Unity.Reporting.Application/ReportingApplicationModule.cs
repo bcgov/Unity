@@ -12,7 +12,7 @@ namespace Unity.Reporting;
 [DependsOn(
     typeof(ReportingApplicationContractsModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpAutoMapperModule)    
     )]
 public class ReportingApplicationModule : AbpModule
 {
