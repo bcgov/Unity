@@ -6,9 +6,7 @@ namespace Unity.GrantManager.Reporting
 {
     public interface IFormsReportSyncServiceAppService : IApplicationService
     {
-        Task GenerateFormVersionFields(Guid formVersionId);
-        Task GenerateFormSubmissionData(Guid submissionId);
-        Task SyncFormVersionFields();
-        Task SyncFormSubmissionData();
+        Task SyncFormVersionFields(Guid? tenantId);
+        Task SyncFormSubmissionData(Guid? tenantId);
     }
 }

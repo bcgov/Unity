@@ -6,9 +6,7 @@ namespace Unity.Flex.Reporting
 {
     public interface IScoresheetReportingFieldsSyncAppService : IApplicationService
     {
-        Task GenerateQuestions(Guid scoresheetId);
-        Task GenerateAnswers(Guid scoresheetInstanceId);
-        Task SyncQuestions();
-        Task SyncAnswers();
+        Task SyncQuestions(Guid? tenantId);
+        Task SyncAnswers(Guid? tenantId);
     }
 }
