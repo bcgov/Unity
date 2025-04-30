@@ -175,20 +175,27 @@ namespace Unity.GrantManager.Reporting
         /// <returns></returns>
         private async Task SyncFormSubmissionDataForCurrentTenant()
         {
-            using var uow = unitOfWorkManager.Begin(isTransactional: false);
+            const int BatchSize = 25;
 
             var submissionIds = (await applicationFormSubmissionRepository
-               .GetListAsync())
-               .Where(s => string.IsNullOrEmpty(s.ReportData) || s.ReportData == "{}")
-            .Select(s => s.Id);
+                .GetListAsync())
+                .Where(s => string.IsNullOrEmpty(s.ReportData) || s.ReportData == "{}")
+                .Select(s => s.Id)
+                .ToList();
 
-            foreach (var submissionId in submissionIds)
+            // Process in batches of 25
+            foreach (var batch in submissionIds.Chunk(BatchSize))
             {
-                // Generate the Reporting Fields for the form version
-                await GenerateFormSubmissionData(submissionId);
-            }
+                using var uow = unitOfWorkManager.Begin(isTransactional: false);
 
-            await uow.CompleteAsync();
+                foreach (var submissionId in batch)
+                {
+                    // Generate the Reporting Fields for the form version
+                    await GenerateFormSubmissionData(submissionId);
+                }
+
+                await uow.CompleteAsync();
+            }
         }
     }
 }
