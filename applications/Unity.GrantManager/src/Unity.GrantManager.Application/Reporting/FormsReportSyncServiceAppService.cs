@@ -186,7 +186,7 @@ namespace Unity.GrantManager.Reporting
             // Process in batches of 25
             foreach (var batch in submissionIds.Chunk(BatchSize))
             {
-                using var uow = unitOfWorkManager.Begin(isTransactional: false);
+                using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
 
                 foreach (var submissionId in batch)
                 {
