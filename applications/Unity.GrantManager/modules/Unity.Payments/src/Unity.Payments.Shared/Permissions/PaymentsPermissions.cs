@@ -15,6 +15,7 @@ public static class PaymentsPermissions
         public const string Decline = Default + ".Decline";
         public const string RequestPayment = Default + ".RequestPayment";
         public const string EditSupplierInfo = Default + ".EditSupplierInfo";
+        public const string EditFormPaymentConfiguration = Default + ".EditFormPaymentConfiguration";
     }    
 
     public static string[] GetAll()

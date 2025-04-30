@@ -23,37 +23,19 @@ namespace Unity.Payments.PaymentRequests
 {
     [RequiresFeature("Unity.Payments")]
     [Authorize]
-    public class PaymentRequestAppService : PaymentsAppService, IPaymentRequestAppService
-    {
-        private readonly ICurrentUser _currentUser;
-        private readonly IDataFilter _dataFilter;
-        private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
-        private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
-        private readonly IPaymentsManager _paymentsManager;
-        private readonly IPaymentRequestRepository _paymentRequestsRepository;
-        private readonly IPermissionChecker _permissionChecker;
-
-        public PaymentRequestAppService(
+    public class PaymentRequestAppService(
             ICurrentUser currentUser,
             IDataFilter dataFilter,
             IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
             IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentsManager paymentsManager,
             IPaymentRequestRepository paymentRequestsRepository,
-            IPermissionChecker permissionChecker)
-        {
-            _currentUser                       = currentUser;
-            _dataFilter                        = dataFilter;
-            _externalUserLookupServiceProvider = externalUserLookupServiceProvider;
-            _paymentConfigurationRepository    = paymentConfigurationRepository;
-            _paymentsManager                   = paymentsManager;
-            _paymentRequestsRepository         = paymentRequestsRepository;
-            _permissionChecker                 = permissionChecker;
-        }
+            IPermissionChecker permissionChecker) : PaymentsAppService, IPaymentRequestAppService
+    {
 
         protected virtual async Task<(PaymentConfiguration? Config, decimal Threshold)> GetPaymentConfigurationWithThresholdAsync()
         {
-            var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
+            var paymentConfigs = await paymentConfigurationRepository.GetListAsync();
             var paymentConfig = paymentConfigs.FirstOrDefault();
 
             if (paymentConfig == null)
@@ -106,7 +88,7 @@ namespace Unity.Payments.PaymentRequests
                     paymentRequestDto.PaymentThreshold = paymentThreshold;
 
                     var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
-                    var result = await _paymentRequestsRepository.InsertAsync(payment);
+                    var result = await paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
                     {
                         Id = result.Id,
@@ -159,7 +141,7 @@ namespace Unity.Payments.PaymentRequests
 
         private async Task<decimal> GetMaxBatchNumberAsync()
         {
-            var paymentRequestList = await _paymentRequestsRepository.GetListAsync();
+            var paymentRequestList = await paymentRequestsRepository.GetListAsync();
             decimal batchNumber = 1; // Lookup max plus 1
             if (paymentRequestList != null && paymentRequestList.Count > 0)
             {
@@ -176,7 +158,7 @@ namespace Unity.Payments.PaymentRequests
 
         public Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId)
         {
-            return _paymentRequestsRepository.GetPaymentRequestCountBySiteId(siteId);
+            return paymentRequestsRepository.GetPaymentRequestCountBySiteId(siteId);
         }
 
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
@@ -189,12 +171,12 @@ namespace Unity.Payments.PaymentRequests
             {
                 try
                 {
-                    var payment = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
+                    var payment = await paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
                     var triggerAction = await DetermineTriggerActionAsync(dto, payment, paymentThreshold);
 
                     if (triggerAction != PaymentApprovalAction.None)
                     {
-                        await _paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
+                        await paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
                         updatedPayments.Add(await CreatePaymentRequestDtoAsync(dto.PaymentRequestId));
                     }
                 }
@@ -238,24 +220,24 @@ namespace Unity.Payments.PaymentRequests
         private async Task<bool> CanPerformLevel1ActionAsync(PaymentRequestStatus status)
         {
             List<PaymentRequestStatus> level1Approvals = new() { PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined };
-            return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L1ApproveOrDecline) && level1Approvals.Contains(status);
+            return await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L1ApproveOrDecline) && level1Approvals.Contains(status);
         }
 
         private async Task<bool> CanPerformLevel2ActionAsync(PaymentRequest payment)
         {
             List<PaymentRequestStatus> level2Approvals = new() { PaymentRequestStatus.L2Pending, PaymentRequestStatus.L2Declined };
-            return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L2ApproveOrDecline) && level2Approvals.Contains(payment.Status);
+            return await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L2ApproveOrDecline) && level2Approvals.Contains(payment.Status);
         }
 
         private async Task<bool> CanPerformLevel3ActionAsync(PaymentRequestStatus status)
         {
             List<PaymentRequestStatus> level3Approvals = new() { PaymentRequestStatus.L3Pending, PaymentRequestStatus.L3Declined };
-            return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && level3Approvals.Contains(status);
+            return await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && level3Approvals.Contains(status);
         }
 
         private async Task<PaymentRequestDto> CreatePaymentRequestDtoAsync(Guid paymentRequestId)
         {
-            var payment = await _paymentRequestsRepository.GetAsync(paymentRequestId);
+            var payment = await paymentRequestsRepository.GetAsync(paymentRequestId);
             return new PaymentRequestDto
             {
                 Id = payment.Id,
@@ -277,10 +259,10 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
-            var totalCount = await _paymentRequestsRepository.GetCountAsync();
-            using (_dataFilter.Disable<ISoftDelete>())
+            var totalCount = await paymentRequestsRepository.GetCountAsync();
+            using (dataFilter.Disable<ISoftDelete>())
             {
-                var payments = await _paymentRequestsRepository
+                var payments = await paymentRequestsRepository
                     .GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, includeDetails: true);
 
                 var mappedPayments = await MapToDtoAndLoadDetailsAsync(payments);
@@ -315,7 +297,7 @@ namespace Unity.Payments.PaymentRequests
             var allUserIds = paymentRequesterIds.Concat(expenseApprovalCreatorIds).Distinct();
             foreach (var userId in allUserIds)
             {
-                var userInfo = await _externalUserLookupServiceProvider.FindByIdAsync(userId);
+                var userInfo = await externalUserLookupServiceProvider.FindByIdAsync(userId);
                 if (userInfo != null)
                 {
                     userDictionary[userId] = ObjectMapper.Map<IUserData, PaymentUserDto>(userInfo);
@@ -358,9 +340,9 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
         {
-            using (_dataFilter.Disable<ISoftDelete>())
+            using (dataFilter.Disable<ISoftDelete>())
             {
-                var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+                var paymentsQueryable = await paymentRequestsRepository.GetQueryableAsync();
                 var payments = await paymentsQueryable.Include(pr => pr.Site).ToListAsync();
                 var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
 
@@ -370,7 +352,7 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds)
         {
-            var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+            var paymentsQueryable = await paymentRequestsRepository.GetQueryableAsync();
             var payments = await paymentsQueryable
                 .Where(e => paymentIds.Contains(e.Id))
                 .Include(pr => pr.Site)
@@ -381,17 +363,17 @@ namespace Unity.Payments.PaymentRequests
 
         public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
         {
-            return await _paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);
+            return await paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);
         }
 
         protected virtual string GetCurrentRequesterName()
         {
-            return $"{_currentUser.Name} {_currentUser.SurName}";
+            return $"{currentUser.Name} {currentUser.SurName}";
         }
 
         protected virtual async Task<PaymentConfiguration?> GetPaymentConfigurationAsync()
         {
-            var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
+            var paymentConfigs = await paymentConfigurationRepository.GetListAsync();
 
             if (paymentConfigs.Count > 0)
             {
@@ -404,7 +386,7 @@ namespace Unity.Payments.PaymentRequests
 
         protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
-            var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
+            var paymentConfigs = await paymentConfigurationRepository.GetListAsync();
 
             if (paymentConfigs.Count > 0)
             {
@@ -418,7 +400,7 @@ namespace Unity.Payments.PaymentRequests
         private async Task<int> GetNextSequenceNumberAsync(int currentYear)
         {
             // Retrieve all payment requests
-            var payments = await _paymentRequestsRepository.GetListAsync();
+            var payments = await paymentRequestsRepository.GetListAsync();
 
             // Filter payments for the current year
             var filteredPayments = payments

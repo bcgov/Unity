@@ -6,4 +6,6 @@ public static class UnitySettingManagementPermissions
     public const string UserInterface = GroupName + ".UserInterface";
 
     public const string BackgroundJobSettings = "SettingManagement.GrantManager";
+
+    public const string ConfigurePayments = "SettingManagement.ConfigurePayments";
 }

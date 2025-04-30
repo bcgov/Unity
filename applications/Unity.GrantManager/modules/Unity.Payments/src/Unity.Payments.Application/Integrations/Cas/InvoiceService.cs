@@ -35,10 +35,10 @@ namespace Unity.Payments.Integrations.Cas
 
         private const string CFS_APINVOICE = "cfs/apinvoice";
 
-        private readonly Dictionary<int, string> CASPaymentGroup = new Dictionary<int, string>
+        private readonly Dictionary<int, string> CASPaymentGroup = new()
         {
-            { (int)PaymentGroup.EFT, "GEN EFT" },
-            { (int)PaymentGroup.Cheque, "GEN CHQ" }
+            [(int)PaymentGroup.EFT] = "GEN EFT",
+            [(int)PaymentGroup.Cheque] = "GEN CHQ"
         };
 
         public InvoiceService(
@@ -62,9 +62,9 @@ namespace Unity.Payments.Integrations.Cas
         }
 
         protected virtual async Task<Invoice?> InitializeCASInvoice(PaymentRequest paymentRequest,
-                                                          string? accountDistributionCode)
+                                                                  string? accountDistributionCode)
         {
-            Invoice? casInvoice = new Invoice();
+            Invoice? casInvoice = new();
             Site? site = await GetSiteByPaymentRequestAsync(paymentRequest);
 
             if (site != null && site.Supplier != null && site.Supplier.Number != null && accountDistributionCode != null)
@@ -87,10 +87,12 @@ namespace Unity.Payments.Integrations.Cas
                 casInvoice.InvoiceBatchName = paymentRequest.BatchName;
                 casInvoice.PaymentAdviceComments = paymentRequest.Description;
 
-                InvoiceLineDetail invoiceLineDetail = new InvoiceLineDetail();
-                invoiceLineDetail.InvoiceLineNumber = 1;
-                invoiceLineDetail.InvoiceLineAmount = paymentRequest.Amount;
-                invoiceLineDetail.DefaultDistributionAccount = accountDistributionCode; // This will be at the tenant level
+                InvoiceLineDetail invoiceLineDetail = new()
+                {
+                    InvoiceLineNumber = 1,
+                    InvoiceLineAmount = paymentRequest.Amount,
+                    DefaultDistributionAccount = accountDistributionCode // This will be at the tenant level
+                };
                 casInvoice.InvoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };
             }
 
@@ -100,8 +102,11 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<Site?> GetSiteByPaymentRequestAsync(PaymentRequest paymentRequest)
         {
             Site? site = await _iSiteRepository.GetAsync(paymentRequest.SiteId, true);
-            Supplier supplier = await _iSupplierRepository.GetAsync(site.SupplierId);
-            site.Supplier = supplier;
+            if (site?.SupplierId != null)
+            {
+                Supplier supplier = await _iSupplierRepository.GetAsync(site.SupplierId);
+                site.Supplier = supplier;
+            }
             return site;
         }
 
@@ -111,26 +116,29 @@ namespace Unity.Payments.Integrations.Cas
             try
             {
                 PaymentRequest? paymentRequest = await _iPaymentRequestRepository.GetPaymentRequestByInvoiceNumber(invoiceNumber);
-                if (paymentRequest == null)
+                if (paymentRequest is null)
                 {
                     throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Payment Request not found");
                 }
 
-                string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
-                if (accountDistributionCode != null)
+                string? accountDistributionCode = ""; // Placeholder for actual logic
+
+                if (!string.IsNullOrEmpty(accountDistributionCode))
                 {
                     Invoice? invoice = await InitializeCASInvoice(paymentRequest, accountDistributionCode);
 
-                    if (invoice != null)
+                    if (invoice is not null)
                     {
                         invoiceResponse = await CreateInvoiceAsync(invoice);
-                        if (invoiceResponse != null)
+                        if (invoiceResponse is not null)
                         {
                             await UpdatePaymentRequestWithInvoice(paymentRequest.Id, invoiceResponse);
                         }
                     }
                 }
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 string ExceptionMessage = ex.Message;
                 Logger.LogError(ex, "CreateInvoiceByPaymentRequestAsync Exception: {ExceptionMessage}", ExceptionMessage);
             }
@@ -222,7 +230,7 @@ namespace Unity.Payments.Integrations.Cas
             var authToken = await _iTokenService.GetAuthTokenAsync();
             var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
             var response = await _resilientRestClient.HttpAsync(HttpMethod.Get, resource, authToken);
-            CasPaymentSearchResult casPaymentSearchResult = new CasPaymentSearchResult();
+            CasPaymentSearchResult casPaymentSearchResult = new();
 
             if (response != null
                 && response.Content != null

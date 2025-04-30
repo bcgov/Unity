@@ -1,101 +1,100 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
-using Unity.Payments.PaymentConfigurations;
+using Unity.GrantManager.Identity;
+using Unity.Payments.Domain.PaymentConfigurations;
+using Unity.Payments.Domain.PaymentThresholds;
+using Unity.Payments.Web.Pages.PaymentApprovals;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Identity;
+using Volo.Abp.Identity.Integration;
+using Volo.Abp.Users;
 
-namespace Unity.Payments.Web.Pages.PaymentConfigurations
+namespace Unity.Payments.Web.Pages.PaymentConfifurations
 {
-    public class CreatePaymentConfigurationModel : AbpPageModel
+    public class PaymentConfigurationModel(
+        IPaymentThresholdRepository paymentThresholdRepository,
+        IPaymentConfigurationRepository paymentConfigurationRepository,
+        IIdentityUserIntegrationService identityUserLookupAppService) : AbpPageModel
     {
-        protected IPaymentConfigurationAppService PaymentConfigurationService { get; }
+        [HiddenInput]
+        [BindProperty(SupportsGet = true)]
+        public Guid? AccountCodingId { get; set; }
 
-        [BindProperty]
-        public PaymentConfigurationViewModel PaymentConfiguration { get; set; } = new();
+        [HiddenInput]
+        [BindProperty(SupportsGet = true)]
+        public List<PaymentThresholdModel> PaymentThresholdList { get; set; } = new List<PaymentThresholdModel>();
 
-        [BindProperty]
-        public decimal PaymentThreshold { get; set; }
-
-        [BindProperty]
-        public string PaymentIdPrefix { get; set; } = string.Empty;
-
-        [TempData]
-        public string StatusMessage { get; set; } = string.Empty;
-
-
-        public CreatePaymentConfigurationModel(IPaymentConfigurationAppService iPaymentConfigurationService)
-        {
-            PaymentConfigurationService = iPaymentConfigurationService;
-        }
+        [BindProperty(SupportsGet = true)]
+        public string? PaymentIdPrefix { get; set; }
 
         public async Task OnGetAsync()
         {
-            // Grab the current Payent Configuration
-            var paymentConfigurationDto = await PaymentConfigurationService.GetAsync();
+            var paymentConfigurations = await paymentConfigurationRepository.GetListAsync();
+            var paymentConfiguration = paymentConfigurations.Count > 0 ? paymentConfigurations[0] : null;
 
-            if (paymentConfigurationDto != null)
+            if (paymentConfiguration != null)
             {
-                PaymentThreshold = paymentConfigurationDto.PaymentThreshold;
-                PaymentIdPrefix = paymentConfigurationDto.PaymentIdPrefix;
-                PaymentConfiguration.MinistryClient = paymentConfigurationDto.MinistryClient;
-                PaymentConfiguration.Responsibility = paymentConfigurationDto.Responsibility;
-                PaymentConfiguration.Stob = paymentConfigurationDto.Stob;
-                PaymentConfiguration.ServiceLine = paymentConfigurationDto.ServiceLine;
-                PaymentConfiguration.ProjectNumber = paymentConfigurationDto.ProjectNumber;
+                AccountCodingId = paymentConfiguration.DefaultAccountCodingId;
+                PaymentIdPrefix = paymentConfiguration.PaymentIdPrefix;
             }
+
+            PaymentThresholdList = await GetL2ApproversThresholds();           
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<List<PaymentThresholdModel>> GetL2ApproversThresholds()
         {
-            if (ModelState.IsValid && PaymentConfiguration != null)
+            // lookup users with the l2_approval role
+            List<PaymentThresholdModel> l2UsersData = new List<PaymentThresholdModel>();
+
+            var userListResult = await identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
+            var users = userListResult.Items;
+            if (users != null)
             {
-                try
+                foreach (UserData user in users)
                 {
-                    await UpsertPaymentConfigurationAsync();
-                    StatusMessage = "Successfully Saved Payment Settings.";
+                    var roles = await identityUserLookupAppService.GetRoleNamesAsync(user.Id);
+                    if(roles != null && roles.Contains(UnityRoles.L2Approver) )
+                    {
+                        PaymentThreshold? paymentThreshold = await paymentThresholdRepository.FirstOrDefaultAsync(x => x.UserId == user.Id);
+
+                        if (paymentThreshold != null)
+                        {
+                            l2UsersData.Add(new PaymentThresholdModel()
+                            {
+                                Id = paymentThreshold.Id,
+                                UserId = user.Id,
+                                UserName = user.Name,
+                                PaymentThreshold = paymentThreshold.Threshold,
+                                Description = paymentThreshold.Description
+                            });
+                        }
+                        else
+                        {
+                            // If the user does not have a payment threshold, create a new one with null values
+                            PaymentThreshold paymentThresholdNew = await paymentThresholdRepository.InsertAsync(new PaymentThreshold()
+                            {
+                                UserId = user.Id,
+                                Threshold = null,
+                                Description = null
+                            });
+
+                            l2UsersData.Add(new PaymentThresholdModel()
+                            {
+                                Id = paymentThresholdNew.Id,
+                                UserId = user.Id,
+                                UserName = user.Name,
+                                PaymentThreshold = null,
+                                Description = null
+                            });
+                        }
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, message: "Exception in CreatePaymentConfigurationModel OnPostAsync");
-                    StatusMessage = "An error occurred while saving Payment Settings.";
-                }
             }
-
-            return Page();
-        }
-
-        private async Task UpsertPaymentConfigurationAsync()
-        {
-            var existing = await PaymentConfigurationService.GetAsync();
-
-            if (existing == null)
-            {
-                await PaymentConfigurationService.CreateAsync(new CreatePaymentConfigurationDto
-                {
-                    PaymentThreshold = PaymentThreshold,
-                    PaymentIdPrefix = PaymentIdPrefix,
-                    MinistryClient = PaymentConfiguration.MinistryClient,
-                    Responsibility = PaymentConfiguration.Responsibility,
-                    Stob = PaymentConfiguration.Stob,
-                    ServiceLine = PaymentConfiguration.ServiceLine,
-                    ProjectNumber = PaymentConfiguration.ProjectNumber
-                });
-            }
-            else
-            {
-                await PaymentConfigurationService.UpdateAsync(new UpdatePaymentConfigurationDto
-                {
-                    PaymentThreshold = PaymentThreshold,
-                    PaymentIdPrefix = PaymentIdPrefix,
-                    MinistryClient = PaymentConfiguration.MinistryClient,
-                    Responsibility = PaymentConfiguration.Responsibility,
-                    Stob = PaymentConfiguration.Stob,
-                    ServiceLine = PaymentConfiguration.ServiceLine,
-                    ProjectNumber = PaymentConfiguration.ProjectNumber
-                });
-            }
+            return l2UsersData;
         }
     }
 }
-
