@@ -1,14 +1,12 @@
-﻿using System.Threading.Tasks;
-using System;
+﻿using System;
+using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Flex.Reporting
 {
     public interface IWorksheetReportingFieldsSyncAppService : IApplicationService
     {
-        Task GenerateFields(Guid worksheetId);
-        Task GenerateData(Guid worksheetInstanceId);
-        Task SyncFields();
-        Task SyncData();
+        Task SyncFields(Guid? tenantId);
+        Task SyncData(Guid? tenantId);
     }
 }

@@ -35,6 +35,9 @@
                     <label for="syncSubmissionData">Sync Submission Data</label>
                 </div>
             </div>
+            <div class="form-group">
+                <abp-input asp-for="@Model.TenantId" name="TenantId" placeholder="Optional Tenant Id" />
+            </div>
         </abp-modal-body>
         <abp-modal-footer>
             <abp-button data-busy-text="Processing..."
