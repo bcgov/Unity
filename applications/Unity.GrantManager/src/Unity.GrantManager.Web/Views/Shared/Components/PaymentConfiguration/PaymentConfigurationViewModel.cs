@@ -19,6 +19,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
         [SelectItems(nameof(AccountCodeList))]
         public Guid? AccountCode { get; set; }
 
+        public decimal? PaymentApprovalThreshold { get; set; }
+
         public bool Payable { get; set; }
 
         public bool PreventAutomaticPaymentToCAS { get; set; }

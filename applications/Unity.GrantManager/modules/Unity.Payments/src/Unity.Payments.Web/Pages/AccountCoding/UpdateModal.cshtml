@@ -11,8 +11,14 @@
     <abp-modal>
         <abp-modal-header title="Account Coding"></abp-modal-header>
         <abp-modal-body>
-            <abp-input asp-for="Id" />
             <abp-form-content />
+            <abp-row>
+                <abp-column size="_12" class="p-3">
+                    <span class="form-label">Account Coding</span>
+                    <input id="account-coding" type="text" value="" readonly="" class="valid form-control readonly" aria-invalid="false">
+                </abp-column>
+            </abp-row>
+            <abp-input hidden="true" asp-for="Id" suppress-label="true"/>
         </abp-modal-body>
         <abp-modal-footer>
             <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>

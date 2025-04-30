@@ -136,6 +136,7 @@ namespace Unity.GrantManager.ApplicationForms
             appForm.AccountCodingId = dto.AccountCodingId;
             appForm.Payable = dto.Payable;
             appForm.PreventPayment = dto.PreventPayment;
+            appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
             await _applicationFormRepository.UpdateAsync(appForm);
         }
     }

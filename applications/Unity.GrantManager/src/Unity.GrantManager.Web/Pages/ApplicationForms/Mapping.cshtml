@@ -201,7 +201,7 @@
         <!--Tab Content: Payment Configuration-->
         <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
             <div id="paymentConfigurationWidget">
-                @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model.ApplicationFormDto?.Id})
+                @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model?.ApplicationFormDto?.Id})
             </div>
         </div>
     </div>

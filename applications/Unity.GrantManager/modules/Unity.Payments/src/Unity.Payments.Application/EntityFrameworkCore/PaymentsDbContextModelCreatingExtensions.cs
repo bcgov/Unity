@@ -6,6 +6,7 @@ using Unity.Payments.Domain;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.AccountCodings;
+using Unity.Payments.Domain.PaymentThresholds;
 
 namespace Unity.Payments.EntityFrameworkCore;
 
@@ -76,6 +77,14 @@ public static class PaymentsDbContextModelCreatingExtensions
         modelBuilder.Entity<PaymentConfiguration>(b =>
         {
             b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentConfigurations",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<PaymentThreshold>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentThresholds",
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();

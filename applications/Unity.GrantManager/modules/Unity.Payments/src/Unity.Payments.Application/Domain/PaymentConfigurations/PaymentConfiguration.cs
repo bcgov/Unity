@@ -7,11 +7,11 @@ namespace Unity.Payments.Domain.PaymentConfigurations
     public class PaymentConfiguration : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
-        public Guid? DeafaultAccountCodingId { get; set; }
+        public Guid? DefaultAccountCodingId { get; set; }
         public string PaymentIdPrefix { get; set; } = string.Empty;
         public decimal? PaymentThreshold { get; set; }
 
-        protected PaymentConfiguration()
+        public PaymentConfiguration()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }

@@ -24,5 +24,6 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? AccountCodingId { get; set; }
     public Guid? ScoresheetId {  get; set; }
     public Guid? TenantId { get; set; }
+    public decimal? PaymentApprovalThreshold { get; set; }
     public bool RenderFormIoToHtml { get; set; } = false;
 }

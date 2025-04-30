@@ -4,6 +4,7 @@ using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Suppliers;
+using Unity.Payments.Domain.PaymentThresholds;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -17,8 +18,8 @@ public class PaymentsDbContext : AbpDbContext<PaymentsDbContext>, IPaymentsDbCon
     public DbSet<ExpenseApproval> ExpenseApproval { get; set; }
     public DbSet<Supplier> Suppliers { get;set; }
     public DbSet<PaymentConfiguration> PaymentConfigurations { get;set; }
+    public DbSet<PaymentThreshold> PaymentThresholds { get; set; }        
     public DbSet<Site> Sites { get; set; }
-
 
     public PaymentsDbContext(DbContextOptions<PaymentsDbContext> options)
         : base(options)

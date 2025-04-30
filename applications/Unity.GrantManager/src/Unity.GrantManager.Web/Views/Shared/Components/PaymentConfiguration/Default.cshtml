@@ -1,9 +1,10 @@
-@using System.Text.Json
-@using Unity.GrantManager.Comments;
-@using Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration;
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
+@using Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration;
 @model PaymentConfigurationViewModel
+
+@section styles {
+    <abp-style src="/PaymentCofniguration/Default.css" />
+}
 
 @{
     Layout = null;
@@ -25,14 +26,41 @@
                         </abp-select>
                     </abp-column>
                     <abp-column size="_6" class="px-1">
+                        <form id="PaymentThresholdform">
+                        <div class="form-label currency-label" style="margin-bottom: 9px;">Approval Payment Threshold</div>
+                        <div class="currencyinput" style="width: 250px;">
+                            $
+                            <input 
+                                type="number" 
+                                maxlength="32"
+                                pattern="^\d*\.?\d*$"
+                                data-val="true"
+                                data-val-range="The field Payment Threshold Amount must be 0 or greater."
+                                data-val-range-max="1.7976931348623157E+308"
+                                data-val-range-min="0" 
+                                placeholder="0.00" 
+                                id="PaymentApprovalThreshold" name="PaymentApprovalThreshold"
+                                value="@Model.PaymentApprovalThreshold" class="form-control currency">
 
+                            </span>
+                        </div>
+                        </form>
+                    </abp-column>
+                </abp-row>
+                <abp-row class="m-0">
+                    <abp-column size="_12">
+                        <p>
+                            <strong>Note:</strong> The selected Account Code for this form will only apply to payments 
+                            made within this specific intake form. It will not impact the global Account Code settings.
+                        </p>
+                        <p>
+                            <strong>Note:</strong> Set the Approval Payment Threshold here only if this intake form requires a unique threshold. 
+                            The individual Approval Thresholds assigned to each l2_approver will still take precedence if they are lower 
+                            than the threshold specified in this form. This form's threshold will not override the l2_approver's existing thresholds.
+                        </p>
                     </abp-column>
                 </abp-row>
             </abp-column>
-            <p>
-                <strong>Note:</strong> The Account Code selected for this form will apply exclusively
-                to payments within this intake form, and will not affect the global settings.                
-            </p>
             <hr />
             <div>
                 <h6 class="fw-bold">Settings</h6>

@@ -85,6 +85,31 @@ input.form-control:focus, input.form-control:active, textarea.form-control:focus
 	font-weight: inherit !important;
 }
 
+.hide {
+	display: none;
+}
+
+#PaymentConfigurationSideMenu.side-menu{
+	float: left;
+    position: absolute;
+    left: 0px;
+	top: 150px;
+}
+
+#PaymentConfigurationSideMenu ul {
+	padding-left: 0;
+}
+
+#PaymentConfigurationSideMenu li {
+	height: 40px;
+	padding: 10px;
+    border-radius: 0 100em 100em 0;
+}
+
+#PaymentConfigurationSideMenu .nav-item {
+	justify-content: left;
+}
+
 @media only screen and (max-width: 850px) {
 	.field-validation-error {
 		float: none;

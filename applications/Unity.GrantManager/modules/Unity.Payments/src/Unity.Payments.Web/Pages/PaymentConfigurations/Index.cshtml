@@ -1,4 +1,5 @@
 ﻿@page
+@model Unity.Payments.Web.Pages.PaymentConfifurations.PaymentConfigurationModel;
 
 @{
     ViewBag.PageTitle = "Account Codes";
@@ -8,14 +9,28 @@
         <abp-style src="/Pages/PaymentConfigurations/Index.css" />
     </abp-style-bundle>
 }
+
 @section scripts {
     <abp-script-bundle>
         <abp-script src="/Pages/PaymentConfigurations/Index.js" />
     </abp-script-bundle>
 }
 
-<div class="input-area card mb-3 payment-config">
+<div id="PaymentConfigurationSideMenu" class="side-menu">
+    <ul>
+        <li id="account-coding-menu-item" class="nav-item btn btn-nav active">            
+            Account Coding           
+        </li>
+        <li id="payment-setting-menu-item" class="nav-item btn btn-nav">            
+            Payment Settings            
+        </li>
+    </ul>
+</div>
 
+<abp-input asp-for="AccountCodingId"/>
+
+
+<div id="account-codes-div" class="input-area card mb-3 payment-config">
     <div class="container-fluid px-0">
         <div class="action-bar p-2 filter-search-action-bar">
             <div class="unity-page-titlebar">
@@ -33,5 +48,32 @@
             <abp-table id="AccountCodesDataTable"></abp-table>
         </div>
     </div>
+</div>
 
+<div id="payment-settings-div" class="input-area card mb-3 payment-config hide">
+    <div class="container-fluid px-0">                       
+        <abp-row>
+            <abp-column size="_12" class="p-3">
+                <h4>Payment Settings</h4>
+            </abp-column>
+        </abp-row>
+        <abp-row>
+            <abp-column size="_12" class="p-3">
+                <span class="form-label">Payment id Prefix</span>
+                <input id="payment-id-prefix" type="text" value="@Model.PaymentIdPrefix" class="valid form-control">
+            </abp-column>
+        </abp-row>
+        <hr/>
+        <abp-row>
+            <abp-column size="_12" class="p-3">
+                <h4>Approval Threshold</h4>
+            </abp-column>
+        </abp-row>
+        <div class="btn-group" id="app_custom_buttons"></div>
+            <div id="paymentSettingsDynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+        </div>
+        <div class="p-3 pt-0">
+            <abp-table id="PaymentSettingsDataTable"/>
+        </div>
+    </div>
 </div>

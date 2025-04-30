@@ -39,6 +39,33 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     table.UniqueConstraint("UK_AccountCodings", x => new { x.MinistryClient, x.Responsibility, x.ServiceLine, x.Stob, x.ProjectNumber });
             });
 
+            migrationBuilder.CreateTable(
+                name: "PaymentThresholds",
+                schema: "Payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Threshold = table.Column<decimal>(type: "decimal", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uuid", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentThresholds", x => x.Id);                                        
+                }
+            );
+
+
             migrationBuilder.AddColumn<string>(
                     name: "DefaultAccountCodingId",
                     table: "PaymentConfigurations",
@@ -61,6 +88,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 principalSchema: "Payments",
                 principalTable: "AccountCodings",
                 principalColumn: "Id");
+
+            migrationBuilder.AddColumn<string>(
+                    name: "PaymentApprovalThreshold",
+                    table: "ApplicationForms",
+                    type: "decimal",
+                    nullable: true,
+                    defaultValue: false);
 
             migrationBuilder.AddColumn<string>(
                     name: "PreventPayment",
@@ -134,10 +168,19 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             migrationBuilder.DropColumn(
                     name: "AccountCodingId",
-                    table: "ApplicationForms");                    
+                    table: "ApplicationForms");   
+
+            migrationBuilder.DropColumn(
+                    name: "PaymentApprovalThreshold",
+                    table: "ApplicationForms");   
 
             migrationBuilder.DropTable(
+                schema: "Payments",
                 name: "AccountCodings");
+
+            migrationBuilder.DropTable(
+                schema: "Payments",
+                name: "PaymentThresholds");
         }
     }
 }
