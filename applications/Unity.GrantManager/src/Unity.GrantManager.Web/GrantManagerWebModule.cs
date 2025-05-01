@@ -74,6 +74,8 @@ using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Web.Views.Settings;
+using Unity.Notifications.Web.Bundling;
+using Unity.Reporting.Web;
 
 namespace Unity.GrantManager.Web;
 
@@ -96,7 +98,8 @@ namespace Unity.GrantManager.Web;
     typeof(PaymentsWebModule),
     typeof(AbpBlobStoringModule),
     typeof(NotificationsWebModule),
-    typeof(FlexWebModule)
+    typeof(FlexWebModule),
+    typeof(ReportingWebModule)
 )]
 
 public class GrantManagerWebModule : AbpModule
@@ -378,7 +381,7 @@ public class GrantManagerWebModule : AbpModule
     }
 
     private void ConfigureBundles()
-    {
+    {        
         Configure<AbpBundlingOptions>(options =>
         {
             options
@@ -386,6 +389,14 @@ public class GrantManagerWebModule : AbpModule
                 .Configure(UnityThemeUX2Bundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
+                });
+
+
+            options.StyleBundles.Configure(
+                NotificationsBundles.Styles.Notifications,
+                bundle =>
+                {
+                    bundle.AddContributors(typeof(NotificationsStyleBundleContributor));                    
                 });
         });
     }

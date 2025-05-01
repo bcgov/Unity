@@ -113,7 +113,7 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 11,
+        defaultSortColumn: 13,
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
         data: {},
         responseCallback,
@@ -140,7 +140,7 @@ $(function () {
     });
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
-    let history_button = dataTable.buttons(['.history']);    
+    let history_button = dataTable.buttons(['.history']);
 
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
@@ -316,10 +316,14 @@ $(function () {
             title: l('ApplicationPaymentListTable:SubmissionConfirmationCode'),
             name: 'submissionConfirmationCode',
             data: 'submissionConfirmationCode',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: function (data) {
-                return data?.length > 0 ? data : null;
+            render: function (data, type, row) {
+                if (row.correlationProvider === 'Application' && data?.length > 0) {
+                    return `<a href="/GrantApplications/Details?ApplicationId=${row.correlationId}">${data}</a>`;
+                }
+
+                return data || null;
             }
         };
     }
@@ -420,10 +424,8 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
-
-                let statusText = getStatusText(data);
                 let statusColor = getStatusTextColor(data);
-                return '<span style="color:' + statusColor + ';">' + statusText + '</span>';
+                return `<span style="color:${statusColor};">` + l(`Enum:PaymentRequestStatus.${data}`) + '</span>';
             }
         };
     }
@@ -435,9 +437,7 @@ $(function () {
             data: 'creationTime',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
         };
     }
     function getUpdatedOnColumn(columnIndex) {
@@ -447,9 +447,7 @@ $(function () {
             data: 'lastModificationTime',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
         };
     }
     function getPaidOnColumn(columnIndex) {
@@ -459,9 +457,7 @@ $(function () {
             data: 'paidOn',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
         };
     }
 
@@ -649,57 +645,11 @@ $(function () {
             case "Paid":
                 return "#42814A";
 
-            case "PaymentFailed":
+            case "Failed":
                 return "#CE3E39";
 
             default:
                 return "#053662";
-        }
-    }
-
-    function getStatusText(status) {
-
-        switch (status) {
-
-            case "L1Pending":
-                return "L1 Pending";
-
-            case "L1Approved":
-                return "L1 Approved";
-
-            case "L1Declined":
-                return "L1 Declined";
-
-            case "L2Pending":
-                return "L2 Pending";
-
-            case "L2Approved":
-                return "L2 Approved";
-
-            case "L2Declined":
-                return "L2 Declined";
-
-            case "L3Pending":
-                return "L3 Pending";
-
-            case "L3Approved":
-                return "L3 Approved";
-
-            case "L3Declined":
-                return "L3 Declined";
-
-            case "Submitted":
-                return "Submitted to CAS";
-
-            case "Paid":
-                return "Paid";
-
-            case "PaymentFailed":
-                return "Payment Failed";
-
-
-            default:
-                return "Created";
         }
     }
 

@@ -22,8 +22,7 @@ public class UnityThemeUX2GlobalStyleContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/tributejs/dist/tribute.css");
 
         // Add assets for "/themes/ux2/fonts/**/*"
-        context.Files.AddRange(new List<BundleFile> {
-            "/themes/ux2/fonts/icons/Segoe-Fluent-Icons.ttf",
+        context.Files.AddRange(["/themes/ux2/fonts/icons/Segoe-Fluent-Icons.ttf",
             "/themes/ux2/fonts/icons/Segoe-MDL2-Assets.ttf",
             "/themes/ux2/fonts/BCSans/BCSans-Bold.otf",
             "/themes/ux2/fonts/BCSans/BCSans-Bold.ttf",
@@ -49,6 +48,6 @@ public class UnityThemeUX2GlobalStyleContributor : BundleContributor
             "/themes/ux2/fonts/BCSans/BCSans-Regular.ttf",
             "/themes/ux2/fonts/BCSans/BCSans-Regular.woff",
             "/themes/ux2/fonts/BCSans/BCSans-Regular.woff2"
-        });
+        ]);
     }
 }

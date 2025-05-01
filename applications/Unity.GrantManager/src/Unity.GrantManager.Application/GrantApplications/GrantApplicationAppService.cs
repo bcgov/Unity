@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -9,30 +11,29 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.WorksheetInstances;
+using Unity.Flex.Worksheets;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Payments;
 using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
+using Unity.Modules.Shared.Correlation;
+using Unity.Payments.Domain.PaymentRequests;
+using Unity.Payments.Enums;
+using Unity.Payments.Integrations.Cas;
+using Unity.Payments.PaymentRequests;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
-using Microsoft.EntityFrameworkCore;
-using Unity.Modules.Shared.Correlation;
-using Unity.Flex.WorksheetInstances;
-using Unity.GrantManager.ApplicationForms;
-using Unity.GrantManager.Flex;
-using Unity.Payments.Integrations.Cas;
-using Microsoft.Extensions.Logging;
-using Unity.Flex.Worksheets;
-using Unity.Payments.PaymentRequests;
-using Unity.Payments.Enums;
-using Volo.Abp;
-using Unity.Payments.Domain.PaymentRequests;
-using Unity.GrantManager.Payments;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -285,7 +286,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     }
 
-    [Authorize(GrantApplicationPermissions.AssessmentResults.Edit)]
+    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -297,17 +298,23 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         if (application.IsInFinalDecisionState())
         {
-            if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.Approval.Update.UpdateFinalStateFields))
             {
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+                application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+            }
+
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields)) // User allowed to edit specific fields past approval
+            {
+                application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
             }
         }
         else
         {
-            if (await CurrentUsCanUpdateAssessmentFieldsAsync())
+            if (await CurrentUserCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+                application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+                application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.RecommendedAmount,
                     input.DeclineRational);
@@ -333,14 +340,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         input.RequestedAmount ??= application.RequestedAmount;
     }
 
-    private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
+    private async Task<bool> CurrentUserCanUpdateAssessmentFieldsAsync()
     {
-        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
-    }
-
-    private async Task<bool> CurrentUserCanUpdateFieldsPostFinalDecisionAsync()
-    {
-        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
+        return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
     }
 
     [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
@@ -448,7 +450,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(id);
                 if (pendingPayments != null && pendingPayments.Count > 0)
                 {
-                        throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
+                    throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
                 }
                 await _iSupplierService.UpdateApplicantSupplierInfo(input.SupplierNumber, application.ApplicantId);
             }
@@ -521,7 +523,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                     SheetCorrelationProvider = CorrelationConsts.FormVersion,
                     UiAnchor = uiAnchor,
                     CustomFields = input.CustomFields,
-                    WorksheetId = input.WorksheetId                    
+                    WorksheetId = input.WorksheetId
                 });
             }
             else
@@ -905,7 +907,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
     {
-        
+
         var query = from applications in await _applicationRepository.GetQueryableAsync()
                     select new GrantApplicationLiteDto
                     {

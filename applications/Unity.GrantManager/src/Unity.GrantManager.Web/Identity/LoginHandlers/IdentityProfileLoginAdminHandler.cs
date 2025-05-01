@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
+using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement;
 using Volo.Abp;
 using Volo.Abp.Data;
@@ -23,7 +24,8 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             TenantManagementPermissions.Tenants.ManageFeatures,
             TenantManagementPermissions.Tenants.ManageConnectionStrings,
             IdentityPermissions.Users.Create,
-            IdentityPermissions.UserLookup.Default
+            IdentityPermissions.UserLookup.Default,
+            IdentityConsts.ITAdminPermissionName
         );
 
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,

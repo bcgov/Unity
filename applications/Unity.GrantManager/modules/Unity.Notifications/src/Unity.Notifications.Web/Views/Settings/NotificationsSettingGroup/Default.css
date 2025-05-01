@@ -1,0 +1,13 @@
+﻿.v-scroll {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 10px;
+    scroll-behavior: smooth;
+}
+.tui-editor-body{
+    min-height:250px;
+}
+
+.note-text{
+    font-size:12px;
+}
