@@ -11,4 +11,5 @@ public class EmailCommentDto
     public string Body { get; set; } = string.Empty;
     public string ApplicationId { get; set; } = string.Empty;
     public List<string> MentionNamesEmail { get; set; } = [];
+    public string? EmailTemplateName { get; set; } = string.Empty;
 }

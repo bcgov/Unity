@@ -22,5 +22,6 @@ namespace Unity.GrantManager.Emails
         public Guid OwnerId { get; set; }
         public Guid EmailId { get; set; } = Guid.Empty;
         public Guid CurrentUserId { get; set; }
+        public string EmailTemplateName { get; set; } = string.Empty;
     }
 }
