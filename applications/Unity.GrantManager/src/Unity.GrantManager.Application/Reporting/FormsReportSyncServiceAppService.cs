@@ -116,7 +116,7 @@ namespace Unity.GrantManager.Reporting
         /// <returns></returns>
         private async Task SyncFormVersionFieldsForCurrentTenant()
         {
-            using var uow = unitOfWorkManager.Begin(isTransactional: false);
+            using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
             // Get all the Form Version thats have no report data associated
             var formVersionIds = (await applicationFormVersionRepository.GetListAsync())
                 .Where(w => string.IsNullOrEmpty(w.ReportViewName))
