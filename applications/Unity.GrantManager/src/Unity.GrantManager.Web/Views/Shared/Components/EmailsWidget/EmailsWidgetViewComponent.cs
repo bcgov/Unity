@@ -4,16 +4,11 @@ using Volo.Abp.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Microsoft.Extensions.Configuration;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Settings;
 using Unity.Notifications.Settings;
 using System.Threading.Tasks;
-using Volo.Abp.Identity.Integration;
 using Unity.Notifications.Templates;
-using Unity.GrantManager.GrantApplications;
-using Volo.Abp.Application.Dtos;
-using Volo.Abp.Users;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
