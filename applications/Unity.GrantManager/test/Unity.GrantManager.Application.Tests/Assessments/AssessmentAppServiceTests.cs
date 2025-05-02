@@ -240,7 +240,7 @@ namespace Unity.GrantManager.Assessments
 
             // Act
             var transitionedAssessment =
-                await _assessmentAppService.ExecuteAssessmentAction(assessment.Id, AssessmentAction.Confirm);
+                await _assessmentAppService.ExecuteAssessmentAction(assessment.Id, AssessmentAction.Complete);
 
             // Assert            
             Assert.Equal(AssessmentState.COMPLETED, transitionedAssessment.Status);

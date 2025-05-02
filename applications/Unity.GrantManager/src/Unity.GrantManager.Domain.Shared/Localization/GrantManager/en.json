@@ -107,9 +107,8 @@
     "Enum:AssessmentState.COMPLETED": "Completed",
 
     "Enum:AssessmentAction.Create": "Create Assessment",
-    "Enum:AssessmentAction.SendTo": "Send To...",
-    "Enum:AssessmentAction.Confirm": "Complete Assessment",
     "Enum:AssessmentAction.SendBack": "Send Back",
+    "Enum:AssessmentAction.Complete": "Complete Assessment",
 
     "Permission:GrantManagerManagement": "Grant Manager Management",
     "Permission:GrantManagerManagement.Default": "Default",
