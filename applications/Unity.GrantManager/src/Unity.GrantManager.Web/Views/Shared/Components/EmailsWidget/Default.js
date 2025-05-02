@@ -154,6 +154,9 @@
             content_css: false,
             skin: false,
             setup: function (editor) {
+                editor.on("change", (e) => {
+                    UIElements.inputEmailBody.val(editor.getContent())
+                });
                 editorInstance = editor;
                 editorInstance.setContent('');
             }
@@ -380,6 +383,7 @@
         console.log(this.value);
 
         try {
+            resetValidationErrors();
             let templateDetails = await loadTemplateDetails(this.value);
             const templateData = extractTemplateData(applicationDetails, mappingConfig);
             const template = Handlebars.compile(templateDetails.bodyHTML);
@@ -465,6 +469,7 @@
 
 
     PubSub.subscribe('email_selected', (msg, data) => {
+        resetValidationErrors();
         console.log("data", data)
         $('#templateListContainer').hide();
         $('#templateTextContainer').show();
@@ -474,6 +479,7 @@
         UIElements.inputOriginalEmailTo.val(data.toAddress);
         UIElements.inputOriginalEmailFrom.val(data.fromAddress);
         UIElements.inputOriginalEmailSubject.val(data.subject);
+         resetEmailBody(); 
         if (tinymce.get("EmailBody")) {
             tinymce.get("EmailBody").remove(); // remove existing instance
         }
@@ -487,6 +493,9 @@
             content_css: false,
             skin: false,
             setup: function (editor) {
+                editor.on("change", (e) => {
+                    UIElements.inputEmailBody.val(editor.getContent())
+                });
                 editorInstance = editor;
                 editorInstance.setContent(data.body);
             }

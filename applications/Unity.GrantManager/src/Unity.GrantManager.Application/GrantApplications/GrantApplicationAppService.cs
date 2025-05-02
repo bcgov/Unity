@@ -199,7 +199,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<GrantApplicationDto> GetAsync(Guid id)
     {
-        var application = await _applicationRepository.GetAsync(id, true);
+        var application = await _applicationRepository.GetWithFullDetailsByIdAsync(id);
 
         if (application == null) return new GrantApplicationDto();
 
