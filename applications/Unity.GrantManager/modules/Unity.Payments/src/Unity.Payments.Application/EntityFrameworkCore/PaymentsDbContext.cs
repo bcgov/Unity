@@ -1,12 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Unity.Payments.Domain.PaymentTags;
 using Unity.Payments.Domain;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
+using Unity.Payments.Domain.PaymentTags;
 using Unity.Payments.Domain.Suppliers;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
-using Volo.Abp.EntityFrameworkCore.Modeling;
 
 namespace Unity.Payments.EntityFrameworkCore;
 

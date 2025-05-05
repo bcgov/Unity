@@ -1,12 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.GrantApplications;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Unity.Payments.PaymentTags;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
@@ -33,7 +32,6 @@ namespace Unity.Payments.Web.Pages.PaymentTags
         [BindProperty]
         public string? ActionType { get; set; } = string.Empty;
 
-        //private readonly IApplicationTagsService _applicationTagsService;
         private readonly IPaymentTagAppService _paymentTagsService;
 
 
@@ -197,7 +195,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
             }
         }
 
-        private string RemoveDuplicates(string paymentTagString)
+        private static string RemoveDuplicates(string paymentTagString)
         {
             var tagArray = paymentTagString.Split(",");
             var noDuplicates = tagArray.Distinct().ToArray();
