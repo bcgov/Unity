@@ -181,6 +181,7 @@
                     content_css: false,
                     skin: false,
                     setup: function (editor) {
+                        console.log("editor", editor);
                         setupEditor(editor, id, editorId, data, isPopulated);
                     }
                 });

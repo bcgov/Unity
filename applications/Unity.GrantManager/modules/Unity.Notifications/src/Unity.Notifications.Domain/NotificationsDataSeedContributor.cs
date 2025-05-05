@@ -3,25 +3,26 @@ using System.Threading.Tasks;
 using Unity.Notifications.Templates;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Notifications;
 
 public class NotificationsDataSeedContributor : IDataSeedContributor, ITransientDependency
-{    
+{
     private readonly ITemplateVariablesRepository _templateVariablesRepository;
 
     public NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository)
-    {        
-
+    {
         _templateVariablesRepository = templateVariablesRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
     {
-       
+        if (context.TenantId == null) // only seed into a tenant database
+        {
+            return;
+        }
 
-        var EmailTempateVariableDtos = new List<EmailTempateVariableDto>
+        var emailTemplateVariableDtos = new List<EmailTempateVariableDto>
         {
             new EmailTempateVariableDto { Name = "Applicant name", Token = "applicant_name", MapTo = "applicant.applicantName" },
             new EmailTempateVariableDto { Name = "Submission #", Token = "submission_number", MapTo = "referenceNo" },
@@ -34,7 +35,7 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
             new EmailTempateVariableDto { Name = "Contact Full Name", Token = "contact_full_name", MapTo = "contactFullName" },
             new EmailTempateVariableDto { Name = "Contact Title", Token = "contact_title", MapTo = "contactTitle" },
             new EmailTempateVariableDto { Name = "Decline Rationale", Token = "decline_rationale", MapTo = "declineRational" },
-            new EmailTempateVariableDto { Name = "Organization Name", Token = "organization_name", MapTo = "organizationName" },
+            new EmailTempateVariableDto { Name = "Registered Organization Name", Token = "organization_name", MapTo = "organizationName" },
             new EmailTempateVariableDto { Name = "Project Start Date", Token = "project_start_date", MapTo = "projectStartDate" },
             new EmailTempateVariableDto { Name = "Project End Date", Token = "project_end_date", MapTo = "projectEndDate" },
             new EmailTempateVariableDto { Name = "Project Name", Token = "project_name", MapTo = "projectName" },
@@ -43,25 +44,21 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
             new EmailTempateVariableDto { Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" }
         };
 
-        if (context.TenantId != null) // only try seed into a tenant database
+        foreach (var template in emailTemplateVariableDtos)
         {
-            foreach (var template in EmailTempateVariableDtos)
+            var existingVariable = await _templateVariablesRepository.FindAsync(tv => tv.Token == template.Token);
+            if (existingVariable == null)
             {
-
-                TemplateVariable? templateDetails = await _templateVariablesRepository.FirstOrDefaultAsync(s => s.Token == template.Token);
-
-                templateDetails ??= await _templateVariablesRepository.InsertAsync(new TemplateVariable { Name = template.Name, Token = template.Token, MapTo = template.MapTo }, autoSave: true);
-
-
+                await _templateVariablesRepository.InsertAsync(
+                    new TemplateVariable { Name = template.Name, Token = template.Token, MapTo = template.MapTo },
+                    autoSave: true
+                );
             }
-
         }
-
-
     }
-    }
+}
 
-    internal class EmailTempateVariableDto
+internal class EmailTempateVariableDto
 {
     public string Name { get; set; } = string.Empty;
     public string Token { get; set; } = string.Empty;

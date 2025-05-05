@@ -333,7 +333,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task ValidateValidScoresheetAsync(Guid assessmentId, AssessmentAction triggerAction)
         {
-            if (await _featureChecker.IsEnabledAsync(UnityFlex) && triggerAction == AssessmentAction.Confirm)
+            if (await _featureChecker.IsEnabledAsync(UnityFlex) && triggerAction == AssessmentAction.Complete)
             {
                 var requirementsMetResult = await _scoresheetInstanceAppService.ValidateAnswersAsync(assessmentId);
 
@@ -346,7 +346,16 @@ namespace Unity.GrantManager.Assessments
 
         private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(AssessmentAction triggerAction)
         {
-            return new OperationAuthorizationRequirement { Name = $"{UnitySelector.Review.AssessmentReviewList.Default}.{triggerAction}" };
+            if (triggerAction == AssessmentAction.SendBack || triggerAction == AssessmentAction.Complete)
+            {
+                // Actions that require parent Update permissions
+                return new OperationAuthorizationRequirement { Name = $"{UnitySelector.Review.AssessmentReviewList.Update.Default}.{triggerAction}" };
+
+            } else
+            {
+                // Actions for generic Create, Update, Delete permissions
+                return new OperationAuthorizationRequirement { Name = $"{UnitySelector.Review.AssessmentReviewList.Default}.{triggerAction}" };
+            }
         }
         #endregion ASSESSMENT WORKFLOW
 

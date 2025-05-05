@@ -16,7 +16,7 @@
             title: l('Actions'),
             orderable: false,
             className: 'notexport text-center',
-            data: null,
+            data: 'id',
             name: 'rowActions',
             index: 0,
             rowAction: {

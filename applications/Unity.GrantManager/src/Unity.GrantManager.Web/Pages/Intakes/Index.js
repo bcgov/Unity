@@ -55,6 +55,7 @@
         },
         {
             title: l('Actions'),
+            data: 'id',
             orderable: false,
             className: 'notexport text-center',
             name: 'rowActions',
