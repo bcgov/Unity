@@ -22,7 +22,7 @@
 }
 
 .action-bar-btn-unavailable {
-    display: none;
+  /*  display: none;*/
 }
 
 .dynamic-buttons-div{

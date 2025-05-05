@@ -6,6 +6,10 @@ using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Users;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.Payments.Domain.PaymentTags;
+using Unity.Payments.PaymentTags;
 
 namespace Unity.Payments;
 
@@ -16,7 +20,8 @@ public class PaymentsApplicationAutoMapperProfile : Profile
         CreateMap<PaymentRequest, PaymentRequestDto>()
             .ForMember(dest => dest.ErrorSummary, options => options.Ignore())
             .ForMember(dest => dest.Site, opt => opt.MapFrom(src => src.Site))
-            .ForMember(dest => dest.CreatorUser, opt => opt.Ignore());
+            .ForMember(dest => dest.CreatorUser, opt => opt.Ignore())
+            .ForMember(dest => dest.PaymentTags, opt => opt.MapFrom(src => src.PaymentTags));
 
         CreateMap<PaymentRequest, PaymentDetailsDto>()
             .ForMember(dest => dest.Site, opt => opt.MapFrom(src => src.Site));
@@ -27,5 +32,6 @@ public class PaymentsApplicationAutoMapperProfile : Profile
         CreateMap<Supplier, SupplierDto>();
         CreateMap<PaymentConfiguration, PaymentConfigurationDto>();
         CreateMap<IUserData, PaymentUserDto>();
+        CreateMap<PaymentTag, PaymentTagDto>();
     }
 }

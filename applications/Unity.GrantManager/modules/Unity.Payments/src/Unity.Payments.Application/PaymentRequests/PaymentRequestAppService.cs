@@ -283,7 +283,13 @@ namespace Unity.Payments.PaymentRequests
                 var payments = await _paymentRequestsRepository
                     .GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, includeDetails: true);
 
-                var mappedPayments = await MapToDtoAndLoadDetailsAsync(payments);
+                // Include PaymentTags in the query  
+                var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+                var paymentsWithTags = await paymentsQueryable
+                    .Include(pr => pr.PaymentTags)
+                    .ToListAsync();
+
+                var mappedPayments = await MapToDtoAndLoadDetailsAsync(paymentsWithTags);
 
                 ApplyErrorSummary(mappedPayments);
 
