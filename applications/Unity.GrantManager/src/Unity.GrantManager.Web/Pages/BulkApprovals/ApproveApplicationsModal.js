@@ -1,7 +1,4 @@
-﻿let approveApplicationsSummaryModal = new abp.ModalManager({
-    viewUrl: 'GrantApplications/Approvals/ApproveApplicationsSummaryModal'
-});
-function removeApplicationApproval(applicationId) {
+﻿function removeApplicationApproval(applicationId) {
     $('#' + applicationId).remove();
     let applicationsCount = $('#ApplicationsCount').val();
     $('#ApplicationsCount').val(applicationsCount - 1);
@@ -104,18 +101,3 @@ function closeApprovals() {
     $('#approveApplicationsModal').modal('hide');
 }
 
-function handleBulkApplicationsApprovalResponse(response) {
-    let transformedFailures = response.responseText.failures.map(failure => {
-        return {
-            Key: failure.key,
-            Value: failure.value
-        };
-    });
-
-    let summaryJson = JSON.stringify(
-        {
-            Successes: response.responseText.successes,
-            Failures: transformedFailures
-        });
-    approveApplicationsSummaryModal.open({ summaryJson: summaryJson });
-}

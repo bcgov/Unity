@@ -10,7 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.Modules.Shared.Utils;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
-namespace Unity.GrantManager.Web.Pages.GrantApplications.Approvals;
+namespace Unity.GrantManager.Web.Pages.BulkApprovals;
 
 public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApprovalsAppService,
     BrowserUtils browserUtils) : AbpPageModel
@@ -33,9 +33,9 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
     [TempData]
     public bool MaxBatchCountExceeded { get; set; }
 
-    public async void OnGet(string applicationIds)
+    public async Task OnGetAsync(string applicationIds)
     {
-        MaxBatchCount = BatchApprovalConsts.MaxBatchCount;        
+        MaxBatchCount = BatchApprovalConsts.MaxBatchCount;
         BulkApplicationApprovals = [];
         MaxBatchCountExceededError = L["ApplicationBatchApprovalRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount.ToString()].Value;
 
@@ -44,6 +44,11 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         if (!ValidCount(applicationGuids))
         {
             MaxBatchCountExceeded = true;
+        }
+
+        if (applicationGuids.Length == 0)
+        {
+            return;
         }
 
         // Load the applications by Id
@@ -135,7 +140,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         {
             bulkApprovals.Add(new BulkApprovalDto()
             {
-                ApplicantName = application.ApplicantName,
+                ApplicantName = application.ApplicantName ?? string.Empty,
                 ApplicationId = application.ApplicationId,
                 ApprovedAmount = application.ApprovedAmount,
                 FinalDecisionDate = application.DecisionDate,
@@ -168,7 +173,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
 
         public Guid ApplicationId { get; set; }
         public string ReferenceNo { get; set; } = string.Empty;
-        public string ApplicantName { get; set; } = string.Empty;
+        public string? ApplicantName { get; set; } = string.Empty;
         public string FormName { get; set; } = string.Empty;
         public string ApplicationStatus { get; set; } = string.Empty;
 

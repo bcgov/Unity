@@ -10,7 +10,10 @@ $(function () {
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
     let approveApplicationsModal = new abp.ModalManager({
-        viewUrl: 'GrantApplications/Approvals/ApproveApplicationsModal'
+        viewUrl: 'BulkApprovals/ApproveApplicationsModal'
+    });
+    let approveApplicationsSummaryModal = new abp.ModalManager({
+        viewUrl: 'BulkApprovals/ApproveApplicationsSummaryModal'
     });
     let tagApplicationModal = new abp.ModalManager({
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
@@ -134,7 +137,18 @@ $(function () {
         });
     });
     approveApplicationsModal.onResult(function (_, response) {                
-        handleBulkApplicationsApprovalResponse(response);
+        let transformedFailures = response.responseText.failures.map(failure => {
+            return {
+                Key: failure.key,
+                Value: failure.value
+            };
+        });
+        let summaryJson = JSON.stringify(
+        {
+            Successes: response.responseText.successes,
+            Failures: transformedFailures
+        });
+        approveApplicationsSummaryModal.open({ summaryJson: summaryJson });
         PubSub.publish("refresh_application_list");
     });
     // Batch Approval End

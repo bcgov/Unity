@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using Unity.GrantManager.GrantApplications;
 
-namespace Unity.GrantManager.Web.Pages.GrantApplications.Approvals
+namespace Unity.GrantManager.Web.Pages.BulkApprovals
 {
     public class ApproveApplicationsSummaryModalModel : PageModel
     {

@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Web.Identity.LoginHandlers;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.SecurityLog;
 
@@ -27,7 +28,7 @@ namespace Unity.GrantManager.Web.Identity
 
                 UserTenantAccountDto signedInTenantAccount;
 
-                if (validatedTokenContext.Principal.IsInRole(IdentityConsts.ITAdmin))
+                if (validatedTokenContext.Principal.IsInRole(IdentityConsts.ITAdminRoleName))
                 {
                     var adminLoginHandler = validatedTokenContext.HttpContext.RequestServices.GetService<IdentityProfileLoginAdminHandler>();
                     var adminAccount = await userTenantsAppService.GetUserAdminAccountAsync(userIdentifier);

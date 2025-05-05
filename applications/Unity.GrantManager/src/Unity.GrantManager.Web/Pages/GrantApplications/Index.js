@@ -260,11 +260,7 @@
             data: 'submissionDate',
             name: 'submissionDate',
             className: 'data-table-header',
-            render: function (data) {
-                return luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toLocaleString();
-            },
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
             index: 4
         }
     }
@@ -424,7 +420,7 @@
 
     function getOrganizationNumberColumn() {
         return {
-            title: 'Organization Number',
+            title: l('ApplicantInfoView:ApplicantInfo.OrgNumber'),
             name: 'orgNumber',
             data: 'applicant.orgNumber',
             className: 'data-table-header',
@@ -790,7 +786,7 @@
 
     function getOrganizationNameColumn() {
         return {
-            title: 'Organization Name',
+            title: l('Summary:Application.OrganizationName'),
             name: 'organizationName',
             data: 'organizationName',
             className: 'data-table-header',
