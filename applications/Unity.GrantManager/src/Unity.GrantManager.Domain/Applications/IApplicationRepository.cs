@@ -9,7 +9,7 @@ namespace Unity.GrantManager.Applications;
 public interface IApplicationRepository : IRepository<Application, Guid>
 {
     Task<Application> WithBasicDetailsAsync(Guid id);
-    Task<Application> GetWithFullDetailsByIdAsync(Guid id);
+    Task<Application?> GetWithFullDetailsByIdAsync(Guid id);
     Task<List<IGrouping<Guid, Application>>> WithFullDetailsGroupedAsync(int skipCount, int maxResultCount, string? sorting = null);
     Task<List<Application>> GetListByIdsAsync(Guid[] ids);
 }
