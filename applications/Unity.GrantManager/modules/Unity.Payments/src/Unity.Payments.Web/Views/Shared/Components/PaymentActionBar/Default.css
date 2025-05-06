@@ -21,10 +21,6 @@
     flex: 1;
 }
 
-.action-bar-btn-unavailable {
-    display: none;
-}
-
 .dynamic-buttons-div{
     display:inline-flex;
 }
