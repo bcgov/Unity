@@ -76,6 +76,16 @@
             <input type="hidden" id="OriginalDraftEmailBody" />
 
             <abp-row class="m-0 p-0">
+                <abp-column id="templateListContainer" size="_10" class="px-1">
+                    <abp-select asp-for="@Model.EmailTemplate" asp-items="@Model.TemplatesList" id="template">
+                        <option value="">Please select</option>
+                    </abp-select>
+                </abp-column>
+                <abp-column id="templateTextContainer" size="_10" class="px-1">
+                    <abp-input id="templateText" asp-for="@Model.EmailTemplateName"></abp-input>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
                 <abp-column size="_10" class="px-1">
                     <abp-input asp-for="@Model.EmailTo" class="email-input" />
                 </abp-column>

@@ -81,4 +81,19 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         // Uses the extension method defined above
         return (await GetQueryableAsync()).IncludeDetails();
     }
+
+    public async Task<Application?> GetWithFullDetailsByIdAsync(Guid id)
+    {
+        return await (await GetQueryableAsync())
+            .Include(a => a.ApplicationStatus)
+            .Include(a => a.ApplicationForm)
+            .Include(a => a.ApplicationTags)
+            .Include(a => a.Owner)
+            .Include(a => a.ApplicationAssignments!)
+                .ThenInclude(aa => aa.Assignee)
+            .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent)
+            .AsNoTracking()                 // read?only; drop this line if you need tracking
+            .FirstOrDefaultAsync(a => a.Id == id);
+    }
 }
