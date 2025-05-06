@@ -164,6 +164,8 @@ public class WorksheetInstanceWidgetScriptBundleContributor : BundleContributor
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
         context.Files
+           .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
+        context.Files
           .AddIfNotContains("/Views/Shared/Components/WorksheetInstanceWidget/Default.js");
     }
 }
