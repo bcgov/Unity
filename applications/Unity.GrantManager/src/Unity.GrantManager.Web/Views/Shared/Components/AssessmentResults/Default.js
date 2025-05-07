@@ -104,8 +104,8 @@
             if (day < 10)
                 day = '0' + day.toString();
             let todayDate = year + '-' + month + '-' + day;
-            $('#AssessmentResults_FinalDecisionDate').attr({ 'max': todayDate });
-            $('#AssessmentResults_DueDate').attr({ 'min': todayDate });
+            $('#ApprovalView_FinalDecisionDate').attr({ 'max': todayDate });
+            $('#AssessmentResultsView_DueDate').attr({ 'min': todayDate });
         }, 500)
     }
     initDatePicker();
@@ -163,15 +163,15 @@ function hasInvalidExplicitValidations() {
     let explicitChangedValueValidations = [
         {
             flag: dueDateHasChanged,
-            name: 'AssessmentResults_DueDate'
+            name: 'AssessmentResultsView_DueDate'
         },
         {
             flag: decisionDateHasChanged,
-            name: 'AssessmentResults_FinalDecisionDate'
+            name: 'ApprovalView_FinalDecisionDate'
         },
         {
             flag: notificationDateHasChanged,
-            name: 'AssessmentResults_NotificationDate'
+            name: 'AssessmentResultsView_NotificationDate'
         }
     ];
 
