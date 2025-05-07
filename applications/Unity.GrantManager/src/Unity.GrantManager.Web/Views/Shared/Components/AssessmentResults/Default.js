@@ -12,7 +12,6 @@
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(assessmentResultObj, input);
             }
-            // TODO
             else if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "ApprovalView.Notes")) {
                 assessmentResultObj[input.name.split(".")[1]] = input.value;
             } else {
