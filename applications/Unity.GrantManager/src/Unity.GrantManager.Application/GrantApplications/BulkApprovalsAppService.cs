@@ -154,6 +154,10 @@ namespace Unity.GrantManager.GrantApplications
             {
                 return false;
             }
+            if(application.ApplicationForm.IsDirectApproval == true)
+            {
+                return true;
+            }
 
             if (application.ApplicationStatus.StatusCode != GrantApplicationState.ASSESSMENT_COMPLETED)
             {
