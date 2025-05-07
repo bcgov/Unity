@@ -130,7 +130,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                     ApprovedAmount = application.ApprovedAmount,
                 };
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(appDto.Id);
-                paymentInfo.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Paid))
+                paymentInfo.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Submitted))
                                       .Sum(e => e.Amount);
                 appDto.PaymentInfo = paymentInfo;
             }
