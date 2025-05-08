@@ -154,7 +154,7 @@ namespace Unity.GrantManager.GrantApplications
             {
                 return false;
             }
-            if(application.ApplicationForm.IsDirectApproval == true)
+            if(application.ApplicationForm.IsDirectApproval)
             {
                 return true;
             }
