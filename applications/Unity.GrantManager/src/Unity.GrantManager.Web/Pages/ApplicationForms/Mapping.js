@@ -5,6 +5,7 @@
     let intakeFieldsString = document.getElementById('intakeProperties').value;
     let chefsFormId = document.getElementById('chefsFormId').value;
     let formVersionId = document.getElementById('formVersionId').value;
+    let applicationFormId = document.getElementById('applicationFormId').value;
     let intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
     let dataTable;
@@ -617,4 +618,32 @@
             prettyJson.push(TAB);
         }
     }
+
+    $("#directApproval").on('change', function (e) {
+     
+        let config = {
+            "isDirectApproval": this.checked
+        }
+        $.ajax(
+            {
+                url: `/api/app/application-form/${applicationFormId}/other-config`,
+                data: JSON.stringify(config),
+                contentType: "application/json",
+                type: "PUT",
+                success: function (data) {
+                    
+                    abp.notify.success(
+                        data.responseText,
+                        'Settings Saved Successfully'
+                    );
+                },
+                error: function (data) {
+                    abp.notify.error(
+                        data.responseText,
+                        'Settings Not Saved Successful'
+                    );
+                }
+            }
+        );
+    })
 });
