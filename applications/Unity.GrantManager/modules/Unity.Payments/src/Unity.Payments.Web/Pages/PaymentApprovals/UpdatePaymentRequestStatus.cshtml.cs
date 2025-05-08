@@ -68,8 +68,8 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
             IsApproval = isApprove;
             SelectedPaymentIds = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? [];
-            var payments             = await _paymentRequestService.GetListByPaymentIdsAsync(SelectedPaymentIds);
-            var permissionsToCheck   = new[] { PaymentsPermissions.Payments.L1ApproveOrDecline, PaymentsPermissions.Payments.L2ApproveOrDecline, PaymentsPermissions.Payments.L3ApproveOrDecline };
+            var payments = await _paymentRequestService.GetListByPaymentIdsAsync(SelectedPaymentIds);
+            var permissionsToCheck = new[] { PaymentsPermissions.Payments.L1ApproveOrDecline, PaymentsPermissions.Payments.L2ApproveOrDecline, PaymentsPermissions.Payments.L3ApproveOrDecline };
             _ = await _permissionCheckerService.CheckPermissionsAsync(permissionsToCheck);
             var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
 
@@ -177,7 +177,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         {
             if (PaymentGroupings == null || PaymentGroupings.Count == 0) return NoContent();
 
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
                 var payments = MapPaymentRequests(IsApproval);
                 await _paymentRequestService.UpdateStatusAsync(payments);
