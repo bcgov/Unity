@@ -129,5 +129,13 @@ namespace Unity.GrantManager.ApplicationForms
             appForm.ScoresheetId = dto.ScoresheetId;
             await _applicationFormRepository.UpdateAsync(appForm);
         }
+
+        public  async Task<ApplicationFormDto> UpdateOtherConfig(Guid id, OtherConfigDto config)
+        {
+            var appForm = await _applicationFormRepository.GetAsync(id);
+            appForm.IsDirectApproval = config.IsDirectApproval;
+            await _applicationFormRepository.UpdateAsync(appForm);
+            return ObjectMapper.Map<ApplicationForm, ApplicationFormDto>(appForm);
+        }
     }
 }
