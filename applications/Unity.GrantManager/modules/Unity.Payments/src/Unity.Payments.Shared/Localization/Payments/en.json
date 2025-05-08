@@ -9,6 +9,7 @@
     "Unity.Payments:Errors:ConfigurationExists": "Configuration already exitst",
     "Unity.Payments:Errors:ConfigurationDoesNotExist": "Configuration does not exits",
     "Unity.Payments:Errors:InvalidAccountCodingFiled": "Invalid account coding field {field} : {length}",
+    "Unity.Payments:Errors:L2ApproverRestriction": "You cannot approve one or more selected payments as you have already approved them as an L1 Approver.",
 
     "Setting:Payments.ThresholdAmount.DisplayName": "Payment threshold amount",
     "Setting:Payments.ThresholdAmount.Description": "Payment threshold that triggers additional approvals and checks",
