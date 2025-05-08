@@ -31,7 +31,8 @@
         class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
         text="@L["ApplicationList:AssignButton"].Value" />
 
-        @if (true) { // Validate against required permission         
+        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Approvals.BulkApplicationApproval))
+        { 
         <abp-button id="approveApplications"
         data-selector="applications-table-actions"
         button-type="Secondary"
