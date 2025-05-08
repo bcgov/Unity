@@ -20,6 +20,19 @@ function removeApplicationPayment(applicationId,groupId) {
         
         $(`#${groupId}_container .payment-status-transition`).css("display", "none");
     }
+
+    // Re-validate the form
+    let form = $('#paymentRequestStatus');
+    form.removeData("validator"); // Remove any existing validation data
+    form.removeData("unobtrusiveValidation"); // Remove unobtrusive validation data
+    $.validator.unobtrusive.parse(form); // Re-parse the form for validation
+    form.validate(); // Trigger validation
+
+    if (form.valid()) {
+        $("#payment-modal").find('#btnSubmitPayment').prop("disabled", false);
+    } else {
+        $("#payment-modal").find('#btnSubmitPayment').prop("disabled", true);
+    }
 }
 
 function closePaymentModal() {
