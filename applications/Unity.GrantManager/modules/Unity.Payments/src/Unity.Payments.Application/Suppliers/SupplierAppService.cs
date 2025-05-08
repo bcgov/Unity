@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Linq;
-using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Features;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
@@ -13,13 +12,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Unity.Payments.Suppliers
 {
     [RequiresFeature("Unity.Payments")]
-    [Authorize]
     public class SupplierAppService(ISupplierRepository supplierRepository, 
                                     ISiteAppService siteAppService) : PaymentsAppService, ISupplierAppService
     {
         protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
-        [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
         public virtual async Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto)
         {
             Supplier supplier = new Supplier(Guid.NewGuid(),
@@ -43,7 +40,6 @@ namespace Unity.Payments.Suppliers
             return ObjectMapper.Map<Supplier, SupplierDto>(result);
         }
 
-        [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
         public virtual async Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto)
         {
             var supplier = await supplierRepository.GetAsync(id);

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Payments.Domain.Suppliers;
@@ -10,7 +9,6 @@ using Volo.Abp;
 namespace Unity.Payments.Suppliers
 {
     [RequiresFeature("Unity.Payments")]
-    [Authorize]
     public class SiteAppService : PaymentsAppService, ISiteAppService
     {
         private const string SITE_ID_KEY = "SiteId";

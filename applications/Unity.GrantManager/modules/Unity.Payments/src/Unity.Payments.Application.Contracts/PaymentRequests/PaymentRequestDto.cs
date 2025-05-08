@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using Unity.Payments.Enums;
+using Unity.Payments.PaymentTags;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
 
@@ -33,7 +34,7 @@ namespace Unity.Payments.PaymentRequests
         public string SubmissionConfirmationCode { get; set; } = string.Empty;
         public string? ErrorSummary { get; set; }
         public PaymentUserDto? CreatorUser { get; set; }
-
+        public Collection<PaymentTagDto> PaymentTags { get; set; }
         public  Collection<ExpenseApprovalDto> ExpenseApprovals { get;  set; }
 
         public static explicit operator PaymentRequestDto(CreatePaymentRequestDto v)
