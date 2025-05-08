@@ -463,9 +463,12 @@ $(function () {
             }
         }
     };
+    
     const assessmentResultObserver = new MutationObserver(widgetCallback);
-    assessmentResultObserver.observe(assessmentResultTargetNode, widgetConfig);
 
+    if (assessmentResultTargetNode) {        
+        assessmentResultObserver.observe(assessmentResultTargetNode, widgetConfig);
+    }    
 
     PubSub.subscribe(
         'application_status_changed',
