@@ -23,4 +23,6 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? ScoresheetId {  get; set; }
     public Guid? TenantId { get; set; }
     public bool RenderFormIoToHtml { get; set; } = false;
+    public bool IsDirectApproval { get; set; } = false;
+    
 }

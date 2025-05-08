@@ -141,6 +141,7 @@
     "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
     "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
+    "Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval": "Bulk Application Approval",
 
     "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",
