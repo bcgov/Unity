@@ -187,7 +187,7 @@ namespace Unity.Payments.PaymentRequests
             var paymentThreshold = await GetPaymentThresholdAsync();
 
             // Check approval batches
-            var approvalRequests = paymentRequests.Where(r => r.IsApprove == true).Select(x => x.PaymentRequestId).ToList();
+            var approvalRequests = paymentRequests.Where(r => r.IsApprove).Select(x => x.PaymentRequestId).ToList();
             var approvalList = await _paymentRequestsRepository.GetListAsync(x => approvalRequests.Contains(x.Id), includeDetails: true);
 
             // Rule AB#26693: Reject Payment Request update batch if violates L1 and L2 separation of duties

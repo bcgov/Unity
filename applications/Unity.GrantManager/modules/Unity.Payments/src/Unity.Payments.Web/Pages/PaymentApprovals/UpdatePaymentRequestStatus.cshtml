@@ -65,7 +65,7 @@
                                         <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].isPermitted" />
                                         <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].IsL3ApprovalRequired" />
                                         <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].ToStatus" />
-                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].PreviousApprover" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].PreviousL1Approver" />
                                         <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].IsValid" />
                                         <abp-row id=@($"{@Model.PaymentGroupings[k].Items[i].Id}_header") class=" m-0 p-2">
                                             <abp-column size="_12" class="px-1 d-flex align-items-center">
@@ -140,8 +140,12 @@
                             <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>
                         </abp-row>
                     }
-                    <abp-column size="_12" class=" m-0 p-3 payment-error-column text-danger">
-                        @Html.ValidationSummary()
+                    <abp-column size="_12" class=" m-0 p-3 payment-error-column text-danger" abp-if="@(!ModelState.IsValid)">
+                        @if(ModelState.ContainsKey(nameof(PaymentsApprovalModel.PreviousL1Approver))
+                            && ModelState[nameof(PaymentsApprovalModel.PreviousL1Approver)]?.ValidationState == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)
+                        {
+                            <span>@L["ApplicationPaymentRequest:Validations:L2ApproverRestrictionBatch"]</span>
+                        }
                     </abp-column>
                     <abp-row class="m-0 p-2 no-payment-msg text-center" id="no-payment-msg" style="display: none;">
                         <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>

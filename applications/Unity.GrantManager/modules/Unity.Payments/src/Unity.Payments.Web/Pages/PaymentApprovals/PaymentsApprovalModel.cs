@@ -44,10 +44,9 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         public string ToStatusText { get; set; } = string.Empty;
 
-        public Guid? PreviousApprover { get; set; }
+        public Guid? PreviousL1Approver { get; set; }
 
         public bool IsApproval { get; set; }
-        public bool IsSameApprover { get; set; }
         public bool IsValid { get; set; } = false;
         public Guid CurrentUser { get; set; }
 
@@ -57,13 +56,13 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             var localizer = validationContext.GetRequiredService<IStringLocalizer<PaymentsResource>>();
 
             // Rule AB#26693: Reject Payment Request update batch if violates L1 and L2 separation of duties
-            if (Status == PaymentRequestStatus.L2Pending 
-                && IsApproval
-                && PreviousApprover == currentUser.Id)
+            if (IsApproval
+                && Status == PaymentRequestStatus.L2Pending
+                && PreviousL1Approver == currentUser.Id)
             {
                 yield return new ValidationResult(
-                    errorMessage: $"Highlighted payments were already approved with L1 permission. L1 and L2 approvers must be different individuals: {ReferenceNumber}",
-                    memberNames: [nameof(PreviousApprover)]
+                    errorMessage: localizer["ApplicationPaymentRequest:Validations:L2ApproverRestriction"],
+                    memberNames: [nameof(PreviousL1Approver)]
                 );
             }
         }

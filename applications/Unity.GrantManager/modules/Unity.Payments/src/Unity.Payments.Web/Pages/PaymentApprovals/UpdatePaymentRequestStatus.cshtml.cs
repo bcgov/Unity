@@ -1,20 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System;
-using Unity.Payments.PaymentRequests;
-using System.Threading.Tasks;
-using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Unity.Payments.PaymentConfigurations;
-using Unity.Payment.Shared;
-using System.Text.Json;
-using Unity.Payments.Enums;
-using Volo.Abp.Users;
-using System.Linq;
-using Unity.Payments.Domain.Shared;
-using Unity.Payments.Permissions;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Volo.Abp.Validation;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Unity.Payment.Shared;
+using Unity.Payments.Domain.Shared;
+using Unity.Payments.Enums;
+using Unity.Payments.PaymentConfigurations;
+using Unity.Payments.PaymentRequests;
+using Unity.Payments.Permissions;
+using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Users;
 
 namespace Unity.Payments.Web.Pages.PaymentApprovals
 {
@@ -68,18 +66,18 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         {
             await GetFromStateForUserAsync();
 
-            IsApproval               = isApprove;
-            SelectedPaymentIds       = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? [];
+            IsApproval = isApprove;
+            SelectedPaymentIds = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? [];
             var payments             = await _paymentRequestService.GetListByPaymentIdsAsync(SelectedPaymentIds);
             var permissionsToCheck   = new[] { PaymentsPermissions.Payments.L1ApproveOrDecline, PaymentsPermissions.Payments.L2ApproveOrDecline, PaymentsPermissions.Payments.L3ApproveOrDecline };
-            _                        = await _permissionCheckerService.CheckPermissionsAsync(permissionsToCheck);
+            _ = await _permissionCheckerService.CheckPermissionsAsync(permissionsToCheck);
             var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
 
             PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
             HasPaymentConfiguration = true;
 
             var paymentApprovals = new List<PaymentsApprovalModel>();
-            
+
 
             foreach (var payment in payments)
             {
@@ -96,8 +94,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                     IsL3ApprovalRequired = payment.Amount > PaymentThreshold,
                     ToStatus             = payment.Status,
                     IsApproval           = isApprove,
-                    PreviousApprover     = payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId,
-                    CurrentUser          = CurrentUser.GetId(),
+                    PreviousL1Approver   = payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId,
                 };
 
                 var validationContext = new ValidationContext(request, LazyServiceProvider, null);
@@ -109,7 +106,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 {
                     foreach (var memberName in validationResult.MemberNames)
                     {
-                        ModelState.AddModelError(memberName, validationResult.ErrorMessage ?? "Missing Message");
+                        ModelState.AddModelError(memberName, validationResult.ErrorMessage ?? "Validation message error.");
                     }
                 }
 
