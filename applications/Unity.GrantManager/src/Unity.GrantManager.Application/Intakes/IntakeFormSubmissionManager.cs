@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -59,6 +60,10 @@ namespace Unity.GrantManager.Intakes
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
             await _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
 
+            JObject submission = JObject.Parse(formSubmission.ToString());
+            ChefsFormIOReplacement.ReplaceAdvancedFormIoControls(formSubmission);
+            JToken? dataNode = submission.SelectToken("submission");
+
             var newSubmission = new ApplicationFormSubmission
             {
                 OidcSub = Guid.Empty.ToString(),
@@ -66,12 +71,12 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormId = applicationForm.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
                 ApplicationId = application.Id,
-                Submission = ChefsFormIOReplacement.ReplaceAdvancedFormIoControls(formSubmission)
+                Submission = dataNode?.ToString() ?? string.Empty
             };
 
             _ = await _applicationFormSubmissionRepository.InsertAsync(newSubmission);
 
-            var localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
+            ApplicationFormVersion? localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
             await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id,
                 localFormVersion?.Id ?? Guid.Empty,
                 formSubmission,
