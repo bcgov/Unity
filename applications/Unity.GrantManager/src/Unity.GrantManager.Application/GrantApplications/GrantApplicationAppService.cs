@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -9,30 +11,30 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.WorksheetInstances;
+using Unity.Flex.Worksheets;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Payments;
 using Unity.GrantManager.Permissions;
+using Unity.GrantManager.Zones;
+using Unity.Modules.Shared;
+using Unity.Modules.Shared.Correlation;
+using Unity.Payments.Domain.PaymentRequests;
+using Unity.Payments.Enums;
+using Unity.Payments.Integrations.Cas;
+using Unity.Payments.PaymentRequests;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
-using Microsoft.EntityFrameworkCore;
-using Unity.Modules.Shared.Correlation;
-using Unity.Flex.WorksheetInstances;
-using Unity.GrantManager.ApplicationForms;
-using Unity.GrantManager.Flex;
-using Unity.Payments.Integrations.Cas;
-using Microsoft.Extensions.Logging;
-using Unity.Flex.Worksheets;
-using Unity.Payments.PaymentRequests;
-using Unity.Payments.Enums;
-using Volo.Abp;
-using Unity.Payments.Domain.PaymentRequests;
-using Unity.GrantManager.Payments;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -57,6 +59,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly ISupplierService _iSupplierService;
     private readonly IPaymentRequestAppService _paymentRequestService;
     private readonly IPaymentRequestRepository _paymentRequestsRepository;
+    private readonly IZoneChecker _zoneChecker;
 
     public GrantApplicationAppService(
         IApplicationManager applicationManager,
@@ -73,7 +76,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         ILocalEventBus localEventBus,
         ISupplierService iSupplierService,
         IPaymentRequestAppService paymentRequestService,
-        IPaymentRequestRepository paymentRequestsRepository)
+        IPaymentRequestRepository paymentRequestsRepository,
+        IZoneChecker zoneChecker)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -90,6 +94,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _localEventBus = localEventBus;
         _paymentRequestService = paymentRequestService;
         _paymentRequestsRepository = paymentRequestsRepository;
+        _zoneChecker = zoneChecker;
     }
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -198,7 +203,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<GrantApplicationDto> GetAsync(Guid id)
     {
-        var application = await _applicationRepository.GetAsync(id, true);
+        var application = await _applicationRepository.GetWithFullDetailsByIdAsync(id);
 
         if (application == null) return new GrantApplicationDto();
 
@@ -285,29 +290,36 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     }
 
-    [Authorize(GrantApplicationPermissions.AssessmentResults.Edit)]
+    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
 
-        SanitizeAssessmentResultsDisabledInputs(input, application);
+        await SanitizeApprovalZoneInputs(input, application);
+        await SanitizeAssessmentResultsZoneInputs(input, application);
 
         application.ValidateAndChangeDueDate(input.DueDate);
         application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate, input.RiskRanking);
 
         if (application.IsInFinalDecisionState())
         {
-            if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.Approval.Update.UpdateFinalStateFields))
             {
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+                application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+            }
+
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields)) // User allowed to edit specific fields past approval
+            {
+                application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
             }
         }
         else
         {
-            if (await CurrentUsCanUpdateAssessmentFieldsAsync())
+            if (await CurrentUserCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+                application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+                application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.RecommendedAmount,
                     input.DeclineRational);
@@ -323,24 +335,65 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
-    private static void SanitizeAssessmentResultsDisabledInputs(CreateUpdateAssessmentResultsDto input, Application application)
+    private async Task SanitizeApprovalZoneInputs(CreateUpdateAssessmentResultsDto input, Application application)
     {
-        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
-        input.TotalProjectBudget ??= application.TotalProjectBudget;
-        input.RecommendedAmount ??= application.RecommendedAmount;
+        // Approval Zone Fields - Disabled Inputs
         input.ApprovedAmount ??= application.ApprovedAmount;
-        input.TotalScore ??= application.TotalScore;
-        input.RequestedAmount ??= application.RequestedAmount;
+
+        // Sanitize if zone is disabled
+        if (!await _zoneChecker.IsEnabledAsync(UnitySelector.Review.Approval.Default, application.ApplicationFormId))
+        {
+            input.SubStatus ??= application.SubStatus;
+            input.FinalDecisionDate ??= application.FinalDecisionDate;
+            input.Notes ??= application.Notes;
+        }
+        else
+        {
+            // Sanitize if zone is enabled but fields are disabled
+            if (application.IsInFinalDecisionState())
+            {
+                input.FinalDecisionDate ??= application.FinalDecisionDate;
+            }
+        }
     }
 
-    private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
+    private async Task SanitizeAssessmentResultsZoneInputs(CreateUpdateAssessmentResultsDto input, Application application)
     {
-        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
+        // Approval Zone Fields - Disabled Inputs
+        input.RequestedAmount       ??= application.RequestedAmount;
+        input.TotalProjectBudget    ??= application.TotalProjectBudget;
+        input.RecommendedAmount     ??= application.RecommendedAmount;
+        input.TotalScore            ??= application.TotalScore;
+
+        // Sanitize if zone is disabled
+        if (!await _zoneChecker.IsEnabledAsync(UnitySelector.Review.AssessmentResults.Default, application.ApplicationFormId))
+        {
+            input.LikelihoodOfFunding       ??= application.LikelihoodOfFunding;
+            input.RiskRanking               ??= application.RiskRanking;
+            input.DueDiligenceStatus        ??= application.DueDiligenceStatus;
+            input.AssessmentResultStatus    ??= application.AssessmentResultStatus;
+            input.DeclineRational           ??= application.DeclineRational;
+            
+            input.NotificationDate          ??= application.NotificationDate;
+            input.DueDate                   ??= application.DueDate;
+        }
+        else
+        {
+            // Sanitize if zone is enabled but fields are disabled
+            if (application.IsInFinalDecisionState())
+            {
+                input.LikelihoodOfFunding   ??= application.LikelihoodOfFunding;
+                input.RiskRanking           ??= application.RiskRanking;
+                input.DueDiligenceStatus    ??= application.DueDiligenceStatus;
+                input.AssessmentResultStatus ??= application.AssessmentResultStatus;
+                input.DeclineRational       ??= application.DeclineRational;
+            }
+        }
     }
 
-    private async Task<bool> CurrentUserCanUpdateFieldsPostFinalDecisionAsync()
+    private async Task<bool> CurrentUserCanUpdateAssessmentFieldsAsync()
     {
-        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
+        return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
     }
 
     [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
@@ -448,7 +501,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(id);
                 if (pendingPayments != null && pendingPayments.Count > 0)
                 {
-                        throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
+                    throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
                 }
                 await _iSupplierService.UpdateApplicantSupplierInfo(input.SupplierNumber, application.ApplicantId);
             }
@@ -521,7 +574,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                     SheetCorrelationProvider = CorrelationConsts.FormVersion,
                     UiAnchor = uiAnchor,
                     CustomFields = input.CustomFields,
-                    WorksheetId = input.WorksheetId                    
+                    WorksheetId = input.WorksheetId
                 });
             }
             else
@@ -905,7 +958,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
     {
-        
+
         var query = from applications in await _applicationRepository.GetQueryableAsync()
                     select new GrantApplicationLiteDto
                     {

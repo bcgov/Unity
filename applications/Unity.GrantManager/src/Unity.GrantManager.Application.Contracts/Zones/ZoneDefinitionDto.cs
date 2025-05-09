@@ -3,7 +3,6 @@
 public class ZoneDefinitionDto
 {
     public string Name { get; set; } = string.Empty;
-    public string? DisplayName { get; set; }
     public bool IsEnabled { get; set; }
     public bool IsConfigurationDisabled { get; set; }
     public string ViewComponentType { get; set; } = string.Empty;

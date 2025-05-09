@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
@@ -45,39 +44,16 @@ namespace Unity.GrantManager.Events
 
         public async Task<bool> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto)
         {
-            await ValidateFormRegistration(eventSubscriptionDto);
-
-            var submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
-
-            var formVersion = await _formsApiService
-                .GetFormDataAsync(
-                    eventSubscriptionDto.FormId.ToString(),
-                    GetFormVersionIdFromJsonDocument(submissionData))
-                ?? throw new InvalidFormDataSubmissionException();
-
-            var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
-            return !result.IsNullOrEmpty();
-        }
-
-        private async Task ValidateFormRegistration(EventSubscriptionDto eventSubscriptionDto)
-        {
-            _ = (await _applicationFormRepository
+            var applicationForm = (await _applicationFormRepository
                 .GetQueryableAsync())
                 .Where(s => s.ChefsApplicationFormGuid == eventSubscriptionDto.FormId.ToString())
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault() ?? throw new EntityNotFoundException("Application Form Not Registered");
-        }
 
-        // Helper method to extract the form version ID from the JsonDocument
-        private static string GetFormVersionIdFromJsonDocument(JsonDocument submissionData)
-        {
-            if (submissionData.RootElement.TryGetProperty("submission", out JsonElement submissionElement) &&
-                submissionElement.TryGetProperty("formVersionId", out JsonElement formVersionIdElement))
-            {
-                return formVersionIdElement.GetString() ?? throw new InvalidFormDataSubmissionException("FormVersionId is null.");
-            }
-
-            throw new InvalidFormDataSubmissionException("Invalid JSON structure: Missing 'submission' or 'formVersionId'.");
+            var submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
+            var formVersion = await _formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), submissionData.submission.formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
+            var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
+            return !result.IsNullOrEmpty();
         }
 
         public async Task<bool> PublishedFormAsync(EventSubscriptionDto eventSubscriptionDto)
@@ -104,7 +80,7 @@ namespace Unity.GrantManager.Events
                 string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
                 TeamsNotificationService.PostChefsEventToTeamsAsync(teamsChannel, eventSubscriptionDto.SubscriptionEvent, form, formVersion);
             }
-            else if (applicationForm == null)
+            else if(applicationForm == null)
             {
                 EventSubscription eventSubscription = ObjectMapper.Map<EventSubscriptionDto, EventSubscription>(eventSubscriptionDto);
                 applicationForm = await _applicationFormManager.InitializeApplicationForm(eventSubscription);

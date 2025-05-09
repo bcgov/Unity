@@ -153,6 +153,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Payments.Shared", "mo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Flex.Web.Tests", "modules\Unity.Flex\test\Unity.Flex.Web.Tests\Unity.Flex.Web.Tests.csproj", "{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Reporting.Web", "modules\Unity.Reporting\src\Unity.Reporting.Web\Unity.Reporting.Web.csproj", "{3E4E5506-9820-4650-8062-4A07FB2C851A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -391,6 +393,10 @@ Global
 		{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E4E5506-9820-4650-8062-4A07FB2C851A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E4E5506-9820-4650-8062-4A07FB2C851A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E4E5506-9820-4650-8062-4A07FB2C851A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E4E5506-9820-4650-8062-4A07FB2C851A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -468,6 +474,7 @@ Global
 		{EC2DA32D-B5B1-4FC0-A4CD-4AE076DBA4C1} = {29B0CA02-EC1F-45B3-A777-1916A74E11CA}
 		{0355D299-4880-4F11-84A9-E14639A76AC4} = {DC64FA90-4E98-442F-BBA9-116940A928CF}
 		{5F4CFB7E-A14A-40A1-8833-A55CB296D31B} = {CDE485CC-D6EA-457A-88D6-DEEAF7CAC424}
+		{3E4E5506-9820-4650-8062-4A07FB2C851A} = {FF8024E0-68D2-4716-8812-E6D16730F4CC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}

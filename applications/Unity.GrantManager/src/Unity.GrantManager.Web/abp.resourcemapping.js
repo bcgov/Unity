@@ -30,6 +30,8 @@ module.exports = {
         '@node_modules/bootstrap-select/dist': '@libs/bootstrap-select/dist',
         '@node_modules/sortablejs': '@libs/sortablejs',
         '@node_modules/jszip': '@libs/jszip',
-        '@node_modules/tributejs': '@libs/tributejs'
+        '@node_modules/tributejs': '@libs/tributejs',
+        '@node_modules/tinymce': '@libs/tinymce',
+        '@node_modules/handlebars': '@libs/handlebars'
     },
 };

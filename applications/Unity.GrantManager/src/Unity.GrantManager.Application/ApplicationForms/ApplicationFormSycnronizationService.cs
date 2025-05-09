@@ -101,20 +101,7 @@ namespace Unity.GrantManager.ApplicationForms
                 return;
             }
 
-            JsonDocument? submissionDocument = await _submissionsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
-
-            if (submissionDocument == null)
-            {
-                Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions submissionData is null");
-                return;
-            }
-
-            // Serialize JsonDocument to a JSON string
-            string jsonString = submissionDocument.RootElement.GetRawText();
-
-            // Parse the JSON string into a JObject
-            JObject submissionData = JObject.Parse(jsonString);
-
+            JObject? submissionData = await _submissionsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
             if (submissionData == null)
             {
                 Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions submissionData is null");

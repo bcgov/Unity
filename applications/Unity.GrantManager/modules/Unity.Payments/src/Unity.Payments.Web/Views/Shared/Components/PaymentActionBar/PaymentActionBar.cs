@@ -34,6 +34,8 @@ namespace Unity.Payments.Web.Views.Shared.Components.ActionBar
         {
             context.Files
               .AddIfNotContains("/Views/Shared/Components/PaymentActionBar/Default.js");
+            context.Files
+              .AddIfNotContains("/Pages/PaymentTags/PaymentTags.js");
         }
     }
 }

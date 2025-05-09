@@ -4,11 +4,12 @@ using Volo.Abp.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Microsoft.Extensions.Configuration;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Settings;
 using Unity.Notifications.Settings;
 using System.Threading.Tasks;
+using Unity.Notifications.Templates;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
 {
@@ -17,8 +18,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         ScriptTypes = [typeof( EmailsWidgetScriptBundleContributor)],
         StyleTypes = [typeof( EmailsWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository) : AbpViewComponent
+    public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository, ITemplateService templateService) : AbpViewComponent
     {
+       
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId)
         {
             // Lookup the applicant contact
@@ -32,9 +34,21 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
                 EmailTo = application?.ApplicantAgent?.Email ?? "",
                 EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
             };
+            await PopulateTemplates(model);
 
             return View(model);
         }
+        private async Task PopulateTemplates(EmailsWidgetViewModel model)
+        {
+            var templates = await templateService.GetTemplatesByTenent();
+
+            templates.ForEach(t =>
+           {
+               model.TemplatesList.Add(new SelectListItem() { Value = t.Id.ToString(), Text = t.Name });
+
+           });
+        }
+                   
     }
 
     public class  EmailsWidgetStyleBundleContributor : BundleContributor

@@ -1,5 +1,6 @@
-(function ($) {
-    let l = abp.localization.getResource('AbpIdentity');
+$(function () {
+    const l = abp.localization.getResource('AbpIdentity');
+    const lg = abp.localization.getResource('GrantManager');
 
     let _identityUserAppService = volo.abp.identity.identityUser;
     let _userImportService = unity.grantManager.identity.userImport;
@@ -63,30 +64,30 @@
         )
 
         $('#ImportUserSearchButton').click(function (e) {
-            e.preventDefault();            
+            e.preventDefault();
             _filterDataTable.ajax.reloadEx();
             $('#import-user-btn').attr('disabled', true);
-        });        
+        });
 
         $('#cancel-import-btn').click(function (e) {
             _importModal.close();
         });
 
-        _filterDataTable.on('select', function (e, dt, type, indexes) {            
+        _filterDataTable.on('select', function (e, dt, type, indexes) {
             if (type === 'row') {
-                let selectedData = _filterDataTable.row(indexes).data();                
+                let selectedData = _filterDataTable.row(indexes).data();
                 $('#import-user-id').val(selectedData.userGuid);
                 $('#import-user-btn').removeAttr('disabled');
-            }            
+            }
         });
 
         _filterDataTable.on('deselect', function (e, dt, type, indexes) {
             $('#import-user-id').val();
             $('#import-user-btn').attr('disabled', true);
-        });     
+        });
 
         _importModal.onResult(function () {
-            _dataTable.ajax.reloadEx();
+            dataTable.ajax.reloadEx();
         });
     }
 
@@ -114,7 +115,7 @@
         modalClass: "importUser"
     });
 
-    let _dataTable = null;
+    let dataTable = null;
 
     abp.ui.extensions.entityActions.get('identity.user').addContributor(
         function (actionList) {
@@ -159,7 +160,7 @@
                             _identityUserAppService
                                 .delete(data.record.id)
                                 .then(function () {
-                                    _dataTable.ajax.reloadEx();
+                                    dataTable.ajax.reload();
                                     abp.notify.success(l('SuccessfullyDeleted'));
                                 });
                         },
@@ -175,6 +176,12 @@
                 [
                     {
                         title: l("Actions"),
+                        sortable: false,
+                        orderable: false,
+                        className: 'notexport text-center',
+                        name: 'rowActions',
+                        data: 'id',
+                        index: 0,
                         rowAction: {
                             items: abp.ui.extensions.entityActions.get('identity.user').actions.toArray()
                         }
@@ -212,27 +219,56 @@
     _importModal.onOpen(function () {
         setTimeout(() => {
             _filterDataTable.columns.adjust().draw();
-        });   
-    });
-
-    $(function () {
-        let _$table = $('#UsersTable');
-        _dataTable = _$table.DataTable(
-            abp.libs.datatables.normalizeConfiguration({
-                order: [[1, 'asc']],
-                processing: true,
-                serverSide: true,
-                scrollX: true,
-                paging: true,
-                ajax: abp.libs.datatables.createAjax(
-                    _identityUserAppService.getList
-                ),
-                columnDefs: abp.ui.extensions.tableColumns.get('identity.user').columns.toArray()
-            })
-        );
-
-        _editModal.onResult(function () {
-            _dataTable.ajax.reloadEx();
         });
     });
-})(jQuery);
+
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
+    let actionButtons = [
+        {
+            text: '<i class="fl fl-add-to align-middle"></i> <span>' + lg('Common:Command:Create') + '</span>',
+            titleAttr: lg('Common:Command:Create'),
+            id: 'CreateIntakeButton',
+            className: 'btn-light rounded-1',
+            action: function (e, dt, node, config) {
+                e.preventDefault();
+                _importModal.open();
+            }
+        },
+        ...commonTableActionButtons(l('Users'))
+    ];
+
+    let tableResponseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
+
+    let dt = $('#UsersTable');
+    let listColumns = abp.ui.extensions.tableColumns.get('identity.user').columns.toArray();
+    let defaultVisibleColumns = listColumns.map((item) => { return item['data']; });
+
+    dataTable = initializeDataTable({
+        dt,
+        defaultVisibleColumns,
+        listColumns,
+        maxRowsPerPage: 25,
+        defaultSortColumn: 1,
+        dataEndpoint: _identityUserAppService.getList,
+        data: {},
+        responseCallback: tableResponseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        reorderEnabled: false,
+        languageSetValues: {},
+        dataTableName: 'UsersTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        useNullPlaceholder: true,
+        externalSearchId: 'search-users'
+    });
+
+    _editModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+});

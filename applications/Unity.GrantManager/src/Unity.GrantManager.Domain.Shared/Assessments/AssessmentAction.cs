@@ -6,7 +6,6 @@ namespace Unity.GrantManager.Assessments;
 public enum AssessmentAction
 {
     Create,
-    SendTo,
     SendBack,
-    Confirm
+    Complete
 }

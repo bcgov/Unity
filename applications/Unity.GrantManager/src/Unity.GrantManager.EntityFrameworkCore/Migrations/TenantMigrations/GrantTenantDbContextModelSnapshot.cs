@@ -2459,6 +2459,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -2470,6 +2474,409 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.ToTable("EmailLogs", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Templates.EmailTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BodyHTML")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BodyText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SendFrom")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailTemplates", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Templates.Subscriber", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Subscribers", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Templates.SubscriptionGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SubscriptionGroups", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Templates.SubscriptionGroupSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<Guid?>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("SubscriberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("SubscriberId");
+
+                    b.ToTable("SubscriptionGroupSubscribers", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Templates.TemplateVariable", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("MapTo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TemplateVariables", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Templates.Trigger", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("InternalName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Triggers", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Templates.TriggerSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("SubscriptionGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<Guid>("TriggerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionGroupId");
+
+                    b.HasIndex("TemplateId");
+
+                    b.HasIndex("TriggerId");
+
+                    b.ToTable("TriggerSubscriptions", "Notifications");
                 });
 
             modelBuilder.Entity("Unity.Payments.Domain.PaymentConfigurations.PaymentConfiguration", b =>
@@ -2753,6 +3160,58 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("PaymentRequests", "Payments");
                 });
 
+            modelBuilder.Entity("Unity.Payments.Domain.PaymentTags.PaymentTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("PaymentRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentRequestId");
+
+                    b.ToTable("PaymentTags", "Payments");
+                });
+
             modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Site", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2815,6 +3274,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<DateTime?>("LastUpdatedInCas")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool>("MarkDeletedInUse")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Number")
                         .IsRequired()
@@ -3270,6 +3732,48 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Unity.Notifications.Templates.SubscriptionGroupSubscription", b =>
+                {
+                    b.HasOne("Unity.Notifications.Templates.SubscriptionGroup", "SubscriptionGroup")
+                        .WithMany()
+                        .HasForeignKey("GroupId");
+
+                    b.HasOne("Unity.Notifications.Templates.Subscriber", "Subscriber")
+                        .WithMany()
+                        .HasForeignKey("SubscriberId");
+
+                    b.Navigation("Subscriber");
+
+                    b.Navigation("SubscriptionGroup");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Templates.TriggerSubscription", b =>
+                {
+                    b.HasOne("Unity.Notifications.Templates.SubscriptionGroup", "SubscriptionGroup")
+                        .WithMany()
+                        .HasForeignKey("SubscriptionGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.Notifications.Templates.EmailTemplate", "EmailTemplate")
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.Notifications.Templates.Trigger", "Trigger")
+                        .WithMany()
+                        .HasForeignKey("TriggerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EmailTemplate");
+
+                    b.Navigation("SubscriptionGroup");
+
+                    b.Navigation("Trigger");
+                });
+
             modelBuilder.Entity("Unity.Payments.Domain.PaymentRequests.ExpenseApproval", b =>
                 {
                     b.HasOne("Unity.Payments.Domain.PaymentRequests.PaymentRequest", "PaymentRequest")
@@ -3290,6 +3794,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
 
                     b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("Unity.Payments.Domain.PaymentTags.PaymentTag", b =>
+                {
+                    b.HasOne("Unity.Payments.Domain.PaymentRequests.PaymentRequest", null)
+                        .WithMany("PaymentTags")
+                        .HasForeignKey("PaymentRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Site", b =>
@@ -3366,6 +3879,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.Payments.Domain.PaymentRequests.PaymentRequest", b =>
                 {
                     b.Navigation("ExpenseApprovals");
+
+                    b.Navigation("PaymentTags");
                 });
 
             modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Supplier", b =>
