@@ -61,7 +61,6 @@ namespace Unity.GrantManager.Intakes
             await _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
 
             JObject submission = JObject.Parse(formSubmission.ToString());
-            ChefsFormIOReplacement.ReplaceAdvancedFormIoControls(formSubmission);
             JToken? dataNode = submission.SelectToken("submission");
 
             var newSubmission = new ApplicationFormSubmission
