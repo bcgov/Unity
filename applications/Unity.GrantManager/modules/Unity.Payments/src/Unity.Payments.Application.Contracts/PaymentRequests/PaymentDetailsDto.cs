@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using Unity.Payments.Enums;
+using Unity.Payments.PaymentTags;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
 
@@ -28,6 +29,7 @@ namespace Unity.Payments.PaymentRequests
         public string ReferenceNumber { get; set; } = string.Empty;
         public string SubmissionConfirmationCode { get; set; } = string.Empty;
         public SiteDto? Site { get; set; }
+        public Collection<PaymentTagDto> PaymentTags { get; set; } = [];
         public Collection<ExpenseApprovalDto> ExpenseApprovals { get; set; } = [];
     }
 }

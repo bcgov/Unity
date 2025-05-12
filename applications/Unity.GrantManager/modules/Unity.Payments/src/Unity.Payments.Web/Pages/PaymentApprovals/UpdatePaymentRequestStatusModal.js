@@ -1,23 +1,38 @@
 
-function removeApplicationPayment(applicationId,groupId) {
+function removeApplicationPayment(applicationId, groupId) {
     $('#' + applicationId).remove();
     let applicationCount = $('#ApplicationCount').val();
     let groupCount = $(`#${groupId}_count`).val();
     $(`#${groupId}_count`).val(groupCount - 1);
     $('#ApplicationCount').val(applicationCount - 1);
+
+    let paymentCount = $('div.single-payment').length;
+    let invalidCount = $('input[name$=".IsValid"]').filter(function () {
+        return $(this).val() === "False";
+    }).length;
+
+    let groupContainer = $(`#${groupId}_container`);
+    let invalidGroupCount = groupContainer.find('input[name$=".IsValid"]').filter(function () {
+        return $(this).val() === "False";
+    }).length;
+
     if ((applicationCount - 1) == 1) {
         $('.max-error').css("display", "none");
         $('.payment-divider').css("display", "none");
     }
-    if (!$('div.single-payment').length) {
+
+    if (paymentCount == 0) {
         $('#no-payment-msg').css("display", "block");
         $("#payment-modal").find('#btnSubmitPayment').prop("disabled", true);
     }
     else {
         $('#no-payment-msg').css("display", "none");
+        $("#payment-modal").find('#btnSubmitPayment').prop("disabled", invalidCount > 0);
+        $('.payment-error-column').css("display", invalidCount > 0 ? "block" : "none");
+        groupContainer.find(".payment-status-transition-ban").css("display", invalidGroupCount > 0 ? "inline-block" : "none");
     }
+
     if (groupCount - 1 == 0) {
-        
         $(`#${groupId}_container .payment-status-transition`).css("display", "none");
     }
 }
@@ -38,9 +53,7 @@ function checkMaxValue(applicationId, input, amountRemaining) {
 
 function submitPaymentApprovals() {
     // check for error class divs
-
-        $('#paymentRequestStatus').submit();
-    
+    $('#paymentRequestStatus').submit();
 };
 
 function getStatusText(data) {
