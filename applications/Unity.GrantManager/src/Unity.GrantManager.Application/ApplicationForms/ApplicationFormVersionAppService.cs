@@ -256,9 +256,9 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             if (applicationFormVersion.Id == Guid.Empty)
-                await _formVersionRepository.InsertAsync(applicationFormVersion);
+                await _formVersionRepository.InsertAsync(applicationFormVersion, true);
             else
-                await _formVersionRepository.UpdateAsync(applicationFormVersion);
+                await _formVersionRepository.UpdateAsync(applicationFormVersion, true);
         }
 
         public async Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId)
