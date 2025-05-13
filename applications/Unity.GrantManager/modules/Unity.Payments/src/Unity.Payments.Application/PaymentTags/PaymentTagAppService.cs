@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using Unity.GrantManager.Permissions;
 using Unity.Payments.Domain.PaymentTags;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 
@@ -41,6 +43,10 @@ namespace Unity.Payments.PaymentTags
         {
             var paymentTag = await _paymentTagRepository.FirstOrDefaultAsync(e => e.PaymentRequestId == id);
 
+            // Sanitize input tag text string
+            var tagInput = input.Text.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+            input.Text = string.Join(',', tagInput.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
+
             if (paymentTag == null)
             {
                 var newTag = await _paymentTagRepository.InsertAsync(new PaymentTag(
@@ -61,5 +67,28 @@ namespace Unity.Payments.PaymentTags
             }
         }
 
+        [Authorize(UnitySettingManagementPermissions.Tags.Default)]
+        public async Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync()
+        {
+            var tagSummary = ObjectMapper.Map<List<TagSummaryCount>, List<TagSummaryCountDto>>(
+            await _paymentTagRepository.GetTagSummary());
+
+            return new PagedResultDto<TagSummaryCountDto>(
+                tagSummary.Count,
+                tagSummary
+            );
+        }
+
+        [Authorize(UnitySettingManagementPermissions.Tags.Update)]
+        public Task<List<Guid>> RenameTagAsync(string originalTag, string replacementTag)
+        {
+            throw new NotImplementedException();
+        }
+
+        [Authorize(UnitySettingManagementPermissions.Tags.Delete)]
+        public Task DeleteTagAsync(string deleteTag)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

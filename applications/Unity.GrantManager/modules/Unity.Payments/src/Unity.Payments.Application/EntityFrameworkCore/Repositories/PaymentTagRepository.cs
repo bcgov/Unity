@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,6 +19,23 @@ namespace Unity.Payments.Repositories
         {
             var dbSet = await GetDbSetAsync();
             return dbSet.Where(p => p.PaymentRequestId.Equals(paymentRequestId)).ToList();
+        }
+
+        public virtual async Task<List<TagSummaryCount>> GetTagSummary()
+        {
+            var dbSet = await GetDbSetAsync();
+            var results = dbSet
+            .AsNoTracking()
+            .AsEnumerable() // Forces client-side evaluation  
+            .SelectMany(tag => tag.Text.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(t => t.Trim()))
+            .GroupBy(tag => tag)
+            .Select(group => new TagSummaryCount(
+                group.Key,
+                group.Count()
+            )).ToList();
+
+            return results;
         }
     }
 }
