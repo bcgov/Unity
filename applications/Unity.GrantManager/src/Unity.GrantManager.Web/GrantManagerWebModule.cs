@@ -76,6 +76,7 @@ using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Web.Views.Settings;
 using Unity.Notifications.Web.Bundling;
 using Unity.Reporting.Web;
+using Unity.GrantManager.Web.Views.Settings;
 
 namespace Unity.GrantManager.Web;
 
@@ -199,6 +200,7 @@ public class GrantManagerWebModule : AbpModule
         Configure<SettingManagementPageOptions>(options =>
         {
             options.Contributors.Add(new BackgroundJobsPageContributor());
+            options.Contributors.Add(new TagManagementPageContributor());
         });
 
         context.Services.AddHealthChecks()

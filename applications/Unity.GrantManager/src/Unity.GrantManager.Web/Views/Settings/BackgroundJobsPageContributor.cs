@@ -20,7 +20,8 @@ public class BackgroundJobsPageContributor : SettingPageContributorBase
             new SettingPageGroup(
                 "GrantManager.BackgroundJobs",
                 "Background Jobs",
-                typeof(BackgroundJobsViewComponent)
+                typeof(BackgroundJobsViewComponent),
+                order: 1
             )
         );
 
