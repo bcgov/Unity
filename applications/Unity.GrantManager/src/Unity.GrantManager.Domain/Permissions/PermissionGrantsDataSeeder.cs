@@ -183,7 +183,10 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
 
-                    UnitySettingManagementPermissions.BackgroundJobSettings
+                    UnitySettingManagementPermissions.BackgroundJobSettings,
+                    UnitySettingManagementPermissions.Tags.Default,
+                    UnitySettingManagementPermissions.Tags.Update,
+                    UnitySettingManagementPermissions.Tags.Delete
                 ], context.TenantId);
 
 

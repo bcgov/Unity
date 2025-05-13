@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -73,6 +74,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         }
     }
 
+    [Authorize(UnitySettingManagementPermissions.Tags.Default)]
     public async Task<PagedResultDto<TagSummaryCountDto>> GetApplicationTagCounts()
     {
         var tagSummary = ObjectMapper.Map<List<TagSummaryCount>, List<TagSummaryCountDto>>(
@@ -93,6 +95,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     /// <param name="replacementTag">The new tag to use as a replacement.</param>
     /// <returns>A list of IDs for the ApplicationTags entities that were updated.</returns>
     /// <exception cref="BusinessException">Thrown if the original and replacement tags are the same.</exception>
+    [Authorize(UnitySettingManagementPermissions.Tags.Update)]
     public async Task<List<Guid>> RenameTagAsync(string originalTag, string replacementTag)
     {
         Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
@@ -138,6 +141,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     /// Deletes a tag from all application tags. Only whole-word tags are removed; substring matches are ignored.
     /// </summary>
     /// <param name="deleteTag">String of tag to be deleted.</param>
+    [Authorize(UnitySettingManagementPermissions.Tags.Delete)]
     public async Task DeleteTagAsync(string deleteTag)
     {
         Check.NotNullOrWhiteSpace(deleteTag, nameof(deleteTag));
