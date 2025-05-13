@@ -60,8 +60,9 @@ namespace Unity.GrantManager.Events
             switch (eventData.Action)
             {
                 case EmailAction.SendFailedSummary:
-                    foreach (string emailToAddress in eventData.EmailAddressList)
+                    for (int i = 0; i < eventData.EmailAddressList.Count; i++)
                     {
+                        string emailToAddress = eventData.EmailAddressList[i];
                         await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, FAILED_PAYMENTS_SUBJECT, eventData.ApplicationId, eventData.EmailFrom,eventData.EmailTemplateName);
                     }
                     break;
