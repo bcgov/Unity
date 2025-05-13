@@ -443,6 +443,36 @@
             });
         });
     }
+    function toTitleCase(str) {
+        return str.replace(/\b\w/g, function (char) {
+            return char.toUpperCase();
+        }).replace(/\B\w/g, function (char) {
+            return char.toLowerCase();
+        });
+    }
+    function processString(token,inputString) {
+        let lookupArray = ['category', 'status', 'decline_rationale'];
+
+        if(typeof inputString !== 'string') {
+            return inputString;
+        }
+       
+        let date = new Date(inputString);
+        if (!isNaN(date.getTime())) {
+           
+            return luxon.DateTime.fromISO(inputString, {
+                locale: abp.localization.currentCulture.name,
+            }).toUTC().toLocaleString()
+        } else {
+           
+            if (lookupArray.includes(token)) {
+                inputString = inputString.replace(/_/g, ' ');
+                return toTitleCase(inputString);
+            }
+            return inputString;
+            
+        }
+    }
 
     function extractTemplateData(apiResponse, mappingConfig) {
         const templateData = {};
@@ -456,7 +486,9 @@
             }
 
             const value = getValueByPath(apiResponse, mapTo);
-            templateData[token] = value !== undefined ? value : "";
+
+            let formatValue = processString(token,value);
+            templateData[token] = formatValue !== undefined ? formatValue : "";
         });
 
         return templateData;
