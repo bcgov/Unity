@@ -75,10 +75,10 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     }
 
     [Authorize(UnitySettingManagementPermissions.Tags.Default)]
-    public async Task<PagedResultDto<TagSummaryCountDto>> GetApplicationTagCounts()
+    public async Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync()
     {
         var tagSummary = ObjectMapper.Map<List<TagSummaryCount>, List<TagSummaryCountDto>>(
-            await _applicationTagsRepository.GetTagCounts());
+            await _applicationTagsRepository.GetTagSummary());
 
         return new PagedResultDto<TagSummaryCountDto>(
             tagSummary.Count,

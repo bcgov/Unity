@@ -19,7 +19,7 @@ public class ApplicationTagsRepository(IDbContextProvider<GrantTenantDbContext> 
     : EfCoreRepository<GrantTenantDbContext, ApplicationTags, Guid>(dbContextProvider), IApplicationTagsRepository
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
 {
-    public virtual async Task<List<TagSummaryCount>> GetTagCounts()
+    public virtual async Task<List<TagSummaryCount>> GetTagSummary()
     {
         var dbSet = await GetDbSetAsync();
         var results = dbSet

@@ -7,5 +7,5 @@ namespace Unity.GrantManager.Applications;
 
 public interface IApplicationTagsRepository : IRepository<ApplicationTags, Guid>
 {
-    Task<List<TagSummaryCount>> GetTagCounts();
+    Task<List<TagSummaryCount>> GetTagSummary();
 }

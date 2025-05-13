@@ -9,36 +9,35 @@
     <div class="unity-page-titlebar">
         <h4 class="m-0">Manage Tags</h4>
     </div>
-    <nav>
-        <div class="nav nav-tabs" id="nav-tab" role="tablist">
-            <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-config" type="button" role="tab">Grant Application Tags</button>
-            @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
-            {
-                <button class="nav-link" id="nav-template-tab" data-bs-toggle="tab" data-bs-target="#nav-template" type="button" role="tab">Payment Tags</button>
-            }
-        </div>
-    </nav>
-
-    <div class="tab-content unt-tab-content" id="nav-tabContent">
-        <div class="tab-pane fade show active" id="nav-config" role="tabpanel" aria-labelledby="nav-mapping-tab">
-            <div class="row">
-                <div class="container mt-3">
-                    <abp-table id="ApplicationTagsTable"></abp-table>
-                </div>
+    <div class="unity-setting-body p-3">
+        <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-config" type="button" role="tab">Grant Application Tags</button>
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+                {
+                    <button class="nav-link" id="nav-template-tab" data-bs-toggle="tab" data-bs-target="#nav-template" type="button" role="tab">Payment Tags</button>
+                }
             </div>
-        </div>
-        @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
-        {
-            <div class="tab-pane fade" id="nav-template" role="tabpanel" aria-labelledby="nav-template-tab">
+        </nav>
+
+        <div class="tab-content unt-tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-config" role="tabpanel" aria-labelledby="nav-mapping-tab">
                 <div class="row">
                     <div class="container mt-3">
-                        <abp-alert alert-type="Primary">
-                            Payment tags management not yet implemented.
-                        </abp-alert>
-                        <abp-table id="PaymentTagsTable"></abp-table>
+                        <abp-table id="ApplicationTagsTable" data-resize-aware="true"></abp-table>
                     </div>
                 </div>
             </div>
-        }
+            @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+            {
+                <div class="tab-pane fade" id="nav-template" role="tabpanel" aria-labelledby="nav-template-tab">
+                    <div class="row">
+                        <div class="container mt-3">
+                            <abp-table id="PaymentTagsTable" data-resize-aware="true"></abp-table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
 </div>
