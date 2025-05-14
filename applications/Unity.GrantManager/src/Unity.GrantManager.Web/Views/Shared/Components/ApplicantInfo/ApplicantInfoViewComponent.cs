@@ -106,6 +106,8 @@ public class ApplicantInfoScriptBundleContributor : BundleContributor
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
         context.Files
+          .AddIfNotContains("/Views/Shared/Components/_Shared/unity-form-component.js");
+        context.Files
           .AddIfNotContains("/Views/Shared/Components/ApplicantInfo/Default.js");
         context.Files
           .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
