@@ -82,8 +82,9 @@ namespace Unity.GrantManager.Events
 
         private async Task HandleSendCustomEmail(EmailNotificationEvent eventData)
         {
-            foreach (string emailToAddress in eventData.EmailAddressList)
+            for (int i = 0; i < eventData.EmailAddressList.Count; i++)
             {
+                string emailToAddress = eventData.EmailAddressList[i];
                 if (eventData.Id == Guid.Empty)
                 {
                     await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom,eventData.EmailTemplateName);
@@ -114,8 +115,9 @@ namespace Unity.GrantManager.Events
 
         private async Task HandleSaveDraftEmail(EmailNotificationEvent eventData)
         {
-            foreach (string emailToAddress in eventData.EmailAddressList)
+            for (int i = 0; i < eventData.EmailAddressList.Count; i++)
             {
+                string emailToAddress = eventData.EmailAddressList[i];
                 if (eventData.Id != Guid.Empty)
                 {
                     await emailNotificationService.UpdateEmailLog(
