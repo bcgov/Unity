@@ -30,4 +30,5 @@ public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
     public string Status { get; set; } = "";
     public DateTime? SendOnDateTime { get; set; }
     public DateTime? SentDateTime { get; set; }
+    public string TemplateName { get; set; } = "";
 }

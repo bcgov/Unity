@@ -154,6 +154,7 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
+                    GrantApplicationPermissions.Approvals.BulkApplicationApproval,
 
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,

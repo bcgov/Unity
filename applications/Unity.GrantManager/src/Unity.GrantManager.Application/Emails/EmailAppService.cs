@@ -50,7 +50,8 @@ namespace Unity.GrantManager.Emails
                 EmailAddressList = toList,
                 EmailFrom = dto.EmailFrom,
                 Subject = dto.EmailSubject,
-                Body = dto.EmailBody
+                Body = dto.EmailBody,
+                EmailTemplateName = dto.EmailTemplateName
             };
         }
     }

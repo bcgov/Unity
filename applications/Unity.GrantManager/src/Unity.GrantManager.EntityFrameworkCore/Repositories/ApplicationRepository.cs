@@ -56,8 +56,19 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
           .Include(s => s.Applicant)
             .ThenInclude(s => s.ApplicantAddresses)
           .Include(s => s.ApplicantAgent)
-          .Include(s => s.ApplicationStatus)          
-          .FirstAsync(s => s.Id == id);                   
+          .Include(s => s.ApplicationStatus)
+          .FirstAsync(s => s.Id == id);
+    }
+
+    public async Task<List<Application>> GetListByIdsAsync(Guid[] ids)
+    {
+        return await (await GetQueryableAsync())
+            .AsNoTracking()
+            .Include(s => s.ApplicationStatus)
+            .Include(s => s.Applicant)
+            .Include(s => s.ApplicationForm)
+            .Where(s => ids.Contains(s.Id))
+            .ToListAsync();
     }
 
     /// <summary>
@@ -69,5 +80,20 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
     {
         // Uses the extension method defined above
         return (await GetQueryableAsync()).IncludeDetails();
+    }
+
+    public async Task<Application?> GetWithFullDetailsByIdAsync(Guid id)
+    {
+        return await (await GetQueryableAsync())
+            .Include(a => a.ApplicationStatus)
+            .Include(a => a.ApplicationForm)
+            .Include(a => a.ApplicationTags)
+            .Include(a => a.Owner)
+            .Include(a => a.ApplicationAssignments!)
+                .ThenInclude(aa => aa.Assignee)
+            .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent)
+            .AsNoTracking()                 // read?only; drop this line if you need tracking
+            .FirstOrDefaultAsync(a => a.Id == id);
     }
 }

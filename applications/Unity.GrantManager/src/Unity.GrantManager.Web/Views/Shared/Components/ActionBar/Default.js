@@ -10,16 +10,14 @@ $(function () {
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
     let approveApplicationsModal = new abp.ModalManager({
-        viewUrl: 'Approve/ApproveApplicationsModal'
+        viewUrl: 'BulkApprovals/ApproveApplicationsModal'
     });
-    let dontApproveApplicationsModal = new abp.ModalManager({
-        viewUrl: 'Approve/ApproveApplicationsModal'
+    let approveApplicationsSummaryModal = new abp.ModalManager({
+        viewUrl: 'BulkApprovals/ApproveApplicationsSummaryModal'
     });
-
     let tagApplicationModal = new abp.ModalManager({
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
     });
-
     let applicationPaymentRequestModal = new abp.ModalManager({
         viewUrl: 'PaymentRequests/CreatePaymentRequests',
     });
@@ -131,26 +129,29 @@ $(function () {
         );
         PubSub.publish("refresh_application_list");
     });
-    approveApplicationsModal.onResult(function () {
-        abp.notify.success(
-            'The application/s has been successfully approved',
-            'Approve Applications'
-        );
+
+    // Batch Approval Start
+    $('#approveApplications').on("click", function () {
+        approveApplicationsModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds)
+        });
+    });
+    approveApplicationsModal.onResult(function (_, response) {                
+        let transformedFailures = response.responseText.failures.map(failure => {
+            return {
+                Key: failure.key,
+                Value: failure.value
+            };
+        });
+        let summaryJson = JSON.stringify(
+        {
+            Successes: response.responseText.successes,
+            Failures: transformedFailures
+        });
+        approveApplicationsSummaryModal.open({ summaryJson: summaryJson });
         PubSub.publish("refresh_application_list");
     });
-    dontApproveApplicationsModal.onResult(function () {
-        abp.notify.success(
-            'The application/s has now been disapproved',
-            'Not Approve Applications'
-        );
-        PubSub.publish("refresh_application_list");
-    });
-    approveApplicationsModal.onClose(function () {
-        PubSub.publish("refresh_application_list");
-    });
-    dontApproveApplicationsModal.onClose(function () {
-        PubSub.publish("refresh_application_list");
-    });
+    // Batch Approval End
 
     PubSub.subscribe("select_application", (msg, data) => {
         selectedApplicationIds.push(data.id);
@@ -190,22 +191,6 @@ $(function () {
             applicationIds: JSON.stringify(selectedApplicationIds),
         });
     });
-    $('#approveApplications').click(function () {
-        approveApplicationsModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds),
-            operation: 'GRANT_APPROVED',
-            message: 'Are you sure you want to approve the selected application/s?',
-            title: 'Approve Applications',
-        });
-    });
-    $('#dontApproveApplications').click(function () {
-        dontApproveApplicationsModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds),
-            operation: 'GRANT_NOT_APPROVED',
-            message: 'Are you sure you want to disapprove the selected application/s?',
-            title: 'Not Approve Applications',
-        });
-    });
 
     $('#applicationLink').click(function () {
         const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
@@ -232,24 +217,24 @@ $(function () {
         if (selectedApplicationIds.length == 0) {
             $('*[data-selector="applications-table-actions"]').prop('disabled', true);
             $('*[data-selector="applications-table-actions"]').addClass('action-bar-btn-unavailable');
-            $('.action-bar').removeClass('active');            
+            $('.action-bar').removeClass('active');
 
             const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
             summaryCanvas.classList.remove('show');
-        }        
-        else { 
+        }
+        else {
             $('*[data-selector="applications-table-actions"]').prop('disabled', false);
             $('*[data-selector="applications-table-actions"]').removeClass('action-bar-btn-unavailable');
             $('.action-bar').addClass('active');
 
             $('#externalLink').addClass('action-bar-btn-unavailable');
             $('#applicationLink').addClass('action-bar-btn-unavailable');
-            
+
             if (selectedApplicationIds.length == 1) {
                 $('#externalLink').removeClass('action-bar-btn-unavailable');
                 $('#applicationLink').removeClass('action-bar-btn-unavailable');
 
-                summaryWidgetManager.refresh();          
+                summaryWidgetManager.refresh();
             }
         }
     }

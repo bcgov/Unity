@@ -80,6 +80,7 @@ $(function () {
                         orderable: false,
                         className: 'notexport text-center',
                         name: 'rowActions',
+                        data: 'id',
                         index: 0,
                         rowAction: {
                             items: abp.ui.extensions.entityActions.get('identity.role').actions.toArray()
@@ -120,10 +121,14 @@ $(function () {
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
         {
-            text: '<i class="fl fl-multi-select align-middle"></i><span>View Role Matrix</span>',
+            text: '<i class="fl fl-add-to align-middle"></i> <span>' + l('NewRole') + '</span>',
+            titleAttr: l('NewRole'),
+            id: 'CreateRoleButton',
             className: 'btn-light rounded-1',
-            action: function (e, dt, button, config) {
-                window.location = '/Identity/Roles/PermissionRoleMatrix'
+            available: () => abp.auth.isGranted('AbpIdentity.Roles.Create'),
+            action: (e, dt, node, config) => {
+                e.preventDefault();
+                _createModal.open();
             }
         },
         ...commonTableActionButtons(l('Roles'))

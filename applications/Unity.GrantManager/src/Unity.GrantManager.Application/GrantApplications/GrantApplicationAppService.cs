@@ -22,6 +22,7 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.GrantManager.Permissions;
+using Unity.GrantManager.Zones;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.PaymentRequests;
@@ -58,6 +59,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly ISupplierService _iSupplierService;
     private readonly IPaymentRequestAppService _paymentRequestService;
     private readonly IPaymentRequestRepository _paymentRequestsRepository;
+    private readonly IZoneChecker _zoneChecker;
 
     public GrantApplicationAppService(
         IApplicationManager applicationManager,
@@ -74,7 +76,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         ILocalEventBus localEventBus,
         ISupplierService iSupplierService,
         IPaymentRequestAppService paymentRequestService,
-        IPaymentRequestRepository paymentRequestsRepository)
+        IPaymentRequestRepository paymentRequestsRepository,
+        IZoneChecker zoneChecker)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -91,6 +94,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _localEventBus = localEventBus;
         _paymentRequestService = paymentRequestService;
         _paymentRequestsRepository = paymentRequestsRepository;
+        _zoneChecker = zoneChecker;
     }
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -130,7 +134,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                     ApprovedAmount = application.ApprovedAmount,
                 };
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(appDto.Id);
-                paymentInfo.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Paid))
+                paymentInfo.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Submitted))
                                       .Sum(e => e.Amount);
                 appDto.PaymentInfo = paymentInfo;
             }
@@ -199,7 +203,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<GrantApplicationDto> GetAsync(Guid id)
     {
-        var application = await _applicationRepository.GetAsync(id, true);
+        var application = await _applicationRepository.GetWithFullDetailsByIdAsync(id);
 
         if (application == null) return new GrantApplicationDto();
 
@@ -291,7 +295,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     {
         var application = await _applicationRepository.GetAsync(id);
 
-        SanitizeAssessmentResultsDisabledInputs(input, application);
+        await SanitizeApprovalZoneInputs(input, application);
+        await SanitizeAssessmentResultsZoneInputs(input, application);
 
         application.ValidateAndChangeDueDate(input.DueDate);
         application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate, input.RiskRanking);
@@ -330,14 +335,60 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
-    private static void SanitizeAssessmentResultsDisabledInputs(CreateUpdateAssessmentResultsDto input, Application application)
+    private async Task SanitizeApprovalZoneInputs(CreateUpdateAssessmentResultsDto input, Application application)
     {
-        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
-        input.TotalProjectBudget ??= application.TotalProjectBudget;
-        input.RecommendedAmount ??= application.RecommendedAmount;
+        // Approval Zone Fields - Disabled Inputs
         input.ApprovedAmount ??= application.ApprovedAmount;
-        input.TotalScore ??= application.TotalScore;
-        input.RequestedAmount ??= application.RequestedAmount;
+
+        // Sanitize if zone is disabled
+        if (!await _zoneChecker.IsEnabledAsync(UnitySelector.Review.Approval.Default, application.ApplicationFormId))
+        {
+            input.SubStatus ??= application.SubStatus;
+            input.FinalDecisionDate ??= application.FinalDecisionDate;
+            input.Notes ??= application.Notes;
+        }
+        else
+        {
+            // Sanitize if zone is enabled but fields are disabled
+            if (application.IsInFinalDecisionState())
+            {
+                input.FinalDecisionDate ??= application.FinalDecisionDate;
+            }
+        }
+    }
+
+    private async Task SanitizeAssessmentResultsZoneInputs(CreateUpdateAssessmentResultsDto input, Application application)
+    {
+        // Approval Zone Fields - Disabled Inputs
+        input.RequestedAmount       ??= application.RequestedAmount;
+        input.TotalProjectBudget    ??= application.TotalProjectBudget;
+        input.RecommendedAmount     ??= application.RecommendedAmount;
+        input.TotalScore            ??= application.TotalScore;
+
+        // Sanitize if zone is disabled
+        if (!await _zoneChecker.IsEnabledAsync(UnitySelector.Review.AssessmentResults.Default, application.ApplicationFormId))
+        {
+            input.LikelihoodOfFunding       ??= application.LikelihoodOfFunding;
+            input.RiskRanking               ??= application.RiskRanking;
+            input.DueDiligenceStatus        ??= application.DueDiligenceStatus;
+            input.AssessmentResultStatus    ??= application.AssessmentResultStatus;
+            input.DeclineRational           ??= application.DeclineRational;
+            
+            input.NotificationDate          ??= application.NotificationDate;
+            input.DueDate                   ??= application.DueDate;
+        }
+        else
+        {
+            // Sanitize if zone is enabled but fields are disabled
+            if (application.IsInFinalDecisionState())
+            {
+                input.LikelihoodOfFunding   ??= application.LikelihoodOfFunding;
+                input.RiskRanking           ??= application.RiskRanking;
+                input.DueDiligenceStatus    ??= application.DueDiligenceStatus;
+                input.AssessmentResultStatus ??= application.AssessmentResultStatus;
+                input.DeclineRational       ??= application.DeclineRational;
+            }
+        }
     }
 
     private async Task<bool> CurrentUserCanUpdateAssessmentFieldsAsync()

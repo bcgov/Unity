@@ -65,20 +65,34 @@ $(function () {
     async function getSubmission() {
         try {
             $('.spinner-grow').hide();
-            let submissionString = document.getElementById('ApplicationFormSubmissionData').value;
-            let submissionData = JSON.parse(submissionString);
+            let submissionDataString = document.getElementById('ApplicationFormSubmissionData').value;
+            let formSchemaString = document.getElementById('ApplicationFormSchema').value;
+            let submissionJson = JSON.parse(submissionDataString);
+            let formSchema;
+            let submissionData;
+            
+            // Check if the submission data is pure data or the entire form
+            if (submissionJson.version !== undefined && submissionJson.submission !== undefined) {
+                // The submission data is in the form of a version and submission object
+                formSchema = submissionJson.version.schema;
+                submissionData = submissionJson.submission.submission;
+            } else if (formSchemaString !== undefined && formSchemaString !== "") {
+                formSchema = JSON.parse(formSchemaString);
+                submissionData = submissionJson.submission;
+            }
+
             Formio.icons = 'fontawesome';
 
             await Formio.createForm(
                 document.getElementById('formio'),
-                submissionData.version.schema,
+                formSchema,
                 {
                     readOnly: true,
                     renderMode: 'form',
                     flatten: true,
                 }
             ).then(function (form) {
-                handleForm(form, submissionData.submission.submission);
+                handleForm(form, submissionData);
             });
 
         } catch (error) {
@@ -463,9 +477,12 @@ $(function () {
             }
         }
     };
+    
     const assessmentResultObserver = new MutationObserver(widgetCallback);
-    assessmentResultObserver.observe(assessmentResultTargetNode, widgetConfig);
 
+    if (assessmentResultTargetNode) {        
+        assessmentResultObserver.observe(assessmentResultTargetNode, widgetConfig);
+    }    
 
     PubSub.subscribe(
         'application_status_changed',

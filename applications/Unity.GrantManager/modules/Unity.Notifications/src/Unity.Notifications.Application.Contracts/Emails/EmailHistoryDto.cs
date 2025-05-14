@@ -13,6 +13,7 @@ public class EmailHistoryDto : ExtensibleAuditedEntityDto<Guid>
     public DateTime? SentDateTime { get; set; }
     public string Body { get; set; } = string.Empty;
     public EmailHistoryUserDto? SentBy { get; set; }
+    public string TemplateName { get; set; } = string.Empty;
 }
 
 public class EmailHistoryUserDto : EntityDto<Guid>
