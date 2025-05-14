@@ -1,6 +1,7 @@
 $(function () {
     let createModal = new abp.ModalManager(abp.appPath + 'AccountCoding/CreateModal');
     let updateModal = new abp.ModalManager(abp.appPath + 'AccountCoding/UpdateModal');
+    let updateThresholdModal = new abp.ModalManager(abp.appPath + 'PaymentThresholds/UpdateModal');
     
     const l = abp.localization.getResource('GrantManager');
     toastr.options.positionClass = 'toast-top-center';
@@ -23,8 +24,6 @@ $(function () {
         dataTable = initializeAccountCodesDataTable();
         paymentSettingsDataTable = initializePaymentSettingsDataTable();
         bindUIElements();
-
-        console.log('in here');
     }
 
     function bindUIElements() {
@@ -42,6 +41,8 @@ $(function () {
         e.target.classList.add('active');  
         UIElements.accountCodesDiv.toggleClass('hide');      
         UIElements.paymentSettingsDiv.toggleClass('hide');      
+        paymentSettingsDataTable.columns.adjust().draw();
+        dataTable.columns.adjust().draw();
     }
     
     function bindModalElements() {
@@ -51,6 +52,7 @@ $(function () {
             inputServiceLine: $('input[name="AccountCoding.ServiceLine"]'),
             inputStob: $('input[name="AccountCoding.Stob"]'),
             inputProjectNumber: $('input[name="AccountCoding.ProjectNumber"]'),
+            inputPaymentThreshold: $('#PaymentThreshold_Threshold'),
             readOnlyAccountCoding: $('#account-coding')
         };
 
@@ -59,6 +61,29 @@ $(function () {
         UIElements.inputServiceLine.on('keyup', setAccountCodingDisplay);
         UIElements.inputStob.on('keyup', setAccountCodingDisplay);
         UIElements.inputProjectNumber.on('keyup', setAccountCodingDisplay);
+
+        UIElements.inputPaymentThreshold.on('keyup', preventDecimalKeyUp);
+        UIElements.inputPaymentThreshold.on('keypress', preventNonCurrencyKeyPress);
+
+        function preventNonCurrencyKeyPress(e) {
+            // Prevent alphabetic characters and -
+            if (/[a-zA-Z]/.test(e.key) || e.key === ' ' || e.key === '-' || e.keyCode === 45) {
+                e.preventDefault();
+            }
+        }
+
+        function preventDecimalKeyUp(e) {
+            const input = e.target;
+            const cursorPosition = input.selectionStart;
+            const decimalMatch = input.value.match(/\.(\d+)/);
+        
+            // Limit to two decimal places
+            if (decimalMatch && decimalMatch[1].length > 2) {
+                input.value = input.value.replace(/\.(\d{2}).*/, '.$1');
+                input.setSelectionRange(cursorPosition, cursorPosition); // Restore cursor position
+            }
+        }
+
         
         function setAccountCodingDisplay() {
             let currentAccount = $(UIElements.inputMinistryClient).val() + "." +
@@ -137,8 +162,9 @@ $(function () {
                 },
                 {
                     title: 'Approval Threshold',
-                    name: "paymentThreshold", 
-                    data: "paymentThreshold",
+                    name: "paymentThreshold",
+                    className: 'dt-body-right', 
+                    data: "threshold",
                     visible: true,
                     index: index++
                 },
@@ -163,7 +189,7 @@ $(function () {
                             [
                                 {
                                     text: 'Edit',
-                                    action: (data) => editPaymentSettingsBtn(data.record.id)                                    
+                                    action: (data) => editThresholdBtn(data.record.id, data.record.userName)                                    
                                 }
                             ]
                     }
@@ -307,10 +333,21 @@ $(function () {
     updateModal.onResult(function () {
         accountCodingDataTable.ajax.reload();
     });
+
+    updateThresholdModal.onResult(function () {
+        paymentSettingsDataTable.ajax.reload();
+    });    
  
     function editAccountCodingBtn(id) {
         updateModal.open({ id: id });
         updateModal.onOpen(function () {
+            bindModalElements();
+        });
+    };
+
+    function editThresholdBtn(id, userName) {
+        updateThresholdModal.open({ id: id, userName: userName });
+        updateThresholdModal.onOpen(function () {
             bindModalElements();
         });
     };
@@ -322,6 +359,9 @@ $(function () {
             bindModalElements();
         });
     };
+
+
+
 });
 
 function handleDefaultAccountCodeRadioClick(id) {

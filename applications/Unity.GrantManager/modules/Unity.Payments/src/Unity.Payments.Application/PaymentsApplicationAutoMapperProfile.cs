@@ -8,6 +8,8 @@ using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Users;
 using Unity.GrantManager.Payments;
+using Unity.Payments.Domain.PaymentThresholds;
+using Unity.Payments.PaymentThresholds;
 
 namespace Unity.Payments;
 
@@ -31,6 +33,22 @@ public class PaymentsApplicationAutoMapperProfile : Profile
         CreateMap<AccountCoding, AccountCodingDto>();
         CreateMap<AccountCodingDto, CreateUpdateAccountCodingDto>();
         CreateMap<CreateUpdateAccountCodingDto, AccountCoding>()
+            .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.DeleterId, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletionTime, opt => opt.Ignore())
+            .ForMember(dest => dest.LastModificationTime, opt => opt.Ignore())
+            .ForMember(dest => dest.LastModifierId, opt => opt.Ignore())
+            .ForMember(dest => dest.CreationTime, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatorId, opt => opt.Ignore())
+            .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore())
+            .ForMember(dest => dest.ConcurrencyStamp, opt => opt.Ignore())
+            .ForMember(dest => dest.Id, opt => opt.Ignore());        
+        CreateMap<PaymentThresholdDto, UpdatePaymentThresholdDto>()
+         .ForMember(dest => dest.UserName, opt => opt.Ignore());
+        CreateMap<PaymentThreshold, PaymentThresholdDto>()
+                 .ForMember(dest => dest.UserName, opt => opt.Ignore());
+        CreateMap<UpdatePaymentThresholdDto, PaymentThreshold>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore())
             .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
             .ForMember(dest => dest.DeleterId, opt => opt.Ignore())

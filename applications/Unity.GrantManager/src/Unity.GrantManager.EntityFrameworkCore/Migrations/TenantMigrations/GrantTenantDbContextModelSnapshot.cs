@@ -3017,6 +3017,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnName("TenantId");
 
                     b.HasKey("Id");
+
+                    b.ToTable("PaymentThresholds", "Payments");
                     
                 });                
 

@@ -110,6 +110,14 @@ input.form-control:focus, input.form-control:active, textarea.form-control:focus
 	justify-content: left;
 }
 
+#payment-settings-div {
+	width: 750px;
+}
+
+#PaymentThreshold_Threshold {
+	text-align: right;
+}
+
 @media only screen and (max-width: 850px) {
 	.field-validation-error {
 		float: none;

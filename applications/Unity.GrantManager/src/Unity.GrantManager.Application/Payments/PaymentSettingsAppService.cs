@@ -43,7 +43,7 @@ public async Task<List<PaymentThresholdDto>> GetL2ApproversThresholds()
                         {
                             Id = paymentThreshold.Id,
                             UserId = user.Id,
-                            UserName = user.Name,
+                            UserName = user.Name + " " + user.Surname,
                             Threshold = paymentThreshold.Threshold,
                             Description = paymentThreshold.Description
                         });
@@ -62,7 +62,7 @@ public async Task<List<PaymentThresholdDto>> GetL2ApproversThresholds()
                         {
                             Id = paymentThresholdNew.Id,
                             UserId = user.Id,
-                            UserName = user.Name,
+                            UserName = user.Name + " " + user.Surname,
                             Threshold = null,
                             Description = null
                         });
