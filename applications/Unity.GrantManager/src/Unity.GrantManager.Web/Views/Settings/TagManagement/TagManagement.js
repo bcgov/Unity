@@ -24,10 +24,16 @@
         tagType.table = createTagTable(tagType);
     });
 
+    let _renameTagModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'SettingManagement/TagManagement/RenameTagModal',
+        modalClass: 'renameTag',
+        registeredTagTypes: TagTypes
+    });
+
     function createTagTable(tagType) {
         let tagManagementTable = $(`#${tagType.name}TagsTable`).DataTable(abp.libs.datatables.normalizeConfiguration({
             processing: true,
-            serverSide: true,
+            serverSide: false,
             paging: false,
             searching: false,
             scrollCollapse: true,
@@ -94,7 +100,10 @@
     }
 
     function handleUpdateTag(tagType, tagText, tagCount) {
-
+        _renameTagModal.open({
+            SelectedTagType: tagType.name,
+            SelectedTagText: tagText
+        });
     }
 
     function handleDeleteTag(tagType, tagText, tagCount) {
@@ -102,7 +111,6 @@
             .then(function (confirmed) {
                 if (confirmed) {
                     try {
-                        debugger;
                         tagType.service.deleteTag(tagText)
                             .done(function (result) {
                                 onTagDeleted(tagType, tagText, result);

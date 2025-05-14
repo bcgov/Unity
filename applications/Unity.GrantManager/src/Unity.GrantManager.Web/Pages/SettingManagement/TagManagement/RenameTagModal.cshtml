@@ -1,0 +1,26 @@
+﻿@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+
+@model Unity.GrantManager.Web.Views.Settings.TagManagement.RenameTagModal
+@{
+    Layout = null;
+}
+
+<abp-script src="/Pages/SettingManagement/TagManagement/RenameTagModal.js" />
+
+<form id="renameTagForm" asp-page="/SettingManagement/TagManagement/RenameTagModal">
+    <abp-modal>
+        <abp-modal-header title="Edit @Model.SelectedTagType Tag"></abp-modal-header>
+        <abp-modal-body>
+            <abp-input type="hidden" asp-for="@Model.SelectedTagType" />
+            <abp-input type="hidden" asp-for="@Model.ViewModel.OriginalTag" />
+            <abp-input type="text" asp-for="@Model.ViewModel.ReplacementTag" />
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button id="SaveButton" type="submit" class="btn btn-primary" disabled="disabled">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
