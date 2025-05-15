@@ -90,30 +90,70 @@ REDIS_PASSWORD=MySecurePassword
 
 ### Client Application Configuration
 
+For application using Sentinel, configure your `appsettings.json` as follows:
+
+```json
+"Redis": {
+  "IsEnabled": true,
+  "UseSentinel": true,
+  
+  /* Used if UseSentinel is true - omit if UseSentinel is false */
+  "SentinelMasterName": "mymaster",
+  "Configuration": "192.168.1.x:26379,192.168.1.x:26380,192.168.1.x:26381",
+  "DatabaseId": 0,
+  
+  /* Used if UseSentinel is false - omit if UseSentinel is true */
+  "Host": "localhost",
+  "Port": 6379,
+  "InstanceName": "redis",
+  
+  /* Used if IsEnabled is true and for both UseSentinel true or false */
+  "KeyPrefix": "Unity",
+  "Password": "YourRedisPassword"
+}
+```
+
+#### Configuration Examples
+
 For internal Docker network communication:
 
 ```json
-{
+"Redis": {
+  "IsEnabled": true,
+  "UseSentinel": true,
+  "SentinelMasterName": "mymaster",
   "Configuration": "redis-sentinel1:26379,redis-sentinel2:26380,redis-sentinel3:26381",
-  "Host": "redis-master"
+  "DatabaseId": 0,
+  "KeyPrefix": "Unity",
+  "Password": "YourRedisPassword"
 }
 ```
 
 For host machine to Docker communication:
 
 ```json
-{
+"Redis": {
+  "IsEnabled": true,
+  "UseSentinel": true,
+  "SentinelMasterName": "mymaster",
   "Configuration": "192.168.1.x:26379,192.168.1.x:26380,192.168.1.x:26381",
-  "Host": "192.168.1.x"
+  "DatabaseId": 0,
+  "KeyPrefix": "Unity",
+  "Password": "YourRedisPassword"
 }
 ```
 
 For Kubernetes deployment:
 
 ```json
-{
+"Redis": {
+  "IsEnabled": true,
+  "UseSentinel": true,
+  "SentinelMasterName": "mymaster",
   "Configuration": "env-redis-ha.namespace.svc.cluster.local:26379",
-  "Host": "env-redis-ha.namespace.svc.cluster.local"
+  "DatabaseId": 0,
+  "KeyPrefix": "Unity", 
+  "Password": "YourRedisPassword"
 }
 ```
 
