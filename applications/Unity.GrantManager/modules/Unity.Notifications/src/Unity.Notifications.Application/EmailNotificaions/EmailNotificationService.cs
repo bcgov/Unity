@@ -361,7 +361,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.Subject = emailDynamicObject.subject;
         emailLog.BodyType = emailDynamicObject.bodyType;
         emailLog.FromAddress = emailDynamicObject.from;
-        emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault() ?? "";
+        emailLog.ToAddress = String.Join(",", emailDynamicObject.to);
         emailLog.TemplateName = emailDynamicObject.templateName;
         return emailLog;
     }
