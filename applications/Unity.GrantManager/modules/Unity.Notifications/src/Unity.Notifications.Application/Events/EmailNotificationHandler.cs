@@ -60,11 +60,11 @@ namespace Unity.GrantManager.Events
             switch (eventData.Action)
             {
                 case EmailAction.SendFailedSummary:
-                    for (int i = 0; i < eventData.EmailAddressList.Count; i++)
-                    {
-                        string emailToAddress = eventData.EmailAddressList[i];
+     
+                        string emailToAddress = String.Join(",", eventData.EmailAddressList);
+
                         await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, FAILED_PAYMENTS_SUBJECT, eventData.ApplicationId, eventData.EmailFrom,eventData.EmailTemplateName);
-                    }
+                    
                     break;
 
                 case EmailAction.SendCustom:
@@ -82,9 +82,9 @@ namespace Unity.GrantManager.Events
 
         private async Task HandleSendCustomEmail(EmailNotificationEvent eventData)
         {
-            for (int i = 0; i < eventData.EmailAddressList.Count; i++)
-            {
-                string emailToAddress = eventData.EmailAddressList[i];
+
+           
+                string emailToAddress = String.Join(",", eventData.EmailAddressList);
                 if (eventData.Id == Guid.Empty)
                 {
                     await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom,eventData.EmailTemplateName);
@@ -110,14 +110,15 @@ namespace Unity.GrantManager.Events
                         throw new UserFriendlyException("Unable to update Email Log");
                     }
                 }
-            }
+            
         }
 
         private async Task HandleSaveDraftEmail(EmailNotificationEvent eventData)
         {
-            for (int i = 0; i < eventData.EmailAddressList.Count; i++)
-            {
-                string emailToAddress = eventData.EmailAddressList[i];
+
+            
+                string emailToAddress = String.Join(",", eventData.EmailAddressList);
+
                 if (eventData.Id != Guid.Empty)
                 {
                     await emailNotificationService.UpdateEmailLog(
@@ -141,7 +142,7 @@ namespace Unity.GrantManager.Events
                         EmailStatus.Draft, 
                         eventData.EmailTemplateName);
                 }
-            }
+            
         }
     }
 }
