@@ -63,7 +63,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? ApplicationFormSubmissionData { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
+        public string? ApplicationFormSchema { get; set; } = null;
 
+        [BindProperty(SupportsGet = true)]
         public string? ApplicationFormSubmissionHtml { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
@@ -86,7 +88,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty]
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
-        public DetailsModel(GrantApplicationAppService grantApplicationAppService,
+        public DetailsModel(
+            GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
             IApplicationFormVersionAppService applicationFormVersionAppService,
             IFeatureChecker featureChecker,
@@ -109,18 +112,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public async Task OnGetAsync()
         {
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
-
             ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
             
-
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
                 // Need to look at finding another way to extract / store this info on intake
-                JObject submission = JObject.Parse(applicationFormSubmission.Submission);
-                JToken? tokenFormVersionId = submission.SelectToken("submission.formVersionId");
-                var sformVersionId = Guid.Parse(tokenFormVersionId?.Value<string>() ?? Guid.Empty.ToString());
-
-                var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(sformVersionId);
+                var formVersion = applicationFormSubmission.ApplicationFormVersionId.HasValue
+                    ? await _applicationFormVersionAppService.GetAsync(applicationFormSubmission.ApplicationFormVersionId.Value)
+                    : null;
+                ApplicationFormSchema = formVersion?.FormSchema ?? string.Empty;
                 ApplicationFormVersionId = formVersion?.Id ?? Guid.Empty;
                 var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(ApplicationFormVersionId, CorrelationConsts.FormVersion);
                 var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor, order = s.Order }).ToList();
