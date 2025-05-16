@@ -99,7 +99,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(input.SkipCount, input.MaxResultCount);
+        var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(input.SkipCount, input.MaxResultCount, input.Sorting);
 
         // Pre-fetch payment requests for all applications in a single query to reduce database calls
         var applicationIds = groupedResult.SelectMany(g => g).Select(a => a.Id).ToList();

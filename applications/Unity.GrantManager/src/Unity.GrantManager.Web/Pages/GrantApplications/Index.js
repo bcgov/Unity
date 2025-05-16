@@ -81,7 +81,7 @@
     let responseCallback = function (result) {
         return {
             recordsTotal: result.totalCount,
-            recordsFiltered: result.items.length,
+            recordsFiltered: result.totalCount,
             data: result.items
         };
     };
