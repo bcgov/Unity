@@ -1,10 +1,12 @@
-﻿$(function () {
+﻿const TagTypes = {};
+
+$(function () {
     abp.log.debug('TagManagement.js initialized!');
 
     let userCanUpdate = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Update');
     let userCanDelete = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Delete');
 
-    const TagTypes = {};
+    let globalTagsTable = null;
 
     function registerTagType(key, name, service) {
         TagTypes[key] = {
@@ -20,9 +22,8 @@
         registerTagType('PAYMENTS', 'Payment', unity.payments.paymentTags.paymentTag);
     }
 
-    Object.values(TagTypes).forEach(tagType => {
-        tagType.table = createTagTable(tagType);
-    });
+    // Initialize the global tags table after individual tables
+    initializeGlobalTagsTable();
 
     let _renameTagModal = new abp.ModalManager({
         viewUrl: abp.appPath + 'SettingManagement/TagManagement/RenameTagModal',
@@ -30,90 +31,54 @@
         registeredTagTypes: TagTypes
     });
 
-    function createTagTable(tagType) {
-        let tagManagementTable = $(`#${tagType.name}TagsTable`).DataTable(abp.libs.datatables.normalizeConfiguration({
+    function initializeGlobalTagsTable() {
+        globalTagsTable = $('#GlobalTagsTable').DataTable(abp.libs.datatables.normalizeConfiguration({
             processing: true,
             serverSide: false,
             paging: false,
-            searching: false,
+            searching: true,
             scrollCollapse: true,
             scrollX: true,
             ordering: true,
-            ajax: abp.libs.datatables.createAjax(tagType.service.getTagSummary),
-            columnDefs: [
-                {
-                    title: "Tags",
-                    name: 'text',
-                    data: 'text'
-                },
-                {
-                    title: "Count",
-                    name: 'count',
-                    data: 'count',
-                    render: function (data) {
-                        let $cellWrapper = $('<div>').addClass('d-flex align-items-center');
-                        let $textWrapper = $('<div>').addClass('w-100').append(data ?? '-');
-                        let $buttonWrapper = $('<div>').addClass('d-flex flex-nowrap gap-1 flex-shrink-1');
-
-                        let $editButton = $('<button>')
-                            .addClass('btn btn-sm edit-button px-0 float-end')
-                            .attr({
-                                'aria-label': 'Edit',
-                                'title': 'Edit',
-                                'disabled': !userCanUpdate
-                            }).append($('<i>').addClass('fl fl-edit'));
-
-                        let $deleteButton = $('<button>')
-                            .addClass('btn btn-sm delete-button px-0 float-end')
-                            .attr({
-                                'aria-label': 'Delete',
-                                'title': 'Delete',
-                                'disabled': !userCanDelete
-                            }).append($('<i>').addClass('fl fl-delete'));
-
-                        $cellWrapper.append($textWrapper);
-                        $buttonWrapper.append($editButton);
-                        $buttonWrapper.append($deleteButton);
-                        $cellWrapper.append($buttonWrapper);
-
-                        return $cellWrapper.prop('outerHTML');
-                    }
-                }
-            ]
+            ajax: (requestData, callback, settings) => getUnifiedTagSummaryAjax(requestData, callback, settings),
+            columnDefs: defineTagSummaryColumnDefs()
         }));
 
-        tagManagementTable.on('click', 'td button.edit-button', function (event) {
+        globalTagsTable.on('click', 'td button.edit-button', function (event) {
             event.stopPropagation();
-            let rowData = tagManagementTable.row(event.target.closest('tr')).data();
-            handleUpdateTag(tagType, rowData.text, rowData.count);
+            let rowData = globalTagsTable.row(event.target.closest('tr')).data();
+            handleUpdateTag(rowData.text, rowData.count);
         });
 
-        tagManagementTable.on('click', 'td button.delete-button', function (event) {
+        globalTagsTable.on('click', 'td button.delete-button', function (event) {
             event.stopPropagation();
-            let rowData = tagManagementTable.row(event.target.closest('tr')).data();
-            handleDeleteTag(tagType, rowData.text, rowData.count);
+            let rowData = globalTagsTable.row(event.target.closest('tr')).data();
+            handleDeleteTag(rowData.text, rowData.count);
         });
 
-        abp.log.debug(tagType.name + ' Table initialized!');
-
-        return tagManagementTable;
+        abp.log.debug('Global Tags Table initialized!');
     }
 
-    function handleUpdateTag(tagType, tagText, tagCount) {
+    function handleUpdateTag(tagText, tagCount) {
         _renameTagModal.open({
-            SelectedTagType: tagType.name,
+            SelectedTagType: "DEFAULT_REPLACE",
             SelectedTagText: tagText
         });
     }
 
-    function handleDeleteTag(tagType, tagText, tagCount) {
-        abp.message.confirm(`Are you sure you want to delete \n\r"${tagText}" from ${tagCount} ${tagType.name.toLowerCase()}s?`, "Delete Tag?")
+    function handleDeleteTag(tagText, tagCount) {
+        abp.message.confirm(`Are you sure you want to delete ${tagCount} "${tagText}" tags?`, "Delete Tag?")
             .then(function (confirmed) {
                 if (confirmed) {
                     try {
-                        tagType.service.deleteTag(tagText)
+                        // Needs to be fixed to work globally
+                        TagTypes.APPLICATIONS.service.deleteTag(tagText)
                             .done(function (result) {
-                                onTagDeleted(tagType, tagText, result);
+                                abp.notify.success(`The tag "${tagText}" has been deleted.`);
+
+                                if (globalTagsTable) {
+                                    globalTagsTable.ajax.reload(); // Also refresh global table
+                                }
                             })
                             .fail(onTagDeleteFailure);
                     } catch (error) {
@@ -123,11 +88,6 @@
             });
     }
 
-    function onTagDeleted(tagType, tagText, result) {
-        abp.notify.success(`The tag "${tagText}" has been deleted from ${tagType.name.toLowerCase()}s.`);
-        tagType.table.ajax.reload();
-    }
-
     function onTagDeleteFailure(error) {
         abp.notify.error('Tag deletion failed.');
         if (error) {
@@ -135,12 +95,140 @@
         }
     }
 
-    // Ensure DataTable headers are adjusted on tab switch
-    $('a[data-bs-toggle="tab"], button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+    function defineTagSummaryColumnDefs() {
+        // Define columns - start with fixed columns
+        const columnDefs = [
+            {
+                title: "Tags",
+                name: 'text',
+                data: 'text'
+            }
+        ];
+        
+        // Add a column for each tag type
         Object.values(TagTypes).forEach(tagType => {
-            if (tagType.table) {
-                tagType.table.columns.adjust().draw(false);
+            columnDefs.push({
+                title: `${tagType.name} Count`,
+                name: `${tagType.name.toLowerCase()}Count`,
+                data: `tagTypeCounts.${tagType.name}`,
+                defaultContent: 0,
+                render: function(data) {
+                    return data || 0;
+                }
+            });
+        });
+
+        columnDefs.push({
+            title: "Count",
+            name: 'totalCount',
+            data: 'totalCount'
+        });
+        
+        // Add the actions column
+        columnDefs.push({
+            title: "Actions",
+            name: 'actions',
+            data: 'text',
+            visible: false,
+            orderable: false,
+            render: function(data, type, row) {
+                let $buttonWrapper = $('<div>').addClass('d-flex flex-nowrap gap-1');
+                
+                let $editButton = $('<button>')
+                            .addClass('btn btn-sm edit-button px-0 float-end')
+                            .attr({
+                                'aria-label': 'Edit',
+                                'title': 'Edit',
+                                'disabled': !userCanUpdate
+                            }).append($('<i>').addClass('fl fl-edit'));
+
+                let $deleteButton = $('<button>')
+                    .addClass('btn btn-sm delete-button px-0 float-end')
+                    .attr({
+                        'aria-label': 'Delete',
+                        'title': 'Delete',
+                        'disabled': !userCanDelete
+                    }).append($('<i>').addClass('fl fl-delete'));
+                
+                $buttonWrapper.append($editButton);
+                $buttonWrapper.append($deleteButton);
+                
+                return $buttonWrapper.prop('outerHTML');
             }
         });
+
+        return columnDefs;
+    }
+
+    function getUnifiedTagSummaryAjax (requestData, callback, settings) {
+        // Fetch data from all tag types and combine
+        let promises = Object.values(TagTypes).map(tagType => {
+            return new Promise((resolve, reject) => {
+                tagType.service.getTagSummary({}).then(result => {
+                    // Map tags with type information
+                    const tagsWithType = (result.items || []).map(tag => ({
+                        ...tag,
+                        tagType: tagType.name,
+                        tagTypeKey: Object.keys(TagTypes).find(key => TagTypes[key] === tagType)
+                    }));
+                    resolve(tagsWithType);
+                }).catch(reject);
+            });
+        });
+
+        Promise.all(promises).then(results => {
+            // Combine all tags into a single array
+            const allTags = results.flat();
+            
+            // Create a map to combine tags with the same text
+            const tagMap = new Map();
+            
+            allTags.forEach(tag => {
+                if (!tagMap.has(tag.text)) {
+                    // Initialize a new entry for this tag text
+                    tagMap.set(tag.text, {
+                        text: tag.text,
+                        totalCount: 0,
+                        tagTypeCounts: {},
+                        tagTypeKeys: {}
+                    });
+                }
+                
+                const tagEntry = tagMap.get(tag.text);
+                const tagTypeName = tag.tagType;
+                
+                // Add count for this tag type
+                tagEntry.tagTypeCounts[tagTypeName] = tag.count;
+                
+                // Add to total count
+                tagEntry.totalCount += tag.count;
+                
+                // Store the tag type key for action buttons
+                tagEntry.tagTypeKeys[tagTypeName] = tag.tagTypeKey;
+            });
+            
+            // Convert map to array for DataTable
+            const combinedTags = Array.from(tagMap.values());
+            
+            callback({
+                recordsTotal: combinedTags.length,
+                recordsFiltered: combinedTags.length,
+                data: combinedTags
+            });
+        }).catch(error => {
+            console.error("Error fetching global tags:", error);
+            callback({
+                recordsTotal: 0,
+                recordsFiltered: 0,
+                data: []
+            });
+        });
+    }
+
+    // Subscribe to tag rename event to refresh global table
+    abp.event.on('tagRenamed', function () {
+        if (globalTagsTable) {
+            globalTagsTable.ajax.reload();
+        }
     });
 });
