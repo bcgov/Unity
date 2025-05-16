@@ -129,6 +129,7 @@ $(function () {
             responseCallback,
             actionButtons,
             colReorder: false,
+            serverSideEnabled: false,
             pagingEnabled: false,
             reorderEnabled: false,
             languageSetValues: {},
