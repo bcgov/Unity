@@ -84,7 +84,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         return query;
     }
 
-    private string? MapSortingField(string field)
+    private static string? MapSortingField(string field)
     {
         if (field.StartsWith("status ", StringComparison.OrdinalIgnoreCase) || field.Equals("status", StringComparison.OrdinalIgnoreCase))
         {
