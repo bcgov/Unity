@@ -601,7 +601,9 @@ public class GrantManagerWebModule : AbpModule
             options.SupportedUICultures = supportedCultures;
         });
 
-        if (Convert.ToBoolean(configuration["DataProtection:IsEnabled"]))
+        // If both Redis and Data Protection are enabled then we can enable this session middleware
+        if (Convert.ToBoolean(configuration["Redis:IsEnabled"])
+            && Convert.ToBoolean(configuration["DataProtection:IsEnabled"]))
         {
             app.UseSession();
         }
