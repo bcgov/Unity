@@ -259,6 +259,7 @@ $(function () {
         data: {},
         responseCallback: tableResponseCallback,
         actionButtons,
+        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
