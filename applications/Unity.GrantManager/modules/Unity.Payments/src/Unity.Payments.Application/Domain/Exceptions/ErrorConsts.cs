@@ -7,5 +7,6 @@
         public const string ConfigurationExists = "Unity.Payments:Errors:ConfigurationExists";
         public const string ConfigurationDoesNotExist = "Unity.Payments:Errors:ConfigurationDoesNotExist";
         public const string InvalidAccountCodingField = "Unity.Payments:Errors:InvalidAccountCodingFiled";
+        public const string L2ApproverRestriction = "Unity.Payments:Errors:L2ApproverRestriction";
     }
 }
