@@ -6,7 +6,7 @@ using Volo.Abp.EventBus;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.Handlers;
-public class DeleteTagHandler(PaymentTagAppService paymentTagAppService, IFeatureChecker featureChecker) :
+public class DeleteTagHandler(PaymentTagAppService paymentTagAppService) :
     ILocalEventHandler<DeleteTagEto>,
     ITransientDependency
 {

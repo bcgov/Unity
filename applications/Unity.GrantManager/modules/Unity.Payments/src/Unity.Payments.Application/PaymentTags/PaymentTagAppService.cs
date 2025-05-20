@@ -193,7 +193,7 @@ namespace Unity.Payments.PaymentTags
 
             if (updatedTags.Count > 0)
             {
-                await _paymentTagRepository.UpdateManyAsync(paymentRequestTags, autoSave: true);
+                await _paymentTagRepository.UpdateManyAsync(updatedTags, autoSave: true);
             }
         }
     }
