@@ -53,4 +53,7 @@ public class FormSubmissionSummaryDto
 
     [JsonPropertyName("submissionDate")]
     public DateTime? SubmissionDate { get; set; }
+
+    [JsonPropertyName("name")]
+    public string name { get; set; } = string.Empty;
 }

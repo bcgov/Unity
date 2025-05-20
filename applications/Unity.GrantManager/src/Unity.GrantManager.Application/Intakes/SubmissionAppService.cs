@@ -9,9 +9,11 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
+using static Unity.Modules.Shared.UnitySelector.Notification;
 
 namespace Unity.GrantManager.Intakes;
 
@@ -22,6 +24,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
     private readonly RestClient _intakeClient;
     private readonly IStringEncryptionService _stringEncryptionService;
+    private readonly IApplicationRepository _applicationRepository;
     private static List<string> SummaryFieldsFilter
     {
         // NOTE: This will be replaced by a customizable filter.
@@ -42,13 +45,15 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IRepository<ApplicationForm, Guid> applicationFormRepository,
         RestClient restClient,
-        IStringEncryptionService stringEncryptionService
+        IStringEncryptionService stringEncryptionService,
+        IApplicationRepository applicationRepository
         )
     {
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _applicationFormRepository = applicationFormRepository;
         _intakeClient = restClient;
         _stringEncryptionService = stringEncryptionService;
+        _applicationRepository = applicationRepository;
     }
 
 
@@ -167,8 +172,10 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
             throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
         }
 
-        var request = new RestRequest($"/forms/{formId}/submissions", Method.Get)
-            .AddParameter("fields", SummaryFieldsFilter.JoinAsString(","));
+        var request = new RestRequest($"/forms/166bc157-9a68-4ef2-8559-7d680b6870b4/submissions", Method.Get)
+            //.AddParameter("draft", true)
+            .AddParameter("fields", "applicantAgent.name");
+        request.Authenticator = new HttpBasicAuthenticator("166bc157-9a68-4ef2-8559-7d680b6870b4", "da2b531e-65a6-467a-919a-0858003d7ca7");
 
         var response = await _intakeClient.GetAsync(request);
 
@@ -190,15 +197,20 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         };
 
         List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
-
+        
         if (null == jsonResponse)
         {
             return new PagedResultDto<FormSubmissionSummaryDto>(0, new List<FormSubmissionSummaryDto>());
         }
         else
         {
+
+            var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(0, 100);
+
             // Remove all deleted and draft submissions
-            jsonResponse.RemoveAll(r => r.Deleted || r.FormSubmissionStatusCode != "SUBMITTED");
+            System.Diagnostics.Debug.WriteLine(JsonSerializer.Serialize(jsonResponse, submissionOptions));
+            //jsonResponse.RemoveAll(r => r.Deleted || r.FormSubmissionStatusCode != "SUBMITTED");
+            jsonResponse.RemoveAll(r => r.Deleted);
             return new PagedResultDto<FormSubmissionSummaryDto>(jsonResponse.Count, jsonResponse);
         }
     }
