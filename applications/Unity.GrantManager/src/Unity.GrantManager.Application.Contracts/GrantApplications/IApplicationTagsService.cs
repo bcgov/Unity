@@ -16,6 +16,7 @@ public interface IApplicationTagsService : IApplicationService
     Task<ApplicationTagsDto?> GetApplicationTagsAsync(Guid id);
 
     Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync();
+    Task<int> GetMaxRenameLengthAsync(string originalTag);
     Task<List<Guid>> RenameTagAsync(string originalTag, string replacementTag);
     Task DeleteTagAsync(string deleteTag);
 }

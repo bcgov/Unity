@@ -9,5 +9,6 @@ namespace Unity.Payments.Domain.PaymentTags
     {
         Task<List<PaymentTag>> GetTagsByPaymentRequestIdAsync(Guid paymentRequestId);
         Task<List<TagSummaryCount>> GetTagSummary();
+        Task<int> GetMaxRenameLengthAsync(string originalTag);
     }
 }

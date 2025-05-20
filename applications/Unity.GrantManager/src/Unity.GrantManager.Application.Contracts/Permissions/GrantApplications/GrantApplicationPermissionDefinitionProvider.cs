@@ -81,9 +81,9 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
 
             // Settings - Tag Management
-            var tagManagement = settingManagement.AddPermission(UnitySettingManagementPermissions.Tags.Default, L(UnitySettingManagementPermissions.Tags.Default));
-            tagManagement.AddChild(UnitySettingManagementPermissions.Tags.Update, L(UnitySettingManagementPermissions.Tags.Update));
-            tagManagement.AddChild(UnitySettingManagementPermissions.Tags.Delete, L(UnitySettingManagementPermissions.Tags.Delete));
+            var tagManagement = settingManagement.AddPermission(UnitySelector.SettingManagement.Tags.Default, L(UnitySelector.SettingManagement.Tags.Default));
+            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Update, L(UnitySelector.SettingManagement.Tags.Update));
+            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Delete, L(UnitySelector.SettingManagement.Tags.Delete));
 
             var emailingPermission = context.GetPermissionOrNull(SettingManagementPermissions.Emailing);
             if (emailingPermission != null)

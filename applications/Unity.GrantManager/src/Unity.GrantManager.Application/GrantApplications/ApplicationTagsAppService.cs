@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -52,7 +53,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         var applicationTag = await _applicationTagsRepository.FirstOrDefaultAsync(e => e.ApplicationId == id);
 
         // Sanitize input tag text string
-        var tagInput = input.Text.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+        var tagInput = input.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
         input.Text = string.Join(',', tagInput.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
 
         if (applicationTag == null)
@@ -74,7 +75,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         }
     }
 
-    [Authorize(UnitySettingManagementPermissions.Tags.Default)]
+    [Authorize(UnitySelector.SettingManagement.Tags.Default)]
     public async Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync()
     {
         var tagSummary = ObjectMapper.Map<List<TagSummaryCount>, List<TagSummaryCountDto>>(
@@ -87,6 +88,18 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     }
 
     /// <summary>
+    /// For a given Tag, finds the maximum length available for renaming.
+    /// </summary>
+    /// <param name="originalTag">The tag to be replaced.</param>
+    /// <returns>The maximum length available for renaming</returns>
+    [Authorize(UnitySelector.SettingManagement.Tags.Update)]
+    public async Task<int> GetMaxRenameLengthAsync(string originalTag)
+    {
+        Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
+        return await _applicationTagsRepository.GetMaxRenameLengthAsync(originalTag);
+    }
+
+    /// <summary>
     /// Renames a tag across all application tags, replacing the original tag with the replacement tag.
     /// Only whole-word tags are replaced; substring matches are ignored.
     /// Throws a BusinessException if the original and replacement tags are the same.
@@ -95,18 +108,26 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     /// <param name="replacementTag">The new tag to use as a replacement.</param>
     /// <returns>A list of IDs for the ApplicationTags entities that were updated.</returns>
     /// <exception cref="BusinessException">Thrown if the original and replacement tags are the same.</exception>
-    [Authorize(UnitySettingManagementPermissions.Tags.Update)]
+    [Authorize(UnitySelector.SettingManagement.Tags.Update)]
     public async Task<List<Guid>> RenameTagAsync(string originalTag, string replacementTag)
     {
         Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
-        // Remove commas from the originalTag and replacementTag
-        originalTag = originalTag.Replace(",", string.Empty);
-        replacementTag = replacementTag.Replace(",", string.Empty);
+        int maxRemainingLength = await GetMaxRenameLengthAsync(originalTag);
+        if (replacementTag.Length > maxRemainingLength)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(replacementTag),
+                $"String length exceeds maximum allowed length of {maxRemainingLength}. Actual length: {replacementTag.Length}"
+            );
+        }
 
-        // Check if the originalTag and replacementTag are the same
-        if (originalTag == replacementTag)
+        // Remove commas and trim whitespace from tags
+        originalTag = originalTag.Replace(",", string.Empty).Trim();
+        replacementTag = replacementTag.Replace(",", string.Empty).Trim();
+
+        if (string.Equals(originalTag, replacementTag, StringComparison.InvariantCultureIgnoreCase))
         {
             throw new BusinessException("Cannot update a tag to itself.");
         }
@@ -114,24 +135,30 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         var applicationTags = await _applicationTagsRepository
             .GetListAsync(e => e.Text.Contains(originalTag));
 
-        var updatedTags = new List<ApplicationTags>();
+        if (applicationTags.Count == 0)
+            return [];
+
+        var updatedTags = new List<ApplicationTags>(applicationTags.Count);
 
         foreach (var item in applicationTags)
         {
-            var tagList = item.Text.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+            // Split and trim tags, use case-insensitive HashSet for matching
+            var tagSet = new HashSet<string>(
+                item.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                    StringComparer.InvariantCultureIgnoreCase);
 
-            // Only replace whole word tags - skip substring matches
-            if (tagList.Remove(originalTag))
+            // Only replace if the original tag exists (case-insensitive)
+            if (tagSet.Remove(originalTag))
             {
-                tagList.Add(replacementTag); // HashSet collision if the replacementTag already exists - ignore
-                item.Text = string.Join(',', tagList.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
+                tagSet.Add(replacementTag); // No effect if replacement already exists
+                item.Text = string.Join(',', tagSet.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
                 updatedTags.Add(item);
             }
         }
 
         if (updatedTags.Count > 0)
         {
-            await _applicationTagsRepository.UpdateManyAsync(applicationTags, autoSave: true);
+            await _applicationTagsRepository.UpdateManyAsync(updatedTags, autoSave: true);
         }
 
         return [.. updatedTags.Select(x => x.Id)];
@@ -141,13 +168,13 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     /// Deletes a tag from all application tags. Only whole-word tags are removed; substring matches are ignored.
     /// </summary>
     /// <param name="deleteTag">String of tag to be deleted.</param>
-    [Authorize(UnitySettingManagementPermissions.Tags.Delete)]
+    [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
     public async Task DeleteTagAsync(string deleteTag)
     {
         Check.NotNullOrWhiteSpace(deleteTag, nameof(deleteTag));
 
         // Remove commas from the originalTag and replacementTag
-        deleteTag = deleteTag.Replace(",", string.Empty);
+        deleteTag = deleteTag.Replace(",", string.Empty).Trim();
 
         var applicationTags = await _applicationTagsRepository
             .GetListAsync(e => e.Text.Contains(deleteTag));
@@ -157,14 +184,16 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
         foreach (var item in applicationTags)
         {
-            var tagList = item.Text.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+            var tagSet = new HashSet<string>(
+                item.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                    StringComparer.InvariantCultureIgnoreCase);
 
             // Only replace whole word tags - skip substring matches
-            if (tagList.Remove(deleteTag))
+            if (tagSet.Remove(deleteTag))
             {
-                if (tagList.Count > 0)
+                if (tagSet.Count > 0)
                 {
-                    item.Text = string.Join(',', tagList.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
+                    item.Text = string.Join(',', tagSet.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
                     updatedTags.Add(item);
                 }
                 else
@@ -181,7 +210,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
         if (updatedTags.Count > 0)
         {
-            await _applicationTagsRepository.UpdateManyAsync(applicationTags, autoSave: true);
+            await _applicationTagsRepository.UpdateManyAsync(updatedTags, autoSave: true);
         }
     }
 }

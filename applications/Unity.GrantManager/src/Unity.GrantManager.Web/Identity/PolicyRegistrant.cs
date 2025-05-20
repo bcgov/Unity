@@ -123,12 +123,12 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageConnectionStrings));
 
         // Setting Management - Tag Management
-        authorizationBuilder.AddPolicy(UnitySettingManagementPermissions.Tags.Default,
-            policy => policy.RequireClaim(PermissionConstant, UnitySettingManagementPermissions.Tags.Default));
-        authorizationBuilder.AddPolicy(UnitySettingManagementPermissions.Tags.Update,
-            policy => policy.RequireClaim(PermissionConstant, UnitySettingManagementPermissions.Tags.Update));
-        authorizationBuilder.AddPolicy(UnitySettingManagementPermissions.Tags.Delete,
-            policy => policy.RequireClaim(PermissionConstant, UnitySettingManagementPermissions.Tags.Delete));
+        authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Update));
+        authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Delete,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Delete));
 
         // IT Administrator Policies
         authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicyName,

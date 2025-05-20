@@ -1,8 +1,8 @@
 ﻿namespace Unity.GrantManager.Web.Views.Settings;
 
 using System.Threading.Tasks;
-using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Web.Views.Settings.TagManagement;
+using Unity.Modules.Shared;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 
@@ -11,7 +11,7 @@ public class TagManagementPageContributor : SettingPageContributorBase
     public TagManagementPageContributor()
     {
         RequiredFeatures(SettingManagementFeatures.Enable);
-        RequiredPermissions(UnitySettingManagementPermissions.Tags.Default);
+        RequiredPermissions(UnitySelector.SettingManagement.Tags.Default);
     }
 
     public override Task ConfigureAsync(SettingPageCreationContext context)
