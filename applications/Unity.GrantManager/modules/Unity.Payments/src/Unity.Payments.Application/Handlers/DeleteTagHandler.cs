@@ -1,0 +1,17 @@
+﻿using System.Threading.Tasks;
+using Unity.Payments.Events;
+using Unity.Payments.PaymentTags;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.EventBus;
+using Volo.Abp.Features;
+
+namespace Unity.Payments.Handlers;
+public class DeleteTagHandler(PaymentTagAppService paymentTagAppService, IFeatureChecker featureChecker) :
+    ILocalEventHandler<DeleteTagEto>,
+    ITransientDependency
+{
+    public async Task HandleEventAsync(DeleteTagEto eventData)
+    {
+        await paymentTagAppService.DeleteTagAsync(eventData.TagName);
+    }
+}

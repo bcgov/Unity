@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
+using Unity.Payments.Events;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -20,9 +21,12 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationTagsAppService : ApplicationService, IApplicationTagsService
 {
     private readonly IApplicationTagsRepository _applicationTagsRepository;
-    public ApplicationTagsAppService(IApplicationTagsRepository repository)
+    private readonly ILocalEventBus _localEventBus;
+
+    public ApplicationTagsAppService(IApplicationTagsRepository repository, ILocalEventBus localEventBus)
     {
         _applicationTagsRepository = repository;
+        _localEventBus = localEventBus;
     }
 
     public async Task<IList<ApplicationTagsDto>> GetListAsync()
@@ -114,15 +118,6 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
-        int maxRemainingLength = await GetMaxRenameLengthAsync(originalTag);
-        if (replacementTag.Length > maxRemainingLength)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(replacementTag),
-                $"String length exceeds maximum allowed length of {maxRemainingLength}. Actual length: {replacementTag.Length}"
-            );
-        }
-
         // Remove commas and trim whitespace from tags
         originalTag = originalTag.Replace(",", string.Empty).Trim();
         replacementTag = replacementTag.Replace(",", string.Empty).Trim();
@@ -137,6 +132,15 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
         if (applicationTags.Count == 0)
             return [];
+
+        int maxRemainingLength = await GetMaxRenameLengthAsync(originalTag);
+        if (replacementTag.Length > maxRemainingLength)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(replacementTag),
+                $"String length exceeds maximum allowed length of {maxRemainingLength}. Actual length: {replacementTag.Length}"
+            );
+        }
 
         var updatedTags = new List<ApplicationTags>(applicationTags.Count);
 
@@ -162,6 +166,29 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         }
 
         return [.. updatedTags.Select(x => x.Id)];
+    }
+
+    /// <summary>
+    /// Deletes a tag from all applications and payment requests.
+    /// </summary>
+    /// <param name="deleteTag">String of tag to be deleted.</param>
+    [Authorize(UnitySelector.SettingManagement.Tags.Update)]
+    public virtual async Task RenameTagGlobalAsync(string originalTag, string replacementTag)
+    {
+        Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
+        Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
+
+        // NOTE: Unable to get the MIN of the MaxRenameLength for both Application and Payments. Must get on front-end by 2 API calls.
+        // May result in one EntityType tag renaming with the other failing in rare cases.
+
+        await RenameTagAsync(originalTag, replacementTag);
+        await _localEventBus.PublishAsync(
+            new RenameTagEto
+            {
+                originalTagName = originalTag,
+                replacementTagName = replacementTag
+            }
+        );
     }
 
     /// <summary>
@@ -212,5 +239,18 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         {
             await _applicationTagsRepository.UpdateManyAsync(updatedTags, autoSave: true);
         }
+    }
+
+    /// <summary>
+    /// Deletes a tag from all applications and payment requests.
+    /// </summary>
+    /// <param name="deleteTag">String of tag to be deleted.</param>
+    [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
+    public virtual async Task DeleteTagGlobalAsync(string deleteTag)
+    {
+        Check.NotNullOrWhiteSpace(deleteTag, nameof(deleteTag));
+
+        await DeleteTagAsync(deleteTag);
+        await _localEventBus.PublishAsync(new DeleteTagEto { TagName = deleteTag });
     }
 }

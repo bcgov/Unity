@@ -98,15 +98,6 @@ namespace Unity.Payments.PaymentTags
             Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
             Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
-            int maxRemainingLength = await GetMaxRenameLengthAsync(originalTag);
-            if (replacementTag.Length > maxRemainingLength)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(replacementTag),
-                    $"String length exceeds maximum allowed length of {maxRemainingLength}. Actual length: {replacementTag.Length}"
-                );
-            }
-
             // Remove commas and trim whitespace from tags
             originalTag = originalTag.Replace(",", string.Empty).Trim();
             replacementTag = replacementTag.Replace(",", string.Empty).Trim();
@@ -121,6 +112,15 @@ namespace Unity.Payments.PaymentTags
 
             if (paymentRequestTags.Count == 0)
                 return [];
+
+            int maxRemainingLength = await GetMaxRenameLengthAsync(originalTag);
+            if (replacementTag.Length > maxRemainingLength)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(replacementTag),
+                    $"String length exceeds maximum allowed length of {maxRemainingLength}. Actual length: {replacementTag.Length}"
+                );
+            }
 
             var updatedTags = new List<PaymentTag>(paymentRequestTags.Count);
 
