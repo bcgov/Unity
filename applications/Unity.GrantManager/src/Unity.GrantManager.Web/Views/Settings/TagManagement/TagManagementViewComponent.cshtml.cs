@@ -22,6 +22,7 @@ public class TagManagementScriptBundleContributor : BundleContributor
 {
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
+        context.Files.AddIfNotContains("/Pages/SettingManagement/TagManagement/RenameTagModal.js");
         context.Files.AddIfNotContains("/Views/Settings/TagManagement/TagManagement.js");
     }
 }

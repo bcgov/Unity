@@ -1,20 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Web.Views.Settings.TagManagement;
 
-public class RenameTagModal(IApplicationTagsService appTagService) : AbpPageModel
+public class RenameTagModal(IApplicationTagsService applicationTagService) : AbpPageModel
 {
-
-    [HiddenInput]
-    [BindProperty(SupportsGet = true)]
-    public TagType SelectedTagType { get; set; }
-
     [HiddenInput]
     [BindProperty(SupportsGet = true)]
     public string SelectedTagText { get; set; } = string.Empty;
@@ -22,39 +22,46 @@ public class RenameTagModal(IApplicationTagsService appTagService) : AbpPageMode
     [BindProperty]
     public RenameTagViewModel? ViewModel { get; set; }
 
-    public List<TagSummaryCountDto> SummaryList = [];
-
-    public void OnGetAsync()
+    public void OnGet()
     {
-        ViewModel = new RenameTagViewModel(SelectedTagText);
+        ViewModel = new RenameTagViewModel
+        {
+            OriginalTag = SelectedTagText,
+            ReplacementTag = SelectedTagText
+        };
     }
 
-    public class RenameTagViewModel(string inputTagName)
+    public class RenameTagViewModel
     {
         [Required]
-        public string OriginalTag { get; set; } = inputTagName;
+        [HiddenInput]
+        public required string OriginalTag { get; set; }
 
         [DisplayName("New Tag Name")]
         [Required(ErrorMessage = "Replacement tag is required")]
-        [RegularExpression(@"^[^\s,]+$", ErrorMessage = "Tag cannot contain spaces or commas")]
-        [CustomValidation(typeof(RenameTagViewModel), nameof(ValidateTagNotEqual))]
-        public string ReplacementTag { get; set; } = inputTagName;
-
-        public static ValidationResult? ValidateTagNotEqual(string replacementTag, ValidationContext context)
-        {
-            var instance = (RenameTagViewModel)context.ObjectInstance;
-            if (replacementTag == instance.OriginalTag)
-            {
-                return new ValidationResult("New tag cannot be the same as the original tag");
-            }
-            return ValidationResult.Success;
-        }
+        [RegularExpression(@"^[^\s,]+$", ErrorMessage = "Tag cannot contain spaces or commas.")]
+        [MaxLength(250)]
+        public required string ReplacementTag { get; set; }
     }
 
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum TagType
+    public async Task<IActionResult> OnPostAsync()
     {
-        Application,
-        Payment
+        if (ViewModel == null) return NoContent();
+
+        if (ViewModel.OriginalTag == ViewModel.ReplacementTag)
+        {
+            throw new AbpValidationException("New tag cannot be the same as the original tag.");
+        }
+
+        try
+        {
+            await applicationTagService.RenameTagGlobalAsync(ViewModel.OriginalTag, ViewModel.ReplacementTag);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, message: "Error updating application tags");
+        }
+
+        return NoContent();
     }
 }

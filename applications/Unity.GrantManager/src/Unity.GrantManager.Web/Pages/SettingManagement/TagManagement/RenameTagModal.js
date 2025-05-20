@@ -1,68 +1,26 @@
 $(function () {
+    // NOTE: This could use more work, initModal isn't always triggering on modal open
     abp.modals.renameTag = function () {
-        let _modalPublicApi = null;
 
         let initModal = function (modalManager, args) {
             let $modal = modalManager.getModal();
             let $form = modalManager.getForm();
-            _modalPublicApi = modalManager;
+            let $submitButton = $form.find(':submit');
             let _modalOptions = modalManager.getOptions();
 
             // DEVELOPMENT IN PROGRESS - STILL NEEDS WORK
 
             let _tagTypes = _modalOptions.registeredTagTypes;
-            
-            debugger;
+
+
             console.log('initialized the modal...');
-            $form.on('submit', function (e) {
-                // $('[href="#url"]').tab('show');
-                debugger;
-                e.preventDefault();
-
-                if (!validateForm()) {
-                    return;
-                }
-
-                const originalTagInput = $('input[name="ViewModel.OriginalTag"]');
-                const replacementTagInput = $('input[name="ViewModel.ReplacementTag"]');
-                const selectedTagTypeInput = $('input[name="SelectedTagType"]');
-
-                const originalTag = originalTagInput.val();
-                const replacementTag = replacementTagInput.val();
-                const selectedTagType = selectedTagTypeInput.val();
-
-                let tagService;
-
-                // Call the appropriate service based on the selected tag type
-                if (selectedTagType === 'Application' && _tagTypes.APPLICATIONS !== undefined) {
-                    // Call the application tags service
-                    tagService = _tagTypes.APPLICATIONS.service;
-                } else if (selectedTagType === 'Payment' && _tagTypes.PAYMENTS !== undefined) {
-                    // Call the payment tags service
-                    tagService = _tagTypes.PAYMENTS.service;
-                } else {
-                    abp.notify.error('Unknown tag type: ' + selectedTagType);
-                }
-
-                tagService.renameTag(
-                    originalTag,
-                    replacementTag
-                ).then(function () {
-                    abp.notify.success(`The tag "${originalTag}" has been renamed to "${replacementTag}".`);
-                    _modalPublicApi.close();
-                }).catch(function (error) {
-                    abp.notify.error('Tag rename failed: ' + (error.message || 'Unknown error'));
-                    console.error(error);
-                    _modalPublicApi.close();
-                });
-            });
+            // Insert validation initialization here
         };
 
         return {
             initModal: initModal
         };
     };
-
 
 
     // Cache DOM elements

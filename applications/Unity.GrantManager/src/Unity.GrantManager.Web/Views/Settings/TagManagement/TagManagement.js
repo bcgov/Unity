@@ -6,8 +6,6 @@ $(function () {
     let userCanUpdate = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Update');
     let userCanDelete = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Delete');
 
-    let globalTagsTable = null;
-
     function registerTagType(key, name, service) {
         TagTypes[key] = {
             name: name,
@@ -22,49 +20,47 @@ $(function () {
         registerTagType('PAYMENTS', 'Payment', unity.payments.paymentTags.paymentTag);
     }
 
-    // Initialize the global tags table after individual tables
-    initializeGlobalTagsTable();
-
     let _renameTagModal = new abp.ModalManager({
         viewUrl: abp.appPath + 'SettingManagement/TagManagement/RenameTagModal',
         modalClass: 'renameTag',
         registeredTagTypes: TagTypes
     });
 
-    function initializeGlobalTagsTable() {
-        globalTagsTable = $('#GlobalTagsTable').DataTable(abp.libs.datatables.normalizeConfiguration({
-            processing: true,
-            serverSide: false,
-            paging: false,
-            searching: true,
-            scrollCollapse: true,
-            scrollX: true,
-            ordering: true,
-            ajax: (requestData, callback, settings) => getUnifiedTagSummaryAjax(requestData, callback, settings),
-            columnDefs: defineTagSummaryColumnDefs()
-        }));
+    let globalTagsTable = $('#GlobalTagsTable').DataTable(abp.libs.datatables.normalizeConfiguration({
+        processing: true,
+        serverSide: false,
+        paging: false,
+        searching: true,
+        scrollCollapse: true,
+        scrollX: true,
+        ordering: true,
+        ajax: (requestData, callback, settings) => getUnifiedTagSummaryAjax(requestData, callback, settings),
+        columnDefs: defineTagSummaryColumnDefs()
+    }));
 
-        globalTagsTable.on('click', 'td button.edit-button', function (event) {
-            event.stopPropagation();
-            let rowData = globalTagsTable.row(event.target.closest('tr')).data();
-            handleUpdateTag(rowData.text, rowData.count);
-        });
+    globalTagsTable.on('click', 'td button.edit-button', function (event) {
+        event.stopPropagation();
+        let rowData = globalTagsTable.row(event.target.closest('tr')).data();
+        handleUpdateTag(rowData.text);
+    });
 
-        globalTagsTable.on('click', 'td button.delete-button', function (event) {
-            event.stopPropagation();
-            let rowData = globalTagsTable.row(event.target.closest('tr')).data();
-            handleDeleteTag(rowData.text, rowData.count);
-        });
+    globalTagsTable.on('click', 'td button.delete-button', function (event) {
+        event.stopPropagation();
+        let rowData = globalTagsTable.row(event.target.closest('tr')).data();
+        handleDeleteTag(rowData.text, rowData.count);
+    });
 
-        abp.log.debug('Global Tags Table initialized!');
-    }
+    abp.log.debug('Global Tags Table initialized!');
 
-    function handleUpdateTag(tagText, tagCount) {
+    function handleUpdateTag(tagText) {
         _renameTagModal.open({
-            SelectedTagType: "DEFAULT_REPLACE",
             SelectedTagText: tagText
         });
     }
+
+    _renameTagModal.onResult(function () {
+        globalTagsTable.ajax.reload();
+    });
 
     function handleDeleteTag(tagText, tagCount) {
         abp.message.confirm(`Are you sure you want to delete ${tagCount} "${tagText}" tags?`, "Delete Tag?")
@@ -72,7 +68,7 @@ $(function () {
                 if (confirmed) {
                     try {
                         // Needs to be fixed to work globally
-                        TagTypes.APPLICATIONS.service.deleteTag(tagText)
+                        unity.grantManager.grantApplications.applicationTags.deleteTagGlobal(tagText)
                             .done(function (result) {
                                 abp.notify.success(`The tag "${tagText}" has been deleted.`);
 
@@ -129,7 +125,6 @@ $(function () {
             title: "Actions",
             name: 'actions',
             data: 'text',
-            visible: false,
             orderable: false,
             render: function(data, type, row) {
                 let $buttonWrapper = $('<div>').addClass('d-flex flex-nowrap gap-1');
@@ -224,11 +219,4 @@ $(function () {
             });
         });
     }
-
-    // Subscribe to tag rename event to refresh global table
-    abp.event.on('tagRenamed', function () {
-        if (globalTagsTable) {
-            globalTagsTable.ajax.reload();
-        }
-    });
 });

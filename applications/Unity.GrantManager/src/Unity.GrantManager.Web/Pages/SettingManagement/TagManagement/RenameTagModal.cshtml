@@ -7,13 +7,17 @@
     Layout = null;
 }
 
+@if (Model.ViewModel == null)
+{
+    throw new InvalidOperationException("ViewModel cannot be null.");
+}
+
 <abp-script src="/Pages/SettingManagement/TagManagement/RenameTagModal.js" />
 
 <form id="renameTagForm" asp-page="/SettingManagement/TagManagement/RenameTagModal">
     <abp-modal>
-        <abp-modal-header title="Edit @Model.SelectedTagType Tag"></abp-modal-header>
+        <abp-modal-header title="Edit Tag"></abp-modal-header>
         <abp-modal-body>
-            <abp-input type="hidden" asp-for="@Model.SelectedTagType" />
             <abp-input type="hidden" asp-for="@Model.ViewModel.OriginalTag" />
             <abp-input type="text" asp-for="@Model.ViewModel.ReplacementTag" />
         </abp-modal-body>
