@@ -306,7 +306,7 @@ namespace Unity.Payments.PaymentRequests
             var payments = await paymentsQueryable.Include(pr => pr.Site).ToListAsync();
             var filteredPayments = payments.Where(pr => applicationIds.Contains(pr.CorrelationId)).ToList();
 
-            return ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(payments);
+            return ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments);
         }
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
