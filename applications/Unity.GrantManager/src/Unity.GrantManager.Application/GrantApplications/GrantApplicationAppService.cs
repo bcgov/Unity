@@ -99,49 +99,51 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(input.SkipCount, input.MaxResultCount);
-        var appDtos = new List<GrantApplicationDto>();
-        var rowCounter = 0;
+        var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(input.SkipCount, input.MaxResultCount, input.Sorting);
 
-        foreach (var grouping in groupedResult)
+        // Pre-fetch payment requests for all applications in a single query to reduce database calls
+        var applicationIds = groupedResult.SelectMany(g => g).Select(a => a.Id).ToList();
+        var paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+        bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+
+        // Map applications to DTOs
+        var appDtos = groupedResult.Select(grouping =>
         {
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
-            appDto.Status = grouping.First().ApplicationStatus.InternalStatus;
+            var firstApplication = grouping.First();
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(firstApplication);
 
-            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().Applicant);
-            appDto.Category = grouping.First().ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = grouping.First().ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
-            appDto.Owner = BuildApplicationOwner(grouping.First().Owner);
-            appDto.OrganizationName = grouping.First().Applicant?.OrgName ?? string.Empty;
-            appDto.OrganizationType = grouping.First().Applicant?.OrganizationType ?? string.Empty;
-            appDto.Assignees = BuildApplicationAssignees(grouping.First().ApplicationAssignments);
+            // Map additional properties
+            appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
+            appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
+            appDto.ApplicationTag = firstApplication.ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
+            appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
+            appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
+            appDto.OrganizationType = firstApplication.Applicant?.OrganizationType ?? string.Empty;
+            appDto.Assignees = BuildApplicationAssignees(firstApplication.ApplicationAssignments);
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
-            appDto.ContactFullName = grouping.First().ApplicantAgent?.Name;
-            appDto.ContactEmail = grouping.First().ApplicantAgent?.Email;
-            appDto.ContactTitle = grouping.First().ApplicantAgent?.Title;
-            appDto.ContactBusinessPhone = grouping.First().ApplicantAgent?.Phone;
-            appDto.ContactCellPhone = grouping.First().ApplicantAgent?.Phone2;
-            appDto.RowCount = rowCounter;
+            appDto.ContactFullName = firstApplication.ApplicantAgent?.Name;
+            appDto.ContactEmail = firstApplication.ApplicantAgent?.Email;
+            appDto.ContactTitle = firstApplication.ApplicantAgent?.Title;
+            appDto.ContactBusinessPhone = firstApplication.ApplicantAgent?.Phone;
+            appDto.ContactCellPhone = firstApplication.ApplicantAgent?.Phone2;
 
-            //Get payment request info
-            var application = await GetAsync(appDto.Id);
-
-            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
+            //Payment request info if the feature is enabled
+            if (paymentsFeatureEnabled)
             {
                 var paymentInfo = new PaymentInfoDto
                 {
-                    ApprovedAmount = application.ApprovedAmount,
+                    ApprovedAmount = firstApplication.ApprovedAmount,
+                    TotalPaid = paymentRequests
+                        .Where(pr => pr.CorrelationId == firstApplication.Id && pr.Status.Equals(PaymentRequestStatus.Submitted))
+                        .Sum(pr => pr.Amount)
                 };
-                var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(appDto.Id);
-                paymentInfo.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Submitted))
-                                      .Sum(e => e.Amount);
                 appDto.PaymentInfo = paymentInfo;
             }
 
-            appDtos.Add(appDto);
-            rowCounter++;
-        }
+            return appDto;
+        }).ToList();
 
         var totalCount = await _applicationRepository.GetCountAsync();
 

@@ -154,8 +154,10 @@
             content_css: false,
             skin: false,
             setup: function (editor) {
-                editor.on("change", (e) => {
+               
+                editor.on("input", (e) => {
                     UIElements.inputEmailBody.val(editor.getContent())
+                    handleDraftChange();
                 });
                 editorInstance = editor;
                 editorInstance.setContent('');
@@ -316,14 +318,15 @@
         // Prevent form submission and stop propagation
         e.stopPropagation();
         e.preventDefault();
+        let isValid = UIElements.emailForm.valid();
+        let validator = UIElements.emailForm.validate();
 
         // Validate the "Email To" field
         if (!validateEmailTo()) {
             return false; // If validation fails, stop further processing
         }
         let fieldName = 'EmailBody';
-        let isValid = UIElements.emailForm.valid();
-        let validator = UIElements.emailForm.validate();
+       
         let errorList = validator.errorList;
 
         let tinymceContent = tinymce.get(fieldName).getContent({ format: 'text' }).trim();
@@ -393,8 +396,7 @@
             $('#EmailFrom').val(templateDetails.sendFrom)
             $('#EmailSubject').val(templateDetails.subject)
             editorInstance.setContent(renderedHtml);
-            console.log(templateData);
-            console.log(renderedHtml);
+            UIElements.btnSave.attr('disabled', false);
         } catch (error) {
             console.error("Error loading data:", error);
         }
@@ -443,6 +445,36 @@
             });
         });
     }
+    function toTitleCase(str) {
+        return str.replace(/\b\w/g, function (char) {
+            return char.toUpperCase();
+        }).replace(/\B\w/g, function (char) {
+            return char.toLowerCase();
+        });
+    }
+    function processString(token,inputString) {
+        let lookupArray = ['category', 'status', 'decline_rationale'];
+
+        if(typeof inputString !== 'string') {
+            return inputString;
+        }
+       
+        let date = new Date(inputString);
+        if (!isNaN(date.getTime())) {
+           
+            return luxon.DateTime.fromISO(inputString, {
+                locale: abp.localization.currentCulture.name,
+            }).toUTC().toLocaleString()
+        } else {
+           
+            if (lookupArray.includes(token)) {
+                inputString = inputString.replace(/_/g, ' ');
+                return toTitleCase(inputString);
+            }
+            return inputString;
+            
+        }
+    }
 
     function extractTemplateData(apiResponse, mappingConfig) {
         const templateData = {};
@@ -456,7 +488,9 @@
             }
 
             const value = getValueByPath(apiResponse, mapTo);
-            templateData[token] = value !== undefined ? value : "";
+
+            let formatValue = processString(token,value);
+            templateData[token] = formatValue !== undefined ? formatValue : "";
         });
 
         return templateData;
@@ -493,8 +527,9 @@
             content_css: false,
             skin: false,
             setup: function (editor) {
-                editor.on("change", (e) => {
+                editor.on("input", (e) => {
                     UIElements.inputEmailBody.val(editor.getContent())
+                    handleDraftChange();
                 });
                 editorInstance = editor;
                 editorInstance.setContent(data.body);
