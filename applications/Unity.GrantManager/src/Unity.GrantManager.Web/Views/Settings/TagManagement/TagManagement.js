@@ -19,43 +19,16 @@ $(function () {
                 replacementTagInput: $('input[name="ViewModel.ReplacementTag"]')
             };
 
-            let _modalOptions = modalManager.getOptions();
-            let _tagTypes = _modalOptions.registeredTagTypes;
-
-            // Store initial form state
-            initialFormState = {
-                originalTag: formElements.originalTagInput.val(),
-                replacementTag: formElements.replacementTagInput.val()
-            };
-
-            debugger;
-
-            // Add custom method to jQuery validation
-            $.validator.addMethod('hasChanges', function (value, element) {
-                return value !== initialFormState.replacementTag;
-            }, 'Make changes to save.');
-
-            // Update validation rules
-            formElements.form.validate({
-                rules: {
-                    'ViewModel.ReplacementTag': {
-                        hasChanges: true
-                    }
-                }
-            });
+            initialFormState = formElements.form.serialize();
 
             // Set up form change event listener
             formElements.form.on('change input', function() {
                 // Trigger validation
                 $(this).valid();
-                // Update save button state based on form validity and changes
-                const isValid = $(this).valid();
-                const hasChanges = formElements.replacementTagInput.val() !== initialFormState.replacementTag;
-                formElements.saveButton.prop('disabled', !isValid || !hasChanges);
+                // Update save button state based on form validity
+                let currentFormState = formElements.form.serialize();
+                formElements.saveButton.prop('disabled', !$(this).valid() || initialFormState === currentFormState);
             });
-
-            // Initial button state
-            formElements.saveButton.prop('disabled', true);
 
             console.log('initialized the modal...');
         };
