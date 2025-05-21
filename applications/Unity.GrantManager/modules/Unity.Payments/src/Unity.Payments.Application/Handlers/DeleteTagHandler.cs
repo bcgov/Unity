@@ -3,7 +3,6 @@ using Unity.Payments.Events;
 using Unity.Payments.PaymentTags;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
-using Volo.Abp.Features;
 
 namespace Unity.Payments.Handlers;
 public class DeleteTagHandler(PaymentTagAppService paymentTagAppService) :

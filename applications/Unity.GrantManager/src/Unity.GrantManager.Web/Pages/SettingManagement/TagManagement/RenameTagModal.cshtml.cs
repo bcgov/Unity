@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -9,7 +8,7 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Validation;
 
-namespace Unity.GrantManager.Web.Views.Settings.TagManagement;
+namespace Unity.GrantManager.Web.Pages.SettingManagement.TagManagement;
 
 public class RenameTagModal(IApplicationTagsService applicationTagService) : AbpPageModel
 {
