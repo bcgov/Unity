@@ -1,0 +1,160 @@
+services:
+  redis-master:
+    image: redis:7
+    container_name: redis-master
+    hostname: redis-master
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecurePassword}
+    command: [
+      "bash", "-c",      
+      "mkdir -p /etc/redis && \
+       echo 'bind 0.0.0.0' > /etc/redis/redis.conf && \
+       echo \"requirepass $${REDIS_PASSWORD}\" >> /etc/redis/redis.conf && \
+       echo \"masterauth $${REDIS_PASSWORD}\" >> /etc/redis/redis.conf && \       
+       redis-server /etc/redis/redis.conf"
+    ]
+    ports:
+      - "6379:6379"
+    networks:
+      redisnet:
+        aliases:
+          - redis-master
+    volumes:
+      - redis-master-data:/data
+
+  redis-slave:
+    image: redis:7
+    container_name: redis-slave
+    hostname: redis-slave
+    environment:
+      - REDIS_MASTER_HOST=${REDIS_MASTER_HOST:-redis-master}
+      - REDIS_SLAVE_HOST=${REDIS_SLAVE_HOST:-redis-slave}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecurePassword}    
+    command: [
+      "bash", "-c", 
+      "mkdir -p /etc/redis && \
+       echo 'bind 0.0.0.0' > /etc/redis/redis.conf && \
+       echo \"requirepass $${REDIS_PASSWORD}\" >> /etc/redis/redis.conf && \
+       echo \"masterauth $${REDIS_PASSWORD}\" >> /etc/redis/redis.conf && \       
+       echo \"replicaof $${REDIS_MASTER_HOST} 6379\" >> /etc/redis/redis.conf && \
+       echo \"replica-announce-ip $${REDIS_SLAVE_HOST}\" >> /etc/redis/redis.conf && \
+       echo 'replica-announce-port 6380' >> /etc/redis/redis.conf && \       
+       redis-server /etc/redis/redis.conf"
+    ]
+    ports:
+      - "6380:6379"
+    depends_on:
+      - redis-master    
+    networks:
+      redisnet:
+        aliases:
+          - redis-slave
+    volumes:
+      - redis-slave-data:/data
+
+  redis-sentinel1:
+    image: redis:7
+    container_name: redis-sentinel1
+    hostname: redis-sentinel1
+    environment:
+      - REDIS_MASTER_HOST=${REDIS_MASTER_HOST:-redis-master}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecurePassword}
+    command: [
+      "bash", "-c", 
+      "echo 'port 26379' > /tmp/sentinel.conf && \
+       echo 'dir /tmp' >> /tmp/sentinel.conf && \
+       echo 'protected-mode no' >> /tmp/sentinel.conf && \
+       echo 'bind 0.0.0.0' >> /tmp/sentinel.conf && \
+       echo \"sentinel monitor mymaster $${REDIS_MASTER_HOST} 6379 2\" >> /tmp/sentinel.conf && \
+       echo \"sentinel auth-pass mymaster $${REDIS_PASSWORD}\" >> /tmp/sentinel.conf && \
+       echo 'sentinel down-after-milliseconds mymaster 5000' >> /tmp/sentinel.conf && \
+       echo 'sentinel failover-timeout mymaster 60000' >> /tmp/sentinel.conf && \
+       echo 'sentinel config-epoch mymaster 0' >> /tmp/sentinel.conf && \
+       echo 'sentinel resolve-hostnames yes' >> /tmp/sentinel.conf && \
+       echo 'sentinel announce-hostnames yes' >> /tmp/sentinel.conf && \
+       redis-server /tmp/sentinel.conf --sentinel"
+    ]
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26379:26379"
+    networks:
+      - redisnet
+    volumes:
+      - redis-sentinel1-data:/data
+
+  redis-sentinel2:
+    image: redis:7
+    container_name: redis-sentinel2
+    hostname: redis-sentinel2
+    environment:
+      - REDIS_MASTER_HOST=${REDIS_MASTER_HOST:-redis-master}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecurePassword}
+    command: [
+      "bash", "-c", 
+      "echo 'port 26379' > /tmp/sentinel.conf && \
+       echo 'dir /tmp' >> /tmp/sentinel.conf && \
+       echo 'protected-mode no' >> /tmp/sentinel.conf && \
+       echo 'bind 0.0.0.0' >> /tmp/sentinel.conf && \
+       echo \"sentinel monitor mymaster $${REDIS_MASTER_HOST} 6379 2\" >> /tmp/sentinel.conf && \
+       echo \"sentinel auth-pass mymaster $${REDIS_PASSWORD}\" >> /tmp/sentinel.conf && \
+       echo 'sentinel down-after-milliseconds mymaster 5000' >> /tmp/sentinel.conf && \
+       echo 'sentinel failover-timeout mymaster 60000' >> /tmp/sentinel.conf && \
+       echo 'sentinel config-epoch mymaster 0' >> /tmp/sentinel.conf && \
+       echo 'sentinel resolve-hostnames yes' >> /tmp/sentinel.conf && \
+       echo 'sentinel announce-hostnames yes' >> /tmp/sentinel.conf && \
+       redis-server /tmp/sentinel.conf --sentinel"
+    ]
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26380:26379"
+    networks:
+      - redisnet
+    volumes:
+      - redis-sentinel2-data:/data
+
+  redis-sentinel3:
+    image: redis:7
+    container_name: redis-sentinel3
+    hostname: redis-sentinel3
+    environment:
+      - REDIS_MASTER_HOST=${REDIS_MASTER_HOST:-redis-master}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecurePassword}
+    command: [
+      "bash", "-c", 
+      "echo 'port 26379' > /tmp/sentinel.conf && \
+       echo 'dir /tmp' >> /tmp/sentinel.conf && \
+       echo 'protected-mode no' >> /tmp/sentinel.conf && \
+       echo 'bind 0.0.0.0' >> /tmp/sentinel.conf && \
+       echo \"sentinel monitor mymaster $${REDIS_MASTER_HOST} 6379 2\" >> /tmp/sentinel.conf && \
+       echo \"sentinel auth-pass mymaster $${REDIS_PASSWORD}\" >> /tmp/sentinel.conf && \
+       echo 'sentinel down-after-milliseconds mymaster 5000' >> /tmp/sentinel.conf && \
+       echo 'sentinel failover-timeout mymaster 60000' >> /tmp/sentinel.conf && \
+       echo 'sentinel config-epoch mymaster 0' >> /tmp/sentinel.conf && \
+       echo 'sentinel resolve-hostnames yes' >> /tmp/sentinel.conf && \
+       echo 'sentinel announce-hostnames yes' >> /tmp/sentinel.conf && \
+       redis-server /tmp/sentinel.conf --sentinel"
+    ]
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26381:26379"
+    networks:
+      - redisnet
+    volumes:
+      - redis-sentinel3-data:/data
+
+networks:
+  redisnet:
+    driver: bridge
+
+volumes:
+  redis-master-data:
+  redis-slave-data:
+  redis-sentinel1-data:
+  redis-sentinel2-data:
+  redis-sentinel3-data:
