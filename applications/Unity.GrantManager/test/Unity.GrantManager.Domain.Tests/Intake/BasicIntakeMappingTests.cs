@@ -3,7 +3,6 @@ using Newtonsoft.Json.Linq;
 using NSubstitute;
 using Shouldly;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
@@ -55,6 +54,6 @@ namespace Unity.GrantManager.Intake
             }
 
             Assert.Equal(expectedDatagridCount, datagridCount);
-        }      
+        }
     }
 }

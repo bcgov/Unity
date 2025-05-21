@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Unity.GrantManager.Intakes
+﻿namespace Unity.GrantManager.Intakes
 {
     public class ApplicantResult
     {

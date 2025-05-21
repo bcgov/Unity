@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.Flex.Localization;
-using Unity.Flex.Web.Menus;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
-using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 
 namespace Unity.Flex.Web;
@@ -33,7 +31,7 @@ public class FlexWebModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        
+
 
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
