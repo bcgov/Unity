@@ -6,6 +6,65 @@ $(function () {
     let userCanUpdate = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Update');
     let userCanDelete = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Delete');
 
+    // Modal Validation Configuration
+    abp.modals.RenameTag = function () {
+        let formElements = {};
+        let initialFormState = {};
+
+        let initModal = function (modalManager, args) {
+            formElements = {
+                form: modalManager.getForm(),
+                saveButton: $('#SaveButton'),
+                originalTagInput: $('input[name="ViewModel.OriginalTag"]'),
+                replacementTagInput: $('input[name="ViewModel.ReplacementTag"]')
+            };
+
+            let _modalOptions = modalManager.getOptions();
+            let _tagTypes = _modalOptions.registeredTagTypes;
+
+            // Store initial form state
+            initialFormState = {
+                originalTag: formElements.originalTagInput.val(),
+                replacementTag: formElements.replacementTagInput.val()
+            };
+
+            debugger;
+
+            // Add custom method to jQuery validation
+            $.validator.addMethod('hasChanges', function (value, element) {
+                return value !== initialFormState.replacementTag;
+            }, 'Make changes to save.');
+
+            // Update validation rules
+            formElements.form.validate({
+                rules: {
+                    'ViewModel.ReplacementTag': {
+                        hasChanges: true
+                    }
+                }
+            });
+
+            // Set up form change event listener
+            formElements.form.on('change input', function() {
+                // Trigger validation
+                $(this).valid();
+                // Update save button state based on form validity and changes
+                const isValid = $(this).valid();
+                const hasChanges = formElements.replacementTagInput.val() !== initialFormState.replacementTag;
+                formElements.saveButton.prop('disabled', !isValid || !hasChanges);
+            });
+
+            // Initial button state
+            formElements.saveButton.prop('disabled', true);
+
+            console.log('initialized the modal...');
+        };
+
+        return {
+            initModal: initModal
+        };
+    };
+
     function registerTagType(key, name, service) {
         TagTypes[key] = {
             name: name,
@@ -22,7 +81,7 @@ $(function () {
 
     let _renameTagModal = new abp.ModalManager({
         viewUrl: abp.appPath + 'SettingManagement/TagManagement/RenameTagModal',
-        modalClass: 'renameTag',
+        modalClass: 'RenameTag',
         registeredTagTypes: TagTypes
     });
 
