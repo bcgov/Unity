@@ -460,7 +460,14 @@ $(function () {
             index: columnIndex,
             render: function(data) {
                 if (!data) return null;
-                return DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name);
+                // Check if date is in DD-MMM-YYYY format
+                if (/^\d{2}-[A-Z]{3}-\d{4}$/.test(data)) {
+                    // Parse and reformat
+                    const date = luxon.DateTime.fromFormat(data, 'dd-MMM-yyyy');
+                    return date.toFormat('yyyy-MM-dd');
+                }
+                // Use default render for other formats
+                return DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)(data);
             }        
         };
     }
