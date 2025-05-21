@@ -70,6 +70,8 @@ $(function () {
         columnDefs: defineTagSummaryColumnDefs()
     }));
 
+    configureSearch(globalTagsTable);
+
     globalTagsTable.on('click', 'td button.edit-button', function (event) {
         event.stopPropagation();
         let rowData = globalTagsTable.row(event.target.closest('tr')).data();
@@ -185,6 +187,15 @@ $(function () {
         });
 
         return columnDefs;
+    }
+
+    function configureSearch(dataTableInstance) {
+        const searchId = "#search-tags";
+
+        $(searchId).on('input change', function () {
+            let filter = dataTableInstance.search($(this).val()).draw();
+            console.info(`Filter on #${searchId}: ${filter}`);
+        });
     }
 
     function getUnifiedTagSummaryAjax (requestData, callback, settings) {
