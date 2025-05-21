@@ -1,11 +1,13 @@
 ﻿@page
+@using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
-@using Unity.GrantManager.Web.Pages.Intakes
-@using Microsoft.Extensions.Localization
+
 @model Unity.GrantManager.Web.Pages.GrantPrograms.IndexModel
+
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
+
 @{
     PageLayout.Content.MenuItemName = "GrantManager.GrantPrograms";
     PageLayout.Content.Title = L["GrantPrograms"].Value;

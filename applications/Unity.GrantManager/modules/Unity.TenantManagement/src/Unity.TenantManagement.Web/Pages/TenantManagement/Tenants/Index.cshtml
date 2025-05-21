@@ -2,13 +2,13 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Unity.TenantManagement.Web.Navigation;
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Tenants
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Pages.Shared.Components.AbpPageToolbar
-@using Volo.Abp.FeatureManagement
-@using Volo.Abp.TenantManagement
 @using Volo.Abp.TenantManagement.Localization
-@using Unity.TenantManagement.Web.Pages.TenantManagement.Tenants
+
 @model IndexModel
+
 @inject IHtmlLocalizer<AbpTenantManagementResource> L
 @inject IAuthorizationService Authorization
 @inject IPageLayout PageLayout

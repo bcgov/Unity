@@ -1,14 +1,10 @@
-﻿@using System.Globalization;
-@using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
-@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidget;
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
-@using Unity.GrantManager.Web.Pages.GrantApplications;
-@using Unity.GrantManager.Localization;
-@using Microsoft.Extensions.Localization;
-
-@inject IStringLocalizer<GrantManagerResource> L
+﻿@using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
+@using Unity.GrantManager.Localization
+@using Microsoft.Extensions.Localization
 
 @model SummaryWidgetViewModel
+
+@inject IStringLocalizer<GrantManagerResource> L
 @{
     Layout = null;
 }
