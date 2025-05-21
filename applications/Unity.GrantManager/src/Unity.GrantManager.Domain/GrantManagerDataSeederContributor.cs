@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
@@ -7,138 +8,63 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager;
 
-public class GrantManagerDataSeederContributor : IDataSeedContributor, ITransientDependency
+public class GrantManagerDataSeederContributor(
+    IApplicationStatusRepository applicationStatusRepository) : IDataSeeder, ITransientDependency
 {
-    private readonly IApplicationStatusRepository _applicationStatusRepository;
-
-    public GrantManagerDataSeederContributor(IApplicationStatusRepository applicationStatusRepository)
+    public static class GrantApplicationStates
     {
-        _applicationStatusRepository = applicationStatusRepository;
+        public const string SUBMITTED = "Submitted";
+        public const string ASSIGNED = "Assigned";
+        public const string WITHDRAWN = "Withdrawn";
+        public const string CLOSED = "Closed";
+        public const string UNDER_REVIEW = "Under Review";
+        public const string UNDER_INITIAL_REVIEW = "Under Initial Review";
+        public const string INITITAL_REVIEW_COMPLETED = "Initial Review Completed";
+        public const string UNDER_ASSESSMENT = "Under Assessment";
+        public const string ASSESSMENT_COMPLETED = "Assessment Completed";
+        public const string GRANT_APPROVED = "Grant Approved";
+        public const string DECLINED = "Declined";
+        public const string DEFER = "Deferred";
+        public const string ON_HOLD = "On Hold";
     }
 
     public async Task SeedAsync(DataSeedContext context)
     {
-        if (context.TenantId != null) // only try seed into a tenant database
+
+        if (context.TenantId == null) // only seed into a tenant database
         {
-            ApplicationStatus? status1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.SUBMITTED);
-            status1 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.SUBMITTED,
-                    ExternalStatus = "Submitted",
-                    InternalStatus = "Submitted"
-                }
-            );
+           return;
+        }   
 
-            ApplicationStatus? status2 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.ASSIGNED);
-            status2 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.ASSIGNED,
-                    ExternalStatus = "Under Review",
-                    InternalStatus = "Assigned"
-                }
-            );
+        await SeedApplicationStatusAsync();
+    }
 
-            ApplicationStatus? status3 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.WITHDRAWN);
-            status3 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.WITHDRAWN,
-                    ExternalStatus = "Withdrawn",
-                    InternalStatus = "Withdrawn"
-                }
-            );
+    
+    private async Task SeedApplicationStatusAsync()
+    {
+        var statuses = new List<ApplicationStatus>
+        {
+            new() { StatusCode = GrantApplicationState.SUBMITTED, ExternalStatus = GrantApplicationStates.SUBMITTED, InternalStatus = GrantApplicationStates.SUBMITTED },
+            new() { StatusCode = GrantApplicationState.ASSIGNED, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.ASSIGNED },
+            new() { StatusCode = GrantApplicationState.WITHDRAWN, ExternalStatus = GrantApplicationStates.WITHDRAWN, InternalStatus = GrantApplicationStates.WITHDRAWN },
+            new() { StatusCode = GrantApplicationState.CLOSED, ExternalStatus = GrantApplicationStates.CLOSED, InternalStatus = GrantApplicationStates.CLOSED },
+            new() { StatusCode = GrantApplicationState.UNDER_INITIAL_REVIEW, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.UNDER_INITIAL_REVIEW },
+            new() { StatusCode = GrantApplicationState.INITITAL_REVIEW_COMPLETED, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.INITITAL_REVIEW_COMPLETED },
+            new() { StatusCode = GrantApplicationState.UNDER_ASSESSMENT, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.UNDER_ASSESSMENT },
+            new() { StatusCode = GrantApplicationState.ASSESSMENT_COMPLETED, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.ASSESSMENT_COMPLETED },
+            new() { StatusCode = GrantApplicationState.GRANT_APPROVED, ExternalStatus = GrantApplicationStates.GRANT_APPROVED, InternalStatus = GrantApplicationStates.GRANT_APPROVED },
+            new() { StatusCode = GrantApplicationState.GRANT_NOT_APPROVED, ExternalStatus = GrantApplicationStates.DECLINED, InternalStatus = GrantApplicationStates.DECLINED },
+            new() { StatusCode = GrantApplicationState.DEFER, ExternalStatus = GrantApplicationStates.DEFER, InternalStatus = GrantApplicationStates.DEFER },
+            new() { StatusCode = GrantApplicationState.ON_HOLD, ExternalStatus = GrantApplicationStates.ON_HOLD, InternalStatus = GrantApplicationStates.ON_HOLD },
+        };
 
-            ApplicationStatus? status4 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.CLOSED);
-            status4 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.CLOSED,
-                    ExternalStatus = "Closed",
-                    InternalStatus = "Closed"
-                }
-            );
-
-            ApplicationStatus? status5 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.UNDER_INITIAL_REVIEW);
-            status5 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.UNDER_INITIAL_REVIEW,
-                    ExternalStatus = "Under Review",
-                    InternalStatus = "Under Initial Review"
-                }
-            );
-
-            ApplicationStatus? status6 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.INITITAL_REVIEW_COMPLETED);
-            status6 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.INITITAL_REVIEW_COMPLETED,
-                    ExternalStatus = "Under Review",
-                    InternalStatus = "Initial Review Completed"
-                }
-            );
-
-            ApplicationStatus? status7 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.UNDER_ASSESSMENT);
-            status7 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.UNDER_ASSESSMENT,
-                    ExternalStatus = "Under Review",
-                    InternalStatus = "Under Assessment"
-                }
-            );
-
-            ApplicationStatus? status8 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.ASSESSMENT_COMPLETED);
-            status8 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.ASSESSMENT_COMPLETED,
-                    ExternalStatus = "Under Review",
-                    InternalStatus = "Assessment Completed"
-                }
-            );
-
-            ApplicationStatus? status9 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.GRANT_APPROVED);
-            status9 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.GRANT_APPROVED,
-                    ExternalStatus = "Approved",
-                    InternalStatus = "Approved"
-                }
-            );
-
-            ApplicationStatus? status10 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.GRANT_NOT_APPROVED);
-            status10 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.GRANT_NOT_APPROVED,
-                    ExternalStatus = "Declined",
-                    InternalStatus = "Declined"
-                }
-            );
-
-            ApplicationStatus? status11 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.DEFER);
-            status11 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.DEFER,
-                    ExternalStatus = "Deferred",
-                    InternalStatus = "Deferred"
-                }
-            );
-
-            ApplicationStatus? status12 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.ON_HOLD);
-            status12 ??= await _applicationStatusRepository.InsertAsync(
-                new ApplicationStatus
-                {
-                    StatusCode = GrantApplicationState.ON_HOLD,
-                    ExternalStatus = "On Hold",
-                    InternalStatus = "On Hold"
-                }
-            );
+        foreach (var status in statuses)
+        {
+            var existing = await applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == status.StatusCode);
+            if (existing == null)
+            {
+                await applicationStatusRepository.InsertAsync(status);
+            }
         }
     }
 }

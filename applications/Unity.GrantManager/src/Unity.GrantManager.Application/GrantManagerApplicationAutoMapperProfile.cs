@@ -9,6 +9,7 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Zones;
 
@@ -21,7 +22,12 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         /* You can configure your AutoMapper mapping configuration here.
          * Alternatively, you can split your mapping configurations
          * into multiple profile classes for a better organization. */
-
+        CreateMap<CreateUpdateDynamicUrlDto, DynamicUrl>();
+        CreateMap<CreateUpdateDynamicUrlDto, DynamicUrlDto>();
+        CreateMap<DynamicUrlDto, CreateUpdateDynamicUrlDto>();        
+        CreateMap<DynamicUrl, DynamicUrlDto>();
+        CreateMap<DynamicUrl, CreateUpdateDynamicUrlDto>();
+        
         CreateMap<Application, GrantApplicationDto>();
         CreateMap<ApplicationAssignment, GrantApplicationAssigneeDto>();
         CreateMap<Person, GrantApplicationAssigneeDto>()
