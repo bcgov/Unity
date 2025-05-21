@@ -75,15 +75,21 @@ function configureSearch(dataTableInstance) {
     });
 }
 
+function mapTagWithType(tag, tagType) {
+    return {
+        ...tag,
+        tagType: tagType.name,
+        tagTypeKey: Object.keys(TagTypes).find(key => TagTypes[key] === tagType)
+    };
+}
+
 function getUnifiedTagSummaryAjax(requestData, callback, settings) {
     // Fetch data from all tag types and combine
     let promises = Object.values(TagTypes).map(tagType =>
         tagType.service.getTagSummary()
-            .then(result => (result.items || []).map(tag => ({
-                ...tag,
-                tagType: tagType.name,
-                tagTypeKey: Object.keys(TagTypes).find(key => TagTypes[key] === tagType)
-            })))
+            .then(result =>
+                (result.items || []).map(tag => mapTagWithType(tag, tagType))
+            )
     );
 
     Promise.all(promises).then(results => {
