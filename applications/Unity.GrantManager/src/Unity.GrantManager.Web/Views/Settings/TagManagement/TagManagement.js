@@ -218,7 +218,7 @@ $(function () {
     globalTagsTable.on('click', 'td button.delete-button', function (event) {
         event.stopPropagation();
         let rowData = globalTagsTable.row(event.target.closest('tr')).data();
-        handleDeleteTag(rowData.text, rowData.count);
+        handleDeleteTag(rowData.text);
     });
 
     abp.log.debug('Global Tags Table initialized!');
@@ -229,8 +229,8 @@ $(function () {
         });
     }
 
-    function handleDeleteTag(tagText, tagCount) {
-        abp.message.confirm(`Are you sure you want to delete ${tagCount} "${tagText}" tags?`, "Delete Tag?")
+    function handleDeleteTag(tagText) {
+        abp.message.confirm(`Are you sure you want to delete the "${tagText}" tag?`, "Delete Tag?")
             .then(function (confirmed) {
                 if (confirmed) {
                     try {
