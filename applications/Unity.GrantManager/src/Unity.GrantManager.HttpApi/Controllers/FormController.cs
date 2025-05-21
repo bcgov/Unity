@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Chefs;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Domain.Entities;

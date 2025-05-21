@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.Integration.Css
+namespace Unity.GrantManager.Integrations.Css
 {
     public class CssUserAttributes
     {

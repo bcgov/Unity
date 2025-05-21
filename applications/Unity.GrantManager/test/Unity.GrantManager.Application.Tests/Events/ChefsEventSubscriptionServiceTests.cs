@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Chefs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Reporting.FieldGenerators;
 using Unity.Modules.Shared.Features;
 using Volo.Abp.Application.Dtos;

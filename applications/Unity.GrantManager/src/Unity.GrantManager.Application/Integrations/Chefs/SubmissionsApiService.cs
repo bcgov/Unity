@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Integration.Chefs;
 using Unity.GrantManager.Integrations.Exceptions;
 using Unity.GrantManager.Integrations.Http;
 using Volo.Abp;

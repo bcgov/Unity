@@ -8,7 +8,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Events;
 using Volo.Abp;
 using System.Collections.Generic;
-using Unity.GrantManager.Integration.Orgbook;
+using Unity.GrantManager.Integrations.Orgbook;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using Unity.Modules.Shared.Utils;

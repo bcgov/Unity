@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace Unity.GrantManager.Integration.Chefs
+namespace Unity.GrantManager.Integrations.Chefs
 {
     public interface ISubmissionsApiService : IApplicationService
     {

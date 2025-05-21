@@ -1,0 +1,24 @@
+﻿@page
+@using Unity.GrantManager.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+
+@model Unity.GrantManager.Web.Pages.EndpointManagement.CreateModalModel
+
+@inject IStringLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+
+<abp-dynamic-form abp-model="Endpoint" asp-page="/EndpointManagement/Endpoints/CreateModal">
+    <abp-modal>
+        <abp-modal-header title="@L["Common:Command:Create"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-form-content />
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</abp-dynamic-form>

@@ -1,4 +1,4 @@
-﻿using Unity.GrantManager.Integration.Geocoder;
+﻿using Unity.GrantManager.Integrations.Geocoder;
 
 namespace Unity.GrantManager.Integrations.Geocoder
 {

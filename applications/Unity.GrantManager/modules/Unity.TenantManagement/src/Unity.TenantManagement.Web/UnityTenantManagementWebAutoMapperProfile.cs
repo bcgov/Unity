@@ -8,6 +8,7 @@ public class AbpTenantManagementWebAutoMapperProfile : Profile
 {
     public AbpTenantManagementWebAutoMapperProfile()
     {
+
         //List
         CreateMap<TenantDto, EditModalModel.TenantInfoModel>()
             .MapExtraProperties();

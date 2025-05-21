@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using System.Linq;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
-using Unity.GrantManager.Integration.Css;
+using Unity.GrantManager.Integrations.Css;
 
 namespace Unity.GrantManager.Integrations.Sso
 {

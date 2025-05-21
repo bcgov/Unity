@@ -3,17 +3,13 @@ using System.Threading.Tasks;
 using Unity.Notifications.Templates;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Notifications;
 
-public class NotificationsDataSeedContributor : IDataSeedContributor, ITransientDependency
+public class NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository) : IDataSeedContributor, ITransientDependency
 {
-    private readonly ITemplateVariablesRepository _templateVariablesRepository;
 
-    public NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository)
-    {
-        _templateVariablesRepository = templateVariablesRepository;
-    }
 
     public async Task SeedAsync(DataSeedContext context)
     {
@@ -46,10 +42,10 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
 
         foreach (var template in emailTemplateVariableDtos)
         {
-            var existingVariable = await _templateVariablesRepository.FindAsync(tv => tv.Token == template.Token);
+            var existingVariable = await templateVariablesRepository.FirstOrDefaultAsync(tv => tv.Token == template.Token);
             if (existingVariable == null)
             {
-                await _templateVariablesRepository.InsertAsync(
+                await templateVariablesRepository.InsertAsync(
                     new TemplateVariable { Name = template.Name, Token = template.Token, MapTo = template.MapTo },
                     autoSave: true
                 );

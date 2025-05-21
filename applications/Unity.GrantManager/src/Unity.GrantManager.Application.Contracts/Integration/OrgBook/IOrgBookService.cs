@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace Unity.GrantManager.Integration.Orgbook
+namespace Unity.GrantManager.Integrations.Orgbook
 {
     public interface IOrgBookService : IApplicationService
     {

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
