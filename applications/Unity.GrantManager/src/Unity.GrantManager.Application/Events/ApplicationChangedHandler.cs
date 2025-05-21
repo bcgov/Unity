@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.Emails;
@@ -19,17 +18,14 @@ namespace Unity.GrantManager.Events
         private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly IFeatureChecker _featureChecker;
         private readonly ILocalEventBus _localEventBus;
-        private readonly IConfiguration _configuration;
         private readonly ISettingProvider _settingProvider;
 
         public ApplicationChangedHandler(
-            IConfiguration configuration,
             IApplicantAgentRepository applicantAgentRepository,
             ILocalEventBus localEventBus,
             IFeatureChecker featureChecker,
             ISettingProvider settingProvider)
         {
-            _configuration = configuration;
             _applicantAgentRepository = applicantAgentRepository;
             _localEventBus = localEventBus;
             _featureChecker = featureChecker;
