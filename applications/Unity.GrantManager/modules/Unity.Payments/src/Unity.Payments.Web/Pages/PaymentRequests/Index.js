@@ -458,7 +458,11 @@ $(function () {
             data: 'paymentDate',
             className: 'data-table-header',
             index: columnIndex,
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
+            render: function(data) {
+                if (!data) return null;
+                return luxon.DateTime.fromFormat(data, 'dd-MMM-yyyy')
+                    .toFormat('yyyy-MM-dd');
+            }
         };
     }
 
