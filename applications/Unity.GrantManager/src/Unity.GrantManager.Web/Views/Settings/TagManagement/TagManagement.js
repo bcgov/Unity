@@ -77,19 +77,14 @@ function configureSearch(dataTableInstance) {
 
 function getUnifiedTagSummaryAjax(requestData, callback, settings) {
     // Fetch data from all tag types and combine
-    let promises = Object.values(TagTypes).map(tagType => {
-        return new Promise((resolve, reject) => {
-            tagType.service.getTagSummary({}).then(result => {
-                // Map tags with type information
-                const tagsWithType = (result.items || []).map(tag => ({
-                    ...tag,
-                    tagType: tagType.name,
-                    tagTypeKey: Object.keys(TagTypes).find(key => TagTypes[key] === tagType)
-                }));
-                resolve(tagsWithType);
-            }).catch(reject);
-        });
-    });
+    let promises = Object.values(TagTypes).map(tagType =>
+        tagType.service.getTagSummary()
+            .then(result => (result.items || []).map(tag => ({
+                ...tag,
+                tagType: tagType.name,
+                tagTypeKey: Object.keys(TagTypes).find(key => TagTypes[key] === tagType)
+            })))
+    );
 
     Promise.all(promises).then(results => {
         // Combine all tags into a single array
