@@ -118,7 +118,6 @@ $(function () {
         data: {},
         responseCallback,
         actionButtons,
-        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
@@ -456,7 +455,7 @@ $(function () {
         return {
             title: l('ApplicationPaymentListTable:PaidOn'),
             name: 'paidOn',
-            data: 'paidOn',
+            data: 'paymentDate',
             className: 'data-table-header',
             index: columnIndex,
             render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
