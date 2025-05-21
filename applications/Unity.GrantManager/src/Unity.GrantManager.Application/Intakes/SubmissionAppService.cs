@@ -175,7 +175,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         var request = new RestRequest($"/forms/166bc157-9a68-4ef2-8559-7d680b6870b4/submissions", Method.Get)
             //.AddParameter("draft", true)
             .AddParameter("fields", "applicantAgent.name");
-        request.Authenticator = new HttpBasicAuthenticator("166bc157-9a68-4ef2-8559-7d680b6870b4", "da2b531e-65a6-467a-919a-0858003d7ca7");
+        request.Authenticator = new HttpBasicAuthenticator("166bc157-9a68-4ef2-8559-7d680b6870b4", "{api_key}");
 
         var response = await _intakeClient.GetAsync(request);
 
