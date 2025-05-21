@@ -460,9 +460,8 @@ $(function () {
             index: columnIndex,
             render: function(data) {
                 if (!data) return null;
-                return luxon.DateTime.fromFormat(data, 'dd-MMM-yyyy')
-                    .toFormat('yyyy-MM-dd');
-            }
+                return DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name);
+            }        
         };
     }
 
