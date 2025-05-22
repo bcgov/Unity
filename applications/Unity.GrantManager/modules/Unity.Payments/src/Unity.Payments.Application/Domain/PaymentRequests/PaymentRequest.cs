@@ -153,7 +153,7 @@ namespace Unity.Payments.Domain.PaymentRequests
             }
             else if(!string.IsNullOrEmpty(paymentDate))
             {
-            PaymentDate = paymentDate;
+                PaymentDate = paymentDate;
             }
             return this;
         }
