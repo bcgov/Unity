@@ -1,5 +1,6 @@
 # Prompt the user to optionally login to OpenShift
-$loginResponse = Read-Host "Do you want to log in to OpenShift now? (y/n)"
+Write-Host "Do you want to log in to OpenShift now? (y/n)" -ForegroundColor Green
+$loginResponse = Read-Host
 if ($loginResponse -match '^(y|yes)$') {
     try {
         oc login --web --server=https://api.silver.devops.gov.bc.ca:6443
@@ -13,7 +14,8 @@ if ($loginResponse -match '^(y|yes)$') {
 # Prompt user for environment selection
 $validEnvironments = @("dev", "dev2", "test", "uat", "prod")
 do {
-    $environment = Read-Host "Enter environment (dev, dev2, test, uat, prod)"
+    Write-Host "Enter environment (dev, dev2, test, uat, prod)" -ForegroundColor Green
+    $environment = Read-Host
 } while (-not ($validEnvironments -contains $environment))
 
 # Configuration parameters (dynamically updated based on environment)
