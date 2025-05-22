@@ -70,9 +70,10 @@ namespace Unity.Payments.Integrations.Cas
             if (site != null && site.Supplier != null && site.Supplier.Number != null && accountDistributionCode != null)
             {
                 // This can not be UTC Now it is sent to cas and can not be in the future - this is not being stored in Unity as a date
-                var currentMonth = DateTime.Now.ToString("MMM").Trim('.');
-                var currentDay = DateTime.Now.ToString("dd");
-                var currentYear = DateTime.Now.ToString("yyyy");
+                var localDateTime = DateTime.UtcNow.ToLocalTime();
+                var currentMonth = localDateTime.ToString("MMM").Trim('.');
+                var currentDay = localDateTime.ToString("dd");
+                var currentYear = localDateTime.ToString("yyyy");
                 var dateStringDayMonYear = $"{currentDay}-{currentMonth}-{currentYear}";
 
                 casInvoice.SupplierNumber = site.Supplier.Number; // This is from each Applicant
