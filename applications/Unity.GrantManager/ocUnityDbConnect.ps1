@@ -1,4 +1,14 @@
-oc login --web --server= https://api.silver.devops.gov.bc.ca:6443
+# Prompt the user to optionally login to OpenShift
+$loginResponse = Read-Host "Do you want to log in to OpenShift now? (y/n)"
+if ($loginResponse -match '^(y|yes)$') {
+    try {
+        oc login --web --server=https://api.silver.devops.gov.bc.ca:6443
+    }
+    catch {
+        Write-Host "Login failed. Please check your connection and credentials." -ForegroundColor Red
+        exit 1
+    }
+}
 
 # Prompt user for environment selection
 $validEnvironments = @("dev", "dev2", "test", "uat", "prod")
