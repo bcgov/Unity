@@ -151,6 +151,10 @@ namespace Unity.Payments.Domain.PaymentRequests
             {
                 PaymentDate = date.ToString("yyyy-MM-dd");
             }
+            else if(!string.IsNullOrEmpty(paymentDate))
+            {
+                PaymentDate = paymentDate;
+            }
             return this;
         }
 
