@@ -7,6 +7,7 @@ $(function () {
     });
 
     const l = abp.localization.getResource('GrantManager');
+    let dt = $('#ReconciliationTable');
 
     const placeholderText = function () {
         return "<span class=\"badge text-bg-secondary\">PLACEHOLDER</span>";
@@ -16,12 +17,25 @@ $(function () {
         return document.getElementById('PassFormIdToJavaScript').value;
     }
 
-    $('#ReconciliationTable').DataTable(
+    $('#search').on('input', function () {
+        let table = $('#ReconciliationTable').DataTable();
+        table.search($(this).val()).draw();
+    });
+
+    function handleSearch() {
+        let filter = $('.dataTables_filter input').val();
+        console.info(filter);
+    }
+
+    let filterData = {"Status": "Missing"};
+
+    let iDt = $('#ReconciliationTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            serverSide: true,
+            serverSide: false,
             paging: true,
             order: [[1, "asc"]],
-            searching: false,
+            searching: true,
+            externalSearchInputId: `#search`,
             scrollX: true,
             ajax:
                 abp.libs.datatables.createAjax(
@@ -33,11 +47,6 @@ $(function () {
                     render: function (data) {
                         return data;
                     }
-                },
-                {
-                    title: l('Unity ID'),
-                    data: "unityId",
-                    render: placeholderText
                 },
                 {
                     title: l('Applicant Name'),
@@ -56,14 +65,14 @@ $(function () {
                     data: "status",
                     render: function (data, type, row) {
                         if (row.formSubmissionStatusCode === 'SUBMITTED') {
-                            return '<span class="badge bg-success">Submitted</span>';
+                            return '<span class="badge bg-danger">Missing</span>';
                         } else {
                             return '<span class="badge bg-secondary">Draft</span>';
                         }
                     }
                 },
                 {
-                    title: l('SubmissionDate'),
+                    title: l('CreationDate'),
                     data: "createdAt",
                     render: function (data) {
                         return luxon
@@ -74,13 +83,256 @@ $(function () {
                     }
                 },
                 {
-                    title: l('ProjectName'),
+                    title: l('Tenant'),
                     data: "projectTitle",
                     render: placeholderText
                 },
-            ]
+            ],
+            processing: true,
+            stateSaveParams: function (settings, data) {
+                let searchValue = $(settings.oInit.externalSearchInputId).val();
+                data.search.search = searchValue;
+
+                let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
+                $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
+            },
+            stateLoadParams: function (settings, data) {
+                $(settings.oInit.externalSearchInputId).val(data.search.search);
+
+                data.columns.forEach((column, index) => {
+                    if (settings.aoColumns[index] + "" != "undefined") {
+                        const title = settings.aoColumns[index].sTitle;
+                        const value = column.search.search;
+                        filterData[title] = value;
+                    }
+                });
+            }
         })
     );
+
+    updateFilter(iDt, dt[0].id, filterData);
+
+    iDt.on('column-reorder.dt', function (e, settings) {
+        updateFilter(iDt, dt[0].id, filterData);
+    });
+    iDt.on('column-visibility.dt', function (e, settings, deselectedcolumn, state) {
+        updateFilter(iDt, dt[0].id, filterData);
+    });
+
+    initializeFilterButtonPopover(iDt);
+
+    searchFilter(iDt);
+
+    setExternalSearchFilter(iDt);
+
+    // Prevent row selection when clicking on a link inside a cell
+    iDt.on('user-select', function (e, dt, type, cell, originalEvent) {
+        if (originalEvent.target.nodeName.toLowerCase() === 'a') {
+            e.preventDefault();
+        }
+    });
+    function toggleFilterRow() {
+        $(this).popover('toggle');
+        $('#dtFilterRow').toggleClass('hidden');
+    }
+
+    function findColumnByTitle(title, dataTable) {
+        let columnIndex = dataTable
+            .columns()
+            .header()
+            .map(c => $(c).text())
+            .indexOf(title);
+        return dataTable.column(columnIndex);
+    }
+
+    function getColumnByName(name, columns) {
+        return columns.find(obj => obj.name === name);
+    }
+
+    function isColumnVisToggled(title, dataTable) {
+        let column = findColumnByTitle(title, dataTable);
+        if (column.visible())
+            return ' dt-button-active';
+        else
+            return null;
+    }
+
+    function toggleManageColumnButton(config, dataTable) {
+        let column = findColumnByTitle(config.text, dataTable);
+        column.visible(!column.visible());
+    }
+
+    function getColumnToggleButtonsSorted(displayListColumns, dataTable) {
+        let exludeIndxs = [0];
+        const res = displayListColumns
+            .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
+            .filter(obj => !exludeIndxs.includes(obj.index))
+            .filter(obj => obj.title !== 'Actions')
+            .sort((a, b) => a.title.localeCompare(b.title))
+            .map(a => ({
+                text: a.title,
+                id: 'managecols-' + a.index,
+                action: function (e, dt, node, config) {
+                    toggleManageColumnButton(config, dataTable);
+                    if (isColumnVisToggled(a.title, dataTable)) {
+                        node.addClass('dt-button-active');
+                    } else {
+                        node.removeClass('dt-button-active');
+                    }
+                },
+                className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable),
+                extend: 'columnToggle',
+                columns: a.index
+            }));
+        return res;
+    }
+
+    function setExternalSearchFilter(dataTableInstance) {
+        let searchId = dataTableInstance.init().externalSearchInputId;
+
+        // Exclude default search inputs that have custom logic
+        if (searchId !== false && searchId !== '#search') {
+            $('.dataTables_filter input').attr("placeholder", "Search");
+            $('.dataTables_filter label')[0].childNodes[0].remove();
+
+            $(searchId).on('input', function () {
+                let filter = dataTableInstance.search($(this).val()).draw();
+                console.info(`Filter on #${searchId}: ${filter}`);
+            });
+        }
+    }
+
+    function updateFilter(dt, dtName, filterData) {
+        let optionsOpen = false;
+        $("#tr-filter").each(function () {
+            if ($(this).is(":visible"))
+                optionsOpen = true;
+        })
+        $('.tr-toggle-filter').remove();
+        let newRow = $("<tr class='tr-toggle-filter' id='tr-filter'>");
+
+        dt.columns().every(function () {
+            let column = this;
+            if (column.visible()) {
+                let title = column.header().textContent;
+                if (title && title !== 'Actions') {
+
+                    let filterValue = filterData[title] ? filterData[title] : '';
+
+                    let input = $("<input>", {
+                        type: 'text',
+                        class: 'form-control input-sm custom-filter-input',
+                        placeholder: title,
+                        value: filterValue
+                    });
+
+                    let newCell = $("<td>").append(input);
+
+                    if (column.search() !== filterValue) {
+                        column.search(filterValue).draw();
+                    }
+
+                    newCell.find("input").on("keyup", function () {
+                        if (column.search() !== this.value) {
+                            column.search(this.value).draw();
+                            updateFilterButton(dt);
+                        }
+                    });
+
+                    newRow.append(newCell);
+                }
+                else {
+                    let newCell = $("<td>");
+                    newRow.append(newCell);
+                }
+            }
+        });
+
+        updateFilterButton(dt);
+
+        $(`#${dtName} thead`).after(newRow);
+
+        if (optionsOpen) {
+            $(".tr-toggle-filter").show();
+        }
+    }
+
+    function searchFilter(iDt) {
+        let searchValue = $(iDt.init().externalSearchInputId).val();
+        if (searchValue) {
+            iDt.search(searchValue).draw();
+        }
+
+        if ($('#btn-toggle-filter').text() === FilterDesc.With_Filter) {
+            $(".tr-toggle-filter").show();
+        }
+    }
+
+    function updateFilterButton(dt) {
+        let searchValue = $(dt.init().externalSearchInputId).val();
+        let columnFiltersApplied = false;
+        dt.columns().every(function () {
+            let search = this.search();
+            if (search) {
+                columnFiltersApplied = true;
+            }
+        });
+
+        let hasFilter = columnFiltersApplied || searchValue !== '';
+        $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
+    }
+
+    $('.data-table-select-all').click(function () {
+
+        if ($('.data-table-select-all').is(":checked")) {
+            PubSub.publish('datatable_select_all', true);
+        } else {
+            PubSub.publish('datatable_select_all', false);
+        }
+
+    });
+
+    function commonTableActionButtons(exportTitle) {
+        return [
+            {
+                text: 'Filter',
+                id: "btn-toggle-filter",
+                className: 'btn-secondary custom-table-btn m-0',
+                action: function (e, dt, node, config) { },
+                attr: {
+                    id: 'btn-toggle-filter'
+                }
+            },
+            {
+                extend: 'csv',
+                text: 'Export',
+                title: exportTitle,
+                className: 'custom-table-btn flex-none btn btn-secondary hidden-export-btn d-none',
+                exportOptions: {
+                    columns: ':visible:not(.notexport)',
+                    orthogonal: 'fullName',
+                    format: {
+                        body: function (data, row, column, node) {
+                            return data === nullPlaceholder ? '' : data;
+                        }
+                    }
+                }
+            }
+        ];
+    }
+
+    // Toggle hidden export buttons for Ctrl+Alt+Shift+E globally
+    $(document).keydown(function (e) {
+        if (e.ctrlKey && e.altKey &&
+            e.shiftKey && e.key === 'E') {
+            // Toggle d-none class on elements with hidden-export class
+            $('.hidden-export-btn').toggleClass('d-none');
+
+            // Prevent default behavior
+            e.preventDefault();
+            return false;
+        }
+    });
 });
 /*
 

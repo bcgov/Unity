@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Polly;
 using RestSharp;
 using RestSharp.Authenticators;
 using System;
@@ -11,8 +12,11 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
+using Volo.Abp.TenantManagement;
 using static Unity.Modules.Shared.UnitySelector.Notification;
 
 namespace Unity.GrantManager.Intakes;
@@ -25,6 +29,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
     private readonly RestClient _intakeClient;
     private readonly IStringEncryptionService _stringEncryptionService;
     private readonly IApplicationRepository _applicationRepository;
+    private readonly ITenantRepository _tenantRepository;
     private static List<string> SummaryFieldsFilter
     {
         // NOTE: This will be replaced by a customizable filter.
@@ -46,7 +51,8 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         IRepository<ApplicationForm, Guid> applicationFormRepository,
         RestClient restClient,
         IStringEncryptionService stringEncryptionService,
-        IApplicationRepository applicationRepository
+        IApplicationRepository applicationRepository,
+        ITenantRepository tenantRepository
         )
     {
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
@@ -54,6 +60,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         _intakeClient = restClient;
         _stringEncryptionService = stringEncryptionService;
         _applicationRepository = applicationRepository;
+        _tenantRepository = tenantRepository;
     }
 
 
@@ -167,15 +174,17 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
 
     public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId)
     {
-        if (formId == null)
-        {
-            throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
-        }
+        //if (formId == null)
+        //{
+        //    throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
+        //} 
+        string ? apiKey = Environment.GetEnvironmentVariable("API_KEY");
+        var id = "166bc157-9a68-4ef2-8559-7d680b6870b4";
 
-        var request = new RestRequest($"/forms/166bc157-9a68-4ef2-8559-7d680b6870b4/submissions", Method.Get)
+        var request = new RestRequest($"/forms/{id}/submissions", Method.Get)
             //.AddParameter("draft", true)
             .AddParameter("fields", "applicantAgent.name");
-        request.Authenticator = new HttpBasicAuthenticator("166bc157-9a68-4ef2-8559-7d680b6870b4", "{api_key}");
+        request.Authenticator = new HttpBasicAuthenticator(id, apiKey ?? "no api key given");
 
         var response = await _intakeClient.GetAsync(request);
 
@@ -205,10 +214,32 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         else
         {
 
-            var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(0, 100);
+            var tenants = await _tenantRepository.GetListAsync();
+            foreach (var tenant in tenants)
+            {
+                System.Diagnostics.Debug.WriteLine($"{tenant.Id} - {tenant.Name}");
+                using (CurrentTenant.Change(tenant.Id))
+                {
+                    var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(0, 100);
+                    var appDtos = new List<GrantApplicationDto>();
+                    var rowCounter = 0;
+                    foreach (var grouping in groupedResult)
+                    {
+                        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
+                        appDto.RowCount = rowCounter;
+                        appDtos.Add(appDto);
+                        rowCounter++;
+                        System.Diagnostics.Debug.WriteLine(appDto.ReferenceNo);
+                        System.Diagnostics.Debug.WriteLine(appDto.CreationTime); 
+                    }
+
+                    jsonResponse.RemoveAll(r => appDtos.Any(appDto => r.ConfirmationId.ToString() == appDto.ReferenceNo));
+                }
+            }
+
 
             // Remove all deleted and draft submissions
-            System.Diagnostics.Debug.WriteLine(JsonSerializer.Serialize(jsonResponse, submissionOptions));
+            //System.Diagnostics.Debug.WriteLine(JsonSerializer.Serialize(jsonResponse, submissionOptions));
             //jsonResponse.RemoveAll(r => r.Deleted || r.FormSubmissionStatusCode != "SUBMITTED");
             jsonResponse.RemoveAll(r => r.Deleted);
             return new PagedResultDto<FormSubmissionSummaryDto>(jsonResponse.Count, jsonResponse);
