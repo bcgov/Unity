@@ -18,11 +18,9 @@ button {
     display: none;
 }
 
-
 .user-role-full {
     margin-left: 20px;
 }
-
 
 .form-control:disabled,
 .form-control[readonly] {
@@ -40,21 +38,9 @@ button {
     overflow-anchor: none;
 }
 
-&:hover {
-    z-index: 2;
-}
-
-&:focus {
-    z-index: 3;
-    outline: 0;
-
-}
-
-
 .accordion-header {
     margin-bottom: 0;
 }
-
 
 #assessment-scoresheet #section-button::after {
     -webkit-filter: grayscale(1) invert(0);
