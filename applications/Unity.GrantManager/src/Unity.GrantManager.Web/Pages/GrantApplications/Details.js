@@ -373,8 +373,8 @@ $(function () {
         let divToStore = newDiv.prop('outerHTML');
 
         newTab.document.write('<html><head><title>Print</title>');
-        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
-        newTab.document.write('<script src="/libs/formiojs/formio.form.js"></script>');
+        newTab.document.write('<script src="/libs/jquery/jquery.min.js"></script>');
+        newTab.document.write('<script src="/libs/formiojs/formio.form.min.js"></script>');
         newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
         newTab.document.write('<link rel="stylesheet" href="/libs/formiojs/formio.form.css">');
         newTab.document.write('</head><body>');
@@ -409,7 +409,7 @@ $(function () {
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
         let newTab = window.open('', '_blank');
         newTab.document.write('<html><head><title>Print</title>');
-        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
+        newTab.document.write('<script src="/libs/jquery/jquery.min.js"></script>');
         newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
         newTab.document.write('<link rel="stylesheet" href="/Pages/GrantApplications/ScoresheetPrint.css">');
         newTab.document.write('</head><body>');
