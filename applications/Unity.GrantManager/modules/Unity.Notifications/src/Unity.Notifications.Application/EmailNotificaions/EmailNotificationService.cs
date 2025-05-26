@@ -105,7 +105,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             return null;
         }
         
-        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "text", emailTemplateName);
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName);
         EmailLog emailLog = await _emailLogsRepository.GetAsync(emailId);
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
@@ -129,7 +129,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         {
             return null;
         }
-        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "text", emailTemplateName);
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName);
         EmailLog emailLog = new EmailLog();
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
@@ -361,7 +361,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.Subject = emailDynamicObject.subject;
         emailLog.BodyType = emailDynamicObject.bodyType;
         emailLog.FromAddress = emailDynamicObject.from;
-        emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault() ?? "";
+        emailLog.ToAddress = String.Join(",", emailDynamicObject.to);
         emailLog.TemplateName = emailDynamicObject.templateName;
         return emailLog;
     }

@@ -155,6 +155,9 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantApplicationPermissions.Approvals.BulkApplicationApproval,
+                    UnitySelector.SettingManagement.Tags.Default,
+                    UnitySelector.SettingManagement.Tags.Update,
+                    UnitySelector.SettingManagement.Tags.Delete,
 
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
@@ -196,7 +199,10 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
 
-                    UnitySettingManagementPermissions.BackgroundJobSettings
+                    UnitySettingManagementPermissions.BackgroundJobSettings,
+                    UnitySelector.SettingManagement.Tags.Default,
+                    UnitySelector.SettingManagement.Tags.Update,
+                    UnitySelector.SettingManagement.Tags.Delete
                 ], context.TenantId);
 
 

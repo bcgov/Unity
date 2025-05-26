@@ -142,7 +142,19 @@ namespace Unity.Payments.Domain.PaymentRequests
 
         public PaymentRequest SetPaymentDate(string paymentDate)
         {
-            PaymentDate = paymentDate;
+            if (!string.IsNullOrEmpty(paymentDate)
+                && DateTime.TryParseExact(paymentDate,
+                                          "dd-MMM-yyyy",
+                                          System.Globalization.CultureInfo.InvariantCulture,
+                                          System.Globalization.DateTimeStyles.None,
+                                          out DateTime date))
+            {
+                PaymentDate = date.ToString("yyyy-MM-dd");
+            }
+            else if(!string.IsNullOrEmpty(paymentDate))
+            {
+                PaymentDate = paymentDate;
+            }
             return this;
         }
 

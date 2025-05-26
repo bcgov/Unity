@@ -54,6 +54,7 @@
         data: {},
         responseCallback,
         actionButtons: [...commonTableActionButtons('Grant Programs')],
+        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
