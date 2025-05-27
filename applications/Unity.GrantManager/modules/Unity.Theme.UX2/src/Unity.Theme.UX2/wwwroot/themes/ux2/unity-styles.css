@@ -51,6 +51,13 @@
     margin: auto;
 }
 
+.unity-navbar-nav {
+    display: flex;
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+}
+
     .unity-navbar .unity-container-fluid {
         display: flex;
     }

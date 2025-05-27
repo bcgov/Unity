@@ -54,6 +54,11 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
                     autoSave: true
                 );
             }
+            else if (existingVariable.Token == "category" && existingVariable.MapTo == "category")
+            {
+                existingVariable.MapTo = "applicationForm.category";
+                await _templateVariablesRepository.UpdateAsync(existingVariable, autoSave: true);
+            }
         }
     }
 }

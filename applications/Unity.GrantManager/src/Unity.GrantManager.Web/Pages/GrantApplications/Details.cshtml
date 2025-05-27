@@ -38,8 +38,8 @@
 @section scripts
 {
     <abp-script src="/Pages/GrantApplications/Details.js" />
-    <abp-script src="/libs/formiojs/formio.form.js" />
-    <abp-script src="/libs/jspdf/dist/jspdf.umd.js" />
+    <abp-script src="/libs/formiojs/formio.form.min.js" />
+    <abp-script src="/libs/jspdf/dist/jspdf.umd.min.js" />
     <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
 }
 
@@ -82,8 +82,16 @@
 
     public string ZoneCssClass(string zoneName) => IsZoneVisible(zoneName) ? string.Empty : "d-none";
 }
+
 <div id="main-loading">
-    <img src="/images/homepage/unity.svg" alt="unity-application-loading">
+    <div class="d-flex justify-content-center">
+        <img src="/images/homepage/unity.svg" alt="unity-application-loading">
+    </div>
+    <div class="m-4 d-flex justify-content-center">
+        <div class="spinner-border">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
 </div>
 <div class="m-0 h-100 application-details-container fade-in-load" id="main-container">
     <div id="main-left">

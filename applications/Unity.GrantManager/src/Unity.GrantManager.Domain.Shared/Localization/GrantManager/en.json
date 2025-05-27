@@ -135,6 +135,7 @@
     "Permission:GrantApplicationManagement.Assessments.Complete": "Complete Assessment",
     "Permission:GrantApplicationManagement.Approvals.Default": "Approvals",
     "Permission:GrantApplicationManagement.Approvals.Complete": "Complete Approval",
+    "Permission:GrantApplicationManagement.Approvals.DeferAfterApproval": "Defer After Approval",
     "Permission:GrantApplicationManagement.Comments.Default": "Comments",
     "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment",
     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",

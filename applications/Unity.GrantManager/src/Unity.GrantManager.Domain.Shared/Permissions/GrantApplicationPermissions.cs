@@ -56,6 +56,7 @@ namespace Unity.GrantManager.Permissions
             public const string Default = GroupName + ".Approvals";
             public const string Complete = Default + ".Complete";
             public const string BulkApplicationApproval = Default + ".BulkApplicationApproval";
+            public const string DeferAfterApproval = Default + ".DeferAfterApproval";
         }
 
         public static class Comments

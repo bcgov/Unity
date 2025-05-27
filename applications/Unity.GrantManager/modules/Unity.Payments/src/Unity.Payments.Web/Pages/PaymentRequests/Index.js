@@ -118,7 +118,6 @@ $(function () {
         data: {},
         responseCallback,
         actionButtons,
-        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
@@ -456,10 +455,20 @@ $(function () {
         return {
             title: l('ApplicationPaymentListTable:PaidOn'),
             name: 'paidOn',
-            data: 'paidOn',
+            data: 'paymentDate',
             className: 'data-table-header',
             index: columnIndex,
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
+            render: function(data) {
+                if (!data) return null;
+                // Check if date is in DD-MMM-YYYY format
+                if (/^\d{2}-[A-Z]{3}-\d{4}$/.test(data)) {
+                    // Parse and reformat
+                    const date = luxon.DateTime.fromFormat(data, 'dd-MMM-yyyy');
+                    return date.toFormat('yyyy-MM-dd');
+                }
+                // Use default render for other formats
+                return DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)(data);
+            }        
         };
     }
 

@@ -1,15 +1,4 @@
-﻿@media (min-width: 1400px) {
-    .container-xxl,
-    .container-xl,
-    .container-lg,
-    .container-md,
-    .container-sm,
-    .container {
-        max-width: 1600px;
-    }
-}
-
-.application-details-container {
+﻿.application-details-container {
     width: 100%;
 }
 
@@ -23,7 +12,7 @@
 
 .card-header:not(.card-body .card-header)::before {
     content: ' ';
-    display: inline-block;
+    display: block;
     border-bottom: 1px solid #313132;
     border-right: 1px solid #313132;
     height: 10px;
@@ -35,7 +24,7 @@
 
 .card-header:not(.card-body .card-header).custom-active::before {
     content: ' ';
-    display: inline-block;
+    display: block;
     border-bottom: 1px solid #313132;
     border-right: 1px solid #313132;
     height: 10px;
@@ -54,9 +43,8 @@
     font-weight: bold !important;
 }
 
-
 /* Target elements with class names starting with 'same-class' */
-[class^="formio-component-nextTab"] {
+[class^='formio-component-nextTab'] {
     /* Apply your common CSS styles here */
     display: none;
     /* Add more common styles as needed */
@@ -82,11 +70,9 @@
     border-right: 1px solid #dddddd;
 }
 
-
-
 .add-review-btn {
     background: #003366;
-    color: #FFFFFF;
+    color: #ffffff;
     border: 0px;
     border-radius: 3px;
     font-weight: 400;
@@ -147,7 +133,7 @@
     gap: 8px;
     display: flex;
     background: #003366;
-    color: #FFFFFF;
+    color: #ffffff;
     border: 0px;
     border-radius: 3px;
     font-weight: 400;
@@ -156,11 +142,9 @@
     margin-top: 1rem;
 }
 
-
-
 .recom-select {
     background: #003366;
-    color: #FFFFFF;
+    color: #ffffff;
     border: 0px;
     border-radius: 3px;
     font-weight: 400;
@@ -168,7 +152,7 @@
 }
 
 .recom-select:hover {
-    background: #FFFFFF;
+    background: #ffffff;
     color: #333;
 }
 
@@ -219,7 +203,6 @@ textarea::placeholder {
     color: #b9b9b9 !important;
 }
 
-
 #widget {
     position: relative;
 }
@@ -228,7 +211,7 @@ textarea::placeholder {
     position: absolute;
     top: 0;
     right: 0;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
 }
 
@@ -251,14 +234,13 @@ select.selected {
     background-color: #fff !important;
 }
 
-
 .review-list-heading {
     margin-left: 0.5rem;
     margin-top: 0.3rem;
 }
 
 .mb-2.card.border {
-    border-bottom: 1px solid rgba(214, 214, 214, 1)
+    border-bottom: 1px solid rgba(214, 214, 214, 1);
 }
 
 .card-header.bg-default {
@@ -353,7 +335,6 @@ div#formio button {
     display: none;
 }
 
-
 form label.error {
     color: #dc3545 !important;
     font-size: 0.8em;
@@ -403,14 +384,8 @@ form label.error {
 .fade-in-load {
     opacity: 0;
     transition: opacity 0.15s ease-in-out;
-    /* Adjust the duration and easing as needed */
 }
 
 .fade-in-load.visible {
     opacity: 1;
-}
-
-#main-loading {
-    display: flex;
-    justify-content: center;
 }
