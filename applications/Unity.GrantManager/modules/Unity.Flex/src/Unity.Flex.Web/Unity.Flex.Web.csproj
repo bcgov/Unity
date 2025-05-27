@@ -90,6 +90,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Views\Shared\Components\BCAddressWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\BCAddressWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxGroupDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxGroupDefinitionWidget\Default.js" />
@@ -98,8 +99,13 @@
     <EmbeddedResource Include="Views\Shared\Components\CheckboxWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\Common\KeyValueComponents.js" />
+    <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\CustomFieldDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CustomFieldDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\CustomTabWidget\Default.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="Views\Shared\Components\CustomTabWidget\Default.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
@@ -107,7 +113,9 @@
     <EmbeddedResource Include="Views\Shared\Components\DataGridDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\DataGridWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\DataGridWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\DateWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\DateWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\NumericDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\QuestionDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\QuestionDefinitionWidget\Default.js" />
@@ -121,10 +129,13 @@
     <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.js" />
     <EmbeddedResource Include="Views\Shared\Components\SelectListDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\SelectListDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\SelectListWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\SelectListWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\CurrencyDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\TextAreaDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\TextAreaWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\TextDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\TextDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.js" />
@@ -132,7 +143,9 @@
     <EmbeddedResource Include="Views\Shared\Components\WorksheetListWidget\WorksheetList.js" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetWidget\Worksheet.css" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetWidget\Worksheet.js" />
+    <EmbeddedResource Include="Views\Shared\Components\QuestionYesNoDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\QuestionYesNoDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\YesNoWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\YesNoWidget\Default.js" />
   </ItemGroup>
 
