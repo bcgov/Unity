@@ -7,6 +7,9 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
 {
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
+        // .NET 9 upgrade wants datatable 2 as a default which has an effect on the file dependencies
+        // but we are using the old datatable 1.x version for now - update these removes when move to 
+        // datatable 2.x version
         context.Files.Remove("/libs/datatables.net/js/dataTables.min.js");
         context.Files.Remove("/libs/datatables.net-bs5/js/dataTables.bootstrap5.js");
         context.Files.Remove("/libs/abp/aspnetcore-mvc-ui-theme-shared/datatables/datatables-extensions.js");
