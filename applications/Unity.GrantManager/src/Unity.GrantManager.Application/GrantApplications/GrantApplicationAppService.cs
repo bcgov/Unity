@@ -31,6 +31,7 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -398,10 +399,28 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
     }
 
-    [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
+    [Authorize(UnitySelector.Project.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
+        // Check if the user has the required permissions to update Project Info for either fieldset zone
+        var hasSummaryPermission = await AuthorizationService.IsGrantedAsync(UnitySelector.Project.Summary.Update.Default);
+        var hasLocationPermission = await AuthorizationService.IsGrantedAsync(UnitySelector.Project.Location.Update.Default);
+
+        if (!hasSummaryPermission || !hasLocationPermission)
+        {
+            throw new AbpAuthorizationException("The user doesn't have the required permissions to update Project Info.");
+        }
+
         var application = await _applicationRepository.GetAsync(id);
+
+        var hasProjectZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Default, application.ApplicationFormId);
+        var hasSummaryZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Summary.Default, application.ApplicationFormId);
+        var hasLocationZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Location.Default, application.ApplicationFormId);
+
+        if (!hasSummaryZone || !hasLocationZone)
+        {
+            throw new BusinessException("The Project Info zones are not enabled for this application form.");
+        }
 
         SanitizeProjectInfoDisabledInputs(input, application);
 
@@ -438,6 +457,13 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             throw new EntityNotFoundException();
         }
     }
+    private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
+    {
+        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RequestedAmount ??= application.RequestedAmount;
+        input.ProjectFundingTotal ??= application.ProjectFundingTotal;
+    }
 
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
@@ -458,14 +484,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             throw new EntityNotFoundException();
         }
-    }
-
-    private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
-    {
-        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
-        input.TotalProjectBudget ??= application.TotalProjectBudget;
-        input.RequestedAmount ??= application.RequestedAmount;
-        input.ProjectFundingTotal ??= application.ProjectFundingTotal;
     }
 
     [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
