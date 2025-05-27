@@ -100,9 +100,6 @@
     <EmbeddedResource Include="Views\Shared\Components\Common\KeyValueComponents.js" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CustomFieldDefinitionWidget\Default.js" />
-    <EmbeddedResource Include="Views\Shared\Components\CustomTabWidget\Default.css">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
     <EmbeddedResource Include="Views\Shared\Components\CustomTabWidget\Default.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
