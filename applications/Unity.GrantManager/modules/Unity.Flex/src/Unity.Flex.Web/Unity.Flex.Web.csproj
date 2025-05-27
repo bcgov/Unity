@@ -35,7 +35,6 @@
   <ItemGroup>
     <None Remove="Pages\WorksheetConfiguration\Index.css" />
     <None Remove="Pages\WorksheetConfiguration\Index.js" />
-    <None Remove="Views\Shared\Components\BCAddressWidget\Default.css" />
     <None Remove="Views\Shared\Components\BCAddressWidget\Default.js" />
     <None Remove="Views\Shared\Components\CheckboxGroupDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\CheckboxGroupDefinitionWidget\Default.js" />
@@ -44,9 +43,7 @@
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.css" />
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.js" />
     <None Remove="Views\Shared\Components\Common\KeyValueComponents.js" />
-    <None Remove="Views\Shared\Components\CurrencyWidget\Default.css" />
     <None Remove="Views\Shared\Components\CurrencyWidget\Default.js" />
-    <None Remove="Views\Shared\Components\CustomFieldDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\CustomFieldDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\CustomTabWidget\Default.css" />
     <None Remove="Views\Shared\Components\CustomTabWidget\Default.js" />
@@ -54,9 +51,7 @@
     <None Remove="Views\Shared\Components\DataGridDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\DataGridWidget\Default.css" />
     <None Remove="Views\Shared\Components\DataGridWidget\Default.js" />
-    <None Remove="Views\Shared\Components\DateWidget\Default.css" />
     <None Remove="Views\Shared\Components\DateWidget\Default.js" />
-    <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\QuestionDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\QuestionDefinitionWidget\Default.js" />
@@ -70,12 +65,9 @@
     <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.js" />
     <None Remove="Views\Shared\Components\SelectListDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\SelectListDefinitionWidget\Default.js" />
-    <None Remove="Views\Shared\Components\SelectListWidget\Default.css" />
     <None Remove="Views\Shared\Components\SelectListWidget\Default.js" />
-    <None Remove="Views\Shared\Components\CurrencyDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\CurrencyDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\TextAreaWidget\Default.js" />
-    <None Remove="Views\Shared\Components\TextDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\TextDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
     <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.js" />
@@ -83,9 +75,7 @@
     <None Remove="Views\Shared\Components\WorksheetListWidget\WorksheetList.js" />
     <None Remove="Views\Shared\Components\WorksheetWidget\Worksheet.css" />
     <None Remove="Views\Shared\Components\WorksheetWidget\Worksheet.js" />
-    <None Remove="Views\Shared\Components\QuestionYesNoDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\QuestionYesNoDefinitionWidget\Default.js" />
-    <None Remove="Views\Shared\Components\YesNoWidget\Default.css" />
     <None Remove="Views\Shared\Components\YesNoWidget\Default.js" />
   </ItemGroup>
 
@@ -100,9 +90,6 @@
     <EmbeddedResource Include="Views\Shared\Components\Common\KeyValueComponents.js" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CustomFieldDefinitionWidget\Default.js" />
-    <EmbeddedResource Include="Views\Shared\Components\CustomTabWidget\Default.css">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
     <EmbeddedResource Include="Views\Shared\Components\CustomTabWidget\Default.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
