@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
 using Volo.Abp;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 
@@ -18,22 +20,25 @@ public class ApplicationManager : DomainService, IApplicationManager
     private readonly IApplicationAssignmentRepository _applicationAssignmentRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly IPersonRepository _personRepository;
+    private readonly IPermissionChecker _permissionChecker;
 
     public ApplicationManager(
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatus,
         IApplicationAssignmentRepository applicationAssignmentRepository,
         IUnitOfWorkManager unitOfWorkManager,
-        IPersonRepository personRepository)
+        IPersonRepository personRepository,
+        IPermissionChecker permissionChecker)
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatus;
         _applicationAssignmentRepository = applicationAssignmentRepository;
         _unitOfWorkManager = unitOfWorkManager;
         _personRepository = personRepository;
+        _permissionChecker = permissionChecker;
     }
 
-    public static void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine, bool isDirectApproval = false)
+    public  void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine, bool isDirectApproval = false)
     {
         // TODO: ENSURE APPLICATION STATE MACHINE MATCHES WORKFLOW IN AB#8375
         stateMachine.Configure(GrantApplicationState.OPEN)
@@ -126,12 +131,18 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         stateMachine.Configure(GrantApplicationState.GRANT_APPROVED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
-            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
-          
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
+            .PermitIf(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermission(GrantApplicationPermissions.Approvals.DeferAfterApproval));
+
+
 
         stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
             .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+    }
+    private bool HasPermission(string permission)
+    {
+        return _permissionChecker.IsGrantedAsync(permission).Result;
     }
 
     public async Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId)
@@ -367,4 +378,6 @@ public class ApplicationManager : DomainService, IApplicationManager
         }
         await uow.SaveChangesAsync();
     }
+  
+
 }
