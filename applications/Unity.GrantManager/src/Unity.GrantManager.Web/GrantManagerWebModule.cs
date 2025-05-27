@@ -125,6 +125,10 @@ public class GrantManagerWebModule : AbpModule
         });
     }
 
+    private static readonly string[] _liveHealthCheckTags = ["live"];
+    private static readonly string[] _readyHealthCheckTags = ["ready"];
+    private static readonly string[] _startupHealthCheckTags = ["startup"];
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
@@ -204,13 +208,13 @@ public class GrantManagerWebModule : AbpModule
         });
 
         context.Services.AddHealthChecks()
-            .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
+            .AddCheck<LiveHealthCheck>("live", tags: _liveHealthCheckTags);
 
         context.Services.AddHealthChecks()
-           .AddCheck<ReadyHealthCheck>("ready", tags: new[] { "ready" });
+            .AddCheck<ReadyHealthCheck>("ready", tags: _readyHealthCheckTags);
 
         context.Services.AddHealthChecks()
-           .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
+            .AddCheck<StartupHealthCheck>("startup", tags: _startupHealthCheckTags);
 
         Configure<SettingManagementPageOptions>(options =>
         {

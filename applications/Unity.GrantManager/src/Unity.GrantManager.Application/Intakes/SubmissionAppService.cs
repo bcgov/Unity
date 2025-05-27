@@ -22,21 +22,24 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
     private readonly RestClient _intakeClient;
     private readonly IStringEncryptionService _stringEncryptionService;
-    private static List<string> SummaryFieldsFilter
+
+    private static readonly List<string> _summaryFieldsFilter =
+    [
+        "projectTitle",
+        "projectLocation",
+        "contactName",
+        "organizationLegalName",
+        "eligibleCost",
+        "totalRequest"
+    ];
+
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
-        // NOTE: This will be replaced by a customizable filter.
-        get
-        {
-            return new List<string>(new string[] {
-                "projectTitle",
-                "projectLocation",
-                "contactName",
-                "organizationLegalName",
-                "eligibleCost",
-                "totalRequest"
-            });
-        }
-    }
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
 
     public SubmissionAppService(
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
@@ -168,7 +171,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         }
 
         var request = new RestRequest($"/forms/{formId}/submissions", Method.Get)
-            .AddParameter("fields", SummaryFieldsFilter.JoinAsString(","));
+            .AddParameter("fields", _summaryFieldsFilter.JoinAsString(","));
 
         var response = await _intakeClient.GetAsync(request);
 
@@ -181,15 +184,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
             throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.ErrorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
         }
 
-        var submissionOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
-        List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
+        List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, _jsonSerializerOptions);
 
         if (null == jsonResponse)
         {

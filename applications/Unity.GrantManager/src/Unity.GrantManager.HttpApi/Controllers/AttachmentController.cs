@@ -298,7 +298,7 @@ namespace Unity.GrantManager.Controllers
                 return DisallowedFileTypes.Contains(FileType.ToLower());
             }))
             {
-                ErrorList.Add(new ValidationResult("Invalid file type for " + source.FileName, new[] { "FileName" }));
+                ErrorList.Add(new ValidationResult("Invalid file type for " + source.FileName, [nameof(source.FileName)]));
             }
             return ErrorList;
         }
