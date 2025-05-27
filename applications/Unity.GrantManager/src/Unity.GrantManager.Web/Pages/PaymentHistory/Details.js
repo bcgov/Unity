@@ -33,6 +33,7 @@
         data: inputAction,
         responseCallback,
         actionButtons,
+        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},

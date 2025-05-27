@@ -1,18 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <RootNamespace>Unity.Reporting</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.AutoMapper" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.Ddd.Application" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.AutoMapper" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.Ddd.Application" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="9.1.3" />
     <ProjectReference Include="..\..\..\Unity.Flex\src\Unity.Flex.Application.Contracts\Unity.Flex.Application.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
     <ProjectReference Include="..\Unity.Reporting.Application.Contracts\Unity.Reporting.Application.Contracts.csproj" />
@@ -20,6 +20,14 @@
 
   <ItemGroup>
     <Folder Include="Handlers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
+    <PackageReference Update="Fody" Version="6.9.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

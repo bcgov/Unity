@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 ENV ASPNETCORE_URLS="http://+:8080"
 EXPOSE 8080 443
 WORKDIR /app
@@ -38,7 +38,7 @@ RUN dotnet restore "src/Unity.GrantManager.Web/Unity.GrantManager.Web.csproj"
 COPY . .
 WORKDIR "/src/src/Unity.GrantManager.Web"
 
-RUN dotnet tool install -g Volo.Abp.Cli --version 8.1.4
+RUN dotnet tool install -g Volo.Abp.Studio.Cli --version 0.9.26
 ENV PATH="${PATH}:/root/.dotnet/tools"
 RUN dotnet dev-certs https --trust
 RUN abp install-libs

@@ -1,28 +1,28 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <RootNamespace>Unity.Notifications</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="8.3.4" />    
-    <PackageReference Include="Volo.Abp.AutoMapper" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.BackgroundJobs" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.BackgroundJobs.Abstractions" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.BackgroundJobs.RabbitMQ" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.BackgroundWorkers.Quartz" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.EventBus.RabbitMQ" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.Ddd.Application" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.Http.Client" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="8.3.4" />
+    <PackageReference Include="System.Formats.Asn1" Version="9.0.5" />
+    <PackageReference Include="System.Text.Json" Version="9.0.5" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="9.1.3" />    
+    <PackageReference Include="Volo.Abp.AutoMapper" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.BackgroundJobs" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.BackgroundJobs.Abstractions" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.BackgroundJobs.RabbitMQ" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.BackgroundWorkers.Quartz" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.EventBus.RabbitMQ" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.Ddd.Application" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.Http.Client" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="9.1.3" />
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.Notifications.Application.Contracts\Unity.Notifications.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.Notifications.Domain\Unity.Notifications.Domain.csproj" />
@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-    <PackageReference Update="Fody" Version="6.8.1">
+    <PackageReference Update="Fody" Version="6.9.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
