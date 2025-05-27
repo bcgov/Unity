@@ -26,4 +26,7 @@ public class UnityZoneTagHelper(UnityZoneTagHelperService tagHelperService)
 
     [HtmlAttributeName("check-if")]
     public bool Condition { get; set; } = true;
+
+    [HtmlAttributeName("editable")]
+    public bool EditableCondition { get; set; } = true;
 }

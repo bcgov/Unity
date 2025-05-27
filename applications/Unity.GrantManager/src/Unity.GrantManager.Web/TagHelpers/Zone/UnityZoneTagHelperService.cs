@@ -68,7 +68,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
             output.Attributes.Add("name", TagHelper.ElementId);
 
             // Toggle fieldset enabled/disabled on edit permission
-            if (!_updateRermissionState)
+            if (!_updateRermissionState || !TagHelper.EditableCondition)
             {
                 output.Attributes.Add("disabled", "disabled");
             }
