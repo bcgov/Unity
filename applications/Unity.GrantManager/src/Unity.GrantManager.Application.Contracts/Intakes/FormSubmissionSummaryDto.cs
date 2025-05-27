@@ -56,4 +56,10 @@ public class FormSubmissionSummaryDto
 
     [JsonPropertyName("name")]
     public string name { get; set; } = string.Empty;
+
+    [JsonPropertyName("tenant")]
+    public string tenant { get; set; } = string.Empty;
+
+    [JsonPropertyName("form")]
+    public string form { get; set; } = string.Empty;
 }

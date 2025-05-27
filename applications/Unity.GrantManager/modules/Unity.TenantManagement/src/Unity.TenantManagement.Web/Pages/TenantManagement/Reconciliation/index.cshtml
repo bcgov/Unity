@@ -31,6 +31,11 @@
         <abp-script src="/Pages/TenantManagement/Reconciliation/Index.js" />      
     </abp-script-bundle>
 }
+<style> 
+    .dataTables_wrapper .dataTables_scrollHead {
+        background-color: transparent;
+    }
+</style>
 <div class="container-fluid px-2 container-grant-application">
     @await Component.InvokeAsync("ActionBar")
     <div class="application-scrollable-content">

@@ -56,9 +56,11 @@ $(function () {
                     }
                 },
                 {
-                    title: l('Category'),
-                    data: "category",
-                    render: placeholderText
+                    title: l('Chefs Form Name'),
+                    data: "form",
+                    render: function (data) {
+                        return data;
+                    }
                 },
                 {
                     title: l('GrantApplicationStatus'),
@@ -72,7 +74,7 @@ $(function () {
                     }
                 },
                 {
-                    title: l('CreationDate'),
+                    title: l('Creation Date'),
                     data: "createdAt",
                     render: function (data) {
                         return luxon
@@ -84,9 +86,11 @@ $(function () {
                 },
                 {
                     title: l('Tenant'),
-                    data: "projectTitle",
-                    render: placeholderText
-                },
+                    data: "tenant",
+                    render: function (data) {
+                        return data;
+                    }
+                }
             ],
             processing: true,
             stateSaveParams: function (settings, data) {

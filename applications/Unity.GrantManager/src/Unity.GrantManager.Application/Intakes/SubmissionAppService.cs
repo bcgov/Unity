@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
@@ -17,6 +18,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
+using static Unity.GrantManager.Permissions.GrantManagerPermissions;
 using static Unity.Modules.Shared.UnitySelector.Notification;
 
 namespace Unity.GrantManager.Intakes;
@@ -25,26 +27,13 @@ namespace Unity.GrantManager.Intakes;
 public class SubmissionAppService : GrantManagerAppService, ISubmissionAppService
 {
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
+    private readonly ApplicationFormSycnronizationService _syncService;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
+    private readonly IApplicationFormRepository _applicationFormRepositoryChef;
     private readonly RestClient _intakeClient;
     private readonly IStringEncryptionService _stringEncryptionService;
     private readonly IApplicationRepository _applicationRepository;
     private readonly ITenantRepository _tenantRepository;
-    private static List<string> SummaryFieldsFilter
-    {
-        // NOTE: This will be replaced by a customizable filter.
-        get
-        {
-            return new List<string>(new string[] {
-                "projectTitle",
-                "projectLocation",
-                "contactName",
-                "organizationLegalName",
-                "eligibleCost",
-                "totalRequest"
-            });
-        }
-    }
 
     public SubmissionAppService(
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
@@ -52,15 +41,17 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         RestClient restClient,
         IStringEncryptionService stringEncryptionService,
         IApplicationRepository applicationRepository,
-        ITenantRepository tenantRepository
+        ITenantRepository tenantRepository,
+        ApplicationFormSycnronizationService syncService
         )
     {
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
-        _applicationFormRepository = applicationFormRepository;
+        _syncService = syncService;
         _intakeClient = restClient;
         _stringEncryptionService = stringEncryptionService;
         _applicationRepository = applicationRepository;
         _tenantRepository = tenantRepository;
+        _applicationFormRepository = applicationFormRepository;
     }
 
 
@@ -174,75 +165,73 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
 
     public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId)
     {
-        //if (formId == null)
-        //{
-        //    throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
-        //} 
-        string ? apiKey = Environment.GetEnvironmentVariable("API_KEY");
-        var id = "166bc157-9a68-4ef2-8559-7d680b6870b4";
+        List<FormSubmissionSummaryDto> jsonResponse = new List<FormSubmissionSummaryDto>(); // Initialize the variable to fix CS0165
 
-        var request = new RestRequest($"/forms/{id}/submissions", Method.Get)
-            //.AddParameter("draft", true)
-            .AddParameter("fields", "applicantAgent.name");
-        request.Authenticator = new HttpBasicAuthenticator(id, apiKey ?? "no api key given");
-
-        var response = await _intakeClient.GetAsync(request);
-
-        if (((int)response.StatusCode) >= 400)
+        var tenants = await _tenantRepository.GetListAsync();
+        foreach (var tenant in tenants)
         {
-            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
-        }
-        else if (((int)response.StatusCode) == 0)
-        {
-            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.ErrorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
-        }
-
-        var submissionOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
-        List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
-        
-        if (null == jsonResponse)
-        {
-            return new PagedResultDto<FormSubmissionSummaryDto>(0, new List<FormSubmissionSummaryDto>());
-        }
-        else
-        {
-
-            var tenants = await _tenantRepository.GetListAsync();
-            foreach (var tenant in tenants)
+            using (CurrentTenant.Change(tenant.Id))
             {
-                System.Diagnostics.Debug.WriteLine($"{tenant.Id} - {tenant.Name}");
-                using (CurrentTenant.Change(tenant.Id))
+                var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(0, 100);
+                var appDtos = new List<GrantApplicationDto>();
+                var rowCounter = 0;
+
+                List<string> checkedForms = new List<string>();
+
+                foreach (var grouping in groupedResult)
                 {
-                    var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(0, 100);
-                    var appDtos = new List<GrantApplicationDto>();
-                    var rowCounter = 0;
-                    foreach (var grouping in groupedResult)
-                    {
-                        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
-                        appDto.RowCount = rowCounter;
-                        appDtos.Add(appDto);
-                        rowCounter++;
-                        System.Diagnostics.Debug.WriteLine(appDto.ReferenceNo);
-                        System.Diagnostics.Debug.WriteLine(appDto.CreationTime); 
+                    var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
+                    appDto.RowCount = rowCounter;
+                    appDtos.Add(appDto);
+                    rowCounter++;
+
+                    // Chef's API call to get submissions
+                    if (!checkedForms.Contains(appDto.ApplicationForm.ChefsApplicationFormGuid ?? string.Empty)){
+                        var id = appDto.ApplicationForm.ChefsApplicationFormGuid;
+                        var apiKey = _stringEncryptionService.Decrypt(appDto.ApplicationForm.ApiKey! ?? string.Empty);
+                        var request = new RestRequest($"/forms/{id}/submissions", Method.Get)
+                            .AddParameter("fields", "applicantAgent.name");
+                        request.Authenticator = new HttpBasicAuthenticator(id ?? "ID", apiKey ?? "no api key given");
+                        var response = await _intakeClient.GetAsync(request);
+
+                        if (((int)response.StatusCode) >= 400)
+                        {
+                            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
+                        }
+                        else if (((int)response.StatusCode) == 0)
+                        {
+                            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.ErrorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
+                        }
+                        var submissionOptions = new JsonSerializerOptions
+                        {
+                            WriteIndented = true,
+                            PropertyNameCaseInsensitive = true,
+                            ReadCommentHandling = JsonCommentHandling.Skip,
+                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                        };
+
+                        var submissions = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
+                        if (submissions != null) // Ensure submissions is not null before adding to jsonResponse
+                        {
+                            foreach (var submission in submissions)
+                            {
+                                submission.tenant = tenant.Name;
+                                submission.form = appDto.ApplicationForm.ApplicationFormName ?? "";
+                            }
+                            jsonResponse.AddRange(submissions); // Use AddRange instead of += to fix CS0019
+                        }
+
+                        checkedForms.Add(id ?? string.Empty);
                     }
-
-                    jsonResponse.RemoveAll(r => appDtos.Any(appDto => r.ConfirmationId.ToString() == appDto.ReferenceNo));
                 }
+
+                // Remove chef's submissions if Unity has an application with the same reference number
+                jsonResponse.RemoveAll(r => appDtos.Any(appDto => r.ConfirmationId.ToString() == appDto.ReferenceNo));
             }
-
-
-            // Remove all deleted and draft submissions
-            //System.Diagnostics.Debug.WriteLine(JsonSerializer.Serialize(jsonResponse, submissionOptions));
-            //jsonResponse.RemoveAll(r => r.Deleted || r.FormSubmissionStatusCode != "SUBMITTED");
-            jsonResponse.RemoveAll(r => r.Deleted);
-            return new PagedResultDto<FormSubmissionSummaryDto>(jsonResponse.Count, jsonResponse);
         }
+
+        // Remove all deleted submissions
+        jsonResponse.RemoveAll(r => r.Deleted);
+        return new PagedResultDto<FormSubmissionSummaryDto>(jsonResponse.Count, jsonResponse);
     }
 }
