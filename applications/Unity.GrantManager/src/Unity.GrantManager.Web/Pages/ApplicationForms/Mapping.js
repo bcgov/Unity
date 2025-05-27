@@ -72,7 +72,7 @@
 
     init();
 
-    worksheetsModal.onResult(function (_, response) {           
+    worksheetsModal.onResult(function (_, response) {
         navigateToVersion(response.responseText.chefsFormVersionId);
     });
 
@@ -107,7 +107,7 @@
     }
 
     function handleLinkWorksheets() {
-        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });        
+        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });
     }
 
     function initializeUIConfiguration() {
@@ -372,7 +372,8 @@
     }
 
     function initializeIntakeMap(availableChefsFields) {
-        try {            
+        try {
+
             let intakeFields = JSON.parse(intakeFieldsString);
 
             for (let intakeField of intakeFields) {
@@ -389,13 +390,19 @@
 
             let keys = Object.keys(availableChefsFields);
             dataTable.clear();
+
+            let rowsToAdd = [];
             for (let key of keys) {
                 let jsonObj = JSON.parse(availableChefsFields[key]);
-
                 if (allowableTypes.includes(jsonObj.type.trim())) {
-                    dataTable.row.add([stripHtml(jsonObj.label), key, jsonObj.type, key]).draw();
+                    rowsToAdd.push([stripHtml(jsonObj.label), key, jsonObj.type, key]);
                 }
             }
+
+            if (rowsToAdd.length > 0) {
+                dataTable.rows.add(rowsToAdd);
+            }
+            dataTable.draw();
         }
         catch (err) {
             console.info('Mapping error: ' + err);
@@ -620,7 +627,7 @@
     }
 
     $("#directApproval").on('change', function (e) {
-     
+
         let config = {
             "isDirectApproval": this.checked
         }
@@ -631,7 +638,7 @@
                 contentType: "application/json",
                 type: "PUT",
                 success: function (data) {
-                    
+
                     abp.notify.success(
                         data.responseText,
                         'Settings Saved Successfully'
