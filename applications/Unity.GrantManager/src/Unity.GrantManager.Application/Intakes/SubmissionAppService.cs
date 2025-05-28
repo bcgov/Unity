@@ -198,7 +198,7 @@ public class SubmissionAppService(
                         catch (Exception ex)
                         {
                             var ExceptionMessage = ex.Message;
-                            logger.LogError(ex, "GetSubmissionsList Exception: {ExceptionMessage}", ex.Message);
+                            logger.LogError(ex, "GetSubmissionsList Exception: {ExceptionMessage}", ExceptionMessage);
                         }
 
                         checkedForms.Add(id ?? string.Empty);
