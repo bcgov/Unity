@@ -1,0 +1,46 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.TenantManagement.Web.Navigation
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Pages.Shared.Components.AbpPageToolbar
+@using Volo.Abp.FeatureManagement
+@using Volo.Abp.TenantManagement
+@using Volo.Abp.TenantManagement.Localization
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Reconciliation
+@model IndexModel
+@inject IHtmlLocalizer<AbpTenantManagementResource> L
+@inject IAuthorizationService Authorization
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.Title = L["Reconciliation"].Value;
+    PageLayout.Content.BreadCrumb.Add(L["Menu:TenantManagement"].Value);
+    PageLayout.Content.MenuItemName = TenantManagementMenuNames.Reconciliation;
+    ViewBag.PageTitle = L["Reconciliation"].Value;
+}
+@section styles {
+    <abp-style-bundle name="@typeof(IndexModel).FullName">        
+        <abp-style src="/Pages/TenantManagement/Tenants/Index.css" />
+    </abp-style-bundle>
+    <abp-style src="/Pages/GrantApplications/Index.css" />
+}
+@section scripts {
+    <abp-script-bundle name="@typeof(IndexModel).FullName">
+        <abp-script src="/client-proxies/multi-tenancy-proxy.js" />
+        <abp-script src="/Pages/FeatureManagement/feature-management-modal.js"/>
+        <abp-script src="/Pages/TenantManagement/Reconciliation/Index.js" />      
+    </abp-script-bundle>
+}
+<style> 
+    .dataTables_wrapper .dataTables_scrollHead {
+        background-color: transparent;
+    }
+</style>
+<div class="container-fluid px-2 container-grant-application">
+    @await Component.InvokeAsync("ActionBar")
+    <div class="application-scrollable-content">
+        <abp-table id="ReconciliationTable"></abp-table>
+    </div>
+</div>
+<label class="dot hidden" id="hdnDot"></label>
+<input type="hidden" id="PassFormIdToJavaScript" value='fad8c91e-0f44-4b07-aaf6-544dca148add' />
