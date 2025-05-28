@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
@@ -20,6 +22,14 @@ namespace Unity.GrantManager.Repositories
         {
         }
 
+        public async Task<List<Applicant>> GetUnmatchedApplicantsAsync()
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Applicants
+                .Where(x => x.MatchPercentage == null)
+                .ToListAsync();
+        }
+
         public async Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId)
         {
             var dbContext = await GetDbContextAsync();
@@ -35,6 +45,21 @@ namespace Unity.GrantManager.Repositories
                 .FirstOrDefaultAsync(a => a.ApplicantName != null &&
                                           a.ApplicantName.ToLower() == unityApplicantNameNormalized);
 
+        }
+        public async Task<List<Applicant>> GetApplicantsWithUnityApplicantIdAsync()
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Applicants
+                .Where(x => x.UnityApplicantId != null)
+                .ToListAsync();
+        }
+
+        public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Applicants
+                .Where(x => x.SiteId == siteId)
+                .ToListAsync();
         }
     }
 }

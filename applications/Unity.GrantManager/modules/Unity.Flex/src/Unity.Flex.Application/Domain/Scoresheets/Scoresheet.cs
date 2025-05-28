@@ -3,21 +3,26 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Unity.Flex.Domain.Exceptions;
 using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Reporting;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.Scoresheets
 {
-    public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
+    public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant, IReportableEntity<Scoresheet>
     {
         public virtual string Title { get; set; } = string.Empty;
         public virtual string Name { get; private set; } = string.Empty;
         public virtual uint Version { get; set; } = 1;
         public virtual uint Order { get; set; } = 0;
-        public virtual bool Published {  get; set; } = false;
+        public virtual bool Published { get; set; } = false;
         public Guid? TenantId { get; set; }
-               
+
+        // For reporting purposes
+        public virtual string ReportColumns { get; set; } = string.Empty;
+        public virtual string ReportKeys { get; set; } = string.Empty;
+        public virtual string ReportViewName { get; set; } = string.Empty;
 
         public virtual Collection<ScoresheetSection> Sections { get; private set; } = [];
         public virtual Collection<ScoresheetInstance> Instances { get; private set; } = [];
@@ -98,6 +103,15 @@ namespace Unity.Flex.Domain.Scoresheets
         internal Scoresheet CloneSection(ScoresheetSection clonedSection)
         {
             Sections.Add(clonedSection);
+            return this;
+        }
+
+        public Scoresheet SetReportingFields(string keys, string columns, string reportViewName)
+        {
+            ReportColumns = columns;
+            ReportViewName = reportViewName;
+            ReportKeys = keys;
+
             return this;
         }
     }

@@ -16,17 +16,21 @@ module.exports = {
         '@node_modules/datatables.net-fixedheader-bs5/': '@libs/datatables.net-fixedheader-bs5/',
         '@node_modules/datatables.net-colreorder/': '@libs/datatables.net-colreorder/',
         '@node_modules/datatables.net-colreorder-bs5/': '@libs/datatables.net-colreorder-bs5/',
+        '@node_modules/datatables.net-staterestore/': '@libs/datatables.net-staterestore/',
+        '@node_modules/datatables.net-staterestore-dt/': '@libs/datatables.net-staterestore-dt/',
 
         '@node_modules/jspdf/dist/': '@libs/jspdf/dist',
         '@node_modules/html2canvas/dist/': '@libs/html2canvas/dist',
         '@node_modules/sweetalert2/src/': '@libs/sweetalert2/src',
         '@node_modules/jquery-maskmoney/': '@libs/jquery-maskmoney',
-        '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',        
-        "@node_modules/echarts/dist/echarts.min.js": "@libs/echarts/",
+        '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',
+        '@node_modules/echarts/dist/echarts.min.js': '@libs/echarts/',
         '@node_modules/bootstrap-4/dist': '@libs/bootstrap-4/dist/',
         '@node_modules/popper.js/dist': '@libs/popper.js/dist/',
         '@node_modules/bootstrap-select/dist': '@libs/bootstrap-select/dist',
         '@node_modules/sortablejs': '@libs/sortablejs',
-        '@node_modules/jszip': '@libs/jszip'
+        '@node_modules/jszip': '@libs/jszip',
+        '@node_modules/tributejs': '@libs/tributejs',
+        '@node_modules/tinymce': '@libs/tinymce'
     },
 };

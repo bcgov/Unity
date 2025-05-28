@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
+using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -8,132 +10,124 @@ namespace Unity.GrantManager.Web.Identity.Policy;
 
 internal static class PolicyRegistrant
 {
+    internal const string PermissionConstant = "Permission";
+
     internal static void Register(ServiceConfigurationContext context)
     {
-        // ABP should do this for us when a permission definition is added, but does not seem to work with our setup
+        // Using AddAuthorizationBuilder to register authorization services and construct policies
+        var authorizationBuilder = context.Services.AddAuthorizationBuilder();
 
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(IdentityPermissions.Roles.Default,
-            policy => policy.RequireClaim("Permission", IdentityPermissions.Roles.Default)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(IdentityPermissions.Roles.Create,
-            policy => policy.RequireClaim("Permission", IdentityPermissions.Roles.Create)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.Roles.Update,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.Roles.Update)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.Roles.Delete,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.Roles.Delete)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.Roles.ManagePermissions,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.Roles.ManagePermissions)));
+        // Identity Role Policies
+        authorizationBuilder.AddPolicy(IdentityPermissions.Roles.Default,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Roles.Default));
+        authorizationBuilder.AddPolicy(IdentityPermissions.Roles.Create,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Roles.Create));
+        authorizationBuilder.AddPolicy(IdentityPermissions.Roles.Update,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Roles.Update));
+        authorizationBuilder.AddPolicy(IdentityPermissions.Roles.Delete,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Roles.Delete));
+        authorizationBuilder.AddPolicy(IdentityPermissions.Roles.ManagePermissions,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Roles.ManagePermissions));
 
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.Users.Default,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.Users.Default)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.Users.Create,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.Users.Create)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.Users.Update,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.Users.Update)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.Users.Delete,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.Users.Delete)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.Users.ManagePermissions,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.Users.ManagePermissions)));
+        // Identity User Policies
+        authorizationBuilder.AddPolicy(IdentityPermissions.Users.Default,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Users.Default));
+        authorizationBuilder.AddPolicy(IdentityPermissions.Users.Create,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Users.Create));
+        authorizationBuilder.AddPolicy(IdentityPermissions.Users.Update,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Users.Update));
+        authorizationBuilder.AddPolicy(IdentityPermissions.Users.Delete,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Users.Delete));
+        authorizationBuilder.AddPolicy(IdentityPermissions.Users.ManagePermissions,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.Users.ManagePermissions));
 
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(IdentityPermissions.UserLookup.Default,
-           policy => policy.RequireClaim("Permission", IdentityPermissions.UserLookup.Default)));
+        // User Lookup Policies
+        authorizationBuilder.AddPolicy(IdentityPermissions.UserLookup.Default,
+            policy => policy.RequireClaim(PermissionConstant, IdentityPermissions.UserLookup.Default));
 
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantManagerPermissions.Default,
-            policy => policy.RequireClaim("Permission", GrantManagerPermissions.Default)));
+        // Grant Manager Policies
+        authorizationBuilder.AddPolicy(GrantManagerPermissions.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantManagerPermissions.Default));
+        authorizationBuilder.AddPolicy(GrantManagerPermissions.Intakes.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantManagerPermissions.Intakes.Default));
+        authorizationBuilder.AddPolicy(GrantManagerPermissions.ApplicationForms.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantManagerPermissions.ApplicationForms.Default));
 
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Applications.Default,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Applications.Default)));
+        // Grant Application Policies
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Applications.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applications.Default));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Applicants.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applicants.Default));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Applicants.Edit,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applicants.Edit));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Assignments.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Assignments.Default));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Assignments.AssignInitial,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Assignments.AssignInitial));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Reviews.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Reviews.Default));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Reviews.StartInitial,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Reviews.StartInitial));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Reviews.CompleteInitial,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Reviews.CompleteInitial));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Approvals.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Approvals.Default));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Approvals.Complete,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Approvals.Complete));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Comments.Default,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Comments.Default));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Comments.Add,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Comments.Add));
 
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Applicants.Default,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Applicants.Default)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Applicants.Edit,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Applicants.Edit)));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Default));
 
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Assignments.Default,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assignments.Default)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Assignments.AssignInitial,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assignments.AssignInitial)));
+        // R&A - Approval Policies
+        authorizationBuilder.AddPolicy(UnitySelector.Review.Approval.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Approval.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.Approval.Update.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Approval.Update.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.Approval.Update.UpdateFinalStateFields,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Approval.Update.UpdateFinalStateFields));
 
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Reviews.Default,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Reviews.Default)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Reviews.StartInitial,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Reviews.StartInitial)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Reviews.CompleteInitial,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Reviews.CompleteInitial)));
+        // R&A - Assessment Results Policies
+        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentResults.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.AssessmentResults.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentResults.Update.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.AssessmentResults.Update.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields));
 
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Approvals.Default,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Approvals.Default)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Approvals.Complete,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Approvals.Complete)));
+        // R&A - Assessment Review List Policies
+        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentReviewList.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.AssessmentReviewList.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentReviewList.Create,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.AssessmentReviewList.Create));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentReviewList.Update.SendBack,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.AssessmentReviewList.Update.SendBack));
+        authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentReviewList.Update.Complete,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.AssessmentReviewList.Update.Complete));
 
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Comments.Default,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Comments.Default)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Comments.Add,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Comments.Add)));
+        // Tenancy Policies
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.Default,
+            policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.Default));
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.Create,
+            policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.Create));
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.Update,
+            policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.Update));
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.Delete,
+            policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.Delete));
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.ManageFeatures,
+            policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageFeatures));
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.ManageConnectionStrings,
+            policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageConnectionStrings));
 
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantManagerPermissions.Intakes.Default,
-            policy => policy.RequireClaim("Permission", GrantManagerPermissions.Intakes.Default)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantManagerPermissions.ApplicationForms.Default,
-            policy => policy.RequireClaim("Permission", GrantManagerPermissions.ApplicationForms.Default)));
-
-        // Assessments
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.Default,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Default)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.Create,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Create)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.SendBack,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.SendBack)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.Confirm,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Confirm)));
-
-        // Tenancy
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(TenantManagementPermissions.Tenants.Default,
-            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.Default)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(TenantManagementPermissions.Tenants.Create,
-            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.Create)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(TenantManagementPermissions.Tenants.Update,
-            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.Update)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(TenantManagementPermissions.Tenants.Delete,
-            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.Delete)));
-        context.Services.AddAuthorization(options =>
-            options.AddPolicy(TenantManagementPermissions.Tenants.ManageFeatures,
-            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.ManageFeatures)));
-        context.Services.AddAuthorization(options =>
-           options.AddPolicy(TenantManagementPermissions.Tenants.ManageConnectionStrings,
-           policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.ManageConnectionStrings)));
+        // IT Administrator Policies
+        authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicyName,
+        policy => policy.RequireAssertion(context =>
+            context.User.IsInRole(IdentityConsts.ITAdminRoleName) ||
+            context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITAdminPermissionName)
+        ));
     }
 }
 

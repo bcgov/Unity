@@ -88,7 +88,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 "~/Dashboard",
                 icon: "fl fl-view-dashboard",
                 order: 7,
-                requiredPermissionName: GrantManagerPermissions.Default
+                requiredPermissionName: GrantApplicationPermissions.Dashboard.Default
             )
         );
 

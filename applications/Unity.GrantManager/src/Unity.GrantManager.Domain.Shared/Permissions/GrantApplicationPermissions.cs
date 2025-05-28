@@ -5,6 +5,27 @@ namespace Unity.GrantManager.Permissions
     public static class GrantApplicationPermissions
     {
         public const string GroupName = "GrantApplicationManagement";
+        
+        private static class Operation
+        {
+            public const string Create = ".Create";
+            public const string Read = ".Read";
+            public const string Update = ".Update";
+            public const string Delete = ".Delete";
+        }
+
+        public static class Dashboard
+        {
+            public const string Default                     = GroupName + ".Dashboard";
+            public const string ViewDashboard               = Default + ".ViewDashboard";
+
+            public const string ApplicationStatusCount      = Default + ".ApplicationStatusCount";
+            public const string EconomicRegionCount         = Default + ".EconomicRegionCount";
+            public const string ApplicationTagsCount        = Default + ".ApplicationTagsCount";
+            public const string ApplicationAssigneeCount    = Default + ".ApplicationAssigneeCount";
+            public const string RequestedAmountPerSubsector = Default + ".RequestedAmountPerSubsector";
+            public const string RequestApprovedCount        = Default + ".RequestApprovedCount";
+        }
 
         public static class Applications
         {
@@ -14,7 +35,7 @@ namespace Unity.GrantManager.Permissions
         public static class Applicants
         {
             public const string Default = GroupName + ".Applicants";
-            public const string Edit = Default + ".Update";
+            public const string Edit = Default + Operation.Update;
         }
 
         public static class Assignments
@@ -42,25 +63,28 @@ namespace Unity.GrantManager.Permissions
             public const string Add = Default + ".Add";
         }
 
-        public static class Assessments
+        public static class ApplicantInfo
         {
-            public const string Default = GroupName + ".Assessments";
-            public const string Create = Default + ".Create";
-            public const string SendBack = Default + ".SendBack";
-            public const string Confirm = Default + ".Confirm";
-        }
+            public const string Default = GroupName + ".ApplicantInfo";
+            public const string Create = Default + Operation.Create;
+            public const string Read = Default + Operation.Read;
+            public const string Update = Default + Operation.Update;
+            public const string Delete = Default + Operation.Delete;
 
-        public static class AssessmentResults
-        {
-            public const string Default = GroupName + ".AssessmentResults";
-            public const string Edit = Default + ".Update";
-            public const string EditFinalStateFields = Default + ".EditFinalStateFields";
+            public const string EditOrganization = Default + ".Organization" + Operation.Update;
+            public const string EditContact = Default + ".Contact" + Operation.Update;
+            public const string EditSigningAuthority = Default + ".SigningAuthority" + Operation.Update;
+            public const string EditAddress = Default + ".Address" + Operation.Update;
+
+            public const string AddAdditionalContact = Default + ".AdditionalContact" + Operation.Create;
+            public const string UpdateAdditionalContact = Default + ".AdditionalContact" + Operation.Update;
+            public const string DeleteAdditionalContact = Default + ".AdditionalContact" + Operation.Delete;
         }
 
         public static class ProjectInfo
         {
             public const string Default = GroupName + ".ProjectInfo";
-            public const string Update = Default + ".Update";
+            public const string Update = Default + Operation.Update;
             public const string UpdateFinalStateFields = Update + ".UpdateFinalStateFields";
         }
 

@@ -16,5 +16,14 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                     .Include(s => s.Answers)
                     .FirstOrDefaultAsync(s => s.CorrelationId == correlationId);
         }
+
+        public async Task<ScoresheetInstance?> GetWithAnswersAsync(Guid scoresheetInstanceId)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+            .Include(wi => wi.Answers)
+                .FirstOrDefaultAsync(si => si.Id == scoresheetInstanceId);
+        }
     }
 }

@@ -216,10 +216,7 @@ function handleInputChange(questionId, inputFieldPrefix) {
         if (assessmentAnswersArr[x].questionType === 1) {
             let inputNumberField = document.getElementById('answer-number-' + assessmentAnswersArr[x].questionId);
             let numberErrorMessage = document.getElementById('error-message-' + assessmentAnswersArr[x].questionId);
-
-            if (inputNumberField.required) { 
-                assessmentAnswersArr[x].isValid = validateNumericField(inputNumberField, numberErrorMessage);
-            }
+            assessmentAnswersArr[x].isValid = validateNumericField(inputNumberField, numberErrorMessage);
         } else if (assessmentAnswersArr[x].questionType === 2) {
             let inputTextField = document.getElementById('answer-text-' + assessmentAnswersArr[x].questionId);
             let textErrorMessage = document.getElementById('error-message-' + assessmentAnswersArr[x].questionId);
@@ -311,31 +308,6 @@ function updateSubtotal() {
             subTotalField.value = subtotal;
         }
     }, 500);
-}
-
-
-function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType, discardButtonPrefix) {    
-    const inputField = document.getElementById(inputFieldPrefix + questionId);
-    const saveButton = document.getElementById(saveButtonPrefix + questionId);
-    const discardButton = document.getElementById(discardButtonPrefix + questionId);
-    const assessmentId = $("#AssessmentId").val();
-    let answerValue = inputField.value;
-    if (questionType == 1 && !answerValue) {
-        answerValue = 0;
-    }
-    unity.grantManager.assessments.assessment.saveScoresheetAnswer(assessmentId, questionId, answerValue, questionType)
-        .then(response => {
-            abp.notify.success(
-                'Answer is successfully saved.',
-                'Save Answer'
-            );
-            inputField.setAttribute('data-original-value', inputField.value);
-            saveButton.disabled = true;
-            discardButton.disabled = true;
-            updateSubtotal();
-            PubSub.publish('refresh_review_list_without_sidepanel', assessmentId);            
-        });
-
 }
 
 function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix, discardButtonPrefix) {

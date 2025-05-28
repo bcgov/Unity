@@ -1,7 +1,12 @@
 ﻿@using Microsoft.Extensions.Localization
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
+@using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.FundingAgreementInfo;
+@using Unity.Modules.Shared.Correlation
+@using Volo.Abp.Features
 
+@inject IFeatureChecker FeatureChecker
 @inject IStringLocalizer<GrantManagerResource> L
 
 @model FundingAgreementInfoViewModel
@@ -10,6 +15,7 @@
 }
 
 <input type="hidden" id="FundingAgreementInfoViewApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="FundingAgreementInfoView_FormVersionId" value="@Model.ApplicationFormVersionId" />
 
 <abp-row class="px-1 pb-2 mb-4 funding-agreement-info-container">
     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
@@ -38,7 +44,18 @@
                 </abp-column>
             </abp-row>
         </abp-row>
-
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+        {
+            @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
+                new
+                {
+                    instanceCorrelationId = Model.ApplicationId,
+                    instanceCorrelationProvider = CorrelationConsts.Application,
+                    sheetCorrelationId = Model.ApplicationFormVersionId,
+                    sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                    uiAnchor = FlexConsts.FundingAgreementInfoUiAnchor
+                })
+        }
     </form>
 </abp-row>
 

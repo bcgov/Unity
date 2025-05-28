@@ -256,6 +256,13 @@
     border: 1px solid var(--bc-colors-blue-primary);
 }
 
+#applicationEmailsWidget .fl-cancel {
+    color: var(--bc-colors-blue-primary);
+}
+
+#applicationEmailsWidget .btn-delete-draft {
+    background-color: white !important;
+}
 
 @keyframes rotateSpinner {
 	to {

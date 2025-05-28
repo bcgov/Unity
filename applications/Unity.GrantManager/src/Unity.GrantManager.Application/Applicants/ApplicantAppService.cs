@@ -7,6 +7,16 @@ using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Events;
 using Volo.Abp;
+using System.Collections.Generic;
+using Unity.GrantManager.Integration.Orgbook;
+using Newtonsoft.Json.Linq;
+using System.Linq;
+using Unity.Modules.Shared.Utils;
+using Microsoft.Extensions.Logging;
+using Unity.Payments.Integrations.Cas;
+using Microsoft.Extensions.Logging.Abstractions;
+using Unity.Payments.Suppliers;
+using Unity.Payments.Domain.Suppliers;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -14,9 +24,13 @@ namespace Unity.GrantManager.Applicants;
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(ApplicantAppService), typeof(IApplicantAppService))]
 public class ApplicantAppService(IApplicantRepository applicantRepository,
+                                 ISupplierService supplierService,
+                                 ISiteAppService siteAppService,
                                  IApplicantAddressRepository addressRepository,
+                                 IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
-{
+{   
+    protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
     public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
@@ -24,12 +38,25 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         ArgumentNullException.ThrowIfNull(intakeMap);
 
         Applicant? applicant = await GetExistingApplicantAsync(intakeMap.UnityApplicantId);
-        if (applicant != null)
+        if (applicant == null)
         {
-            return applicant;
+            applicant = await CreateNewApplicantAsync(intakeMap);
+        } else {
+            applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
+            applicant.NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegisteredBusinessName;
+            applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
+            applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
+            applicant.OrganizationType = intakeMap.OrganizationType ?? applicant.OrganizationType;
+            applicant.Sector = intakeMap.Sector ?? applicant.Sector;
+            applicant.SubSector = intakeMap.SubSector ?? applicant.SubSector;
+            applicant.SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc ?? applicant.SectorSubSectorIndustryDesc;
+            applicant.ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? applicant.ApproxNumberOfEmployees;
+            applicant.IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? applicant.IndigenousOrgInd;
+            applicant.OrgStatus = intakeMap.OrgStatus  ?? applicant.OrgStatus;
+            applicant.FiscalDay = MappingUtil.ConvertToIntFromString(intakeMap.FiscalDay) ?? applicant.FiscalDay;
+            applicant.FiscalMonth = intakeMap.FiscalMonth ?? applicant.FiscalMonth;
         }
 
-        applicant = await CreateNewApplicantAsync(intakeMap);
         await CreateApplicantAddressesAsync(intakeMap, applicant);
         return applicant;
     }
@@ -41,46 +68,177 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
         ArgumentNullException.ThrowIfNull(applicant);
         applicant.SupplierId = applicantSupplierEto.SupplierId;
+        applicant.SiteId = null; // Reset site id to null
+        // lookup sites if there is only one then set it as default
+        if (applicant.SupplierId != null)
+        {
+            List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(applicant.SupplierId.Value);
+            if (sites.Count == 1)
+            {
+                applicant.SiteId = sites.FirstOrDefault()?.Id;
+            }
+        }
+
         await applicantRepository.UpdateAsync(applicant);
         return applicant;
     }
 
     [RemoteService(false)]
-    public async Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
+    public async Task<ApplicantAgent> CreateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
     {
         var applicant = applicantAgentDto.Applicant;
         var application = applicantAgentDto.Application;
         var intakeMap = applicantAgentDto.IntakeMap;
-        var applicantAgent = new ApplicantAgent
+        var applicantAgent = await applicantAgentRepository.GetByApplicantIdAsync(applicant.Id);
+
+        var newApplicantAgent = new ApplicantAgent
         {
             ApplicantId = applicant.Id,
-            ApplicationId = application.Id,
-            Name = intakeMap.ContactName ?? string.Empty,
-            Phone = intakeMap.ContactPhone ?? string.Empty,
-            Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
-            Email = intakeMap.ContactEmail ?? string.Empty,
-            Title = intakeMap.ContactTitle ?? string.Empty,
+            ApplicationId = application.Id
         };
+
+        if (applicantAgent != null)
+        {
+            newApplicantAgent.Name = intakeMap.ContactName ?? applicantAgent.Name;
+            newApplicantAgent.Phone = intakeMap.ContactPhone ?? applicantAgent.Phone;
+            newApplicantAgent.Phone2 = intakeMap.ContactPhone2 ?? applicantAgent.Phone2;
+            newApplicantAgent.Email = intakeMap.ContactEmail ?? applicantAgent.Email;
+            newApplicantAgent.Title = intakeMap.ContactTitle ?? applicantAgent.Title;
+        }
+        else
+        {
+            newApplicantAgent.Name = intakeMap.ContactName ?? string.Empty;
+            newApplicantAgent.Phone = intakeMap.ContactPhone ?? string.Empty;
+            newApplicantAgent.Phone2 = intakeMap.ContactPhone2 ?? string.Empty;
+            newApplicantAgent.Email = intakeMap.ContactEmail ?? string.Empty;
+            newApplicantAgent.Title = intakeMap.ContactTitle ?? string.Empty;
+        }
 
         if (MappingUtil.IsJObject(intakeMap.ApplicantAgent))
         {
-            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
-            applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
-            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
-            applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
-            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
+            newApplicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
+            newApplicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
+            newApplicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
+            newApplicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
+            newApplicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
+            newApplicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
+            newApplicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
         }
-        await applicantAgentRepository.InsertAsync(applicantAgent);
 
-        return applicantAgent;
+        await applicantAgentRepository.InsertAsync(newApplicantAgent);
+        return newApplicantAgent;
+    }
+    
+    public async Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto) {
+        var applicant = applicantAgentDto.Applicant;
+
+        if (applicant.BusinessNumber == null 
+            && applicant.MatchPercentage == null 
+            && !string.IsNullOrEmpty(applicant.OrgNumber)
+            && !applicant.OrgNumber.Contains("No Data", StringComparison.OrdinalIgnoreCase))
+        {
+            applicant = await UpdateApplicantOrgMatchAsync(applicant);
+        }
+
+        if (applicant.SupplierId != null) return;
+
+        if(applicant.BusinessNumber != null) {
+            // This fires a detached process event which may update the supplier if it finds it in CAS via the BN9
+            await supplierService.UpdateApplicantSupplierInfoByBn9(applicant.BusinessNumber, applicant.Id);
+        }
     }
 
-    private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
+    [RemoteService(true)]
+    public async Task MatchApplicantOrgNamesAsync()
+    {
+        List<Applicant> applicants = await applicantRepository.GetUnmatchedApplicantsAsync();
+        foreach (Applicant applicant in applicants)
+        {
+            // Create match lookups for applicants with org numbers but no org names
+            if (applicant.OrgNumber.IsNullOrEmpty() || !applicant.OrgName.IsNullOrEmpty()) continue;
+            await UpdateApplicantOrgMatchAsync(applicant);
+        }
+    }
+
+    [RemoteService(true)]
+    public async Task<int> GetNextUnityApplicantIdAsync()
+    {
+        List<Applicant> applicants = await applicantRepository.GetApplicantsWithUnityApplicantIdAsync();
+        // Convert UnityApplicantId to int, filter only valid numbers
+        var unityIds = applicants
+            .Where(a => int.TryParse(a.UnityApplicantId, out _)) // Ensure it's numeric
+            .Select(a => int.Parse(a.UnityApplicantId!))
+            .ToList();
+
+        int nextId = unityIds.Count > 0 ? unityIds.Max() + 1 : 000001;
+
+        return nextId;
+    }
+
+    [RemoteService(true)]
+    public async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
     {
         if (unityApplicantId.IsNullOrEmpty()) return null;
         return await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
+    }
+
+    public async Task<Applicant> UpdateApplicantOrgMatchAsync(Applicant applicant)
+    {
+        try
+        {
+            string? orgbookLookup = string.IsNullOrEmpty(applicant.OrgNumber) ? applicant.ApplicantName : applicant.OrgNumber;
+            if (string.IsNullOrEmpty(orgbookLookup)) return applicant;
+
+            JObject? result = await orgBookService.GetOrgBookQueryAsync(orgbookLookup);
+            var orgData = result?.SelectToken("results")?.Children().FirstOrDefault();
+            if (orgData == null) return applicant;
+
+            await UpdateApplicantOrgNumberAsync(applicant, orgData);
+            await UpdateApplicantNamesAsync(applicant, orgData.SelectToken("names")?.Children());
+        }
+        catch (Exception ex)
+        {
+            Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ex.Message);
+        }
+
+        return applicant;
+    }
+
+    private async Task UpdateApplicantOrgNumberAsync(Applicant applicant, JToken orgData)
+    {
+        var orgNumber = orgData.SelectToken("source_id");
+        if (applicant.OrgNumber == null && orgNumber != null)
+        {
+            applicant.OrgNumber = orgNumber.ToString();
+            await applicantRepository.UpdateAsync(applicant);
+        }
+    }
+
+    private async Task UpdateApplicantNamesAsync(Applicant applicant, IEnumerable<JToken>? namesChildren)
+    {
+        if (namesChildren == null) return;
+
+        foreach (var name in namesChildren)
+        {
+            string nameType = name.SelectToken("type")?.ToString() ?? string.Empty;
+            string nameText = name.SelectToken("text")?.ToString() ?? string.Empty;
+
+            if (nameType == "entity_name")
+            {
+                double match = nameText.CompareStrings(applicant.ApplicantName ?? string.Empty);
+                applicant.MatchPercentage = (decimal)match;
+                if (applicant.OrgName != nameText)
+                {
+                    applicant.OrgName = nameText;
+                    await applicantRepository.UpdateAsync(applicant);
+                }
+            }
+            else if (nameType == "business_number" && nameText != applicant.BusinessNumber)
+            {
+                applicant.BusinessNumber = nameText;
+                await applicantRepository.UpdateAsync(applicant);
+            }
+        }
     }
 
     private async Task<Applicant> CreateNewApplicantAsync(IntakeMapping intakeMap)
@@ -98,9 +256,11 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             SubSector = intakeMap.SubSector,
             SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc,
             ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
-            IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
+            IndigenousOrgInd = intakeMap.IndigenousOrgInd,
             OrgStatus = intakeMap.OrgStatus,
-            RedStop = false
+            RedStop = false,
+            FiscalDay = MappingUtil.ConvertToIntFromString(intakeMap.FiscalDay),
+            FiscalMonth = intakeMap.FiscalMonth
         };
 
         return await applicantRepository.InsertAsync(applicant);
@@ -144,4 +304,11 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             });
         }
     }
+
+    public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
+    {
+        List<Applicant> applicants = await applicantRepository.GetApplicantsBySiteIdAsync(siteId);
+        return applicants;
+    }
+
 }

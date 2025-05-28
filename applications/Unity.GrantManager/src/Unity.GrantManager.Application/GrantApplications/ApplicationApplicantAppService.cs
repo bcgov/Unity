@@ -36,11 +36,16 @@ namespace Unity.GrantManager.GrantApplications
                 OrganizationType = applicantInfo.Applicant?.OrganizationType ?? string.Empty,
                 OrgNumber = applicantInfo.Applicant?.OrgNumber ?? string.Empty,
                 OrgStatus = applicantInfo.Applicant?.OrgStatus ?? string.Empty,
+                NonRegOrgName = applicantInfo.Applicant?.NonRegOrgName ?? string.Empty,
 
                 Sector = applicantInfo.Applicant?.Sector ?? string.Empty,
                 SectorSubSectorIndustryDesc = applicantInfo.Applicant?.SectorSubSectorIndustryDesc ?? string.Empty,
                 SubSector = applicantInfo.Applicant?.SubSector ?? string.Empty,
                 RedStop = applicantInfo.Applicant?.RedStop ?? false,
+                IndigenousOrgInd = applicantInfo.Applicant?.IndigenousOrgInd ?? string.Empty,
+                UnityApplicantId = applicantInfo.Applicant?.UnityApplicantId ?? string.Empty,
+                FiscalDay = applicantInfo.Applicant?.FiscalDay.ToString() ?? string.Empty,
+                FiscalMonth = applicantInfo.Applicant?.FiscalMonth ?? string.Empty,
 
                 SigningAuthorityBusinessPhone = applicantInfo.SigningAuthorityBusinessPhone ?? string.Empty,
                 SigningAuthorityCellPhone = applicantInfo.SigningAuthorityCellPhone ?? string.Empty,

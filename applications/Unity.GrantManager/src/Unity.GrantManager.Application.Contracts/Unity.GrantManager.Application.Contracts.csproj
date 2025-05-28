@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -14,7 +14,7 @@
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Application.Contracts\Unity.TenantManagement.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Application.Contracts\Unity.Notifications.Application.Contracts.csproj" />
-  </ItemGroup>
+  <ProjectReference Include="..\..\modules\Unity.Reporting\src\Unity.Reporting.Application.Contracts\Unity.Reporting.Application.Contracts.csproj" /></ItemGroup>
 
   <ItemGroup>
 	  <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />

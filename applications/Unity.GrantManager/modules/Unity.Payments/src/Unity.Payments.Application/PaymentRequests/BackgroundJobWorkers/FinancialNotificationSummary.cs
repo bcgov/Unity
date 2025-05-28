@@ -1,7 +1,10 @@
 using System.Threading.Tasks;
 using Quartz;
 using Volo.Abp.BackgroundWorkers.Quartz;
-using Microsoft.Extensions.Options;
+using Volo.Abp.SettingManagement;
+using Unity.Modules.Shared.Utils;
+using Unity.Payments.Settings;
+using System;
 
 namespace Unity.Payments.PaymentRequests;
 
@@ -9,26 +12,35 @@ namespace Unity.Payments.PaymentRequests;
 public class FinancialNotificationSummary : QuartzBackgroundWorkerBase
 {
     private readonly FinancialSummaryService _financialSummaryService;
-
+  
     public FinancialNotificationSummary(
-        IOptions<PaymentRequestBackgroundJobsOptions> casPaymentsBackgroundJobsOptions,
+        ISettingManager settingManager,
         FinancialSummaryService financialSummaryService
         )
     {
-
-        JobDetail = JobBuilder
-            .Create<FinancialNotificationSummary>()
-            .WithIdentity(nameof(FinancialNotificationSummary))
-            .Build();
-
         _financialSummaryService = financialSummaryService;
+        string casFinancialNotificationExpression = "";
+        try { 
+            casFinancialNotificationExpression = SettingDefinitions.GetSettingsValue(settingManager, PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression);
+        } catch
+        {
+            casFinancialNotificationExpression = "0 0 9 1/1 * ? *";
+        }
 
-        Trigger = TriggerBuilder
-            .Create()
-            .WithIdentity(nameof(FinancialNotificationSummary))
-            .WithSchedule(CronScheduleBuilder.CronSchedule(casPaymentsBackgroundJobsOptions.Value.FinancialNotificationSummaryOptions.ProducerExpression)
-            .WithMisfireHandlingInstructionIgnoreMisfires())
-            .Build();
+        if(!casFinancialNotificationExpression.IsNullOrEmpty()) {
+            
+            JobDetail = JobBuilder
+                .Create<FinancialNotificationSummary>()
+                .WithIdentity(nameof(FinancialNotificationSummary))
+                .Build();
+
+            Trigger = TriggerBuilder
+                .Create()
+                .WithIdentity(nameof(FinancialNotificationSummary))
+                .WithSchedule(CronScheduleBuilder.CronSchedule(casFinancialNotificationExpression)
+                .WithMisfireHandlingInstructionIgnoreMisfires())
+                .Build();
+        }
     }
 
     public override async Task Execute(IJobExecutionContext context)

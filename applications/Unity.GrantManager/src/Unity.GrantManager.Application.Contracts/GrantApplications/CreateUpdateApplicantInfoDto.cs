@@ -15,7 +15,10 @@ namespace Unity.GrantManager.GrantApplications
         public string? SubSector { get; set; }        
         public string? SectorSubSectorIndustryDesc { get; set; } = string.Empty;
         public bool? RedStop { get; set; }
-
+        public string? IndigenousOrgInd { get; set; }
+        public string? UnityApplicantId { get; set; }
+        public int? FiscalDay { get; set; }
+        public string? FiscalMonth { get; set; }
         public string? ContactFullName { get; set; }
         public string? ContactTitle { get; set; }
         public string? ContactEmail { get; set; }
@@ -42,6 +45,7 @@ namespace Unity.GrantManager.GrantApplications
         public string? MailingAddressProvince { get; set; }
         public string? MailingAddressPostalCode { get; set; }
 
-        public Guid ApplicantId {  get; set; }        
+        public Guid ApplicantId {  get; set; }
+        public string? NonRegOrgName { get; set; }
     }
 }

@@ -25,11 +25,6 @@
     cursor: pointer;
 }
 
-#AbpContentToolbar {
-    display: flex !important;
-    background-color: transparent;
-}
-
 #UsersWrapper {
     background-color: transparent;
 }

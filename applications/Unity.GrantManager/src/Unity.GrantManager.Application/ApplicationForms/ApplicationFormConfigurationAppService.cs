@@ -32,7 +32,8 @@ namespace Unity.GrantManager.ApplicationForms
         public async Task<ApplicationFormsConfigurationDto> GetConfiguration()
         {
             var scheme = "https"; // default to https
-            var request = _httpContextAccessor.HttpContext.Request;
+            var httpContext = _httpContextAccessor.HttpContext ?? throw new System.InvalidOperationException("HttpContext is not available");
+            var request = httpContext.Request;
             var host = request.Host.ToUriComponent();
             var pathBase = request.PathBase.ToUriComponent();
             var baseUrl = $"{scheme}://{host}{pathBase}";

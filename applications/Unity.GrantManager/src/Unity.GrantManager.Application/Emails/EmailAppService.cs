@@ -43,7 +43,7 @@ namespace Unity.GrantManager.Emails
             return
             new EmailNotificationEvent
             {
-
+                Id = dto.EmailId,
                 ApplicationId = dto.ApplicationId,
                 RetryAttempts = 0,
                 EmailAddress = dto.EmailTo,

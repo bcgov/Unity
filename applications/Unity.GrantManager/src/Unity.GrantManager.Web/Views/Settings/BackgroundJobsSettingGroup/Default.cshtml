@@ -1,0 +1,31 @@
+﻿@model Unity.GrantManager.Web.Views.Settings.BackgroundJobsSettingGroup.BackgroundJobsViewModel
+
+<div class="container-fluid px-0">
+    <div class="unity-page-titlebar">
+        <h4 class="m-0">Background Jobs Configuration</h4>
+    </div>
+    <div class="p-3">
+        <form id="BackgroundJobsSettingsForm">
+            <abp-row>
+                <abp-column size-md="_12" class="mx-2 fw-bold">
+                    <abp-input asp-for="@Model.IntakeResyncExpression" />
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <abp-column size-md="_12" class="mx-2 fw-bold">
+                    <abp-input asp-for="@Model.IntakeNumberOfDays" />
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <abp-column size-md="_12" class="mx-2 fw-bold">
+                    <abp-input asp-for="@Model.CasPaymentsReconciliationProducerExpression" />
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <abp-column size-md="_12" class="mx-2 fw-bold">
+                    <abp-input asp-for="@Model.CasFinancialNotificationSummaryProducerExpression" />
+                </abp-column>
+            </abp-row>
+        </form>
+    </div>
+</div>

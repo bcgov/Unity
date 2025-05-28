@@ -18,6 +18,7 @@ using Unity.GrantManager.Flex;
 using Unity.Flex.WorksheetLinks;
 using Newtonsoft.Json.Linq;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Zones;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -28,6 +29,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         private readonly IWorksheetLinkAppService _worksheetLinkAppService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
         private readonly IFeatureChecker _featureChecker;
+        protected readonly IZoneManagementAppService _zoneManagementAppService;
 
         [BindProperty(SupportsGet = true)]
         public string? SubmissionId { get; set; } = null;
@@ -81,17 +83,23 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public List<BoundWorksheet> CustomTabs { get; set; } = [];
 
+        [BindProperty]
+        public HashSet<string> ZoneStateSet { get; set; } = [];
+
         public DetailsModel(GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
             IApplicationFormVersionAppService applicationFormVersionAppService,
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
             _worksheetLinkAppService = worksheetLinkAppService;
             _featureChecker = featureChecker;
             _applicationFormVersionAppService = applicationFormVersionAppService;
+            _zoneManagementAppService = zoneManagementAppService;
+
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
@@ -101,6 +109,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public async Task OnGetAsync()
         {
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+
+            ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
+            
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
@@ -112,28 +123,33 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(sformVersionId);
                 ApplicationFormVersionId = formVersion?.Id ?? Guid.Empty;
                 var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(ApplicationFormVersionId, CorrelationConsts.FormVersion);
-                var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor }).ToList();
+                var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor, order = s.Order }).ToList();
 
-                foreach (var tab in tabs)
+                foreach (var tab in tabs.OrderBy(s => s.order))
                 {
-                    CustomTabs.Add(new BoundWorksheet() { Worksheet = tab.worksheet, UiAnchor = tab.uiAnchor });
+                    CustomTabs.Add(new BoundWorksheet()
+                    {
+                        Worksheet = tab.worksheet,
+                        UiAnchor = tab.uiAnchor,
+                        Order = tab.order
+                    });
                 }
             }
 
-            if (applicationFormSubmission != null)
+            ApplicationFormId = applicationFormSubmission.ApplicationFormId;
+            ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
+            ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
+            HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
+            ApplicationForm? applicationForm = await _grantApplicationAppService.GetApplicationFormAsync(ApplicationFormId);
+            ArgumentNullException.ThrowIfNull(applicationForm);
+            RenderFormIoToHtml = applicationForm.RenderFormIoToHtml;
+            if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML) && RenderFormIoToHtml)
             {
-                ApplicationFormId = applicationFormSubmission.ApplicationFormId;
-                ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
-                ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
-                HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
-                ApplicationForm? applicationForm = await _grantApplicationAppService.GetApplicationFormAsync(ApplicationFormId);
-                ArgumentNullException.ThrowIfNull(applicationForm);
-                RenderFormIoToHtml = applicationForm.RenderFormIoToHtml;
-                if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML) && RenderFormIoToHtml) {
-                    ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
-                } else {
-                    ApplicationFormSubmissionData = applicationFormSubmission.Submission;
-                }
+                ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
+            }
+            else
+            {
+                ApplicationFormSubmissionData = applicationFormSubmission.Submission;
             }
         }
 
@@ -148,5 +164,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
     {
         public WorksheetBasicDto? Worksheet { get; set; }
         public string UiAnchor { get; set; } = string.Empty;
+        public uint? Order { get; set; } = 0;
     }
 }

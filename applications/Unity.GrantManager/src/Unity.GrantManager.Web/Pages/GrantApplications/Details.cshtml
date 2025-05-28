@@ -1,5 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @* #pragma warning disable S1128 *@
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
+@using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Settings
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
@@ -11,10 +13,12 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
+@using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
 @using Volo.Abp.Settings
@@ -25,11 +29,14 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @inject IFeatureChecker FeatureChecker
+@inject IPermissionChecker PermissionChecker
 @inject ICurrentTenant CurrentTenant
 @inject ISettingProvider SettingProvider
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
+    var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
+    var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
 }
 @section styles
 {
@@ -77,8 +84,12 @@
 
         return initials;
     }
+
+    public bool IsZoneVisible(string zoneName) => Model.ZoneStateSet.Contains(zoneName);
+
+    public string ZoneCssClass(string zoneName) => IsZoneVisible(zoneName) ? string.Empty : "d-none";
 }
-<div id="main-loading">    
+<div id="main-loading">
     <img src="/images/homepage/unity.svg" alt="unity-application-loading">
 </div>
 <div class="m-0 h-100 application-details-container fade-in-load" id="main-container">
@@ -109,53 +120,85 @@
                 @*-------- Submission Section END ---------*@
 
                 @*-------- Review & Assessment Section ---------*@
-                <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
-                    <div class="w-100 px-2" id="assessmentResultWidget">
-                        @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                    </div>
-                    <div class="w-100 px-2" id="assessmentMainView">
-                        @await Component.InvokeAsync("ReviewList")
-                    </div>
-                    <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
-                        <abp-column size="_12">
-                            <abp-row>
-                                <abp-column size="_12" class="back-button-container">
-                                    <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
-                                </abp-column>
-                                <abp-column size="_8">
-                                    <h4 class="review-heading">Assessment Result Attachments</h4>
-                                </abp-column>
-                                <abp-column size="_4" class="add-review-btn-container">
+                @if (IsZoneVisible(UnitySelector.Review.Default))
+                {
+                    <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
+                        <div class="w-100 px-2" id="assessmentResultWidget">
+                            @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                        </div>
 
-                                </abp-column>
-                            </abp-row>
+                        <zone id="@UnitySelector.Review.Worksheet.Default" form-id="@Model.ApplicationFormId"
+                            zone-requirement="@UnitySelector.Review.Default"
+                            permission-requirement="@UnitySelector.Review.Default"
+                            feature-requirement="Unity.Flex">
+                            <div id="assessmentResultsCustomWidget">
+                                <form id="assessmentResultsCustomForm">
+                                    @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
+                                             new
+                                             {
+                                                 instanceCorrelationId = Model.ApplicationId,
+                                                 instanceCorrelationProvider = CorrelationConsts.Application,
+                                                 sheetCorrelationId = Model.ApplicationFormVersionId,
+                                                 sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                                                 uiAnchor = FlexConsts.AssessmentInfoUiAnchor
+                                             })
+                                </form>
+                            </div>
+                        </zone>
 
-                        </abp-column>
-                    </abp-row>
-                </abp-tab>
+                        <zone id="@UnitySelector.Review.AssessmentReviewList.Default" form-id="@Model.ApplicationFormId">
+                            <div class="w-100 px-2" id="assessmentMainView">
+                                @await Component.InvokeAsync("ReviewList")
+                            </div>
+                        </zone>
+
+                        <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
+                            <abp-column size="_12">
+                                <abp-row>
+                                    <abp-column size="_12" class="back-button-container">
+                                        <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
+                                    </abp-column>
+                                    <abp-column size="_8">
+                                        <h4 class="review-heading">Assessment Result Attachments</h4>
+                                    </abp-column>
+                                    <abp-column size="_4" class="add-review-btn-container">
+
+                                    </abp-column>
+                                </abp-row>
+                            </abp-column>
+                        </abp-row>
+                    </abp-tab>
+                }
                 @*-------- Review & Assessment Section END ---------*@
 
                 @*-------- Project Info Section ---------*@
-                <abp-tab name="nav-project-info" title="Project Info">
-                    <div class="w-100 px-2" id="projectInfoWidget">
-                        @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                    </div>
-                </abp-tab>
+                @if (IsZoneVisible(UnitySelector.Project.Default))
+                {
+                    <abp-tab name="nav-project-info" title="Project Info">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Project.Summary.Default)" id="projectInfoWidget">
+                            @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                        </div>
+                    </abp-tab>
+                }
                 @*-------- Project Info Section END ---------*@
 
                 @*-------- Applicant Info Section ---------*@
-                <abp-tab name="nav-organization-info" title="Applicant Info">
-                    <div class="w-100 px-2" id="ApplicantInfoWidget">
-                        @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                    </div>
-                </abp-tab>
+                @if (IsZoneVisible(UnitySelector.Applicant.Default))
+                {
+                    <abp-tab name="nav-organization-info" title="Applicant Info">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Applicant.Summary.Default)" id="ApplicantInfoWidget">
+                            @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                        </div>
+                    </abp-tab>
+                }
+
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Funding Agreement Info Section ---------*@
-                @if (await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.FundingAgreement))
+                @if (IsZoneVisible(UnitySelector.Funding.Default))
                 {
                     <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
-                        <div class="w-100 px-2" id="FundingAgreementInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Funding.Agreement.Default)" id="FundingAgreementInfoWidget">
                             @await Component.InvokeAsync("FundingAgreementInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
@@ -163,10 +206,11 @@
                 @*-------- Funding Agreement Section END ---------*@
 
                 @*-------- Payments Section ---------*@
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments")
+                && IsZoneVisible(UnitySelector.Payment.Default))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
-                        <div class="w-100 px-2" id="PaymentInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Payment.Summary.Default)" id="PaymentInfoWidget">
                             @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
@@ -202,11 +246,11 @@
                 <li class="nav-item">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications"))
+                @if (notificationsFeatureEnabled && readEmailGranted)
                 {
-                <li class="nav-item">
-                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
-                </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
+                    </li>
                 }
                 <li class="nav-item">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
@@ -243,7 +287,7 @@
                     <div id="reviewDetails" style="display:none">
                         <input type="hidden" id="AssessmentId" value="@Model.AssessmentId" />
                         <div id="assessmentUserDetailsWidget">
-                            <div class="container-fluid float-inline" >
+                            <div class="container-fluid float-inline">
                                 <abp-row>
                                     <abp-column size="_12">
                                         <abp-button icon="fl fl-pdf" icon-type="Other" id="printAssessmentPdf" class="pdf-icon"></abp-button>
@@ -300,6 +344,8 @@
                 @*-------- Details Tab Section END ---------*@
 
                 @*-------- Emails Tab Section ---------*@
+                @if (notificationsFeatureEnabled && readEmailGranted)
+                {
                 <div class="tab-pane" id="emails" role="tabpanel" aria-labelledby="emails-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Emails</h6>
                     <div class="px-3 pb-2" id="applicationEmailsWidget">
@@ -310,6 +356,7 @@
                         @await Component.InvokeAsync("EmailHistoryWidget")
                     </div>
                 </div>
+                }
                 @*-------- Emails Tab Section END ---------*@
 
                 @*-------- Comments Tab Section ---------*@
@@ -361,7 +408,3 @@
         </abp-card>
     </div>
 </div>
-
-
-
-

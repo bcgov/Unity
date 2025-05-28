@@ -29,27 +29,27 @@
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].CorrelationId" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ContractNumber" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ApplicantName" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SubmissionConfirmationCode" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SupplierName" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SupplierNumber" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].RemainingAmount" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId" />
+                            
                             <abp-row class="m-0 p-3">
-                                <abp-column size="_3" class="px-1">
+                                <abp-column size="_2" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>
                                 </abp-column>
-                                <abp-column size="_3" class="px-1">
+                                <abp-column size="_2" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" 
                                             class="amount unity-currency-input" 
                                             disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"
                                                onchange='checkMaxValue("@Model.ApplicationPaymentRequestForm[i].CorrelationId",this, @Model.ApplicationPaymentRequestForm[i].RemainingAmount)' />
                                 </abp-column>
-                                <abp-column size="_3" class="px-1">
-                                    <abp-select id="site_select" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId"
-                                                disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"
-                                                asp-items="@Model.ApplicationPaymentRequestForm[i].SiteList">
-                                        <option value="null" disabled>Please choose...</option>
-                                    </abp-select>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].SiteName" alt="@Model.ApplicationPaymentRequestForm[i].SiteName" disabled="true"/>
                                 </abp-column>
-                                <abp-column size="_3" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" alt="@Model.ApplicationPaymentRequestForm[i].Description" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>
                                 </abp-column>
 
                                 <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_remaining_error")" style="display: none;">

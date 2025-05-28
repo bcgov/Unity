@@ -1,0 +1,77 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+
+@inject IStringLocalizer<GrantManagerResource> L
+@model Unity.GrantManager.Web.Pages.SettingManagement.ZoneManagementModel
+@{
+    Layout = null;
+}
+
+<abp-script src="/Pages/SettingManagement/zone-management.js" />
+
+<form id="ZoneManagementForm" method="post" asp-page="/SettingManagement/ZoneManagement" data-script-class="abp.modals.ZoneManagement">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <input asp-for="@Model.ProviderKey" />
+                <input asp-for="@Model.ProviderName" />
+                <abp-tabs name="ZonesTabs" tab-style="Tab" class="custom-scroll-container">
+                    <abp-tab title="Application Details" name="tab-@Model.GroupTemplate.Name">
+                        <div class="w-100">
+                            <div class="ps-1">
+                                <div class="row row-cols-1 row-cols-md-2 g-4">
+                                    @for (var i = 0; i < Model.GroupTemplate.Tabs.Count; i++)
+                                    {
+                                        var tabGroup = Model.GroupTemplate.Tabs[i];
+                                        <abp-column class="border-0">
+                                            <div class="form-switch">
+                                                <abp-input asp-for="@tabGroup.IsEnabled"
+                                                           abp-id-name="@Model.GroupTemplate.Tabs[i].IsEnabled"
+                                                           check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
+                                                           label="@L[$"{tabGroup.Name}"].Value"
+                                                           class="fw-bold"
+                                                           group-data-zone-name="@tabGroup.Name" />
+                                                <input asp-for="@tabGroup.Name" abp-id-name="@Model.GroupTemplate.Tabs[i].Name" hidden />
+                                            </div>
+
+                                            @for (var j = 0; j < tabGroup.Zones.Count; j++)
+                                            {
+                                                var zone = tabGroup.Zones[j];
+                                                <div class="form-switch">
+                                                    <abp-input asp-for="@zone.IsEnabled"
+                                                               abp-id-name="@Model.GroupTemplate.Tabs[i].Zones[j].IsEnabled"
+                                                               check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
+                                                               label="@(L[$"{zone.Name}"].Value)"
+                                                               group-data-zone-name="@zone.Name"
+                                                               group-data-parent-name="@tabGroup.Name"
+                                                               group-style="margin-inline-start: 25px"
+                                                               disabled=@zone.IsConfigurationDisabled />
+
+                                                    <input asp-for="@zone.Name" abp-id-name="@Model.GroupTemplate.Tabs[i].Zones[j].Name" hidden />
+                                                </div>
+                                            }
+                                        </abp-column>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </abp-tab>
+                </abp-tabs>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-center">
+                    <abp-button button-type="Primary" 
+                                text="Save"
+                                icon-type="Other"
+                                icon="fl fl-save"
+                                class="btn unt-btn-primary btn-primary"
+                                type="submit"></abp-button>
+                    <abp-button id="btn-cancel" class="btn unt-btn-outline-primary btn-outline-primary mx-1" abp-tooltip="Navigate back to the Forms">Back</abp-button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

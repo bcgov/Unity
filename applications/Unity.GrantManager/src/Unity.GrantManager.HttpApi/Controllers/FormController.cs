@@ -63,7 +63,9 @@ namespace Unity.GrantManager.Controllers
                 }
 
                 var chefsFormVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
-                var result = await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);
+                
+                var result = await _applicationFormVersionAppService
+                    .UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);                                
                 
                 return Ok(result);
             }

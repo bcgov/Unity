@@ -1,6 +1,6 @@
 # Unity Portal
-[![Lifecycle:Maturing](https://img.shields.io/badge/Lifecycle-Maturing-007EC6)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
-The codebase is being roughed out, but finer details are likely to change.
+[![Lifecycle:Stable](https://img.shields.io/badge/Lifecycle-Stable-97ca00)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.m)
+The project is in a reliable state and major changes are unlikely to happen.
 
 ## Directory Structure
 

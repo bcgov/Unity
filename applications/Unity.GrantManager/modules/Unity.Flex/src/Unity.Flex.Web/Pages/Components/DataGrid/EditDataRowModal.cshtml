@@ -31,68 +31,88 @@
             <abp-input type="hidden" id="UiAnchor" asp-for="@Model.UiAnchor" />
             <abp-input type="hidden" id="IsNew" asp-for="@Model.IsNew" />
             <abp-input type="hidden" id="CheckboxKeys" asp-for="@Model.CheckboxKeys" />
-
-            @foreach (var field in Model.Properties ?? [])
-            {
-                <div class="edit_row_field unity-input-group">
-                    <label class="form-label" for="@field.Name">@field.Label</label>
-                    @try
-                    {
-                        @switch (field.Type)
+            <div class="custom-fields-split">
+                @if (Model.DynamicFields?.Length > 0)
+                {
+                    <div>
+                        <h6 class="customgrid-edit-row-header">@L["DataGrids:DynamicColumnsHeader"]:</h6>
+                        @foreach (var field in Model.DynamicFields ?? [])
                         {
-                            case CustomFieldType.Checkbox:
-                                {
-                                    @await Component.InvokeAsync(typeof(CheckboxWidget), new { fieldModel = field, modelName = field.Name })
-                                    break;
-                                }
-                            case CustomFieldType.Currency:
-                                {
-                                    @await Component.InvokeAsync(typeof(CurrencyWidget), new { fieldModel = field, modelName = field.Name })
-                                    break;
-                                }
-                            case CustomFieldType.Date:
-                                {
-                                    @await Component.InvokeAsync(typeof(DateWidget), new { fieldModel = field, modelName = field.Name })
-                                    break;
-                                }
-                            case CustomFieldType.DateTime:
-                                {
-                                    @await Component.InvokeAsync(typeof(DateWidget), new { fieldModel = field, modelName = field.Name })
-                                    break;
-                                }
-                            case CustomFieldType.TextArea:
-                                {
-                                    @await Component.InvokeAsync(typeof(TextAreaWidget), new { fieldModel = field, modelName = field.Name })
-                                    break;
-                                }
-                            case CustomFieldType.YesNo:
-                                {
-                                    @await Component.InvokeAsync(typeof(YesNoWidget), new { fieldModel = field, modelName = field.Name })
-                                    break;
-                                }
-                            default:
-                                {
-                                    <input type="@field.Type.ConvertInputType()"
-                                           label="@field.Label"
-                                           value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
-                                           class="@field.Type.ApplyCssClass()"
-                                           id="@($"{field.Name}.{field.Name}.{field.Id}")"
-                                           name="@($"{field.Name}.{field.Name}.{field.Id}")"
-                                           min="@field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull()"
-                                           max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
-                                           minlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMinLengthValueOrNull()"
-                                           maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()" />
-                                    break;
-                                }
+                            <div class="edit_row_field unity-input-group">
+                                <label class="form-label" for="@field.Key">@field.Key</label>
+                                <input class="form-control customgrid-edit-dymanic-field" name="@field.Key" value="@field.Value" disabled />
+                            </div>
                         }
-                    }
-                    catch (Exception)
+                    </div>
+                }
+                <div>
+                    @if (Model.DynamicFields?.Length > 0)
                     {
-                        <span class="control-render-error">Error rendering component!</span>
+                        <h6 class="customgrid-edit-row-header">@L["DataGrids:CustomColumnsHeader"]:</h6>
                     }
-                    <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field?.Name}.{field?.Name}.{field?.Id}")" data-valmsg-replace="true"></span>
+                    @foreach (var field in Model.Properties ?? [])
+                    {
+                        <div class="edit_row_field unity-input-group">
+                            <label class="form-label" for="@field.Name">@field.Label</label>
+                            @try
+                            {
+                                @switch (field.Type)
+                                {
+                                    case CustomFieldType.Checkbox:
+                                        {
+                                            @await Component.InvokeAsync(typeof(CheckboxWidget), new { fieldModel = field, modelName = field.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.Currency:
+                                        {
+                                            @await Component.InvokeAsync(typeof(CurrencyWidget), new { fieldModel = field, modelName = field.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.Date:
+                                        {
+                                            @await Component.InvokeAsync(typeof(DateWidget), new { fieldModel = field, modelName = field.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.DateTime:
+                                        {
+                                            @await Component.InvokeAsync(typeof(DateWidget), new { fieldModel = field, modelName = field.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.TextArea:
+                                        {
+                                            @await Component.InvokeAsync(typeof(TextAreaWidget), new { fieldModel = field, modelName = field.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.YesNo:
+                                        {
+                                            @await Component.InvokeAsync(typeof(YesNoWidget), new { fieldModel = field, modelName = field.Name })
+                                            break;
+                                        }
+                                    default:
+                                        {
+                                            <input type="@field.Type.ConvertInputType()"
+                                                   label="@field.Label"
+                                                   value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
+                                                   class="@field.Type.ApplyCssClass()"
+                                                   id="@($"{field.Name}.{field.Name}.{field.Id}")"
+                                                   name="@($"{field.Name}.{field.Name}.{field.Id}")"
+                                                   min="@field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull()"
+                                                   max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
+                                                   minlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMinLengthValueOrNull()"
+                                                   maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()" />
+                                            break;
+                                        }
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                <span class="control-render-error">Error rendering component!</span>
+                            }
+                            <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field?.Name}.{field?.Name}.{field?.Id}")" data-valmsg-replace="true"></span>
+                        </div>
+                    }
                 </div>
-            }
+            </div>
         </abp-modal-body>
         <abp-modal-footer>
             <button type="submit" class="btn btn-primary" id="saveRowValues-@Model.FieldId" name="saveRowValues-@Model.FieldId" value="save">@AbpModalButtons.Save</button>
@@ -135,7 +155,7 @@
 
         // Get all date/time elements
         let datetimeElements = $(`#${formId} input[type="datetime-local"], #${formId} input[type="date"]`);
-        
+
         // Loop through all the input elements
         datetimeElements.each(function () {
             // Find the <i> element within the same .custom-input-group
@@ -150,6 +170,9 @@
             $("#" + formId + " input:visible").each(function (i, el) {
                 let $field = $(this);
                 if ($field.hasClass('custom-currency-input')) {
+                    if ($field.val() === '' || $field.val() === '0') {
+                       $field.val('0.00');
+                    }
                     if (!isValidCurrencyCustomField($field)) {
                         invalidFieldsFound = true;
                     }

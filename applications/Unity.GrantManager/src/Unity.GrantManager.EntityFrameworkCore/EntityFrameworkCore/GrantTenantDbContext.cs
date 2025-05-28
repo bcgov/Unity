@@ -13,6 +13,7 @@ using Unity.GrantManager.Identity;
 using Unity.Payments.EntityFrameworkCore;
 using Unity.Flex.EntityFrameworkCore;
 using Unity.Notifications.EntityFrameworkCore;
+using Unity.Reporting.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -285,6 +286,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
             modelBuilder.ConfigurePayments();
             modelBuilder.ConfigureFlex();
             modelBuilder.ConfigureNotifications();
+            modelBuilder.ConfigureReporting();
         }
     }
 }

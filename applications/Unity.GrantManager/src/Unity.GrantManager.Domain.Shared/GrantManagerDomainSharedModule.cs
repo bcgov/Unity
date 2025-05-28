@@ -15,6 +15,7 @@ using Volo.Abp.VirtualFileSystem;
 using Unity.Notifications;
 using Unity.Flex;
 using Unity.Payments;
+using Unity.Reporting;
 
 namespace Unity.GrantManager;
 
@@ -32,7 +33,8 @@ namespace Unity.GrantManager;
     typeof(NotificationsDomainSharedModule),
     typeof(FlexSharedModule),
     typeof(PaymentsSharedModule))]
-public class GrantManagerDomainSharedModule : AbpModule
+[DependsOn(typeof(ReportingDomainSharedModule))]
+    public class GrantManagerDomainSharedModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

@@ -1,0 +1,16 @@
+redis:
+  fullnameOverride: prod-redis-ha
+  sentinel:
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "20m"
+  replica:
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 64Mi
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "20m"

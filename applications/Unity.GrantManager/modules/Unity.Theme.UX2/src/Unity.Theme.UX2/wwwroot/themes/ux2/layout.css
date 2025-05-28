@@ -496,6 +496,24 @@ input.form-control, textarea.form-control, .form-select {
         pointer-events: auto;
     }
 
+.modal-dialog input.form-control-plaintext, 
+.modal-dialog input.form-control:read-only {
+    border: none;
+    font-weight:700;
+}
+
+.modal-dialog input.form-control-plaintext:hover,
+.modal-dialog input.form-control[readonly]:hover {
+    box-shadow: none;
+    outline: none;
+}
+
+.modal-dialog input.form-control-plaintext:focus,
+.modal-dialog input.form-control[readonly]:focus {
+    box-shadow: none;
+    outline: none;
+}
+
 abp-date-picker .btn {
     position: absolute !important;
     right: 1px;
@@ -802,4 +820,8 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
     content: "" !important;
     border-bottom: 0px solid transparent;
     border-right: 5px solid transparent;
+}
+
+fieldset.unity-zone:first-of-type legend {
+    margin-top: 0 !important;
 }

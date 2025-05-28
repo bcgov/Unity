@@ -32,6 +32,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual bool IsRecon { get; internal set; }
 
         public virtual string ReferenceNumber { get;  set; } = string.Empty;
+        public virtual string SubmissionConfirmationCode { get; set; } = string.Empty;
 
         // Filled on a recon
         public virtual string? InvoiceStatus { get; private set; }
@@ -45,6 +46,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         // Payee Info
         public virtual string PayeeName { get; private set; } = string.Empty;
         public virtual string ContractNumber { get; private set; } = string.Empty;
+        public virtual string? SupplierName { get; private set; } = string.Empty;
         public virtual string SupplierNumber { get; private set; } = string.Empty;
         public virtual string RequesterName { get; private set; } = string.Empty;
         public virtual string BatchName { get; private set; } = string.Empty;
@@ -86,11 +88,13 @@ namespace Unity.Payments.Domain.PaymentRequests
             PayeeName = createPaymentRequestDto.PayeeName;
             ContractNumber = createPaymentRequestDto.ContractNumber;
             SupplierNumber = createPaymentRequestDto.SupplierNumber;
+            SupplierName = createPaymentRequestDto.SupplierName;
             SiteId = createPaymentRequestDto.SiteId;
             Description = createPaymentRequestDto.Description;
             CorrelationId = createPaymentRequestDto.CorrelationId;
             CorrelationProvider = createPaymentRequestDto.CorrelationProvider;
             ReferenceNumber = createPaymentRequestDto.ReferenceNumber;
+            SubmissionConfirmationCode = createPaymentRequestDto.SubmissionConfirmationCode;
             BatchName = createPaymentRequestDto.BatchName;
             BatchNumber = createPaymentRequestDto.BatchNumber;
             ExpenseApprovals = GenerateExpenseApprovals(createPaymentRequestDto.Amount, createPaymentRequestDto.PaymentThreshold);
@@ -135,7 +139,19 @@ namespace Unity.Payments.Domain.PaymentRequests
 
         public PaymentRequest SetPaymentDate(string paymentDate)
         {
-            PaymentDate = paymentDate;
+            if (!string.IsNullOrEmpty(paymentDate)
+                && DateTime.TryParseExact(paymentDate,
+                                          "dd-MMM-yyyy",
+                                          System.Globalization.CultureInfo.InvariantCulture,
+                                          System.Globalization.DateTimeStyles.None,
+                                          out DateTime date))
+            {
+                PaymentDate = date.ToString("yyyy-MM-dd");
+            }
+            else if(!string.IsNullOrEmpty(paymentDate))
+            {
+                PaymentDate = paymentDate;
+            }
             return this;
         }
 

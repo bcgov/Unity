@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -9,12 +10,15 @@ public class ApplicantAgent : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? OidcSubUser { get; set; }
     public Guid ApplicantId { get; set; }
     public Guid? ApplicationId { get; set; }
+
+    [JsonIgnore]
     public virtual Application Application
     {
         set => _application = value;
         get => _application
                ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Application));
     }
+
     private Application? _application;
     public Guid? TenantId { get; set; }
 

@@ -348,26 +348,26 @@ objects:
     selector:
       app: ${APPLICATION_NAME}
 # Redis
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      description: The application's host port.
-    name: ${Redis__HostName}
-    labels:
-      app: ${Redis__HostName}
-      app.kubernetes.io/component: ${Redis__HostName}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-      app.kubernetes.io/name: ${Redis__HostName}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  spec:
-    ports:
-      - name: redis
-        protocol: TCP
-        port: 6379
-        targetPort: 6379
-    selector:
-      app: ${Redis__HostName}
+# - apiVersion: v1
+#   kind: Service
+#   metadata:
+#     annotations:
+#       description: The application's host port.
+#     name: ${Redis__HostName}
+#     labels:
+#       app: ${Redis__HostName}
+#       app.kubernetes.io/component: ${Redis__HostName}
+#       app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+#       app.kubernetes.io/name: ${Redis__HostName}
+#       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+#   spec:
+#     ports:
+#       - name: redis
+#         protocol: TCP
+#         port: 6379
+#         targetPort: 6379
+#     selector:
+#       app: ${Redis__HostName}
 # Route ingress
 - apiVersion: route.openshift.io/v1
   id: ${APPLICATION_NAME}-http
@@ -442,24 +442,24 @@ objects:
       storageClassName: netapp-file-standard
       volumeMode: Filesystem
 # Redis
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: ${Redis__HostName}
-    labels:
-      app: ${Redis__HostName}
-      app.kubernetes.io/component: ${Redis__HostName}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-      app.kubernetes.io/name: ${Redis__HostName}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  spec:
-    accessModes:
-    - ReadWriteOnce
-    resources:
-      requests:
-        storage: ${VOLUME_CAPACITY}
-      storageClassName: netapp-file-standard
-      volumeMode: Filesystem
+# - apiVersion: v1
+#   kind: PersistentVolumeClaim
+#   metadata:
+#     name: ${Redis__HostName}
+#     labels:
+#       app: ${Redis__HostName}
+#       app.kubernetes.io/component: ${Redis__HostName}
+#       app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+#       app.kubernetes.io/name: ${Redis__HostName}
+#       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+#   spec:
+#     accessModes:
+#     - ReadWriteOnce
+#     resources:
+#       requests:
+#         storage: ${VOLUME_CAPACITY}
+#       storageClassName: netapp-file-standard
+#       volumeMode: Filesystem
 # Deployment
 - apiVersion: apps/v1
   kind: Deployment
@@ -540,7 +540,7 @@ objects:
                 - name: readiness
                   value: healthy
             timeoutSeconds: 5
-            periodSeconds: 10
+            periodSeconds: 30
             successThreshold: 1
             failureThreshold: 3
           livenessProbe:
@@ -553,7 +553,7 @@ objects:
                   value: text/plain
             initialDelaySeconds: 120
             timeoutSeconds: 5
-            periodSeconds: 10
+            periodSeconds: 30
             successThreshold: 1
             failureThreshold: 3
           startupProbe:
@@ -566,7 +566,7 @@ objects:
                   value: text/plain
             initialDelaySeconds: 30
             timeoutSeconds: 1
-            periodSeconds: 10
+            periodSeconds: 5
             successThreshold: 1
             failureThreshold: 12
           ports:
@@ -581,80 +581,80 @@ objects:
         terminationGracePeriodSeconds: 30
         dnsPolicy: ClusterFirst
 # Redis
-- apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: ${Redis__HostName}
-    annotations:
-      app.openshift.io/route-disabled: "false"
-      image.openshift.io/triggers: >-
-        [{"from":{"kind":"ImageStreamTag","name":"${REDIS_IMAGESTREAM_NAME}:${REDIS_IMAGESTREAM_TAG}","namespace":"${REDIS_IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${Redis__HostName}\")].image","pause":"false"}]
-    labels:
-      app: ${Redis__HostName}
-      app.openshift.io/runtime: redis
-      app.kubernetes.io/component: ${Redis__HostName}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-      app.kubernetes.io/name: ${Redis__HostName}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: ${Redis__HostName}
-    strategy:
-      type: Recreate
-    template:
-      metadata:
-        labels:
-          application: ${Redis__HostName}
-          app: ${Redis__HostName}
-      spec:
-        volumes:
-          - name: ${Redis__HostName}-data
-            persistentVolumeClaim:
-              claimName: ${Redis__HostName}
-        containers:
-        - name: ${Redis__HostName}
-          image: ${IMAGEPULL_REGISTRY}/${REDIS_IMAGEPULL_NAMESPACE}/${REDIS_IMAGESTREAM_NAME}:${REDIS_IMAGESTREAM_TAG}
-          imagePullPolicy: Always
-          resources:
-            requests:
-              cpu: ${CPU_REQUEST}
-              memory: ${MEMORY_REQUEST}
-          readinessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - '-i'
-                - '-c'
-                - test "$(redis-cli -h 127.0.0.1 -a $REDIS_PASSWORD ping)" == "PONG"
-            initialDelaySeconds: 5
-            timeoutSeconds: 1
-            periodSeconds: 10
-            successThreshold: 1
-            failureThreshold: 3
-          livenessProbe:
-            tcpSocket:
-              port: 6379
-            initialDelaySeconds: 30
-            timeoutSeconds: 1
-            periodSeconds: 10
-            successThreshold: 1
-            failureThreshold: 3
-          env:
-            - name: REDIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: ${Redis__HostName}
-                  key: database-password
-          ports:
-            - containerPort: 6379
-              protocol: TCP
-          imagePullPolicy: IfNotPresent
-          volumeMounts:
-            - name: ${Redis__HostName}-data
-              mountPath: /var/lib/redis/data
-          terminationMessagePolicy: File
-        restartPolicy: Always
-        terminationGracePeriodSeconds: 30
-        dnsPolicy: ClusterFirst
+# - apiVersion: apps/v1
+#   kind: Deployment
+#   metadata:
+#     name: ${Redis__HostName}
+#     annotations:
+#       app.openshift.io/route-disabled: "false"
+#       image.openshift.io/triggers: >-
+#         [{"from":{"kind":"ImageStreamTag","name":"${REDIS_IMAGESTREAM_NAME}:${REDIS_IMAGESTREAM_TAG}","namespace":"${REDIS_IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${Redis__HostName}\")].image","pause":"false"}]
+#     labels:
+#       app: ${Redis__HostName}
+#       app.openshift.io/runtime: redis
+#       app.kubernetes.io/component: ${Redis__HostName}
+#       app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+#       app.kubernetes.io/name: ${Redis__HostName}
+#       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+#   spec:
+#     replicas: 1
+#     selector:
+#       matchLabels:
+#         app: ${Redis__HostName}
+#     strategy:
+#       type: Recreate
+#     template:
+#       metadata:
+#         labels:
+#           application: ${Redis__HostName}
+#           app: ${Redis__HostName}
+#       spec:
+#         volumes:
+#           - name: ${Redis__HostName}-data
+#             persistentVolumeClaim:
+#               claimName: ${Redis__HostName}
+#         containers:
+#         - name: ${Redis__HostName}
+#           image: ${IMAGEPULL_REGISTRY}/${REDIS_IMAGEPULL_NAMESPACE}/${REDIS_IMAGESTREAM_NAME}:${REDIS_IMAGESTREAM_TAG}
+#           imagePullPolicy: Always
+#           resources:
+#             requests:
+#               cpu: ${CPU_REQUEST}
+#               memory: ${MEMORY_REQUEST}
+#           readinessProbe:
+#             exec:
+#               command:
+#                 - /bin/sh
+#                 - '-i'
+#                 - '-c'
+#                 - test "$(redis-cli -h 127.0.0.1 -a $REDIS_PASSWORD ping)" == "PONG"
+#             initialDelaySeconds: 5
+#             timeoutSeconds: 1
+#             periodSeconds: 10
+#             successThreshold: 1
+#             failureThreshold: 3
+#           livenessProbe:
+#             tcpSocket:
+#               port: 6379
+#             initialDelaySeconds: 30
+#             timeoutSeconds: 1
+#             periodSeconds: 10
+#             successThreshold: 1
+#             failureThreshold: 3
+#           env:
+#             - name: REDIS_PASSWORD
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: ${Redis__HostName}
+#                   key: database-password
+#           ports:
+#             - containerPort: 6379
+#               protocol: TCP
+#           imagePullPolicy: IfNotPresent
+#           volumeMounts:
+#             - name: ${Redis__HostName}-data
+#               mountPath: /var/lib/redis/data
+#           terminationMessagePolicy: File
+#         restartPolicy: Always
+#         terminationGracePeriodSeconds: 30
+#         dnsPolicy: ClusterFirst

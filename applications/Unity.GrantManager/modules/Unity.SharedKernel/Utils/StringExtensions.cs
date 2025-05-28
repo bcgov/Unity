@@ -18,7 +18,7 @@ namespace Unity.Modules.Shared.Utils
         }
 
         // Synchronous method to compare strings
-        public static double CompareStringsAsync(this string str1, string str2)
+        public static double CompareStrings(this string str1, string str2)
         {
             if (string.IsNullOrEmpty(str1) || string.IsNullOrEmpty(str2))
                 return 0.0;

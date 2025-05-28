@@ -13,6 +13,7 @@ using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
+using Volo.Abp.Users;
 
 namespace Unity.Payments.Domain.Services
 {
@@ -23,18 +24,21 @@ namespace Unity.Payments.Domain.Services
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IPermissionChecker _permissionChecker;
         private readonly CasPaymentRequestCoordinator _casPaymentRequestCoordinator;
+        private readonly ICurrentUser _currentUser;
 
         public PaymentsManager(
             CasPaymentRequestCoordinator casPaymentRequestCoordinator,
             IInvoiceService invoiceService,
             IPaymentRequestRepository paymentRequestRepository,
             IUnitOfWorkManager unitOfWorkManager,
-            IPermissionChecker permissionChecker)
+            IPermissionChecker permissionChecker,
+            ICurrentUser currentUser)
         {
             _casPaymentRequestCoordinator = casPaymentRequestCoordinator;
             _paymentRequestRepository = paymentRequestRepository;
             _unitOfWorkManager = unitOfWorkManager;
             _permissionChecker = permissionChecker;
+            _currentUser = currentUser;
         }
 
         private void ConfigureWorkflow(StateMachine<PaymentRequestStatus, PaymentApprovalAction> paymentStateMachine)
@@ -97,6 +101,7 @@ namespace Unity.Payments.Domain.Services
         public async Task<PaymentRequest> TriggerAction(Guid paymentRequestsId, PaymentApprovalAction triggerAction)
         {
             var paymentRequest = await _paymentRequestRepository.GetAsync(paymentRequestsId, true);
+            var currentUserId = _currentUser.GetId();
 
             var statusChange = paymentRequest.Status;
 
@@ -112,33 +117,33 @@ namespace Unity.Payments.Domain.Services
             if (triggerAction == PaymentApprovalAction.L1Approve)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
-                paymentRequest.ExpenseApprovals[index].Approve();
+                paymentRequest.ExpenseApprovals[index].Approve(currentUserId);
                 statusChangedTo = PaymentRequestStatus.L2Pending;
             }
             else if (triggerAction == PaymentApprovalAction.L1Decline)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
-                paymentRequest.ExpenseApprovals[index].Decline();
+                paymentRequest.ExpenseApprovals[index].Decline(currentUserId);
                 statusChangedTo = PaymentRequestStatus.L1Declined;
             }
             else if (triggerAction == PaymentApprovalAction.L2Approve)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
-                paymentRequest.ExpenseApprovals[index].Approve();
+                paymentRequest.ExpenseApprovals[index].Approve(currentUserId);
                 statusChangedTo = PaymentRequestStatus.L3Pending;
 
             }
             else if (triggerAction == PaymentApprovalAction.L2Decline)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
-                paymentRequest.ExpenseApprovals[index].Decline();
+                paymentRequest.ExpenseApprovals[index].Decline(currentUserId);
                 statusChangedTo = PaymentRequestStatus.L2Declined;
             }
 
             else if (triggerAction == PaymentApprovalAction.L3Decline)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level3);
-                paymentRequest.ExpenseApprovals[index].Decline();
+                paymentRequest.ExpenseApprovals[index].Decline(currentUserId);
                 statusChangedTo = PaymentRequestStatus.L3Declined;
             }
 
@@ -147,12 +152,12 @@ namespace Unity.Payments.Domain.Services
                 if (HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline))
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
-                    paymentRequest.ExpenseApprovals[index].Approve();
+                    paymentRequest.ExpenseApprovals[index].Approve(currentUserId);
                 }
                 else if (HasPermission(PaymentsPermissions.Payments.L3ApproveOrDecline))
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level3);
-                    paymentRequest.ExpenseApprovals[index].Approve();
+                    paymentRequest.ExpenseApprovals[index].Approve(currentUserId);
                 }
 
                 statusChangedTo = PaymentRequestStatus.Submitted;

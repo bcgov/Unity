@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,8 +8,11 @@ using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes.Mapping;
+using Unity.GrantManager.Reporting.DataGenerators;
+using Unity.Modules.Shared.Features;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Features;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Intakes
@@ -19,8 +24,11 @@ namespace Unity.GrantManager.Intakes
                                              IApplicationFormSubmissionRepository _applicationFormSubmissionRepository,
                                              IIntakeFormSubmissionMapper _intakeFormSubmissionMapper,
                                              IApplicationFormVersionRepository _applicationFormVersionRepository,
-                                             CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper) : DomainService, IIntakeFormSubmissionManager
+                                             CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper,
+                                             IReportingDataGenerator _reportingDataGenerator,
+                                             IFeatureChecker featureChecker) : DomainService, IIntakeFormSubmissionManager
     {
+        protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
         {
@@ -49,10 +57,9 @@ namespace Unity.GrantManager.Intakes
             intakeMap.ConfirmationId = formSubmission.submission.confirmationId;
             using var uow = _unitOfWorkManager.Begin();
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
-            _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
+            await _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
 
-            _ = await _applicationFormSubmissionRepository.InsertAsync(
-            new ApplicationFormSubmission
+            var newSubmission = new ApplicationFormSubmission
             {
                 OidcSub = Guid.Empty.ToString(),
                 ApplicantId = application.ApplicantId,
@@ -60,15 +67,25 @@ namespace Unity.GrantManager.Intakes
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
                 ApplicationId = application.Id,
                 Submission = ChefsFormIOReplacement.ReplaceAdvancedFormIoControls(formSubmission)
-            });
+            };
+
+            _ = await _applicationFormSubmissionRepository.InsertAsync(newSubmission);
 
             var localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
             await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id,
                 localFormVersion?.Id ?? Guid.Empty,
                 formSubmission,
-                formVersionSubmissionHeaderMapping);
+            formVersionSubmissionHeaderMapping);
+
+            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            {
+                newSubmission.ReportData = _reportingDataGenerator.Generate(formSubmission, localFormVersion?.ReportKeys, newSubmission.Id);
+            }
+
+            newSubmission.ApplicationFormVersionId = localFormVersion?.Id;
 
             await uow.SaveChangesAsync();
+
             return application.Id;
         }
 
@@ -80,7 +97,7 @@ namespace Unity.GrantManager.Intakes
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName), 
+                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
@@ -109,12 +126,23 @@ namespace Unity.GrantManager.Intakes
                     ProjectSummary = intakeMap.ProjectSummary,
                 }
             );
-            ApplicantAgentDto applicantAgentDto = new ApplicantAgentDto {
+            ApplicantAgentDto applicantAgentDto = new ApplicantAgentDto
+            {
                 Applicant = applicant,
                 Application = application,
                 IntakeMap = intakeMap
             };
-            await applicantService.CreateOrUpdateApplicantAgentAsync(applicantAgentDto);
+            
+            await applicantService.CreateApplicantAgentAsync(applicantAgentDto);
+
+            try {
+                await applicantService.RelateDefaultSupplierAsync(applicantAgentDto);
+            } catch (Exception ex) {
+                // This was failing with SSL Certificate errors, so we're catching the exception and logging it
+                string MessageException = ex.Message;
+                logger.LogError(ex, "Error Relating Default Supplier {MessageException}", MessageException);
+            }
+            
             return application;
         }
 

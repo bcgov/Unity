@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
-using System.Globalization;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
 
@@ -21,12 +19,28 @@ namespace Unity.Flex
 
             var dataGridColumns = new List<DataGridColumn>();
             var dataGridRows = new List<DataGridRow>();
+            var dateTimeCheck = CustomFieldType.DateTime.ToString();
 
             foreach (var component in result)
             {
                 var key = component["key"]?.ToString() ?? string.Empty;
                 var name = component["label"]?.ToString() ?? string.Empty;
-                var type = ChefsToUnityTypes.Convert((component["type"]?.ToString() ?? string.Empty), CustomFieldType.Text.ToString());
+
+                var type = ChefsToUnityTypes
+                    .Convert(component["type"]?.ToString() ?? string.Empty,
+                        CustomFieldType.Text.ToString());
+
+                // Explicit handling of datetime property
+                if (type == dateTimeCheck)
+                {
+                    var enableTime = component["enableTime"];
+                    if (enableTime != null
+                        && !enableTime.Value<bool>())
+                    {
+                        type = CustomFieldType.Date.ToString();
+                    }
+                }
+
                 var format = ResolveFormatter(component);
 
                 dataGridColumns.Add(new DataGridColumn(key, name, type, format));
@@ -49,17 +63,16 @@ namespace Unity.Flex
                     {
                         string value;
 
-                        if (DateTime.TryParse(prop.Value.ToString(), new CultureInfo("en-CA"), out DateTime parsedDate))
+                        if (column.Type.RequiresDateTimeConversion())
                         {
-                            // If the value is a DateTime, keep the raw format
-                            value = prop.Value.ToString(Newtonsoft.Json.Formatting.None).Trim('"');
+                            value = prop.Value.ApplyDateTimeConversion();
                         }
                         else
                         {
                             // Otherwise, use the value as-is
                             value = prop.Value.ToString();
                         }
-                        
+
                         dataGridRow.Cells.Add(new DataGridRowCell(key, value));
                     }
                 }

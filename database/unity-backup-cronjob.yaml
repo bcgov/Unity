@@ -127,8 +127,8 @@ objects:
                     PGPASSWORD="$UNITY_POSTGRES_PASSWORD" pg_dumpall --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME);
                     echo "";echo "Backup successful";du -h /var/lib/pgsql/backups/$FILENAME;
                     echo "to restore the backup use: $ psql --username=$UNITY_POSTGRES_USER --password --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --username postgres < /var/lib/pgsql/backups/<backupfile> (unpacked with gunzip)";
-                    echo "";/var/lib/pgsql/backups/bin/mc alias set $AccessKeyID $RestEndpoint $AccessKeyID $SecretKey;/var/lib/pgsql/backups/bin/mc cp /var/lib/pgsql/backups/$FILENAME $AccessKeyID/$BucketDisplayName/Unity/Backups;
-                    echo "";ls -la /var/lib/pgsql/backups
+                    echo "";/var/lib/pgsql/backups/bin/mc alias set $AccessKeyID $RestEndpoint $AccessKeyID $SecretKey;/var/lib/pgsql/backups/bin/mc mirror --remove --summary /var/lib/pgsql/backups $AccessKeyID/$BucketDisplayName/Unity/Backups;
+                    echo "";ls -lR /var/lib/pgsql/backups
                 env:
                   - name: RestEndpoint
                     valueFrom:

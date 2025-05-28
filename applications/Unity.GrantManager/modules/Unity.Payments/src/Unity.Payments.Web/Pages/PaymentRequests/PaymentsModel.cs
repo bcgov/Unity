@@ -24,12 +24,16 @@ namespace Unity.Payments.Web.Pages.Payments
         public bool? Payable { get; set; }
         public bool RenderFormIoToHtml { get; set; } = false;
         public string? ApplicantName { get; set; }
+        public string? SubmissionConfirmationCode { get; set; }
         public decimal PaymentThreshold { get; set; }
-        public List<SelectListItem> SiteList { get; set; } = new List<SelectListItem>{};
+
+        [DisplayName("ApplicationPaymentRequest:SiteName")]
+        public string SiteName { get; set; } = string.Empty;
         public List<string> ErrorList { get; set; } = new List<string>{};
         public bool DisableFields  { get; set; } = false;
         public string? ContractNumber { get; set; }
         public string? SupplierNumber { get; set; }
+        public string? SupplierName { get; set; }
         public decimal RemainingAmount { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -8,6 +9,8 @@ namespace Unity.GrantManager.Applications;
 public class ApplicantAddress : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? ApplicantId { get; set; }
+
+    [JsonIgnore]
     public virtual Applicant Applicant
     {
         set => _applicant = value;

@@ -8,78 +8,178 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 
-namespace Unity.GrantManager.GrantApplications
+namespace Unity.GrantManager.Attachments;
+
+[Authorize]
+[Dependency(ReplaceServices = true)]
+[ExposeServices(typeof(AttachmentAppService), typeof(IAttachmentAppService))]
+public class AttachmentAppService(
+    IApplicationAttachmentRepository applicationAttachmentRepository,
+    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
+    IAssessmentAttachmentRepository assessmentAttachmentRepository,
+    IIntakeFormSubmissionManager intakeFormSubmissionManager,
+    IPersonRepository personUserRepository) : ApplicationService, IAttachmentAppService
 {
-    [Authorize]
-    [Dependency(ReplaceServices = true)]
-    [ExposeServices(typeof(AttachmentService), typeof(IAttachmentService))]
-    public class AttachmentService : ApplicationService, IAttachmentService
+    public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
     {
-        private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
-        private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
-        private readonly IPersonRepository _personRepository;
-        private readonly IApplicationChefsFileAttachmentRepository _applicationChefsFileAttachmentRepository;
-        private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
-
-        public AttachmentService(IApplicationAttachmentRepository applicationAttachmentRepository,
-            IAssessmentAttachmentRepository assessmentAttachmentRepository,
-            IPersonRepository personUserRepository,
-            IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-            IIntakeFormSubmissionManager intakeFormSubmissionManager)
-        {
-            _applicationAttachmentRepository = applicationAttachmentRepository;
-            _assessmentAttachmentRepository = assessmentAttachmentRepository;
-            _personRepository = personUserRepository;
-            _applicationChefsFileAttachmentRepository = applicationChefsFileAttachmentRepository;
-            _intakeFormSubmissionManager = intakeFormSubmissionManager;
-        }
-
-        public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
-        {
-            var query = from applicationAttachment in await _applicationAttachmentRepository.GetQueryableAsync()
-                        join person in await _personRepository.GetQueryableAsync() on applicationAttachment.UserId equals person.Id
-                        where applicationAttachment.ApplicationId == applicationId
-                        select new ApplicationAttachmentDto()
-                        {
-                            AttachedBy = person.FullName,
-                            Id = applicationAttachment.Id,
-                            FileName = applicationAttachment.FileName,
-                            S3ObjectKey = applicationAttachment.S3ObjectKey,
-                            Time = applicationAttachment.Time,
-                            CreatorId = person.Id
-                        };
-
-            return query.ToList();
-        }
-
-        public async Task<IList<AssessmentAttachmentDto>> GetAssessmentAsync(Guid assessmentId)
-        {
-            var query = from applicationAttachment in await _assessmentAttachmentRepository.GetQueryableAsync()
-                        join person in await _personRepository.GetQueryableAsync() on applicationAttachment.UserId equals person.Id
-                        where applicationAttachment.AssessmentId == assessmentId
-                        select new AssessmentAttachmentDto()
-                        {
-                            AttachedBy = person.FullName,
-                            Id = applicationAttachment.Id,
-                            FileName = applicationAttachment.FileName,
-                            S3ObjectKey = applicationAttachment.S3ObjectKey,
-                            Time = applicationAttachment.Time,
-                            CreatorId = person.Id
-                        };
-
-            return query.ToList();
-        }
-
-        public async Task<List<ApplicationChefsFileAttachment>> GetApplicationChefsFileAttachmentsAsync(Guid applicationId)
-        {
-            return await _applicationChefsFileAttachmentRepository.GetListAsync(applicationId);
-        }
-
-        public async Task ResyncSubmissionAttachmentsAsync(Guid applicationId)
-        {
-            await _intakeFormSubmissionManager.ResyncSubmissionAttachments(applicationId);
-        }
-
+        return (await GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.APPLICATION, applicationId)))
+            .Select(attachment => new ApplicationAttachmentDto
+            {
+                AttachedBy  = attachment.AttachedBy,
+                Id          = attachment.Id,
+                FileName    = attachment.FileName,
+                S3ObjectKey = attachment.S3ObjectKey,
+                Time        = attachment.Time,
+                CreatorId   = attachment.CreatorId,
+                DisplayName = attachment.DisplayName
+            }).ToList();
     }
+
+    public async Task<IList<AssessmentAttachmentDto>> GetAssessmentAsync(Guid assessmentId)
+    {
+        return (await GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.ASSESSMENT, assessmentId)))
+            .Select(attachment => new AssessmentAttachmentDto
+            {
+                AttachedBy  = attachment.AttachedBy,
+                Id          = attachment.Id,
+                FileName    = attachment.FileName,
+                S3ObjectKey = attachment.S3ObjectKey,
+                Time        = attachment.Time,
+                CreatorId   = attachment.CreatorId,
+                DisplayName = attachment.DisplayName
+            }).ToList();
+    }
+
+    public async Task<List<ApplicationChefsFileAttachment>> GetApplicationChefsFileAttachmentsAsync(Guid applicationId)
+    {
+        return await applicationChefsFileAttachmentRepository.GetListAsync(applicationId);
+    }
+
+    public async Task ResyncSubmissionAttachmentsAsync(Guid applicationId)
+    {
+        await intakeFormSubmissionManager.ResyncSubmissionAttachments(applicationId);
+    }
+
+    public async Task<IList<UnityAttachmentDto>> GetAttachmentsAsync(AttachmentParametersDto attachmentParametersDto)
+    {
+        if (attachmentParametersDto.AttachedResourceId == Guid.Empty)
+        {
+            return [];
+        }
+
+        return attachmentParametersDto.AttachmentType switch
+        {
+            AttachmentType.APPLICATION => await GetAttachmentsInternalAsync(
+                applicationAttachmentRepository,
+                attachment => attachment.ApplicationId == attachmentParametersDto.AttachedResourceId),
+            AttachmentType.ASSESSMENT => await GetAttachmentsInternalAsync(
+                assessmentAttachmentRepository,
+                attachment => attachment.AssessmentId == attachmentParametersDto.AttachedResourceId),
+            _ => throw new ArgumentException("Attachment type is not supported", nameof(attachmentParametersDto)),
+        };
+    }
+
+    protected internal async Task<IList<UnityAttachmentDto>> GetAttachmentsInternalAsync<T>(
+        IRepository<T, Guid> repository,
+        Func<T, bool> predicate) where T : AbstractS3Attachment
+    {
+        var attachments = await repository.GetQueryableAsync();
+        var people = await personUserRepository.GetQueryableAsync();
+        var query = from attachment in attachments.AsEnumerable()
+                    join person in people.AsEnumerable() on attachment.UserId equals person.Id
+                    where predicate(attachment)
+                    select new UnityAttachmentDto()
+                    {
+                        Id             = attachment.Id,
+                        FileName       = attachment.FileName,
+                        DisplayName    = attachment.DisplayName,
+                        S3ObjectKey    = attachment.S3ObjectKey,
+                        Time           = attachment.Time,
+                        AttachmentType = attachment.AttachmentType,
+                        AttachedBy     = person.FullName,
+                        CreatorId      = person.Id
+                    };
+
+        return query.ToList();
+    }
+
+    public async Task<AttachmentMetadataDto> GetAttachmentMetadataAsync(AttachmentType attachmentType, Guid attachmentId)
+    {
+        return attachmentType switch
+        {
+            AttachmentType.APPLICATION => await GetMetadataInternalAsync(
+                attachmentId, applicationAttachmentRepository),
+            AttachmentType.ASSESSMENT => await GetMetadataInternalAsync(
+                attachmentId, assessmentAttachmentRepository),
+            AttachmentType.CHEFS => await GetMetadataInternalAsync(
+                attachmentId, applicationChefsFileAttachmentRepository),
+            _ => throw new ArgumentException("Invalid attachment type", nameof(attachmentType)),
+        };
+    }
+
+    protected internal static async Task<AttachmentMetadataDto> GetMetadataInternalAsync<T>(
+        Guid attachmentId,
+        IRepository<T, Guid> repository) where T : AbstractAttachmentBase
+    {
+        var attachment = await repository.GetAsync(attachmentId) ?? throw new EntityNotFoundException();
+        return new AttachmentMetadataDto
+        {
+            Id             = attachment.Id,
+            FileName       = attachment.FileName,
+            DisplayName    = attachment.DisplayName,
+            CreatorId      = GetCreatorId(attachment),
+            AttachmentType = attachment.AttachmentType
+        };
+    }
+
+    public async Task<AttachmentMetadataDto> UpdateAttachmentMetadataAsync(UpdateAttachmentMetadataDto updateAttachment)
+    {
+        return updateAttachment.AttachmentType switch
+        {
+            AttachmentType.APPLICATION => await UpdateMetadataInternalAsync(
+                updateAttachment,
+                applicationAttachmentRepository,
+                AttachmentType.APPLICATION),
+            AttachmentType.ASSESSMENT => await UpdateMetadataInternalAsync(
+                updateAttachment,
+                assessmentAttachmentRepository,
+                AttachmentType.ASSESSMENT),
+            AttachmentType.CHEFS => await UpdateMetadataInternalAsync(
+                updateAttachment,
+                applicationChefsFileAttachmentRepository,
+                AttachmentType.CHEFS),
+            _ => throw new ArgumentException("Invalid attachment type", nameof(updateAttachment)),
+        };
+    }
+
+    protected internal static async Task<AttachmentMetadataDto> UpdateMetadataInternalAsync<T>(
+        UpdateAttachmentMetadataDto updateAttachment,
+        IRepository<T, Guid> repository,
+        AttachmentType attachmentType) where T : AbstractAttachmentBase
+    {
+        var attachment = await repository.GetAsync(updateAttachment.Id) ?? throw new EntityNotFoundException();
+
+        // Properties to be updated
+        attachment.DisplayName = updateAttachment.DisplayName;
+
+        var updatedAttachment = await repository.UpdateAsync(attachment, autoSave: true) ?? throw new EntityNotFoundException();
+        return new AttachmentMetadataDto
+        {
+            Id             = updatedAttachment.Id,
+            FileName       = updatedAttachment.FileName,
+            DisplayName    = updatedAttachment.DisplayName,
+            CreatorId      = GetCreatorId(updatedAttachment),
+            AttachmentType = attachmentType
+        };
+    }
+
+    private static Guid? GetCreatorId<T>(T attachment) where T : AbstractAttachmentBase
+    {
+        var property = typeof(T).GetProperty("CreatorId");
+        return property?.GetValue(attachment) as Guid?;
+    }
+
 }

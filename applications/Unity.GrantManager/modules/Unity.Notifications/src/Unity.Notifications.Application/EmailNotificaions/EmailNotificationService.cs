@@ -20,6 +20,8 @@ using Volo.Abp.SettingManagement;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Permissions;
 using Volo.Abp;
+using Volo.Abp.Features;
+using Microsoft.AspNetCore.Http;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -34,6 +36,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     private readonly IEmailLogsRepository _emailLogsRepository;
     private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
     private readonly ISettingManager _settingManager;
+    private readonly IFeatureChecker _featureChecker;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public EmailNotificationService(
         IEmailLogsRepository emailLogsRepository,
@@ -41,7 +45,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         IChesClientService chesClientService,
         EmailQueueService emailQueueService,
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
-        ISettingManager settingManager
+        ISettingManager settingManager,
+        IFeatureChecker featureChecker,
+        IHttpContextAccessor httpContextAccessor
         )
     {
         _emailLogsRepository = emailLogsRepository;
@@ -50,6 +56,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         _emailQueueService = emailQueueService;
         _externalUserLookupServiceProvider = externalUserLookupServiceProvider;
         _settingManager = settingManager;
+        _featureChecker = featureChecker;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     private const string approvalBody =
@@ -85,6 +93,30 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return declineBody;
     }
 
+    public async Task DeleteEmail(Guid id)
+    {
+        await _emailLogsRepository.DeleteAsync(id);
+    }
+
+    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status)
+    {
+        if (string.IsNullOrEmpty(emailTo))
+        {
+            return null;
+        }
+        
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "text");
+        EmailLog emailLog = await _emailLogsRepository.GetAsync(emailId);
+        emailLog = UpdateMappedEmailLog(emailLog, emailObject);
+        emailLog.ApplicationId = applicationId;
+        emailLog.Id = emailId;
+        emailLog.Status = status ?? EmailStatus.Initialized;
+
+        // When being called here the current tenant is in context - verified by looking at the tenant id
+        EmailLog loggedEmail = await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+        return loggedEmail;
+    }
+
     public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
     {
         return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized);
@@ -97,8 +129,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         {
             return null;
         }
-        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
-        EmailLog emailLog = GetMappedEmailLog(emailObject);
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "text");
+        EmailLog emailLog = new EmailLog();
+        emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
         emailLog.Status = status ?? EmailStatus.Initialized;
 
@@ -117,6 +150,83 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
     }
 
+    public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
+    {
+        HttpResponseMessage res = new();
+        try
+        {
+            if (await _featureChecker.IsEnabledAsync("Unity.Notifications"))
+            {
+                var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+                var scheme = "https";
+                var request = _httpContextAccessor.HttpContext?.Request;
+
+                if (request == null)
+                {
+                    throw new InvalidOperationException("HttpContext or Request is null.");
+                }
+
+                var host = request.Host.ToUriComponent();
+                var pathBase = "/GrantApplications/Details?ApplicationId=";
+                var baseUrl = $"{scheme}://{host}{pathBase}";
+                var commentLink = $"{baseUrl}{input.ApplicationId}";
+
+                var subject = $"Unity-Comment: {input.Subject}";
+                var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
+                string htmlBody = $@"
+                <html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
+                <body style='font-family: Arial, sans-serif;'>
+                    <h3 style='color: #0a58ca;'>{input.From} mentioned you in a comment.</h3>
+                    <table style='width: 100%; background-color: #f9f9f9; border-left: 3px solid #ccc;'>
+                        <tr>
+                            <td style='padding: 15px;'>
+                                <p>{input.Body}</p>
+                            </td>
+                        </tr>
+                    </table>
+                    <br />
+                    <table style='background-color: #255a90;'>
+                        <tr>
+                            <td style='padding: 5px 10px; color: #fff; border: 1px solid #2d63c8'>
+                                <a href='{commentLink}' target='_blank' 
+                                    style='display: inline-block;
+                                    font-size: 14px;
+                                    color: #fff;
+                                    text-decoration: none;'>View Comment</a>
+                            </td>
+                        </tr>
+                    </table>
+                    <p style='font-size: 12px; color: #999;'>*Note - Please do not reply to this email as it is an automated notification.</p>
+                </body>
+                </html>";
+
+                foreach (var email in input.MentionNamesEmail)
+                {
+                    var toEmail = email;
+                    res = await SendEmailNotification(toEmail, htmlBody, subject, fromEmail, "html");
+                }
+            }
+            else
+            {
+                res = new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("Feature is not enabled.")
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "EmailNotificationService->SendEmailCommentNotification: Exception occurred while sending email.");
+
+            res = new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+            };
+        }
+        return res;
+    }
+
+
     /// <summary>
     /// Send Email Notfication
     /// </summary>
@@ -124,8 +234,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
     /// <param name="emailFrom">From Email Address</param>
+    ///  <param name="emailBodyType">Type of body email: html or text</param>
     /// <returns>HttpResponseMessage indicating the result of the operation</returns>
-    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom)
+    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType)
     {
         try
         {
@@ -139,7 +250,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
 
             }
             // Send the email using the CHES client service
-            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
+            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType);
             var response = await _chesClientService.SendAsync(emailObject);
 
             // Assuming SendAsync returns a HttpResponseMessage or equivalent:
@@ -217,7 +328,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
-    protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom)
+    protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType)
     {
         List<string> toList = new();
         string[] emails = emailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
@@ -232,7 +343,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         var emailObject = new
         {
             body,
-            bodyType = "html",
+            bodyType = emailBodyType ?? "text",
             encoding = "utf-8",
             from = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca",
             priority = "normal",
@@ -243,9 +354,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return emailObject;
     }
 
-    protected virtual EmailLog GetMappedEmailLog(dynamic emailDynamicObject)
+    protected virtual EmailLog UpdateMappedEmailLog(EmailLog emailLog, dynamic emailDynamicObject)
     {
-        EmailLog emailLog = new EmailLog();
         emailLog.Body = emailDynamicObject.body;
         emailLog.Subject = emailDynamicObject.subject;
         emailLog.BodyType = emailDynamicObject.bodyType;
@@ -257,9 +367,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     [Authorize(NotificationsPermissions.Settings)]
     public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
     {
-        if (!settingsDto.DefaultFromAddress.IsNullOrWhiteSpace())
+        await UpdateTenantSettings(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
+        await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
+    }
+
+    private async Task UpdateTenantSettings(string settingKey, string valueString) {
+        if (!valueString.IsNullOrWhiteSpace())
         {
-            await _settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
+            await _settingManager.SetForCurrentTenantAsync(settingKey, valueString);
         }
     }
 }

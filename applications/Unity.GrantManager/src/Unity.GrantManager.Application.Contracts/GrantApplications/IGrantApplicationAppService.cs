@@ -17,6 +17,7 @@ namespace Unity.GrantManager.GrantApplications
         Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync();
         Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds);
         Task<GrantApplicationDto> GetAsync(Guid id);
-        Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input);        
+        Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input);
+        Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
     }
 }

@@ -36,18 +36,9 @@ function reloadDashboard() {
 
     const chartConfigs = [
         {
-            fetchFunction: unity.grantManager.dashboard.dashboard.getEconomicRegionCount,
-            label: 'economicRegion',
-            count: 'count',
-            title: 'Submissions by Economic Region',
-            chartId: 'economicRegionChart',
-            chartOption: 'pie',
-            width: 465,
-            height: 300
-        },
-        {
             fetchFunction: unity.grantManager.dashboard.dashboard.getApplicationStatusCount,
             label: 'applicationStatus',
+            readPolicy: 'GrantApplicationManagement.Dashboard.ApplicationStatusCount',
             count: 'count',
             title: 'Submissions by Status',
             chartId: 'applicationStatusChart',
@@ -56,8 +47,20 @@ function reloadDashboard() {
             height: 300
         },
         {
+            fetchFunction: unity.grantManager.dashboard.dashboard.getEconomicRegionCount,
+            label: 'economicRegion',
+            readPolicy: 'GrantApplicationManagement.Dashboard.EconomicRegionCount',
+            count: 'count',
+            title: 'Submissions by Economic Region',
+            chartId: 'economicRegionChart',
+            chartOption: 'pie',
+            width: 465,
+            height: 300
+        },
+        {
             fetchFunction: unity.grantManager.dashboard.dashboard.getApplicationTagsCount,
             label: 'applicationTag',
+            readPolicy: 'GrantApplicationManagement.Dashboard.ApplicationTagsCount',
             count: 'count',
             title: 'Application Tags Overview',
             chartId: 'applicationTagsChart',
@@ -68,6 +71,7 @@ function reloadDashboard() {
         {
             fetchFunction: unity.grantManager.dashboard.dashboard.getApplicationAssigneeCount,
             label: 'applicationAssignee',
+            readPolicy: 'GrantApplicationManagement.Dashboard.ApplicationAssigneeCount',
             count: 'count',
             title: 'Application Assignee Overview',
             chartId: 'applicationAssigneeChart',
@@ -78,6 +82,7 @@ function reloadDashboard() {
         {
             fetchFunction: unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector,
             label: 'subsector',
+            readPolicy: 'GrantApplicationManagement.Dashboard.RequestedAmountPerSubsector',
             count: 'totalRequestedAmount',
             title: 'Total Funding Requested Per Sub-Sector',
             chartId: 'subsectorRequestedAmountChart',
@@ -88,6 +93,7 @@ function reloadDashboard() {
         {
             fetchFunction: unity.grantManager.dashboard.dashboard.getRequestApprovedCount,
             label: 'description',
+            readPolicy: 'GrantApplicationManagement.Dashboard.RequestApprovedCount',
             count: 'amount',
             title: 'Requested Vs. Approved Funding',
             chartId: 'requestVsApprovedChart',
@@ -97,13 +103,19 @@ function reloadDashboard() {
         }
     ];
 
-    chartConfigs.forEach(config => {
-        config.fetchFunction(params).then(data => {
-            initializeChart(
+    const fetchPromises = chartConfigs
+        .filter(config => abp.auth.isGranted(config.readPolicy))
+        .map(config => config.fetchFunction(params)
+            .then(data => ({
                 config,
-                data.map(obj => obj[config.label]),
-                data.map(obj => obj[config.count])
-            );
+                labels: data.map(obj => obj[config.label]),
+                counts: data.map(obj => obj[config.count])
+            }))
+        );
+
+    Promise.all(fetchPromises).then(results => {
+        results.forEach(({ config, labels, counts }) => {
+            initializeChart(config, labels, counts);
         });
     });
 }
@@ -118,8 +130,31 @@ fetch('./colorsPalette.json')
 
 reloadDashboard();
 
-function initializeChart(config, labelsArray, dataArray) {
+function generateCard(config) {
+    if (document.getElementById(config.chartId)) {
+        return; // Skip if the chart element already exists
+    }
 
+    const container = document.getElementById('dashboardContainer');
+
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'col-md-6 col-lg-4 col-sm-12 p-2 card-border-radius';
+
+    const abpCard = document.createElement('div');
+    const abpCardBody = document.createElement('div');
+    const chartDiv = document.createElement('div');
+    chartDiv.id = config.chartId;
+    abpCardBody.className = 'card mb-3';
+    chartDiv.className = 'card-body';
+
+    abpCardBody.appendChild(chartDiv);
+    abpCard.appendChild(abpCardBody);
+    cardDiv.appendChild(abpCard);
+    container.appendChild(cardDiv);
+}
+
+function initializeChart(config, labelsArray, dataArray) {
+    generateCard(config);
     let myChart = echarts.init(document.getElementById(config.chartId), null, {
         width: config.width,
         height: config.height,

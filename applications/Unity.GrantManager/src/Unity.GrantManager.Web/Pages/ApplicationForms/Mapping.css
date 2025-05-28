@@ -1,54 +1,4 @@
-﻿.main-content {
-    background-color: #f9f7f7;
-    height: 550px;
-    padding: 4px;
-    padding-top: 2px;
-}
-
-.mapping-container {
-    height: calc(100vh - 350px);
-    width: calc(100vw - 25px);
-    overflow: scroll;
-    border: 1px solid black;
-}
-
-.table-div {
-    height: 600px;
-    overflow: auto;
-    margin: 5px;
-    margin-right: 10px;
-}
-
-.intake-map-col {
-    height: 600px;
-    overflow: auto;
-}
-
-.left {
-    width: calc(65% - (.5em + 6px));
-    float: left;
-    min-height: 400px;
-    max-height: 500px;
-    padding-top: 6px;
-}
-
-.right {
-    width: calc(35% - (.5em + 6px));
-    float: right;
-    min-height: 400px;
-    max-height: 500px;
-    margin-top: 5px;
-}
-
-.container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    margin: 0 20%;
-}
-
-.col {
+﻿.col {
     min-height: 40px;
     border: 1px solid #6a6a6a;
     border-radius: 10px;
@@ -192,7 +142,6 @@ thead tr:first-child th {
 
 .table-title {
     background-color: white;
-    margin-top: -13px;
     font-size: 20px;
     padding: 4px;
     z-index: 23;
@@ -201,20 +150,11 @@ thead tr:first-child th {
     float: left;
 }
 
-
-table.dataTable {
-    margin-top: 29px !important;
-}
-
-
 table.dataTable thead td {
     font-size: 14px;
 }
 
-
-
 #intake-map-available-fields-column {
-    margin-top: 55px;
     width: 96%;
 }
 
@@ -222,7 +162,7 @@ table.dataTable thead td {
     position: static;
     float: left;
     margin-top: 0px;
-    padding: 8px;
+    padding: 7px;
     padding-top: 0px;
     width: -webkit-fill-available;
 }
@@ -255,23 +195,14 @@ div.dataTables_wrapper div.dataTables_filter {
     margin-left: 7px;
 }
 
-input.form-control {
-    min-width: 356px;
-}
-
 .form-version-label {
     width: 400px;
     margin-left: -74px;
 }
 
-.unity-app-main-container {
-    min-width: 2020px;
-}
-
 textarea {
     border: 1px solid #e9e9e9;
 }
-
 
 .display-modal {
     opacity: 1 !important;
@@ -331,7 +262,7 @@ textarea {
 }
 
 .input-width {
-    width: 400px !important;
+    width: 355px !important;
 }
 
 .input-button-wrapper {
@@ -342,3 +273,46 @@ textarea {
     align-items: center;
     gap: 5px;
 }
+
+.unt-tab-content {
+    background:#FFF;
+    padding:15px;
+}
+
+.unt-label {
+    padding: 10px 0px;
+}
+
+.unt-mapping-container {
+    height: calc(97vh - 400px);
+    overflow: scroll;
+    overflow-x:hidden;
+    border: 1px solid black;
+}
+
+.nav-tabs .nav-link.active {
+    color: #003366;
+    border-bottom: 3px solid #003366;
+}
+
+.nav-tabs .nav-link {
+    background: #fff;
+    border-bottom: 1px solid #dee2e6;
+    padding: 10px 20px;
+}
+
+.intake-mapping-content {
+    height: calc(100vh - 200px);
+    overflow: auto;
+}
+
+.application-forms-table-content {
+    height: calc(100vh - 200px);
+    overflow: auto;
+    background: #fff;
+}
+
+.application-forms-table-content .table.dataTable { 
+    margin-top:0px !important;
+}
+

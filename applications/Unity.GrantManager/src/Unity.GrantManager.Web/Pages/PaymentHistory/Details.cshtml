@@ -2,8 +2,15 @@
 @using Microsoft.Extensions.Localization
 @using Unity.Payments.Localization;
 @model Unity.GrantManager.Web.Pages.Payments.DisplayPaymentHistoryModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @inject IStringLocalizer<PaymentsResource> L
 
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.MenuItemName = "GrantManager.Payments";
+    PageLayout.Content.Title = "Payment History";    
+    ViewBag.PageTitle = "Payment History";
+}
 
 @section scripts {
     <abp-script-bundle>
@@ -14,20 +21,22 @@
     <abp-style src="/Pages/PaymentHistory/Details.css" />
 }
 
-<abp-row class="m-0 h-100 application-details-container">
-    <abp-input type="hidden" id="paymentId" asp-for="@Model.EntityId" />
-    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Payment History</h6>
+<abp-input type="hidden" id="paymentId" asp-for="@Model.EntityId" add-margin-bottom-class=false />
+<div class="container-fluid px-0">
     <div class="action-bar p-2 search-action-bar">
+        <div class="unity-page-titlebar">
+            <h4>Payment History</h4>
+        </div>
         <div class="search-action-bar_search-wrapper">
-            <input type="search" id="search" placeholder="Search" class="tbl-search">
+            <input type="search" id="search-payment-history" placeholder="Search" class="tbl-search">
         </div>
 
         <div class="btn-group" id="app_custom_buttons"></div>
 
-        <div id="dynamicButtonContainerId" class="dynamic-buttons-div"></div>
+        <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
     </div>
 
-    <abp-column class="p-0">
+    <div class="p-3 pt-0">
         <abp-table id="AuditHistoryTable"></abp-table>
-    </abp-column>
-</abp-row>
+    </div>
+</div>

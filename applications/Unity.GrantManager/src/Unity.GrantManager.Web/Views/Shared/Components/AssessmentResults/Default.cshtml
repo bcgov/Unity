@@ -3,162 +3,148 @@
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Settings
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
-@using Unity.Modules.Shared.Correlation
-@using Volo.Abp.Features
+@using Unity.Modules.Shared
+@using Volo.Abp.Authorization.Permissions
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
-@inject IFeatureChecker FeatureChecker
+@inject IPermissionChecker PermissionChecker
 @model AssessmentResultsPageModel
 
 <input type="hidden" id="AssessmentResultViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="AssessmentResultViewApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 
 <abp-row class="px-1 pb-2 mb-4 assessment-results-container">
-    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
-        <div id="AssessementResultsTitleRegion" class="d-flex align-items-stretch justify-content-start">
-            <h6 class="ps-1 fw-bold">@L["AssessmentResultsView:ApprovalTitle"].Value</h6>
-        </div>
+    <div class="save-button-container">
         <abp-button text="Save" id="saveAssessmentResultBtn" class="floating-save-btn"
                     icon-type="Other" icon="fl fl-save" button-type="Primary" disabled="true" />
-    </abp-column>
+    </div>
     <form id="assessmentResultForm">
-        <fieldset name="assessmentResults" @(!Model.IsFormEditGranted ? "disabled" : "")>
-            <legend class="d-none">@L["AssessmentResultsView:ApprovalTitle"].Value</legend>
+        @* Zone Section : Approval *@
+        <zone-fieldset id="@UnitySelector.Review.Approval.Default" form-id="@Model.ApplicationFormId"
+            update-permission-requirement="@UnitySelector.Review.Approval.Update.Default"
+            check-if=@(Model.ApprovalView != null) show-legend="true">
+            @if (Model?.ApprovalView != null) // To handle CS8602 - Handled by Zone
+            {
+            <abp-row class="m-0 assessment-result-form">
+                <abp-column size="_12" class="px-0">
+                    <abp-row class="m-0">
+                        <abp-column size="_4" class="px-1">
+                            <div class="unity-input-group">
+                                <span class="unity-input-prepend">$</span>
+                                <abp-input asp-for="@Model.ApprovalView.ApprovedAmount"
+                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsPostEditFieldsAllowed_Approval)" />
+                            </div>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.ApprovalView.SubStatus" asp-items="@Model.SubStatusActionList"
+                                        onchange="enableAssessmentResultsSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input type="date" asp-for="@Model.ApprovalView.FinalDecisionDate" onchange="validateDecisionDate();" disabled="@(!Model.IsEditGranted)" abp-data-datepicker="false">
+                            </abp-input>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0">
+                        <abp-column size="_12" class="px-1">
+                            <abp-input asp-for="@Model.ApprovalView.Notes"
+                                onchange="enableAssessmentResultsSaveBtn(this)" />
+                        </abp-column>
+                    </abp-row>
+                </abp-column>
+            </abp-row>
+            }
+        </zone-fieldset>
 
-        <abp-row class="m-0 assessment-result-form">
-            <abp-column size="_12" class="px-0">
-                <abp-row class="m-0">
-                    <abp-column size="_4" class="px-1">
-                        <div class="unity-input-group">
-                            <span class="unity-input-prepend">$</span>
-                            <abp-input asp-for="@Model.AssessmentResults.ApprovedAmount"
-                                        onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" id="approvedAmountInput" disabled="@(!Model.IsPostEditFieldsAllowed)" />
-                        </div>
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.AssessmentResults.SubStatus" asp-items="@Model.SubStatusActionList"
-                                    onchange="enableAssessmentResultsSaveBtn(this)">
-                            <option value="">Please choose...</option>
-                        </abp-select>
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input type="date" asp-for="@Model.AssessmentResults.FinalDecisionDate" onchange="validateDecisionDate();" disabled="@(!Model.IsEditGranted)" abp-data-datepicker="false">
-                        </abp-input>
-                    </abp-column>
-                </abp-row>
-                <abp-row class="m-0">
-                    <abp-column size="_12" class="px-1">
-                        <abp-input asp-for="@Model.AssessmentResults.Notes"
-                                    onchange="enableAssessmentResultsSaveBtn(this)" />
-                    </abp-column>
-                </abp-row>
-            </abp-column>
-        </abp-row>
-
-        <abp-row class="m-0 p-0">
-            <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                <div class="d-flex align-items-stretch justify-content-start">
-                        <h6 class="ps-1 fw-bold">@L["AssessmentResultsView:AssessmentResultsTitle"].Value</h6>
-                </div>
-            </abp-column>
-        </abp-row>
-        <abp-row class="m-0 assessment-result-form">
-            <abp-column size="_12" class="px-0">
-                <abp-row class="m-0">
-                    <abp-column size="_4" class="px-1">
-                        <div class="unity-input-group">
-                            <span class="unity-input-prepend">$</span>
-                            <abp-input asp-for="@Model.AssessmentResults.RequestedAmount" id="RequestedAmountInputAR"
-                                       onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsPostEditFieldsAllowed)" />
-                        </div>
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <div class="unity-input-group">
-                            <span class="unity-input-prepend">$</span>
-                            <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget" id="TotalBudgetInputAR"
-                                       onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" />
-                        </div>
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <div class="unity-input-group">
-                            <span class="unity-input-prepend">$</span>
-                            <abp-input asp-for="@Model.AssessmentResults.RecommendedAmount"
-                                       onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsEditGranted)" />
-                        </div>
-                    </abp-column>
-                </abp-row>
-                <abp-row class="m-0">
-                    <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.AssessmentResults.LikelihoodOfFunding" asp-items="@Model.FundingRiskList"
-                                    onchange="enableAssessmentResultsSaveBtn(this)">
-                            <option value="">Please choose...</option>
-                        </abp-select>
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.AssessmentResults.RiskRanking" asp-items="@Model.RiskRankingList"
-                                    onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
-                            <option value="">Please choose...</option>
-                        </abp-select>
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.AssessmentResults.DueDiligenceStatus" asp-items="@Model.DueDiligenceList"
-                                    onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
-                            <option value="">Please choose...</option>
-                        </abp-select>
-                    </abp-column>
-                </abp-row>
-                   <abp-row class="m-0">
-                    <abp-column size="_4" class="px-1">
-                        <abp-input type="number" asp-for="@Model.AssessmentResults.TotalScore"
-                                   onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsPostEditFieldsAllowed)" min="0" max="2147483647" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.AssessmentResults.AssessmentResultStatus" asp-items="@Model.AssessmentResultStatusList"
-                                    onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
-                            <option value="">Please choose...</option>
-                        </abp-select>
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.AssessmentResults.DeclineRational" asp-items="@Model.DeclineRationalActionList"
-                                    onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
-                            <option value="">Please choose...</option>
-                        </abp-select>
-                    </abp-column>
-                   </abp-row>
-                <abp-row class="m-0">
-                    <abp-column size="_4" class="px-1">
-                        <abp-input type="date" asp-for="@Model.AssessmentResults.NotificationDate" onchange="validateNotificationDate();" abp-data-datepicker="false">
-                        </abp-input>
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input type="date" asp-for="@Model.AssessmentResults.DueDate" onchange="validateDueDate();" abp-data-datepicker="false">
-                        </abp-input>
-                    </abp-column>
-                </abp-row>
-            </abp-column>
-            
-        </abp-row>
-
-        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-        {
-            <div id="assessmentResultsCustomWidget">
-             @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
-                     new
-                     {
-                         instanceCorrelationId = Model.ApplicationId,
-                         instanceCorrelationProvider = CorrelationConsts.Application,
-                         sheetCorrelationId = Model.ApplicationFormVersionId,
-                         sheetCorrelationProvider = CorrelationConsts.FormVersion,
-                         uiAnchor = FlexConsts.AssessmentInfoUiAnchor
-                     })
-            </div>
-        }
-        </fieldset>
+        @* Zone Section : Application Assessment Result *@
+        <zone-fieldset id="@UnitySelector.Review.AssessmentResults.Default" form-id="@Model.ApplicationFormId"
+            update-permission-requirement="@UnitySelector.Review.AssessmentResults.Update.Default" show-legend="true"
+            check-if=@(Model.AssessmentResultsView != null)>
+            @if (Model?.AssessmentResultsView != null) // To handle CS8602 - Handled by Zone
+            {
+            <abp-row class="m-0 assessment-result-form">
+                <abp-column size="_12" class="px-0">
+                    <abp-row class="m-0">
+                        <abp-column size="_4" class="px-1">
+                            <div class="unity-input-group">
+                                <span class="unity-input-prepend">$</span>
+                                <abp-input asp-for="@Model.AssessmentResultsView.RequestedAmount" id="RequestedAmountInputAR"
+                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsPostEditFieldsAllowed_AssessmentResults)" />
+                            </div>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <div class="unity-input-group">
+                                <span class="unity-input-prepend">$</span>
+                                <abp-input asp-for="@Model.AssessmentResultsView.TotalProjectBudget" id="TotalBudgetInputAR"
+                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" />
+                            </div>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <div class="unity-input-group">
+                                <span class="unity-input-prepend">$</span>
+                                <abp-input asp-for="@Model.AssessmentResultsView.RecommendedAmount"
+                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsEditGranted)" />
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0">
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.AssessmentResultsView.LikelihoodOfFunding" asp-items="@Model.FundingRiskList"
+                                        onchange="enableAssessmentResultsSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.AssessmentResultsView.RiskRanking" asp-items="@Model.RiskRankingList"
+                                        onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.AssessmentResultsView.DueDiligenceStatus" asp-items="@Model.DueDiligenceList"
+                                        onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0">
+                        <abp-column size="_4" class="px-1">
+                            <abp-input type="number" asp-for="@Model.AssessmentResultsView.TotalScore"
+                                       onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsPostEditFieldsAllowed_AssessmentResults)" min="0" max="2147483647" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.AssessmentResultsView.AssessmentResultStatus" asp-items="@Model.AssessmentResultStatusList"
+                                        onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-select asp-for="@Model.AssessmentResultsView.DeclineRational" asp-items="@Model.DeclineRationalActionList"
+                                        onchange="enableAssessmentResultsSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0">
+                        <abp-column size="_4" class="px-1">
+                            <abp-input type="date" asp-for="@Model.AssessmentResultsView.NotificationDate" onchange="validateNotificationDate();" abp-data-datepicker="false">
+                            </abp-input>
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input type="date" asp-for="@Model.AssessmentResultsView.DueDate" onchange="validateDueDate();" abp-data-datepicker="false">
+                            </abp-input>
+                        </abp-column>
+                    </abp-row>
+                </abp-column>
+            </abp-row>
+            }
+        </zone-fieldset>
     </form>
 </abp-row>
-
 
 <script defer>
     (function () {

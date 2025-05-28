@@ -1,7 +1,9 @@
+const nullPlaceholder = '—';
 const FilterDesc = {
     Default: 'Filter',
     With_Filter: 'Filter*'
 };
+
 function createNumberFormatter() {
     return new Intl.NumberFormat('en-CA', {
         style: 'currency',
@@ -11,25 +13,69 @@ function createNumberFormatter() {
     });
 }
 
-function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, responseCallback, actionButtons, dynamicButtonContainerId) {
+function removePlaceholderFromCvsExportButton(actionButtons, useNullPlaceholder, nullPlaceholder) {
+    if (!useNullPlaceholder) {
+        return actionButtons;
+    }
+    return actionButtons.map(button => {
+        if (button.extend === 'csv') {
+            return {
+                ...button,
+                exportOptions: {
+                    ...button.exportOptions,
+                    format: {
+                        body: function (data, row, column, node) {
+                            return data === nullPlaceholder ? '' : data;
+                        }
+                    }
+                }
+            };
+        }
+        return button;
+    });
+}
 
-    let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
+function initializeDataTable(options) {
+    const {
+        dt,
+        defaultVisibleColumns = [],
+        listColumns,
+        maxRowsPerPage,
+        defaultSortColumn,
+        dataEndpoint,
+        data,
+        responseCallback,
+        actionButtons,
+        pagingEnabled,
+        reorderEnabled,
+        languageSetValues,
+        dataTableName,
+        dynamicButtonContainerId,
+        useNullPlaceholder = false,
+        externalSearchId = 'search',
+        disableColumnSelect = false,
+        listColumnDefs,
+    } = options;
+
+    // If useNullPlaceholder is true, update csv export buttons to include the example format function
+    let updatedActionButtons = removePlaceholderFromCvsExportButton(actionButtons, useNullPlaceholder, nullPlaceholder);
+    let tableColumns = assignColumnIndices(listColumns);
+    let visibleColumns = getVisibleColumnIndexes(tableColumns, defaultVisibleColumns);
 
     let filterData = {};
 
     let iDt = dt.DataTable(
-        abp.libs.datatables.normalizeConfiguration({
+       abp.libs.datatables.normalizeConfiguration({
             fixedHeader: {
                 header: true,
                 footer: false,
                 headerOffset: 0
             },
             serverSide: false,
-            paging: true,
+            paging: pagingEnabled,
             order: [[defaultSortColumn, 'desc']],
             searching: true,
-           
-           
+            externalSearchInputId: `#${externalSearchId}`,
             iDisplayLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
@@ -52,13 +98,14 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                 style: 'multiple',
                 selector: 'td:not(:nth-child(8))',
             },
-            colReorder: true,
+            colReorder: reorderEnabled,
             orderCellsTop: true,
             //fixedHeader: true,
             stateSave: true,
             stateDuration: 0,
+            oLanguage: languageSetValues,
             dom: 'Blfrtip',
-            buttons: actionButtons,
+            buttons: updatedActionButtons,
             drawCallback: function () {
                 $(`#${dt[0].id}_previous a`).text("<");
                 $(`#${dt[0].id}_next a`).text(">");
@@ -68,27 +115,32 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             },
             initComplete: function () {
             },
-            columns: listColumns,
-            columnDefs: [
+           columns: tableColumns,
+           columnDefs: [
                 {
-                    targets: visibleColumnsIndex,
+                    targets: visibleColumns,
                     visible: true
                 },
                 {
                     targets: '_all',
-                    visible: false // Hide all other columns initially
-                }
+                    // Hide all other columns initially
+                    visible: false,
+                    // Set default content for all cells to placeholder if null
+                    ...(useNullPlaceholder ? { defaultContent: nullPlaceholder } : {})
+                },
+                // Add listColumnDefs if not null or empty
+                ...(Array.isArray(listColumnDefs) && listColumnDefs.length > 0 ? listColumnDefs : [])
             ],
             processing: true,
             stateSaveParams: function (settings, data) {
-                let searchValue = $('#search').val();
+                let searchValue = $(settings.oInit.externalSearchInputId).val();
                 data.search.search = searchValue;
 
                 let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
                 $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
             },
             stateLoadParams: function (settings, data) {
-                $('#search').val(data.search.search);
+                $(settings.oInit.externalSearchInputId).val(data.search.search);
 
                 data.columns.forEach((column, index) => {
                     if(settings.aoColumns[index] +"" != "undefined") {
@@ -102,18 +154,19 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
     );
 
     // Add custom manage columns button that remains sorted alphabetically
-    iDt.button().add(actionButtons.length + 1 ,{
-        text: 'Columns',
-        extend: 'collection',
-        buttons: getColumnToggleButtonsSorted(listColumns, iDt),
-        className: 'custom-table-btn flex-none btn btn-secondary'
-    });
+    if (!disableColumnSelect) {
+        iDt.button().add(updatedActionButtons.length + 1, {
+            text: 'Columns',
+            extend: 'collection',
+            buttons: getColumnToggleButtonsSorted(tableColumns, iDt),
+            className: 'custom-table-btn flex-none btn btn-secondary'
+        });
+    }
 
     iDt.buttons().container().prependTo(`#${dynamicButtonContainerId}`);
-    $('.dataTables_wrapper').append('<div class="length-menu-footer"></div>');
-
+    $(`#${dataTableName}_wrapper`).append(`<div class="length-menu-footer ${dataTableName}"></div>`);
     // Move the length menu to the footer container
-    $('.dataTables_length').appendTo('.length-menu-footer');
+    $(`#${dataTableName}_length`).appendTo(`.${dataTableName}`);
     init(iDt);
 
     updateFilter(iDt, dt[0].id, filterData);
@@ -129,11 +182,69 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
 
     searchFilter(iDt);
 
+    setExternalSearchFilter(iDt);
+
+    // Prevent row selection when clicking on a link inside a cell
+    iDt.on('user-select', function (e, dt, type, cell, originalEvent) {
+        if (originalEvent.target.nodeName.toLowerCase() === 'a') {
+            e.preventDefault();
+        }
+    });
+
     return iDt;
 }
 
-function setTableHeighDynamic(tableName) {        
-    let tableHeight = $(`#${tableName}_wrapper`)[0].clientHeight;    
+function assignColumnIndices(columnsArray) {
+    if (!Array.isArray(columnsArray) || columnsArray.length === 0) {
+        return [];
+    }
+
+    const maxExistingIndex = Math.max(...columnsArray
+        .filter(col => 'index' in col && col.index !== undefined && col.index !== '')
+        .map(col => parseInt(col.index))
+        .concat(-1)
+    );
+
+    let nextIndex = maxExistingIndex + 1;
+    return columnsArray.map(column => {
+        // Preserve existing index if it exists
+        if (column.index !== undefined && column.index !== '') {
+            return column;
+        }
+
+        // Assign new index starting after max existing index
+        return {
+            ...column,
+            index: nextIndex++
+        };
+    });
+}
+
+function getVisibleColumnIndexes(columns, visibleColumnsArray) {
+    let indexes = [];
+
+    if (Array.isArray(visibleColumnsArray) && visibleColumnsArray.length > 0) {
+        // Get indexes from provided visible column names.
+        indexes = visibleColumnsArray
+            .map(colName => columns.find(col => col.name === colName || col.data === colName)?.index)
+            .filter(index => typeof index !== 'undefined');
+    } else {
+        // If visibleColumnsArray is empty, include all column indexes.
+        indexes = columns
+            .map(col => col.index)
+            .filter(index => typeof index !== 'undefined');
+    }
+
+    // Always add 0 if not already present
+    if (!indexes.includes(0)) {
+        indexes.push(0);
+    }
+
+    return indexes.sort();
+}
+
+function setTableHeighDynamic(tableName) {
+    let tableHeight = $(`#${tableName}_wrapper`)[0].clientHeight;
     let docHeight = document.body.clientHeight;
     let tableOffset = 425;
 
@@ -151,7 +262,7 @@ function getSelectColumn(title,dataField,uniqueTableId) {
         className: 'notexport text-center',
         data: dataField,
         name: 'select',
-        render: function (data) {           
+        render: function (data) {
             return `<input class="checkbox-select chkbox" id="row_${data}" type="checkbox" value="" title="${title}">`
         },
         index: 0
@@ -159,13 +270,13 @@ function getSelectColumn(title,dataField,uniqueTableId) {
 }
 
 function init(iDt) {
-    $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');    
+    $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
     iDt.search('').columns().search('').draw();
 }
 
 function initializeFilterButtonPopover(iDt) {
     const UIElements = {
-        search: $('#search'),
+        search: $(iDt.init().externalSearchInputId),
         btnToggleFilter: $('#btn-toggle-filter')
     };
 
@@ -196,15 +307,11 @@ function initializeFilterButtonPopover(iDt) {
         placement: 'bottom'
     });
 
-    
-
     UIElements.btnToggleFilter.on('shown.bs.popover', function () {
-        const searchElement = $('#search');
+        const searchElement = $(iDt.init().externalSearchInputId);
         const trToggleElement = $(".tr-toggle-filter");
         const popoverElement = $('.popover.custom-popover');
         const customFilterElement = $('.custom-filter-input');
-
-       
 
         popoverElement.find('#showFilter').on('click', () => {
             trToggleElement.toggle();
@@ -277,18 +384,12 @@ function toggleManageColumnButton(config, dataTable) {
     column.visible(!column.visible());
 }
 
-function getColumnsVisibleByDefault(columns, listColumns) {
-    return columns
-        .map((name) => {
-            return TableUtils.getColumnByName(name, listColumns).index;
-        });
-}
-
-function getColumnToggleButtonsSorted(listColumns, dataTable) {    
+function getColumnToggleButtonsSorted(displayListColumns, dataTable) {
     let exludeIndxs = [0];
-    return listColumns
+    const res = displayListColumns
         .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
         .filter(obj => !exludeIndxs.includes(obj.index))
+        .filter(obj => obj.title !== 'Actions')
         .sort((a, b) => a.title.localeCompare(b.title))
         .map(a => ({
             text: a.title,
@@ -300,10 +401,27 @@ function getColumnToggleButtonsSorted(listColumns, dataTable) {
                 } else {
                     node.removeClass('dt-button-active');
                 }
-
             },
-            className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable)
+            className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable),
+            extend: 'columnToggle',
+            columns: a.index
         }));
+    return res;
+}
+
+function setExternalSearchFilter(dataTableInstance) {
+    let searchId = dataTableInstance.init().externalSearchInputId;
+
+    // Exclude default search inputs that have custom logic
+    if (searchId !== false && searchId !== '#search') {
+        $('.dataTables_filter input').attr("placeholder", "Search");
+        $('.dataTables_filter label')[0].childNodes[0].remove();
+
+        $(searchId).on('input', function () {
+            let filter = dataTableInstance.search($(this).val()).draw();
+            console.info(`Filter on #${searchId}: ${filter}`);
+        });
+    }
 }
 
 function updateFilter(dt, dtName, filterData) {
@@ -319,7 +437,7 @@ function updateFilter(dt, dtName, filterData) {
             let column = this;
             if (column.visible()) {
                 let title = column.header().textContent;
-                if (title) {
+                if (title && title !== 'Actions') {
 
                     let filterValue = filterData[title] ? filterData[title] : '';
 
@@ -362,7 +480,7 @@ function updateFilter(dt, dtName, filterData) {
 }
 
 function searchFilter(iDt) {
-    let searchValue = $('#search').val();
+    let searchValue = $(iDt.init().externalSearchInputId).val();
     if (searchValue) {
         iDt.search(searchValue).draw();
     }
@@ -373,7 +491,7 @@ function searchFilter(iDt) {
 }
 
 function updateFilterButton(dt) {
-    let searchValue = $('#search').val();
+    let searchValue = $(dt.init().externalSearchInputId).val();
     let columnFiltersApplied = false;
     dt.columns().every(function () {
         let search = this.search();
@@ -393,5 +511,47 @@ $('.data-table-select-all').click(function () {
     } else {
         PubSub.publish('datatable_select_all', false);
     }
-   
+
+});
+
+function commonTableActionButtons(exportTitle) {
+    return [
+        {
+            text: 'Filter',
+            id: "btn-toggle-filter",
+            className: 'btn-secondary custom-table-btn m-0',
+            action: function (e, dt, node, config) { },
+            attr: {
+                id: 'btn-toggle-filter'
+            }
+        },
+        {
+            extend: 'csv',
+            text: 'Export',
+            title: exportTitle,
+            className: 'custom-table-btn flex-none btn btn-secondary hidden-export-btn d-none',
+            exportOptions: {
+                columns: ':visible:not(.notexport)',
+                orthogonal: 'fullName',
+                format: {
+                    body: function (data, row, column, node) {
+                        return data === nullPlaceholder ? '' : data;
+                    }
+                }
+            }
+        }
+    ];
+}
+
+// Toggle hidden export buttons for Ctrl+Alt+Shift+E globally
+$(document).keydown(function (e) {
+    if (e.ctrlKey && e.altKey &&
+        e.shiftKey && e.key === 'E') {
+        // Toggle d-none class on elements with hidden-export class
+        $('.hidden-export-btn').toggleClass('d-none');
+
+        // Prevent default behavior
+        e.preventDefault();
+        return false;
+    }
 });

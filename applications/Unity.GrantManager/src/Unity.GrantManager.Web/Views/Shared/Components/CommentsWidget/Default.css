@@ -142,3 +142,7 @@
 .commenter-name {
     font-size: var(--bc-font-size);
 }
+
+.comment-with-mention { 
+    min-height:120px;
+}

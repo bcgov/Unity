@@ -1,4 +1,5 @@
 ﻿using Unity.GrantManager.Localization;
+using Unity.Modules.Shared;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
@@ -10,6 +11,33 @@ namespace Unity.GrantManager.Permissions.GrantApplications
         public override void Define(IPermissionDefinitionContext context)
         {
             var grantApplicationPermissionsGroup = context.AddGroup(GrantApplicationPermissions.GroupName, L("Permission:GrantApplicationManagement"));
+
+            // Dashboard
+            var dashboardPermissions = grantApplicationPermissionsGroup.AddPermission(
+                GrantApplicationPermissions.Dashboard.Default,
+                L("Permission:GrantApplicationManagement.Dashboard.Default"));
+
+            var viewDashboard = dashboardPermissions.AddChild(
+                GrantApplicationPermissions.Dashboard.ViewDashboard,
+                L("Permission:GrantApplicationManagement.Dashboard.ViewDashboard"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.ApplicationStatusCount,
+                L("Permission:GrantApplicationManagement.Dashboard.ApplicationStatusCount"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.EconomicRegionCount,
+                L("Permission:GrantApplicationManagement.Dashboard.EconomicRegionCount"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.ApplicationTagsCount,
+                L("Permission:GrantApplicationManagement.Dashboard.ApplicationTagsCount"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount,
+                L("Permission:GrantApplicationManagement.Dashboard.ApplicationAssigneeCount"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector,
+                L("Permission:GrantApplicationManagement.Dashboard.RequestedAmountPerSubsector"));
+            viewDashboard.AddChild(
+                GrantApplicationPermissions.Dashboard.RequestApprovedCount,
+                L("Permission:GrantApplicationManagement.Dashboard.RequestApprovedCount"));
 
             // Application
             grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applications.Default, L("Permission:GrantApplicationManagement.Applications.Default"));
@@ -35,16 +63,12 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var appCommentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Comments.Default, L("Permission:GrantApplicationManagement.Comments.Default"));
             appCommentPermissions.AddChild(GrantApplicationPermissions.Comments.Add, L("Permission:GrantApplicationManagement.Comments.Add"));
 
-            // Assessments
-            var assessmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assessments.Default, L("Permission:GrantApplicationPermissions.Assessments.Default"));
-            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Create, L("Permission:GrantApplicationPermissions.Assessments.Create"));
-            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.SendBack, L("Permission:GrantApplicationPermissions.Assessments.SendBack"));
-            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Confirm, L("Permission:GrantApplicationPermissions.Assessments.Confirm"));
+            //-- REVIEW & ASSESSMENT PERMISSIONS
+            grantApplicationPermissionsGroup.AddApplication_ReviewAndAssessment_Permissions();
 
-            // Assessment Results
-            var assessmentResultPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.AssessmentResults.Default, L("Permission:GrantApplicationPermissions.AssessmentResults.Default"));
-            var updateAssessmentResultPermissions = assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.Edit, L("Permission:GrantApplicationPermissions.AssessmentResults.Edit"));
-            updateAssessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields, L("Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields"));
+            // Applicant Info
+            var applicantInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ApplicantInfo.Default, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Default}"));
+            applicantInfoPermissions.AddChild(GrantApplicationPermissions.ApplicantInfo.Update, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Update}"));
 
             // Project Info
             var projectInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ProjectInfo.Default, L("Permission:GrantApplicationManagement.ProjectInfo"));
@@ -53,6 +77,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
+            settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
 
             var emailingPermission = context.GetPermissionOrNull(SettingManagementPermissions.Emailing);
             if (emailingPermission != null)
@@ -71,6 +96,56 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             {
                 timezonePermission.IsEnabled = false;
             }
+        }
+
+        private static LocalizableString L(string name)
+        {
+            return LocalizableString.Create<GrantManagerResource>(name);
+        }
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S125:Sections of code should not be commented out", Justification = "Configuration Code")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Configuration Code")]
+    public static class PermissionGroupDefinitionExtensions
+    {
+        public static void AddApplication_ReviewAndAssessment_Permissions(this PermissionGroupDefinition grantApplicationPermissionsGroup)
+        {
+            #region REVIEW & ASSESSMENT GRANULAR PERMISSIONS
+            var upx_Review                                          = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Review.Default, L(UnitySelector.Review.Default));
+
+            var upx_Review_Approval                                 = upx_Review.AddUnityChild(UnitySelector.Review.Approval.Default);
+            var upx_Review_Approval_Update                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Update.Default);
+            var upx_Review_Approval_UpdateFinalStateFields          = upx_Review_Approval_Update.AddUnityChild(UnitySelector.Review.Approval.Update.UpdateFinalStateFields);
+
+            var upx_Review_AssessmentResults                        = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentResults.Default);
+            var upx_Review_AssessmentResults_Update                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.Default);
+            var upx_Review_AssessmentResults_UpdateFinalStateFields = upx_Review_AssessmentResults_Update.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields);
+
+            var upx_Review_AssessmentReviewList                     = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Default);
+            var upx_Review_AssessmentReviewList_Create              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Create);
+            
+            // Assessment Review Transitions are implied update functions but not in the update hierarchy at this time
+            // var upx_Review_AssessmentReviewList_Update           = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.Default);
+            var upx_Review_AssessmentReviewList_SendBack            = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.SendBack);
+            var upx_Review_AssessmentReviewList_Complete            = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.Complete);
+
+            //var upx_Review_Worksheet                                = upx_Review.AddUnityChild(UnitySelector.Review.Worksheet.Default);
+            //var upx_Review_Worksheet_Update                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Update);
+            #endregion
+
+            // Available Permission Hooks
+            // var upx_Review_Approval_Create                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Create);
+            // var upx_Review_Approval_Delete                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Delete);
+            // var upx_Review_AssessmentResults_Create                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Create);
+            // var upx_Review_AssessmentResults_Delete                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Delete);
+            // var upx_Review_AssessmentReviewList_Delete              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Delete);
+            // var upx_Review_Worksheet_Create                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Create);
+            // var upx_Review_Worksheet_Delete                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Delete);
+        }
+
+        public static PermissionDefinition AddUnityChild(this PermissionDefinition parent, string name)
+        {
+            return parent.AddChild(name, LocalizableString.Create<GrantManagerResource>(name));
         }
 
         private static LocalizableString L(string name)

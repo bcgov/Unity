@@ -6,7 +6,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
 {
-    [Widget(        
+    [Widget(
         ScriptTypes = [typeof(ActionBarWidgetScriptBundleContributor)],
         StyleTypes = [typeof(ActionBarWidgetStyleBundleContributor)],
         AutoInitialize = true)]
@@ -24,6 +24,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
         {
             context.Files
               .AddIfNotContains("/Views/Shared/Components/ActionBar/Default.css");
+            context.Files
+              .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.css");
         }
     }
 
@@ -42,7 +44,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
             context.Files
               .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
             context.Files
-            .AddIfNotContains("/Pages/PaymentApprovals/UpdatePaymentRequestStatusModal.js");
+              .AddIfNotContains("/Pages/PaymentApprovals/UpdatePaymentRequestStatusModal.js");
+            context.Files
+              .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.js");
         }
     }
 }

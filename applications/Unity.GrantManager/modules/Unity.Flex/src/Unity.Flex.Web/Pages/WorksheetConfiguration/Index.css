@@ -1,5 +1,10 @@
 ﻿.worksheet-configuration-container {
     width: 100%;
+    flex-wrap: nowrap;
+}
+
+.worksheet-configuration-container > div {
+    overflow-y: scroll;
 }
 
 .worksheet-scrollable-content {

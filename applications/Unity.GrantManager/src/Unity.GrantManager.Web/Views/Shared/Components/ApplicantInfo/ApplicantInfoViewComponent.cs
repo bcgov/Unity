@@ -82,11 +82,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 OrganizationSize = applicantInfoDto.OrganizationSize,
                 SectorSubSectorIndustryDesc = applicantInfoDto.SectorSubSectorIndustryDesc,
                 RedStop = applicantInfoDto.RedStop,
+                IndigenousOrgInd = applicantInfoDto.IndigenousOrgInd,
+                UnityApplicantId = applicantInfoDto.UnityApplicantId,
+                FiscalDay = applicantInfoDto.FiscalDay,
+                FiscalMonth = applicantInfoDto.FiscalMonth,
+                NonRegOrgName = applicantInfoDto.NonRegOrgName
             };
 
             if (applicantInfoDto.ApplicantAddresses.Count != 0)
             {
-                ApplicantAddressDto? physicalAddress = applicantInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.PhysicalAddress);
+                ApplicantAddressDto? physicalAddress = applicantInfoDto.ApplicantAddresses
+                    .Where(address => address.AddressType == AddressType.PhysicalAddress)
+                    .OrderByDescending(address => address.CreationTime)
+                    .FirstOrDefault();
 
                 if (physicalAddress != null)
                 {
@@ -97,8 +105,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                     model.ApplicantInfo.PhysicalAddressProvince = physicalAddress.Province;
                     model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
                 }
-
-                ApplicantAddressDto? mailingAddress = applicantInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.MailingAddress);
+                
+                ApplicantAddressDto? mailingAddress = applicantInfoDto.ApplicantAddresses
+                    .Where(address => address.AddressType == AddressType.MailingAddress)
+                    .OrderByDescending(address => address.CreationTime)
+                    .FirstOrDefault();
 
                 if (mailingAddress != null)
                 {

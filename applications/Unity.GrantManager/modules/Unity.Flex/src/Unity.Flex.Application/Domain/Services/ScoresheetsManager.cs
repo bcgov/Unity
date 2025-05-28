@@ -1,13 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Reporting.DataGenerators;
+using Unity.Flex.Scoresheets.Enums;
+using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
+using Unity.Modules.Shared.Features;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Features;
+using Volo.Abp.Validation;
 
 namespace Unity.Flex.Domain.Services
 {
-    public class ScoresheetsManager : DomainService
+    public class ScoresheetsManager(IScoresheetInstanceRepository scoresheetInstanceRepository,
+        IScoresheetRepository scoresheetRepository,
+        IReportingDataGeneratorService<Scoresheet, ScoresheetInstance> reportingDataGeneratorService,
+        IFeatureChecker featureChecker) : DomainService
     {
         public static List<string> ValidateScoresheetAnswersAsync(ScoresheetInstance scoresheetInstance, Scoresheet scoresheet)
         {
@@ -36,6 +47,41 @@ namespace Unity.Flex.Domain.Services
         private static string BuildMissingAnswerError(Question question)
         {
             return $"{question.Section?.Order + 1}.{question.Order + 1}: {question.Label} (required)";
+        }
+
+        public async Task PersistScoresheetData(PersistScoresheetSectionInstanceEto eventData)
+        {
+            var instance = await scoresheetInstanceRepository.GetByCorrelationAsync(eventData.AssessmentId) ?? throw new AbpValidationException("Missing ScoresheetInstance.");
+            var scoresheet = await scoresheetRepository.GetAsync(instance.ScoresheetId);
+
+            var scoresheetAnswers = eventData.AssessmentAnswers.ToList();
+
+            foreach (var item in scoresheetAnswers)
+            {
+                var ans = instance.Answers.FirstOrDefault(a => a.QuestionId == item.QuestionId);
+
+                if (ans != null)
+                {
+                    ans.SetValue(ValueConverter.Convert(item.Answer ?? "", (QuestionType)item.QuestionType));
+                }
+                else
+                {
+                    ans = new Answer(Guid.NewGuid())
+                    {
+                        CurrentValue = ValueConverter.Convert(item?.Answer?.ToString() ?? string.Empty, (QuestionType)item!.QuestionType),
+                        QuestionId = item.QuestionId,
+                        ScoresheetInstanceId = instance.Id
+                    };
+                    instance.Answers.Add(ans);
+                }
+
+                await scoresheetInstanceRepository.UpdateAsync(instance);
+            }
+
+            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+            {
+                reportingDataGeneratorService.GenerateAndSet(scoresheet, instance);
+            }
         }
     }
 

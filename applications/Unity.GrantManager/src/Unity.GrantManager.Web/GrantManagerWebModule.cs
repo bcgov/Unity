@@ -37,7 +37,6 @@ using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
-using Unity.GrantManager.Web.Services;
 using Unity.GrantManager.Web.Settings;
 using Unity.Identity.Web;
 using Unity.Notifications.Web;
@@ -73,6 +72,10 @@ using Volo.Abp.Users;
 using Volo.Abp.VirtualFileSystem;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
+using Unity.Modules.Shared.Utils;
+using Unity.Notifications.Web.Views.Settings;
+using Unity.Notifications.Web.Bundling;
+using Unity.Reporting.Web;
 
 namespace Unity.GrantManager.Web;
 
@@ -95,8 +98,10 @@ namespace Unity.GrantManager.Web;
     typeof(PaymentsWebModule),
     typeof(AbpBlobStoringModule),
     typeof(NotificationsWebModule),
-    typeof(FlexWebModule)    
+    typeof(FlexWebModule),
+    typeof(ReportingWebModule)
 )]
+
 public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -191,6 +196,10 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new BackgroundJobsPageContributor());
+        });
 
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
@@ -231,7 +240,7 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddSession(options =>
         {
-            options.IdleTimeout = TimeSpan.FromHours(8);            
+            options.IdleTimeout = TimeSpan.FromHours(8);
         });
     }
 
@@ -372,7 +381,7 @@ public class GrantManagerWebModule : AbpModule
     }
 
     private void ConfigureBundles()
-    {
+    {        
         Configure<AbpBundlingOptions>(options =>
         {
             options
@@ -380,6 +389,14 @@ public class GrantManagerWebModule : AbpModule
                 .Configure(UnityThemeUX2Bundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
+                });
+
+
+            options.StyleBundles.Configure(
+                NotificationsBundles.Styles.Notifications,
+                bundle =>
+                {
+                    bundle.AddContributors(typeof(NotificationsStyleBundleContributor));                    
                 });
         });
     }
@@ -516,7 +533,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        var configuration = context.GetConfiguration();       
+        var configuration = context.GetConfiguration();
 
         if (!env.IsProduction())
         {

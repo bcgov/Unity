@@ -31,13 +31,20 @@ using Volo.Abp.Caching;
 using Volo.Abp.Quartz;
 using System;
 using Quartz;
-using Volo.Abp.BackgroundJobs;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
+using Volo.Abp.BackgroundJobs;
+using Unity.Reporting;
+using Volo.Abp.DistributedLocking;
+using Medallion.Threading.Redis;
+using Medallion.Threading;
+using StackExchange.Redis;
+using Unity.GrantManager.Locks;
+using Unity.GrantManager.Zones;
 
 namespace Unity.GrantManager;
 
-[DependsOn(    
+[DependsOn(
     typeof(GrantManagerDomainModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
@@ -48,8 +55,10 @@ namespace Unity.GrantManager;
     typeof(AbpBackgroundWorkersQuartzModule),
     typeof(NotificationsApplicationModule),
     typeof(PaymentsApplicationModule),
-    typeof(FlexApplicationModule)
-    )]
+    typeof(FlexApplicationModule),
+    typeof(ReportingApplicationModule),
+    typeof(AbpDistributedLockingModule)
+)]
 public class GrantManagerApplicationModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -133,8 +142,10 @@ public class GrantManagerApplicationModule : AbpModule
 
         ConfigureBackgroundServices(configuration);
         ConfigureDistributedCache(context, configuration);
+        ConfigureDistributedLocking(context, configuration);
 
         context.Services.ConfigureRabbitMQ();
+        context.Services.AddScoped<IZoneChecker, ZoneChecker>();
 
         _ = context.Services.AddSingleton(provider =>
         {
@@ -187,6 +198,20 @@ public class GrantManagerApplicationModule : AbpModule
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 
+    private static void ConfigureDistributedLocking(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"]))
+        {
+            context.Services.AddSingleton<IDistributedLockProvider, InMemoryDistributedLockProvider>();
+            return;
+        }
+
+        var redisConnectionString = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
+        var redisConnection = ConnectionMultiplexer.Connect(redisConnectionString);
+
+        context.Services.AddSingleton<IDistributedLockProvider>(new RedisDistributedSynchronizationProvider(redisConnection.GetDatabase()));
+    }
+
     private void ConfigureBackgroundServices(IConfiguration configuration)
     {
         if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"])) return;
@@ -204,13 +229,10 @@ public class GrantManagerApplicationModule : AbpModule
         /*
          * There are Global Retry Options that can be configured, configure if required, or if handled per job 
         */
-
         Configure<BackgroundJobsOptions>(options =>
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
-            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";
-            options.IntakeResync.NumDaysToCheck = configuration.GetValue<string>("BackgroundJobs:IntakeResync:NumDaysToCheck") ?? "-2";
         });
     }
 

@@ -50,7 +50,12 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
 
            model.TotalPaid= paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Paid))
                                   .Sum(e => e.Amount);
-            model.TotalPendingAmounts = paymentRequests.Where(e => e.Status != PaymentRequestStatus.Paid).Sum(e => e.Amount);
+            model.TotalPendingAmounts = paymentRequests
+                .Where(e => e.Status is not (PaymentRequestStatus.Paid 
+                                            or PaymentRequestStatus.L1Declined 
+                                            or PaymentRequestStatus.L2Declined 
+                                            or PaymentRequestStatus.L3Declined))
+                .Sum(e => e.Amount);
             model.RemainingAmount = application.ApprovedAmount - model.TotalPaid;
 
                 return View(model);

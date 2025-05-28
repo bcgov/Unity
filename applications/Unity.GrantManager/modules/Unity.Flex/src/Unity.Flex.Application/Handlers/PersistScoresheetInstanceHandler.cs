@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
-using Unity.Flex.Scoresheets;
+using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;

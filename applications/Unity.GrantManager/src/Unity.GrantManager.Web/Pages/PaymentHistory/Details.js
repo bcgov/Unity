@@ -3,10 +3,7 @@
     let dataTable;
 
     const listColumns = getColumns();
-    const defaultVisibleColumns = ['EntityName', 'PropertyName', 'OriginalValue', 'NewValue', 'ChangeTime', 'UserName'];
-    const maxRows = 20;
-    const defaultSortColumn = 0;
-    let actionButtons = [];
+    let actionButtons = [...commonTableActionButtons('Payment History')];
 
     let responseCallback = function (result) {
         if (result + "" == "undefined") {
@@ -27,28 +24,22 @@
         return document.getElementById('paymentId').value
     };
 
-    dataTable = initializeDataTable(dt,
-        defaultVisibleColumns,
+    dataTable = initializeDataTable({
+        dt,
         listColumns,
-        maxRows,
-        defaultSortColumn,
-        unity.grantManager.history.paymentHistory.getPaymentHistoryList,
-        inputAction,
+        maxRowsPerPage: 20,
+        defaultSortColumn: 0,
+        dataEndpoint: unity.grantManager.history.paymentHistory.getPaymentHistoryList,
+        data: inputAction,
         responseCallback,
         actionButtons,
-        'dynamicButtonContainerId');
-
-    dataTable.on('search.dt', () => handleSearch());      
-
-    $('#search').on('input', function () {
-        let table = $('#AuditHistoryTable').DataTable();
-        table.search($(this).val()).draw();
+        pagingEnabled: true,
+        reorderEnabled: true,
+        languageSetValues: {},
+        dataTableName: 'AuditHistoryTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        externalSearchId: 'search-payment-history',
     });
-
-    function handleSearch() {
-        let filter = $('.dataTables_filter input').val();
-        console.info(filter);
-    }
 
     function getColumns() {
         return [
@@ -127,7 +118,7 @@
     function formatLuxonDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
             locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString({
+        }).toLocaleString({
             day: "numeric",
             year: "numeric",
             month: "numeric",

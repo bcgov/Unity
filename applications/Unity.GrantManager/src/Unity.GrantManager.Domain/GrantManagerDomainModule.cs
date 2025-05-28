@@ -1,8 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Unity.GrantManager.MultiTenancy;
+using Unity.GrantManager.Settings;
+using Unity.Notifications;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Caching;
 using Volo.Abp.Emailing;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -14,8 +17,6 @@ using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.PermissionManagement.OpenIddict;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
-using Volo.Abp.Caching;
-using Unity.Notifications;
 
 namespace Unity.GrantManager;
 
@@ -30,11 +31,11 @@ namespace Unity.GrantManager;
     typeof(AbpPermissionManagementDomainIdentityModule),
     typeof(AbpSettingManagementDomainModule),
     typeof(AbpTenantManagementDomainModule),
-    typeof(AbpEmailingModule)
+    typeof(AbpEmailingModule),
+    typeof(AbpCachingModule),
+    typeof(NotificationsDomainModule)
 )]
-    [DependsOn(typeof(AbpCachingModule))]
-    [DependsOn(typeof(NotificationsDomainModule))]    
-    public class GrantManagerDomainModule : AbpModule
+public class GrantManagerDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
@@ -46,6 +47,11 @@ namespace Unity.GrantManager;
         Configure<AbpMultiTenancyOptions>(options =>
         {
             options.IsEnabled = MultiTenancyConsts.IsEnabled;
+        });
+
+        Configure<SettingManagementOptions>(options =>
+        {
+            options.Providers.Add<FormSettingManagementProvider>();
         });
 
 #if DEBUG

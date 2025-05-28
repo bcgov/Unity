@@ -11,7 +11,8 @@
     const defaultVisibleColumns = [
         'id',
         'amount',
-        'status'
+        'status',
+        'supplierName'
     ];
 
     $('body').on('click', '#savePaymentInfoBtn', function () {
@@ -32,8 +33,13 @@
 
         // Update checkboxes which are serialized if unchecked
         $(`#paymentInfoForm input:checkbox`).each(function () {
-            paymentInfoForm[this.name] = (this.checked).toString();
+            paymentInfoObj[this.name] = (this.checked).toString();
         });
+
+        // Make sure all the custom fields are set in the custom fields object
+        if (typeof Flex === 'function') {
+            Flex?.setCustomFields(paymentInfoObj);
+        }
 
         paymentInfoObj['correlationId'] = formVersionId;
         paymentInfoObj['worksheetId'] = worksheetId;
@@ -127,10 +133,21 @@
         });
         return newData;
     }
-
-    dataTable = initializeDataTable(dt,
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
-        listColumns, 10, 3, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns,
+        maxRowsPerPage: 10,
+        defaultSortColumn: 3,
+        dataEndpoint: unity.payments.paymentRequests.paymentRequest.getListByApplicationId,
+        data: inputAction,
+        responseCallback,
+        actionButtons,
+        pagingEnabled: true,
+        reorderEnabled: true,
+        languageSetValues: {},
+        dataTableName: 'ApplicationPaymentRequestListTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -190,6 +207,11 @@
             getApplicationPaymentPaidOnColumn(),
             getApplicationPaymentDescriptionColumn(),
             getApplicationPaymentCASResponseColumn(),
+            getMailingAddressColumn(),
+            getMaskedBankAccountColumn(),
+            getSiteNumberColumn(),
+            geSupplierNumberColumn(),
+            getSupplierNameColumn()
         ]
     }
 
@@ -224,7 +246,8 @@
             className: 'data-table-header',
             index: 3,
             render: function (data) {
-                return getStatusText(data);
+                let statusColor = getPaymentStatusTextColor(data);
+                return `<span style="color:${statusColor};">` + l(`Enum:PaymentRequestStatus.${data}`) + '</span>';
             }
         };
     }
@@ -294,6 +317,59 @@
         };
     }
 
+    function getMailingAddressColumn() { 
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.MailingAddress'),
+            name: 'addressLine1',
+            data: 'site.addressLine1',
+            className: 'data-table-header',
+            render: function (data, type, full, meta) {
+                return nullToEmpty(full.site.addressLine1) + ' ' + nullToEmpty(full.site.addressLine2) + " " + nullToEmpty(full.site.addressLine3) + " " + nullToEmpty(full.site.city) + " " + nullToEmpty(full.site.province) + " " + nullToEmpty(full.site.postalCode);
+            },
+            index: 9,
+        };
+    }
+
+    function getMaskedBankAccountColumn() { 
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount'),
+            name: 'bankAccount',
+            data: 'site.bankAccount',
+            className: 'data-table-header',
+            index: 10,
+        };
+    }
+
+    function getSiteNumberColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SiteNumber'),
+            name: 'number',
+            data: 'site.number',
+            className: 'data-table-header',
+            index: 11,
+        };
+    }
+
+    function geSupplierNumberColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SupplierNumber'),
+            name: 'supplierNumber',
+            data: 'supplierNumber',
+            className: 'data-table-header',
+            index: 12,
+        };
+    }
+    function getSupplierNameColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.SupplierName'),
+            name: 'supplierName',
+            data: 'supplierName',
+            className: 'data-table-header',
+            index: 13,
+        };
+    }
+
+
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
             locale: abp.localization.currentCulture.name,
@@ -320,23 +396,6 @@
         let table = $('#ApplicationPaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
-
-    function getStatusText(data) {
-        switch (data) {
-            case 1:
-                return "Created";
-            case 2:
-                return "Submitted";
-            case 3:
-                return "Approved";
-            case 4:
-                return "Declined";
-            case 5:
-                return "Awaiting Approval"
-            default:
-                return "Created";
-        }
-    }
 
     $('.select-all-application-payments').click(function () {
         if ($(this).is(':checked')) {
@@ -371,4 +430,42 @@ function enablePaymentInfoSaveBtn() {
         return;
     }
     $('#savePaymentInfoBtn').prop('disabled', false);
+}
+
+function nullToEmpty(value) {
+    return value == null ? '' : value;
+}
+
+function getPaymentStatusTextColor(status) {
+    switch (status) {
+        case "L1Pending":
+            return "#053662";
+
+        case "L1Declined":
+            return "#CE3E39";
+
+        case "L2Pending":
+            return "#053662";
+
+        case "L2Declined":
+            return "#CE3E39";
+
+        case "L3Pending":
+            return "#053662";
+
+        case "L3Declined":
+            return "#CE3E39";
+
+        case "Submitted":
+            return "#5595D9";
+
+        case "Paid":
+            return "#42814A";
+
+        case "Failed":
+            return "#CE3E39";
+
+        default:
+            return "#053662";
+    }
 }

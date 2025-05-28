@@ -1,14 +1,9 @@
 apiVersion: template.openshift.io/v1
 kind: Template
 message: |-
-  The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.
-
-         Username: ${POSTGRESQL_USER}
-         Password: ${POSTGRESQL_PASSWORD}
-    Database Name: ${POSTGRESQL_DATABASE}
-   Connection URL: unity-database://${DATABASE_SERVICE_NAME}:${DATABASE_PORT}/
-
-  For more information about using this template, including OpenShift considerations, see the project readme.md and wiki documents.
+  A new application been created in your project: unity-database
+  For more information about using this template, including OpenShift considerations,
+  see template usage guide found in the project readme.md and wiki documents.
 metadata:
   name: unity-database
   # This template uses a separate parameter .env file to override the default values defined in this section.
@@ -21,7 +16,6 @@ metadata:
       NOTE: Scaling to more than one replica is not supported.
     iconClass: icon-postgresql
     openshift.io/display-name: PostgreSQL
-    openshift.io/documentation-url: https://docs.okd.io/latest/using_images/db_images/postgresql.html
     openshift.io/long-description: This template provides a standalone PostgreSQL
       server with an initial database created. The database is stored on persistent storage.
       The database name, username, and password are selected through parameters during provisioning.
@@ -32,24 +26,18 @@ parameters:
   displayName: Application Name
   name: APPLICATION_NAME
   required: false
-  value: unity-backup-cronjob
+  value: unity-databaase
 - description: The name of the application grouping.
   displayName: Application Group
   name: APPLICATION_GROUP
   required: true
-  value: unity-grantmanager
+  value: unity-tools
 # Additional parameters for project database provisioning.
 - description: The name of the OpenShift Service exposed for the database.
   displayName: Database Service Name
   name: DATABASE_SERVICE_NAME
   required: true
-  value: unity-data-postgres
-- description: The host exposed for the database.
-  displayName: Database Service Host
-  name: DATABASE_HOST
-  required: true
-  from: 'develop-crunchy-postgres-primary[a-zA-Z0-9]{6}-dev.svc'
-  generate: expression
+  value: unity-database
 - description: The port exposed for the database.
   displayName: Database Service Port
   name: DATABASE_PORT
@@ -58,7 +46,7 @@ parameters:
 - description: Username for PostgreSQL user that will be used for accessing the database.
   displayName: PostgreSQL Connection Username
   name: POSTGRESQL_USER
-  required: true
+  required: false
   value: "postgres"
 - description: Password for the PostgreSQL connection user.
   displayName: PostgreSQL Connection Password
@@ -70,21 +58,12 @@ parameters:
   displayName: PostgreSQL Database Name
   name: POSTGRESQL_DATABASE
   required: true
-  value: UnityGrantManager
-- description: Name of the default tenant database.
-  displayName: PostgreSQL Tenant Database Name
-  name: UNITY_TENANT_DB
-  value: UnityGrantTenant
+  value: postgres
 - description: Volume space for data directory.
   displayName: Volume Capacity
   name: VOLUME_CAPACITY
   required: true
   value: 256Mi
-- description: The name of the storage object.
-  displayName: Object Storage Name
-  name: STORAGE_OBJECT_NAME
-  required: true
-  value: s3-object-storage
 - description: The Namespace where the container image resides default=project-tools cluster=openshift, source=registry.redhat.io/rhel9/postgresql-16
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
@@ -123,9 +102,9 @@ objects:
   kind: Secret
   metadata:
     annotations:
-      template.openshift.io/expose-database_name: '{.data[''UNITY_POSTGRES_DB'']}'
-      template.openshift.io/expose-password: '{.data[''UNITY_POSTGRES_PASSWORD'']}'
-      template.openshift.io/expose-username: '{.data[''UNITY_POSTGRES_USER'']}'
+      template.openshift.io/expose-database_name: '{.data[''POSTGRES_DATABASE'']}'
+      template.openshift.io/expose-password: '{.data[''POSTGRES_PASSWORD'']}'
+      template.openshift.io/expose-username: '{.data[''POSTGRES_USER'']}'
     name: ${DATABASE_SERVICE_NAME}
     labels:
       app: ${DATABASE_SERVICE_NAME}
@@ -134,13 +113,36 @@ objects:
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   stringData:
-    UNITY_DB_HOST: ${DATABASE_HOST}
-    UNITY_DB_PORT: ${DATABASE_PORT}
-    UNITY_POSTGRES_DB: ${POSTGRESQL_DATABASE}
-    UNITY_POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
-    UNITY_POSTGRES_USER: ${POSTGRESQL_USER}
-    UNITY_TENANT_DB: ${UNITY_TENANT_DB}
+    POSTGRES_USER: ${POSTGRESQL_USER}
+    POSTGRES_DATABASE: ${POSTGRESQL_DATABASE}
+    POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
   type: Opaque
+# Service
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      template.openshift.io/expose-uri: postgres://{.spec.clusterIP}:{.spec.ports[?(.name=="postgresql")].port}
+    name: ${DATABASE_SERVICE_NAME}
+    labels:
+      app: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
+      app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    ports:
+    - name: ${DATABASE_SERVICE_NAME}
+      nodePort: 0
+      protocol: TCP
+      port: ${{DATABASE_PORT}}
+      targetPort: ${{DATABASE_PORT}}
+    selector:
+      app: ${DATABASE_SERVICE_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
 # Persistent storage for database backups
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -168,17 +170,16 @@ objects:
       template.alpha.openshift.io/wait-for-ready: "true"
       # Add the trigger annotation
       image.openshift.io/triggers: >-
-        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${APPLICATION_NAME}\")].image","pause":"true"}]
+        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${{DATABASE_SERVICE_NAME}\")].image","pause":"false"}]
     name: ${DATABASE_SERVICE_NAME}
     labels:
       app: ${DATABASE_SERVICE_NAME}
-      app.openshift.io/runtime: postgresql
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
-    replicas: 0
+    replicas: 1
     selector:
       matchLabels:
         app: ${DATABASE_SERVICE_NAME}
@@ -202,7 +203,7 @@ objects:
             valueFrom:
               secretKeyRef:
                 name: ${DATABASE_SERVICE_NAME}
-                key: UNITY_POSTGRES_PASSWORD
+                key: POSTGRES_PASSWORD
           livenessProbe:
             exec:
               command:
@@ -215,6 +216,7 @@ objects:
               command:
               - /usr/libexec/check-container
             initialDelaySeconds: 5
+            periodSeconds: 60
             timeoutSeconds: 1
           resources:
             requests:

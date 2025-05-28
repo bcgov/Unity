@@ -8,41 +8,38 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Web.Identity.LoginHandlers;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.SecurityLog;
 
 namespace Unity.GrantManager.Web.Identity
 {
-    internal class IdentityProfileLoginHandler : ITransientDependency
+    internal class IdentityProfileLoginHandler(IUserTenantAppService userTenantsAppService,
+        ISecurityLogManager securityLogManager) : ITransientDependency
     {
-        private readonly IUserTenantAppService _userTenantsAppService;
-        private readonly ISecurityLogManager _securityLogManager;
-
-        public IdentityProfileLoginHandler(IUserTenantAppService userTenantsAppService,
-            ISecurityLogManager securityLogManager)
-        {
-            _userTenantsAppService = userTenantsAppService;
-            _securityLogManager = securityLogManager;
-        }
-
         internal async Task HandleAsync(TokenValidatedContext validatedTokenContext)
         {
             if (validatedTokenContext.Principal != null)
             {
                 var idpSplitter = validatedTokenContext.SecurityToken.Subject.IndexOf("@");
                 var userIdentifier = validatedTokenContext.SecurityToken.Subject[..(idpSplitter == -1 ? validatedTokenContext.SecurityToken.Subject.Length : idpSplitter)].ToUpper();
-                var userTenantAccounts = await _userTenantsAppService.GetUserTenantsAsync(userIdentifier);
+                var userTenantAccounts = await userTenantsAppService.GetUserTenantsAsync(userIdentifier);
                 var idp = validatedTokenContext.SecurityToken.Claims.FirstOrDefault(s => s.Type == UnityClaimsTypes.IdpProvider)?.Value;
 
                 UserTenantAccountDto signedInTenantAccount;
 
-                if (validatedTokenContext.Principal.IsInRole(IdentityConsts.ITAdmin))
+                if (validatedTokenContext.Principal.IsInRole(IdentityConsts.ITAdminRoleName))
                 {
-                    var adminLoginHandler = validatedTokenContext.HttpContext.RequestServices.GetService<IdentityProfileLoginAdminHandler>();                    
+                    var adminLoginHandler = validatedTokenContext.HttpContext.RequestServices.GetService<IdentityProfileLoginAdminHandler>();
+                    var adminAccount = await userTenantsAppService.GetUserAdminAccountAsync(userIdentifier);
+                    if (adminAccount != null)
+                    {
+                        userTenantAccounts.Add(adminAccount);
+                    }
                     signedInTenantAccount = await adminLoginHandler!.Handle(validatedTokenContext, userTenantAccounts, idp);
                 }
                 else
-                {                    
+                {
                     var userLoginHandler = validatedTokenContext.HttpContext.RequestServices.GetService<IdentityProfileLoginUserHandler>();
                     signedInTenantAccount = await userLoginHandler!.Handle(validatedTokenContext, userTenantAccounts, idp);
                 }
@@ -50,7 +47,7 @@ namespace Unity.GrantManager.Web.Identity
                 AddTenantClaims(validatedTokenContext.Principal!, userTenantAccounts);
 
                 // Create security log
-                await _securityLogManager.SaveAsync(securityLog =>
+                await securityLogManager.SaveAsync(securityLog =>
                 {
                     securityLog.Identity = validatedTokenContext.SecurityToken.Subject;
                     securityLog.Action = "Login";
@@ -60,7 +57,7 @@ namespace Unity.GrantManager.Web.Identity
                     securityLog.TenantName = signedInTenantAccount.TenantName;
                 });
             }
-        }           
+        }
 
         private static void AddTenantClaims(ClaimsPrincipal claimsPrincipal, IList<UserTenantAccountDto> userTenantAccounts)
         {
@@ -71,6 +68,6 @@ namespace Unity.GrantManager.Web.Identity
                     claimsPrincipal.AddClaim(UnityClaimsTypes.Tenant, tenantAcc.TenantId.ToString() ?? Guid.Empty.ToString());
                 }
             }
-        }               
+        }
     }
 }

@@ -1,13 +1,15 @@
-﻿$(function () {
+﻿// Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
+$(function () {
     const l = abp.localization.getResource('GrantManager');
+    const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
         let assessmentId = decodeURIComponent($("#AssessmentId").val());
-        if (!assessmentId) {
-            return "00000000-0000-0000-0000-000000000000";
-        }
-        return assessmentId;
-    }
+        return {
+            attachmentType: 'ASSESSMENT',
+            attachedResourceId: assessmentId ?? "00000000-0000-0000-0000-000000000000"
+        };
+    };
 
     let responseCallback = function (result) {
         return {
@@ -25,7 +27,7 @@
             info: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.grantApplications.attachment.getAssessment, inputAction, responseCallback
+                unity.grantManager.attachments.attachment.getAttachments, inputAction, responseCallback
             ),
             columnDefs: [
                 {
@@ -39,6 +41,14 @@
                     title: l('AssessmentResultAttachments:DocumentName'),
                     data: 'fileName',
                     className: 'data-table-header',
+                },
+                {
+                    title: 'Label',
+                    data: 'displayName',
+                    className: 'data-table-header',
+                    render: function (data) {
+                        return data ?? nullPlaceholder;
+                    }
                 },
                 {
                     title: l('AssessmentResultAttachments:UploadedDate'),

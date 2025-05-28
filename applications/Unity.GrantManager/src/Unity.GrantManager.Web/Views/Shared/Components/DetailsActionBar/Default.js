@@ -27,20 +27,12 @@ $(function () {
         );        
     });
            
-    $('#approveApplicationsDetails').click(function () {
+    $('#approveApplications').click(function () {
         approveApplicationsModal.open({
             applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
             operation: 'GRANT_APPROVED',
             message: 'Are you sure you want to approve this application?',
             title: 'Approve Applications',
-        });
-    });
-    $('#disApproveApplicationsDetails').click(function () {
-        dontApproveApplicationsModal.open({
-            applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
-            operation: 'GRANT_NOT_APPROVED',
-            message: 'Are you sure you want to disapprove this application?', 
-            title: 'Not Approve Applications',
         });
     });
 

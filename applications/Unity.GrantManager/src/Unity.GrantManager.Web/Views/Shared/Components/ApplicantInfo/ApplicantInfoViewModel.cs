@@ -7,6 +7,8 @@ using System;
 using Unity.GrantManager.GrantApplications;
 using System.Collections.Immutable;
 using Unity.GrantManager.Locality;
+using System.Linq;
+using System.Globalization;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 {
@@ -23,7 +25,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
         public List<SelectListItem> OrgBookStatusList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrgBookStatusList);
         public List<SelectListItem> ApplicationSectorsList { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ApplicationSubSectorsList { get; set; } = new List<SelectListItem>();
-        
+        public List<SelectListItem> IndigenousList { get; set; } = FormatOptionsList(ApplicantInfoOptionsList.IndigenousList);
+        public List<SelectListItem> FiscalDayList { get; set; } = FormatOptionsList(ApplicantInfoOptionsList.FiscalDayList).OrderBy(x => int.Parse(x.Text)).ToList();
+        public List<SelectListItem> FiscalMonthList { get; set; } = FormatOptionsList(ApplicantInfoOptionsList.FiscalMonthList).OrderBy(x => DateTime.ParseExact(x.Text, "MMMM", CultureInfo.InvariantCulture).Month).ToList();
+
         public Guid ApplicationId { get; set; }
         public Guid ApplicantId { get; set; }
         public Guid ApplicationFormId { get; set; }
@@ -54,6 +59,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             [Display(Name = "ApplicantInfoView:ApplicantInfo.OrganizationSize")]
             public string? OrganizationSize { get; set; }
 
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.UnityApplicant")]
+            public string? UnityApplicantId { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.FiscalMonth")]
+            [SelectItems(nameof(FiscalMonthList))]
+            public string? FiscalMonth { get; set; }
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.FiscalDay")]
+            [SelectItems(nameof(FiscalDayList))]
+            public string? FiscalDay { get; set; }
+
+
             [Display(Name = "ApplicantInfoView:ApplicantInfo.Sector")]
             [SelectItems(nameof(ApplicationSectorsList))]
             public string? Sector { get; set; }
@@ -63,6 +79,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             public string? SubSector { get; set; }
 
             public bool RedStop { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd")]
+            public string? IndigenousOrgInd { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactFullName")]
             [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]
@@ -147,6 +166,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.PostalCode")]
             public string? MailingAddressPostalCode { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Search")]
+            public string? Search { get; set; }
+
+            public string? SelectedOrgBookId { get; set; }
+
+            public string? SelectedOrgBookText { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.NonRegOrgName")]
+            public string? NonRegOrgName { get; set; }
+
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

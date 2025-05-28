@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Linq;
-using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Features;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Unity.Payments.Permissions;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.Payments.Suppliers
 {
     [RequiresFeature("Unity.Payments")]
-    [Authorize]
-    public class SupplierAppService(ISupplierRepository supplierRepository) : PaymentsAppService, ISupplierAppService
+    public class SupplierAppService(ISupplierRepository supplierRepository, 
+                                    ISiteAppService siteAppService) : PaymentsAppService, ISupplierAppService
     {
+        protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
-        [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
         public virtual async Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto)
         {
             Supplier supplier = new Supplier(Guid.NewGuid(),
@@ -38,7 +40,6 @@ namespace Unity.Payments.Suppliers
             return ObjectMapper.Map<Supplier, SupplierDto>(result);
         }
 
-        [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
         public virtual async Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto)
         {
             var supplier = await supplierRepository.GetAsync(id);
@@ -63,10 +64,15 @@ namespace Unity.Payments.Suppliers
             return ObjectMapper.Map<Supplier, SupplierDto>(result);
         }
 
-        public virtual async Task<SupplierDto> GetAsync(Guid id)
-        {
-            var result = await supplierRepository.GetAsync(id);
-            return ObjectMapper.Map<Supplier, SupplierDto>(result);
+        public virtual async Task<SupplierDto?> GetAsync(Guid id)
+        {   try {
+                var result = await supplierRepository.GetAsync(id);
+                if (result == null) return null;
+                return ObjectMapper.Map<Supplier, SupplierDto>(result);
+            } catch (Exception ex) {
+                logger.LogError(ex, "Error fetching supplier");
+                return null;
+            }
         }
 
         public virtual async Task<SupplierDto?> GetByCorrelationAsync(GetSupplierByCorrelationDto requestDto)
@@ -88,6 +94,14 @@ namespace Unity.Payments.Suppliers
             if (result == null) return null;
 
             return ObjectMapper.Map<Supplier, SupplierDto?>(result);
+        }
+
+        public async Task<List<SiteDto>> GetSitesBySupplierNumberAsync(string? supplierNumber)
+        {
+            var supplier = await GetBySupplierNumberAsync(supplierNumber);
+            if (supplier == null) return new List<SiteDto>();
+            List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(supplier.Id);
+            return sites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
         }
 
         public virtual async Task<SiteDto> CreateSiteAsync(Guid id, CreateSiteDto createSiteDto)

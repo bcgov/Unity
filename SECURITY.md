@@ -11,8 +11,9 @@ This document outlines security procedures for the Economy Sector Grant Manageme
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.0.x   | Experimental  |
+| 0.1.x   | Experimental  |
 | 1.0.x   | Initial release |
+| 1.x.x   | Production release |
 
 ## Reporting a Security Bug
 

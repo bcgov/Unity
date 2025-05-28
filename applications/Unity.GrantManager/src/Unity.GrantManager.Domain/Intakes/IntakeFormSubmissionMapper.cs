@@ -64,7 +64,7 @@ namespace Unity.GrantManager.Intakes
                         ApplicationId = applicationId,
                         ChefsFileId = file.Key.ToString(),
                         ChefsSumbissionId = submissionId,
-                        Name = file.Value,
+                        FileName = file.Value,
                     });
             }
         }

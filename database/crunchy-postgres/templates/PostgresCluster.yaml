@@ -110,9 +110,11 @@ spec:
         # Support both PVC and s3 backups
         repo1-retention-full: {{ .Values.pgBackRest.retention | quote }}
         repo1-retention-full-type: {{ .Values.pgBackRest.retentionFullType }}
+        repo1-retention-archive: {{ .Values.pgBackRest.retentionArchive | quote }}
+        repo1-retention-archive-type: {{ .Values.pgBackRest.retentionArchiveType }}
         {{- if .Values.pgBackRest.s3.enabled }}
-        repo2-retention-full: {{ .Values.pgBackRest.retention | quote }}
-        repo2-retention-full-type: {{ .Values.pgBackRest.retentionFullType }}
+        repo2-retention-full: {{ .Values.pgBackRest.retentionS3 | quote }}
+        repo2-retention-full-type: {{ .Values.pgBackRest.retentionFullTypeS3 }}
         repo2-path: {{ .Values.pgBackRest.s3.s3Path }}
         repo2-s3-uri-style: {{ .Values.pgBackRest.s3.s3UriStyle }}
         {{- end }}
@@ -184,6 +186,9 @@ spec:
           min_wal_size: {{ .Values.patroni.postgresql.parameters.min_wal_size }}
           max_wal_size: {{ .Values.patroni.postgresql.parameters.max_wal_size }}
           max_slot_wal_keep_size:  {{ .Values.patroni.postgresql.parameters.max_slot_wal_keep_size }}
+          temp_file_limit: {{ .Values.patroni.postgresql.parameters.temp_file_limit }}
+          checkpoint_timeout: {{ .Values.patroni.postgresql.parameters.checkpoint_timeout }}
+          checkpoint_completion_target: {{ .Values.patroni.postgresql.parameters.checkpoint_completion_target }}
 
   proxy:
     pgBouncer:

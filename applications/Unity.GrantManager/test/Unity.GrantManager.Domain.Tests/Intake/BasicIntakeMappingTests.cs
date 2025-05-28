@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using NSubstitute;
 using Shouldly;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
@@ -36,8 +37,8 @@ namespace Unity.GrantManager.Intake
         [InlineData("basicdatagrid.json", 2)]
         [InlineData("panelinpaneldatagrid.json", 1)]
         public void TestBasicDataGridMapping(string filename, int expectedDatagridCount)
-        {            
-             dynamic? formMapping = LoadTestData(filename);
+        {
+            dynamic? formMapping = LoadTestData(filename);
             string result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formMapping);
             result.ShouldNotBeNull();
 
@@ -52,7 +53,8 @@ namespace Unity.GrantManager.Intake
                     datagridCount++;
                 }
             }
+
             Assert.Equal(expectedDatagridCount, datagridCount);
-        }
+        }      
     }
 }

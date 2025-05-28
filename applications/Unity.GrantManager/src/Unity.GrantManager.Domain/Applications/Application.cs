@@ -145,9 +145,13 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         RiskRanking = riskRanking;
     }
 
-    public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore)
+    public void UpdateApprovalFieldsRequiringPostEditPermission(decimal? approvedAmount)
     {
         ApprovedAmount = approvedAmount ?? 0;
+    }
+
+    public void UpdateAssessmentResultFieldsRequiringPostEditPermission(decimal? requestedAmount, int? totalScore)
+    {
         RequestedAmount = requestedAmount ?? 0;
         TotalScore = totalScore ?? 0;
     }
@@ -190,6 +194,14 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         else
         {
             FinalDecisionDate = finalDecisionDate;
+        }
+    }
+
+    public void ValidateMinAndChangeApprovedAmount(decimal approvedAmount)
+    {
+        if ((ApprovedAmount != approvedAmount) && approvedAmount <= 0m)
+        {
+            throw new BusinessException("Approved amount cannot be 0.");
         }
     }
 }

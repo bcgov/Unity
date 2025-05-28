@@ -1,0 +1,111 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {},
+      "host": {}
+    }
+  },
+  "packages": {
+    "Unity.Reporting.Domain.Shared": {
+      "path": "src/Unity.Reporting.Domain.Shared/Unity.Reporting.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.Domain": {
+      "path": "src/Unity.Reporting.Domain/Unity.Reporting.Domain.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.Application.Contracts": {
+      "path": "src/Unity.Reporting.Application.Contracts/Unity.Reporting.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.Application": {
+      "path": "src/Unity.Reporting.Application/Unity.Reporting.Application.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.EntityFrameworkCore": {
+      "path": "src/Unity.Reporting.EntityFrameworkCore/Unity.Reporting.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.MongoDB": {
+      "path": "src/Unity.Reporting.MongoDB/Unity.Reporting.MongoDB.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.HttpApi": {
+      "path": "src/Unity.Reporting.HttpApi/Unity.Reporting.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.HttpApi.Client": {
+      "path": "src/Unity.Reporting.HttpApi.Client/Unity.Reporting.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.TestBase": {
+      "path": "test/Unity.Reporting.TestBase/Unity.Reporting.TestBase.abppkg",
+      "folder": "test"
+    },
+    "Unity.Reporting.EntityFrameworkCore.Tests": {
+      "path": "test/Unity.Reporting.EntityFrameworkCore.Tests/Unity.Reporting.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.Reporting.MongoDB.Tests": {
+      "path": "test/Unity.Reporting.MongoDB.Tests/Unity.Reporting.MongoDB.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.Reporting.Domain.Tests": {
+      "path": "test/Unity.Reporting.Domain.Tests/Unity.Reporting.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.Reporting.Application.Tests": {
+      "path": "test/Unity.Reporting.Application.Tests/Unity.Reporting.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.Reporting.HttpApi.Host": {
+      "path": "host/Unity.Reporting.HttpApi.Host/Unity.Reporting.HttpApi.Host.abppkg",
+      "folder": "host"
+    },
+    "Unity.Reporting.Web": {
+      "path": "src/Unity.Reporting.Web/Unity.Reporting.Web.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/Unity.Reporting.HttpApi.Client.ConsoleTestApp/Unity.Reporting.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "Unity.Reporting.Web.Host": {
+      "path": "host/Unity.Reporting.Web.Host/Unity.Reporting.Web.Host.abppkg",
+      "folder": "host"
+    },
+    "Unity.Reporting.AuthServer": {
+      "path": "host/Unity.Reporting.AuthServer/Unity.Reporting.AuthServer.abppkg",
+      "folder": "host"
+    },
+    "Unity.Reporting.Host.Shared": {
+      "path": "host/Unity.Reporting.Host.Shared/Unity.Reporting.Host.Shared.abppkg",
+      "folder": "host"
+    },
+    "Unity.Reporting.Web.Unified": {
+      "path": "host/Unity.Reporting.Web.Unified/Unity.Reporting.Web.Unified.abppkg",
+      "folder": "host"
+    },
+    "Unity.Reporting.Blazor": {
+      "path": "src/Unity.Reporting.Blazor/Unity.Reporting.Blazor.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.Blazor.Host": {
+      "path": "host/Unity.Reporting.Blazor.Host/Unity.Reporting.Blazor.Host.abppkg",
+      "folder": "host"
+    },
+    "Unity.Reporting.Blazor.Server": {
+      "path": "src/Unity.Reporting.Blazor.Server/Unity.Reporting.Blazor.Server.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.Blazor.WebAssembly": {
+      "path": "src/Unity.Reporting.Blazor.WebAssembly/Unity.Reporting.Blazor.WebAssembly.abppkg",
+      "folder": "src"
+    },
+    "Unity.Reporting.Blazor.Server.Host": {
+      "path": "host/Unity.Reporting.Blazor.Server.Host/Unity.Reporting.Blazor.Server.Host.abppkg",
+      "folder": "host"
+    }
+  }
+}

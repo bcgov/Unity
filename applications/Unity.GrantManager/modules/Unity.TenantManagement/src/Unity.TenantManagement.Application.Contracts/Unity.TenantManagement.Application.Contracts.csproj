@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk"> 
+<Project Sdk="Microsoft.NET.Sdk"> 
  <PropertyGroup><LangVersion>latest</LangVersion>
     <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
     <AssemblyName>Unity.TenantManagement.Application.Contracts</AssemblyName>

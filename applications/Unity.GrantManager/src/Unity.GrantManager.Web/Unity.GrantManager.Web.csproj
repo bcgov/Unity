@@ -25,8 +25,8 @@
     <ProjectReference Include="..\..\modules\Unity.Flex\src\Unity.Flex.Web\Unity.Flex.Web.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Web\Unity.Notifications.Web.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Web\Unity.Payments.Web.csproj" />
-    <ProjectReference Include="..\..\modules\Unity.Theme.UX2\src\Unity.Theme.UX2\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj" />
-  </ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Reporting\src\Unity.Reporting.Web\Unity.Reporting.Web.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Theme.UX2\src\Unity.Theme.UX2\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj" /></ItemGroup>
 
   <ItemGroup>
     <None Update="Pages\**\*.js">

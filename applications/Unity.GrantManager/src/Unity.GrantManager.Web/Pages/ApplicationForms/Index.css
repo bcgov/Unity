@@ -29,3 +29,17 @@
     background-blend-mode: difference;
     border: none !important;
 }
+
+.search-action-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.search-action-bar_search-wrapper {
+    flex: 1;
+}
+
+input::placeholder {
+    color: #8e8e8e !important;
+}

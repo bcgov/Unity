@@ -16,10 +16,10 @@ namespace Unity.GrantManager;
     typeof(AbpPermissionManagementHttpApiClientModule),
     typeof(UnityTenantManagementHttpApiClientModule),
     typeof(AbpFeatureManagementHttpApiClientModule),
-    typeof(AbpSettingManagementHttpApiClientModule)
+    typeof(AbpSettingManagementHttpApiClientModule),
+    typeof(NotificationsHttpApiClientModule)
 )]
-[DependsOn(typeof(NotificationsHttpApiClientModule))]
-    public class GrantManagerHttpApiClientModule : AbpModule
+public class GrantManagerHttpApiClientModule : AbpModule
 {
     public const string RemoteServiceName = "Default";
 

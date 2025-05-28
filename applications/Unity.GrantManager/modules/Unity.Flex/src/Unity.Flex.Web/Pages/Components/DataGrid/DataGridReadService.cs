@@ -18,7 +18,8 @@ namespace Unity.Flex.Web.Pages.Flex
     {
         internal static Dictionary<string, string> ApplyPresentationFormat(
             Dictionary<string, string> keyValuePairs,
-            List<Tuple<string, string, CustomFieldType>> keyValueTypes)
+            List<Tuple<string, string, CustomFieldType>> keyValueTypes,
+            PresentationSettings presentationSettings)
         {
             var formattedKeyValuePairs = new Dictionary<string, string>();
 
@@ -30,7 +31,7 @@ namespace Unity.Flex.Web.Pages.Flex
                 var typeTuple = keyValueTypes.Find(kvt => kvt.Item1 == key);
                 if (typeTuple != null)
                 {
-                    var formattedValue = value.ApplyPresentationFormatting(typeTuple.Item3.ToString(), null);
+                    var formattedValue = value.ApplyPresentationFormatting(typeTuple.Item3.ToString(), null, presentationSettings);
                     formattedKeyValuePairs.Add(key, formattedValue);
                 }
                 else
@@ -42,19 +43,19 @@ namespace Unity.Flex.Web.Pages.Flex
             return formattedKeyValuePairs;
         }
 
-        internal async Task<List<WorksheetFieldViewModel>?> GetPropertiesAsync(RowInputData dataProps)
+        internal async Task<(KeyValuePair<string, string>[] dynamicFields, List<WorksheetFieldViewModel>? customFields)> GetPropertiesAsync(RowInputData dataProps, PresentationSettings presentationSettings)
         {
             if (IsFirstRow(dataProps))
             {
-                return await GetFirstRowAsync(dataProps);
+                return ([], await GetFirstRowAsync(dataProps));
             }
 
             if (AddNewRow(dataProps))
             {
-                return await GetNewRowAsync(dataProps);
+                return ([], await GetNewRowAsync(dataProps));
             }
 
-            return await GetExistingRowAsync(dataProps);
+            return await GetExistingRowAsync(dataProps, presentationSettings);
         }
 
         private async Task<List<WorksheetFieldViewModel>> GetFirstRowAsync(RowInputData dataProps)
@@ -62,7 +63,7 @@ namespace Unity.Flex.Web.Pages.Flex
             var datagridDefinition = await customFieldAppService.GetAsync(dataProps.FieldId);
             if (datagridDefinition == null) return [];
 
-            return DataGridServiceUtils.ConvertDataGridValue(new DataGridValue(), datagridDefinition, 0, true);
+            return DataGridServiceUtils.ExtractCustomColumnsValues(new DataGridValue(), datagridDefinition, 0, true);
         }
 
         private async Task<List<WorksheetFieldViewModel>> GetNewRowAsync(RowInputData dataProps)
@@ -76,21 +77,22 @@ namespace Unity.Flex.Web.Pages.Flex
 
             var dataGridValue = JsonSerializer.Deserialize<DataGridValue>(customFieldValue.CurrentValue ?? "{}");
 
-            return DataGridServiceUtils.ConvertDataGridValue(dataGridValue, datagridDefinition, dataProps.Row, true);
+            return DataGridServiceUtils.ExtractCustomColumnsValues(dataGridValue, datagridDefinition, dataProps.Row, true);
         }
 
-        private async Task<List<WorksheetFieldViewModel>> GetExistingRowAsync(RowInputData dataProps)
+        private async Task<(KeyValuePair<string, string>[] dynamicFields, List<WorksheetFieldViewModel> customFields)> GetExistingRowAsync(RowInputData dataProps, PresentationSettings presentationSettings)
         {
             if (dataProps.ValueId == null) throw new ArgumentNullException(nameof(dataProps));
             var customFieldValue = await customFieldValueAppService.GetAsync(dataProps.ValueId.Value);
-            if (customFieldValue.CurrentValue == null) return [];
+            if (customFieldValue.CurrentValue == null) return ([], []);
 
             var datagridDefinition = await customFieldAppService.GetAsync(dataProps.FieldId);
-            if (datagridDefinition == null) return [];
+            if (datagridDefinition == null) return ([], []);
 
             var dataGridValue = JsonSerializer.Deserialize<DataGridValue>(customFieldValue.CurrentValue ?? "{}");
 
-            return DataGridServiceUtils.ConvertDataGridValue(dataGridValue, datagridDefinition, dataProps.Row, false);
+            return (DataGridServiceUtils.ExtractDynamicColumnsPairs(dataGridValue, dataProps.Row, presentationSettings),
+                DataGridServiceUtils.ExtractCustomColumnsValues(dataGridValue, datagridDefinition, dataProps.Row, false));
         }
 
         private static bool AddNewRow(RowInputData dataProps)

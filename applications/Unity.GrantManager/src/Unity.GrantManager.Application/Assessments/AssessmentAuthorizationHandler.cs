@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 using Volo.Abp;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.DependencyInjection;
@@ -24,7 +24,7 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         OperationAuthorizationRequirement requirement,
         Assessment resource)
     {
-        if (requirement.Name.Equals(GrantApplicationPermissions.Assessments.SendBack)
+        if (requirement.Name.Equals(UnitySelector.Review.AssessmentReviewList.Update.SendBack)
             && await CheckPolicyAsync(requirement.Name, context))
         {
             context.Succeed(requirement);
@@ -32,7 +32,7 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         }
 
         // Complete only if Assessor/Reviewer and current user
-        if (requirement.Name.Equals(GrantApplicationPermissions.Assessments.Confirm)
+        if (requirement.Name.Equals(UnitySelector.Review.AssessmentReviewList.Update.Complete)
             && await HasConfirmPermissionAsync(context, resource))
         {
             context.Succeed(requirement);
@@ -55,7 +55,7 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         if (resource.AssessorId == currentUserId || resource.CreatorId == currentUserId)
         {
             return await PermissionChecker.IsGrantedAsync(context.User,
-                   GrantApplicationPermissions.Assessments.Confirm);
+                   UnitySelector.Review.AssessmentReviewList.Update.Complete);
         }
 
         return false;

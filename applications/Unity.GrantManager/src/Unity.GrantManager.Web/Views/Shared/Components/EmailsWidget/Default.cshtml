@@ -2,109 +2,132 @@
 @using Microsoft.AspNetCore.Mvc.Localization;
 @using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
+@using Volo.Abp.Authorization.Permissions;
 @model EmailsWidgetViewModel;
 
 @inject IHtmlLocalizer<GrantManagerResource> L
+@inject IPermissionChecker PermissionChecker
 @inject IStringLocalizerFactory StringLocalizerFactory
 @{
     Layout = null;
+    var sendEmailGranted    = await PermissionChecker.IsGrantedAsync("Notifications.Email.Send");
+    var emailFieldsetState  = sendEmailGranted ? string.Empty : "disabled";
 }
 
 <div id=" emails-div@(Model.ApplicationId)" class="mt-2  emails-container" data-count="0" data-counttag="application_emails_count">
 
-<div id="modal-background"></div>
+    <div id="modal-background"></div>
 
+    <abp-button 
+        id="btn-new-email" 
+        text="New Email"
+        icon-type="Other" 
+        icon="fa-solid fa-plus" 
+        button-type="Light"
+        abp-if="@sendEmailGranted" />
 
-<abp-button text="New Email" id="btn-new-email" icon-type="Other"  icon="fa-solid fa-plus" button-type="Light" />
+    <abp-alert
+        id="email-alert-readonly"
+        alert-type="Secondary" 
+        abp-if="@(!sendEmailGranted)">
+        Please select from the email history below.
+    </abp-alert>
 
-<div id="modal-content" class="modal-content" title="Email Send Confrirmation">
-    <h2 class="swal2-title" style="text-align: center;">Confirm Action</h2>
-    <abp-column id="spinner-modal" class="modal-content">
+    <div id="modal-content" class="modal-content" title="Email Send Confrirmation">
+        <h2 class="swal2-title" style="text-align: center;">Confirm Action</h2>
+        <abp-column id="spinner-modal" class="modal-content">
             <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <p>
+                        <div id="email-spinner"></div>
+                        <span class="email-spinner-text email-spinner confirmation-label">Sending email...</span>
+                    </p>
+                </abp-column>
+            </abp-row>
+        </abp-column>
+        <abp-row class="m-0 p-0" id="confirmation-modal">
             <abp-column size="_12" class="px-1">
                 <p>
-                    <div id="email-spinner"></div>
-                    <span class="email-spinner-text email-spinner confirmation-label">Sending email...</span>
+                    <label id="confirmation-label" for="btn-send" class="col-form-label confirmation-label" ref="label">
+                        Are you sure you want to send this email?
+                    </label>
                 </p>
             </abp-column>
         </abp-row>
-    </abp-column>
-    <abp-row class="m-0 p-0" id="confirmation-modal">
-        <abp-column size="_12" class="px-1">
-            <p>
-                <label id="confirmation-label" for="btn-send" class="col-form-label" class="confirmation-label" ref="label">
-                    Are you sure you want to send this email?
-                </label>
-            </p>
-        </abp-column>
-    </abp-row>
-    <abp-row class="m-0 p-0">
-        <abp-column size="_12" class="px-1">
+        <abp-row class="m-0 p-0">
+            <abp-column size="_12" class="px-1">
+                <abp-modal-footer>
+                    <abp-button id="btn-confirm-send" text="Send Email" class="swal2-confirm btn btn-primary swal2-styled" type="button" button-type="Primary"></abp-button>
+                    <abp-button id="btn-cancel-email" class="swal2-cancel btn btn-secondary swal2-styled" data-dismiss="modal" aria-label="Cancel" text="Cancel" button-type="Secondary"></abp-button>
+                </abp-modal-footer>
+            </abp-column>
+        </abp-row>
+    </div>
+
+
+    <form id="EmailForm" class="email-form">
+        <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
+        <fieldset @emailFieldsetState>
+            <legend class="d-none">Email Form</legend>
+            <input type="hidden" id="EmailId" name="EmailId" />
+            <input type="hidden" id="OriginalDraftEmailTo" value="@Model.EmailTo" />
+            <input type="hidden" id="OriginalDraftEmailFrom" value="@Model.EmailFrom" />
+            <input type="hidden" id="OriginalDraftEmailSubject" />
+            <input type="hidden" id="OriginalDraftEmailBody" />
+
+            <abp-row class="m-0 p-0">
+                <abp-column size="_10" class="px-1">
+                    <abp-input asp-for="@Model.EmailTo" class="email-input" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_10" class="px-1">
+                    <abp-input asp-for="@Model.EmailFrom" class="email-input" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_10" class="px-1">
+                    <abp-input asp-for="@Model.EmailSubject" class="email-input" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_10" class="px-1">
+                    <abp-input asp-for="@Model.EmailBody" class="email-input" />
+                </abp-column>
+            </abp-row>
+        </fieldset>
+        <abp-row class="m-0 p-0" abp-if="@sendEmailGranted">
+            <abp-column size="_10" class="px-1">
             <abp-modal-footer>
-                <abp-button id="btn-confirm-send" text="Send Email" class="swal2-confirm btn btn-primary swal2-styled" type="button" button-type="Primary"></abp-button>
-                <abp-button id="btn-cancel-email" class="swal2-cancel btn btn-secondary swal2-styled" data-dismiss="modal" aria-label="Cancel" text="Cancel" button-type="Secondary"></abp-button>
-            </abp-modal-footer>
-        </abp-column>
-    </abp-row>
-</div>
+                <abp-button id="btn-save"
+                            icon-type="Other"
+                            icon="fl fl-save"
+                            class="btn-save"
+                            text="Save"
+                            type="button"
+                            button-type="Primary" data-applicationId="@Model.ApplicationId"></abp-button>
 
+                <abp-button id="btn-send"
+                            class="btn-send"
+                            text="Send"
+                            type="submit"
+                            button-type="Primary" data-applicationId="@Model.ApplicationId"></abp-button>
 
-<form id="EmailForm" class="email-form">
-    <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
-
-    <abp-row class="m-0 p-0">
-        <abp-column size="_10" class="px-1">
-            <abp-input asp-for="@Model.EmailTo"  class="email-input"/>
-        </abp-column>
-    </abp-row>
-    <abp-row class="m-0 p-0">
-        <abp-column size="_10" class="px-1">
-            <abp-input asp-for="@Model.EmailFrom"  class="email-input"/>
-        </abp-column>
-    </abp-row>
-    <abp-row class="m-0 p-0">
-        <abp-column size="_10" class="px-1">
-            <abp-input asp-for="@Model.EmailSubject"  class="email-input"/>
-        </abp-column>
-    </abp-row>
-    <abp-row class="m-0 p-0">
-        <abp-column size="_10" class="px-1">
-            <abp-input asp-for="@Model.EmailBody"  class="email-input"/>
-        </abp-column>
-    </abp-row>
-
-    <abp-row class="m-0 p-0">
-        <abp-column size="_10" class="px-1">
-            <abp-modal-footer>
-                <abp-button id="btn-save" 
-                                    icon-type="Other"
-                                    icon="fl fl-save"
-                                    class="btn-save" 
-                                    text="Save" 
-                                    type="button" 
-                                    button-type="Primary" 
-                                    data-applicationId="@Model.ApplicationId"></abp-button>
-
-                <abp-button id="btn-send" 
-                                    class="btn-send" 
-                                    text="Send" 
-                                    type="submit" 
-                                    button-type="Primary" 
-                                    data-applicationId="@Model.ApplicationId"></abp-button>
-                <abp-button id="btn-send-discard" 
-                            class="close btn-send-discard" 
-                            data-dismiss="modal" 
-                            aria-label="Discard" 
-                            text="Discard" 
+                <abp-button id="btn-send-discard"
+                            class="close btn-send-discard"
+                            data-dismiss="modal"
+                            aria-label="Discard"
+                            text="Discard"
                             button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
-                <abp-button id="btn-send-close" 
-                            class="close btn-send-close" 
-                            data-dismiss="modal" 
-                            aria-label="Close" 
-                            text="Close" 
+
+                <abp-button id="btn-send-close"
+                            class="close btn-send-close"
+                            data-dismiss="modal"
+                            aria-label="Close"
+                            text="Close"
                             button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
             </abp-modal-footer>
-      </abp-column>
+        </abp-column>
     </abp-row>
 </form>
 </div>

@@ -12,5 +12,6 @@ namespace Unity.Flex.WorksheetLinks
         public string CorrelationProvider { get; set; } = string.Empty;
         public string UiAnchor { get; set; } = string.Empty;
         public WorksheetBasicDto Worksheet { get; set; } = new WorksheetBasicDto();
+        public uint? Order { get;set; } = 0;
     }
 }

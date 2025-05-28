@@ -1,31 +1,56 @@
-﻿@model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
+﻿@using Unity.Notifications.Web.Bundling
+@model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
 
 <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
+<abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
 
 <div class="container-fluid px-0">
-    <div class="unity-page-titlebar">
-        <h4 class="m-0">Notifications Configuration</h4>
-    </div>
-    <div class="p-3">
-        <form id="NotificationsSettingsForm">
-            <abp-row>
-                <abp-column size-md="_12" class="mx-2 fw-bold">
-                    <abp-input asp-for="@Model.DefaultFromAddress" />
-                </abp-column>
-            </abp-row>
-            <abp-row>
-                <hr class="my-4" />
-                <div class="d-flex p-2">
-                    <abp-button id="NotificationsSaveButton"
-                                text="Save Changes"
-                                button-type="Primary" class="me-2"
-                                type="submit" />
-                    <abp-button id="NotificationsDiscardButton"
-                                text="Discard Changes"
-                                button-type="Light" class="me-2"
-                                disabled="true"/>
-                </div>
-            </abp-row>
-        </form>
-    </div>
+    <abp-tabs name="NotificationSettings">
+        <abp-tab active="true" name="nav-config" title="Configuration">
+            <div class="unity-page-titlebar">
+                <h4 class="m-0">Notifications Configuration</h4>
+            </div>
+            <div class="p-3">
+                <form id="NotificationsSettingsForm">
+                    <abp-row>
+                        <abp-column size-md="_12" class="mx-2 fw-bold">
+                            <abp-input asp-for="@Model.DefaultFromAddress" />
+                        </abp-column>
+                    </abp-row>
+                    <abp-row>
+                        <abp-column size-md="_12" class="mx-2 fw-bold">
+                            <abp-input asp-for="@Model.MaximumRetryAttempts" />
+                        </abp-column>
+                    </abp-row>
+                    <abp-row>
+                        <hr class="my-4" />
+                        <div class="d-flex p-2">
+                            <abp-button id="NotificationsSaveButton"
+                                        text="Save Changes"
+                                        button-type="Primary" class="me-2"
+                                        type="submit" />
+                            <abp-button id="NotificationsDiscardButton"
+                                        text="Discard Changes"
+                                        button-type="Light" class="me-2"
+                                        disabled="true" />
+                        </div>
+                    </abp-row>
+                </form>
+            </div>
+        </abp-tab>
+        <abp-tab name="nav-template"  title="Templates">
+            <div class="container mt-3">
+                <h3>Email Templates</h3>
+
+           
+                <abp-button id="CreateNewTemplate"
+                            text="+ Add Template"
+                            button-type="Primary" class="me-2  ms-auto"
+                           />
+                <div id="cardContainer" class="v-scroll p-3"></div>
+            </div>
+        </abp-tab>
+
+    </abp-tabs>
+    
 </div>

@@ -24,13 +24,15 @@ namespace Unity.Payments.PaymentRequests
         public string PayeeName { get; set; }
         public string ContractNumber { get; set; }
         public string SupplierNumber { get; set; }
-        public  string CorrelationProvider { get;  set; } = string.Empty;
+        public string SupplierName { get; set; } = string.Empty;
+        public string CorrelationProvider { get;  set; } = string.Empty;
         public string? CasResponse { get; set; }
         public string BatchName { get; set; }
         public decimal BatchNumber { get; set; }
         public string ReferenceNumber { get;  set; } = string.Empty;
+        public string SubmissionConfirmationCode { get; set; } = string.Empty;
         public string? ErrorSummary { get; set; }
-
+        public PaymentUserDto? CreatorUser { get; set; }
 
         public  Collection<ExpenseApprovalDto> ExpenseApprovals { get;  set; }
 

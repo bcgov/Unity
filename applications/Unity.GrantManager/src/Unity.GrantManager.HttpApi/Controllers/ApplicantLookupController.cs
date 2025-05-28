@@ -61,7 +61,7 @@ namespace Unity.GrantManager.Controllers
             }
             else if (applicantLookup.UnityApplicantName != null)
             {
-                applicantLookupResult = await applicantService.ApplicantLookupByApplicantName(applicantLookup.UnityApplicantName);
+                applicantLookupResult = await applicantService.ApplicantLookupByBceidBusinesName(applicantLookup.UnityApplicantName, applicantLookup.CreateIfNotExists);
             }
 
             if (applicantLookupResult == null)

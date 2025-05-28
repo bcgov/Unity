@@ -1,0 +1,118 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.BulkApprovals.ApproveApplicationsModalModel
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+
+@inject IStringLocalizer<GrantManagerResource> L
+
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page-handler="OnPostAsync" id="bulkApprovalForm">
+    <abp-modal id="approveApplicationsModal" size="ExtraLarge">
+        <abp-modal-header class="batch-approval-modal-header" title="@L["ApplicationBatchApprovalRequest:Title"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-card class="batch-approval-card">
+                <abp-card-body>
+                    <abp-input id="ApplicationsCount" type="hidden" asp-for="@Model.ApplicationsCount" />
+                    <abp-input id="MaxBatchCount" type="hidden" asp-for="@Model.MaxBatchCount" />
+                    @for (var i = 0; i < Model.BulkApplicationApprovals?.Count; i++)
+                    {
+                        <div id="@($"{Model.BulkApplicationApprovals[i].ApplicationId}_container")" class="batch-approval-container">
+                            <abp-row class="m-0 p-2 bulk-approval-row-header d-flex flex-nowrap">
+                                <abp-column size="_11" class="px-1 flex-grow-1">
+                                    <div class="approval-details-header">
+                                        <div class="reference-no">@Model.BulkApplicationApprovals[i].ReferenceNo</div>
+                                        <div class="applicant-name">@Model.BulkApplicationApprovals[i].ApplicantName</div>
+                                        <div class="form-name pr-1">@string.Format("({0})", @Model.BulkApplicationApprovals[i].FormName)</div>
+                                        <div class="application-status">@Model.BulkApplicationApprovals[i].ApplicationStatus</div>
+                                    </div>
+                                </abp-column>
+                                <abp-column size="_1" class="bulk-approval-remove-row d-flex justify-content-end">
+                                    <abp-button onclick='removeApplicationApproval("@Model.BulkApplicationApprovals[i].ApplicationId" + "_container")'
+                                                size="Small"
+                                                icon-type="Other"
+                                                icon="fa fa-times"
+                                                class="m-0 p-0"
+                                                data-parameter="@Model.BulkApplicationApprovals[i].ApplicationId" />
+                                </abp-column>
+                            </abp-row>
+
+                            <input name="BulkApplicationApprovals.Index" type="hidden" value="@i" />
+                            <abp-input type="hidden" asp-for="@Model.BulkApplicationApprovals[i].IsValid" />
+                            <abp-input type="hidden" asp-for="@Model.BulkApplicationApprovals[i].ApplicationId" />
+                            <abp-input type="hidden" asp-for="@Model.BulkApplicationApprovals[i].ApplicantName" />
+                            <abp-input type="hidden" asp-for="@Model.BulkApplicationApprovals[i].ReferenceNo" />
+
+                            <abp-row class="m-0 p-3">
+                                <abp-column size="_4" class="px-3">
+                                    <abp-input asp-for="@Model.BulkApplicationApprovals[i].RequestedAmount" class="unity-currency-input" disabled=true />
+                                </abp-column>
+                                <abp-column size="_4" class="px-3">
+                                    <abp-input asp-for="@Model.BulkApplicationApprovals[i].ApprovedAmount" disabled="@(!Model.BulkApplicationApprovals[i].IsValid)" class="unity-currency-input" onchange="approvedAmountUpdated(event)" />
+                                </abp-column>
+                                <abp-column size="_4">
+                                    <abp-input asp-for="@Model.BulkApplicationApprovals[i].DecisionDate" disabled="@(!Model.BulkApplicationApprovals[i].IsValid)" type="date" max="@DateTime.Now.ToString("yyyy-MM-dd")" onchange="decisionDateUpdated(event)" />
+                                </abp-column>
+                                @for (var j = 0; j < Model.BulkApplicationApprovals[i].Notes?.Count; j++)
+                                {
+                                    <abp-column size="_12" class="bulk-approval-notes-column px-1" id="@($"{Model.BulkApplicationApprovals[i].ApplicationId}_container_{@Model.BulkApplicationApprovals[i].Notes[j].Key}")" style="display:@(Model.BulkApplicationApprovals[i].Notes[j].Active ? "block" : "none")">
+                                        <span>
+                                            @if (Model.BulkApplicationApprovals[i].Notes[j].IsError)
+                                            {
+                                                <span class="approval-note-prefix approval-note-error">Error</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="approval-note-prefix">Note</span>
+                                            }
+                                            @Model.BulkApplicationApprovals[i].Notes[j].Description
+                                        </span>
+                                    </abp-column>
+                                }
+                            </abp-row>
+                        </div>
+                    }
+                </abp-card-body>
+            </abp-card>
+            <div id="batch-approval-summary" class="batch-approval-summary" style="display:@(Model.MaxBatchCountExceeded ? "block" : "none")">
+                <span class="approval-note-prefix approval-note-error">Error</span> @Model.MaxBatchCountExceededError
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button id="btnSubmitBatchApproval"
+                        data-busy-text="Saving..."
+                        class="btn btn-primary"
+                        disabled="@Model.Invalid"
+                        text="@L["ApplicationBatchApprovalRequest:SubmitButtonText"].Value"
+                        type="submit">
+            </abp-button>
+            <abp-button id="btnCancelBatchApproval"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                        text="@L["ApplicationBatchApprovalRequest:CancelButtonText"].Value"
+                        data-dismiss="modal"
+                        onclick="closeApprovals()">
+            </abp-button>
+        </abp-modal-footer>
+
+    </abp-modal>
+</form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+             $('#bulkApprovalForm .unity-currency-input').maskMoney({
+                thousands: ',',
+                decimal: '.'
+        }).maskMoney('mask');
+
+         $('#bulkApprovalForm .unity-currency-input').on('blur', function () {
+            if ($(this).val() === '' || $(this).val() === '0') {
+                $(this).val('0.00');
+            }
+        });
+        }
+    })();
+</script>

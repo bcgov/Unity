@@ -31,6 +31,13 @@
         class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
         text="@L["ApplicationList:AssignButton"].Value" />
 
+        @if (true) { // Validate against required permission         
+        <abp-button id="approveApplications"
+        data-selector="applications-table-actions"
+        button-type="Secondary"
+        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+        text="@L["ApplicationList:ApproveButton"].Value" />
+        }
 
         <abp-button id="tagApplication"
         data-selector="applications-table-actions"

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using Unity.Flex.Scoresheets;
 using System.ComponentModel.DataAnnotations.Schema;
 using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.Domain.Entities.Auditing;
@@ -8,6 +7,7 @@ using Volo.Abp.MultiTenancy;
 using Newtonsoft.Json;
 using Volo.Abp;
 using System.Linq;
+using Unity.Flex.Scoresheets.Enums;
 
 namespace Unity.Flex.Domain.Scoresheets
 {

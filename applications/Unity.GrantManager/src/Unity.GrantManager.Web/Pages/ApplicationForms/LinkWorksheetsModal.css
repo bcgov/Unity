@@ -21,7 +21,8 @@
 }
 
 .slots-col {
-    height: 100%;
+    display: flex;
+    flex-direction: column;
     flex: 0.5;
     padding: 5px;
     border-radius: 5px;
@@ -37,7 +38,7 @@
 }
 
 .multi-slot {
-    height: 170px;
+    height: 100px;
     overflow-y: scroll;
     width: 98%;
     border: 1px solid gray;

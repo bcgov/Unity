@@ -33,7 +33,11 @@ namespace Unity.Flex.Worksheets
         [RemoteService(false)]
         public async Task SyncWorksheetInstanceValueAsync(Guid worksheetInstanceId)
         {
-            var worksheetInstance = await worksheetInstanceRepository.GetAsync(worksheetInstanceId);
+            var worksheetInstance = await worksheetInstanceRepository.GetAsync(worksheetInstanceId, true);
+            
+            // There may be a bug somewhere with ABP or EF, this magic line of code get the models to refresh and attach correctly to the aggregate
+            _ = await customFieldValueRepository.GetListByWorksheetInstanceAsync(worksheetInstanceId);
+
             await worksheetsManager.UpdateWorksheetInstanceValueAsync(worksheetInstance);
         }
     }

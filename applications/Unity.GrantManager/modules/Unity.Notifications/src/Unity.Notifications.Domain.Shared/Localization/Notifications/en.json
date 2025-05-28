@@ -6,6 +6,9 @@
     "Permission:NotificationsPermissions.Settings": "Configure Notifications",
     "Setting:Notifications": "Notifications",
     "Setting:Notifications.Mailing.DefaultFromAddress.DisplayName": "From Address",
-    "Setting:Notifications.Mailing.DefaultFromAddress.Description": "The default From sender address"
+    "Setting:Notifications.Mailing.DefaultFromAddress.Description": "The default From sender address",
+    "Permission:Notifications": "Notifications",
+    "Permission:Notifications.Email": "Email",
+    "Permission:Notifications.Email.Send": "Send Email"
   }
 }

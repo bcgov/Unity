@@ -10,15 +10,30 @@
     Layout = null;
 }
 <br/>
-<div class="mb-2 card border"> 
-    <div class="card-header bg-default custom-active"> 
+<div id="application-history-div" class="mb-2 card border"> 
+    <div id="card-header-div" class="card-header bg-default"> 
         <h4 class="mb-0 card-title">Application Status History</h4> 
     </div> 
-    <div ref="tab-tabs" class="card-body" style="display: block;">
+    <div id="expanded-div" ref="tab-tabs" class="card-body" style="display: block;">
         <div id="history-div" class="mt-2 history-container">
-            
+            <input id="historyLength" type="hidden" value="@Model.ApplicationStatusHistoryList?.Count"/>
+            @if(@Model.ApplicationStatusHistoryList == null || @Model.ApplicationStatusHistoryList?.Count == 0)
+            {
+                <div class="mb-2 history-read-mode">
+                    <div class="unity-history-block read-mode">
+                        No History Found
+                    </div>
+                </div>
+            }
+
             @foreach (HistoryDto historyDto in Model.ApplicationStatusHistoryList)
             {
+                string fromString = "";
+                if (!historyDto.OriginalValue.IsNullOrEmpty()) 
+                {
+                    fromString = "from";
+                }
+
                 <div class="mb-2 history-read-mode">
                     <div class="unity-history-block read-mode">
                         <div class="d-flex justify-content-between">
@@ -28,12 +43,12 @@
                         </div>
                         <div class="history-lbl">
                             <div>
-                                Status changed from
-                                <span class="status-change">@historyDto.OriginalValue</span> to
+                                Status changed @fromString <span class="status-change">@historyDto.OriginalValue</span> 
+                                to
                                 <span class="status-change">@historyDto.NewValue</span>
                             </div>
                         </div>
-                        <div class="history-time mt-3 fw-bold">@historyDto.ChangeTime.ToLocalTime()</div>
+                        <div class="history-time mt-3 fw-bold">@historyDto.ChangeTime.ToString("yyyy-MM-dd h:mm tt")</div>
                     </div>
                 </div>
             }

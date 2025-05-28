@@ -22,6 +22,30 @@
         'community',
         'orgNumber',
         'orgBookStatus'];
+
+    //For stateRestore label in modal
+    let languageSetValues = {
+        buttons: {
+            stateRestore: 'View %d'
+        },
+        stateRestore:
+        {
+            creationModal: {
+                title: 'Create View',
+                name: 'Name',
+                button: 'Save',
+            },
+            emptyStates: 'No saved views',
+            renameTitle: 'Rename View',
+            renameLabel: 'New name for "%s"',
+            removeTitle: 'Delete View',
+            removeConfirm: 'Are you sure you want to delete "%s"?',
+            removeSubmit: 'Delete',
+            duplicateError: 'A view with this name already exists.',
+            removeError: 'Failed to remove view.',
+        }
+    }
+
     let actionButtons = [
         {
             extend: 'csv',
@@ -31,6 +55,26 @@
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
             }
+        },
+        {
+            extend: 'savedStates',
+            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
+            config: {
+                creationModal: true,
+                splitSecondaries: [
+                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk" ></i> Update'},
+                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square" ></i> Rename'},
+                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can" ></i> Delete'}
+                ]
+            },
+            buttons: [
+                { extend: 'createState', text: 'Save As View' },
+                { extend: 'removeAllStates', text: 'Delete All Views' },
+                {
+                    extend: 'spacer',
+                    style: 'bar',
+                }
+            ]
         }
     ];
 
@@ -41,16 +85,23 @@
             data: result.items
         };
     };
-    dataTable = initializeDataTable(dt,
+
+    dataTable = initializeDataTable({
+        dt,
         defaultVisibleColumns,
         listColumns,
-        10,
-        4,
-        unity.grantManager.grantApplications.grantApplication.getList,
-        {},
+        maxRowsPerPage: 10,
+        defaultSortColumn: 4,
+        dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
+        data: {},
         responseCallback,
         actionButtons,
-        'dynamicButtonContainerId');
+        pagingEnabled: true,
+        reorderEnabled: true,
+        languageSetValues,
+        dataTableName: 'GrantApplicationsTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'
+    });
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -65,7 +116,7 @@
                 selectApplication(type, index, 'select_application');
             });
         }
-        
+
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
@@ -84,6 +135,10 @@
         let table = $('#GrantApplicationsTable').DataTable();
         table.search($(this).val()).draw();
     });
+
+    //For savedStates
+    $('.grp-savedStates').text('Save View');
+    $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
 
     function selectApplication(type, indexes, action) {
         if (type === 'row') {
@@ -157,6 +212,11 @@
             getRiskRankingColumn(),
             getNotesColumn(),
             getRedStopColumn(),
+            getIndigenousColumn(),
+            getFyeDayColumn(),
+            getFyeMonthColumn(),
+            getApplicantIdColumn(),
+            getPayoutColumn()
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -176,7 +236,10 @@
             title: 'Submission #',
             data: 'referenceNo',
             name: 'referenceNo',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
+            render: function (data, type, row) {                
+                return `<a href="/GrantApplications/Details?ApplicationId=${row.id}">${data}</a>`;
+            },
             index: 2
         }
     }
@@ -197,11 +260,7 @@
             data: 'submissionDate',
             name: 'submissionDate',
             className: 'data-table-header',
-            render: function (data) {
-                return luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toLocaleString();
-            },
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
             index: 4
         }
     }
@@ -361,7 +420,7 @@
 
     function getOrganizationNumberColumn() {
         return {
-            title: 'Organization Number',
+            title: l('ApplicantInfoView:ApplicantInfo.OrgNumber'),
             name: 'orgNumber',
             data: 'applicant.orgNumber',
             className: 'data-table-header',
@@ -727,7 +786,7 @@
 
     function getOrganizationNameColumn() {
         return {
-            title: 'Organization Name',
+            title: l('Summary:Application.OrganizationName'),
             name: 'organizationName',
             data: 'organizationName',
             className: 'data-table-header',
@@ -947,9 +1006,79 @@
             data: 'applicant.redStop',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '';
+                return convertToYesNo(data);
             },
             index: 57
+        }
+    }
+
+    function getIndigenousColumn() {
+        return {
+            title: 'Indigenous',
+            name: 'indigenous',
+            data: 'applicant.indigenousOrgInd',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 58
+        }
+    }
+
+    function getFyeDayColumn() {
+        return {
+            title: 'FYE Day',
+            name: 'fyeDay',
+            data: 'applicant.fiscalDay',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 59
+        }
+    }
+
+    function getFyeMonthColumn() {
+        return {
+            title: 'FYE Month',
+            name: 'fyeMonth',
+            data: 'applicant.fiscalMonth',
+            className: 'data-table-header',
+            render: function (data) {
+                if (data) {
+                    return titleCase(data);
+                }
+                else {
+                    return '';
+                }
+            },
+            index: 60
+        }
+    }
+
+    function getApplicantIdColumn() {
+        return {
+            title: 'Applicant Id',
+            name: 'applicantId',
+            data: 'applicant.unityApplicantId',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 61
+        }
+    }
+
+    function getPayoutColumn() {
+        return {
+            title: 'Payout',
+            name: 'paymentInfo',
+            data: 'paymentInfo',
+            className: 'data-table-header',
+            render: function (data) {
+                return payoutDefinition(data?.approvedAmount ?? 0, data?.totalPaid ?? 0);
+            },
+            index: 62
         }
     }
 
@@ -985,6 +1114,17 @@
         return str.join(' ');
     }
 
+    function convertToYesNo(str) {
+        switch (str) {
+            case true:
+                return "Yes";
+            case false:
+                return "No";
+            default:
+                return '';
+        }
+    }
+
     $('.select-all-applications').click(function () {
         if ($(this).is(':checked')) {
             dataTable.rows({ 'page': 'current' }).select();
@@ -994,3 +1134,12 @@
         }
     });
 });
+function payoutDefinition(approvedAmount, totalPaid) {
+    if ((approvedAmount > 0 && totalPaid > 0) && (approvedAmount  === totalPaid)) {
+        return 'Fully Paid';
+    } else if (totalPaid === 0) {
+        return '';
+    } else {
+        return 'Partially Paid';
+    }
+}

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Unity.Reporting</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.AutoMapper" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.Ddd.Application" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="8.3.4" />
+    <ProjectReference Include="..\..\..\Unity.Flex\src\Unity.Flex.Application.Contracts\Unity.Flex.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
+    <ProjectReference Include="..\Unity.Reporting.Application.Contracts\Unity.Reporting.Application.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Handlers\" />
+  </ItemGroup>
+
+</Project>

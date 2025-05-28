@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
@@ -12,7 +13,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Dashboard;
 
-[Authorize]
+[Authorize(GrantApplicationPermissions.Dashboard.Default)]
 public class DashboardAppService : ApplicationService, IDashboardAppService
 {
     private readonly IApplicationRepository _applicationRepository;
@@ -42,11 +43,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         _applicationAssignmentRepository = applicationAssignmentRepository;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.EconomicRegionCount)]
     public virtual async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
 
-        var economicRegionDto = await ExecuteWithDisabledTracking(async () => {
+        var economicRegionDto = await ExecuteWithDisabledTracking(async () =>
+        {
 
             var query = from baseQuery in await GetBaseQueryAsync(parameters)
                         select new { baseQuery.Application };
@@ -66,11 +69,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return economicRegionDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.ApplicationStatusCount)]
     public virtual async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
 
-        var applicationStatusDto = await ExecuteWithDisabledTracking(async () => {
+        var applicationStatusDto = await ExecuteWithDisabledTracking(async () =>
+        {
 
             var query = from baseQuery in await GetBaseQueryAsync(parameters)
                         select new { baseQuery.Application, baseQuery.ApplicationStatus };
@@ -90,11 +95,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return applicationStatusDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.ApplicationTagsCount)]
     public virtual async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
 
-        var applicationTagsDto = await ExecuteWithDisabledTracking(async () => {
+        var applicationTagsDto = await ExecuteWithDisabledTracking(async () =>
+        {
 
             var query = from baseQuery in await GetBaseQueryAsync(parameters)
                         join tag in await _applicationTagsRepository.GetQueryableAsync() on baseQuery.Application.Id equals tag.ApplicationId
@@ -113,11 +120,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return applicationTagsDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector)]
     public virtual async Task<List<GetSubsectorRequestedAmtDto>> GetRequestedAmountPerSubsectorAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
 
-        var subSectorRequestedAmtDto = await ExecuteWithDisabledTracking(async () => {
+        var subSectorRequestedAmtDto = await ExecuteWithDisabledTracking(async () =>
+        {
 
             var query = from baseQuery in await GetBaseQueryAsync(parameters)
                         join applicant in await _applicantRepository.GetQueryableAsync() on baseQuery.Application.ApplicantId equals applicant.Id
@@ -141,11 +150,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return subSectorRequestedAmtDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount)]
     public virtual async Task<List<GetApplicationAssigneeDto>> GetApplicationAssigneeCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
 
-        var applicationAssigneeDto = await ExecuteWithDisabledTracking(async () => {
+        var applicationAssigneeDto = await ExecuteWithDisabledTracking(async () =>
+        {
 
             var query = from baseQuery in await GetBaseQueryAsync(parameters)
                         where parameters.Assignees.Contains(baseQuery.AppAssignee.AssigneeId.ToString())
@@ -171,6 +182,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return applicationAssigneeDto;
     }
 
+    [Authorize(GrantApplicationPermissions.Dashboard.RequestApprovedCount)]
     public virtual async Task<List<GetRequestedApprovedAmtDto>> GetRequestApprovedCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -193,7 +205,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             };
 
             return queryResult;
-        }); 
+        });
 
         return requestApprovedAmtDto;
     }

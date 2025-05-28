@@ -8,11 +8,15 @@ using System.Globalization;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using Volo.Abp.Domain.Repositories;
+using Unity.GrantManager.Applicants;
+using Unity.Payments.Integrations.Cas;
 
 namespace Unity.GrantManager.Intakes
 {
     [RemoteService(true)]
     public class ApplicantLookupService(
+                            ISupplierService supplierService,
+                            IApplicantAppService applicantAppService,
                             IApplicantRepository applicantRepository,
                             IApplicantAddressRepository applicantAddressRepository,
                             IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantLookupService
@@ -41,25 +45,53 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        public async Task<string> ApplicantLookupByApplicantName(string unityApplicantName)
+        public async Task<string> ApplicantLookupByBceidBusinesName(string bceidBusinessName, bool createIfNotExists = false)
         {
-            if (string.IsNullOrWhiteSpace(unityApplicantName))
+            if (string.IsNullOrWhiteSpace(bceidBusinessName))
             {
-                throw new ArgumentNullException(nameof(unityApplicantName), "Unity applicant name cannot be null or empty.");
+                throw new ArgumentNullException(nameof(bceidBusinessName), "Unity applicant name cannot be null or empty.");
             }
 
             try
             {
-                Applicant? applicant = await applicantRepository.GetByUnityApplicantNameAsync(unityApplicantName);
+                Applicant? applicant = await applicantRepository.GetByUnityApplicantNameAsync(bceidBusinessName);
                 if (applicant == null)
                 {
-                    throw new KeyNotFoundException("Applicant not found.");
+                    if (!createIfNotExists)
+                    {
+                        throw new KeyNotFoundException("Applicant not found.");
+                    }
+
+                    int unityApplicantId = await applicantAppService.GetNextUnityApplicantIdAsync();
+                    applicant = await applicantRepository.InsertAsync(new Applicant
+                    {
+                        ApplicantName = bceidBusinessName,
+                        UnityApplicantId = unityApplicantId.ToString(),
+                        RedStop = false
+                    });
                 }
+
+                if (applicant.OrgNumber.IsNullOrEmpty() || applicant.BusinessNumber.IsNullOrEmpty())
+                {
+                    applicant = await applicantAppService.UpdateApplicantOrgMatchAsync(applicant);
+                    if (applicant?.OrgNumber != null && applicant?.BusinessNumber != null)
+                    {
+                        try
+                        {
+                            await supplierService.UpdateApplicantSupplierInfoByBn9(applicant.BusinessNumber, applicant.Id);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "ApplicantService->ApplicantLookupByBceidBusinesName Exception: {Message}", ex.Message);
+                        }
+                    }
+                }
+
                 return await FormatApplicantJsonAsync(applicant);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "ApplicantService->ApplicantLookupByApplicantName Exception: {Message}", ex.Message);
+                Logger.LogError(ex, "ApplicantService->ApplicantLookupByBceidBusinesName Exception: {Message}", ex.Message);
                 throw new UserFriendlyException("An error occurred while retrieving the applicant.");
             }
         }
@@ -74,7 +106,7 @@ namespace Unity.GrantManager.Intakes
             string operatingDate = applicant.StartedOperatingDate != null
                 ? ((DateOnly)applicant.StartedOperatingDate).ToString("o", CultureInfo.InvariantCulture)
                 : string.Empty;
-            
+
             string bcSocietyNumber = applicant.OrgNumber?.StartsWith('S') == true ? applicant.OrgNumber : string.Empty;
 
             // Fetch address and agent information
@@ -82,7 +114,7 @@ namespace Unity.GrantManager.Intakes
             List<ApplicantAddress>? applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
 
             // Order by date (for example, DateCreated) in descending order
-            applicantAddresses = applicantAddresses?.OrderByDescending(x => x.LastModificationTime).ToList();
+            applicantAddresses = applicantAddresses?.OrderByDescending(x => x.CreationTime).ToList();
 
             // Filter physical and mailing addresses from the sorted list
             ApplicantAddress? applicantPhysicalAgent = applicantAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.PhysicalAddress);
@@ -96,13 +128,15 @@ namespace Unity.GrantManager.Intakes
                 ApplicantName = applicant.ApplicantName,
                 UnityApplicantId = applicant.UnityApplicantId,
                 BcSocietyNumber = bcSocietyNumber,
+                OrgName = applicant.OrgName,
                 OrgNumber = applicant.OrgNumber,
+                BusinessNumber = applicant.BusinessNumber,
                 Sector = applicant.Sector,
                 OperatingStartDate = operatingDate,
                 FiscalYearDay = applicant.FiscalDay.ToString(),
                 FiscalYearMonth = applicant.FiscalMonth,
-                BusinessNumber = applicant.BusinessNumber,
                 RedStop = applicant.RedStop,
+                IndigenousOrgInd = applicant.IndigenousOrgInd,
                 PhysicalAddressUnit = applicantPhysicalAgent?.Unit ?? "",
                 PhysicalAddressLine1 = applicantPhysicalAgent?.Street ?? "",
                 PhysicalAddressLine2 = applicantPhysicalAgent?.Street2 ?? "",

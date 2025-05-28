@@ -5,6 +5,8 @@ using Volo.Abp;
 using Volo.Abp.Modularity;
 using Volo.Abp.Uow;
 using Volo.Abp.Testing;
+using NSubstitute;
+using Volo.Abp.Features;
 
 namespace Unity.Flex;
 
@@ -55,5 +57,15 @@ public abstract class FlexTestBase<TStartupModule> : AbpIntegratedTest<TStartupM
                 return result;
             }
         }
+    }
+
+    protected override void AfterAddApplication(IServiceCollection services)
+    {
+        // Because some of the tests rely on the feature check, always set to true for the module tests
+        var featureMock = Substitute.For<IFeatureChecker>();
+        featureMock.IsEnabledAsync(Arg.Any<string>()).Returns(true);
+        services.AddSingleton(featureMock);
+
+        base.AfterAddApplication(services);
     }
 }

@@ -6,9 +6,9 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.Web.Services;
 using Unity.GrantManager.Web.Views.Shared.Components.Summary;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.DependencyInjection;
 using Xunit;
 

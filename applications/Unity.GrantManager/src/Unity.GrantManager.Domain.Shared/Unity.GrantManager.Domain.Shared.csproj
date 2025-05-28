@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -26,7 +26,7 @@
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Domain.Shared\Unity.Notifications.Domain.Shared.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Shared\Unity.Payments.Shared.csproj" />
-  </ItemGroup>
+  <ProjectReference Include="..\..\modules\Unity.Reporting\src\Unity.Reporting.Domain.Shared\Unity.Reporting.Shared.csproj" /></ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Localization\GrantManager\*.json" />

@@ -57,7 +57,7 @@ public class UnityAspNetCoreMvcUIThemeUX2Module : AbpModule
                 {
                     bundle
                         .AddBaseBundles(StandardBundles.Styles.Global)
-                        .AddContributors(typeof(UnityThemeUX2GlobalStyleContributor));
+                        .AddContributors(typeof(UnityThemeUX2GlobalStyleContributor));                        
                 });
 
             options

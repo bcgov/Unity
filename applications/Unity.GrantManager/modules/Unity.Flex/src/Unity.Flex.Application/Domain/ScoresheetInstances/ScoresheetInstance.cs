@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Modules.Shared.Correlation;
@@ -25,6 +26,9 @@ namespace Unity.Flex.Domain.ScoresheetInstances
 
         public virtual Collection<Answer> Answers { get; private set; } = [];
 
+        [Column(TypeName = "jsonb")]
+        public virtual string ReportData { get; private set; } = "{}";
+
         public ScoresheetInstance(Guid id, 
             Guid scoresheetId, 
             Guid correlationId,
@@ -39,6 +43,12 @@ namespace Unity.Flex.Domain.ScoresheetInstances
         {
             // this needs to dig and get the sheet + sections + field values
             Value = JsonSerializer.Serialize(this);
+            return this;
+        }
+
+        public ScoresheetInstance SetReportingData(string reportingData)
+        {
+            ReportData = reportingData;
             return this;
         }
     }

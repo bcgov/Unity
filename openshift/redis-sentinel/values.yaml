@@ -1,0 +1,40 @@
+
+redis:
+  fullnameOverride: redis-ha
+  architecture: replication
+  auth:
+    enabled: true # If true, the Redis password will be enabled
+    sentinel: true # If true, the Redis Sentinel will be enabled
+    usePasswordFiles: false # If true, the password will be stored in a file
+  image:
+    registry: docker.io
+    repository: bitnami/redis
+    tag: 7.2.4-debian-12-r9
+  sentinel:
+    enabled: true
+    masterSet: "redisMasterSet"
+    persistence:
+      enabled: false
+    containerPorts:
+      sentinel: 26379
+    podSecurityContext:
+      enabled: false
+    containerSecurityContext:
+      enabled: false
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "20m"
+  replica:
+    replicaCount: 1
+    podSecurityContext:
+      enabled: false
+    containerSecurityContext:
+      enabled: false
+    persistence:
+      enabled: true
+      size: 64Mi
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "20m"

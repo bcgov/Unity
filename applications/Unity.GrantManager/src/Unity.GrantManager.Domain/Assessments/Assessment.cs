@@ -62,12 +62,12 @@ public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentSta
     public void ConfigureWorkflow(StateMachine<AssessmentState, AssessmentAction> stateMachine)
     {
         stateMachine.Configure(AssessmentState.IN_PROGRESS)
-            .Permit(AssessmentAction.Confirm, AssessmentState.COMPLETED);
+            .Permit(AssessmentAction.Complete, AssessmentState.COMPLETED);
 
         // NOTE: This will be removed when there are no more assessments IN_REVIEW
         stateMachine.Configure(AssessmentState.IN_REVIEW)
             .Permit(AssessmentAction.SendBack, AssessmentState.IN_PROGRESS)
-            .Permit(AssessmentAction.Confirm, AssessmentState.COMPLETED);
+            .Permit(AssessmentAction.Complete, AssessmentState.COMPLETED);
 
         stateMachine.Configure(AssessmentState.COMPLETED)
             .Permit(AssessmentAction.SendBack, AssessmentState.IN_PROGRESS)

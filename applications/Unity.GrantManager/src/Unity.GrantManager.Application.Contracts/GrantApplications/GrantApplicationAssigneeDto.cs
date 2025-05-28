@@ -10,4 +10,5 @@ public class GrantApplicationAssigneeDto : EntityDto<Guid>
     public Guid ApplicationId { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string? Duty { get; set; } = string.Empty;
+    public string? Email { get; set; } = string.Empty;
 }

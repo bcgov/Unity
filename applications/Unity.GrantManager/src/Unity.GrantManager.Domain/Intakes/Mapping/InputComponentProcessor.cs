@@ -22,11 +22,11 @@ namespace Unity.GrantManager.Intakes
 
         private static readonly HashSet<string> allowableContainerTypes = new HashSet<string>
         {
-            "tabs", "table", "simplecols2", "simplecols3", "simplecols4", 
-            "simplecontent", "simplepanel", "simpleparagraph", "simpletabs", 
+            "tabs", "table", "simplecols2", "simplecols3", "simplecols4",
+            "simplecontent", "simplepanel", "simpleparagraph", "simpletabs",
             "container", "columns", "panel"
         };
-        private static readonly HashSet<string> columnTypes  = new HashSet<string>
+        private static readonly HashSet<string> columnTypes = new HashSet<string>
         {
             "simplecols2",
             "simplecols3",
@@ -39,11 +39,16 @@ namespace Unity.GrantManager.Intakes
             "datagrid"
         };
 
-        private void ProcessComponentToDictionary(string key, string? tokenType, string label)
+        private static readonly HashSet<string> nestedKeyFields = new HashSet<string>
+        {
+            "simplecheckboxes","simplecheckboxadvanced"
+        };
+
+        private void ProcessComponentToDictionary(string key, string? tokenType, string label, string? tokenValues)
         {
             if (!components.ContainsKey(key))
             {
-                var jsonValue = JsonConvert.SerializeObject(new { type = tokenType, label });
+                var jsonValue = JsonConvert.SerializeObject(new { type = tokenType, label, values = tokenValues });
                 components.Add(key, jsonValue);
             }
         }
@@ -93,10 +98,25 @@ namespace Unity.GrantManager.Intakes
                 string? key = token["key"]?.ToString();
                 string? label = token["label"]?.ToString();
                 string? tokenType = token["type"]?.ToString();
+                string? tokenValues = token["values"]?.ToString();
+
+                // Check if tokenType is in nestedKeyFields and extract values
+                if (key != null
+                    && tokenType != null
+                    && nestedKeyFields.Contains(tokenType)
+                    && token["values"] is JArray valuesArray)
+                {
+                    tokenValues = string.Join(",", valuesArray.Select(v => v["value"]?.ToString()));
+                }
+                else
+                {
+                    tokenValues = token["values"]?.ToString();
+                }
+
 
                 if (key != null && label != null)
                 {
-                    ProcessComponentToDictionary(key, tokenType, label);
+                    ProcessComponentToDictionary(key, tokenType, label, tokenValues);
                 }
             }
             catch (Exception ex)

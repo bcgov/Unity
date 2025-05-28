@@ -1,6 +1,6 @@
 apiVersion: v2
 name: crunchy-postgres
-description: A Helm chart for Kubernetes
+description: High Availability CrunchyDB Operator Chart
 
 icon: https://www.postgresql.org/media/img/about/press/elephant.png
 

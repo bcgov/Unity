@@ -9,3 +9,7 @@
     padding-left: 10px;
     color: rgb(109, 109, 109);
 }
+
+#SiteInfoTable_wrapper .dt-buttons {
+    float: right;
+}

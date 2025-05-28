@@ -32,11 +32,21 @@
     </abp-script-bundle>
 }
 
-@section content_toolbar {
-    @await Component.InvokeAsync(typeof(AbpPageToolbarViewComponent), new { pageName = typeof(IndexModel).FullName })
-}
-<abp-card id="UsersWrapper">
-    <abp-card-body>
-        <abp-table id="UsersTable" striped-rows="false" class="nowrap"></abp-table>
-    </abp-card-body>
-</abp-card>
+<div class="container-fluid px-0">
+    <div class="action-bar p-2 filter-search-action-bar">
+        <div class="unity-page-titlebar">
+            <h4>@L["Users"]</h4>
+        </div>
+
+        <div class="filter-search-action-bar_search-wrapper">
+            <input type="search" id="search-users" placeholder="Search" class="tbl-search">
+        </div>
+
+        <div class="btn-group" id="app_custom_buttons"></div>
+
+        <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+    <div class="p-3 pt-0">
+        <abp-table id="UsersTable"></abp-table>
+    </div>
+</div>

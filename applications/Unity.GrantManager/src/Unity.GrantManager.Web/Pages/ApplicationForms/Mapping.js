@@ -65,7 +65,8 @@
         inputSearchBar: $('#search-bar'),
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
-        linkWorksheets: $('#btn-link-worksheets')
+        linkWorksheets: $('#btn-link-worksheets'),
+        uiConfigurationTab: $('#nav-ui-configuration')
     };
 
     init();
@@ -80,7 +81,8 @@
         let availableChefsFields = JSON.parse(availableChefFieldsString)
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
-        setupTooltips();        
+        setupTooltips();
+        initializeUIConfiguration();
     }
 
     function setupTooltips() {
@@ -105,6 +107,28 @@
 
     function handleLinkWorksheets() {
         worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });        
+    }
+
+    function initializeUIConfiguration() {
+        const providerName = 'F';
+        const providerKey = $('#applicationFormId').val();
+        const providerKeyDisplayName = 'Test.Display.Name';
+
+        $.ajax({
+            url: abp.appPath + 'SettingManagement/ZoneManagement',
+            type: 'GET',
+            data: {
+                providerName: providerName,
+                providerKey: providerKey,
+                providerKeyDisplayName: providerKeyDisplayName
+            },
+            success: function (response) {
+                UIElements.uiConfigurationTab.html(response);
+            },
+            error: function () {
+                abp.notify.error('Failed to load UI Configuration.');
+            }
+        });
     }
 
     function handleEdit() {

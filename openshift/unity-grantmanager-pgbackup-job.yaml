@@ -120,7 +120,7 @@ objects:
                 PGPASSWORD="$UNITY_POSTGRES_PASSWORD" pg_dumpall --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME);
                 echo "";echo "Backup successful";du -h /var/lib/pgsql/backups/$FILENAME;
                 echo "";echo "to restore the backup use: $ psql --username=$UNITY_POSTGRES_USER --password --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --username postgres < /var/lib/pgsql/backups/<backupfile> (unpacked with gunzip)";
-                echo "";ls -la /var/lib/pgsql/backups
+                echo "";ls -lR /var/lib/pgsql/backups
             ## Add single and mapped environment values
             env:
               - name: DATABASE_BACKUP_KEEP

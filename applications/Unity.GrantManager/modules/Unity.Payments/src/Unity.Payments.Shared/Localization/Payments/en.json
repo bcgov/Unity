@@ -15,17 +15,22 @@
     "ApplicationPaymentRequest:Title": "Request Payment",
     "ApplicationPaymentRequest:Amount": "Amount",
     "ApplicationPaymentRequest:Description": "Description",
+    "ApplicationPaymentRequest:SiteName": "Site Name",
     "ApplicationPaymentRequest:InvoiceNumber": "Invoice #",
     "ApplicationPaymentRequest:SiteNumber": "Site #",
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
     "ApplicationPaymentRequest:Validations:RemainingAmountExceeded": "Cannot add a payment that exceeds the remaining amount of ",
 
-
     "ApplicationPaymentTable:BatchNumber": "Batch Number",
     "ApplicationPaymentTable:TotalAmount": "Total Amount",
     "ApplicationPaymentTable:Status": "Status",
     "ApplicationPaymentTable:RequestedOn": "Requested On",
+    "ApplicationPaymentListTable:SubmissionConfirmationCode": "Submission #",
+    "ApplicationPaymentListTable:PaymentRequesterName": "Payment Requester",
+    "ApplicationPaymentListTable:L1ApproverName": "L1 Approver",
+    "ApplicationPaymentListTable:L2ApproverName": "L2 Approver",
+    "ApplicationPaymentListTable:L3ApproverName": "L3 Approver",
     "ApplicationPaymentListTable:L1ApprovalDate": "L1 Approval Date",
     "ApplicationPaymentListTable:L2ApprovalDate": "L2 Approval Date",
     "ApplicationPaymentListTable:L3ApprovalDate": "L3 Approval Date",
@@ -47,7 +52,7 @@
     "ApplicationPaymentListTable:InvoiceStatus": "Invoice Status",
     "ApplicationPaymentListTable:PaymentStatus": "CAS Payment Status",
 
-    "ApplicantInfoView:SupplierInfoTitle": "Payments",
+    "ApplicantInfoView:SupplierInfoTitle": "Supplier Info",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber": "Site #",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup": "Pay Group",
@@ -59,6 +64,7 @@
     "ApplicantInfoView:ApplicantInfo.SiteInfo:City": "City",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:Province": "Province",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:PostalCode": "Postal Code",
+    "ApplicantInfoView:ApplicantInfo.Search": "Search In BC Registries (Registered Socities Only)",
 
     "PaymentInfoView:PaymentInfoTitle": "Payment Summary",
     "PaymentInfoView:PaymentInfo.RequestedAmount": "Requested Amount",
@@ -73,6 +79,11 @@
     "PaymentInfoView:ApplicationPaymentListTable.Amount": "Amount",
     "PaymentInfoView:ApplicationPaymentListTable.Status": "Status",
     "PaymentInfoView:ApplicationPaymentListTable.Description": "Description",
+    "PaymentInfoView:ApplicationPaymentListTable.MailingAddress": "Mailing Address",
+    "PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount": "Bank Account",
+    "PaymentInfoView:ApplicationPaymentListTable.SiteNumber": "Site Number",
+    "PaymentInfoView:ApplicationPaymentListTable.SupplierNumber": "Supplier Number",
+    "PaymentInfoView:ApplicationPaymentListTable.SupplierName": "Supplier Name",
     "PaymentInfoView:ApplicationPaymentListTable.RequestedOn": "Requested On",
     "PaymentInfoView:ApplicationPaymentListTable.UpdatedOn": "Updated On",
     "PaymentInfoView:ApplicationPaymentListTable.PaidOn": "Paid On",
@@ -91,13 +102,28 @@
     "ApplicationPaymentStatusRequest:L2ApproveOrDeclineTitle": "Approve/Decline L2 Payment Requests",
     "ApplicationPaymentStatusRequest:L3ApproveOrDeclineTitle": "Approve/Decline L3 Payment Requests",
 
-
     "Permission:Payments": "Payments",
     "Permission:Payments.Default": "Payments",
     "Permission:Payments.L1ApproveOrDecline": "Approve/Decline L1 Payments",
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
     "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
     "Permission:Payments.RequestPayment": "Request Payment",
-    "Permission:Payments.EditSupplierInfo": "Update Supplier Info"
+    "Permission:Payments.EditSupplierInfo": "Update Supplier Info",
+
+    "Enum:PaymentRequestStatus.L1Pending": "L1 Pending",
+    "Enum:PaymentRequestStatus.L1Approved": "L1 Approved",
+    "Enum:PaymentRequestStatus.L1Declined": "L1 Declined",
+    "Enum:PaymentRequestStatus.L2Pending": "L2 Pending",
+    "Enum:PaymentRequestStatus.L2Approved": "L2 Approved",
+    "Enum:PaymentRequestStatus.L2Declined": "L2 Declined",
+    "Enum:PaymentRequestStatus.L3Pending": "L3 Pending",
+    "Enum:PaymentRequestStatus.L3Approved": "L3 Approved",
+    "Enum:PaymentRequestStatus.L3Declined": "L3 Declined",
+    "Enum:PaymentRequestStatus.Submitted": "Submitted to CAS",
+    "Enum:PaymentRequestStatus.Validated": "Validated",
+    "Enum:PaymentRequestStatus.NotValidated": "Not Validated",
+    "Enum:PaymentRequestStatus.Paid": "Paid",
+    "Enum:PaymentRequestStatus.Failed": "Payment Failed",
+    "Enum:PaymentRequestStatus.PaymentFailed": "Payment Failed"
   }
 }

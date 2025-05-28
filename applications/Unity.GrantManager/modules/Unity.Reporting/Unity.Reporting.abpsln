@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "Unity.Reporting": {
+      "path": "Unity.Reporting.abpmdl"
+    }
+  }
+}

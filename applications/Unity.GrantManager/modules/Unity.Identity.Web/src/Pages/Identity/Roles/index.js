@@ -1,6 +1,5 @@
-(function ($) {
+$(function () {
     let l = abp.localization.getResource('AbpIdentity');
-
     let _identityRoleAppService = volo.abp.identity.identityRole;
     let _permissionsModal = new abp.ModalManager(
         abp.appPath + 'AbpPermissionManagement/PermissionManagementModal'
@@ -78,6 +77,11 @@
                 [
                     {
                         title: l("Actions"),
+                        orderable: false,
+                        className: 'notexport text-center',
+                        name: 'rowActions',
+                        data: 'id',
+                        index: 0,
                         rowAction: {
                             items: abp.ui.extensions.entityActions.get('identity.role').actions.toArray()
                         }
@@ -113,36 +117,46 @@
         },
         0 //adds as the first contributor
     );
-    
-    $(function () {
-        let _$table = $('#IdentityRolesTable');        
 
-        _dataTable = _$table.DataTable(
-            abp.libs.datatables.normalizeConfiguration({
-                order: [[1, 'asc']],
-                searching: true,
-                processing: true,
-                serverSide: true,
-                scrollX: true,
-                paging: true,
-                ajax: abp.libs.datatables.createAjax(
-                    _identityRoleAppService.getList
-                ),
-                columnDefs: abp.ui.extensions.tableColumns.get('identity.role').columns.toArray()
-            })
-        );
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
+    let actionButtons = [
+        ...commonTableActionButtons(l('Roles'))
+    ];
 
-        _createModal.onResult(function () {
-            _dataTable.ajax.reloadEx();
-        });
+    let dt = $('#IdentityRolesTable');
+    let listColumns = abp.ui.extensions.tableColumns.get('identity.role').columns.toArray();
+    let defaultVisibleColumns = listColumns.map((item) => { return item['data']; });
 
-        _editModal.onResult(function () {
-            _dataTable.ajax.reloadEx();
-        });
-
-        $('#AbpContentToolbar button[name=CreateRole]').click(function (e) {
-            e.preventDefault();
-            _createModal.open();
-        });
+    _dataTable = initializeDataTable({
+        dt,
+        defaultVisibleColumns,
+        listColumns,
+        maxRowsPerPage: 25,
+        defaultSortColumn: 1,
+        dataEndpoint: _identityRoleAppService.getList,
+        data: {},
+        responseCallback: function (result) {
+            return {
+                recordsTotal: result.totalCount,
+                recordsFiltered: result.items.length,
+                data: result.items
+            };
+        },
+        actionButtons,
+        pagingEnabled: true,
+        reorderEnabled: false,
+        languageSetValues: {},
+        dataTableName: 'IdentityRolesTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        useNullPlaceholder: true,
+        externalSearchId: 'search-roles'
     });
-})(jQuery);
+
+    _createModal.onResult(function () {
+        _dataTable.ajax.reloadEx();
+    });
+
+    _editModal.onResult(function () {
+        _dataTable.ajax.reloadEx();
+    });
+});

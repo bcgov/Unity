@@ -28,6 +28,8 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public DateOnly? StartedOperatingDate { get; set; }
     public Guid? TenantId { get; set; }
     public Guid? SupplierId { get; set; }
+    public Guid? SiteId { get; set; }
     public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
     public decimal? MatchPercentage { get; set; }
+    public string? NonRegOrgName { get; set; }
 }

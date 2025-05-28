@@ -3,9 +3,9 @@
     justify-content: space-between;
 }
 
-.custom-dynamic-table.custom-table-edit th:last-child {
-    width: 20px !important;
-    max-width: 20px !important;
+.custom-dynamic-table.custom-table-actions th:last-child {
+    width: 75px !important;
+    max-width: 75px !important;
 }
 
 .dynamic-grid-summary {
@@ -40,4 +40,23 @@
 
 .edit_row_field {
     padding-bottom: 1rem;
+}
+
+.custom-fields-split {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: flex-start;
+}
+
+.custom-fields-split > div {
+    width: 100%;
+}
+
+.customgrid-edit-row-header {
+    margin-bottom: 1rem;
+}
+
+.customgrid-edit-dymanic-field {
+    width: 90%;
 }
