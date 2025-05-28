@@ -349,7 +349,6 @@ thead input {
 }
 
 .abp-widget-wrapper {
-    /* position: sticky; */
     top: 0;
     z-index: 2;
 }
@@ -532,6 +531,7 @@ div.dt-buttons div.dropdown-menu {
 
 .dataTables_filter {
     margin-bottom: .5rem;
+    display: none;
 }
 
 .custom-table-btn {
@@ -572,10 +572,6 @@ div.dt-buttons div.dropdown-menu {
     background-color: var(--bc-colors-blue-primary);
     border-radius: 50%;
     margin-left: 5px;
-}
-
-.dataTables_filter {
-    display: none;
 }
 
 ul.pagination {

@@ -1,18 +1,17 @@
-﻿@using Microsoft.AspNetCore.Authorization;
+﻿@using Microsoft.AspNetCore.Authorization
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
-@using Unity.GrantManager.Permissions;
-@using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
+@using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.Features
+
+@model ProjectInfoViewModel
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IFeatureChecker FeatureChecker
-
-@model ProjectInfoViewModel
 @{
     Layout = null;
 }
