@@ -30,6 +30,9 @@ using Unity.GrantManager.Flex;
 using Unity.Payments.Integrations.Cas;
 using Microsoft.Extensions.Logging;
 using Unity.Flex.Worksheets;
+using Unity.Payments.Enums;
+using Unity.Payments.PaymentInfo;
+using Unity.Payments.PaymentRequests;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -52,6 +55,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
     private readonly ISupplierService _iSupplierService;
+    private readonly IPaymentRequestAppService _paymentRequestService;
 
     public GrantApplicationAppService(
         IApplicationManager applicationManager,
@@ -66,7 +70,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicantAgentRepository applicantAgentRepository,
         IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus,
-        ISupplierService iSupplierService)
+        ISupplierService iSupplierService,
+        IPaymentRequestAppService paymentRequestService)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -81,37 +86,56 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _applicantAddressRepository = applicantAddressRepository;
         _iSupplierService = iSupplierService;
         _localEventBus = localEventBus;
+        _paymentRequestService = paymentRequestService;
     }
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(input.SkipCount, input.MaxResultCount);
-        var appDtos = new List<GrantApplicationDto>();
-        var rowCounter = 0;
+        var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(input.SkipCount, input.MaxResultCount, input.Sorting);
 
-        foreach (var grouping in groupedResult)
+        // Pre-fetch payment requests for all applications in a single query to reduce database calls
+        var applicationIds = groupedResult.SelectMany(g => g).Select(a => a.Id).ToList();
+        var paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+        bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+
+        // Map applications to DTOs
+        var appDtos = groupedResult.Select(grouping =>
         {
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
-            appDto.Status = grouping.First().ApplicationStatus.InternalStatus;
+            var firstApplication = grouping.First();
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(firstApplication);
 
-            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().Applicant);
-            appDto.Category = grouping.First().ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = grouping.First().ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
-            appDto.Owner = BuildApplicationOwner(grouping.First().Owner);
-            appDto.OrganizationName = grouping.First().Applicant?.OrgName ?? string.Empty;
-            appDto.OrganizationType = grouping.First().Applicant?.OrganizationType ?? string.Empty;
-            appDto.Assignees = BuildApplicationAssignees(grouping.First().ApplicationAssignments);
+            // Map additional properties
+            appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
+            appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
+            appDto.ApplicationTag = firstApplication.ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
+            appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
+            appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
+            appDto.OrganizationType = firstApplication.Applicant?.OrganizationType ?? string.Empty;
+            appDto.Assignees = BuildApplicationAssignees(firstApplication.ApplicationAssignments);
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
-            appDto.ContactFullName = grouping.First().ApplicantAgent?.Name;
-            appDto.ContactEmail = grouping.First().ApplicantAgent?.Email;
-            appDto.ContactTitle = grouping.First().ApplicantAgent?.Title;
-            appDto.ContactBusinessPhone = grouping.First().ApplicantAgent?.Phone;
-            appDto.ContactCellPhone = grouping.First().ApplicantAgent?.Phone2;
-            appDto.RowCount = rowCounter;
-            appDtos.Add(appDto);
-            rowCounter++;
-        }
+            appDto.ContactFullName = firstApplication.ApplicantAgent?.Name;
+            appDto.ContactEmail = firstApplication.ApplicantAgent?.Email;
+            appDto.ContactTitle = firstApplication.ApplicantAgent?.Title;
+            appDto.ContactBusinessPhone = firstApplication.ApplicantAgent?.Phone;
+            appDto.ContactCellPhone = firstApplication.ApplicantAgent?.Phone2;
+
+            //Payment request info if the feature is enabled
+            if (paymentsFeatureEnabled)
+            {
+                var paymentInfo = new PaymentInfoDto
+                {
+                    ApprovedAmount = firstApplication.ApprovedAmount,
+                    TotalPaid = paymentRequests
+                        .Where(pr => pr.CorrelationId == firstApplication.Id && pr.Status.Equals(PaymentRequestStatus.Submitted))
+                        .Sum(pr => pr.Amount)
+                };
+                appDto.PaymentInfo = paymentInfo;
+            }
+
+            return appDto;
+        }).ToList();
 
         var totalCount = await _applicationRepository.GetCountAsync();
 
