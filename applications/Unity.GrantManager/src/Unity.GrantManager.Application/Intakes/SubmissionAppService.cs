@@ -14,6 +14,8 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Intakes;
 
@@ -28,6 +30,7 @@ public class SubmissionAppService(
         ) : GrantManagerAppService, ISubmissionAppService
 {
 
+    protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     public async Task<object?> GetSubmission(Guid? formSubmissionId)
     {
@@ -192,9 +195,10 @@ public class SubmissionAppService(
                                 chefsSubmissions.AddRange(submissions);
                             }
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            
+                            var ExceptionMessage = ex.Message;
+                            logger.LogError(ex, "GetSubmissionsList Exception: {ExceptionMessage}", ex.Message);
                         }
 
                         checkedForms.Add(id ?? string.Empty);
