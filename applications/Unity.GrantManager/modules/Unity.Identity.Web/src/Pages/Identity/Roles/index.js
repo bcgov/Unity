@@ -154,6 +154,7 @@ $(function () {
             };
         },
         actionButtons,
+        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},

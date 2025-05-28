@@ -16,31 +16,30 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-buttons/js/dataTables.buttons.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons/js/buttons.colVis.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons/js/buttons.html5.min.js");
-        context.Files.AddIfNotContains("/libs/datatables.net-select/js/dataTables.select.js");
-        context.Files.AddIfNotContains("/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.js");
-        context.Files.AddIfNotContains("/libs/datatables.net-select-bs5/js/select.bootstrap5.js");
-        context.Files.AddIfNotContains("/libs/datatables.net-fixedheader/js/dataTables.fixedHeader.js");
-        context.Files.AddIfNotContains("/libs/datatables.net-staterestore-dt/js/stateRestore.dataTables.js");
-        context.Files.AddIfNotContains("/libs/datatables.net-staterestore/js/dataTables.stateRestore.js");
+        context.Files.AddIfNotContains("/libs/datatables.net-select/js/dataTables.select.min.js");
+        context.Files.AddIfNotContains("/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.min.js");
+        context.Files.AddIfNotContains("/libs/datatables.net-select-bs5/js/select.bootstrap5.min.js");
+        context.Files.AddIfNotContains("/libs/datatables.net-fixedheader/js/dataTables.fixedHeader.min.js");
+        context.Files.AddIfNotContains("/libs/datatables.net-staterestore-dt/js/stateRestore.dataTables.min.js");
+        context.Files.AddIfNotContains("/libs/datatables.net-staterestore/js/dataTables.stateRestore.min.js");
 
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder/js/dataTables.colReorder.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder-bs5/js/colReorder.bootstrap5.min.js");
 
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader-bs5/js/fixedHeader.bootstrap5.min.js");
-        context.Files.AddIfNotContains("/libs/echarts/echarts.min.js");
         context.Files.AddIfNotContains("/libs/jszip/dist/jszip.min.js");
-        context.Files.AddIfNotContains("/libs/tributejs/dist/tribute.js");
+        context.Files.AddIfNotContains("/libs/tributejs/dist/tribute.min.js");
 
-        context.Files.AddIfNotContains("/libs/tinymce/tinymce.js");
-        context.Files.AddIfNotContains("/libs/tinymce/themes/silver/theme.js");
-        context.Files.AddIfNotContains("/libs/tinymce/plugins/lists/plugin.js");
-        context.Files.AddIfNotContains("/libs/tinymce/icons/default/icons.js");
-        context.Files.AddIfNotContains("/libs/tinymce/models/dom/model.js");
-        context.Files.AddIfNotContains("/libs/tinymce/plugins/link/plugin.js");
-        context.Files.AddIfNotContains("/libs/tinymce/plugins/image/plugin.js");
-        context.Files.AddIfNotContains("/libs/tinymce/plugins/preview/plugin.js");
-        context.Files.AddIfNotContains("/libs/tinymce/plugins/code/plugin.js");
-        context.Files.AddIfNotContains("/libs/handlebars/dist/handlebars.js");
+        context.Files.AddIfNotContains("/libs/tinymce/tinymce.min.js");
+        context.Files.AddIfNotContains("/libs/tinymce/themes/silver/theme.min.js");
+        context.Files.AddIfNotContains("/libs/tinymce/plugins/lists/plugin.min.js");
+        context.Files.AddIfNotContains("/libs/tinymce/icons/default/icons.min.js");
+        context.Files.AddIfNotContains("/libs/tinymce/models/dom/model.min.js");
+        context.Files.AddIfNotContains("/libs/tinymce/plugins/link/plugin.min.js");
+        context.Files.AddIfNotContains("/libs/tinymce/plugins/image/plugin.min.js");
+        context.Files.AddIfNotContains("/libs/tinymce/plugins/preview/plugin.min.js");
+        context.Files.AddIfNotContains("/libs/tinymce/plugins/code/plugin.min.js");
+        context.Files.AddIfNotContains("/libs/handlebars/dist/handlebars.min.js");
 
     }
 }

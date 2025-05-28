@@ -15,5 +15,6 @@ namespace Unity.Payments.PaymentRequests
         Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds);
         Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests);
         Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId);
+        Task<List<PaymentDetailsDto>> GetListByApplicationIdsAsync(List<Guid> applicationIds);
     }
 }

@@ -1,9 +1,11 @@
-@model HistoryWidgetViewModel
 @using Unity.GrantManager.History
-@using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
 @using Microsoft.AspNetCore.Mvc.Localization
-@using Unity.GrantManager.Localization;
+@using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
+
+@model HistoryWidgetViewModel
+
 @inject IHtmlLocalizer<GrantManagerResource> L
 @inject IStringLocalizerFactory StringLocalizerFactory
 @{
@@ -26,10 +28,10 @@
                 </div>
             }
 
-            @foreach (HistoryDto historyDto in Model.ApplicationStatusHistoryList)
+            @foreach (HistoryDto historyDto in Model.ApplicationStatusHistoryList ?? Enumerable.Empty<HistoryDto>())
             {
-                string fromString = "";
-                if (!historyDto.OriginalValue.IsNullOrEmpty()) 
+                string fromString = string.Empty;
+                if (!string.IsNullOrEmpty(historyDto?.OriginalValue)) 
                 {
                     fromString = "from";
                 }
@@ -38,17 +40,17 @@
                     <div class="unity-history-block read-mode">
                         <div class="d-flex justify-content-between">
                             <div class="fw-bold history-name">
-                                @historyDto.UserName
+                                @historyDto?.UserName
                             </div>
                         </div>
                         <div class="history-lbl">
                             <div>
-                                Status changed @fromString <span class="status-change">@historyDto.OriginalValue</span> 
+                                Status changed @fromString <span class="status-change">@historyDto?.OriginalValue</span> 
                                 to
-                                <span class="status-change">@historyDto.NewValue</span>
+                                <span class="status-change">@historyDto?.NewValue</span>
                             </div>
                         </div>
-                        <div class="history-time mt-3 fw-bold">@historyDto.ChangeTime.ToString("yyyy-MM-dd h:mm tt")</div>
+                        <div class="history-time mt-3 fw-bold">@historyDto?.ChangeTime.ToString("yyyy-MM-dd h:mm tt")</div>
                     </div>
                 </div>
             }
