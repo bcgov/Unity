@@ -5,12 +5,12 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Integrations.Chefs;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Unity.GrantManager.Integrations.Chefs;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -63,10 +63,16 @@ namespace Unity.GrantManager.Controllers
                 }
 
                 var chefsFormVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
-                
+
+                // Ensure chefsFormVersion is not null before proceeding
+                if (chefsFormVersion == null)
+                {
+                    throw new BusinessException("Chefs Form Version data could not be retrieved.");
+                }
+
                 var result = await _applicationFormVersionAppService
-                    .UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);                                
-                
+                    .UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);
+
                 return Ok(result);
             }
             catch (EntityNotFoundException ex)

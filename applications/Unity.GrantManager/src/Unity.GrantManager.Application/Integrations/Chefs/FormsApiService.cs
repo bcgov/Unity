@@ -1,82 +1,105 @@
 ﻿using Newtonsoft.Json;
-using RestSharp;
-using RestSharp.Authenticators;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Integrations.Exceptions;
-using Unity.GrantManager.Integrations.Http;
 using Volo.Abp;
 using Volo.Abp.Security.Encryption;
+using Microsoft.Extensions.Logging;
+using Volo.Abp.DependencyInjection;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.GrantManager.Integrations.Chefs
 {
-    [IntegrationService]
-    public class FormsApiService : GrantManagerAppService, IFormsApiService
-    {
-        private readonly IApplicationFormRepository _applicationFormRepository;
-        private readonly IStringEncryptionService _stringEncryptionService;
-        private readonly IResilientHttpRequest _resilientRestClient;
-
-        public FormsApiService(IApplicationFormRepository applicationFormRepository,
+    [IntegrationService] // <- registers the class as the interface it implements
+    [ExposeServices(typeof(IFormsApiService))] // <- ensure it's registered under its interface
+    public class FormsApiService(
+            IEndpointManagementAppService endpointManagementAppService,
+            IApplicationFormRepository applicationFormRepository,
             IStringEncryptionService stringEncryptionService,
-            IResilientHttpRequest resilientRestClient)
+            IResilientHttpRequest resilientRestClient,
+            ILogger<FormsApiService> logger) : GrantManagerAppService, IFormsApiService
+    {
+        public async Task<JObject?> GetFormDataAsync(string chefsFormId, string chefsFormVersionId)
         {
-            _applicationFormRepository = applicationFormRepository;
-            _stringEncryptionService = stringEncryptionService;
-            _resilientRestClient = resilientRestClient;
-        }
-
-        public async Task<dynamic?> GetFormDataAsync(string chefsFormId, string chefsFormVersionId)
-        {
-            var applicationForm = (await _applicationFormRepository
-                .GetQueryableAsync())
+            var applicationForm = (await applicationFormRepository.GetQueryableAsync())
                 .Where(s => s.ChefsApplicationFormGuid == chefsFormId)
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault();
 
-            if (applicationForm == null) return null;
-
-            var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"/forms/{chefsFormId}/versions/{chefsFormVersionId}",
-                    null,
-                    null,
-                    new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty));
-
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
+            if (applicationForm == null)
             {
-                string content = response.Content;
-                return JsonConvert.DeserializeObject<dynamic>(content)!;
+                logger.LogWarning("No application form found for FormId: {FormId}", chefsFormId);
+                return null;
             }
-            else
-            {
-                throw new IntegrationServiceException($"Error with integrating with request resource");
-            }
+
+            string url = $"/forms/{chefsFormId}/versions/{chefsFormVersionId}";
+            var response = await GetRequestAsync(url, applicationForm.ChefsApplicationFormGuid!, applicationForm.ApiKey!);
+
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<JObject>(content);
         }
 
-        public async Task<object> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey)
+        public async Task<JObject> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey)
         {
-            var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"/forms/{formId}",
-                    null,
-                    null,
-                    new HttpBasicAuthenticator(chefsApplicationFormGuid!, _stringEncryptionService.Decrypt(encryptedApiKey!) ?? string.Empty));
+            if (string.IsNullOrEmpty(chefsApplicationFormGuid) || string.IsNullOrEmpty(encryptedApiKey))
+            {
+                throw new ArgumentException("Form GUID and API Key must be provided");
+            }
 
-            if (response != null
-               && response.Content != null
-               && response.IsSuccessStatusCode)
+            string url = $"/forms/{formId}";
+            var response = await GetRequestAsync(url, chefsApplicationFormGuid, encryptedApiKey);
+
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<JObject>(content)!;
+        }
+
+        public async Task<JObject?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
+        {
+            var applicationForm = (await applicationFormRepository.GetQueryableAsync())
+                .Where(s => s.ChefsApplicationFormGuid == chefsFormId.ToString())
+                .OrderBy(s => s.CreationTime)
+                .FirstOrDefault();
+
+            if (applicationForm == null)
             {
-                return response.Content;
+                logger.LogWarning("No application form found for SubmissionId: {SubmissionId}", submissionId);
+                return null;
             }
-            else
+
+            string url = $"/submissions/{submissionId}";
+            var response = await GetRequestAsync(url, applicationForm.ChefsApplicationFormGuid!, applicationForm.ApiKey!);
+
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<JObject>(content);
+        }
+
+        private async Task<HttpResponseMessage> GetRequestAsync(string url, string chefsApplicationFormGuid, string encryptedApiKey)
+        {
+            var decryptedApiKey = stringEncryptionService.Decrypt(encryptedApiKey ?? string.Empty) ?? string.Empty;
+            string chefsApi = await endpointManagementAppService.GetChefsApiBaseUrlAsync();
+
+            resilientRestClient.SetBaseUrl(chefsApi); // Set the base URL for the API
+            logger.LogInformation("Sending GET request to {Url} using basic auth", url);
+
+            var response = await resilientRestClient.ExecuteRequestAsync(
+                HttpMethod.Get,
+                url,
+                null,
+                null,
+                basicAuth: (chefsApplicationFormGuid, decryptedApiKey));
+
+            if (!response.IsSuccessStatusCode)
             {
-                throw new IntegrationServiceException($"Error with integrating with request resource");
+                var content = await response.Content.ReadAsStringAsync();
+                logger.LogError("Request to {Url} failed with status {StatusCode}. Response: {Content}", url, response.StatusCode, content);
+                throw new IntegrationServiceException($"Failed to get data. Status: {response.StatusCode}, URL: {url}");
             }
+
+            return response;
         }
     }
 }
-

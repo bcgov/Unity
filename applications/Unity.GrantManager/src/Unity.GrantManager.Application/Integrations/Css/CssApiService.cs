@@ -1,135 +1,118 @@
-﻿using RestSharp;
-using RestSharp.Authenticators;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
-using Unity.GrantManager.Integrations.Http;
-using Volo.Abp.Application.Services;
-using System.Text.Json;
-using System;
-using Volo.Abp.Caching;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Linq;
-using Volo.Abp;
-using Volo.Abp.DependencyInjection;
+using System;
 using Unity.GrantManager.Integrations.Css;
+using Volo.Abp;
+using Volo.Abp.Application.Services;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Caching;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.GrantManager.Integrations.Sso
 {
     [IntegrationService]
     [ExposeServices(typeof(CssApiService), typeof(ICssUsersApiService))]
-    public class CssApiService(IResilientHttpRequest resilientHttpRequest,
-        IDistributedCache<TokenValidationResponse, string> accessTokenCache,
-        IOptions<CssApiOptions> cssApiOptions,
-        RestClient restClient) : ApplicationService, ICssUsersApiService
+    public class CssApiService : ApplicationService, ICssUsersApiService
     {
+        private readonly IResilientHttpRequest _resilientHttpRequest;
+        private readonly IDistributedCache<TokenValidationResponse, string> _accessTokenCache;
+        private readonly CssApiOptions _cssApiOptions;
         private const string CSS_API_KEY = "CssApiKey";
+
+        public CssApiService(
+            IResilientHttpRequest resilientHttpRequest,
+            IDistributedCache<TokenValidationResponse, string> accessTokenCache,
+            IOptions<CssApiOptions> cssApiOptions)
+        {
+            _resilientHttpRequest = resilientHttpRequest;
+            _accessTokenCache = accessTokenCache;
+            _cssApiOptions = cssApiOptions.Value;
+        }
 
         public async Task<UserSearchResult> FindUserAsync(string directory, string guid)
         {
-            var paramDictionary = new Dictionary<string, string>();
-
-            if (guid != null)
-            {
-                paramDictionary.Add(nameof(guid), guid);
-            }
-
-            return await SearchSsoAsync(directory, paramDictionary);
+            var parameters = new Dictionary<string, string> { { nameof(guid), guid } };
+            return await SearchSsoAsync(directory, parameters);
         }
 
         public async Task<UserSearchResult> SearchUsersAsync(string directory, string? firstName = null, string? lastName = null)
-        {            
-            var paramDictionary = new Dictionary<string, string>();
+        {
+            var parameters = new Dictionary<string, string>();
 
-            if (firstName != null && firstName.Length >= 2)
-            {
-                paramDictionary.Add(nameof(firstName), firstName);
-            }
+            if (!string.IsNullOrWhiteSpace(firstName) && firstName.Length >= 2)
+                parameters.Add(nameof(firstName), firstName);
 
-            if (lastName != null && lastName.Length >= 2)
-            {
-                paramDictionary.Add(nameof(lastName), lastName);
-            }
+            if (!string.IsNullOrWhiteSpace(lastName) && lastName.Length >= 2)
+                parameters.Add(nameof(lastName), lastName);
 
-            return await SearchSsoAsync(directory, paramDictionary);
+            return await SearchSsoAsync(directory, parameters);
         }
 
-        private async Task<UserSearchResult> SearchSsoAsync(string directory, Dictionary<string, string> paramDictionary)
+        private async Task<UserSearchResult> SearchSsoAsync(string directory, Dictionary<string, string> parameters)
         {
             var tokenResponse = await GetAccessTokenAsync();
+            var baseUrl = $"{_cssApiOptions.Url}/{_cssApiOptions.Env}/{directory}/users";
+            var url = BuildUrlWithQuery(baseUrl, parameters);
 
-            var resource = BuildUrlWithQueryStringUsingUriBuilder($"{cssApiOptions.Value.Url}/{cssApiOptions.Value.Env}/{directory}/users?", paramDictionary);
+            _resilientHttpRequest.SetBaseUrl("");
+            var response = await _resilientHttpRequest.ExecuteRequestAsync(HttpMethod.Get, url, null, tokenResponse.AccessToken);
 
-            var authHeaders = new Dictionary<string, string>
+            if (response != null && response.IsSuccessStatusCode && response.Content != null)
             {
-                { "Authorization", $"Bearer {tokenResponse.AccessToken}" }
-            };
-
-            var response = await resilientHttpRequest.HttpAsync(Method.Get, resource, authHeaders);
-
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
-            {
-                string content = response.Content;
-                var result = JsonSerializer.Deserialize<UserSearchResult>(content) ?? throw new UserFriendlyException("SearchSsoAsync -> Could not Deserialize");
-
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<UserSearchResult>(json) ?? throw new UserFriendlyException("Could not deserialize user search result.");
                 result.Success = true;
                 return result;
             }
-            else
+
+            return new UserSearchResult
             {
-                return new UserSearchResult() { Error = "", Success = false, Data = Array.Empty<CssUser>() };
-            }
+                Success = false,
+                Error = "Failed to search users",
+                Data = Array.Empty<CssUser>()
+            };
         }
 
-        private static string BuildUrlWithQueryStringUsingUriBuilder(string basePath, Dictionary<string, string> queryParams)
+        private static string BuildUrlWithQuery(string basePath, Dictionary<string, string> queryParams)
         {
-            var uriBuilder = new UriBuilder(basePath)
-            {
-                Query = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-            };
-            return uriBuilder.Uri.AbsoluteUri;
+            var query = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+            return string.IsNullOrWhiteSpace(query) ? basePath : $"{basePath}?{query}";
         }
 
         private async Task<TokenValidationResponse> GetAccessTokenAsync()
         {
-            var cachedTokenResponse = await accessTokenCache.GetAsync(CSS_API_KEY);
+            var cachedToken = await _accessTokenCache.GetAsync(CSS_API_KEY);
+            if (cachedToken != null)
+                return cachedToken;
 
-            if (cachedTokenResponse != null)
+            var client = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Post, _cssApiOptions.TokenUrl);
+
+            var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_cssApiOptions.ClientId}:{_cssApiOptions.ClientSecret}"));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded");
+
+            var response = await client.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode || response.Content == null)
             {
-                return cachedTokenResponse;
+                var errorContent = response.Content != null ? await response.Content.ReadAsStringAsync() : "No content";
+                Logger.LogError("Failed to fetch CSS API token. Status: {StatusCode}, Content: {ErrorContent}", response.StatusCode, errorContent);
+                throw new UserFriendlyException($"Error fetching token: {response.StatusCode}");
             }
 
-            var grantType = "client_credentials";
+            var content = await response.Content.ReadAsStringAsync();
+            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(content) ?? throw new UserFriendlyException("Could not parse token response.");
 
-            var request = new RestRequest($"{cssApiOptions.Value.TokenUrl}")
-            {
-                Authenticator = new HttpBasicAuthenticator(cssApiOptions.Value.ClientId, cssApiOptions.Value.ClientSecret)
-            };
-            request.AddHeader("content-type", "application/x-www-form-urlencoded");
-            request.AddParameter("application/x-www-form-urlencoded", $"grant_type={grantType}", ParameterType.RequestBody);
-
-            var response = await restClient.ExecuteAsync(request, Method.Post);
-
-            if (response.Content == null)
-            {
-                throw new UserFriendlyException($"Error fetching Css API token - content empty {response.StatusCode} {response.ErrorMessage}");
-            }
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                Logger.LogError(response.ErrorException, "Error fetching Css API token {StatusCode} {ErrorMessage} {ErrorException}", response.StatusCode, response.ErrorMessage, response.ErrorException);
-
-                if (response.StatusCode == HttpStatusCode.Unauthorized)
-                {                    
-                    throw new UnauthorizedAccessException(response.ErrorMessage);
-                }
-            }
-
-            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
-            await accessTokenCache.SetAsync(CSS_API_KEY, tokenResponse, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions()
+            await _accessTokenCache.SetAsync(CSS_API_KEY, tokenResponse, new DistributedCacheEntryOptions
             {
                 AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
             });

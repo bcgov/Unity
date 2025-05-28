@@ -13,6 +13,13 @@ namespace Unity.Notifications.TeamsNotifications
     public class TeamsNotificationService
     {
         public TeamsNotificationService() : base() { }
+
+        public const string DIRECT_MESSAGE_KEY_PREFIX = "DIRECT_MESSAGE_";
+        public const string TEAMS_NOTIFICATION = $"{DIRECT_MESSAGE_KEY_PREFIX}0";
+        public const string TEAMS_NOTIFICATION_1 = $"{DIRECT_MESSAGE_KEY_PREFIX}1";
+
+        public static string TeamsChannel { get; set; } = string.Empty;
+
         private readonly List<Fact> _facts = new List<Fact>();
 
         public async Task PostFactsToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle)
@@ -51,7 +58,7 @@ namespace Unity.Notifications.TeamsNotifications
             public const string FORM_DRAFT_PUBLISHED = "eventFormDraftPublished";
         }
 
-        private static string InitializeMessageCard(string activityTitle, string activitySubtitle, List<Fact> facts)
+        public static string InitializeMessageCard(string activityTitle, string activitySubtitle, List<Fact> facts)
         {
             dynamic messageCard = MessageCard.GetMessageCard();
             JObject jsonObj = JsonConvert.DeserializeObject<dynamic>(messageCard)!;
@@ -148,7 +155,7 @@ namespace Unity.Notifications.TeamsNotifications
             await PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
         }
 
-        private static async Task PostToTeamsChannelAsync(string teamsChannel, string messageCard) {
+        public static async Task PostToTeamsChannelAsync(string teamsChannel, string messageCard) {
             using var httpClient = new HttpClient();
             using var request = new HttpRequestMessage(new HttpMethod("POST"), teamsChannel);
             request.Content = new StringContent(messageCard);

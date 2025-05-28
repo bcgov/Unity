@@ -77,7 +77,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         {
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
             ScoresheetId = ApplicationFormDto.ScoresheetId;
-            ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
+            ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?) await _applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
             FlexEnabled = await _featureChecker.IsEnabledAsync("Unity.Flex");
 
             if (ApplicationFormVersionDtoList != null)

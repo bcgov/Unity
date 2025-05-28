@@ -1,12 +1,11 @@
 ﻿using Newtonsoft.Json;
-using RestSharp;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.GrantManager.Integrations.Orgbook;
 using Unity.GrantManager.Integrations.Exceptions;
-using Unity.GrantManager.Integrations.Http;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using System.Net.Http;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.GrantManager.Integrations.Orgbook
 {
@@ -26,11 +25,12 @@ namespace Unity.GrantManager.Integrations.Orgbook
         public async Task<dynamic?> GetOrgBookQueryAsync(string orgBookQuery)
         {
             var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/v4/search/topic?q={orgBookQuery}&{orgbook_query_match}");
+                .ExecuteRequestAsync(HttpMethod.Get, $"{orgbook_base_api}/v4/search/topic?q={orgBookQuery}&{orgbook_query_match}", null, null, null);
 
             if (response != null && response.Content != null)
             {
-                string content = response.Content;
+                // Fix: Read the content as a string before deserializing it
+                var content = await response.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<dynamic>(content)!;
             }
             else
@@ -47,12 +47,13 @@ namespace Unity.GrantManager.Integrations.Orgbook
             }
 
             var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/v3/search/autocomplete?q={orgBookQuery}&revoked=false&inactive=");
+                .ExecuteRequestAsync(HttpMethod.Get, $"{orgbook_base_api}/v3/search/autocomplete?q={orgBookQuery}&revoked=false&inactive=", null, null, null);
 
             if (response != null && response.Content != null)
             {
-
-                return JsonDocument.Parse(response.Content);
+                // Fix: Read the content as a string before parsing it into a JsonDocument
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonDocument.Parse(content);
             }
             else
             {
@@ -68,12 +69,13 @@ namespace Unity.GrantManager.Integrations.Orgbook
             }
 
             var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/v2/topic/ident/registration.registries.ca/{orgBookId}/formatted");
+                .ExecuteRequestAsync(HttpMethod.Get, $"{orgbook_base_api}/v2/topic/ident/registration.registries.ca/{orgBookId}/formatted", null, null, null);
 
             if (response != null && response.Content != null)
             {
-
-                return JsonDocument.Parse(response.Content);
+                // Fix: Read the content as a string before parsing it into a JsonDocument
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonDocument.Parse(content);
             }
             else
             {

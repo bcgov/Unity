@@ -1,12 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Integrations;
-
-/// <summary>
-/// Represents a collection of functions to interact with the API endpoints
-/// </summary>
+   
 
 public interface IEndpointManagementAppService : ICrudAppService<
             DynamicUrlDto,
@@ -15,5 +13,6 @@ public interface IEndpointManagementAppService : ICrudAppService<
             CreateUpdateDynamicUrlDto>
 
 {
-    
+    Task<string> GetChefsApiBaseUrlAsync();
+    Task<string> GetUrlByKeyNameAsync(string keyName);
 }

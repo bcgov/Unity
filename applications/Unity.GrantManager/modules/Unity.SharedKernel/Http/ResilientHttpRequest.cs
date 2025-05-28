@@ -14,10 +14,12 @@ namespace Unity.Modules.Shared.Http
     public class ResilientHttpRequest : IResilientHttpRequest
     {
         private readonly IHttpClientFactory _httpClientFactory;
+
         private static int _maxRetryAttempts = 3;
-        private const int OneMinuteInSeconds = 60;       
+        private const int OneMinuteInSeconds = 60;
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
         private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(OneMinuteInSeconds);
+        private string? _baseUrl;
 
         public ResilientHttpRequest(IHttpClientFactory httpClientFactory)
         {
@@ -25,47 +27,54 @@ namespace Unity.Modules.Shared.Http
         }
 
         public static void SetPipelineOptions(
-            int maxRetryAttempts, 
+            int maxRetryAttempts,
             TimeSpan pauseBetweenFailures,
             TimeSpan httpRequestTimeout
-            )
+        )
         {
             _maxRetryAttempts = maxRetryAttempts;
             _pauseBetweenFailures = pauseBetweenFailures;
             _httpRequestTimeout = httpRequestTimeout;
         }
 
-        private static bool ReprocessBasedOnStatusCode(HttpStatusCode statusCode)
+        public void SetBaseUrl(string baseUrl)
         {
-            HttpStatusCode[] reprocessStatusCodes = {
-                 HttpStatusCode.TooManyRequests,
-                 HttpStatusCode.InternalServerError,
-                 HttpStatusCode.BadGateway,
-                 HttpStatusCode.ServiceUnavailable,
-                 HttpStatusCode.GatewayTimeout,
+            if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out _))
+            {
+                throw new ArgumentException("Base URL is not a valid absolute URI.", nameof(baseUrl));
+            }
+
+            _baseUrl = baseUrl.TrimEnd('/');
+        }
+
+        private static bool ShouldRetry(HttpStatusCode statusCode)
+        {
+            HttpStatusCode[] retryableStatusCodes = {
+                HttpStatusCode.TooManyRequests,
+                HttpStatusCode.InternalServerError,
+                HttpStatusCode.BadGateway,
+                HttpStatusCode.ServiceUnavailable,
+                HttpStatusCode.GatewayTimeout,
             };
 
-            return reprocessStatusCodes.Contains(statusCode);
+            return retryableStatusCodes.Contains(statusCode);
         }
 
         private static ResiliencePipeline<HttpResponseMessage> _pipeline =
-                new ResiliencePipelineBuilder<HttpResponseMessage>()
-                   .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
-                   {
-                       ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-                           .Handle<HttpRequestException>()
-                           .HandleResult(result => ReprocessBasedOnStatusCode(result.StatusCode)),
-                       Delay = _pauseBetweenFailures,
-                       MaxRetryAttempts = _maxRetryAttempts,
-                       UseJitter = true,
-                       BackoffType = DelayBackoffType.Exponential,
-                       OnRetry = args =>
-                       {
-                           return default;
-                       }
-                   })
-                   .AddTimeout(_httpRequestTimeout)
-                   .Build();
+            new ResiliencePipelineBuilder<HttpResponseMessage>()
+                .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
+                {
+                    ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                        .Handle<HttpRequestException>()
+                        .HandleResult(result => ShouldRetry(result.StatusCode)),
+                    Delay = _pauseBetweenFailures,
+                    MaxRetryAttempts = _maxRetryAttempts,
+                    UseJitter = true,
+                    BackoffType = DelayBackoffType.Exponential,
+                    OnRetry = args => default
+                })
+                .AddTimeout(_httpRequestTimeout)
+                .Build();
 
         public async Task<HttpResponseMessage> HttpAsync(HttpMethod httpVerb, string resource, string? authToken = null)
         {
@@ -83,21 +92,35 @@ namespace Unity.Modules.Shared.Http
             return readAsStringAsync.Result;
         }
 
-        private async Task<HttpResponseMessage> ExecuteRequestAsync(
-            HttpMethod httpVerb, 
+        public async Task<HttpResponseMessage> ExecuteRequestAsync(
+            HttpMethod httpVerb,
             string resource,
             string? body,
-            string? authToken)
+            string? authToken,
+            (string username, string password)? basicAuth = null)
         {
-            //specify to use TLS 1.2 as default connection if 1.3 is not available
+            if (string.IsNullOrWhiteSpace(_baseUrl))
+            {
+                throw new InvalidOperationException("Base URL has not been set. Call SetBaseUrl() before making requests.");
+            }
+
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-            HttpRequestMessage requestMessage = new HttpRequestMessage(httpVerb, resource) { Version = new Version(3, 0) };
-            using HttpClient httpClient = _httpClientFactory.CreateClient();
+
+            var baseUri = new Uri(_baseUrl, UriKind.Absolute);
+            var relativeUri = new Uri(resource, UriKind.Relative);
+            var fullUrl = new Uri(baseUri, relativeUri);
+
+            var requestMessage = new HttpRequestMessage(httpVerb, fullUrl)
+            {
+                Version = new Version(3, 0)
+            };
+
+            using var httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.ConnectionClose = true;
 
-            if (!authToken.IsNullOrEmpty())
+            if (!authToken.IsNullOrWhiteSpace())
             {
                 httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {authToken}");
             }
@@ -107,8 +130,10 @@ namespace Unity.Modules.Shared.Http
                 requestMessage.Content = new StringContent(body, Encoding.UTF8, "application/json");
             }
 
-            HttpResponseMessage restResponse = await _pipeline.ExecuteAsync(async ct => await httpClient.SendAsync(requestMessage, ct));
-            return await Task.FromResult(restResponse);
+            HttpResponseMessage response = await _pipeline.ExecuteAsync(async ct =>
+                await httpClient.SendAsync(requestMessage, ct));
+
+            return response;
         }
     }
 }

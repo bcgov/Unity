@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using RestSharp.Authenticators;
@@ -14,7 +13,7 @@ using Unity.Notifications.TeamsNotifications;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Chefs;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -22,6 +21,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
+using Unity.GrantManager.Notifications;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -41,40 +41,39 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly ICurrentTenant _currentTenant;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
-        private readonly IConfiguration _configuration;
-        private readonly ISubmissionsApiService _submissionsApiService;
+        private readonly IFormsApiService _formsApiService;
         private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
+        private readonly INotificationsAppService _notificationsAppService;
         private List<Fact> _facts = new();
         private readonly RestClient _intakeClient;
         private readonly ITenantRepository _tenantRepository;
         public List<ApplicationFormDto>? applicationFormDtoList { get; set; }
         public HashSet<string> FormVersionsInitializedVersionHash { get; set; } = new HashSet<string>();
-
-
+      
         public ApplicationFormSycnronizationService(
+            INotificationsAppService notificationsAppService,
             ICurrentTenant currentTenant,
             IRepository<ApplicationForm, Guid> repository,
             ITenantRepository tenantRepository,
             RestClient restClient,
-            IConfiguration configuration,
             IStringEncryptionService stringEncryptionService,
             IApplicationFormRepository applicationFormRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
             IApplicationFormVersionAppService applicationFormVersionAppService,
-            ISubmissionsApiService submissionsApiService,
+            IFormsApiService formsApiService,
             IIntakeFormSubmissionManager intakeFormSubmissionManager)
             : base(repository)
         {
             _currentTenant = currentTenant;
             _tenantRepository = tenantRepository;
             _intakeClient = restClient;
-            _configuration = configuration;
             _stringEncryptionService = stringEncryptionService;
             _applicationFormRepository = applicationFormRepository;
-            _submissionsApiService = submissionsApiService;
+            _formsApiService = formsApiService;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _applicationFormVersionAppService = applicationFormVersionAppService;
             _intakeFormSubmissionManager = intakeFormSubmissionManager;
+            _notificationsAppService = notificationsAppService;
         }
 
         private async Task SynchronizeFormSubmissions(HashSet<string> missingSubmissions, ApplicationFormDto applicationFormDto)
@@ -101,7 +100,7 @@ namespace Unity.GrantManager.ApplicationForms
                 return;
             }
 
-            JObject? submissionData = await _submissionsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
+            JObject? submissionData = await _formsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
             if (submissionData == null)
             {
                 Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions submissionData is null");
@@ -177,7 +176,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             HashSet<string> missingSubmissions = new HashSet<string>();
             // Get all forms with api keys
-            applicationFormDtoList = (List<ApplicationFormDto>?)await GetConnectedApplicationFormsAsync();
+            applicationFormDtoList = (List<ApplicationFormDto>?) await GetConnectedApplicationFormsAsync();
 
             if (applicationFormDtoList != null)
             {
@@ -226,8 +225,8 @@ namespace Unity.GrantManager.ApplicationForms
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Review Missed Chefs Submissions " + tenantName;
             string activitySubtitle = "Environment: " + envInfo;
-            string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
-            await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, _facts);
+            
+            await _notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, _facts);
             return missingSubmissions ?? new HashSet<string>();
         }
 
