@@ -146,7 +146,7 @@ public class SubmissionAppService(
         {
             using (CurrentTenant.Change(tenant.Id))
             {
-                var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, 10000);
+                var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, int.MaxValue);
                 var appDtos = new List<GrantApplicationDto>();
                 var rowCounter = 0;
 
