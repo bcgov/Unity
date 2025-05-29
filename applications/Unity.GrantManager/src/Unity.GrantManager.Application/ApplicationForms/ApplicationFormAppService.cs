@@ -133,7 +133,10 @@ namespace Unity.GrantManager.ApplicationForms
         public  async Task<ApplicationFormDto> UpdateOtherConfig(Guid id, OtherConfigDto config)
         {
             var appForm = await _applicationFormRepository.GetAsync(id);
+
             appForm.IsDirectApproval = config.IsDirectApproval;
+            appForm.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
+
             await _applicationFormRepository.UpdateAsync(appForm);
             return ObjectMapper.Map<ApplicationForm, ApplicationFormDto>(appForm);
         }

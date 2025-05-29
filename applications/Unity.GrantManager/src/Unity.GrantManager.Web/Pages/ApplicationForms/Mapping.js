@@ -67,7 +67,9 @@
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
         linkWorksheets: $('#btn-link-worksheets'),
-        uiConfigurationTab: $('#nav-ui-configuration')
+        uiConfigurationTab: $('#nav-ui-configuration'),
+        btnSaveOtherConfig: $('#btn-save-other-config'),
+        btnCancelOtherConfig: $('#btn-cancel-other-config')
     };
 
     init();
@@ -104,6 +106,8 @@
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
         UIElements.selectVersionList.on('change', handleSelectVersion);
         UIElements.linkWorksheets.on('click', handleLinkWorksheets);
+        UIElements.btnSaveOtherConfig.on('click', handleSaveOtherConfig);
+        UIElements.btnCancelOtherConfig.on('click', handleCancelOtherConfig);
     }
 
     function handleLinkWorksheets() {
@@ -626,31 +630,41 @@
         }
     }
 
-    $("#directApproval").on('change', function (e) {
-
+    function handleSaveOtherConfig() {
         let config = {
-            "isDirectApproval": this.checked
+            "isDirectApproval": '', // Get toggle value
+            "selectedElectoralAddressType": '' // Get selected electoral district address type value
         }
-        $.ajax(
-            {
-                url: `/api/app/application-form/${applicationFormId}/other-config`,
-                data: JSON.stringify(config),
-                contentType: "application/json",
-                type: "PUT",
-                success: function (data) {
-
-                    abp.notify.success(
-                        data.responseText,
-                        'Settings Saved Successfully'
-                    );
-                },
-                error: function (data) {
-                    abp.notify.error(
-                        data.responseText,
-                        'Settings Not Saved Successful'
-                    );
-                }
-            }
-        );
-    })
+        unity.grantManager.applicationForms.applicationForm.otherConfig({
+            applicationFormId: appFormId,
+            config: JSON.stringify(config)
+        })
+            .then(response => {
+                // if success - then success, else error
+                abp.notify.success(
+                    'Settings Saved Successfully Title',
+                    'Settings Saved Successfully Message'
+                );
+            });
+    }   
+        //$.ajax(
+        //    {
+        //        url: `/api/app/application-form/${applicationFormId}/other-config`,
+        //        data: JSON.stringify(config),
+        //        contentType: "application/json",
+        //        type: "PUT",
+        //        success: function (data) {
+        //            abp.notify.success(
+        //                data.responseText,
+        //                'Settings Saved Successfully'
+        //            );
+        //        },
+        //        error: function (data) {
+        //            abp.notify.error(
+        //                data.responseText,
+        //                'Settings Not Saved Successful'
+        //            );
+        //        }
+        //    }
+        //);    
 });

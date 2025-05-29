@@ -18,6 +18,8 @@ using Volo.Abp.Features;
 using Unity.Modules.Shared.Correlation;
 using Unity.Flex.Worksheets.Definitions;
 using Unity.Flex;
+using Unity.GrantManager.Applications;
+using YamlDotNet.Core.Tokens;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationForms
 {
@@ -59,6 +61,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
         [BindProperty]
         public bool FlexEnabled { get; set; }
+
+        public List<SelectListItem> ElectoralDistrictAddressTypes { get; set; } = [];
+        public string? ElectoralDistrictAddressType { get; set; }
 
         public MappingModel(IApplicationFormAppService applicationFormAppService,
                             IApplicationFormVersionAppService applicationFormVersionAppService,
@@ -112,6 +117,33 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
             }
 
             IntakeProperties = JsonSerializer.Serialize(await GenerateMappingFieldsAsync());
+
+            SetElectoralDistrictFields();
+        }
+
+        private void SetElectoralDistrictFields()
+        {
+            bool existingApplicationsForForm = false; // Query for existing application for this form type
+
+            ElectoralDistrictAddressType = ApplicationFormDto?
+                .ElectoralDistrictAddressType == null ? null
+                : ((int)ApplicationFormDto.ElectoralDistrictAddressType).ToString();
+
+            ElectoralDistrictAddressTypes = ApplicationForm
+                .GetAvailableElectoralDistrictAddressTypes()
+                .Select(x => new SelectListItem
+                {
+                    Value = ((int)x.AddressType).ToString(),
+                    Text = x.DisplayName
+                })
+                    .ToList();
+
+            // Insert default option at the top
+            ElectoralDistrictAddressTypes.Insert(0, new SelectListItem
+            {
+                Value = "",
+                Text = "Please choose..."
+            });
         }
 
         private async Task<List<MapField>> GenerateMappingFieldsAsync()
