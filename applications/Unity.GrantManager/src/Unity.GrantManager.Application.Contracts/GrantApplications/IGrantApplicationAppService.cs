@@ -12,6 +12,7 @@ namespace Unity.GrantManager.GrantApplications
         Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false);
         Task<GetSummaryDto> GetSummaryAsync(Guid applicationId);
         Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input);
+        Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<PartialUpdateProjectInfoDto> input);
         Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input);
         Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input);
         Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync();

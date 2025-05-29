@@ -76,6 +76,13 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
 
         CreateMap<TagSummaryCount, TagSummaryCountDto>();
+
+        CreateMap<PartialUpdateProjectInfoDto, Application>()
+            .ForAllMembers(opts =>
+            {
+                opts.AllowNull(); // Ignore Null Values for Lists and Collections
+                opts.Condition((src, dest, srcMember) => srcMember != null);
+            });
     }
 }
 

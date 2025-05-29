@@ -465,6 +465,22 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         input.ProjectFundingTotal ??= application.ProjectFundingTotal;
     }
 
+    [Authorize(UnitySelector.Project.UpdatePolicy)]
+    public async Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<PartialUpdateProjectInfoDto> input)
+    {
+        // Only update the fields we need to update based on the modified fields
+        // This is required to handle controls like the date picker that do not send null values for unchanged fields
+        var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
+        ObjectMapper.Map<PartialUpdateProjectInfoDto, Application>(input.Data, application);
+
+        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
+        // TODO: Map null but modified cases
+
+
+        await _applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
