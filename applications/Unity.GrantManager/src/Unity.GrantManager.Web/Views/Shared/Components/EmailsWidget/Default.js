@@ -454,18 +454,25 @@
     }
     function processString(token,inputString) {
         let lookupArray = ['category', 'status', 'decline_rationale'];
+        let datesArray = ['submission_date', 'approval_date', 'project_start_date', 'project_end_date']
 
         if(typeof inputString !== 'string') {
             return inputString;
         }
-       
-        let date = new Date(inputString);
-        if (!isNaN(date.getTime())) {
-           
-            return luxon.DateTime.fromISO(inputString, {
-                locale: abp.localization.currentCulture.name,
-            }).toUTC().toLocaleString()
-        } else {
+
+        if (datesArray.includes(token)) {
+            let date = new Date(inputString);
+            if (!isNaN(date.getTime())) {
+
+                return luxon.DateTime.fromISO(inputString, {
+                    locale: abp.localization.currentCulture.name,
+                }).toUTC().toLocaleString()
+            }
+            else {
+                return '';
+            }
+        }
+        else {
            
             if (lookupArray.includes(token)) {
                 inputString = inputString.replace(/_/g, ' ');
