@@ -7,7 +7,6 @@
             ...options
         };
 
-        debugger;
 
         // Expect options.form to be a jQuery object representing the form element
         if (!$form || !($form instanceof $) || !$form.is('form')) {
@@ -168,7 +167,6 @@
 class UnityZoneForm extends UnityChangeTrackingForm {
     constructor($form, options = {}) {
         super($form, options);
-        debugger;
         this.options = {
             ...this.options,
             ...options
@@ -211,12 +209,18 @@ class UnityZoneForm extends UnityChangeTrackingForm {
     }
 }
 
-(function ($) {
+(function () {
     // Called on widget initialization
     abp.widgets.ProjectInfo = function ($wrapper) {
+
+        let getFilters = function () {
+            return {
+                applicationId: $wrapper.find('#ProjectInfoViewApplicationId').val()
+            };
+        }
+
         let init = function (filters) {
             let $widgetForm = $wrapper.find('form');
-            debugger;
 
             abp.zones = abp.zones || {};
             abp.zones.projectInfo = new UnityZoneForm($widgetForm, {
@@ -224,11 +228,27 @@ class UnityZoneForm extends UnityChangeTrackingForm {
             });
         }
 
+        // PubSub Event Handling should be implemented here
+        PubSub.subscribe(
+            'application_status_changed',
+            (msg, data) => {
+                let projectInfoWidgets = document.querySelectorAll('[data-widget-name="ProjectInfo"]')
+                projectInfoWidgets.forEach(function (entry) {
+                    $(entry).data('abp-widget-manager')
+                        .refresh();
+                });
+
+            }
+        );
+
         return {
+            getFilters: getFilters,
             init: init
         };
     };
+})();
 
+(function ($) {
     $(function () {
         abp.zones.projectInfo.init();
 
@@ -317,7 +337,6 @@ class UnityZoneForm extends UnityChangeTrackingForm {
         }
 
         function updateProjectInfo(applicationId, projectInfoObj) {
-            debugger;
             try {
                 unity.grantManager.grantApplications.grantApplication
                     .updateProjectInfo(applicationId, projectInfoObj)
