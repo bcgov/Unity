@@ -60,7 +60,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
             .AsQueryable();
     }
 
-    private IQueryable<Application> ApplySorting(IQueryable<Application> query, string? sorting)
+    private static IQueryable<Application> ApplySorting(IQueryable<Application> query, string? sorting)
     {
         if (string.IsNullOrEmpty(sorting))
         {

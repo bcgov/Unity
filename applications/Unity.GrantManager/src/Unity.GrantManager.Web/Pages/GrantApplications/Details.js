@@ -337,25 +337,30 @@ $(function () {
 
     $('#printPdf').click(function () {
         let submissionId = getSubmissionId();
+        let submissionDataString = document.getElementById('ApplicationFormSubmissionData').value;
+        let formSchemaString = document.getElementById('ApplicationFormSchema').value;
+        let submissionJson = JSON.parse(submissionDataString);
+        let formSchema;
+        let data;
+        let submissionData;
 
-        // Fetch submission data
-        fetchSubmissionData(submissionId)
-            .done(function (result) {
-                openDataInNewTab(result, submissionId);
-            })
-            .fail(function (error) {
-                console.error('Error fetching submission data:', error);
-            });
+        // Check if the submission data is pure data or the entire form
+        if (submissionJson.version !== undefined && submissionJson.submission !== undefined) {
+            // The submission data is in the form of a version and submission object
+            formSchema = submissionJson.version.schema;
+            submissionData = submissionJson.submission.submission;
+        } else if (formSchemaString !== undefined && formSchemaString !== "") {
+            formSchema = JSON.parse(formSchemaString);
+            submissionData = submissionJson.submission;
+        }
+        data.version.schema = formSchema;
+        data.submission.submission = submissionData;
+        openDataInNewTab(data, submissionId);
     });
 
     // Get submission ID from the input field
     function getSubmissionId() {
         return document.getElementById('ChefsSubmissionId').value;
-    }
-
-    // Fetch the submission data
-    function fetchSubmissionData(submissionId) {
-        return unity.grantManager.intakes.submission.getSubmission(submissionId);
     }
 
     // Handle the submission result
@@ -373,8 +378,8 @@ $(function () {
         let divToStore = newDiv.prop('outerHTML');
 
         newTab.document.write('<html><head><title>Print</title>');
-        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
-        newTab.document.write('<script src="/libs/formiojs/formio.form.js"></script>');
+        newTab.document.write('<script src="/libs/jquery/jquery.min.js"></script>');
+        newTab.document.write('<script src="/libs/formiojs/formio.form.min.js"></script>');
         newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
         newTab.document.write('<link rel="stylesheet" href="/libs/formiojs/formio.form.css">');
         newTab.document.write('</head><body>');
@@ -391,6 +396,7 @@ $(function () {
         newTab.document.write(inputToStore);
         newTab.document.write(divToStore);
         newTab.document.write('</body></html>');
+
         newTab.onload = function () {
             let script = newTab.document.createElement('script');
             script.src = '/Pages/GrantApplications/loadPrint.js';
@@ -409,7 +415,7 @@ $(function () {
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
         let newTab = window.open('', '_blank');
         newTab.document.write('<html><head><title>Print</title>');
-        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
+        newTab.document.write('<script src="/libs/jquery/jquery.min.js"></script>');
         newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
         newTab.document.write('<link rel="stylesheet" href="/Pages/GrantApplications/ScoresheetPrint.css">');
         newTab.document.write('</head><body>');

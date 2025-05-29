@@ -18,7 +18,7 @@ namespace Unity.Payments.Repositories
         public async Task<List<PaymentTag>> GetTagsByPaymentRequestIdAsync(Guid paymentRequestId)
         {
             var dbSet = await GetDbSetAsync();
-            return dbSet.Where(p => p.PaymentRequestId.Equals(paymentRequestId)).ToList();
+            return await dbSet.Where(p => p.PaymentRequestId.Equals(paymentRequestId)).ToListAsync();
         }
 
         public virtual async Task<List<TagSummaryCount>> GetTagSummary()
