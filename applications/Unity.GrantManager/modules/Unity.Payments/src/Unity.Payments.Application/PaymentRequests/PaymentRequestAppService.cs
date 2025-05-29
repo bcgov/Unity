@@ -275,6 +275,15 @@ namespace Unity.Payments.PaymentRequests
             };
         }
 
+        public async Task<List<PaymentDetailsDto>> GetListByApplicationIdsAsync(List<Guid> applicationIds)
+        {
+            var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+            var payments = await paymentsQueryable.Include(pr => pr.Site).ToListAsync();
+            var filteredPayments = payments.Where(pr => applicationIds.Contains(pr.CorrelationId)).ToList();
+
+            return ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments);
+        }
+
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
