@@ -103,8 +103,15 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         // Pre-fetch payment requests for all applications in a single query to reduce database calls
         var applicationIds = groupedResult.SelectMany(g => g).Select(a => a.Id).ToList();
-        var paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+
+        List<PaymentDetailsDto> paymentRequests = new List<PaymentDetailsDto>();
+        if (!paymentsFeatureEnabled)
+        {
+            paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+        }
+       
 
         // Map applications to DTOs
         var appDtos = groupedResult.Select(grouping =>
@@ -130,7 +137,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.ContactCellPhone = firstApplication.ApplicantAgent?.Phone2;
 
             //Payment request info if the feature is enabled
-            if (paymentsFeatureEnabled)
+            if (paymentsFeatureEnabled && paymentRequests != null && paymentRequests is { Count: > 0 })
             {
                 var paymentInfo = new PaymentInfoDto
                 {
