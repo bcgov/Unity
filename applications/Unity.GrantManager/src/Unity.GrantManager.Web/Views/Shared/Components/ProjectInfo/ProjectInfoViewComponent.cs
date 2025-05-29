@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Locality;
-using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
@@ -51,12 +51,8 @@ public class ProjectInfoViewComponent : AbpViewComponent
         const decimal ProjectFundingMultiply = 0.2M;
         GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
-        bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-        bool isFormEditGranted =  true;
-            //await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.ProjectInfo.Update);
-        bool isEditGranted = isFormEditGranted && !finalDecisionState;
-        bool isPostEditFieldsAllowed = true;
-            //= isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.ProjectInfo.UpdateFinalStateFields) && finalDecisionState);
+        bool IsApplicationOpen = !GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
+        bool UserHasFinalStateUpdate = await _authorizationService.IsGrantedAsync(UnitySelector.Project.Summary.Update.UpdateFinalStateFields);
 
         List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
 
@@ -74,10 +70,9 @@ public class ProjectInfoViewComponent : AbpViewComponent
             RegionalDistricts = RegionalDistricts,
             Communities = Communities,
             EconomicRegions = EconomicRegions,
-            IsFinalDecisionMade = finalDecisionState,
-            IsFormEditGranted = isFormEditGranted,
-            IsEditGranted = isEditGranted,
-            IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
+            IsFinalDecisionMade = !IsApplicationOpen,
+            IsSummaryEditable = IsApplicationOpen || UserHasFinalStateUpdate,
+            IsLocationEditable = IsApplicationOpen,
         };
 
         model.EconomicRegionList.AddRange(EconomicRegions.Select(EconomicRegion =>

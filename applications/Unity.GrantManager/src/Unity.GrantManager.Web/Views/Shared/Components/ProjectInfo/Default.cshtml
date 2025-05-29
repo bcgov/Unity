@@ -35,7 +35,9 @@
 
         @* Zone Section : ProjectInfo.Summary *@
         <zone-fieldset id="@UnitySelector.Project.Summary.Default" form-id="@Model.ApplicationFormId"
-            update-permission-requirement="@UnitySelector.Project.Summary.Update.Default" show-legend="true">
+            update-permission-requirement="@UnitySelector.Project.Summary.Update.Default" 
+            editable-if="@Model.IsSummaryEditable"
+            show-legend="true">
             <abp-row class="m-0 project-info-form">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_6" class="px-1">
@@ -110,7 +112,8 @@
 
         @* Zone Section : ProjectInfo.Location *@
         <zone-fieldset id="@UnitySelector.Project.Location.Default" form-id="@Model.ApplicationFormId"
-            update-permission-requirement="@UnitySelector.Project.Location.Update.Default" show-legend="true">
+            update-permission-requirement="@UnitySelector.Project.Location.Update.Default"
+            editable-if="@Model.IsLocationEditable" show-legend="true">
             <abp-row class="m-0 project-info-form">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">

@@ -29,7 +29,6 @@ public class ProjectInfoViewModel : PageModel
     
 
     public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
-    public bool IsFinalDecisionMade { get; set; }
     public ProjectInfoViewModelModel ProjectInfo { get; set; } = new();
 
     public List<EconomicRegionDto> EconomicRegions  { get; set; } = new List<EconomicRegionDto>();
@@ -37,9 +36,10 @@ public class ProjectInfoViewModel : PageModel
     public List<SelectListItem> CommunityList { get; set; } = new List<SelectListItem>();
     public List<CommunityDto> Communities { get; set; } = new List<CommunityDto>();
     public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
-    public bool IsFormEditGranted { get; set; }
-    public bool IsEditGranted { get; set; }
-    public bool IsPostEditFieldsAllowed { get; set; }
+    
+    public bool IsFinalDecisionMade { get; set; }
+    public bool IsSummaryEditable { get; set; }
+    public bool IsLocationEditable { get; set; }
 
     public class ProjectInfoViewModelModel
     {

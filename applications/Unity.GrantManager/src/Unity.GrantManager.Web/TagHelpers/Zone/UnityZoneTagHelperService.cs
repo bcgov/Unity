@@ -21,12 +21,15 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
     protected IStringLocalizer<GrantManagerResource> L { get; }
 
-    private bool _featureState = true;
-    private bool _zoneState = true;
-    private bool _readRermissionState = true;
-    private bool _updateRermissionState = true;
+    private bool _featureState          = true;
+    private bool _zoneState             = true;
+    private bool _readPermissionState   = true;
+    private bool _readCondition         = true;
+    private bool _updatePermissionState = true;
+    private bool _updateCondition       = true;
 
-    private bool _allRequirementsSatisfied => _featureState && _zoneState && _readRermissionState;
+    private bool _readRequirementsSatisfied => _readCondition && _featureState && _zoneState && _readPermissionState;
+    private bool _updateRequirementsSatisfied => _readRequirementsSatisfied && _updatePermissionState && _updateCondition;
 
     public UnityZoneTagHelperService(
         IFeatureChecker featureChecker,
@@ -48,7 +51,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
         await CheckRequirementsAsync();
 
-        if (!TagHelper.Condition || !_allRequirementsSatisfied)
+        if (!_readRequirementsSatisfied)
         {
             output.SuppressOutput();
             await CheckRequirementsAsync();
@@ -68,7 +71,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
             output.Attributes.Add("name", TagHelper.ElementId);
 
             // Toggle fieldset enabled/disabled on edit permission
-            if (!_updateRermissionState || !TagHelper.EditableCondition)
+            if (!_updateRequirementsSatisfied)
             {
                 output.Attributes.Add("disabled", "disabled");
             }
@@ -120,17 +123,22 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
                 </dd>
                 <dt class=""col-sm-3"">FeatureRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_featureState)}{TagHelper.FeatureRequirement ?? "N/A"}{(TagHelper.Id == TagHelper.FeatureRequirement ? " (Inherited)" : string.Empty)}</dd>
                 <dt class=""col-sm-3"">ZoneRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_zoneState)}{TagHelper.ZoneRequirement ?? "N/A"}{(TagHelper.Id == TagHelper.ZoneRequirement ? " (Inherited)" : string.Empty)}</dd>
-                <dt class=""col-sm-3"">ReadPermissionRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_readRermissionState)}{TagHelper.PermissionRequirement ?? "N/A"}{(TagHelper.Id == TagHelper.PermissionRequirement ? " (Inherited)" : string.Empty)}</dd>
+                <dt class=""col-sm-3"">ReadPermissionRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_readPermissionState)}{TagHelper.PermissionRequirement ?? "N/A"}{(TagHelper.Id == TagHelper.PermissionRequirement ? " (Inherited)" : string.Empty)}</dd>
+                <dt class=""col-sm-3"">CustomReadCondition</dt><dd class=""col-sm-9"">{NotApplicableStatusBadge(TagHelper.ReadCondition)}</dd>
                 <hr/>
-                <dt class=""col-sm-3"">UpdatePermissionRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_updateRermissionState)}{TagHelper.UpdatePermissionRequirement ?? "N/A"}</dd>
+                <dt class=""col-sm-3"">UpdatePermissionRequirement</dt><dd class=""col-sm-9"">{StatusBadge(_updatePermissionState)}{TagHelper.UpdatePermissionRequirement ?? "N/A"}</dd>
+                <dt class=""col-sm-3"">CustomUpdateCondition</dt><dd class=""col-sm-9"">{NotApplicableStatusBadge(TagHelper.UpdateCondition)}</dd>
             </dl>";
 
         debugAlert.InnerHtml.SetHtmlContent(debugMessage);
         output.PreElement.AppendHtml(debugAlert);
     }
 
-    private static string StatusBadge(bool condition)
-        => (condition ? "<span class=\"badge text-bg-primary\">PASS</span> " : "<span class=\"badge text-bg-secondary\">FAIL</span> ");
+    private static string NotApplicableStatusBadge(bool? condition)
+        => (condition == null ? "<span class=\"badge text-bg-light\">N/A</span> " : StatusBadge(condition));
+
+    private static string StatusBadge(bool? condition)
+        => (condition == true ? "<span class=\"badge text-bg-primary\">PASS</span> " : "<span class=\"badge text-bg-secondary\">FAIL</span> ");
 
     protected async Task CheckRequirementsAsync()
     {
@@ -143,7 +151,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         if (!string.IsNullOrWhiteSpace(TagHelper.PermissionRequirement)
             && !await PermissionChecker.IsGrantedAsync(TagHelper.PermissionRequirement))
         {
-            _readRermissionState = false;
+            _readPermissionState = false;
         }
 
         // Skip zone checks if FormId is null
@@ -157,7 +165,13 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         if (!string.IsNullOrWhiteSpace(TagHelper.UpdatePermissionRequirement)
                 && !await PermissionChecker.IsGrantedAsync(TagHelper.UpdatePermissionRequirement))
         {
-            _updateRermissionState = false;
+            _updatePermissionState = false;
         }
+
+        // Check if the read condition is explicitly set (user must still have permission)
+        _readCondition = TagHelper.ReadCondition ?? true;
+        
+        // Check if the update condition is explicitly set (user must still have permission)
+        _updateCondition = TagHelper.UpdateCondition ?? true;
     }
 }
