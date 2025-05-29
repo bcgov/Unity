@@ -10,7 +10,7 @@
      * @param {any} camelCase
      * @returns
      */
-    $.fn.serializeZoneFieldsets = function (camelCase = true, includeDisabledFields = false) {
+    $.fn.serializeZoneFieldsets = function (camelCase = true, includeDisabledFields = false, nested = false) {
         let $form = $(this);
         // OPTIONS NOTE: Zones to exclude
         // OPTIONS NOTE: Zones to include
@@ -50,28 +50,32 @@
             data.forEach(item => item.name = toCamelCaseInternal(item.name));
         }
 
-        // Transformation phase: Convert flat data to nested object structure
-        data.forEach(field => {
-            const nameParts = field.name.split('.');
-            let current = resultObject;
+        if (nested) {
+            // Transformation phase: Convert flat data to nested object structure
+            data.forEach(field => {
+                const nameParts = field.name.split('.');
+                let current = resultObject;
 
-            // Navigate through the object hierarchy
-            for (let i = 0; i < nameParts.length - 1; i++) {
-                const part = nameParts[i];
-                if (!current[part]) {
-                    current[part] = {};
+                // Navigate through the object hierarchy
+                for (let i = 0; i < nameParts.length - 1; i++) {
+                    const part = nameParts[i];
+                    if (!current[part]) {
+                        current[part] = {};
+                    }
+                    current = current[part];
                 }
-                current = current[part];
-            }
 
-            // Set the final property value
-            const lastPart = nameParts[nameParts.length - 1];
-            if (!current[lastPart] || Object.keys(current[lastPart]).length === 0) {
-                current[lastPart] = field.value;
-            }
-        });
+                // Set the final property value
+                const lastPart = nameParts[nameParts.length - 1];
+                if (!current[lastPart] || Object.keys(current[lastPart]).length === 0) {
+                    current[lastPart] = field.value;
+                }
+            });
 
-        return resultObject;
+            return resultObject;
+        } else {
+            return data;
+        }
     };
 
     /**
@@ -80,14 +84,14 @@
      * @returns
      */
     let toCamelCaseInternal = function (str) {
-        var regexs = [
+        let regexs = [
             /(^[A-Z])/, // first char of string
             /((\.)[A-Z])/ // first char after a dot (.)
         ];
 
         regexs.forEach(
             function (regex) {
-                var infLoopAvoider = 0;
+                let infLoopAvoider = 0;
 
                 while (regex.test(str)) {
                     str = str
@@ -128,5 +132,4 @@
 
         console.table(tableData);
     }
-
 })(jQuery);
