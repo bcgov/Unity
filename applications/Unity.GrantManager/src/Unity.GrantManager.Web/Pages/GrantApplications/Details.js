@@ -341,8 +341,18 @@ $(function () {
         let formSchemaString = document.getElementById('ApplicationFormSchema').value;
         let submissionJson = JSON.parse(submissionDataString);
         let formSchema;
-        let data;
         let submissionData;
+        
+        // Initialize data with correct structure
+        let data = {
+            version: {
+                schema: null
+            },
+            submission: {
+                submission: null
+            }
+        };
+
 
         // Check if the submission data is pure data or the entire form
         if (submissionJson.version !== undefined && submissionJson.submission !== undefined) {
