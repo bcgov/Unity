@@ -18,7 +18,6 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unity.Payments.PaymentRequests
 {
