@@ -413,7 +413,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         var application = await _applicationRepository.GetAsync(id);
 
-        var hasProjectZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Default, application.ApplicationFormId);
         var hasSummaryZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Summary.Default, application.ApplicationFormId);
         var hasLocationZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Location.Default, application.ApplicationFormId);
 
@@ -473,9 +472,27 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
         ObjectMapper.Map<PartialUpdateProjectInfoDto, Application>(input.Data, application);
 
-        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
-        // TODO: Map null but modified cases
+        // Explicitly handle properties that are null but listed in ModifiedFields
+        var dtoProperties = typeof(PartialUpdateProjectInfoDto).GetProperties();
+        var appProperties = typeof(Application).GetProperties().ToDictionary(p => p.Name, p => p);
 
+        foreach (var fieldName in input.ModifiedFields)
+        {
+            if (dtoProperties.FirstOrDefault(p => 
+                string.Equals(p.Name, fieldName, StringComparison.OrdinalIgnoreCase)) is { } dtoProperty)
+            {
+                var value = dtoProperty.GetValue(input.Data);
+                if (value == null && appProperties.TryGetValue(dtoProperty.Name, out var appProperty) && appProperty.CanWrite)
+                {
+                    appProperty.SetValue(application, appProperty.PropertyType.IsValueType 
+                        && Nullable.GetUnderlyingType(appProperty.PropertyType) == null
+                        ? Activator.CreateInstance(appProperty.PropertyType)
+                        : null);
+                }
+            }
+        }
+
+        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
 
         await _applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
