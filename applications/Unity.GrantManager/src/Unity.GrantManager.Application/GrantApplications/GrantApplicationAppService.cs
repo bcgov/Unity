@@ -107,7 +107,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
         List<PaymentDetailsDto> paymentRequests = new List<PaymentDetailsDto>();
-        if (!paymentsFeatureEnabled)
+        if (paymentsFeatureEnabled)
         {
             paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
         }
