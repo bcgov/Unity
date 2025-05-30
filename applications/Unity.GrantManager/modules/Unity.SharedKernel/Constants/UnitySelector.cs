@@ -198,7 +198,7 @@ public static partial class UnitySelector
     public static partial class Project
     {
         public const string Default = "Unity.GrantManager.ApplicationManagement.Project";
-        public const string UpdatePolicy = "Unity.GrantManager.ApplicationManagement.Project.UpdatePolicy";
+        public const string UpdatePolicy = "Unity.GrantManager.ApplicationManagement.Project.UpdatePolicy"; // Custom Policy
 
         public static partial class Location
         {

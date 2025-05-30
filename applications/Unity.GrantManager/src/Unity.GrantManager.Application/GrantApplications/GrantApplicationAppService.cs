@@ -492,6 +492,10 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
 
+        // Calculate the percentage of the total project budget based on
+        // the requested amount and total project budget. Percentage total has to be
+        // updated whenever RequestedAmount or TotalProjectBudget changes
+        application.UpdatePercentageTotalProjectBudget();
         await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
 
         await _applicationRepository.UpdateAsync(application);
