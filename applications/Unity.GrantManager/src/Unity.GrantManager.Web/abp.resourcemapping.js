@@ -32,7 +32,6 @@ module.exports = {
         '@node_modules/jszip': '@libs/jszip',
         '@node_modules/tributejs': '@libs/tributejs',
         '@node_modules/tinymce': '@libs/tinymce',
-        '@node_modules/handlebars': '@libs/handlebars',
-        '@node_modules/jquery/dist': '@libs/jquery/'
+        '@node_modules/handlebars': '@libs/handlebars'
     },
 };
