@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Integration.Chefs;
 using Unity.GrantManager.Permissions;
 using Volo.Abp;
@@ -130,15 +131,14 @@ namespace Unity.GrantManager.ApplicationForms
             await _applicationFormRepository.UpdateAsync(appForm);
         }
 
-        public  async Task<ApplicationFormDto> UpdateOtherConfig(Guid id, OtherConfigDto config)
+        public async Task PatchOtherConfig(Guid id, OtherConfigDto config)
         {
-            var appForm = await _applicationFormRepository.GetAsync(id);
+            var form = await _applicationFormRepository.GetAsync(id);
 
-            appForm.IsDirectApproval = config.IsDirectApproval;
-            appForm.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
+            form.IsDirectApproval = config.IsDirectApproval;
+            form.ElectoralDistrictAddressType = AddressType.PhysicalAddress; // config.ElectoralDistrictAddressType;
 
-            await _applicationFormRepository.UpdateAsync(appForm);
-            return ObjectMapper.Map<ApplicationForm, ApplicationFormDto>(appForm);
+            await _applicationFormRepository.UpdateAsync(form);
         }
     }
 }
