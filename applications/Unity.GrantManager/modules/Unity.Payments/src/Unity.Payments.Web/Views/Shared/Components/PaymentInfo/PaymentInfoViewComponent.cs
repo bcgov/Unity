@@ -47,8 +47,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                     ApplicationFormVersionId = applicationFormVersionId
                 };
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
-
-           model.TotalPaid= paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Paid))
+           model.TotalPaid= paymentRequests.Where(e => e.Status == PaymentRequestStatus.Submitted)
                                   .Sum(e => e.Amount);
             model.TotalPendingAmounts = paymentRequests
                 .Where(e => e.Status is not (PaymentRequestStatus.Paid 

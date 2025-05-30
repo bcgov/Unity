@@ -74,6 +74,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ZoneGroupDefinition, ZoneGroupDefinitionDto>().ReverseMap();
         CreateMap<ZoneTabDefinition, ZoneTabDefinitionDto>().ReverseMap();
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
+
+        CreateMap<TagSummaryCount, TagSummaryCountDto>();
     }
 }
 

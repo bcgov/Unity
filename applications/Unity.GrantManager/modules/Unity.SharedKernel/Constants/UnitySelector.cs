@@ -213,5 +213,16 @@ public static partial class UnitySelector
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Project.Summary.Delete";
         }
     }
+
+    public static partial class SettingManagement
+    {
+        public static class Tags
+        {
+            public const string Default = "Unity.GrantManager.SettingManagement.Tags";
+            public const string Create  = "Unity.GrantManager.SettingManagement.Tags.Create";
+            public const string Update  = "Unity.GrantManager.SettingManagement.Tags.Update";
+            public const string Delete  = "Unity.GrantManager.SettingManagement.Tags.Delete";
+        }
+    }
 }
 

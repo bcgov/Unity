@@ -278,7 +278,8 @@ $(function () {
             getDescriptionColumn(columnIndex++),
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
-            getCASResponseColumn(columnIndex++)
+            getCASResponseColumn(columnIndex++),
+            getTagsColumn(columnIndex++)
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -595,7 +596,18 @@ $(function () {
         };
     }
 
-
+    function getTagsColumn(columnIndex) {
+        return {
+            title: 'Tags',
+            name: 'paymentTags',
+            data: 'paymentTags[0].text',
+            className: '',
+            index: columnIndex,
+            render: function (data) {
+                return data.replace(/,/g, ', ') ?? '';
+            }
+        }
+    }
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
@@ -671,6 +683,16 @@ $(function () {
             dataTable.rows({ 'page': 'current' }).deselect();
         }
     });
+
+    PubSub.subscribe(
+        'refresh_payment_list',
+        (msg, data) => {
+            dataTable.ajax.reload(null, false);
+            $(".select-all-payments").prop("checked", false);
+            PubSub.publish('clear_selected_payment');
+        }
+    );
+
 });
 
 

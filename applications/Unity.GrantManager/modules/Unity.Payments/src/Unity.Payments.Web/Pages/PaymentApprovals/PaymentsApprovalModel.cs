@@ -1,12 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Unity.Payments.Enums;
+using Unity.Payments.Localization;
+using Volo.Abp.Users;
 
 namespace Unity.Payments.Web.Pages.PaymentApprovals
 {
-    public class PaymentsApprovalModel
+    public class PaymentsApprovalModel : IValidatableObject
     {
         [Required]
         public Guid Id { get; set; }
@@ -32,8 +36,6 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         public bool isPermitted { get; set; }
 
-        public List<string> ErrorList { get; set; } = new List<string> { };
-
         public bool IsL3ApprovalRequired { get; set; }
 
         public PaymentRequestStatus ToStatus { get; set; }
@@ -42,5 +44,27 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         public string ToStatusText { get; set; } = string.Empty;
 
+        public Guid? PreviousL1Approver { get; set; }
+
+        public bool IsApproval { get; set; }
+        public bool IsValid { get; set; } = false;
+        public Guid CurrentUser { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            var currentUser = validationContext.GetRequiredService<ICurrentUser>();
+            var localizer = validationContext.GetRequiredService<IStringLocalizer<PaymentsResource>>();
+
+            // Rule AB#26693: Reject Payment Request update batch if violates L1 and L2 separation of duties
+            if (IsApproval
+                && Status == PaymentRequestStatus.L2Pending
+                && PreviousL1Approver == currentUser.Id)
+            {
+                yield return new ValidationResult(
+                    errorMessage: localizer["ApplicationPaymentRequest:Validations:L2ApproverRestriction"],
+                    memberNames: [nameof(PreviousL1Approver)]
+                );
+            }
+        }
     }
 }

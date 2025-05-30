@@ -2,23 +2,22 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Unity.GrantManager.GrantApplications;
-using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Volo.Abp.Users;
-using Microsoft.Extensions.Configuration;
-using Unity.Flex.Worksheets;
-using Unity.GrantManager.Applications;
-using Unity.Modules.Shared.Correlation;
-using Volo.Abp.Features;
 using System.Linq;
-using Unity.GrantManager.Flex;
+using System.Threading.Tasks;
 using Unity.Flex.WorksheetLinks;
-using Newtonsoft.Json.Linq;
+using Unity.Flex.Worksheets;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.Flex;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Zones;
+using Unity.Modules.Shared.Correlation;
+using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Features;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -63,7 +62,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? ApplicationFormSubmissionData { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
+        public string? ApplicationFormSchema { get; set; } = null;
 
+        [BindProperty(SupportsGet = true)]
         public string? ApplicationFormSubmissionHtml { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
@@ -86,7 +87,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty]
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
-        public DetailsModel(GrantApplicationAppService grantApplicationAppService,
+        public DetailsModel(
+            GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
             IApplicationFormVersionAppService applicationFormVersionAppService,
             IFeatureChecker featureChecker,
@@ -109,18 +111,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public async Task OnGetAsync()
         {
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
-
             ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
-            
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
                 // Need to look at finding another way to extract / store this info on intake
-                JObject submission = JObject.Parse(applicationFormSubmission.Submission);
-                JToken? tokenFormVersionId = submission.SelectToken("submission.formVersionId");
-                var sformVersionId = Guid.Parse(tokenFormVersionId?.Value<string>() ?? Guid.Empty.ToString());
-
-                var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(sformVersionId);
+                var formVersion = applicationFormSubmission.ApplicationFormVersionId.HasValue
+                    ? await _applicationFormVersionAppService.GetAsync(applicationFormSubmission.ApplicationFormVersionId.Value)
+                    : null;
+                ApplicationFormSchema = formVersion?.FormSchema ?? string.Empty;
                 ApplicationFormVersionId = formVersion?.Id ?? Guid.Empty;
                 var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(ApplicationFormVersionId, CorrelationConsts.FormVersion);
                 var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor, order = s.Order }).ToList();

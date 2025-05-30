@@ -1,17 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System;
-using Unity.Payments.PaymentRequests;
-using System.Threading.Tasks;
-using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Unity.Payments.PaymentConfigurations;
-using Unity.Payment.Shared;
-using System.Text.Json;
-using Unity.Payments.Enums;
-using Volo.Abp.Users;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Unity.Payment.Shared;
 using Unity.Payments.Domain.Shared;
+using Unity.Payments.Enums;
+using Unity.Payments.PaymentConfigurations;
+using Unity.Payments.PaymentRequests;
 using Unity.Payments.Permissions;
+using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Users;
 
 namespace Unity.Payments.Web.Pages.PaymentApprovals
 {
@@ -76,21 +77,38 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             HasPaymentConfiguration = true;
 
             var paymentApprovals = new List<PaymentsApprovalModel>();
+
+
             foreach (var payment in payments)
             {
                 PaymentsApprovalModel request = new()
                 {
-                    Id = payment.Id,
-                    ReferenceNumber = payment.ReferenceNumber,
-                    CorrelationId = payment.Id,
-                    ApplicantName = payment.PayeeName,
-                    Amount = payment.Amount,
-                    Description = payment.Description,
-                    InvoiceNumber = payment.InvoiceNumber,
-                    Status = payment.Status,
+                    Id                   = payment.Id,
+                    ReferenceNumber      = payment.ReferenceNumber,
+                    CorrelationId        = payment.Id,
+                    ApplicantName        = payment.PayeeName,
+                    Amount               = payment.Amount,
+                    Description          = payment.Description,
+                    InvoiceNumber        = payment.InvoiceNumber,
+                    Status               = payment.Status,
                     IsL3ApprovalRequired = payment.Amount > PaymentThreshold,
-                    ToStatus = payment.Status,
+                    ToStatus             = payment.Status,
+                    IsApproval           = isApprove,
+                    PreviousL1Approver   = payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId,
                 };
+
+                var validationContext = new ValidationContext(request, LazyServiceProvider, null);
+                var validationResults = new List<ValidationResult>();
+                request.IsValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
+
+                // Add validation errors to ModelState
+                foreach (var validationResult in validationResults)
+                {
+                    foreach (var memberName in validationResult.MemberNames)
+                    {
+                        ModelState.AddModelError(memberName, validationResult.ErrorMessage ?? "Validation message error.");
+                    }
+                }
 
                 var verifiedRequest = await CheckUserPermissionsAsync(payment.Status, IsApproval, payment.Amount > PaymentThreshold, request);
 
@@ -117,7 +135,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 indx++;
             }
 
-            DisableSubmit = (paymentApprovals.Count == 0);
+            DisableSubmit = (paymentApprovals.Count == 0 || !ModelState.IsValid);
         }
 
         private async Task<PaymentsApprovalModel> CheckUserPermissionsAsync(PaymentRequestStatus status, bool IsApproval, bool isExceedThreshold, PaymentsApprovalModel request)
@@ -158,9 +176,12 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         public async Task<IActionResult> OnPostAsync()
         {
             if (PaymentGroupings == null || PaymentGroupings.Count == 0) return NoContent();
-            var payments = MapPaymentRequests(IsApproval);
 
-            await _paymentRequestService.UpdateStatusAsync(payments);
+            if (ModelState.IsValid)
+            {
+                var payments = MapPaymentRequests(IsApproval);
+                await _paymentRequestService.UpdateStatusAsync(payments);
+            }
 
             return NoContent();
         }

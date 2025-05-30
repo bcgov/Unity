@@ -1,7 +1,44 @@
 $(function () {
     let selectedPaymentIds = [];
-    
-  
+    let tagPaymentModal = new abp.ModalManager({
+        viewUrl: 'PaymentTags/PaymentTagsSelectionModal',
+    });
+
+    tagPaymentModal.onOpen(function () {
+        let tagInput = new TagsInput({
+            selector: 'SelectedTags',
+            duplicate: false,
+            max: 50
+        });
+        let suggestionsArray = [];
+        let uncommonTags = $('#UncommonTags').val();
+        let commonTags = $('#CommonTags').val();
+        let allTags = $('#AllTags').val();
+        if (allTags) {
+            suggestionsArray = allTags.split(',');
+        }
+        tagInput.setSuggestions(suggestionsArray);
+
+        let tagInputArray = [];
+
+        if (uncommonTags && uncommonTags != null) {
+            tagInputArray.push({ text: 'Uncommon Tags', class: 'tags-uncommon', id: 0 })
+
+        }
+        const commonTagsArray = commonTags.split(',');
+        if (commonTags && commonTagsArray.length) {
+
+            if (commonTagsArray.length) {
+
+                commonTagsArray.forEach(function (item, index) {
+
+                    tagInputArray.push({ text: item, class: 'tags-common', id: index + 1 })
+                });
+
+            }
+        }
+        tagInput.addData(tagInputArray);
+    });
 
     PubSub.subscribe("select_batchpayment_application", (msg, data) => {
         selectedPaymentIds.push(data.id);
@@ -21,17 +58,34 @@ $(function () {
         if (selectedPaymentIds.length == 0) {
             $('*[data-selector="batch-payment-table-actions"]').prop('disabled', true);
             $('*[data-selector="batch-payment-table-actions"]').addClass('action-bar-btn-unavailable');
-            $('.action-bar').removeClass('active');
-
-
+            $('.action-bar').addClass('disabled');
+            $('#tagPayment').prop('disabled', true); 
         }
         else {
             $('*[data-selector="batch-payment-table-actions"]').prop('disabled', false);
             $('*[data-selector="batch-payment-table-actions"]').removeClass('action-bar-btn-unavailable');
             $('.action-bar').addClass('active');
-         
+            $('#tagPayment').removeClass('disabled');
+            $('#tagPayment').prop('disabled', false);
+
         }
     }
+
+    $('#tagPayment').click(function () {
+        tagPaymentModal.open({
+            paymentRequestIds: JSON.stringify(selectedPaymentIds),
+            actionType: 'Add'
+        });
+    });
+
+
+    tagPaymentModal.onResult(function () {
+        abp.notify.success(
+            'The payment tags have been successfully updated.',
+            'Payment Tags'
+        );
+        PubSub.publish("refresh_payment_list");
+    });
 
 });
 

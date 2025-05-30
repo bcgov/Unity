@@ -120,6 +120,17 @@ $(function () {
 
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
+        {
+            text: '<i class="fl fl-add-to align-middle"></i> <span>' + l('NewRole') + '</span>',
+            titleAttr: l('NewRole'),
+            id: 'CreateRoleButton',
+            className: 'btn-light rounded-1',
+            available: () => abp.auth.isGranted('AbpIdentity.Roles.Create'),
+            action: (e, dt, node, config) => {
+                e.preventDefault();
+                _createModal.open();
+            }
+        },
         ...commonTableActionButtons(l('Roles'))
     ];
 
@@ -143,6 +154,7 @@ $(function () {
             };
         },
         actionButtons,
+        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},

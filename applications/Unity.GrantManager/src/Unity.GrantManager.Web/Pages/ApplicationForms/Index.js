@@ -120,6 +120,7 @@
         data: {},
         responseCallback,
         actionButtons,
+        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},

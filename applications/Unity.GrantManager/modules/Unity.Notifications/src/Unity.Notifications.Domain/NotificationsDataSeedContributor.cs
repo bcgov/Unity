@@ -27,7 +27,7 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
             new EmailTempateVariableDto { Name = "Applicant name", Token = "applicant_name", MapTo = "applicant.applicantName" },
             new EmailTempateVariableDto { Name = "Submission #", Token = "submission_number", MapTo = "referenceNo" },
             new EmailTempateVariableDto { Name = "Submission Date", Token = "submission_date", MapTo = "submissionDate" },
-            new EmailTempateVariableDto { Name = "Category", Token = "category", MapTo = "category" },
+            new EmailTempateVariableDto { Name = "Category", Token = "category", MapTo = "applicationForm.category" },
             new EmailTempateVariableDto { Name = "Status", Token = "status", MapTo = "status" },
             new EmailTempateVariableDto { Name = "Approved Amount", Token = "approved_amount", MapTo = "approvedAmount" },
             new EmailTempateVariableDto { Name = "Approval date", Token = "approval_date", MapTo = "finalDecisionDate" },
@@ -53,6 +53,11 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
                     new TemplateVariable { Name = template.Name, Token = template.Token, MapTo = template.MapTo },
                     autoSave: true
                 );
+            }
+            else if (existingVariable.Token == "category" && existingVariable.MapTo == "category")
+            {
+                existingVariable.MapTo = "applicationForm.category";
+                await _templateVariablesRepository.UpdateAsync(existingVariable, autoSave: true);
             }
         }
     }

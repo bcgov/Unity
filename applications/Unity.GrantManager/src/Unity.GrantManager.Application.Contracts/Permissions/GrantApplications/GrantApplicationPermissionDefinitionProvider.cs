@@ -3,6 +3,7 @@ using Unity.Modules.Shared;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
+using static Unity.Modules.Shared.UnitySelector.Review;
 
 namespace Unity.GrantManager.Permissions.GrantApplications
 {
@@ -58,6 +59,8 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             // Approval
             var approvalPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Approvals.Default, L("Permission:GrantApplicationManagement.Approvals.Default"));
             approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.Complete, L("Permission:GrantApplicationManagement.Approvals.Complete"));
+            approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.DeferAfterApproval, L("Permission:GrantApplicationManagement.Approvals.DeferAfterApproval"));
+            approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.BulkApplicationApproval, L("Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval"));
 
             // Comments
             var appCommentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Comments.Default, L("Permission:GrantApplicationManagement.Comments.Default"));
@@ -78,6 +81,11 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
+
+            // Settings - Tag Management
+            var tagManagement = settingManagement.AddPermission(UnitySelector.SettingManagement.Tags.Default, L(UnitySelector.SettingManagement.Tags.Default));
+            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Update, L(UnitySelector.SettingManagement.Tags.Update));
+            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Delete, L(UnitySelector.SettingManagement.Tags.Delete));
 
             var emailingPermission = context.GetPermissionOrNull(SettingManagementPermissions.Emailing);
             if (emailingPermission != null)

@@ -5,52 +5,63 @@
 <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
 
 <div class="container-fluid px-0">
-    <abp-tabs name="NotificationSettings">
-        <abp-tab active="true" name="nav-config" title="Configuration">
-            <div class="unity-page-titlebar">
-                <h4 class="m-0">Notifications Configuration</h4>
-            </div>
-            <div class="p-3">
-                <form id="NotificationsSettingsForm">
-                    <abp-row>
-                        <abp-column size-md="_12" class="mx-2 fw-bold">
-                            <abp-input asp-for="@Model.DefaultFromAddress" />
-                        </abp-column>
-                    </abp-row>
-                    <abp-row>
-                        <abp-column size-md="_12" class="mx-2 fw-bold">
-                            <abp-input asp-for="@Model.MaximumRetryAttempts" />
-                        </abp-column>
-                    </abp-row>
-                    <abp-row>
-                        <hr class="my-4" />
-                        <div class="d-flex p-2">
-                            <abp-button id="NotificationsSaveButton"
-                                        text="Save Changes"
-                                        button-type="Primary" class="me-2"
-                                        type="submit" />
-                            <abp-button id="NotificationsDiscardButton"
-                                        text="Discard Changes"
-                                        button-type="Light" class="me-2"
-                                        disabled="true" />
-                        </div>
-                    </abp-row>
-                </form>
-            </div>
-        </abp-tab>
-        <abp-tab name="nav-template"  title="Templates">
-            <div class="container mt-3">
-                <h3>Email Templates</h3>
+    <div class="unity-page-titlebar">
+        <h4 class="m-0">Notifications</h4>
+    </div>
+    <nav>
+        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+            <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-config" type="button" role="tab">Notifications Configuration</button>
+            <button class="nav-link" id="nav-template-tab" data-bs-toggle="tab" data-bs-target="#nav-template" type="button" role="tab">Email Templates</button>
+        </div>
+    </nav>
 
-           
-                <abp-button id="CreateNewTemplate"
-                            text="+ Add Template"
-                            button-type="Primary" class="me-2  ms-auto"
-                           />
-                <div id="cardContainer" class="v-scroll p-3"></div>
-            </div>
-        </abp-tab>
+    <div class="tab-content unt-tab-content" id="nav-tabContent">
+        <!--Tab Content: Mapping-->
+        <div class="tab-pane fade show active" id="nav-config" role="tabpanel" aria-labelledby="nav-mapping-tab">
+            <div class="row">
+                <div class="p-3">
+                    <form id="NotificationsSettingsForm">
+                        <abp-row>
+                            <abp-column size-md="_12" class="mx-2 fw-bold">
+                                <abp-input asp-for="@Model.DefaultFromAddress" />
+                            </abp-column>
+                        </abp-row>
+                        <abp-row>
+                            <abp-column size-md="_12" class="mx-2 fw-bold">
+                                <abp-input asp-for="@Model.MaximumRetryAttempts" />
+                            </abp-column>
+                        </abp-row>
+                        <abp-row>
+                            <hr class="my-4" />
+                            <div class="d-flex p-2">
+                                <abp-button id="NotificationsSaveButton"
+                                            text="Save Changes"
+                                            button-type="Primary" class="me-2"
+                                            type="submit" />
+                                <abp-button id="NotificationsDiscardButton"
+                                            text="Discard Changes"
+                                            button-type="Light" class="me-2"
+                                            disabled="true" />
+                            </div>
+                        </abp-row>
+                    </form>
+                </div>
+                </div>
+         </div>
+        <div class="tab-pane fade" id="nav-template" role="tabpanel" aria-labelledby="nav-template-tab">
+            <div class="row">
+                <div class="container mt-3">
+                    <h3>Email Templates</h3>
 
-    </abp-tabs>
+
+                    <abp-button id="CreateNewTemplate"
+                                text="+ Add Template"
+                                button-type="Primary" class="me-2  ms-auto" />
+                    <div id="cardContainer" class="v-scroll p-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     
 </div>

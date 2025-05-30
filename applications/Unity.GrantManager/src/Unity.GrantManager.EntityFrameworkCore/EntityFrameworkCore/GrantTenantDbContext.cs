@@ -103,6 +103,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+                b.Property(x => x.FormSchema).HasColumnType("jsonb");
             });
 
             modelBuilder.Entity<ApplicationStatus>(b =>

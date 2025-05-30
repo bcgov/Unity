@@ -55,6 +55,7 @@
                 <button class="nav-link" id="nav-ui-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-ui-configuration" type="button" role="tab">UI Configuration</button>
             }
             <button class="nav-link" id="nav-payment-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-configuration" type="button" role="tab">Payment Configuration</button>
+            <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
         </div>
     </nav>
     <div class="tab-content unt-tab-content" id="nav-tabContent">
@@ -199,6 +200,24 @@
         
         <!--Tab Content: Payment Configuration-->
         <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab"></div>
+        
+        <!--Tab Content: Other Configuration-->
+        <div class="tab-pane fade" id="nav-other-configuration" role="tabpanel" aria-labelledby="nav-other-configuration-tab">
+            <div class="row">
+                <div class="col-12 p-3">
+                <h6 class="mb-3"><b>Workflow Settings</b></h6>
+                <div class="switch-container">
+                    <div class="form-check unt-form-switch form-switch">
+                            <input class="form-check-input " checked="@Model?.ApplicationFormDto?.IsDirectApproval" type="checkbox" id="directApproval">
+                            <label class="form-check-label direct-approval" for="redStop">Direct Approval</label>
+                    </div>
+                </div>
+                    <label class="form-label note mt-1"><b>NOTE:</b> Note : Enabling this feature will bypass the Assessment workflow when you approve submissions associated with this form.</label>
+                </div>
+            </div>
+            </div>
+
+        </div>
     </div>
 
     <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">

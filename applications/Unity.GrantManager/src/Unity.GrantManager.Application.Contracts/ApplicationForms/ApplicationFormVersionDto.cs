@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -15,5 +16,7 @@ namespace Unity.GrantManager.ApplicationForms
         public string ReportColumns { get; set; } = string.Empty;
         public string ReportKeys { get; set; } = string.Empty;
         public string ReportViewName { get; set; } = string.Empty;
+        [Column(TypeName = "jsonb")]
+        public string? FormSchema { get; set; } = string.Empty;
     }
 }

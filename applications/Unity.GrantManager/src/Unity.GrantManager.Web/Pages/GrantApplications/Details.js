@@ -65,20 +65,34 @@ $(function () {
     async function getSubmission() {
         try {
             $('.spinner-grow').hide();
-            let submissionString = document.getElementById('ApplicationFormSubmissionData').value;
-            let submissionData = JSON.parse(submissionString);
+            let submissionDataString = document.getElementById('ApplicationFormSubmissionData').value;
+            let formSchemaString = document.getElementById('ApplicationFormSchema').value;
+            let submissionJson = JSON.parse(submissionDataString);
+            let formSchema;
+            let submissionData;
+
+            // Check if the submission data is pure data or the entire form
+            if (submissionJson.version !== undefined && submissionJson.submission !== undefined) {
+                // The submission data is in the form of a version and submission object
+                formSchema = submissionJson.version.schema;
+                submissionData = submissionJson.submission.submission;
+            } else if (formSchemaString !== undefined && formSchemaString !== "") {
+                formSchema = JSON.parse(formSchemaString);
+                submissionData = submissionJson.submission;
+            }
+
             Formio.icons = 'fontawesome';
 
             await Formio.createForm(
                 document.getElementById('formio'),
-                submissionData.version.schema,
+                formSchema,
                 {
                     readOnly: true,
                     renderMode: 'form',
                     flatten: true,
                 }
             ).then(function (form) {
-                handleForm(form, submissionData.submission.submission);
+                handleForm(form, submissionData);
             });
 
         } catch (error) {
@@ -322,80 +336,99 @@ $(function () {
     });
 
     $('#printPdf').click(function () {
-        let submissionId = getSubmissionId();
+        let submissionId = document.getElementById('ChefsSubmissionId').value;
+        let submissionDataString = document.getElementById('ApplicationFormSubmissionData').value;
+        let formSchemaString = document.getElementById('ApplicationFormSchema').value;
+        let submissionJson = JSON.parse(submissionDataString);
+        let formSchema;
+        let submissionData;
 
-        // Fetch submission data
-        fetchSubmissionData(submissionId)
-            .done(function (result) {
-                openDataInNewTab(result, submissionId);
-            })
-            .fail(function (error) {
-                console.error('Error fetching submission data:', error);
-            });
-    });
-
-    // Get submission ID from the input field
-    function getSubmissionId() {
-        return document.getElementById('ChefsSubmissionId').value;
-    }
-
-    // Fetch the submission data
-    function fetchSubmissionData(submissionId) {
-        return unity.grantManager.intakes.submission.getSubmission(submissionId);
-    }
-
-    // Handle the submission result
-    function openDataInNewTab(data, submissionId) {
-        let newTab = window.open('', '_blank');
-        let newDiv = $('<div>');
-
-        // Set the ID for the new div
-        newDiv.attr('id', 'new-rendering');
-
-        // Add some content to the new div if needed
-        newDiv.html('Content for the new div');
-
-        // Store the outer HTML of the new div in divToStore
-        let divToStore = newDiv.prop('outerHTML');
-
-        newTab.document.write('<html><head><title>Print</title>');
-        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
-        newTab.document.write('<script src="/libs/formiojs/formio.form.js"></script>');
-        newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
-        newTab.document.write('<link rel="stylesheet" href="/libs/formiojs/formio.form.css">');
-        newTab.document.write('</head><body>');
-
-        let newHiddenInput = $('<input>');
-        // Set attributes for the hidden input
-        newHiddenInput.attr({
-            'type': 'hidden',
-            'name': 'ApplicationFormSubmissionId',
-            'value': submissionId
-        });
-
-        let inputToStore = newHiddenInput.prop('outerHTML');
-        newTab.document.write(inputToStore);
-        newTab.document.write(divToStore);
-        newTab.document.write('</body></html>');
-        newTab.onload = function () {
-            let script = newTab.document.createElement('script');
-            script.src = '/Pages/GrantApplications/loadPrint.js';
-            script.onload = function () {
-                newTab.executeOperations(data);
-
-            };
-
-            newTab.document.head.appendChild(script);
-
+        // Initialize data with correct structure
+        let data = {
+            version: {
+                schema: null
+            },
+            submission: {
+                submission: null
+            }
         };
 
-        newTab.document.close();
-    }
+        // Determine how to extract form schema and submission
+        if (submissionJson.version !== undefined && submissionJson.submission !== undefined) {
+            formSchema = submissionJson.version.schema;
+            submissionData = submissionJson.submission.submission;
+        } else if (formSchemaString !== undefined && formSchemaString !== "") {
+            formSchema = JSON.parse(formSchemaString);
+            submissionData = submissionJson.submission;
+        }
+
+        data.version.schema = formSchema;
+        data.submission.submission = submissionData;
+
+        // Open a new tab
+        let newTab = window.open('', '_blank');
+
+        // Wait for the new tab's document to be available
+        const doc = newTab.document;
+
+        // Set title
+        doc.title = "Print";
+
+        // HEAD
+        const head = doc.head;
+
+        const jqueryScript = doc.createElement('script');
+        jqueryScript.src = '/libs/jquery/jquery.min.js';
+
+        const formioScript = doc.createElement('script');
+        formioScript.src = '/libs/formiojs/formio.form.min.js';
+
+        const bootstrapCSS = doc.createElement('link');
+        bootstrapCSS.rel = 'stylesheet';
+        bootstrapCSS.href = '/libs/bootstrap-4/dist/css/bootstrap.min.css';
+
+        const formioCSS = doc.createElement('link');
+        formioCSS.rel = 'stylesheet';
+        formioCSS.href = '/libs/formiojs/formio.form.css';
+
+        head.appendChild(jqueryScript);
+        head.appendChild(formioScript);
+        head.appendChild(bootstrapCSS);
+        head.appendChild(formioCSS);
+
+        // BODY
+        const body = doc.body;
+
+        // Hidden input
+        const hiddenInput = doc.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'ApplicationFormSubmissionId';
+        hiddenInput.value = submissionId;
+        body.appendChild(hiddenInput);
+
+        // Placeholder div
+        const formContainer = doc.createElement('div');
+        formContainer.id = 'new-rendering';
+        formContainer.textContent = 'Loading form...';
+        body.appendChild(formContainer);
+
+        // Load your custom script after Form.io is ready
+        formioScript.onload = () => {
+            const customScript = doc.createElement('script');
+            customScript.src = '/Pages/GrantApplications/loadPrint.js';
+            customScript.onload = function () {
+                // Call your global executeOperations function
+                newTab.executeOperations(data);
+            };
+            head.appendChild(customScript);
+        };
+    });
+
 
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
         let newTab = window.open('', '_blank');
         newTab.document.write('<html><head><title>Print</title>');
-        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
+        newTab.document.write('<script src="/libs/jquery/jquery.min.js"></script>');
         newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
         newTab.document.write('<link rel="stylesheet" href="/Pages/GrantApplications/ScoresheetPrint.css">');
         newTab.document.write('</head><body>');
@@ -463,12 +496,12 @@ $(function () {
             }
         }
     };
-    
+
     const assessmentResultObserver = new MutationObserver(widgetCallback);
 
-    if (assessmentResultTargetNode) {        
+    if (assessmentResultTargetNode) {
         assessmentResultObserver.observe(assessmentResultTargetNode, widgetConfig);
-    }    
+    }
 
     PubSub.subscribe(
         'application_status_changed',
