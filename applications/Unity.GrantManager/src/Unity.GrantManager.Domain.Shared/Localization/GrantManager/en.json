@@ -135,12 +135,14 @@
     "Permission:GrantApplicationManagement.Assessments.Complete": "Complete Assessment",
     "Permission:GrantApplicationManagement.Approvals.Default": "Approvals",
     "Permission:GrantApplicationManagement.Approvals.Complete": "Complete Approval",
+    "Permission:GrantApplicationManagement.Approvals.DeferAfterApproval": "Defer After Approval",
     "Permission:GrantApplicationManagement.Comments.Default": "Comments",
     "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment",
     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
     "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
     "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
+    "Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval": "Bulk Application Approval",
 
     "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",
@@ -210,6 +212,11 @@
     "Permission:GrantApplicationManagement.ProjectInfo": "Project Info",
     "Permission:GrantApplicationManagement.ProjectInfo.Update": "Project Info Update",
     "Permission:GrantApplicationManagement.ProjectInfo.Update.UpdateFinalStateFields": "Edit Project Info Fields After Approval",
+
+    "Unity.GrantManager.SettingManagement.Tags": "Manage Tags",
+    "Unity.GrantManager.SettingManagement.Tags.Create": "Create Tag",
+    "Unity.GrantManager.SettingManagement.Tags.Update": "Edit Tag",
+    "Unity.GrantManager.SettingManagement.Tags.Delete": "Delete Tag",
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",

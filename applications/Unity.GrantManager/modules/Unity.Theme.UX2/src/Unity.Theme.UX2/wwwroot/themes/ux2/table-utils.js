@@ -46,6 +46,7 @@ function initializeDataTable(options) {
         data,
         responseCallback,
         actionButtons,
+        serverSideEnabled,
         pagingEnabled,
         reorderEnabled,
         languageSetValues,
@@ -71,7 +72,7 @@ function initializeDataTable(options) {
                 footer: false,
                 headerOffset: 0
             },
-            serverSide: false,
+            serverSide: serverSideEnabled,
             paging: pagingEnabled,
             order: [[defaultSortColumn, 'desc']],
             searching: true,

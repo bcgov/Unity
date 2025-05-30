@@ -400,20 +400,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("CustomFieldId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -1628,6 +1614,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasDefaultValue(false)
                         .HasColumnName("IsDeleted");
 
+                    b.Property<bool>("IsDirectApproval")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -2459,6 +2448,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -3156,6 +3149,58 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("PaymentRequests", "Payments");
                 });
 
+            modelBuilder.Entity("Unity.Payments.Domain.PaymentTags.PaymentTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("PaymentRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentRequestId");
+
+                    b.ToTable("PaymentTags", "Payments");
+                });
+
             modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Site", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3740,6 +3785,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("Site");
                 });
 
+            modelBuilder.Entity("Unity.Payments.Domain.PaymentTags.PaymentTag", b =>
+                {
+                    b.HasOne("Unity.Payments.Domain.PaymentRequests.PaymentRequest", null)
+                        .WithMany("PaymentTags")
+                        .HasForeignKey("PaymentRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Site", b =>
                 {
                     b.HasOne("Unity.Payments.Domain.Suppliers.Supplier", "Supplier")
@@ -3814,6 +3868,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.Payments.Domain.PaymentRequests.PaymentRequest", b =>
                 {
                     b.Navigation("ExpenseApprovals");
+
+                    b.Navigation("PaymentTags");
                 });
 
             modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Supplier", b =>

@@ -1,8 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -29,8 +28,8 @@ namespace Unity.Payments.Web.Pages.Payments
 
         [DisplayName("ApplicationPaymentRequest:SiteName")]
         public string SiteName { get; set; } = string.Empty;
-        public List<string> ErrorList { get; set; } = new List<string>{};
-        public bool DisableFields  { get; set; } = false;
+        public List<string> ErrorList { get; set; } = new List<string> { };
+        public bool DisableFields { get; set; } = false;
         public string? ContractNumber { get; set; }
         public string? SupplierNumber { get; set; }
         public string? SupplierName { get; set; }

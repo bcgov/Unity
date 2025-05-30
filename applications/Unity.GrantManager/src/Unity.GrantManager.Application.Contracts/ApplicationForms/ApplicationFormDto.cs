@@ -23,5 +23,6 @@ namespace Unity.GrantManager.ApplicationForms
         public bool RenderFormIoToHtml { get; set; }
         public Guid? ScoresheetId { get; set; }
         public Guid? TenantId { get; set; }
+        public bool IsDirectApproval { get; set; }
     }
 }

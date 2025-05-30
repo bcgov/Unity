@@ -315,4 +315,9 @@ textarea {
 .application-forms-table-content .table.dataTable { 
     margin-top:0px !important;
 }
-
+.note{
+     font-size: 0.75rem; 
+}
+.direct-approval {
+    font-size: 0.9rem;
+}

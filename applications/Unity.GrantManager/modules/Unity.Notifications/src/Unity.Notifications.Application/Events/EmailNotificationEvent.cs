@@ -20,5 +20,6 @@ namespace Unity.Notifications.Events
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public EmailAction Action { get; set; }
+        public string? EmailTemplateName { get; set; } = string.Empty;
     }
 }

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Integration;
 
@@ -35,6 +36,13 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {
             try
             {
+
+                if (User.IsInRole(IdentityConsts.ITAdminRoleName)) 
+                {
+                    Response.Redirect("/TenantManagement/Tenants");
+                    return;
+                }
+
                 var users = (await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto())).Items;
                 AssigneeList ??= new List<SelectListItem>();
                 foreach (var user in users.OrderBy(s => s.UserName))

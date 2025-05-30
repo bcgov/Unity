@@ -118,15 +118,18 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
 
             decimal projectFundingTotal = application.ProjectFundingTotal ?? 0;
-            double percentageTotalProjectBudget = application.PercentageTotalProjectBudget ?? 0;
+            double percentageTotalProjectBudget;
+
+            if (application.TotalProjectBudget == 0)
+                percentageTotalProjectBudget = application.PercentageTotalProjectBudget ?? 0;
+            else
+                percentageTotalProjectBudget = decimal.Multiply(decimal.Divide(application.RequestedAmount, application.TotalProjectBudget), 100).To<double>();
 
             if (projectFundingTotal == 0)
             {
                 projectFundingTotal = decimal.Multiply(application.TotalProjectBudget, ProjectFundingMultiply);
                 projectFundingTotal = (projectFundingTotal > ProjectFundingMax) ? ProjectFundingMax : projectFundingTotal;
             }
-
-            percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(application.RequestedAmount, application.TotalProjectBudget), 100).To<double>();
 
             model.ProjectInfo = new()
             {

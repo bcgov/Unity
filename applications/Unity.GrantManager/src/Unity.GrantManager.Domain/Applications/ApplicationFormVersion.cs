@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -17,4 +18,6 @@ public class ApplicationFormVersion : AuditedAggregateRoot<Guid>, IMultiTenant
     public string ReportColumns { get; set; } = string.Empty;
     public string ReportKeys { get; set; } = string.Empty;
     public string ReportViewName { get; set; } = string.Empty;
+    [Column(TypeName = "jsonb")]
+    public string? FormSchema { get; set; } = string.Empty;
 }

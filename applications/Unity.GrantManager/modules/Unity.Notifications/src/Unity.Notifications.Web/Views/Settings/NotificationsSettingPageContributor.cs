@@ -21,7 +21,8 @@ public class NotificationsSettingPageContributor : SettingPageContributorBase
             new SettingPageGroup(
                 "GrantManager.Notifications",
                 "Notifications",
-                typeof(NotificationsSettingViewComponent)
+                typeof(NotificationsSettingViewComponent),
+                order: 2
             )
         );
 

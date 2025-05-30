@@ -1,6 +1,5 @@
 
 /** Layout/Component based styles */
-
 html, body {
     height: 100%;
     width: 100%;
@@ -439,7 +438,7 @@ div.dataTables_wrapper div.dataTables_length label {
 }
 
 .nav-item > a {
-    padding: 1.2rem;
+    padding: 10px 20px;
     width: 100%;
     height: 100%;
     display: flex;

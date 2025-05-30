@@ -2,6 +2,7 @@
 using Unity.Payments.Domain;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
+using Unity.Payments.Domain.PaymentTags;
 using Unity.Payments.Domain.Suppliers;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
@@ -17,6 +18,7 @@ public class PaymentsDbContext : AbpDbContext<PaymentsDbContext>, IPaymentsDbCon
     public DbSet<Supplier> Suppliers { get;set; }
     public DbSet<PaymentConfiguration> PaymentConfigurations { get;set; }
     public DbSet<Site> Sites { get; set; }
+    public DbSet<PaymentTag> PaymentTags { get; set; }
 
     public PaymentsDbContext(DbContextOptions<PaymentsDbContext> options)
         : base(options)

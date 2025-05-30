@@ -5,7 +5,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.WorksheetInstances
 {
-    public class CustomFieldValue : FullAuditedEntity<Guid>, IMultiTenant
+    public class CustomFieldValue : AuditedEntity<Guid>, IMultiTenant
     {
         [Column(TypeName = "jsonb")]
         public virtual string CurrentValue { get; private set; } = "{}";

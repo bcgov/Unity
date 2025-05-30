@@ -5,6 +5,7 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentConfigurations;
+using Unity.Payments.Domain.PaymentTags;
 
 namespace Unity.Payments.EntityFrameworkCore;
 
@@ -70,6 +71,17 @@ public static class PaymentsDbContextModelCreatingExtensions
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<PaymentTag>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentTags",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+            b.Property(x => x.Text)
+                .IsRequired()
+                .HasMaxLength(250);
         });
     }
 }

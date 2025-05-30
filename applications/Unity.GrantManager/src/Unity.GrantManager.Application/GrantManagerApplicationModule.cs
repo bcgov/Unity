@@ -27,20 +27,17 @@ using Unity.GrantManager.Intakes.BackgroundWorkers;
 using Unity.Payments.Integrations.Cas;
 using Unity.Flex;
 using Unity.Payments;
-using Volo.Abp.Caching;
 using Volo.Abp.Quartz;
 using System;
 using Quartz;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Volo.Abp.BackgroundJobs;
 using Unity.Reporting;
 using Volo.Abp.DistributedLocking;
-using Medallion.Threading.Redis;
-using Medallion.Threading;
-using StackExchange.Redis;
-using Unity.GrantManager.Locks;
 using Unity.GrantManager.Zones;
+using Unity.GrantManager.Infrastructure;
+using Medallion.Threading;
+using Unity.GrantManager.Locks;
 
 namespace Unity.GrantManager;
 
@@ -141,8 +138,16 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
         ConfigureBackgroundServices(configuration);
-        ConfigureDistributedCache(context, configuration);
-        ConfigureDistributedLocking(context, configuration);
+
+        if (Convert.ToBoolean(configuration["Redis:IsEnabled"]))
+        {
+            RedisInfrastructureManager.ConfigureRedis(context.Services, configuration);
+        }
+        else
+        {
+            // We need this because adding the AbpDistributedLockingModule requires a provider
+            context.Services.AddSingleton<IDistributedLockProvider, InMemoryDistributedLockProvider>();
+        }
 
         context.Services.ConfigureRabbitMQ();
         context.Services.AddScoped<IZoneChecker, ZoneChecker>();
@@ -198,20 +203,6 @@ public class GrantManagerApplicationModule : AbpModule
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 
-    private static void ConfigureDistributedLocking(ServiceConfigurationContext context, IConfiguration configuration)
-    {
-        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"]))
-        {
-            context.Services.AddSingleton<IDistributedLockProvider, InMemoryDistributedLockProvider>();
-            return;
-        }
-
-        var redisConnectionString = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
-        var redisConnection = ConnectionMultiplexer.Connect(redisConnectionString);
-
-        context.Services.AddSingleton<IDistributedLockProvider>(new RedisDistributedSynchronizationProvider(redisConnection.GetDatabase()));
-    }
-
     private void ConfigureBackgroundServices(IConfiguration configuration)
     {
         if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"])) return;
@@ -233,28 +224,6 @@ public class GrantManagerApplicationModule : AbpModule
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
-        });
-    }
-
-    private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
-    {
-        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
-
-        context.Services.AddStackExchangeRedisCache(options =>
-        {
-            options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
-        });
-
-        Configure<RedisCacheOptions>(options =>
-        {
-            options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
-        });
-
-        Configure<AbpDistributedCacheOptions>(options =>
-        {
-            options.KeyPrefix = configuration["Redis:KeyPrefix"] ?? "unity";
         });
     }
 }

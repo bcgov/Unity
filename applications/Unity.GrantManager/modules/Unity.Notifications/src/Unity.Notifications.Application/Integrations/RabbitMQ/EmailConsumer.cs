@@ -63,7 +63,8 @@ public class EmailConsumer(
                                                                                     emailLog.ToAddress,
                                                                                     emailLog.Body,
                                                                                     emailLog.Subject,
-                                                                                    emailLog.FromAddress, "text");
+                                                                                    emailLog.FromAddress, "html",
+                                                                                    emailLog.TemplateName);
                 // Update the response
                 emailLog.ChesResponse = JsonConvert.SerializeObject(response);
                 emailLog.ChesStatus = response.StatusCode.ToString();

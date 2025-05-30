@@ -1,10 +1,11 @@
 describe('Grant Manager Login and List Navigation', () => {
+
   it('Verify Login', () => {
     cy.login()
   })
   // 12.) Ensure all of the lists are populated.
   it('Verify Applications, Roles, Users, Intakes, Forms, Dashboard lists are populated', () => {
-    // 12.) Verify Default Grant Program tenant is selected.
+    // Verify Default Grant Program tenant is selected.
     cy.get('.unity-user-initials').should('exist').click()
     cy.get('#user-dropdown .btn-dropdown span').should('contain', 'Default Grants Program')
     // 13.) Applications
