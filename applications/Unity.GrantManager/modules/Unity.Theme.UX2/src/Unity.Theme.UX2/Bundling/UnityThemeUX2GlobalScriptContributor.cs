@@ -10,8 +10,6 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
 
         context.Files.Add("/themes/ux2/layout.js");
         context.Files.Add("/themes/ux2/table-utils.js");
-
-        context.Files.AddIfNotContains("/libs/jquery/jquery.min.js");
         context.Files.AddIfNotContains("/libs/pubsub-js/src/pubsub.js");        
         context.Files.AddIfNotContains("/libs/datatables.net-bs5/js/dataTables.bootstrap5.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons/js/dataTables.buttons.min.js");
