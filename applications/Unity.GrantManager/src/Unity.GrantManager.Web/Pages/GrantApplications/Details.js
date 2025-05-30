@@ -378,7 +378,7 @@ $(function () {
         const head = doc.head;
 
         const jqueryScript = doc.createElement('script');
-        jqueryScript.src = '/libs/jquery/jquery.min.js';
+        jqueryScript.src = '/libs/jquery/jquery.js';
 
         const formioScript = doc.createElement('script');
         formioScript.src = '/libs/formiojs/formio.form.min.js';
@@ -428,7 +428,7 @@ $(function () {
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
         let newTab = window.open('', '_blank');
         newTab.document.write('<html><head><title>Print</title>');
-        newTab.document.write('<script src="/libs/jquery/jquery.min.js"></script>');
+        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
         newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
         newTab.document.write('<link rel="stylesheet" href="/Pages/GrantApplications/ScoresheetPrint.css">');
         newTab.document.write('</head><body>');
