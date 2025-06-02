@@ -342,6 +342,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                         $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
                         $('#TotalBudgetInputPI').maskMoney('mask');
                     }
+                    calculatePercentage();
                 }
             );
             
@@ -366,6 +367,8 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                     });
                 }
             );
+
+            calculatePercentage();
         },
         // Helper methods
         processFormField: function(projectInfoObj, input) {
@@ -467,5 +470,4 @@ function calculatePercentage() {
     }
     const percentage = ((requestedAmount / totalProjectBudget) * 100.00).toFixed(2);
     $("#ProjectInfo_PercentageTotalProjectBudget").maskMoney('mask', parseFloat(percentage));
-   
 }
