@@ -180,16 +180,15 @@ parameters:
   displayName: RabbitMQ__HostName
   value: 'unity-rabbitmq'
   name: RabbitMQ__HostName
+- description: Redis__Configuration
+  displayName: Redis__Configuration
+  from: 'dev-redis-ha.[a-zA-Z0-9]{5}-dev.svc.cluster.local:26379'
+  generate: expression
+  name: Redis__Configuration
 - description: Redis__HostName
   displayName: Redis__HostName
-  value: 'dev-redis'
+  value: 'dev-redis-ha'
   name: Redis__HostName
-- description: Redis__Password
-  displayName: Redis__Password
-  name: Redis__Password
-  required: true
-  from: '[a-zA-Z0-9]{26}'
-  generate: expression
 - description: Redis__IsEnabled
   displayName: Redis__IsEnabled
   value: 'false'
@@ -207,20 +206,6 @@ parameters:
 - description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
   displayName: Application Version
   name: IMAGESTREAM_TAG
-  required: true
-  value: latest
-- description: The Namespace where the container image resides
-  displayName: Registry Namespace
-  name: REDIS_IMAGEPULL_NAMESPACE
-  from: '[a-zA-Z0-9]{5}-tools'
-  generate: expression
-- description: The ImageStream Name
-  displayName: Registry imagestream name
-  name: REDIS_IMAGESTREAM_NAME
-  value: redis
-- description: The version of the image to use
-  displayName: Application Version
-  name: REDIS_IMAGESTREAM_TAG
   required: true
   value: latest
 - description: The registry path of the container image used.
@@ -265,20 +250,6 @@ objects:
     Payments__CasClientId: ${Payments__CasClientId}
     RabbitMQ__Password: ${RabbitMQ__Password}
   type: Opaque
-# Redis
-- apiVersion: v1
-  kind: Secret
-  metadata:
-    name: ${Redis__HostName}
-    labels:
-      app: ${Redis__HostName}
-      app.kubernetes.io/component: ${Redis__HostName}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-      app.kubernetes.io/name: ${Redis__HostName}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  stringData:
-    database-password: ${Redis__Password}
-  type: Opaque
 # Configmap
 - apiVersion: v1
   kind: ConfigMap
@@ -319,11 +290,15 @@ objects:
     RabbitMQ__VirtualHost: ${RabbitMQ__VirtualHost}
     RabbitMQ__HostName: ${RabbitMQ__HostName}
     DataProtection__IsEnabled: ${Redis__IsEnabled}
+    Redis__Configuration: ${Redis__Configuration}
+    Redis__DatabaseId: '0'
     Redis__Host: ${Redis__HostName}
     Redis__InstanceName: ${Redis__HostName}
     Redis__IsEnabled: ${Redis__IsEnabled}
     Redis__KeyPrefix: unity
     Redis__Port: '6379'
+    Redis__SentinelMasterName: redisMasterSet
+    Redis__UseSentinel: ${Redis__IsEnabled}
     Serilog__MinimumLevel__Override__Quartz.Impl: Information
     Serilog__MinimumLevel__Override__Quartz.SQL: Information
 # Services
@@ -347,27 +322,6 @@ objects:
         targetPort: 8080
     selector:
       app: ${APPLICATION_NAME}
-# Redis
-# - apiVersion: v1
-#   kind: Service
-#   metadata:
-#     annotations:
-#       description: The application's host port.
-#     name: ${Redis__HostName}
-#     labels:
-#       app: ${Redis__HostName}
-#       app.kubernetes.io/component: ${Redis__HostName}
-#       app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-#       app.kubernetes.io/name: ${Redis__HostName}
-#       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-#   spec:
-#     ports:
-#       - name: redis
-#         protocol: TCP
-#         port: 6379
-#         targetPort: 6379
-#     selector:
-#       app: ${Redis__HostName}
 # Route ingress
 - apiVersion: route.openshift.io/v1
   id: ${APPLICATION_NAME}-http
@@ -441,25 +395,6 @@ objects:
         storage: ${VOLUME_CAPACITY}
       storageClassName: netapp-file-standard
       volumeMode: Filesystem
-# Redis
-# - apiVersion: v1
-#   kind: PersistentVolumeClaim
-#   metadata:
-#     name: ${Redis__HostName}
-#     labels:
-#       app: ${Redis__HostName}
-#       app.kubernetes.io/component: ${Redis__HostName}
-#       app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-#       app.kubernetes.io/name: ${Redis__HostName}
-#       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-#   spec:
-#     accessModes:
-#     - ReadWriteOnce
-#     resources:
-#       requests:
-#         storage: ${VOLUME_CAPACITY}
-#       storageClassName: netapp-file-standard
-#       volumeMode: Filesystem
 # Deployment
 - apiVersion: apps/v1
   kind: Deployment
@@ -580,81 +515,3 @@ objects:
         restartPolicy: Always
         terminationGracePeriodSeconds: 30
         dnsPolicy: ClusterFirst
-# Redis
-# - apiVersion: apps/v1
-#   kind: Deployment
-#   metadata:
-#     name: ${Redis__HostName}
-#     annotations:
-#       app.openshift.io/route-disabled: "false"
-#       image.openshift.io/triggers: >-
-#         [{"from":{"kind":"ImageStreamTag","name":"${REDIS_IMAGESTREAM_NAME}:${REDIS_IMAGESTREAM_TAG}","namespace":"${REDIS_IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${Redis__HostName}\")].image","pause":"false"}]
-#     labels:
-#       app: ${Redis__HostName}
-#       app.openshift.io/runtime: redis
-#       app.kubernetes.io/component: ${Redis__HostName}
-#       app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-#       app.kubernetes.io/name: ${Redis__HostName}
-#       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-#   spec:
-#     replicas: 1
-#     selector:
-#       matchLabels:
-#         app: ${Redis__HostName}
-#     strategy:
-#       type: Recreate
-#     template:
-#       metadata:
-#         labels:
-#           application: ${Redis__HostName}
-#           app: ${Redis__HostName}
-#       spec:
-#         volumes:
-#           - name: ${Redis__HostName}-data
-#             persistentVolumeClaim:
-#               claimName: ${Redis__HostName}
-#         containers:
-#         - name: ${Redis__HostName}
-#           image: ${IMAGEPULL_REGISTRY}/${REDIS_IMAGEPULL_NAMESPACE}/${REDIS_IMAGESTREAM_NAME}:${REDIS_IMAGESTREAM_TAG}
-#           imagePullPolicy: Always
-#           resources:
-#             requests:
-#               cpu: ${CPU_REQUEST}
-#               memory: ${MEMORY_REQUEST}
-#           readinessProbe:
-#             exec:
-#               command:
-#                 - /bin/sh
-#                 - '-i'
-#                 - '-c'
-#                 - test "$(redis-cli -h 127.0.0.1 -a $REDIS_PASSWORD ping)" == "PONG"
-#             initialDelaySeconds: 5
-#             timeoutSeconds: 1
-#             periodSeconds: 10
-#             successThreshold: 1
-#             failureThreshold: 3
-#           livenessProbe:
-#             tcpSocket:
-#               port: 6379
-#             initialDelaySeconds: 30
-#             timeoutSeconds: 1
-#             periodSeconds: 10
-#             successThreshold: 1
-#             failureThreshold: 3
-#           env:
-#             - name: REDIS_PASSWORD
-#               valueFrom:
-#                 secretKeyRef:
-#                   name: ${Redis__HostName}
-#                   key: database-password
-#           ports:
-#             - containerPort: 6379
-#               protocol: TCP
-#           imagePullPolicy: IfNotPresent
-#           volumeMounts:
-#             - name: ${Redis__HostName}-data
-#               mountPath: /var/lib/redis/data
-#           terminationMessagePolicy: File
-#         restartPolicy: Always
-#         terminationGracePeriodSeconds: 30
-#         dnsPolicy: ClusterFirst
