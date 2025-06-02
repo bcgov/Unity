@@ -32,7 +32,6 @@
             }
         });
 
-        // TODO-TOGGLE
         // 3. Add disabled fields (also ignored by serializeArray)
         if (includeDisabledFields) {
             $form.find(':disabled[name]').each(function () {
@@ -138,8 +137,8 @@ class UnityChangeTrackingForm {
     constructor($form, options = {}) {
 
         this.options = {
-            modifiedClass: 'bg-primary-subtle',
-            saveButtonSelector: options.saveButtonSelector || '#saveButton', // TODO: Set default
+            modifiedClass: 'unity-modified-field-marker',
+            saveButtonSelector: options.saveButtonSelector || '#saveButton',
             ...options
         };
 
@@ -153,7 +152,6 @@ class UnityChangeTrackingForm {
         this.modifiedFields = new Set();
         this.originalValues = {};
         this.saveButton = $(this.options.saveButtonSelector);
-        console.log('UnityChangeTrackingForm initialized');
     }
 
     init() {
@@ -232,7 +230,6 @@ class UnityChangeTrackingForm {
     }
 
     updateSaveButtonState() {
-        // TODO: Include validation check if needed
         this.saveButton.prop('disabled', this.modifiedFields.size === 0);
     }
 
@@ -308,8 +305,6 @@ class UnityZoneForm extends UnityChangeTrackingForm {
             ...this.options,
             ...options
         };
-
-        console.log('UnityZoneForm initialized');
     }
 
     init() {

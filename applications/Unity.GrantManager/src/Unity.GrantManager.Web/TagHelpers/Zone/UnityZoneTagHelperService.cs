@@ -199,7 +199,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         AddDefinitionItem(dl, "Form ID", formLink);
     }
 
-    private void AddRequirementItem(TagBuilder dl, string label, bool state, string? requirement, string? inheritFrom)
+    private static void AddRequirementItem(TagBuilder dl, string label, bool state, string? requirement, string? inheritFrom)
     {
         var content = new HtmlContentBuilder();
         content.AppendHtml(StatusBadge(state));
@@ -238,12 +238,12 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         AddDefinitionItem(dl, term, new HtmlString(content));
     }
 
-    private static IHtmlContent NotApplicableStatusBadge(bool? condition)
+    private static HtmlContentBuilder NotApplicableStatusBadge(bool? condition)
         => condition == null
             ? CreateBadge("NONE", "text-bg-light")
             : StatusBadge(condition);
 
-    private static IHtmlContent StatusBadge(bool? condition)
+    private static HtmlContentBuilder StatusBadge(bool? condition)
         => condition == true
             ? CreateBadge("PASS", "text-bg-primary")
             : CreateBadge("FAIL", "text-bg-secondary");
