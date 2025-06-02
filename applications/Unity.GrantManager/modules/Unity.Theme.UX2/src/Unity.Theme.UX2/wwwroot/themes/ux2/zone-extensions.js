@@ -221,7 +221,6 @@ class UnityChangeTrackingForm {
         this.modifiedFields.add(name);
         $element.addClass(this.options.modifiedClass);
         $element.attr('data-field-modified', 'true');
-        $element.removeAttr('data-field-modified');
     }
 
     markAsUnmodified($element, name) {
