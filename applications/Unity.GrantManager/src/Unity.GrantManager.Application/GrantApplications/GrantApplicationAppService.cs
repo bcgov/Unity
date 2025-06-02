@@ -496,7 +496,12 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         // the requested amount and total project budget. Percentage total has to be
         // updated whenever RequestedAmount or TotalProjectBudget changes
         application.UpdatePercentageTotalProjectBudget();
-        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
+
+        // Add custom worksheet data
+        if (input.Data.CustomFields is not null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        {
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
+        }
 
         await _applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
