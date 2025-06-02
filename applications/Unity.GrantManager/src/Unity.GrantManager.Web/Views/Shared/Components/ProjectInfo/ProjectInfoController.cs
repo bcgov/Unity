@@ -14,14 +14,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult ProjectInfo(Guid applicationId)
+        public IActionResult ProjectInfo(Guid applicationId, Guid applicationFormVersionId)
         {
             if (!ModelState.IsValid)
             {
                 logger.LogWarning("Invalid model state for ProjectInfoController: Refresh");
                 return ViewComponent("ProjectInfo");
             }
-            return ViewComponent("ProjectInfo", new { applicationId, Guid.Empty });
+            return ViewComponent("ProjectInfo", new { applicationId, applicationFormVersionId });
         }
     }
 }

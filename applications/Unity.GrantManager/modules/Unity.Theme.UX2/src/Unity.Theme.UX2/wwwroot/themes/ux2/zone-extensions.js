@@ -338,7 +338,6 @@ class UnityZoneForm extends UnityChangeTrackingForm {
     addSubmitHandler() {
         this.form.on('submit', (e) => {
             e.preventDefault();
-            debugger;
             this.resetTracking();
         });
     }

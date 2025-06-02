@@ -3,7 +3,8 @@ abp.widgets.ProjectInfo = function ($wrapper) {
     let widgetApi = {
         getFilters: function () {
             return {
-                applicationId: $wrapper.find('#ProjectInfoViewApplicationId').val()
+                applicationId: $wrapper.find('#ProjectInfo_ApplicationId').val(),
+                applicationFormVersionId: $wrapper.find("#ProjectInfo_ApplicationFormVersionId").val()
             };
         },
         init: function (filters) {
@@ -24,7 +25,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
 
             // Save button handler
             self.form.saveButton.on('click', function () {
-                let applicationId = document.getElementById('ProjectInfoViewApplicationId').value; 
+                let applicationId = document.getElementById('ProjectInfo_ApplicationId').value; 
                 let formData = self.form.serializeZoneArray();
                 
                 let projectInfoObj = {};
@@ -33,23 +34,31 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                 $.each(formData, function (_, input) {
                     self.processFormField(projectInfoObj, input);
                 });
+
+                const customIncludes = new Set();
+
+                if (typeof Flex === 'function' && Object.keys(projectInfoObj.CustomFields || {}).length > 0) {
+                    // Add Worksheet Metadata and filter conditions
+                    projectInfoObj.CorrelationId = $("#ProjectInfo_ApplicationFormVersionId").val();
+                    projectInfoObj.WorksheetId = $("#ProjectInfo_WorksheetId").val();
+
+                    customIncludes
+                        .add('CustomFields')
+                        .add('CorrelationId')
+                        .add('WorksheetId');
+                }
                 
-                // Add metadata
-                projectInfoObj.CorrelationId = $("#ApplicationFormVersionId").val();
-                projectInfoObj.WorksheetId = $("#ProjectInfo_WorksheetId").val();
-                
-                const customIncludes = new Set(['ApplicantId', 'CorrelationId', 'WorksheetId']);
                 // Create filtered object in one functional operation
                 let modifiedFieldData = Object.fromEntries(
                     Object.entries(projectInfoObj).filter(([key, _]) => {
-                        // Check if it's a directly included field
-                        if (customIncludes.has(`ProjectInfo.${key}`)) return true;
+                        // Check if it's a directly included widget field
+                        if (customIncludes.has(key)) return true;
                         
-                        // Check if it's a modified field
+                        // Check if it's a modified widget field
                         return self.form.modifiedFields.has(`ProjectInfo.${key}`);
                     })
                 );
-                
+
                 let projectInfoSubmission = {
                     modifiedFields: Array.from(self.form.modifiedFields).map(field => {
                         const parts = field.split('.');
@@ -143,18 +152,33 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                 'application_status_changed',
                 (msg, data) => {
                     let projectInfoWidgets = document.querySelectorAll('[data-widget-name="ProjectInfo"]')
-                    projectInfoWidgets.forEach(function (entry) {
-                        $(entry).data('abp-widget-manager')
-                            .refresh()
-                            .then(() => {
-                                // After refresh, the widget will automatically call init()
-                                // Update the global reference if you're using it
-                                abp.zones = abp.zones || {};
-                                abp.zones.projectInfo = $(entry).data('abp-widget-api')?.form || null;
-                            });
-                    });
+                    projectInfoWidgets.forEach(refreshWidget);
                 }
             );
+
+            function refreshWidget(widget) {
+                const widgetManager = $(widget).data('abp-widget-manager');
+                if (!widgetManager) {
+                    console.warn('Widget manager not found for ProjectInfo widget');
+                    return;
+                }
+
+                const refreshResult = widgetManager.refresh();
+
+                // Check if refresh returns a promise
+                if (refreshResult && typeof refreshResult.then === 'function') {
+                    refreshResult.then(updateGlobalReference);
+                } else {
+                    // If no promise is returned, update reference directly
+                    updateGlobalReference();
+                }
+            }
+
+            function updateGlobalReference() {
+                // After refresh, the widget will automatically call init()
+                abp.zones = abp.zones || {};
+                abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]').data('abp-widget-api')?.form || null;
+            }
 
             calculatePercentage();
         },

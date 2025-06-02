@@ -14,9 +14,8 @@
 
 @model ProjectInfoViewModel
 
-<input type="hidden" id="ProjectInfoViewApplicationId" value="@Model.ApplicationId" />
-<input type="hidden" asp-for="@Model.ApplicationFormId" />
-<input type="hidden" asp-for="@Model.ApplicationFormVersionId" />
+<input type="hidden" id="ProjectInfo_ApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="ProjectInfo_ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 
 <div id="applicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
 <div id="allEconomicRegionList" style="display: none;">@Html.Raw(Json.Serialize(Model.EconomicRegions))</div>
