@@ -51,8 +51,8 @@ public static class DefaultZoneDefinition
                          SortOrder = 2
                      },
                  ]
-             },                     
-             new ZoneTabDefinition { 
+             },
+             new ZoneTabDefinition {
                  Name = UnitySelector.Applicant.Default,
                  IsEnabled = true,
                  SortOrder = 3,

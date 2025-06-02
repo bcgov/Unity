@@ -1,14 +1,15 @@
 ﻿@page
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Microsoft.Extensions.Localization
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Tenants
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Volo.Abp.Data
 @using Volo.Abp.Localization
 @using Volo.Abp.ObjectExtending
 @using Volo.Abp.TenantManagement.Localization
-@using Unity.TenantManagement.Web.Pages.TenantManagement.Tenants
-@using Volo.Abp.Data
-@using Volo.Abp.TenantManagement;
+
 @model AssignManagerModalModel
+
 @inject IHtmlLocalizer<AbpTenantManagementResource> L
 @inject IStringLocalizerFactory StringLocalizerFactory
 @{

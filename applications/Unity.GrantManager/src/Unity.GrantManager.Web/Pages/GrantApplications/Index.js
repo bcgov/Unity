@@ -779,7 +779,7 @@
             data: 'organizationType',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '';
+                return getFullType(data) ?? '';
             },
             index: 39
         }
@@ -1081,6 +1081,47 @@
             },
             index: 62
         }
+    }
+
+    function getFullType(code) {
+        const companyTypes = [
+            { code: "BC", name: "BC Company" },
+            { code: "CP", name: "Cooperative" },
+            { code: "GP", name: "General Partnership" },
+            { code: "S", name: "Society" },
+            { code: "SP", name: "Sole Proprietorship" },
+            { code: "A", name: "Extraprovincial Company" },
+            { code: "B", name: "Extraprovincial" },
+            { code: "BEN", name: "Benefit Company" },
+            { code: "C", name: "Continuation In" },
+            { code: "CC", name: "BC Community Contribution Company" },
+            { code: "CS", name: "Continued In Society" },
+            { code: "CUL", name: "Continuation In as a BC ULC" },
+            { code: "EPR", name: "Extraprovincial Registration" },
+            { code: "FI", name: "Financial Institution" },
+            { code: "FOR", name: "Foreign Registration" },
+            { code: "LIB", name: "Public Library Association" },
+            { code: "LIC", name: "Licensed (Extra-Pro)" },
+            { code: "LL", name: "Limited Liability Partnership" },
+            { code: "LLC", name: "Limited Liability Company" },
+            { code: "LP", name: "Limited Partnership" },
+            { code: "MF", name: "Miscellaneous Firm" },
+            { code: "PA", name: "Private Act" },
+            { code: "PAR", name: "Parish" },
+            { code: "QA", name: "CO 1860" },
+            { code: "QB", name: "CO 1862" },
+            { code: "QC", name: "CO 1878" },
+            { code: "QD", name: "CO 1890" },
+            { code: "QE", name: "CO 1897" },
+            { code: "REG", name: "Registraton (Extra-pro)" },
+            { code: "ULC", name: "BC Unlimited Liability Company" },
+            { code: "XCP", name: "Extraprovincial Cooperative" },
+            { code: "XL", name: "Extrapro Limited Liability Partnership" },
+            { code: "XP", name: "Extraprovincial Limited Partnership" },
+            { code: "XS", name: "Extraprovincial Society" }
+        ];
+        const match = companyTypes.find(entry => entry.code === code);
+        return match ? match.name : "Unknown";
     }
 
 

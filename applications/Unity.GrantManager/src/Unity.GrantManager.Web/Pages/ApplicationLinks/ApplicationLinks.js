@@ -91,11 +91,6 @@ $(function () {
 
     // Make sure input string have no error with the plugin
     LinksInput.prototype.anyErrors = function (string) {
-        // if (this.options.max != null && this.arr.length >= this.options.max) {
-        //     console.log('max links limit reached');
-        //     return true;
-        // }
-
         if (!this.options.duplicate && this.arr.indexOf(string) != -1) {
             console.log('duplicate found " ' + string + ' " ')
             return true;

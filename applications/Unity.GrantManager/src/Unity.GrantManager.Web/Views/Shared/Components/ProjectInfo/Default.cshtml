@@ -6,13 +6,19 @@
 @using Unity.GrantManager.Flex
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
 @using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
+@using Unity.Modules.Shared.Correlation
+@using Volo.Abp.Features
 @using Microsoft.AspNetCore.Authorization;
+
+@model ProjectInfoViewModel
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IFeatureChecker FeatureChecker
-
-@model ProjectInfoViewModel
+@{
+    Layout = null;
+}
 
 <input type="hidden" id="ProjectInfo_ApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="ProjectInfo_ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
