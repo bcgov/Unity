@@ -70,9 +70,8 @@ public class ProjectInfoViewComponent : AbpViewComponent
             RegionalDistricts = RegionalDistricts,
             Communities = Communities,
             EconomicRegions = EconomicRegions,
-            IsFinalDecisionMade = !IsApplicationOpen,
             IsSummaryEditable = IsApplicationOpen || UserHasFinalStateUpdate,
-            IsLocationEditable = IsApplicationOpen,
+            IsLocationEditable = IsApplicationOpen
         };
 
         model.EconomicRegionList.AddRange(EconomicRegions.Select(EconomicRegion =>
@@ -115,7 +114,6 @@ public class ProjectInfoViewComponent : AbpViewComponent
 
 
         decimal projectFundingTotal = application.ProjectFundingTotal ?? 0;
-        double percentageTotalProjectBudget = application.PercentageTotalProjectBudget ?? 0;
 
         if (projectFundingTotal == 0)
         {
@@ -123,7 +121,7 @@ public class ProjectInfoViewComponent : AbpViewComponent
             projectFundingTotal = (projectFundingTotal > ProjectFundingMax) ? ProjectFundingMax : projectFundingTotal;
         }
 
-        percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(application.RequestedAmount, application.TotalProjectBudget), 100).To<double>();
+        double percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(application.RequestedAmount, application.TotalProjectBudget), 100).To<double>();
 
         model.ProjectInfo = new()
         {

@@ -465,15 +465,15 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     }
 
     [Authorize(UnitySelector.Project.UpdatePolicy)]
-    public async Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<PartialUpdateProjectInfoDto> input)
+    public async Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input)
     {
         // Only update the fields we need to update based on the modified fields
         // This is required to handle controls like the date picker that do not send null values for unchanged fields
         var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
-        ObjectMapper.Map<PartialUpdateProjectInfoDto, Application>(input.Data, application);
+        ObjectMapper.Map<UpdateProjectInfoDto, Application>(input.Data, application);
 
         // Explicitly handle properties that are null but listed in ModifiedFields
-        var dtoProperties = typeof(PartialUpdateProjectInfoDto).GetProperties();
+        var dtoProperties = typeof(UpdateProjectInfoDto).GetProperties();
         var appProperties = typeof(Application).GetProperties().ToDictionary(p => p.Name, p => p);
 
         foreach (var fieldName in input.ModifiedFields)

@@ -78,7 +78,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
 
         CreateMap<TagSummaryCount, TagSummaryCountDto>();
 
-        CreateMap<PartialUpdateProjectInfoDto, Application>()
+        CreateMap<UpdateProjectInfoDto, Application>()
             .ForAllMembers(opts =>
             {
                 opts.AllowNull(); // Ignore Null Values for Lists and Collections
@@ -96,7 +96,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         Type type = value.GetType();
         // For reference types, null is the only default
         if (!type.IsValueType)
-            return false; 
+            return false;
 
         // For value types, compare with default instance
         return value.Equals(Activator.CreateInstance(type));

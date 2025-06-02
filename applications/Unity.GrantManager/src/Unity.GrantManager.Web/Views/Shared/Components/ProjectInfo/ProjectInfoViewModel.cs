@@ -37,7 +37,6 @@ public class ProjectInfoViewModel : PageModel
     public List<CommunityDto> Communities { get; set; } = new List<CommunityDto>();
     public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
     
-    public bool IsFinalDecisionMade { get; set; }
     public bool IsSummaryEditable { get; set; }
     public bool IsLocationEditable { get; set; }
 

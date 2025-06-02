@@ -29,6 +29,7 @@
                     form="projectInfoForm" action="submit"
                     text="Save"
                     icon-type="Other"
+                    abp-if="@(Model.IsSummaryEditable || Model.IsLocationEditable)"
                     icon="fl fl-save" button-type="Primary" disabled="true" />
     </div>
     <form id="projectInfoForm" autocomplete="off">
