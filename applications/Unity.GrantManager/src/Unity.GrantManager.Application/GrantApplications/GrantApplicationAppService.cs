@@ -31,6 +31,7 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -406,10 +407,27 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
     }
 
-    [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
+    [Authorize(UnitySelector.Project.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
+        // Check if the user has the required permissions to update Project Info for either fieldset zone
+        var hasSummaryPermission = await AuthorizationService.IsGrantedAsync(UnitySelector.Project.Summary.Update.Default);
+        var hasLocationPermission = await AuthorizationService.IsGrantedAsync(UnitySelector.Project.Location.Update.Default);
+
+        if (!hasSummaryPermission || !hasLocationPermission)
+        {
+            throw new AbpAuthorizationException("The user doesn't have the required permissions to update Project Info.");
+        }
+
         var application = await _applicationRepository.GetAsync(id);
+
+        var hasSummaryZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Summary.Default, application.ApplicationFormId);
+        var hasLocationZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Location.Default, application.ApplicationFormId);
+
+        if (!hasSummaryZone || !hasLocationZone)
+        {
+            throw new BusinessException("The Project Info zones are not enabled for this application form.");
+        }
 
         SanitizeProjectInfoDisabledInputs(input, application);
 
@@ -446,6 +464,56 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             throw new EntityNotFoundException();
         }
     }
+    private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
+    {
+        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RequestedAmount ??= application.RequestedAmount;
+        input.ProjectFundingTotal ??= application.ProjectFundingTotal;
+    }
+
+    [Authorize(UnitySelector.Project.UpdatePolicy)]
+    public async Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input)
+    {
+        // Only update the fields we need to update based on the modified fields
+        // This is required to handle controls like the date picker that do not send null values for unchanged fields
+        var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
+        ObjectMapper.Map<UpdateProjectInfoDto, Application>(input.Data, application);
+
+        // Explicitly handle properties that are null but listed in ModifiedFields
+        var dtoProperties = typeof(UpdateProjectInfoDto).GetProperties();
+        var appProperties = typeof(Application).GetProperties().ToDictionary(p => p.Name, p => p);
+
+        foreach (var fieldName in input.ModifiedFields)
+        {
+            if (dtoProperties.FirstOrDefault(p => 
+                string.Equals(p.Name, fieldName, StringComparison.OrdinalIgnoreCase)) is { } dtoProperty)
+            {
+                var value = dtoProperty.GetValue(input.Data);
+                if (value == null && appProperties.TryGetValue(dtoProperty.Name, out var appProperty) && appProperty.CanWrite)
+                {
+                    appProperty.SetValue(application, appProperty.PropertyType.IsValueType 
+                        && Nullable.GetUnderlyingType(appProperty.PropertyType) == null
+                        ? Activator.CreateInstance(appProperty.PropertyType)
+                        : null);
+                }
+            }
+        }
+
+        // Calculate the percentage of the total project budget based on
+        // the requested amount and total project budget. Percentage total has to be
+        // updated whenever RequestedAmount or TotalProjectBudget changes
+        application.UpdatePercentageTotalProjectBudget();
+
+        // Add custom worksheet data
+        if (input.Data.CustomFields is not null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        {
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
+        }
+
+        await _applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
 
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
@@ -466,14 +534,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             throw new EntityNotFoundException();
         }
-    }
-
-    private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
-    {
-        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
-        input.TotalProjectBudget ??= application.TotalProjectBudget;
-        input.RequestedAmount ??= application.RequestedAmount;
-        input.ProjectFundingTotal ??= application.ProjectFundingTotal;
     }
 
     [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]

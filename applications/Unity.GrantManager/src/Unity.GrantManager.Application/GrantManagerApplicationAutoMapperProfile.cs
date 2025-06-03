@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -76,6 +77,28 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
 
         CreateMap<TagSummaryCount, TagSummaryCountDto>();
+
+        CreateMap<UpdateProjectInfoDto, Application>()
+            .ForAllMembers(opts =>
+            {
+                opts.AllowNull(); // Ignore Null Values for Lists and Collections
+                opts.Condition((src, dest, srcMember) // Ignore Null and Default Values for Properties
+                    => srcMember != null
+                    && !IsDefault(srcMember));
+            });
+    }
+
+    private static bool IsDefault(object value)
+    {
+        if (value == null)
+            return true;
+
+        Type type = value.GetType();
+        // For reference types, null is the only default
+        if (!type.IsValueType)
+            return false;
+
+        // For value types, compare with default instance
+        return value.Equals(Activator.CreateInstance(type));
     }
 }
-

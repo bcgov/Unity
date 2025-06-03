@@ -83,13 +83,6 @@ namespace Unity.GrantManager.Permissions
             public const string DeleteAdditionalContact = Default + ".AdditionalContact" + Operation.Delete;
         }
 
-        public static class ProjectInfo
-        {
-            public const string Default = GroupName + ".ProjectInfo";
-            public const string Update = Default + Operation.Update;
-            public const string UpdateFinalStateFields = Update + ".UpdateFinalStateFields";
-        }
-
         public static string[] GetAll()
         {
             return ReflectionHelper.GetPublicConstantsRecursively(typeof(GrantApplicationPermissions));
