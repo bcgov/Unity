@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 using Unity.Flex.Worksheets;
 
 namespace Unity.GrantManager.GrantApplications;
 
-public class CreateUpdateProjectInfoDto : CustomDataFieldDto
+public class UpdateProjectInfoDto : CustomDataFieldDto
 {
     public Guid? ApplicationId { get; set; }
     public string? ProjectSummary { get; set; }
@@ -12,6 +13,8 @@ public class CreateUpdateProjectInfoDto : CustomDataFieldDto
     public decimal? TotalProjectBudget { get; set; }
     public DateTime? ProjectStartDate { get; set; }
     public DateTime? ProjectEndDate { get; set; }
+
+    [JsonIgnore] // Calculated Property
     public double? PercentageTotalProjectBudget { get; set; }
     public decimal? ProjectFundingTotal { get; set; }
     public string? Community { get; set; }
