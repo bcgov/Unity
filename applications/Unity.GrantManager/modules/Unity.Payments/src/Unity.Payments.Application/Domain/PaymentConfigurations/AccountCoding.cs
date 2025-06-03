@@ -2,13 +2,11 @@
 using System.Linq;
 using Unity.Payments.Domain.Exceptions;
 using Volo.Abp;
-using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.MultiTenancy;
 
 
 namespace Unity.Payments.Domain.AccountCodings
 {
-    public class AccountCoding : FullAuditedAggregateRoot<Guid>, IMultiTenant
+    public record AccountCoding
     {
         public Guid? TenantId { get; set; }
 
@@ -49,19 +47,20 @@ namespace Unity.Payments.Domain.AccountCodings
         string stob,
         string projectNumber)
         {
-            ValidateField(ministryClient, 3, nameof(MinistryClient), false);
-            ValidateField(responsibility, 5, nameof(Responsibility), false);
-            ValidateField(serviceLine, 5, nameof(serviceLine));
-            ValidateField(stob, 4, nameof(stob));
-            ValidateField(projectNumber, 7, nameof(projectNumber));
+            ValidateField(ministryClient, 3, nameof(MinistryClient), true);
+            ValidateField(responsibility, 5, nameof(Responsibility), true);
+            ValidateField(serviceLine, 5, nameof(serviceLine), true);
+            ValidateField(stob, 4, nameof(stob), true);
+            ValidateField(projectNumber, 7, nameof(projectNumber), true);
 
             return new AccountCoding(ministryClient, responsibility, serviceLine, stob, projectNumber);
         }
 
-        private static void ValidateField(string field, uint length, string fieldName, bool validAlphanumeric = true)
+        private static void ValidateField(string field, uint length, string fieldName, bool validateAlphanumeric = true)
         {
+            bool validAlphanumeric = true;
 
-            if (validAlphanumeric)
+            if (validateAlphanumeric)
             {
                 validAlphanumeric = field.All(char.IsLetterOrDigit);
             }
