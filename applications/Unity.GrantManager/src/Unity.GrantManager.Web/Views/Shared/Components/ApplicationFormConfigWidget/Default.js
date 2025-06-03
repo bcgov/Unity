@@ -25,7 +25,8 @@
 
     // Hide warning and disable buttons when cancel button is clicked
     cancelButton.addEventListener('click', function () {
-        resetForm();
+        form.reset();
+        resetFormState();
     });
 
     // Handle back button click
@@ -59,12 +60,12 @@
         }).fail(function (error) {
             abp.notify.error('Failed to save other configuration.');
         }).always(function () {
-            resetForm();
+            resetFormState();
             isSaving = false;
         });
     });
 
-    function resetForm() {
+    function resetFormState() {        
         saveButton.disabled = true;
         cancelButton.disabled = true;
         displayAddressChangeWarning.style.display = 'none';

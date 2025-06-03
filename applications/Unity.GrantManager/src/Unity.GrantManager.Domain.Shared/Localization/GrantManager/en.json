@@ -160,6 +160,9 @@
     "ApplicationForms:Payable": "Payable",
     "ApplicationForms:RenderFormIoToHtml": "Render FormIO to HTML",
     "ApplicationForms:ConfigureWorksheets": "Configure Worksheets",
+    "ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow": "Enabling this feature will bypass the Assessment workflow when you approve submissions associated with this form.",
+    "ApplicationForms.Configuration.Notes:SelectedElectoralAddress": "The selected address type will determine which submitted application address is used to extract the electoral district.",
+    "ApplicationForms.Configuration.Warnings:ElectoralAddressTypeChange": "Changing the address type will only affect new submissions. Existing applications will retain the electoral district extracted from their original address type.",
 
     "Intakes": "Intakes",
 

@@ -23,7 +23,9 @@
                     <label class="form-check-label direct-approval" for="directApproval">Direct Approval</label>
                 </div>
             </div>
-            <label class="form-label note mt-1"><b>NOTE:</b> Enabling this feature will bypass the Assessment workflow when you approve submissions associated with this form.</label>
+            <label class="form-label note mt-1">
+                <b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow"].Value
+            </label>
         </div>
     </div>
 
@@ -35,12 +37,16 @@
                     name="electoralDistrictAddressType">
                 @foreach (var option in Model?.ElectoralDistrictAddressTypes ?? Enumerable.Empty<SelectListItem>())
                 {
-                    var selected = option.Value == ((int)(Model.ElectoralDistrictAddressType)).ToString();
+                    var selected = option.Value == ((int)(Model?.ElectoralDistrictAddressType)).ToString();
                     <option value="@option.Value" selected="@(selected ? "selected" : null)">@option.Text</option>
                 }
             </select>
-            <label class="form-label note mt-1 " style="display:block"><b>NOTE:</b> The selected address type will determine which submitted application address is used to extract the electoral district.</label>
-            <label class="note mt-1 configuration-warning" style="display:none" id="change-electoral-address-warning"><b>WARNING:</b> Changing the address type will only affect new submissions. Existing applications will retain the electoral district extracted from their original address type.</label>
+            <label class="form-label note mt-1 " style="display:block"><b>NOTE:</b>
+                @L["ApplicationForms.Configuration.Notes:SelectedElectoralAddress"].Value
+            </label>
+            <label class="note mt-1 configuration-warning" style="display:none" id="change-electoral-address-warning"><b>WARNING:</b> 
+                @L["ApplicationForms.Configuration.Warnings:ElectoralAddressTypeChange"].Value
+            </label>
         </div>
     </div>
 

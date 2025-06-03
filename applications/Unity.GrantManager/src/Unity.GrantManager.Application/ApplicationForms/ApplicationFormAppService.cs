@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
-using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Integration.Chefs;
 using Unity.GrantManager.Permissions;
 using Volo.Abp;
@@ -135,9 +134,9 @@ namespace Unity.GrantManager.ApplicationForms
         {
             var form = await _applicationFormRepository.GetAsync(id);
 
-            form.IsDirectApproval = config.IsDirectApproval;
-            form.ElectoralDistrictAddressType = AddressType.PhysicalAddress; // config.ElectoralDistrictAddressType;
-
+            form.IsDirectApproval = config.IsDirectApproval;            
+            form.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
+            
             await _applicationFormRepository.UpdateAsync(form);
         }
     }

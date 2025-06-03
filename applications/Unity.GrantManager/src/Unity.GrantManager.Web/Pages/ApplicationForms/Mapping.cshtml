@@ -1,5 +1,4 @@
 ﻿@page
-@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationFormConfigWidget
 @using Unity.GrantManager.ApplicationForms
 @using Unity.GrantManager.Localization;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicationActionWidget
@@ -206,7 +205,7 @@
 
         <!--Tab Content: Other Configuration-->
         <div class="tab-pane fade" id="nav-other-configuration" role="tabpanel" aria-labelledby="nav-other-configuration-tab">
-            @await Component.InvokeAsync(typeof(ApplicationFormConfigWidget), new { configType = "Other", applicationForm = Model.ApplicationFormDto })
+            @await Component.InvokeAsync(typeof(ApplicationFormConfigWidget), new { configType = "Other", applicationForm = Model?.ApplicationFormDto })
         </div>
     </div>
 
