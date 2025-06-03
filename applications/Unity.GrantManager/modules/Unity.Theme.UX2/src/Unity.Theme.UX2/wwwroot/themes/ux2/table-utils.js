@@ -133,23 +133,34 @@ function initializeDataTable(options) {
                 ...(Array.isArray(listColumnDefs) && listColumnDefs.length > 0 ? listColumnDefs : [])
             ],
             processing: true,
-            stateSaveParams: function (settings, data) {
-                let searchValue = $(settings.oInit.externalSearchInputId).val();
-                data.search.search = searchValue;
+           stateSaveParams: function (settings, data) {
+               let searchValue = $(settings.oInit.externalSearchInputId).val();
+               data.search.search = searchValue;
 
-                let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
-                $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
+               // Assign unique keys to columns based on their original index
+               data.columns.forEach((col, idx) => {
+                   let aoCol = settings.aoColumns[idx];
+                   let originalIdx = typeof aoCol._ColReorder_iOrigCol !== "undefined" ? aoCol._ColReorder_iOrigCol : idx;
+                   let originalCol = settings.aoColumns.find(col => col.index === originalIdx);
+                   data.columns[originalIdx].uniqueKey = originalCol.name;
+               });
+
+               let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
+               $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
             },
-            stateLoadParams: function (settings, data) {
-                $(settings.oInit.externalSearchInputId).val(data.search.search);
+           stateLoadParams: function (settings, data) {
+               $(settings.oInit.externalSearchInputId).val(data.search.search);
 
-                data.columns.forEach((column, index) => {
-                    if(settings.aoColumns[index] +"" != "undefined") {
-                        const title = settings.aoColumns[index].sTitle;
-                        const value = column.search.search;
-                        filterData[title] = value;
-                    }
-                });
+               data.columns.forEach((column, index) => {
+                   if(settings.aoColumns[index] +"" != "undefined") {
+                       const title = settings.aoColumns[index].sTitle;
+                       const name = settings.aoColumns[index].name;
+                       //Find the object based on column unique keys / names
+                       const dataObj = data.columns.find(col => col.uniqueKey === name);
+                       const value = dataObj.search.search;
+                       filterData[title] = value;
+                   }
+               });
             }
         })
     );
