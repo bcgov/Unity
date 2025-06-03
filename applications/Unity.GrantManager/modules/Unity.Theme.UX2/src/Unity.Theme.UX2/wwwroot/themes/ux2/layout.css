@@ -166,13 +166,18 @@ body {
     font-size: var(--bc-font-size-sm);
 }
 
-    .dataTables_wrapper table th:first-child {
-        border-top-left-radius: 10px;
-    }
+.dataTables_wrapper table th:first-child {
+    border-top-left-radius: 10px;
+}
 
-    .dataTables_wrapper table th:last-child {
-        border-top-right-radius: 10px;
-    }
+.dataTables_wrapper table th:last-child {
+    border-top-right-radius: 10px;
+}
+
+.dataTables_wrapper table thead tr:not(:first-child) th:first-child,
+.dataTables_wrapper table thead tr:not(:first-child) th:last-child {
+    border-radius: inherit;
+}
 
 .dataTables_wrapper thead tr.filters th {
     border-top-left-radius: 0;
