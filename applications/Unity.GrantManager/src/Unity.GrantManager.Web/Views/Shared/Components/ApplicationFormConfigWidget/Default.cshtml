@@ -1,0 +1,78 @@
+﻿@using Microsoft.AspNetCore.Authorization;
+@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationFormConfigWidget;
+
+@model ApplicationFormConfigWidgetViewModel;
+
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IAuthorizationService AuthorizationService
+
+<form id="otherConfigForm" autocomplete="off">
+    <div class="row">
+        <div class="col-12 p-3">
+            <h6 class="mb-3"><b>Workflow Settings</b></h6>
+            <div class="switch-container">
+                <div class="form-check unt-form-switch form-switch">
+                    <input class="form-check-input"
+                           checked="@Model?.IsDirectApproval"
+                           type="checkbox"
+                           id="directApproval"
+                           name="directApproval"
+                           style="cursor:pointer">
+                    <label class="form-check-label direct-approval" for="directApproval">Direct Approval</label>
+                </div>
+            </div>
+            <label class="form-label note mt-1">
+                <b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow"].Value
+            </label>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 p-3">
+            <h6 class="mb-3"><b>Electoral District Configuration</b></h6>
+            <select class="form-select form-control"
+                    id="electoralDistrictAddressType"
+                    name="electoralDistrictAddressType">
+                @foreach (var option in Model?.ElectoralDistrictAddressTypes ?? Enumerable.Empty<SelectListItem>())
+                {
+                    var selected = option.Value == ((int)(Model?.ElectoralDistrictAddressType ?? 0)).ToString();
+                    <option value="@option.Value" selected="@(selected ? "selected" : null)">@option.Text</option>
+                }
+            </select>
+            <label class="form-label note mt-1 " style="display:block"><b>NOTE:</b>
+                @L["ApplicationForms.Configuration.Notes:SelectedElectoralAddress"].Value
+            </label>
+            <label class="note mt-1 configuration-warning" style="display:none" id="change-electoral-address-warning"><b>WARNING:</b> 
+                @L["ApplicationForms.Configuration.Warnings:ElectoralAddressTypeChange"].Value
+            </label>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-center">
+                <abp-button id="btn-save-other-config"
+                            text="Save"
+                            icon-type="Other"
+                            icon="fl fl-save"
+                            class="btn unt-btn-primary btn-primary mx-1"
+                            abp-tooltip="Save Other Configuration"
+                            button-type="Primary" />
+                <button type="reset"
+                        id="btn-cancel-other-config"
+                        class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                        abp-tooltip="Cancel changes">
+                    <i class="fl fl-undo"></i> Cancel
+                </button>
+                <button type="reset"
+                        id="btn-back-other-config"
+                        class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                        abp-tooltip="Navigate back to the Forms">
+                    Back
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
