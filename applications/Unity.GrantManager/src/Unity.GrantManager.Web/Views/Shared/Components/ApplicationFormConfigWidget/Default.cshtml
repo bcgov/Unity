@@ -37,7 +37,7 @@
                     name="electoralDistrictAddressType">
                 @foreach (var option in Model?.ElectoralDistrictAddressTypes ?? Enumerable.Empty<SelectListItem>())
                 {
-                    var selected = option.Value == ((int)(Model?.ElectoralDistrictAddressType)).ToString();
+                    var selected = option.Value == ((int)(Model?.ElectoralDistrictAddressType ?? 0)).ToString();
                     <option value="@option.Value" selected="@(selected ? "selected" : null)">@option.Text</option>
                 }
             </select>
