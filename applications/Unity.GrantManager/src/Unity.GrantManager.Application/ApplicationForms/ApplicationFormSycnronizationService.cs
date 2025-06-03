@@ -171,9 +171,11 @@ namespace Unity.GrantManager.ApplicationForms
             AddFact("Synchronizing Data - Form Version: ", $"{version} Unity Application ID: {result}");
         }
 
-        public async Task<HashSet<string>> GetMissingSubmissions(int numberOfDaysToCheck)
+        public async Task<(HashSet<string> MissingSubmissions, string MissingSubmissionsReport)> GetMissingSubmissions(int numberOfDaysToCheck)
         {
             _facts = new List<Fact>();
+            var missingSubmissionsReportBuilder = new System.Text.StringBuilder();
+            int missingSubmissionsCounter = 1;
 
             HashSet<string> missingSubmissions = new HashSet<string>();
             // Get all forms with api keys
@@ -200,6 +202,13 @@ namespace Unity.GrantManager.ApplicationForms
                             AddFact("------------------------------------", "----------------------------------------");
                             AddFact("Application Form Name: ", applicationFormDto.ApplicationFormName ?? string.Empty);
                             AddFact("Missing Submissions Count: ", missingSubmissions.Count.ToString());
+
+                            foreach (string submissionId in missingSubmissions)
+                            {
+                                missingSubmissionsReportBuilder.AppendLine($"{missingSubmissionsCounter}-{applicationFormDto.ApplicationFormName}-{submissionId}<br>");
+                                missingSubmissionsCounter++;
+                            }
+
                             await SynchronizeFormSubmissions(missingSubmissions, applicationFormDto);
                         }
                     }
@@ -227,8 +236,8 @@ namespace Unity.GrantManager.ApplicationForms
             string activityTitle = "Review Missed Chefs Submissions " + tenantName;
             string activitySubtitle = "Environment: " + envInfo;
             string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
-            await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, _facts);
-            return missingSubmissions ?? new HashSet<string>();
+             await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, _facts);
+            return (missingSubmissions ?? new HashSet<string>(), missingSubmissionsReportBuilder.ToString());
         }
 
         private async Task<string?> GetTenantNameAsync()
