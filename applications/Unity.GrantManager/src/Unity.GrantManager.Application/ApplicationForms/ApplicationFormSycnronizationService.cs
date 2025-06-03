@@ -236,7 +236,7 @@ namespace Unity.GrantManager.ApplicationForms
             string activityTitle = "Review Missed Chefs Submissions " + tenantName;
             string activitySubtitle = "Environment: " + envInfo;
             string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
-             await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, _facts);
+            await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, _facts);
             return (missingSubmissions ?? new HashSet<string>(), missingSubmissionsReportBuilder.ToString());
         }
 
