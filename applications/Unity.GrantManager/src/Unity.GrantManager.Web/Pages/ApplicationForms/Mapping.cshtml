@@ -1,16 +1,13 @@
 ﻿@page
 @using Unity.GrantManager.ApplicationForms
-@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationActionWidget
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
-@using Microsoft.AspNetCore.Authorization;
 @using Unity.GrantManager.Permissions;
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
 @using Volo.Abp.Authorization.Permissions;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicationFormConfigWidget;
 
 @model MappingModel
-@inject IAuthorizationService AuthorizationService
 @inject IPageLayout PageLayout
 @inject IPermissionChecker PermissionChecker
 @{
