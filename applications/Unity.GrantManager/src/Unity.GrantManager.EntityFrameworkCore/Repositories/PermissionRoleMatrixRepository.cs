@@ -83,4 +83,5 @@ public class PermissionRoleMatrixDto
     public required string PermissionDisplayName { get; set; }
     public int Depth { get; set; }
     public required Dictionary<string, bool> RolePermissions { get; set; }
+    public bool IsDefined { get; set; } = false;
 }

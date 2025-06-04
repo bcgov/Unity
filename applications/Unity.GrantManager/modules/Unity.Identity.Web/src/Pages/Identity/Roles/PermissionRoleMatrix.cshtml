@@ -19,10 +19,16 @@
     int rowCount = 1;
     int maxDepth = Model.PermissionRoleMatrix.Max(item => item.Depth);
     int headerLevel = maxDepth + 1;
+
+    var roleHeaders = Model.PermissionRoleMatrix.FirstOrDefault()?.RolePermissions.Keys ?? Enumerable.Empty<string>();
+    var filteredPermissions = Model.ShowNotDefined
+        ? Model.PermissionRoleMatrix.Where(p => !p.IsDefined)
+        : Model.PermissionRoleMatrix.Where(p => p.IsDefined);
 }
 
 @section scripts {
     <th:abp-script src="/Pages/Identity/Roles/PermissionRoleMatrix.js" />
+    <th:abp-script src="/Pages/AbpPermissionManagement/permission-management-modal.js" />
 }
 
 @section styles {
@@ -72,14 +78,14 @@
                         <th scope="col">Permission Group</th>
                         <th scope="col">Permission</th>
                         <th scope="col">Description</th>
-                        @foreach (var role in Model.PermissionRoleMatrix.FirstOrDefault()?.RolePermissions.Keys ?? Enumerable.Empty<string>())
+                        @foreach (var role in roleHeaders)
                         {
                             <th scope="col" class="role-name" data-role-header="@role">@role</th>
                         }
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var permission in Model.PermissionRoleMatrix)
+                    @foreach (var permission in filteredPermissions)
                     {
                         <tr>
                             <td>@rowCount.ToString("D2")</td>
@@ -107,7 +113,7 @@
                         <th scope="col" rowspan="2">Permission Group</th>
                         <th scope="colgroup" colspan="@headerLevel" data-dt-order="disable">Permission</th>
                         <th scope="col" rowspan="2">Description</th>
-                        @foreach (var role in Model.PermissionRoleMatrix.FirstOrDefault()?.RolePermissions.Keys ?? Enumerable.Empty<string>())
+                        @foreach (var role in roleHeaders)
                         {
                             <th scope="col" rowspan="2" class="role-name" data-role-header="@role">@role</th>
                         }
@@ -120,7 +126,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var permission in Model.PermissionRoleMatrix)
+                    @foreach (var permission in filteredPermissions)
                     {
                         <tr>
                             <td>
