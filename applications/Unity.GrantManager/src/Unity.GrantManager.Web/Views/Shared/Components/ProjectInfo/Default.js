@@ -42,6 +42,11 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                     projectInfoObj.CorrelationId = $("#ProjectInfo_ApplicationFormVersionId").val();
                     projectInfoObj.WorksheetId = $("#ProjectInfo_WorksheetId").val();
 
+                    // Normalize checkboxes to string for custom worksheets
+                    $(`#Unity_GrantManager_ApplicationManagement_Project_Worksheet input:checkbox`).each(function () {
+                        projectInfoObj.CustomFields[this.name] = (this.checked).toString();
+                    });
+
                     customIncludes
                         .add('CustomFields')
                         .add('CorrelationId')
