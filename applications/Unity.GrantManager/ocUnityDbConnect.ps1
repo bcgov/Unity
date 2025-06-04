@@ -19,15 +19,23 @@ do {
 } while (-not ($validEnvironments -contains $environment))
 
 
-if( $environment -eq "dev" ) {
-    Write-Host "Please select between dev and dev2" -ForegroundColor Green
-    $cluster = Read-Host "Enter cluster (dev, dev2)"
-} elseif ($environment -eq "test") {
-    Write-Host "Please select between test and uat" -ForegroundColor Green
-    $cluster = Read-Host "Enter cluster (test, uat)"
-} elseif ($environment -eq "prod") {
-    $cluster = "prod"
+# Define cluster mappings
+$clusterMappings = @{
+    'dev' = @('dev', 'dev2')
+    'test' = @('test', 'uat')
+    'prod' = @('prod')
 }
+
+if ($environment -eq 'prod') {
+    $cluster = 'prod'
+} else {
+    $validClusters = $clusterMappings[$environment]
+    do {
+        Write-Host "Please select between $($validClusters -join ' and ')" -ForegroundColor Green
+        $cluster = Read-Host "Enter cluster ($($validClusters -join ', '))"
+    } while (-not ($validClusters -contains $cluster))
+}
+
 
 # Configuration parameters (dynamically updated based on environment)
 $NameSpace = "d18498-$environment"  # OpenShift project namespace
