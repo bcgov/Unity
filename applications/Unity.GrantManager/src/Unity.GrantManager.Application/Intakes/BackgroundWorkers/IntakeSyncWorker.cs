@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Quartz;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Settings;
