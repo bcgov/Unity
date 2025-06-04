@@ -12,15 +12,26 @@ if ($loginResponse -match '^(y|yes)$') {
 }
 
 # Prompt user for environment selection
-$validEnvironments = @("dev", "dev2", "test", "uat", "prod")
+$validEnvironments = @("dev", "test", "prod")
 do {
-    Write-Host "Enter environment (dev, dev2, test, uat, prod)" -ForegroundColor Green
+    Write-Host "Enter environment (dev, test, prod)" -ForegroundColor Green
     $environment = Read-Host
 } while (-not ($validEnvironments -contains $environment))
 
+
+if( $environment -eq "dev" ) {
+    Write-Host "Please select between dev and dev2" -ForegroundColor Green
+    $cluster = Read-Host "Enter cluster (dev, dev2)"
+} elseif ($environment -eq "test") {
+    Write-Host "Please select between test and uat" -ForegroundColor Green
+    $cluster = Read-Host "Enter cluster (test, uat)"
+} elseif ($environment -eq "prod") {
+    $cluster = "prod"
+}
+
 # Configuration parameters (dynamically updated based on environment)
 $NameSpace = "d18498-$environment"  # OpenShift project namespace
-$ClusterName = "$environment-crunchy-postgres"
+$ClusterName = "$cluster-crunchy-postgres"
 $LocalPort = 5436
 $RemotePort = 5432
 $ListenInterface = "localhost"
