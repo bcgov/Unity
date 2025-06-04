@@ -231,12 +231,15 @@ namespace Unity.GrantManager.ApplicationForms
                 AddFact("Total Missing Submissions Count: ", missingSubmissionsCount.ToString());
             }
 
-            string tenantName = await GetTenantNameAsync() ?? "";
-            string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            string activityTitle = "Review Missed Chefs Submissions " + tenantName;
-            string activitySubtitle = "Environment: " + envInfo;
-            string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
-            await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, _facts);
+            if (missingSubmissions.Count > 0) 
+            {
+                string tenantName = await GetTenantNameAsync() ?? "";
+                string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                string activityTitle = "Review Missed Chefs Submissions " + tenantName;
+                string activitySubtitle = "Environment: " + envInfo;
+                string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
+                await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, _facts);
+            }
             return (missingSubmissions ?? new HashSet<string>(), missingSubmissionsReportBuilder.ToString());
         }
 
