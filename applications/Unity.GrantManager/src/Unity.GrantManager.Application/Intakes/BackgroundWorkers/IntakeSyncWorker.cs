@@ -82,15 +82,16 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
 
             if (sendEmail) {
                 string htmlBody = $@"
-                <body style='font-family: Arial, sans-serif;'>
-                    <p>{emailBody}</p>
-                    <br />
-                    <p style='font-size: 12px; color: #999;'>*Note - Please do not reply to this email as it is an automated notification.</p>
-                </body>
+                <html>
+                    <body style='font-family: Arial, sans-serif;'>
+                        <p>{emailBody}</p>
+                        <br />
+                        <p style='font-size: 12px; color: #999;'>*Note - Please do not reply to this email as it is an automated notification.</p>
+                    </body>
                 </html>";
 
                 await _emailNotificationService.SendEmailNotification(
-                     "grantmanagementsupport@gov.bc.ca",
+                    "grantmanagementsupport@gov.bc.ca",
                     htmlBody,
                     "Unity Failed Submissions Notification",
                     "NoReply@gov.bc.ca", "html",
