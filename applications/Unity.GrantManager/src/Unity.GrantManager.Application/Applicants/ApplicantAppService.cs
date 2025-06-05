@@ -1,22 +1,23 @@
-﻿using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
-using Volo.Abp.DependencyInjection;
-using Unity.GrantManager.Intakes;
-using System;
-using Unity.GrantManager.Intakes.Mapping;
-using Unity.GrantManager.GrantApplications;
-using Unity.Payments.Events;
-using Volo.Abp;
-using System.Collections.Generic;
-using Unity.GrantManager.Integration.Orgbook;
-using Newtonsoft.Json.Linq;
-using System.Linq;
-using Unity.Modules.Shared.Utils;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Unity.Payments.Integrations.Cas;
 using Microsoft.Extensions.Logging.Abstractions;
-using Unity.Payments.Suppliers;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Intakes.Mapping;
+using Unity.GrantManager.Integration.Orgbook;
+using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
+using Unity.Payments.Events;
+using Unity.Payments.Integrations.Cas;
+using Unity.Payments.Suppliers;
+using Volo.Abp;
+using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -163,16 +164,45 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(true)]
     public async Task<int> GetNextUnityApplicantIdAsync()
     {
-        List<Applicant> applicants = await applicantRepository.GetApplicantsWithUnityApplicantIdAsync();
-        // Convert UnityApplicantId to int, filter only valid numbers
-        var unityIds = applicants
-            .Where(a => int.TryParse(a.UnityApplicantId, out _)) // Ensure it's numeric
-            .Select(a => int.Parse(a.UnityApplicantId!))
+        // Finds the first available Unity Applicant ID, starting from 100001.
+
+        var applicantQuery = await applicantRepository.GetQueryableAsync();
+
+        // Fetch non-null UnityApplicantId strings from the database.
+        var allUnityIdStrings = await applicantQuery
+            .Where(a => a.UnityApplicantId != null)
+            .Select(a => a.UnityApplicantId)
+            .ToListAsync();
+
+        // Parse, filter for IDs >= 100001, and sort client-side.
+        var relevantUnityIds = allUnityIdStrings
+            .Select(s => {
+                if (int.TryParse(s, out int parsedId) && parsedId >= 100001)
+                {
+                    return (int?)parsedId;
+                }
+                return null;
+            })
+            .Where(id => id.HasValue)
+            .Select(id => id.GetValueOrDefault()) // Safely unwrap nullable int
+            .OrderBy(id => id)
             .ToList();
 
-        int nextId = unityIds.Count > 0 ? unityIds.Max() + 1 : 000001;
+        int candidate = 100001; // Starting ID for availability search.
 
-        return nextId;
+        foreach (var id in relevantUnityIds)
+        {
+            if (id == candidate)
+            {
+                candidate++;
+            }
+            else // Gap found: candidate is the first available ID.
+            {
+                break;
+            }
+        }
+
+        return candidate;
     }
 
     [RemoteService(true)]
