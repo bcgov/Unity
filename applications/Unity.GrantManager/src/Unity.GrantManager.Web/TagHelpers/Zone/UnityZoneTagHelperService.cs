@@ -164,8 +164,11 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         AddFormIdWithLink(dl);
 
         // Feature and Zone requirements
-        AddRequirementItem(dl, "FeatureRequirement", _featureState,
-            TagHelper.FeatureRequirement, TagHelper.Id);
+        AddRequirementItem(dl, 
+            "FeatureRequirement", 
+            string.IsNullOrEmpty(TagHelper.FeatureRequirement) ? null : _featureState,
+            TagHelper.FeatureRequirement, 
+            TagHelper.Id);
         AddRequirementItem(dl, "ZoneRequirement", _zoneState,
             TagHelper.ZoneRequirement, TagHelper.Id);
 
@@ -174,14 +177,14 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         // Permission requirements
         AddRequirementItem(dl, "ReadPermissionRequirement", _readPermissionState,
             TagHelper.PermissionRequirement, TagHelper.Id);
-        AddDefinitionItem(dl, "CustomReadCondition", NotApplicableStatusBadge(TagHelper.ReadCondition));
+        AddDefinitionItem(dl, "ReadCondition", NotApplicableStatusBadge(TagHelper.ReadCondition));
 
         AddSeparator(dl);
 
         // Update requirements
         AddRequirementItem(dl, "UpdatePermissionRequirement", _updatePermissionState,
             TagHelper.UpdatePermissionRequirement, null);
-        AddDefinitionItem(dl, "CustomUpdateCondition", NotApplicableStatusBadge(TagHelper.UpdateCondition));
+        AddDefinitionItem(dl, "UpdateCondition", NotApplicableStatusBadge(TagHelper.UpdateCondition));
 
         content.AppendHtml(dl);
         debugAlert.InnerHtml.AppendHtml(content);
@@ -199,10 +202,10 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         AddDefinitionItem(dl, "Form ID", formLink);
     }
 
-    private static void AddRequirementItem(TagBuilder dl, string label, bool state, string? requirement, string? inheritFrom)
+    private static void AddRequirementItem(TagBuilder dl, string label, bool? state, string? requirement, string? inheritFrom)
     {
         var content = new HtmlContentBuilder();
-        content.AppendHtml(StatusBadge(state));
+        content.AppendHtml(NotApplicableStatusBadge(state));
         content.Append(requirement ?? "N/A");
 
         // Add inheritance notice if applicable
