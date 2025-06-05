@@ -151,7 +151,11 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
-                    .. Dashboard_CommonPermissions
+                    .. Dashboard_CommonPermissions,
+
+                    // Role Specific Permissions
+                    UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
+                    UnitySelector.Project.Location.Update.UpdateFinalStateFields,
                 ], context.TenantId);
 
             // - Approver
