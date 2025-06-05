@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
@@ -225,40 +226,37 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             string? orgbookLookup = string.IsNullOrEmpty(applicant.OrgNumber) ? applicant.ApplicantName : applicant.OrgNumber;
             if (string.IsNullOrEmpty(orgbookLookup)) return applicant;
-
-            JObject? result = await orgBookService.GetOrgBookQueryAsync(orgbookLookup);
-            var orgData = result?.SelectToken("results")?.Children().FirstOrDefault();
-            if (orgData == null) return applicant;
-
+            // Use the built-in System.Text.Json API
+            using JsonDocument result = await orgBookService.GetOrgBookAutocompleteQueryAsync(orgbookLookup);
+            if (!result.RootElement.TryGetProperty("results", out JsonElement results) ||
+                results.GetArrayLength() == 0)
+                return applicant;
+            JsonElement orgData = results[0];
             await UpdateApplicantOrgNumberAsync(applicant, orgData);
-            await UpdateApplicantNamesAsync(applicant, orgData.SelectToken("names")?.Children());
+            await UpdateApplicantNamesAsync(applicant, orgData.GetProperty("names").EnumerateArray());
         }
         catch (Exception ex)
         {
             Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ex.Message);
         }
-
         return applicant;
     }
 
-    private async Task UpdateApplicantOrgNumberAsync(Applicant applicant, JToken orgData)
+    private async Task UpdateApplicantOrgNumberAsync(Applicant applicant, JsonElement orgData)
     {
-        var orgNumber = orgData.SelectToken("source_id");
-        if (applicant.OrgNumber == null && orgNumber != null)
+        if (orgData.TryGetProperty("source_id", out JsonElement orgNumberElement) && applicant.OrgNumber == null)
         {
-            applicant.OrgNumber = orgNumber.ToString();
+            applicant.OrgNumber = orgNumberElement.GetString();
             await applicantRepository.UpdateAsync(applicant);
         }
     }
 
-    private async Task UpdateApplicantNamesAsync(Applicant applicant, IEnumerable<JToken>? namesChildren)
+    private async Task UpdateApplicantNamesAsync(Applicant applicant, IEnumerable<JsonElement> namesChildren)
     {
-        if (namesChildren == null) return;
-
         foreach (var name in namesChildren)
         {
-            string nameType = name.SelectToken("type")?.ToString() ?? string.Empty;
-            string nameText = name.SelectToken("text")?.ToString() ?? string.Empty;
+            string nameType = name.TryGetProperty("type", out JsonElement typeEl) ? typeEl.GetString() ?? string.Empty : string.Empty;
+            string nameText = name.TryGetProperty("text", out JsonElement textEl) ? textEl.GetString() ?? string.Empty : string.Empty;
 
             if (nameType == "entity_name")
             {
