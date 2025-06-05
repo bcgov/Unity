@@ -6,7 +6,7 @@ using Unity.GrantManager.ApplicationForms;
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationFormConfigWidget;
 
 [ApiExplorerSettings(IgnoreApi = true)]
-[Route("GrantApplications/Widgets/ApplicationActionWidget")]
+[Route("GrantApplications/Widgets/ApplicationFormConfigWidget")]
 public class ApplicationFormConfigWidgetController : AbpController
 {
     [HttpGet]

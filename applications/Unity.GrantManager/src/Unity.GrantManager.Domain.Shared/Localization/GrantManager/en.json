@@ -193,6 +193,7 @@
     "Unity.GrantManager.ApplicationManagement.Project.Summary.Update.UpdateFinalStateFields": "Edit Project Summary after approval",
     "Unity.GrantManager.ApplicationManagement.Project.Location": "Project Location",
     "Unity.GrantManager.ApplicationManagement.Project.Location.Update": "Edit Project Location",
+    "Unity.GrantManager.ApplicationManagement.Project.Location.Update.UpdateFinalStateFields": "Edit Project Location after approval",
 
     "Unity.GrantManager.ApplicationManagement.Applicant": "Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary": "Applicant Info",

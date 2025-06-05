@@ -119,7 +119,7 @@ namespace Unity.GrantManager.Intakes
             string activityTitle = "Chefs Submission Event Validation Error";
             string activitySubtitle = "Environment: " + envInfo;
             string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
-            TeamsNotificationService teamsNotificationService = new TeamsNotificationService();
+            TeamsNotificationService teamsNotificationService = new();
             teamsNotificationService.AddFact(factName, factValue);
             await teamsNotificationService.PostFactsToTeamsAsync(teamsChannel, activityTitle, activitySubtitle);
         }

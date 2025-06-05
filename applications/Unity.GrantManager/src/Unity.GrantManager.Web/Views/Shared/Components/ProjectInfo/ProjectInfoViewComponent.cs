@@ -52,7 +52,6 @@ public class ProjectInfoViewComponent : AbpViewComponent
         GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
         bool IsApplicationOpen = !GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-        bool UserHasFinalStateUpdate = await _authorizationService.IsGrantedAsync(UnitySelector.Project.Summary.Update.UpdateFinalStateFields);
 
         List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
 
@@ -62,6 +61,8 @@ public class ProjectInfoViewComponent : AbpViewComponent
 
         List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();
 
+        bool UserHasFinalStateUpdateSummary = await _authorizationService.IsGrantedAsync(UnitySelector.Project.Summary.Update.UpdateFinalStateFields);
+        bool UserHasFinalStateUpdateLocation = await _authorizationService.IsGrantedAsync(UnitySelector.Project.Location.Update.UpdateFinalStateFields);
         ProjectInfoViewModel model = new()
         {
             ApplicationId = applicationId,
@@ -70,8 +71,8 @@ public class ProjectInfoViewComponent : AbpViewComponent
             RegionalDistricts = RegionalDistricts,
             Communities = Communities,
             EconomicRegions = EconomicRegions,
-            IsSummaryEditable = IsApplicationOpen || UserHasFinalStateUpdate,
-            IsLocationEditable = IsApplicationOpen
+            IsSummaryEditable = IsApplicationOpen || UserHasFinalStateUpdateSummary,
+            IsLocationEditable = IsApplicationOpen || UserHasFinalStateUpdateLocation
         };
 
         model.EconomicRegionList.AddRange(EconomicRegions.Select(EconomicRegion =>
