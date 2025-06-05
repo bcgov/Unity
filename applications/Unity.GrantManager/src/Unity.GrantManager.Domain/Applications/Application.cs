@@ -5,6 +5,7 @@ using System.Linq;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Intakes;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -174,7 +175,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? recommendedAmount, string? declineRational)
     {
-        DueDiligenceStatus = dueDiligenceStatus;        
+        DueDiligenceStatus = dueDiligenceStatus;
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
     }
@@ -218,8 +219,26 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// </summary>
     public void UpdatePercentageTotalProjectBudget()
     {
-        PercentageTotalProjectBudget 
-            = (this.TotalProjectBudget == 0) 
+        PercentageTotalProjectBudget
+            = (this.TotalProjectBudget == 0)
             ? 0 : decimal.Multiply(decimal.Divide(this.RequestedAmount, this.TotalProjectBudget), 100).To<double>();
     }
+
+    /// <summary>
+    /// Triggers an event indicating that the application has been processed.
+    /// </summary>
+    public void ApplicationProcessed()
+    {
+        //AddLocalEvent(new ApplicationProcessedEvent { Application = this });
+    }
+
+    /// <summary>
+    /// Sets the Electoral District for the application.
+    /// </summary>
+    /// <param name="electoralDistrict"></param>
+    public void SetElectoralDistrict(string electoralDistrict)
+    {
+        ElectoralDistrict = electoralDistrict;
+    }
 }
+
