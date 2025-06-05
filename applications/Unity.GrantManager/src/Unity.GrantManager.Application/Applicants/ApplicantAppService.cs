@@ -174,23 +174,31 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             .Select(a => a.UnityApplicantId)
             .ToListAsync();
 
-        // Parse, filter for IDs >= 100000, and sort client-side.
-        var relevantUnityIds = allUnityIdStrings
-            .Select(s => {
-                if (int.TryParse(s, out int parsedId) && parsedId >= 100000)
+        var relevantUnityIds = await applicantQuery
+            .Where(a => a.UnityApplicantId != null)
+            .Select(a => new { UnityApplicantId = a.UnityApplicantId, ParsedId = (int?)null })
+            .ToListAsync();
+
+        var updatedRelevantUnityIds = relevantUnityIds
+            .Select(item =>
+            {
+                if (int.TryParse(item.UnityApplicantId, out var parsedId) && parsedId >= 100000)
                 {
-                    return (int?)parsedId;
+                    return new { UnityApplicantId = item.UnityApplicantId ?? string.Empty, ParsedId = (int?)parsedId };
                 }
-                return null;
+                return new { UnityApplicantId = item.UnityApplicantId ?? string.Empty, ParsedId = item.ParsedId };
             })
-            .Where(id => id.HasValue)
-            .Select(id => id.GetValueOrDefault()) // Safely unwrap nullable int
+            .ToList();
+
+        var orderedIds = updatedRelevantUnityIds
+            .Where(a => a.ParsedId.HasValue)
+            .Select(a => a.ParsedId!.Value) // Use the null-forgiving operator (!) to assert that ParsedId is not null
             .OrderBy(id => id)
             .ToList();
 
         int candidate = 100000; // Starting ID for availability search.
 
-        foreach (var id in relevantUnityIds)
+        foreach (var id in orderedIds)
         {
             if (id == candidate)
             {
