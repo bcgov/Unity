@@ -164,7 +164,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(true)]
     public async Task<int> GetNextUnityApplicantIdAsync()
     {
-        // Finds the first available Unity Applicant ID, starting from 100001.
+        // Finds the first available Unity Applicant ID, starting from 100000.
 
         var applicantQuery = await applicantRepository.GetQueryableAsync();
 
@@ -174,10 +174,10 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             .Select(a => a.UnityApplicantId)
             .ToListAsync();
 
-        // Parse, filter for IDs >= 100001, and sort client-side.
+        // Parse, filter for IDs >= 100000, and sort client-side.
         var relevantUnityIds = allUnityIdStrings
             .Select(s => {
-                if (int.TryParse(s, out int parsedId) && parsedId >= 100001)
+                if (int.TryParse(s, out int parsedId) && parsedId >= 100000)
                 {
                     return (int?)parsedId;
                 }
@@ -188,7 +188,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             .OrderBy(id => id)
             .ToList();
 
-        int candidate = 100001; // Starting ID for availability search.
+        int candidate = 100000; // Starting ID for availability search.
 
         foreach (var id in relevantUnityIds)
         {
