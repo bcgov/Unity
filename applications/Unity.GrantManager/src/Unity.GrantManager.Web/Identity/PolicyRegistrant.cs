@@ -162,6 +162,8 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Project.Location.Update.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Location.Update.UpdateFinalStateFields,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.UpdateFinalStateFields));
     }
 }
 
