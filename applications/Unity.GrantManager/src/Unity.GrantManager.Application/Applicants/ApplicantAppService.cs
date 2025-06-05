@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -166,14 +165,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     public async Task<int> GetNextUnityApplicantIdAsync()
     {
         // Finds the first available Unity Applicant ID, starting from 100000.
-
         var applicantQuery = await applicantRepository.GetQueryableAsync();
-
-        // Fetch non-null UnityApplicantId strings from the database.
-        var allUnityIdStrings = await applicantQuery
-            .Where(a => a.UnityApplicantId != null)
-            .Select(a => a.UnityApplicantId)
-            .ToListAsync();
 
         var relevantUnityIds = await applicantQuery
             .Where(a => a.UnityApplicantId != null)
