@@ -148,7 +148,7 @@ internal static class PolicyRegistrant
             context.User.HasClaim(PermissionConstant, UnitySelector.Project.Location.Update.Default) ||
             context.User.HasClaim(PermissionConstant, UnitySelector.Project.Summary.Update.Default) ||
             
-            // NOTE: This be replaced when Worksheets are normalized with UnitySelector.Project.Worksheet.Update
+            // NOTE: This will be replaced when Worksheets are normalized with UnitySelector.Project.Worksheet.Update
             context.User.HasClaim(PermissionConstant, UnitySelector.Project.Default) 
         ));
 
