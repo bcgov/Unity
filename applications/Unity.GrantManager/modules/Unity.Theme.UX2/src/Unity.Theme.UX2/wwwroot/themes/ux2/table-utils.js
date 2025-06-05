@@ -163,7 +163,7 @@ function initializeDataTable(options) {
                            cleanInvalidStateRestore(tableId);
                            stateCorrupted = true;
                        } else {
-                           const value = dataObj.search && dataObj.search.search ? dataObj.search.search : '';
+                           const value = dataObj?.search?.search ?? '';
                            filterData[title] = value;
                        }
                    }
