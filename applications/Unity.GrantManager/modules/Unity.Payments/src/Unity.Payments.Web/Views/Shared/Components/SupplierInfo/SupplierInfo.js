@@ -8,18 +8,43 @@ $(function () {
         siteId: $("#SiteId"),
         originalSupplierNumber: $("#OriginalSupplierNumber"),
         supplierNumber: $("#SupplierNumber"),
+        supplierName: $("#SupplierName"),
         hasEditSupplier: $("#HasEditSupplierInfo"),
-        refreshSitesBtn: $("#btn-refresh-sites")
+        refreshSitesBtn: $("#btn-refresh-sites"),
+        orgName: $("#ApplicantInfo_OrgName"),
+        nonRegisteredOrgName: $("#ApplicantInfo_NonRegOrgName"),
+        supplierOrgInfoErrorDiv: $("#supplier-error-div")    
     };
 
     function init() {
         $(document).ready(function () {
             loadSiteInfoTable();
-            bindUIEvents();
+            bindUIEvents();  
+            validateMatchingSupplierToOrgInfo();          
         });
     }
 
     init();
+
+    function validateMatchingSupplierToOrgInfo() {
+        const supplierName = (UIElements.supplierName.val() || '').toLowerCase().trim();
+        
+        if (!supplierName) {
+            UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
+            return;
+        }
+        let isMatch = true;
+        const orgName = (UIElements.orgName.val() || '').toLowerCase().trim();
+        const nonRegisteredOrgName = (UIElements.nonRegisteredOrgName.val() || '').toLowerCase().trim();
+
+        if(orgName != '') {
+            isMatch = !supplierName || !orgName || supplierName === orgName;
+        } else if(nonRegisteredOrgName != '') {
+            isMatch = !supplierName || !nonRegisteredOrgName || supplierName === nonRegisteredOrgName;
+        }
+        
+        UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', isMatch);
+    }
 
     function bindUIEvents() {
         UIElements.navOrgInfoTab.one('click', function () { 
@@ -27,6 +52,10 @@ $(function () {
                 dataTable.columns.adjust(); 
             }
         });
+
+        UIElements.supplierName.on('change', validateMatchingSupplierToOrgInfo);
+        UIElements.orgName.on('change', validateMatchingSupplierToOrgInfo);
+        UIElements.nonRegisteredOrgName.on('change', validateMatchingSupplierToOrgInfo);
             
         UIElements.refreshSitesBtn.on('click', function () { 
             let originalSupplierNumber = UIElements.originalSupplierNumber.val();

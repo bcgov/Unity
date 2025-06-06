@@ -13,3 +13,13 @@
 #SiteInfoTable_wrapper .dt-buttons {
     float: right;
 }
+
+.error-message {
+    color: var(--lpx-danger);
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.hidden {
+    display: none;
+}
