@@ -86,7 +86,7 @@ namespace Unity.Payments.Handlers
             return new()
                 {
                     Number = siteEto.SupplierSiteCode,
-                    PaymentGroup = siteEto.EFTAdvicePref == "E" ? Enums.PaymentGroup.EFT : Enums.PaymentGroup.Cheque,
+                    PaymentGroup = Enums.PaymentGroup.EFT, // Defaulting to EFT based on conversations with CGG/CAS
                     AddressLine1 = siteEto.AddressLine1,
                     AddressLine2 = siteEto.AddressLine2,
                     AddressLine3 = siteEto.AddressLine3,
