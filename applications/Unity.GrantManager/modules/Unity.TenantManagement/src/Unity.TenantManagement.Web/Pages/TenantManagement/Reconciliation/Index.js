@@ -36,13 +36,10 @@ $(function () {
         let dateTo = new Date($('#dateTo').val());
         let dateFrom = new Date($('#dateFrom').val());
 
-        if ($('#dateFrom').val() == "") dateFrom = new Date("2000-01-01");
-        if ($('#dateTo').val() == "") dateTo = new Date("3000-01-01");
-
         let filtered_submissions = submissions.filter(x =>
             x.tenant.toLowerCase().includes($('#ReconciliationTenantFilter').val().toLowerCase()) &&
-            new Date(x.createdAt) <= dateTo &&
-            new Date(x.createdAt) >= dateFrom &&
+            (isNaN(dateTo.getTime()) || new Date(x.createdAt) <= dateTo) &&
+            (isNaN(dateFrom.getTime()) || new Date(x.createdAt) >= dateFrom) &&
             (x.category == $("#ReconciliationCategoryFilter").val() || $("#ReconciliationCategoryFilter").val() == null)
         );
 
