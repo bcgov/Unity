@@ -1,22 +1,23 @@
-﻿using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
-using Volo.Abp.DependencyInjection;
-using Unity.GrantManager.Intakes;
-using System;
-using Unity.GrantManager.Intakes.Mapping;
-using Unity.GrantManager.GrantApplications;
-using Unity.Payments.Events;
-using Volo.Abp;
-using System.Collections.Generic;
-using Unity.GrantManager.Integration.Orgbook;
-using Newtonsoft.Json.Linq;
-using System.Linq;
-using Unity.Modules.Shared.Utils;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Unity.Payments.Integrations.Cas;
 using Microsoft.Extensions.Logging.Abstractions;
-using Unity.Payments.Suppliers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Text.Json;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Intakes.Mapping;
+using Unity.GrantManager.Integration.Orgbook;
+using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
+using Unity.Payments.Events;
+using Unity.Payments.Integrations.Cas;
+using Unity.Payments.Suppliers;
+using Volo.Abp;
+using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -163,16 +164,46 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(true)]
     public async Task<int> GetNextUnityApplicantIdAsync()
     {
-        List<Applicant> applicants = await applicantRepository.GetApplicantsWithUnityApplicantIdAsync();
-        // Convert UnityApplicantId to int, filter only valid numbers
-        var unityIds = applicants
-            .Where(a => int.TryParse(a.UnityApplicantId, out _)) // Ensure it's numeric
-            .Select(a => int.Parse(a.UnityApplicantId!))
+        // Finds the first available Unity Applicant ID, starting from 100000.
+        var applicantQuery = await applicantRepository.GetQueryableAsync();
+
+        var relevantUnityIds = await applicantQuery
+            .Where(a => a.UnityApplicantId != null)
+            .Select(a => new { UnityApplicantId = a.UnityApplicantId, ParsedId = (int?)null })
+            .ToListAsync();
+
+        var updatedRelevantUnityIds = relevantUnityIds
+            .Select(item =>
+            {
+                if (int.TryParse(item.UnityApplicantId, out var parsedId) && parsedId >= 100000)
+                {
+                    return new { UnityApplicantId = item.UnityApplicantId ?? string.Empty, ParsedId = (int?)parsedId };
+                }
+                return new { UnityApplicantId = item.UnityApplicantId ?? string.Empty, ParsedId = item.ParsedId };
+            })
             .ToList();
 
-        int nextId = unityIds.Count > 0 ? unityIds.Max() + 1 : 000001;
+        var orderedIds = updatedRelevantUnityIds
+            .Where(a => a.ParsedId.HasValue)
+            .Select(a => a.ParsedId!.Value) // Use the null-forgiving operator (!) to assert that ParsedId is not null
+            .OrderBy(id => id)
+            .ToList();
 
-        return nextId;
+        int candidate = 100000; // Starting ID for availability search.
+
+        foreach (var id in orderedIds)
+        {
+            if (id == candidate)
+            {
+                candidate++;
+            }
+            else // Gap found: candidate is the first available ID.
+            {
+                break;
+            }
+        }
+
+        return candidate;
     }
 
     [RemoteService(true)]
@@ -188,40 +219,37 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             string? orgbookLookup = string.IsNullOrEmpty(applicant.OrgNumber) ? applicant.ApplicantName : applicant.OrgNumber;
             if (string.IsNullOrEmpty(orgbookLookup)) return applicant;
-
-            JObject? result = await orgBookService.GetOrgBookQueryAsync(orgbookLookup);
-            var orgData = result?.SelectToken("results")?.Children().FirstOrDefault();
-            if (orgData == null) return applicant;
-
+            // Use the built-in System.Text.Json API
+            using JsonDocument result = await orgBookService.GetOrgBookAutocompleteQueryAsync(orgbookLookup);
+            if (!result.RootElement.TryGetProperty("results", out JsonElement results) ||
+                results.GetArrayLength() == 0)
+                return applicant;
+            JsonElement orgData = results[0];
             await UpdateApplicantOrgNumberAsync(applicant, orgData);
-            await UpdateApplicantNamesAsync(applicant, orgData.SelectToken("names")?.Children());
+            await UpdateApplicantNamesAsync(applicant, orgData.GetProperty("names").EnumerateArray());
         }
         catch (Exception ex)
         {
             Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ex.Message);
         }
-
         return applicant;
     }
 
-    private async Task UpdateApplicantOrgNumberAsync(Applicant applicant, JToken orgData)
+    private async Task UpdateApplicantOrgNumberAsync(Applicant applicant, JsonElement orgData)
     {
-        var orgNumber = orgData.SelectToken("source_id");
-        if (applicant.OrgNumber == null && orgNumber != null)
+        if (orgData.TryGetProperty("source_id", out JsonElement orgNumberElement) && applicant.OrgNumber == null)
         {
-            applicant.OrgNumber = orgNumber.ToString();
+            applicant.OrgNumber = orgNumberElement.GetString();
             await applicantRepository.UpdateAsync(applicant);
         }
     }
 
-    private async Task UpdateApplicantNamesAsync(Applicant applicant, IEnumerable<JToken>? namesChildren)
+    private async Task UpdateApplicantNamesAsync(Applicant applicant, IEnumerable<JsonElement> namesChildren)
     {
-        if (namesChildren == null) return;
-
         foreach (var name in namesChildren)
         {
-            string nameType = name.SelectToken("type")?.ToString() ?? string.Empty;
-            string nameText = name.SelectToken("text")?.ToString() ?? string.Empty;
+            string nameType = name.TryGetProperty("type", out JsonElement typeEl) ? typeEl.GetString() ?? string.Empty : string.Empty;
+            string nameText = name.TryGetProperty("text", out JsonElement textEl) ? textEl.GetString() ?? string.Empty : string.Empty;
 
             if (nameType == "entity_name")
             {

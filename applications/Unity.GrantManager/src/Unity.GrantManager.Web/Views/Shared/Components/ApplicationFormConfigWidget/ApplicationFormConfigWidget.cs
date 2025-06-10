@@ -14,7 +14,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationFormConfigWi
 [Widget(
     ScriptFiles = ["/Views/Shared/Components/ApplicationFormConfigWidget/Default.js"],
     StyleFiles = ["/Views/Shared/Components/ApplicationFormConfigWidget/Default.css"],
-    RefreshUrl = "Widgets/ApplicationActionWidget/Refresh",
+    RefreshUrl = "Widgets/ApplicationFormConfigWidget/Refresh",
     AutoInitialize = true
 )]
 public class ApplicationFormConfigWidget : AbpViewComponent

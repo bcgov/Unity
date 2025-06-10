@@ -150,20 +150,52 @@ function initializeDataTable(options) {
             },
            stateLoadParams: function (settings, data) {
                $(settings.oInit.externalSearchInputId).val(data.search.search);
+               let stateCorrupted = false;
+               const tableId = settings.sTableId || settings.nTable.id;
 
                data.columns.forEach((column, index) => {
-                   if(settings.aoColumns[index] +"" != "undefined") {
+                   if (settings.aoColumns[index] + "" != "undefined") {
                        const title = settings.aoColumns[index].sTitle;
                        const name = settings.aoColumns[index].name;
-                       //Find the object based on column unique keys / names
                        const dataObj = data.columns.find(col => col.uniqueKey === name);
-                       const value = dataObj.search.search;
-                       filterData[title] = value;
+                       if (typeof dataObj === "undefined") {
+                           localStorage.removeItem(`DataTables_${tableId}_${window.location.pathname}`);
+                           cleanInvalidStateRestore(tableId);
+                           stateCorrupted = true;
+                       } else {
+                           const value = dataObj?.search?.search ?? '';
+                           filterData[title] = value;
+                       }
                    }
                });
+
+               if (stateCorrupted) {
+                   window.location.reload();
+                   return false;
+               }
             }
         })
     );
+
+    function cleanInvalidStateRestore(tableId) {
+        Object.keys(localStorage)
+            .filter(key => key.includes('DataTables_stateRestore') && key.includes(`${tableId}`))
+            .forEach(key => {
+                try {
+                    const value = localStorage.getItem(key);
+                    if (!value) return;
+                    const obj = JSON.parse(value);
+                    if (Array.isArray(obj.columns)) {
+                        const hasMissingUniqueKey = obj.columns.some(col => !('uniqueKey' in col));
+                        if (hasMissingUniqueKey) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Could not process DataTables state for key: ${key}`, e);
+                }
+            });
+    }
 
     // Add custom manage columns button that remains sorted alphabetically
     if (!disableColumnSelect) {
