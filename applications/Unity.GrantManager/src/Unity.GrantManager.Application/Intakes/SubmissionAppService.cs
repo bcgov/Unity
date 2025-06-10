@@ -140,7 +140,7 @@ public class SubmissionAppService(
         return applicationFormSubmissionData;
     }
 
-    public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId)
+    public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Boolean allSubmissions)
     {
         List<FormSubmissionSummaryDto> chefsSubmissions = new List<FormSubmissionSummaryDto>();
 
@@ -191,6 +191,7 @@ public class SubmissionAppService(
                                 {
                                     submission.tenant = tenant.Name;
                                     submission.form = appDto.ApplicationForm.ApplicationFormName ?? "";
+                                    submission.category = appDto.ApplicationForm.Category ?? "";
                                 }
                                 chefsSubmissions.AddRange(submissions);
                             }
@@ -205,8 +206,18 @@ public class SubmissionAppService(
                     }
                 }
 
+                // Set inUnity property for each submission based on whether it exists in appDtos
+                foreach (var submission in chefsSubmissions)
+                {
+                    submission.inUnity = appDtos.Any(appDto => submission.ConfirmationId.ToString() == appDto.ReferenceNo);
+                }
+                
+
                 // Remove chef's submissions if Unity has an application with the same reference number
-                chefsSubmissions.RemoveAll(r => appDtos.Any(appDto => r.ConfirmationId.ToString() == appDto.ReferenceNo));
+                if (!allSubmissions)
+                {
+                    chefsSubmissions.RemoveAll(r => appDtos.Any(appDto => r.ConfirmationId.ToString() == appDto.ReferenceNo));
+                }
             }
         }
 
