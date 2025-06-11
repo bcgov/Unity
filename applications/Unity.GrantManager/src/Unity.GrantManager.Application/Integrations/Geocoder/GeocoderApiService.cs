@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RestSharp;
 using System.Threading.Tasks;
@@ -11,8 +12,9 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Integrations.Geocoder
 {
-    [IntegrationService]
-    [ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderApiService))]
+    //[IntegrationService]
+    //[ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderApiService))]
+    [AllowAnonymous]
     public class GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration) : ApplicationService, IGeocoderApiService
     {
         public async Task<AddressDetailsDto> GetAddressDetailsAsync(string address)

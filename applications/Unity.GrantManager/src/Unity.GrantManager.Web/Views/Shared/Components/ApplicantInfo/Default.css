@@ -57,3 +57,18 @@
     min-height: 25px;
     border-radius: 2em;
 }
+
+.aligned-select-btn {
+    padding-top: 1.7rem !important;    
+}
+
+    .aligned-select-btn button {
+        border-radius: 2em;
+    }
+
+.select-disabled {
+    background-color: #e9ecef;
+    pointer-events: none;
+    color: #6c757d;
+    opacity: 1;
+}

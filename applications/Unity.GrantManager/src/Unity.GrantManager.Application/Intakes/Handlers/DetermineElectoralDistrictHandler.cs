@@ -35,7 +35,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 }
 
                 // Check if the electoral district is already mapped for the form submission, if so then no work to be done
-                if (eventData.FormVersion.HasSubmissionHeaderMapping("ElectoralDistrict"))
+                if (eventData.FormVersion.HasSubmissionHeaderMapping("ApplicantElectoralDistrict"))
                     return;
 
                 var electoralDistrictAddressType = eventData.Application.ApplicationForm.ElectoralDistrictAddressType;
@@ -72,7 +72,7 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                 if (electoralDistrict.Name != null)
                 {
-                    eventData.Application.SetElectoralDistrict(electoralDistrict.Name);
+                    eventData.Application.Applicant.SetElectoralDistrict(electoralDistrict.Name);
                 }
                 else
                 {

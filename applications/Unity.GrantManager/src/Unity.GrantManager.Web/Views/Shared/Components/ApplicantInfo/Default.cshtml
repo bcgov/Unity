@@ -23,12 +23,10 @@
 }
 
 <input type="hidden" id="ApplicantInfoViewApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="ApplicantElectoralAddressType" value="@Model.ApplicantElectoralAddressType" />
 <div id="orgApplicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
 
 <abp-row class="px-1 pb-2 mb-4 project-info-container">
-
-
-
     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
         <div id="ApplicantInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
             <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle"].Value</h6>
@@ -57,17 +55,17 @@
                                 data-autocomplete-allow-clear="true">
                         </select>
                     </abp-column>
-                   
+
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.OrgName" onchange="enableApplicantInfoSaveBtn(this)" disabled/>
+                        <abp-input asp-for="@Model.ApplicantInfo.OrgName" onchange="enableApplicantInfoSaveBtn(this)" disabled />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.OrgNumber" onchange="enableApplicantInfoSaveBtn(this)"  disabled/>
+                        <abp-input asp-for="@Model.ApplicantInfo.OrgNumber" onchange="enableApplicantInfoSaveBtn(this)" disabled />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ApplicantInfo.OrgStatus" asp-items="@Model.OrgBookStatusList" 
+                        <abp-select asp-for="@Model.ApplicantInfo.OrgStatus" asp-items="@Model.OrgBookStatusList"
                                     id="orgBookStatusDropdown" onchange="enableApplicantInfoSaveBtn(this)" disabled>
                             <option value="">Please choose...</option>
                         </abp-select>
@@ -75,13 +73,13 @@
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ApplicantInfo.OrganizationType" asp-items="@Model.OrganizationTypeList" 
+                        <abp-select asp-for="@Model.ApplicantInfo.OrganizationType" asp-items="@Model.OrganizationTypeList"
                                     id="orgTypeDropdown" onchange="enableApplicantInfoSaveBtn(this)" disabled>
                             <option value="">Please choose...</option>
-                        </abp-select> 
+                        </abp-select>
                     </abp-column>
-                    </abp-row>
-                    <abp-row class="m-0 p-0">
+                </abp-row>
+                <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
                         <abp-input asp-for="@Model.ApplicantInfo.NonRegOrgName" onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
@@ -118,7 +116,7 @@
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <abp-select asp-for="@Model.ApplicantInfo.FiscalDay" asp-items="@Model.FiscalDayList"
-                                   onchange="enableApplicantInfoSaveBtn(this)">
+                                    onchange="enableApplicantInfoSaveBtn(this)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
@@ -250,7 +248,7 @@
             <legend class="d-none">@L["ApplicantInfoView:PhysicalAddress"].Value</legend>
             <abp-row class="m-0 contact-info-form">
                 <div class="d-flex">
-                    <abp-row class="m-0 physical-address-form pe-2">
+                    <abp-row class="m-0 physical-address-form pe-2" style="border-bottom:none;">
                         <abp-row class="m-0 p-0">
                             <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
                                 <div class="d-flex align-items-stretch justify-content-start">
@@ -258,7 +256,7 @@
                                 </div>
                             </abp-column>
                         </abp-row>
-                        <abp-row class="m-0 p-0">
+                        <abp-row class="m-0 p-0 address-fields-group">
                             <abp-column size="_5" class="px-1">
                                 <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressStreet"
                                            onchange="enableApplicantInfoSaveBtn(this)" />
@@ -285,8 +283,8 @@
                             </abp-column>
                         </abp-row>
                     </abp-row>
-                    <abp-row class="m-0 mailing-address-form ps-2">
-                        <abp-row class="m-0 p-0">
+                    <abp-row class="m-0 mailing-address-form ps-2" style="border-bottom:none;">
+                        <abp-row class="m-0 p-0 address-fields-group">
                             <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
                                 <div class="d-flex align-items-stretch justify-content-start">
                                     <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:MailingAddress"].Value</h6>
@@ -321,6 +319,43 @@
                         </abp-row>
                     </abp-row>
                 </div>
+            </abp-row>
+
+            <abp-row class="m-0 contact-info-form">
+                <abp-row class="m-0 p-0">
+                    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                        <div id="ApplicantElectoralDistrictTitleRegion"
+                             class="d-flex align-items-stretch justify-content-start">
+                            <h6 class="ps-1 fw-bold mb-0">@L["ApplicantInfoView:ElectoralDistrict"].Value</h6>
+                            <button class="btn btn-link p-0 ms-2"
+                                    id="btn-toggle-lock-electoral"
+                                    type="button"
+                                    onclick="toggleElectoralDistrictLockState()"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    data-bs-title="Toggle Electoral District Edit"
+                                    style="margin-top: -0.5rem;">
+                                <i class="unt-icon-sm fa-solid fa-lock"></i>
+                            </button>
+                        </div>
+                    </abp-column>
+                </abp-row>
+                <abp-column size="_6" class="px-3">
+                    <abp-row>
+                        <abp-column size="_10" class="px-1">
+                            <abp-select asp-for="@Model.ApplicantInfo.ElectoralDistrict" asp-items="@Model.ElectoralDistrictList"
+                                        onchange="enableApplicantInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_2" class="px-1 aligned-select-btn">
+                            <button class="btn unt-btn-outline-primary btn-outline-primary" id="btn-refresh-electoral" type="button" onclick="refreshApplicantElectoralDistrict()">
+                                <i class="unt-icon-sm fa-solid fa-refresh"></i>
+                            </button>
+                        </abp-column>
+                    </abp-row>
+                </abp-column>
+                <div class=""><b>NOTE: </b>@L["ApplicantInfoView:Notes.ElectoralDistrict", Model.ApplicantElectoralAddressTypeDisplay].Value</div>
             </abp-row>
         </fieldset>
 

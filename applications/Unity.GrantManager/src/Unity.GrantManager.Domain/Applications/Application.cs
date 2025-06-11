@@ -110,7 +110,9 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? ForestryFocus { get; set; }
 
+    // This is the Project Level Electoral District, not the Applicant's Electoral District.
     public string? ElectoralDistrict { get; set; }
+
     public string? Place { get; set; }
 
     public string? RegionalDistrict { get; set; }

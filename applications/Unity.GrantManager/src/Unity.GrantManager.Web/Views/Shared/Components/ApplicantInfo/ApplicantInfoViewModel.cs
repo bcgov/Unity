@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System;
@@ -12,31 +11,47 @@ using System.Globalization;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 {
-    public class ApplicantInfoViewModel : PageModel
+    public class ApplicantInfoViewModel
     {
-        public static ImmutableDictionary<string, string> DropdownList => 
-            ImmutableDictionary.CreateRange(new[]
-            {
+        public static ImmutableDictionary<string, string> DropdownList =>
+            ImmutableDictionary.CreateRange(
+            [
                 new KeyValuePair<string, string>("VALUE1", "Value 1"),
                 new KeyValuePair<string, string>("VALUE2", "Value 2"),
-            });
+            ]);
 
         public List<SelectListItem> OrganizationTypeList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrganizationTypeList);
         public List<SelectListItem> OrgBookStatusList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrgBookStatusList);
-        public List<SelectListItem> ApplicationSectorsList { get; set; } = new List<SelectListItem>();
-        public List<SelectListItem> ApplicationSubSectorsList { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> ApplicationSectorsList { get; set; } = [];
+        public List<SelectListItem> ApplicationSubSectorsList { get; set; } = [];
         public List<SelectListItem> IndigenousList { get; set; } = FormatOptionsList(ApplicantInfoOptionsList.IndigenousList);
-        public List<SelectListItem> FiscalDayList { get; set; } = FormatOptionsList(ApplicantInfoOptionsList.FiscalDayList).OrderBy(x => int.Parse(x.Text)).ToList();
-        public List<SelectListItem> FiscalMonthList { get; set; } = FormatOptionsList(ApplicantInfoOptionsList.FiscalMonthList).OrderBy(x => DateTime.ParseExact(x.Text, "MMMM", CultureInfo.InvariantCulture).Month).ToList();
+        public List<SelectListItem> FiscalDayList { get; set; } = [.. FormatOptionsList(ApplicantInfoOptionsList.FiscalDayList).OrderBy(x => int.Parse(x.Text))];
+        public List<SelectListItem> FiscalMonthList { get; set; } = [.. FormatOptionsList(ApplicantInfoOptionsList.FiscalMonthList).OrderBy(x => DateTime.ParseExact(x.Text, "MMMM", CultureInfo.InvariantCulture).Month)];
+        public List<SelectListItem> ElectoralDistrictList { get; set; } = [];
 
         public Guid ApplicationId { get; set; }
         public Guid ApplicantId { get; set; }
         public Guid ApplicationFormId { get; set; }
         public Guid ApplicationFormVersionId { get; set; }
 
-        public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
+        public List<SectorDto> ApplicationSectors { get; set; } = [];
         public bool IsFinalDecisionMade { get; set; }
         public ApplicantInfoViewModelModel ApplicantInfo { get; set; } = new();
+
+        public AddressType ApplicantElectoralAddressType { get; set; } = AddressType.PhysicalAddress;
+        public string ApplicantElectoralAddressTypeDisplay
+        {
+            get
+            {
+                return ApplicantElectoralAddressType switch
+                {
+                    AddressType.PhysicalAddress => "Physical Address",
+                    AddressType.MailingAddress => "Mailing Address",
+                    AddressType.BusinessAddress => "Business Address",
+                    _ => "Address"
+                };
+            }
+        }
 
 
         public class ApplicantInfoViewModelModel
@@ -177,11 +192,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             [Display(Name = "ApplicantInfoView:ApplicantInfo.NonRegOrgName")]
             public string? NonRegOrgName { get; set; }
 
+            [Display(Name = "ApplicantInfoView:ApplicantElectoralDistrict")]
+            [SelectItems(nameof(ElectoralDistrictList))]
+            public string? ElectoralDistrict { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)
         {
-            List<SelectListItem> optionsFormattedList = new();
+            List<SelectListItem> optionsFormattedList = [];
             foreach (KeyValuePair<string, string> entry in optionsList)
             {
                 optionsFormattedList.Add(new SelectListItem { Value = entry.Key, Text = entry.Value });

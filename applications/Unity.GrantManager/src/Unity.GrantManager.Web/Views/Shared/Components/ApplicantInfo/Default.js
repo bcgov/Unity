@@ -2,7 +2,7 @@
     $('.numeric-mask').maskMoney({ precision: 0 });
     $('.numeric-mask').each(function () {
         $(this).maskMoney('mask', this.value);
-    });
+    });    
 
     const $unityAppId = $('#applicantInfoUnityApplicantId');
     let previousUnityAppId = $unityAppId.val();
@@ -67,9 +67,9 @@
                 ApplicantInfoObj['IndigenousOrgInd'] = "Yes";
             }
             else {
-                ApplicantInfoObj['IndigenousOrgInd'] =  "No";
+                ApplicantInfoObj['IndigenousOrgInd'] = "No";
             }
-            
+
 
 
             ApplicantInfoObj['correlationId'] = formVersionId;
@@ -146,7 +146,7 @@
             url: '/api/app/org-book/org-book-details-query/' + orgBookId,
             type: 'GET'
         }).done(function (response) {
-           
+
             $('#ApplicantInfo_OrgName').val(response.names[0].text);
             $('#ApplicantInfo_OrgNumber').val(orgBookId);
             let entry_status = getAttributeObjectByType("entity_status", response.attributes);
@@ -155,17 +155,27 @@
             let entity_type = getAttributeObjectByType("entity_type", response.attributes);
             $('#orgTypeDropdown').val(entity_type.value);
 
-          
+
             enableApplicantInfoSaveBtn();
-            
+
         });
     });
 
     function getAttributeObjectByType(type, attributes) {
         return attributes.find(attr => attr.type === type);
     }
+
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    setElectoralDistrictLockState(true);
+
+    $('.address-fields-group').on('input change', 'input, select', function () {
+        if (!electoralDistrictLocked) {
+            refreshApplicantElectoralDistrict();
+        }
+    });    
 });
 
+let electoralDistrictLocked = true; // Default: locked
 
 async function generateUnityApplicantIdBtn() {
     try {
@@ -178,7 +188,72 @@ async function generateUnityApplicantIdBtn() {
     }
 };
 
-async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj ) {
+function setElectoralDistrictLockState(locked) {
+    $('#btn-toggle-lock-electoral').tooltip('hide');
+
+    electoralDistrictLocked = locked;
+    
+    // Toggle "disabled" look and interaction for the select
+    const $select = $('#ApplicantInfo_ElectoralDistrict');
+    if (locked) {
+        $select.addClass('select-disabled');
+        $select.on('mousedown.electoralLock touchstart.electoralLock', function (e) { e.preventDefault(); });
+        $select.on('focus.electoralLock', function (e) { $(this).blur(); });
+    } else {
+        $select.removeClass('select-disabled');
+        $select.off('.electoralLock');
+    }
+
+    $('#btn-refresh-electoral').prop('disabled', locked);
+
+    // Toggle icon
+    const $icon = $('#btn-toggle-lock-electoral i');
+    if (locked) {
+        $icon.removeClass('fa-unlock').addClass('fa-lock');
+    } else {
+        $icon.removeClass('fa-lock').addClass('fa-unlock');
+    }
+};
+
+async function refreshApplicantElectoralDistrict() {
+    try {
+        let address = extractAddressInfo();
+        let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
+        let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
+        if (electoralDistrict?.name) {
+            $('#ApplicantInfo_ElectoralDistrict').val(electoralDistrict.name).trigger('change');
+        }
+    }
+    catch (error) {
+        console.log(error);
+    }
+};
+
+function toggleElectoralDistrictLockState() {
+    setElectoralDistrictLockState(!electoralDistrictLocked);
+};
+
+function extractAddressInfo() {
+    // Determine which address to use based on the flag    
+    const isPhysical = $('#ApplicantElectoralAddressType').val() === "PhysicalAddress";
+
+    // Define the field prefixes
+    const prefix = isPhysical ? 'ApplicantInfo_PhysicalAddress' : 'ApplicantInfo_MailingAddress';
+
+    // Collect address parts
+    const street = $(`#${prefix}Street`).val() || '';
+    const city = $(`#${prefix}City`).val() || '';
+    const province = $(`#${prefix}Province`).val() || '';
+    const postal = $(`#${prefix}Postal`).val() || '';
+    const country = $(`#${prefix}Country`).val() || '';
+
+    // Concatenate address parts, filtering out empty values
+    return [street, city, province, postal, country]
+        .filter(part => part.trim() !== '')
+        .join(', ');
+};
+
+async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj) {
     try {
         let existingApplicant = await unity.grantManager.applicants.applicant.getExistingApplicant(unityAppId);
 
@@ -232,7 +307,7 @@ function enableApplicantInfoSaveBtn(inputText) {
     $('#saveApplicantInfoBtn').prop('disabled', false);
 }
 
-function updateApplicantInfo(appId, appInfoObj) { 
+function updateApplicantInfo(appId, appInfoObj) {
     return unity.grantManager.grantApplications.grantApplication
         .updateProjectApplicantInfo(appId, appInfoObj)
         .done(function () {

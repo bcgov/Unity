@@ -8,11 +8,11 @@ namespace Unity.GrantManager.GrantApplications
         public string? OrgName { get; set; }
         public string? OrgNumber { get; set; }
         public string? OrgStatus { get; set; }
-        public string? OrganizationType  { get; set; }
+        public string? OrganizationType { get; set; }
         public string? OrganizationSize { get; set; }
 
         public string? Sector { get; set; }
-        public string? SubSector { get; set; }        
+        public string? SubSector { get; set; }
         public string? SectorSubSectorIndustryDesc { get; set; } = string.Empty;
         public bool? RedStop { get; set; }
         public string? IndigenousOrgInd { get; set; }
@@ -45,7 +45,8 @@ namespace Unity.GrantManager.GrantApplications
         public string? MailingAddressProvince { get; set; }
         public string? MailingAddressPostalCode { get; set; }
 
-        public Guid ApplicantId {  get; set; }
+        public Guid ApplicantId { get; set; }
         public string? NonRegOrgName { get; set; }
+        public string? ElectoralDistrict { get; set; }
     }
 }

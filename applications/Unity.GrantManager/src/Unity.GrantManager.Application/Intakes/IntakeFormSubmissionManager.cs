@@ -105,7 +105,7 @@ namespace Unity.GrantManager.Intakes
                     ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
-                    ApplicationStatusId = submittedStatus.Id,
+                    ApplicationStatusId = submittedStatus.Id,                    
                     ReferenceNo = intakeMap.ConfirmationId ?? string.Empty,
                     Acquisition = intakeMap.Acquisition,
                     Forestry = intakeMap.Forestry,
