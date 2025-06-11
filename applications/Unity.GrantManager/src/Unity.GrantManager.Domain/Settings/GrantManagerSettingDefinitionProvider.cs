@@ -57,7 +57,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
     {
         var backGroundSchedules = new Dictionary<string, string>
         {
-            { SettingsConstants.BackgroundJobs.IntakeResync_NumDaysToCheck, "-2" },
+            { SettingsConstants.BackgroundJobs.IntakeResync_NumDaysToCheck, "-4" },
             // 23 = 11 pm   So 23 + 8 UTC = 7 also at 19 = 11 am
             { SettingsConstants.BackgroundJobs.IntakeResync_Expression, "0 0 7,19 1/1 * ? *" },
             // 24 = 12 am   So 24 + 8 UTC = 8

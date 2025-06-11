@@ -146,6 +146,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var upx_Project_Location                                = upx_Project.AddUnityChild(UnitySelector.Project.Location.Default);
             var upx_Project_Location_Update                         = upx_Project_Location.AddUnityChild(UnitySelector.Project.Location.Update.Default);
+            var upx_Project_Location_UpdateFinalStateFields         = upx_Project_Location_Update.AddUnityChild(UnitySelector.Project.Location.Update.UpdateFinalStateFields);
             #endregion
         }
 

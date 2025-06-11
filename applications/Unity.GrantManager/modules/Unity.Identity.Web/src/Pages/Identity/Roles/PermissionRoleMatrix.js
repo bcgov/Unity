@@ -22,7 +22,7 @@
     const columnDefs = [
         {
             targets: 0,
-            orderable: false,
+            orderable: true,
             className: 'notexport'
         }
     ];
