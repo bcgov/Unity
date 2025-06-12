@@ -62,4 +62,10 @@ public class FormSubmissionSummaryDto
 
     [JsonPropertyName("form")]
     public string form { get; set; } = string.Empty;
+
+    [JsonPropertyName("category")]
+    public string category { get; set; } = string.Empty;
+
+    [JsonPropertyName("inUnity")]
+    public bool inUnity { get; set; } = false;
 }

@@ -2,15 +2,55 @@ $(function () {
 
     const l = abp.localization.getResource('GrantManager');
     let dt = $('#ReconciliationTable');
+    let submissions = [];
+    unity.grantManager.intakes.submission.getSubmissionsList(true).then(function (pagedResultDto) { 
+        submissions = pagedResultDto.items.filter(x => x.formSubmissionStatusCode === "SUBMITTED");
+
+        // Build unique category options after submissions are loaded
+        const categories = [...new Set(submissions.map(s => s.category))].filter(Boolean);
+        const options = categories.map(c => ({ value: c, text: c }));
+
+        // Add options to the select element
+        const categoriesSelect = document.getElementById("ReconciliationCategoryFilter");
+        if (categoriesSelect) {
+            options.forEach(function(opt) {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.text = opt.text;
+                categoriesSelect.appendChild(option);
+            });
+        }
+    });
 
     let inputAction = function (requestData, dataTableSettings) {
-        return document.getElementById('PassFormIdToJavaScript').value;
-    }
+        return false;
+    };
+
 
     $('#search').on('input', function () {
         let table = $('#ReconciliationTable').DataTable();
         table.search($(this).val()).draw();
     });
+
+    function onSubmissionSummaryFilterChanged() {
+        let dateTo = new Date($('#dateTo').val());
+        let dateFrom = new Date($('#dateFrom').val());
+
+        let filtered_submissions = submissions.filter(x =>
+            x.tenant.toLowerCase().includes($('#ReconciliationTenantFilter').val().toLowerCase()) &&
+            (isNaN(dateTo.getTime()) || new Date(x.createdAt) <= dateTo) &&
+            (isNaN(dateFrom.getTime()) || new Date(x.createdAt) >= dateFrom) &&
+            (x.category == $("#ReconciliationCategoryFilter").val() || $("#ReconciliationCategoryFilter").val() == null)
+        );
+
+        let totalSubmissions = filtered_submissions.length;
+        let chefOnlySubmissions = filtered_submissions.filter(x => x.inUnity === false).length;
+
+        $('#ChefsSubmissionCount').html(totalSubmissions);
+        $('#UnitySubmissionCount').html(totalSubmissions - chefOnlySubmissions);
+        $('#MissingCount').html(chefOnlySubmissions);
+    }
+    window.onSubmissionSummaryFilterChanged = onSubmissionSummaryFilterChanged;
 
 
     let filterData = {"Status": "Missing"};
