@@ -10,10 +10,8 @@ namespace Unity.TenantManagement.Web.Pages.TenantManagement.Reconciliation
     {
 
         [BindProperty]
-        [Display(Name = "")]
         public DateTime? SubmissionDateFrom { get; set; }
         [BindProperty]
-        [Display(Name = "")]
         public DateTime? SubmissionDateTo { get; set; }
 
         public void OnGet()

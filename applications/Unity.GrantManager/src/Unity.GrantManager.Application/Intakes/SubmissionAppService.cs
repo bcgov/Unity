@@ -140,7 +140,7 @@ public class SubmissionAppService(
         return applicationFormSubmissionData;
     }
 
-    public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Boolean allSubmissions)
+    public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(bool allSubmissions)
     {
         List<FormSubmissionSummaryDto> chefsSubmissions = new List<FormSubmissionSummaryDto>();
 
@@ -190,8 +190,8 @@ public class SubmissionAppService(
                                 foreach (var submission in submissions)
                                 {
                                     submission.tenant = tenant.Name;
-                                    submission.form = appDto.ApplicationForm.ApplicationFormName ?? "";
-                                    submission.category = appDto.ApplicationForm.Category ?? "";
+                                    submission.form = appDto.ApplicationForm.ApplicationFormName ?? string.Empty;
+                                    submission.category = appDto.ApplicationForm.Category ?? string.Empty;
                                 }
                                 chefsSubmissions.AddRange(submissions);
                             }
