@@ -43,8 +43,8 @@ $(function () {
             (x.category == $("#ReconciliationCategoryFilter").val() || $("#ReconciliationCategoryFilter").val() == null)
         );
 
-        totalSubmissions = filtered_submissions.length
-        chefOnlySubmissions = filtered_submissions.filter(x => x.inUnity === false).length
+        let totalSubmissions = filtered_submissions.length;
+        let chefOnlySubmissions = filtered_submissions.filter(x => x.inUnity === false).length;
 
         $('#ChefsSubmissionCount').html(totalSubmissions);
         $('#UnitySubmissionCount').html(totalSubmissions - chefOnlySubmissions);
