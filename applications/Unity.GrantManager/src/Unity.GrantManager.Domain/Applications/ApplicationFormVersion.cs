@@ -45,5 +45,4 @@ public class ApplicationFormVersion : AuditedAggregateRoot<Guid>, IMultiTenant
             return false;
         }
     }
-
 }

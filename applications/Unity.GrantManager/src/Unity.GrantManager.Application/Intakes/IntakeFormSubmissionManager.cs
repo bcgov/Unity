@@ -131,7 +131,8 @@ namespace Unity.GrantManager.Intakes
                     ProjectSummary = intakeMap.ProjectSummary,
                 }
             );
-            ApplicantAgentDto applicantAgentDto = new ApplicantAgentDto
+
+            ApplicantAgentDto applicantAgentDto = new()
             {
                 Applicant = applicant,
                 Application = application,

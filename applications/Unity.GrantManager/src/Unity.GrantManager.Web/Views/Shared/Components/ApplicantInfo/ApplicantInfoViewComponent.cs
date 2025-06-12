@@ -9,6 +9,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Unity.GrantManager.Locality;
+using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 {
@@ -21,25 +23,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
     public class ApplicantInfoViewComponent(
         IApplicationApplicantAppService applicationAppicantService,
         ISectorService applicationSectorAppService,
-        IElectoralDistrictService applicationElectoralDistrictAppService) : AbpViewComponent
+        IElectoralDistrictService applicationElectoralDistrictAppService,
+        IApplicationFormAppService applicationFormAppService) : AbpViewComponent
     {
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
             var applicantInfoDto = await applicationAppicantService.GetByApplicationIdAsync(applicationId);
+            var applicationForm = await applicationFormAppService.GetAsync(applicantInfoDto.ApplicationFormId);
 
             ApplicantInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationFormId = applicantInfoDto.ApplicationFormId,
                 ApplicationFormVersionId = applicationFormVersionId,
-                ApplicantId = applicantInfoDto.ApplicantId
-            };
-
-            await PopulateSectorsAndSubSectorsAsync(applicantInfoDto, model);
-            await PopulateElectoralDistrictsAsync(model);
-
-            model.ApplicantInfo = new()
-            {
+                ApplicantId = applicantInfoDto.ApplicantId,
                 Sector = applicantInfoDto.Sector,
                 SubSector = applicantInfoDto.SubSector,
                 ContactFullName = applicantInfoDto.ContactFullName,
@@ -64,8 +61,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 FiscalDay = applicantInfoDto.FiscalDay,
                 FiscalMonth = applicantInfoDto.FiscalMonth,
                 NonRegOrgName = applicantInfoDto.NonRegOrgName,
-                ElectoralDistrict = applicantInfoDto.ElectoralDistrict
+                ElectoralDistrict = applicantInfoDto.ElectoralDistrict,
+                ApplicantElectoralAddressType = applicationForm.ElectoralDistrictAddressType 
+                    ?? ApplicationForm.GetDefaultElectoralDistrictAddressType(),
             };
+
+            await PopulateSectorsAndSubSectorsAsync(model);
+            await PopulateElectoralDistrictsAsync(model);
 
             if (applicantInfoDto.ApplicantAddresses.Count != 0)
             {
@@ -84,12 +86,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             if (physicalAddress != null)
             {
-                model.ApplicantInfo.PhysicalAddressStreet = physicalAddress.Street;
-                model.ApplicantInfo.PhysicalAddressStreet2 = physicalAddress.Street2;
-                model.ApplicantInfo.PhysicalAddressUnit = physicalAddress.Unit;
-                model.ApplicantInfo.PhysicalAddressCity = physicalAddress.City;
-                model.ApplicantInfo.PhysicalAddressProvince = physicalAddress.Province;
-                model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
+                model.PhysicalAddressStreet = physicalAddress.Street;
+                model.PhysicalAddressStreet2 = physicalAddress.Street2;
+                model.PhysicalAddressUnit = physicalAddress.Unit;
+                model.PhysicalAddressCity = physicalAddress.City;
+                model.PhysicalAddressProvince = physicalAddress.Province;
+                model.PhysicalAddressPostalCode = physicalAddress.Postal;
             }
 
             ApplicantAddressDto? mailingAddress = applicantInfoDto.ApplicantAddresses
@@ -99,12 +101,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             if (mailingAddress != null)
             {
-                model.ApplicantInfo.MailingAddressStreet = mailingAddress.Street;
-                model.ApplicantInfo.MailingAddressStreet2 = mailingAddress.Street2;
-                model.ApplicantInfo.MailingAddressUnit = mailingAddress.Unit;
-                model.ApplicantInfo.MailingAddressCity = mailingAddress.City;
-                model.ApplicantInfo.MailingAddressProvince = mailingAddress.Province;
-                model.ApplicantInfo.MailingAddressPostalCode = mailingAddress.Postal;
+                model.MailingAddressStreet = mailingAddress.Street;
+                model.MailingAddressStreet2 = mailingAddress.Street2;
+                model.MailingAddressUnit = mailingAddress.Unit;
+                model.MailingAddressCity = mailingAddress.City;
+                model.MailingAddressProvince = mailingAddress.Province;
+                model.MailingAddressPostalCode = mailingAddress.Postal;
             }
         }
 
@@ -120,7 +122,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 }));
         }
 
-        private async Task PopulateSectorsAndSubSectorsAsync(ApplicationApplicantInfoDto applicantInfoDto, ApplicantInfoViewModel model)
+        private async Task PopulateSectorsAndSubSectorsAsync(ApplicantInfoViewModel model)
         {
             List<SectorDto> sectors = [.. (await applicationSectorAppService.GetListAsync())];
 
@@ -137,7 +139,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             {
                 List<SubSectorDto> SubSectors = [];
 
-                SectorDto? applicationSector = sectors.Find(x => x.SectorName == applicantInfoDto.Sector);
+                SectorDto? applicationSector = sectors.Find(x => x.SectorName == model.Sector);
                 SubSectors = applicationSector?.SubSectors ?? SubSectors;
 
                 model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>

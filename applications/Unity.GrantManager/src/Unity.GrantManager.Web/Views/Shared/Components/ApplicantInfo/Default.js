@@ -168,11 +168,25 @@
     $('[data-bs-toggle="tooltip"]').tooltip();
     setElectoralDistrictLockState(true);
 
-    $('.address-fields-group').on('input change', 'input, select', function () {
-        if (!electoralDistrictLocked) {
+    // Listen for changes in physical address fields
+    $('.physical-address-fields-group').on('change', 'input', function () {
+        if (
+            $('#ApplicantElectoralAddressType').val() === "PhysicalAddress" &&
+            !electoralDistrictLocked
+        ) {
             refreshApplicantElectoralDistrict();
         }
-    });    
+    });
+
+    // Listen for changes in mailing address fields
+    $('.mailing-address-fields-group').on('change', 'input', function () {
+        if (
+            $('#ApplicantElectoralAddressType').val() === "MailingAddress" &&
+            !electoralDistrictLocked
+        ) {
+            refreshApplicantElectoralDistrict();
+        }
+    });
 });
 
 let electoralDistrictLocked = true; // Default: locked
@@ -184,7 +198,7 @@ async function generateUnityApplicantIdBtn() {
         $('#saveApplicantInfoBtn').prop('disabled', false);
     }
     catch (error) {
-        console.log(error);
+        console.error(error);
     }
 };
 
@@ -194,7 +208,7 @@ function setElectoralDistrictLockState(locked) {
     electoralDistrictLocked = locked;
     
     // Toggle "disabled" look and interaction for the select
-    const $select = $('#ApplicantInfo_ElectoralDistrict');
+    const $select = $('#ElectoralDistrict');
     if (locked) {
         $select.addClass('select-disabled');
         $select.on('mousedown.electoralLock touchstart.electoralLock', function (e) { e.preventDefault(); });
@@ -221,11 +235,11 @@ async function refreshApplicantElectoralDistrict() {
         let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
         let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
         if (electoralDistrict?.name) {
-            $('#ApplicantInfo_ElectoralDistrict').val(electoralDistrict.name).trigger('change');
+            $('#ElectoralDistrict').val(electoralDistrict.name).trigger('change');
         }
     }
     catch (error) {
-        console.log(error);
+        console.error(error);
     }
 };
 
@@ -238,7 +252,7 @@ function extractAddressInfo() {
     const isPhysical = $('#ApplicantElectoralAddressType').val() === "PhysicalAddress";
 
     // Define the field prefixes
-    const prefix = isPhysical ? 'ApplicantInfo_PhysicalAddress' : 'ApplicantInfo_MailingAddress';
+    const prefix = isPhysical ? 'PhysicalAddress' : 'MailingAddress';
 
     // Collect address parts
     const street = $(`#${prefix}Street`).val() || '';
