@@ -403,6 +403,13 @@
     "ApplicantInfoView:ApplicantInfo.NonRegOrgName": "Non-Registered Organization Name",
     "ApplicantInfoView:ApplicantInfo.OrgBookSearchPlaceholder": "Start typing to search for your registered organization name",
     "ApplicantInfoView:ApplicantInfo.OrgBookSearch": "Search in BC Registries",
+    "ApplicantInfoView:ApplicantInfo.ApplicantLookUp": "Applicant Look up",
+    "ApplicantInfoView:ApplicantInfo.ApplicantLookUpPlaceholder": "Start typing applicant name or number to search for applicant...",
+    "ApplicantInfoView:ApplicantInfo.PrincipalRecord": "Principal Record",
+    "ApplicantInfoView:ApplicantInfo.Principal": "Use as a Principal",
+    "ApplicantInfoView:ApplicantInfo.ApplicantName": "Applicant Name",
+
+
 
     "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement",
     "FundingAgreementInfoView:FundingAgreementInfoContract": "Contract",

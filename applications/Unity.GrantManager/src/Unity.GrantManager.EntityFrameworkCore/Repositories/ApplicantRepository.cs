@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
@@ -60,6 +61,49 @@ namespace Unity.GrantManager.Repositories
             return await dbContext.Applicants
                 .Where(x => x.SiteId == siteId)
                 .ToListAsync();
+        }
+
+        public async Task<JsonDocument> GetApplicantAutocompleteQueryAsync(string? applicantLookUpQuery)
+        {
+            if (string.IsNullOrWhiteSpace(applicantLookUpQuery))
+            {
+                // Return an empty JSON array if the query is null or only whitespace
+                return JsonDocument.Parse("[]");
+            }
+
+            var dbContext = await GetDbContextAsync();
+            var searchQuery = applicantLookUpQuery.ToLower();
+
+            var applicants = await dbContext.Applicants
+                .AsNoTracking()
+                .Where(a =>
+                    (a.ApplicantName != null && a.ApplicantName.ToLower().Contains(searchQuery)) ||
+                    (a.UnityApplicantId != null && a.UnityApplicantId.ToLower().Contains(searchQuery))
+                )
+                .Select(a => new
+                {
+                    a.Id,
+                    a.ApplicantName,
+                    a.OrgName,
+                    a.OrgNumber,
+                    a.NonRegOrgName,
+                    a.OrganizationType,
+                    a.OrganizationSize,
+                    a.ApproxNumberOfEmployees,
+                    a.OrgStatus,
+                    a.IndigenousOrgInd,
+                    a.Sector,
+                    a.SubSector,
+                    a.SectorSubSectorIndustryDesc,
+                    a.FiscalDay,
+                    a.FiscalMonth,
+                    a.UnityApplicantId
+                })
+                .Take(10)
+                .ToListAsync();
+
+            var json = JsonSerializer.Serialize(applicants);
+            return JsonDocument.Parse(json);
         }
     }
 }
