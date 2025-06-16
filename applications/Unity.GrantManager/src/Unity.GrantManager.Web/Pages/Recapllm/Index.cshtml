@@ -1,0 +1,29 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.Recapllm.IndexModel
+@using Unity.GrantManager.Web.Pages.Recapllm
+
+@section styles {
+    <abp-style src="/Pages/Recapllm/Index.css" />
+    <abp-style src="/libs/bootstrap/css/bootstrap.css" />
+}
+@section scripts
+{
+    <abp-script src="/Pages/Recapllm/Index.js" />
+    <abp-script src="/libs/jquery/jquery.js" />
+    <abp-script src="/libs/bootstrap-4/dist/js/bootstrap.min.js"></abp-script>
+}
+<div class="container-fluid px-0 mt-3">
+    <div class="card">
+        <div class="card-body">
+            <form id="resultForm" onsubmit="handleSubmit(event)">
+                <div>
+                    <label for="resultText">Enter or view result:</label><br />
+                    <textarea id="resultText" rows="10" cols="80"></textarea>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button class="btn utn-btn-primary btn-primary" type="submit">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
