@@ -2,6 +2,7 @@
   "culture": "en",
   "texts": {
     "Menu:Home": "Home",
+    "Menu:Recapllm": "Recap LLM",
     "Menu:Dashboard": "Dashboard",
     "Menu:GrantPrograms": "Grant Programs",
     "Menu:GrantTracker": "Grant Tracker",
