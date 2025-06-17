@@ -5,7 +5,6 @@ using System.Linq;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
-using Unity.GrantManager.Intakes;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -224,14 +223,6 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         PercentageTotalProjectBudget
             = (this.TotalProjectBudget == 0)
             ? 0 : decimal.Multiply(decimal.Divide(this.RequestedAmount, this.TotalProjectBudget), 100).To<double>();
-    }
-
-    /// <summary>
-    /// Triggers an event indicating that the application has been processed.
-    /// </summary>
-    public void ApplicationProcessed()
-    {
-        //AddLocalEvent(new ApplicationProcessedEvent { Application = this });
     }
 
     /// <summary>
