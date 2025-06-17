@@ -192,7 +192,6 @@
                             FiscalMonth: item.FiscalMonth,
                             UnityApplicantId: item.UnityApplicantId
                         };
-                        console.log(res);
                         return res
                     })
                 };
@@ -514,7 +513,6 @@ function enableApplicantInfoSaveBtn(inputText) {
 }
 
 function updateApplicantInfo(appId, appInfoObj) { 
-    console.log('updateApplicantInfo', appId, appInfoObj);
     return unity.grantManager.grantApplications.grantApplication
         .updateProjectApplicantInfo(appId, appInfoObj)
         .done(function () {
