@@ -440,7 +440,7 @@ async function handleApplicantMerge(applicationId, principalApplicantId, nonPrin
     await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
 
     if (principalApplicantId === newData.ApplicantId) {
-        await updatePrincipalApplicant(applicationId, principalApplicantId);
+        updatePrincipalApplicant(applicationId, principalApplicantId);
     }
 
     updateApplicantInfo(applicationId, ApplicantInfoObj);
