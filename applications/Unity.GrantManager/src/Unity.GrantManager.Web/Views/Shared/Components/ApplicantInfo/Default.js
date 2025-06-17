@@ -174,10 +174,9 @@
             processResults: function (data) {
                 return {
                     results: data.map(function (item) {
-                        let unityApplicantIdDisplay = item.UnityApplicantId && item.UnityApplicantId.trim() ? item.UnityApplicantId : 'None';
                         const res = {
                             id: item.Id,
-                            text: `${unityApplicantIdDisplay} / ${item.ApplicantName}`,
+                            text: `${item.UnityApplicantId?.trim() ? item.UnityApplicantId : 'None'} / ${item.ApplicantName}`,
                             ApplicantName: item.ApplicantName,
                             OrgName: item.OrgName,
                             OrgNumber: item.OrgNumber,
