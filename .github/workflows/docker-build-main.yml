@@ -89,6 +89,8 @@ jobs:
     needs: [Setup,Branch]
     runs-on: ubuntu-latest
     environment: main
+    permissions:
+      contents: write
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
