@@ -29,7 +29,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  ISiteAppService siteAppService,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
-                                 IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
+                                 IApplicantAgentRepository applicantAgentRepository,
+                                 IApplicationRepository applicationRepository) : GrantManagerAppService, IApplicantAppService
 {   
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
@@ -339,5 +340,121 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     {
         List<Applicant> applicants = await applicantRepository.GetApplicantsBySiteIdAsync(siteId);
         return applicants;
+    }
+    [RemoteService(true)]
+    public async Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery)
+    {
+        JsonDocument result = await applicantRepository.GetApplicantAutocompleteQueryAsync(applicantLookUpQuery);
+        return result;
+    }
+
+    [RemoteService(true)]
+    public async Task UpdateApplicantIdAsync(UpdateApplicantIdDto dto)
+    {
+        // Validate input
+        if (dto == null)
+        {
+            Logger.LogWarning("UpdateApplicantIdAsync called with null dto.");
+            return;
+        }
+
+        //Update Application
+        var application = await applicationRepository.GetAsync(dto.ApplicationId);
+        if (application == null)
+        {
+            Logger.LogWarning("Application not found for ApplicationId: {ApplicationId}", dto.ApplicationId);
+            return;
+        }
+
+        var oldApplicantId = application.ApplicantId;
+        if (oldApplicantId == dto.ApplicantId)
+        {
+            Logger.LogInformation("ApplicantId is already set to the requested value. No update required.");
+            return;
+        }
+
+        application.ApplicantId = dto.ApplicantId;
+        await applicationRepository.UpdateAsync(application);
+
+        //Update ApplicationFormSubmissions
+        await UpdateApplicationFormSubmissionsAsync(dto.ApplicationId, dto.ApplicantId);
+
+        //Update ApplicantAgent records
+        await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
+    }
+
+    [RemoteService(true)]
+    public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
+    {
+        // Set principal as not duplicated
+        var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
+        if (principal != null && principal.IsDuplicated != false)
+        {
+            principal.IsDuplicated = false;
+            await applicantRepository.UpdateAsync(principal);
+        }
+
+        // Set non-principal as duplicated
+        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
+        if (nonPrincipal != null && nonPrincipal.IsDuplicated != true)
+        {
+            nonPrincipal.IsDuplicated = true;
+            await applicantRepository.UpdateAsync(nonPrincipal);
+        }
+    }
+
+    private async Task UpdateApplicationFormSubmissionsAsync(Guid applicationId, Guid newApplicantId)
+    {
+        try
+        {
+            var formSubmissionRepository = LazyServiceProvider.LazyGetRequiredService<IApplicationFormSubmissionRepository>();
+            var formSubmissions = await (await formSubmissionRepository.GetQueryableAsync())
+                .Where(s => s.ApplicationId == applicationId)
+                .ToListAsync();
+
+            foreach (var submission in formSubmissions)
+            {
+                submission.ApplicantId = newApplicantId;
+                await formSubmissionRepository.UpdateAsync(submission);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating ApplicationFormSubmissions for ApplicationId: {ApplicationId}", applicationId);
+            throw new UserFriendlyException("An error occurred while updating application form submissions.");
+        }
+    }
+
+    private async Task UpdateApplicantAgentRecordsAsync(Guid oldApplicantId, Guid newApplicantId, Guid applicationId)
+    {
+        try
+        {
+            var agentQueryable = await applicantAgentRepository.GetQueryableAsync();
+
+            // Detach old agent from application
+            var oldAgent = await agentQueryable
+                .FirstOrDefaultAsync(a => a.ApplicantId == oldApplicantId && a.ApplicationId == applicationId);
+
+            if (oldAgent != null)
+            {
+                oldAgent.ApplicationId = null;
+                await applicantAgentRepository.UpdateAsync(oldAgent);
+            }
+
+            // Attach new agent to application
+            var newAgent = await agentQueryable
+                .FirstOrDefaultAsync(a => a.ApplicantId == newApplicantId);
+
+            if (newAgent != null)
+            {
+                newAgent.ApplicationId = applicationId;
+                await applicantAgentRepository.UpdateAsync(newAgent);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating ApplicantAgent records for ApplicationId: {ApplicationId}", applicationId);
+            throw new UserFriendlyException("An error occurred while updating applicant agent records.");
+        }
     }
 }

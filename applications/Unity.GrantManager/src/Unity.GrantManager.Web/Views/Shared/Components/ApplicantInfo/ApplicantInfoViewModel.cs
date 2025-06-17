@@ -186,6 +186,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
         [Display(Name = "ApplicantInfoView:ApplicantInfo.NonRegOrgName")]
         public string? NonRegOrgName { get; set; }
+            public string? SelectedApplicantLookUp { get; set; }
 
         [Display(Name = "ApplicantInfoView:ApplicantElectoralDistrict")]
         [SelectItems(nameof(ElectoralDistrictList))]
