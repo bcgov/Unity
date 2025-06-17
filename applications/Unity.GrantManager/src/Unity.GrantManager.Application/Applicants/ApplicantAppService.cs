@@ -18,7 +18,6 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -429,7 +428,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     {
         try
         {
-            var applicantAgentRepository = LazyServiceProvider.LazyGetRequiredService<IApplicantAgentRepository>();
             var agentQueryable = await applicantAgentRepository.GetQueryableAsync();
 
             // Detach old agent from application

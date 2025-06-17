@@ -176,7 +176,7 @@
                     results: data.map(function (item) {
                         const res = {
                             id: item.Id,
-                            text: item.ApplicantName + ' (' + item.UnityApplicantId + ')',
+                            text: `${item.UnityApplicantId && item.UnityApplicantId.trim() ? item.UnityApplicantId : 'None'} / ${item.ApplicantName}`,
                             ApplicantName: item.ApplicantName,
                             OrgName: item.OrgName,
                             OrgNumber: item.OrgNumber,
@@ -282,22 +282,14 @@
             $('#mergeApplicantsSpinner').show();
 
             let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
-            let principalApplicantId = selectedPrincipal === 'existing'
-                ? existing.ApplicantId
-                : newData.ApplicantId;
-            let nonPrincipalApplicantId = selectedPrincipal === 'existing'
-                ? newData.ApplicantId
-                : existing.ApplicantId;
+            let principalApplicantId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
+            let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
             let applicationId = $('#ApplicantInfoViewApplicationId').val();
 
             // Merge and update applicant info
             let mergedApplicantInfo = {};
             if (principalApplicantId) {
-                for (const key in existing) {
-                    let useExisting = $(`input[name="merge_${key}"][value="existing"]`).is(':checked');
-                    mergedApplicantInfo[key] = useExisting ? existing[key] : newData[key];
-                }
-
+                mergedApplicantInfo = getMergedApplicantInfo(existing, newData);
                 mergedApplicantInfo.ApplicantId = principalApplicantId;
 
                 let formData = $("#ApplicantInfoForm").serializeArray();
@@ -343,19 +335,9 @@
                 ApplicantInfoObj.ApplicantId = principalApplicantId;
                 Object.assign(ApplicantInfoObj, mergedApplicantInfo);
 
+
                 try {
-                    // Update duplicated status for both applicants
-                    if (principalApplicantId && nonPrincipalApplicantId) {
-                        await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
-                    }
-
-                    // Update principal applicant in application if needed
-                    if (principalApplicantId === newData.ApplicantId && principalApplicantId) {
-                        await updatePrincipalApplicant(applicationId, principalApplicantId);
-                    }
-
-                    // Update and save using the selected values
-                    await updateApplicantInfo(applicationId, ApplicantInfoObj);
+                    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
                 } catch (err) {
                     console.error(err);
                 }
@@ -443,11 +425,25 @@
     });
 
 });
-function reloadApplicantInfoTab() {
-    var applicantId = $('#ApplicantInfoViewApplicantId').val();
-    $('#applicantInfoTabContent').load('/Your/ApplicantInfo/Url?applicantId=' + applicantId);
+
+function getMergedApplicantInfo(existing, newData) {
+    let merged = {};
+    for (const key in existing) {
+        let useExisting = $(`input[name="merge_${key}"][value="existing"]`).is(':checked');
+        merged[key] = useExisting ? existing[key] : newData[key];
+    }
+    return merged;
 }
 
+async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj) {
+    await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
+
+    if (principalApplicantId === newData.ApplicantId) {
+        await updatePrincipalApplicant(applicationId, principalApplicantId);
+    }
+
+    updateApplicantInfo(applicationId, ApplicantInfoObj);
+}
 
 async function generateUnityApplicantIdBtn() {
     try {
@@ -561,9 +557,4 @@ function updatePrincipalApplicant(applicationId, principalApplicantId) {
             }
         });
     }, 1000);
-}
-
-function reloadApplicantInfoTab() {
-    var applicantId = $('#ApplicantInfoViewApplicantId').val();
-    $('#applicantInfoTabContent').load('/Your/ApplicantInfo/Url?applicantId=' + applicantId);
 }

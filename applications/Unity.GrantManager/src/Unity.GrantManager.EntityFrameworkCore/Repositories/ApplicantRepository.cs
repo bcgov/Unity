@@ -75,10 +75,13 @@ namespace Unity.GrantManager.Repositories
             var searchQuery = applicantLookUpQuery.ToLower();
 
             var applicants = await dbContext.Applicants
-                .AsNoTracking()
+            .AsNoTracking()
+            .ToListAsync();
+
+            var filteredApplicants = applicants
                 .Where(a =>
-                    (a.ApplicantName != null && a.ApplicantName.ToLower().Contains(searchQuery)) ||
-                    (a.UnityApplicantId != null && a.UnityApplicantId.ToLower().Contains(searchQuery))
+                    (!string.IsNullOrEmpty(a.ApplicantName) && a.ApplicantName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(a.UnityApplicantId) && a.UnityApplicantId.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
                 )
                 .Select(a => new
                 {
@@ -100,9 +103,9 @@ namespace Unity.GrantManager.Repositories
                     a.UnityApplicantId
                 })
                 .Take(10)
-                .ToListAsync();
+                .ToList();
 
-            var json = JsonSerializer.Serialize(applicants);
+            var json = JsonSerializer.Serialize(filteredApplicants);
             return JsonDocument.Parse(json);
         }
     }
