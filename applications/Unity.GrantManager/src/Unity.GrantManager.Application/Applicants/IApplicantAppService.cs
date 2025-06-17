@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
@@ -17,4 +18,5 @@ public interface IApplicantAppService : IApplicationService
     Task<Applicant> UpdateApplicantOrgMatchAsync(Applicant applicant);
     Task<int> GetNextUnityApplicantIdAsync();
     Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId);
+    Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery);
 }

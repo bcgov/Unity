@@ -136,9 +136,7 @@
 
     $('.unity-currency-input').maskMoney();
 
-    let $orgBookSelect = $('.auto-complete-select');
-
-    $orgBookSelect.on('select2:select', function (e) {
+    $('#orgBookSelect').on('select2:select', function (e) {
         let selectedData = e.params.data;
         let orgBookId = selectedData.id;
 
@@ -146,7 +144,7 @@
             url: '/api/app/org-book/org-book-details-query/' + orgBookId,
             type: 'GET'
         }).done(function (response) {
-           
+
             $('#ApplicantInfo_OrgName').val(response.names[0].text);
             $('#ApplicantInfo_OrgNumber').val(orgBookId);
             let entry_status = getAttributeObjectByType("entity_status", response.attributes);
@@ -164,8 +162,288 @@
     function getAttributeObjectByType(type, attributes) {
         return attributes.find(attr => attr.type === type);
     }
+
+    $('#applicantLookupSelect').select2({
+        ajax: {
+            url: '/api/app/applicant/applicant-look-up-autocomplete-query',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return { applicantLookUpQuery: params.term };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.map(function (item) {
+                        const res = {
+                            id: item.Id,
+                            text: `${item.UnityApplicantId?.trim() ? item.UnityApplicantId : 'None'} / ${item.ApplicantName}`,
+                            ApplicantName: item.ApplicantName,
+                            OrgName: item.OrgName,
+                            OrgNumber: item.OrgNumber,
+                            NonRegOrgName: item.NonRegOrgName,
+                            OrganizationType: item.OrganizationType,
+                            OrganizationSize: item.OrganizationSize,
+                            OrgStatus: item.OrgStatus,
+                            IndigenousOrgInd: item.IndigenousOrgInd,
+                            Sector: item.Sector,
+                            SubSector: item.SubSector,
+                            SectorSubSectorIndustryDesc: item.SectorSubSectorIndustryDesc,
+                            FiscalDay: item.FiscalDay,
+                            FiscalMonth: item.FiscalMonth,
+                            UnityApplicantId: item.UnityApplicantId
+                        };
+                        return res
+                    })
+                };
+            }
+        },
+        minimumInputLength: 3,
+        placeholder: 'Start typing applicant name or number to search for applicant...'
+    });
+
+    $('#applicantLookupSelect').on('select2:select', function (e) {
+        $('#mergeApplicantsMergeBtn').prop('disabled', false);
+        let selectedData = e.params.data;
+
+        // Gather existing values from the form
+        let getVal = id => $(`#${id}`).val() || '';
+        let existing = {
+            ApplicantId: getVal('ApplicantId'),
+            UnityApplicantId: getVal('applicantInfoUnityApplicantId'),
+            ApplicantName: $('.application-details-breadcrumb .applicant-name').text(),
+            OrgName: getVal('ApplicantInfo_OrgName'),
+            OrgNumber: getVal('ApplicantInfo_OrgNumber'),
+            NonRegOrgName: getVal('ApplicantInfo_NonRegOrgName'),
+            OrganizationType: getVal('orgTypeDropdown'),
+            OrganizationSize: getVal('ApplicantInfo_OrganizationSize'),
+            OrgStatus: getVal('orgBookStatusDropdown'),
+            IndigenousOrgInd: $('#indigenousOrgInd').is(':checked') ? 'Yes' : 'No',
+            Sector: getVal('orgSectorDropdown'),
+            SubSector: getVal('orgSubSectorDropdown'),
+            SectorSubSectorIndustryDesc: getVal('ApplicantInfo_SectorSubSectorIndustryDesc'),
+            FiscalDay: getVal('ApplicantInfo_FiscalDay'),
+            FiscalMonth: getVal('ApplicantInfo_FiscalMonth')
+        };
+
+        let newData = {
+            ApplicantId: selectedData.id || '',
+            UnityApplicantId: selectedData.UnityApplicantId || '',
+            ApplicantName: selectedData.ApplicantName || '',
+            OrgName: selectedData.OrgName || '',
+            OrgNumber: selectedData.OrgNumber || '',
+            NonRegOrgName: selectedData.NonRegOrgName || '',
+            OrganizationType: selectedData.OrganizationType || '',
+            OrganizationSize: selectedData.OrganizationSize || '',
+            OrgStatus: selectedData.OrgStatus || '',
+            IndigenousOrgInd: selectedData.IndigenousOrgInd || '',
+            Sector: selectedData.Sector || '',
+            SubSector: selectedData.SubSector || '',
+            SectorSubSectorIndustryDesc: selectedData.SectorSubSectorIndustryDesc || '',
+            FiscalDay: selectedData.FiscalDay || '',
+            FiscalMonth: selectedData.FiscalMonth || ''
+        };
+
+        $('#existing_ApplicantNameHeader').text(existing.ApplicantName);
+        $('#new_ApplicantNameHeader').text(newData.ApplicantName);
+
+        // Fill modal fields
+        for (const key in existing) {
+            $(`#existing_${key}`).text(existing[key]);
+            $(`#new_${key}`).text(newData[key]);
+            $(`input[name="merge_${key}"][value="existing"]`).prop('checked', true);
+        }
+
+        // Show step 1, hide step 2
+        $('#mergeApplicantsStep1').show();
+        $('#mergeApplicantsStep2').hide();
+
+        // Remove previous handlers
+        $('#mergeApplicantsNextBtn').off('click');
+        $('#mergeApplicantsBackBtn').off('click');
+        $('#mergeApplicantsMergeBtn').off('click');
+        $('#mergeDuplicateApplicantsModal').off('hidden.bs.modal');
+
+        // Next button: go to confirmation
+        $('#mergeApplicantsNextBtn').on('click', function () {
+            $('#mergeApplicantsStep1').hide();
+            $('#mergeApplicantsStep2').show();
+        });
+
+        // Back button: return to comparison
+        $('#mergeApplicantsBackBtn').on('click', function () {
+            $('#mergeApplicantsStep2').hide();
+            $('#mergeApplicantsStep1').show();
+        });
+
+        // Merge button: apply selected values to form
+        $('#mergeApplicantsMergeBtn').on('click', async function () {
+            $('#mergeApplicantsMergeBtn').prop('disabled', true);
+            $('.cas-spinner').show();
+            $('#mergeApplicantsSpinner').show();
+
+            let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
+            let principalApplicantId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
+            let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
+            let applicationId = $('#ApplicantInfoViewApplicationId').val();
+
+            // Merge and update applicant info
+            let mergedApplicantInfo = {};
+            if (principalApplicantId) {
+                mergedApplicantInfo = getMergedApplicantInfo(existing, newData);
+                mergedApplicantInfo.ApplicantId = principalApplicantId;
+
+                let formData = $("#ApplicantInfoForm").serializeArray();
+                let ApplicantInfoObj = {};
+                let formVersionId = $("#ApplicationFormVersionId").val();
+                let worksheetId = $("#ApplicantInfo_WorksheetId").val();
+
+                $.each(formData, function (_, input) {
+                    ApplicantInfoObj[input.name.split(".")[1]] = input.value;
+                    if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
+                        ApplicantInfoObj[input.name.split(".")[1]] = null;
+                    }
+                    if (input.name == 'ApplicantId' || input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
+                        ApplicantInfoObj[input.name] = input.value;
+                    }
+                });
+
+                $(`#ApplicantInfoForm input:checkbox`).each(function () {
+                    ApplicantInfoObj[this.name] = (this.checked).toString();
+                });
+                if (typeof Flex === 'function') {
+                    Flex?.setCustomFields(ApplicantInfoObj);
+                }
+
+                if (ApplicantInfoObj["SupplierNumber"] + "" != "undefined"
+                    && ApplicantInfoObj["SupplierNumber"] + "" != ""
+                    && ApplicantInfoObj["SupplierNumber"] + "" != ApplicantInfoObj["OriginalSupplierNumber"] + "") {
+                    $('.cas-spinner').show();
+                }
+
+                const orgName = $('#ApplicantInfo_OrgName').val();
+                ApplicantInfoObj['OrgName'] = orgName;
+                const orgNumber = $('#ApplicantInfo_OrgNumber').val();
+                ApplicantInfoObj['OrgNumber'] = orgNumber;
+                const orgStatus = $('#orgBookStatusDropdown').val();
+                ApplicantInfoObj['OrgStatus'] = orgStatus;
+                const organizationType = $('#orgTypeDropdown').val();
+                ApplicantInfoObj['OrganizationType'] = organizationType;
+                const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
+                ApplicantInfoObj['IndigenousOrgInd'] = indigenousOrgInd ? "Yes" : "No";
+                ApplicantInfoObj['correlationId'] = formVersionId;
+                ApplicantInfoObj['worksheetId'] = worksheetId;
+                ApplicantInfoObj.ApplicantId = principalApplicantId;
+                Object.assign(ApplicantInfoObj, mergedApplicantInfo);
+
+
+                try {
+                    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            // Update form fields with merged values
+            for (const key in mergedApplicantInfo) {
+                switch (key) {
+                    case 'ApplicantId':
+                        $('#ApplicantId').val(mergedApplicantInfo[key]);
+                        $('#ApplicantInfoViewApplicantId').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'UnityApplicantId':
+                        $('#applicantInfoUnityApplicantId').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'ApplicantName':
+                        $('.application-details-breadcrumb .applicant-name').val(mergedApplicantInfo[key]);
+                        $('.application-details-breadcrumb .applicant-name').text(mergedApplicantInfo[key]);
+                        break;
+                    case 'OrgName':
+                        $('#ApplicantInfo_OrgName').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'OrgNumber':
+                        $('#ApplicantInfo_OrgNumber').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'NonRegOrgName':
+                        $('#ApplicantInfo_NonRegOrgName').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'OrganizationType':
+                        $('#orgTypeDropdown').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'OrganizationSize':
+                        $('#ApplicantInfo_OrganizationSize').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'OrgStatus':
+                        $('#orgBookStatusDropdown').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'IndigenousOrgInd':
+                        $('#indigenousOrgInd').prop('checked', mergedApplicantInfo[key] === 'Yes');
+                        break;
+                    case 'Sector':
+                        $('#orgSectorDropdown').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'SubSector':
+                        $('#orgSubSectorDropdown').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'SectorSubSectorIndustryDesc':
+                        $('#ApplicantInfo_SectorSubSectorIndustryDesc').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'FiscalDay':
+                        $('#ApplicantInfo_FiscalDay').val(mergedApplicantInfo[key]);
+                        break;
+                    case 'FiscalMonth':
+                        $('#ApplicantInfo_FiscalMonth').val(mergedApplicantInfo[key]);
+                        break;
+                }
+            }
+
+            $('.cas-spinner').hide();
+            $('#mergeApplicantsSpinner').hide();
+            $('#mergeDuplicateApplicantsModal').modal('hide');
+        });
+
+        // On modal close, clear the ApplicantLookUp field
+        $('#mergeDuplicateApplicantsModal').on('hidden.bs.modal', function () {
+            $('#applicantLookupSelect').val(null).trigger('change');
+        });
+
+        // Show the modal
+        $('#mergeDuplicateApplicantsModal').modal('show');
+
+    });
+
+
+    $('#selectAllExistingBtn').on('click', function () {
+        $('#mergeApplicantsStep1 input[type="radio"][value="existing"]').each(function () {
+            $(this).prop('checked', true);
+        });
+    });
+
+    $('#selectAllNewBtn').on('click', function () {
+        $('#mergeApplicantsStep1 input[type="radio"][value="new"]').each(function () {
+            $(this).prop('checked', true);
+        });
+    });
+
 });
 
+function getMergedApplicantInfo(existing, newData) {
+    let merged = {};
+    for (const key in existing) {
+        let useExisting = $(`input[name="merge_${key}"][value="existing"]`).is(':checked');
+        merged[key] = useExisting ? existing[key] : newData[key];
+    }
+    return merged;
+}
+
+async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj) {
+    await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
+
+    if (principalApplicantId === newData.ApplicantId) {
+        updatePrincipalApplicant(applicationId, principalApplicantId);
+    }
+
+    updateApplicantInfo(applicationId, ApplicantInfoObj);
+}
 
 async function generateUnityApplicantIdBtn() {
     try {
@@ -187,9 +465,7 @@ async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj ) {
                 icon: "error",
                 text: "Applicatn ID already exists. Please enter a unique ID.",
                 confirmButtonText: 'Ok',
-                customClass: {
-                    confirmButton: 'btn btn-primary'
-                }
+                customClass: { confirmButton: 'btn btn-primary' }
             });
         } else {
             updateApplicantInfo(appId, appInfoObj);
@@ -251,3 +527,34 @@ function updateApplicantInfo(appId, appInfoObj) {
         });
 }
 
+function setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId) {
+    return $.ajax({
+        url: '/api/app/applicant/set-duplicated',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            principalApplicantId: principalApplicantId,
+            nonPrincipalApplicantId: nonPrincipalApplicantId
+        })
+    });
+}
+
+function updatePrincipalApplicant(applicationId, principalApplicantId) {
+    return setTimeout(function () {
+        $.ajax({
+            url: '/api/app/applicant/applicant-id',
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                applicationId: applicationId,
+                applicantId: principalApplicantId
+            }),
+            success: function () {
+                abp.notify.success('Principal Applicant updated successfully.');
+            },
+            error: function (xhr, status) {
+                abp.notify.error('Failed to update Principal Applicant.');
+            }
+        });
+    }, 1000);
+}
