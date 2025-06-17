@@ -9,6 +9,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Unity.GrantManager.Locality;
+using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 {
@@ -18,51 +20,23 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
         ScriptTypes = [typeof(ApplicantInfoScriptBundleContributor)],
         StyleTypes = [typeof(ApplicantInfoStyleBundleContributor)],
         AutoInitialize = true)]
-    public class ApplicantInfoViewComponent : AbpViewComponent
+    public class ApplicantInfoViewComponent(
+        IApplicationApplicantAppService applicationAppicantService,
+        ISectorService applicationSectorAppService,
+        IElectoralDistrictService applicationElectoralDistrictAppService,
+        IApplicationFormAppService applicationFormAppService) : AbpViewComponent
     {
-        private readonly IApplicationApplicantAppService _applicationAppicantService;
-        private readonly ISectorService _applicationSectorAppService;
-
-        public ApplicantInfoViewComponent(
-            IApplicationApplicantAppService applicationAppicantService,
-            ISectorService applicationSectorAppService)
-        {
-            _applicationAppicantService = applicationAppicantService;
-            _applicationSectorAppService = applicationSectorAppService;
-        }
-
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
-            var applicantInfoDto = await _applicationAppicantService.GetByApplicationIdAsync(applicationId);
-            List<SectorDto> Sectors = [.. (await _applicationSectorAppService.GetListAsync())];
+            var applicantInfoDto = await applicationAppicantService.GetByApplicationIdAsync(applicationId);
+            var applicationForm = await applicationFormAppService.GetAsync(applicantInfoDto.ApplicationFormId);
 
             ApplicantInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationFormId = applicantInfoDto.ApplicationFormId,
                 ApplicationFormVersionId = applicationFormVersionId,
-                ApplicationSectors = Sectors,
-                ApplicantId = applicantInfoDto.ApplicantId
-            };
-
-            model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
-                new SelectListItem { Value = Sector.SectorName, Text = Sector.SectorName }));
-
-
-            if (Sectors.Count > 0)
-            {
-                List<SubSectorDto> SubSectors = [];
-
-                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == applicantInfoDto.Sector);
-                SubSectors = applicationSector?.SubSectors ?? SubSectors;
-
-                model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
-                    new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
-            }
-
-
-            model.ApplicantInfo = new()
-            {
+                ApplicantId = applicantInfoDto.ApplicantId,
                 Sector = applicantInfoDto.Sector,
                 SubSector = applicantInfoDto.SubSector,
                 ContactFullName = applicantInfoDto.ContactFullName,
@@ -86,43 +60,91 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 UnityApplicantId = applicantInfoDto.UnityApplicantId,
                 FiscalDay = applicantInfoDto.FiscalDay,
                 FiscalMonth = applicantInfoDto.FiscalMonth,
-                NonRegOrgName = applicantInfoDto.NonRegOrgName
+                NonRegOrgName = applicantInfoDto.NonRegOrgName,
+                ElectoralDistrict = applicantInfoDto.ElectoralDistrict,
+                ApplicantElectoralAddressType = applicationForm.ElectoralDistrictAddressType 
+                    ?? ApplicationForm.GetDefaultElectoralDistrictAddressType(),
             };
+
+            await PopulateSectorsAndSubSectorsAsync(model);
+            await PopulateElectoralDistrictsAsync(model);
 
             if (applicantInfoDto.ApplicantAddresses.Count != 0)
             {
-                ApplicantAddressDto? physicalAddress = applicantInfoDto.ApplicantAddresses
-                    .Where(address => address.AddressType == AddressType.PhysicalAddress)
-                    .OrderByDescending(address => address.CreationTime)
-                    .FirstOrDefault();
-
-                if (physicalAddress != null)
-                {
-                    model.ApplicantInfo.PhysicalAddressStreet = physicalAddress.Street;
-                    model.ApplicantInfo.PhysicalAddressStreet2 = physicalAddress.Street2;
-                    model.ApplicantInfo.PhysicalAddressUnit = physicalAddress.Unit;
-                    model.ApplicantInfo.PhysicalAddressCity = physicalAddress.City;
-                    model.ApplicantInfo.PhysicalAddressProvince = physicalAddress.Province;
-                    model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
-                }
-                
-                ApplicantAddressDto? mailingAddress = applicantInfoDto.ApplicantAddresses
-                    .Where(address => address.AddressType == AddressType.MailingAddress)
-                    .OrderByDescending(address => address.CreationTime)
-                    .FirstOrDefault();
-
-                if (mailingAddress != null)
-                {
-                    model.ApplicantInfo.MailingAddressStreet = mailingAddress.Street;
-                    model.ApplicantInfo.MailingAddressStreet2 = mailingAddress.Street2;
-                    model.ApplicantInfo.MailingAddressUnit = mailingAddress.Unit;
-                    model.ApplicantInfo.MailingAddressCity = mailingAddress.City;
-                    model.ApplicantInfo.MailingAddressProvince = mailingAddress.Province;
-                    model.ApplicantInfo.MailingAddressPostalCode = mailingAddress.Postal;
-                }
+                PopulateAddressInfo(applicantInfoDto, model);
             }
 
             return View(model);
+        }
+
+        private static void PopulateAddressInfo(ApplicationApplicantInfoDto applicantInfoDto, ApplicantInfoViewModel model)
+        {
+            ApplicantAddressDto? physicalAddress = applicantInfoDto.ApplicantAddresses
+                .Where(address => address.AddressType == AddressType.PhysicalAddress)
+                .OrderByDescending(address => address.CreationTime)
+                .FirstOrDefault();
+
+            if (physicalAddress != null)
+            {
+                model.PhysicalAddressStreet = physicalAddress.Street;
+                model.PhysicalAddressStreet2 = physicalAddress.Street2;
+                model.PhysicalAddressUnit = physicalAddress.Unit;
+                model.PhysicalAddressCity = physicalAddress.City;
+                model.PhysicalAddressProvince = physicalAddress.Province;
+                model.PhysicalAddressPostalCode = physicalAddress.Postal;
+            }
+
+            ApplicantAddressDto? mailingAddress = applicantInfoDto.ApplicantAddresses
+                .Where(address => address.AddressType == AddressType.MailingAddress)
+                .OrderByDescending(address => address.CreationTime)
+                .FirstOrDefault();
+
+            if (mailingAddress != null)
+            {
+                model.MailingAddressStreet = mailingAddress.Street;
+                model.MailingAddressStreet2 = mailingAddress.Street2;
+                model.MailingAddressUnit = mailingAddress.Unit;
+                model.MailingAddressCity = mailingAddress.City;
+                model.MailingAddressProvince = mailingAddress.Province;
+                model.MailingAddressPostalCode = mailingAddress.Postal;
+            }
+        }
+
+        private async Task PopulateElectoralDistrictsAsync(ApplicantInfoViewModel model)
+        {
+            List<ElectoralDistrictDto> electoralDistricts = [.. (await applicationElectoralDistrictAppService.GetListAsync())];
+
+            model.ElectoralDistrictList.AddRange(electoralDistricts.Select(electoralDistrict =>
+                new SelectListItem
+                {
+                    Value = electoralDistrict.ElectoralDistrictName,
+                    Text = electoralDistrict.ElectoralDistrictName
+                }));
+        }
+
+        private async Task PopulateSectorsAndSubSectorsAsync(ApplicantInfoViewModel model)
+        {
+            List<SectorDto> sectors = [.. (await applicationSectorAppService.GetListAsync())];
+
+            model.ApplicationSectors = sectors;
+
+            model.ApplicationSectorsList.AddRange(sectors.Select(sector =>
+                new SelectListItem
+                {
+                    Value = sector.SectorName,
+                    Text = sector.SectorName
+                }));
+
+            if (sectors.Count > 0)
+            {
+                List<SubSectorDto> SubSectors = [];
+
+                SectorDto? applicationSector = sectors.Find(x => x.SectorName == model.Sector);
+                SubSectors = applicationSector?.SubSectors ?? SubSectors;
+
+                model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
+                    new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
+            }
         }
     }
 

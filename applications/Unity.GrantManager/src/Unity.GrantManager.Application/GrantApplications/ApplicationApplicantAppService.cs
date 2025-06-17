@@ -59,7 +59,8 @@ namespace Unity.GrantManager.GrantApplications
                 ContactBusinessPhone = applicantInfo.ApplicantAgent?.Phone ?? string.Empty,
                 ContactCellPhone = applicantInfo.ApplicantAgent?.Phone2 ?? string.Empty,
 
-                ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(applicantInfo.Applicant?.ApplicantAddresses?.ToList() ?? [])
+                ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(applicantInfo.Applicant?.ApplicantAddresses?.ToList() ?? []),
+                ElectoralDistrict = applicantInfo.Applicant?.ElectoralDistrict ?? string.Empty
             };
         }
     }

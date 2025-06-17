@@ -45,6 +45,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicant = await CreateNewApplicantAsync(intakeMap);
         } else {
             applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
+            applicant.ElectoralDistrict = intakeMap.ElectoralDistrict ?? applicant.ElectoralDistrict;
             applicant.NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegisteredBusinessName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
             applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
@@ -277,6 +278,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         var applicant = new Applicant
         {
             ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
+            ElectoralDistrict = intakeMap.ElectoralDistrict,
             NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
             OrgNumber = intakeMap.OrgNumber,
@@ -339,7 +341,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         List<Applicant> applicants = await applicantRepository.GetApplicantsBySiteIdAsync(siteId);
         return applicants;
     }
-
     [RemoteService(true)]
     public async Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery)
     {
