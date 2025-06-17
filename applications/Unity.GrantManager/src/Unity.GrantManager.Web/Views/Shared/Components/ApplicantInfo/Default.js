@@ -12,7 +12,7 @@
         $('#saveApplicantInfoBtn').prop('disabled', currentUnityAppId === previousUnityAppId);
     });
 
-    $('body').on('click', '#saveApplicantInfoBtn', function () {
+    $('body').on('click', '#saveApplicantInfoBtn', function () {        
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
@@ -24,15 +24,10 @@
                 Flex.includeCustomFieldObj(ApplicantInfoObj, input);
             }
             else {
-                // This will not work if the culture is different and uses a different decimal separator
-                ApplicantInfoObj[input.name.split(".")[1]] = input.value;
+                ApplicantInfoObj[input.name] = input.value;
 
-                if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
-                    ApplicantInfoObj[input.name.split(".")[1]] = null;
-                }
-
-                if (input.name == 'ApplicantId' || input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
-                    ApplicantInfoObj[input.name] = input.value;
+                if (ApplicantInfoObj[input.name] == '') {
+                    ApplicantInfoObj[input.name] = null;
                 }
             }
         });
@@ -54,9 +49,9 @@
                 $('.cas-spinner').show();
             }
 
-            const orgName = $('#ApplicantInfo_OrgName').val();
+            const orgName = $('#OrgName').val();
             ApplicantInfoObj['orgName'] = orgName;
-            const orgNumber = $('#ApplicantInfo_OrgNumber').val();
+            const orgNumber = $('#OrgNumber').val();
             ApplicantInfoObj['orgNumber'] = orgNumber;
             const orgStatus = $('#orgBookStatusDropdown').val();
             ApplicantInfoObj['orgStatus'] = orgStatus;
@@ -67,9 +62,9 @@
                 ApplicantInfoObj['IndigenousOrgInd'] = "Yes";
             }
             else {
-                ApplicantInfoObj['IndigenousOrgInd'] =  "No";
+                ApplicantInfoObj['IndigenousOrgInd'] = "No";
             }
-            
+
 
 
             ApplicantInfoObj['correlationId'] = formVersionId;
@@ -145,17 +140,17 @@
             type: 'GET'
         }).done(function (response) {
 
-            $('#ApplicantInfo_OrgName').val(response.names[0].text);
-            $('#ApplicantInfo_OrgNumber').val(orgBookId);
+            $('#OrgName').val(response.names[0].text);
+            $('#OrgNumber').val(orgBookId);
             let entry_status = getAttributeObjectByType("entity_status", response.attributes);
             let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
             $('#orgBookStatusDropdown').val(org_status);
             let entity_type = getAttributeObjectByType("entity_type", response.attributes);
             $('#orgTypeDropdown').val(entity_type.value);
 
-          
+
             enableApplicantInfoSaveBtn();
-            
+
         });
     });
 
@@ -211,18 +206,18 @@
             ApplicantId: getVal('ApplicantId'),
             UnityApplicantId: getVal('applicantInfoUnityApplicantId'),
             ApplicantName: $('.application-details-breadcrumb .applicant-name').text(),
-            OrgName: getVal('ApplicantInfo_OrgName'),
-            OrgNumber: getVal('ApplicantInfo_OrgNumber'),
-            NonRegOrgName: getVal('ApplicantInfo_NonRegOrgName'),
+            OrgName: getVal('OrgName'),
+            OrgNumber: getVal('OrgNumber'),
+            NonRegOrgName: getVal('NonRegOrgName'),
             OrganizationType: getVal('orgTypeDropdown'),
-            OrganizationSize: getVal('ApplicantInfo_OrganizationSize'),
+            OrganizationSize: getVal('OrganizationSize'),
             OrgStatus: getVal('orgBookStatusDropdown'),
             IndigenousOrgInd: $('#indigenousOrgInd').is(':checked') ? 'Yes' : 'No',
             Sector: getVal('orgSectorDropdown'),
             SubSector: getVal('orgSubSectorDropdown'),
-            SectorSubSectorIndustryDesc: getVal('ApplicantInfo_SectorSubSectorIndustryDesc'),
-            FiscalDay: getVal('ApplicantInfo_FiscalDay'),
-            FiscalMonth: getVal('ApplicantInfo_FiscalMonth')
+            SectorSubSectorIndustryDesc: getVal('SectorSubSectorIndustryDesc'),
+            FiscalDay: getVal('FiscalDay'),
+            FiscalMonth: getVal('FiscalMonth')
         };
 
         let newData = {
@@ -295,7 +290,7 @@
                 let formData = $("#ApplicantInfoForm").serializeArray();
                 let ApplicantInfoObj = {};
                 let formVersionId = $("#ApplicationFormVersionId").val();
-                let worksheetId = $("#ApplicantInfo_WorksheetId").val();
+                let worksheetId = $("#WorksheetId").val();
 
                 $.each(formData, function (_, input) {
                     ApplicantInfoObj[input.name.split(".")[1]] = input.value;
@@ -320,9 +315,9 @@
                     $('.cas-spinner').show();
                 }
 
-                const orgName = $('#ApplicantInfo_OrgName').val();
+                const orgName = $('#OrgName').val();
                 ApplicantInfoObj['OrgName'] = orgName;
-                const orgNumber = $('#ApplicantInfo_OrgNumber').val();
+                const orgNumber = $('#OrgNumber').val();
                 ApplicantInfoObj['OrgNumber'] = orgNumber;
                 const orgStatus = $('#orgBookStatusDropdown').val();
                 ApplicantInfoObj['OrgStatus'] = orgStatus;
@@ -358,19 +353,19 @@
                         $('.application-details-breadcrumb .applicant-name').text(mergedApplicantInfo[key]);
                         break;
                     case 'OrgName':
-                        $('#ApplicantInfo_OrgName').val(mergedApplicantInfo[key]);
+                        $('#OrgName').val(mergedApplicantInfo[key]);
                         break;
                     case 'OrgNumber':
-                        $('#ApplicantInfo_OrgNumber').val(mergedApplicantInfo[key]);
+                        $('#OrgNumber').val(mergedApplicantInfo[key]);
                         break;
                     case 'NonRegOrgName':
-                        $('#ApplicantInfo_NonRegOrgName').val(mergedApplicantInfo[key]);
+                        $('#NonRegOrgName').val(mergedApplicantInfo[key]);
                         break;
                     case 'OrganizationType':
                         $('#orgTypeDropdown').val(mergedApplicantInfo[key]);
                         break;
                     case 'OrganizationSize':
-                        $('#ApplicantInfo_OrganizationSize').val(mergedApplicantInfo[key]);
+                        $('#OrganizationSize').val(mergedApplicantInfo[key]);
                         break;
                     case 'OrgStatus':
                         $('#orgBookStatusDropdown').val(mergedApplicantInfo[key]);
@@ -385,13 +380,13 @@
                         $('#orgSubSectorDropdown').val(mergedApplicantInfo[key]);
                         break;
                     case 'SectorSubSectorIndustryDesc':
-                        $('#ApplicantInfo_SectorSubSectorIndustryDesc').val(mergedApplicantInfo[key]);
+                        $('#SectorSubSectorIndustryDesc').val(mergedApplicantInfo[key]);
                         break;
                     case 'FiscalDay':
-                        $('#ApplicantInfo_FiscalDay').val(mergedApplicantInfo[key]);
+                        $('#FiscalDay').val(mergedApplicantInfo[key]);
                         break;
                     case 'FiscalMonth':
-                        $('#ApplicantInfo_FiscalMonth').val(mergedApplicantInfo[key]);
+                        $('#FiscalMonth').val(mergedApplicantInfo[key]);
                         break;
                 }
             }
@@ -424,7 +419,97 @@
         });
     });
 
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    setElectoralDistrictLockState(true);
+
+    // Listen for changes in physical address fields
+    $('.physical-address-fields-group').on('change', 'input', function () {
+        if (
+            $('#ApplicantElectoralAddressType').val() === "PhysicalAddress" &&
+            !electoralDistrictLocked
+        ) {
+            refreshApplicantElectoralDistrict();
+        }
+    });
+
+    // Listen for changes in mailing address fields
+    $('.mailing-address-fields-group').on('change', 'input', function () {
+        if (
+            $('#ApplicantElectoralAddressType').val() === "MailingAddress" &&
+            !electoralDistrictLocked
+        ) {
+            refreshApplicantElectoralDistrict();
+        }
+    });
+
 });
+
+let electoralDistrictLocked = true; // Default: locked
+
+function setElectoralDistrictLockState(locked) {
+    $('#btn-toggle-lock-electoral').tooltip('hide');
+
+    electoralDistrictLocked = locked;
+
+    // Toggle "disabled" look and interaction for the select
+    const $select = $('#ElectoralDistrict');
+    if (locked) {
+        $select.addClass('select-disabled');
+        $select.on('mousedown.electoralLock touchstart.electoralLock', function (e) { e.preventDefault(); });
+        $select.on('focus.electoralLock', function (e) { $(this).blur(); });
+    } else {
+        $select.removeClass('select-disabled');
+        $select.off('.electoralLock');
+    }
+
+    $('#btn-refresh-electoral').prop('disabled', locked);
+
+    // Toggle icon
+    const $icon = $('#btn-toggle-lock-electoral i');
+    if (locked) {
+        $icon.removeClass('fa-unlock').addClass('fa-lock');
+    } else {
+        $icon.removeClass('fa-lock').addClass('fa-unlock');
+    }
+};
+
+async function refreshApplicantElectoralDistrict() {
+    try {
+        let address = extractAddressInfo();
+        let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
+        let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
+        if (electoralDistrict?.name) {
+            $('#ElectoralDistrict').val(electoralDistrict.name).trigger('change');
+        }
+    }
+    catch (error) {
+        console.error(error);
+    }
+};
+
+function toggleElectoralDistrictLockState() {
+    setElectoralDistrictLockState(!electoralDistrictLocked);
+};
+
+function extractAddressInfo() {
+    // Determine which address to use based on the flag    
+    const isPhysical = $('#ApplicantElectoralAddressType').val() === "PhysicalAddress";
+
+    // Define the field prefixes
+    const prefix = isPhysical ? 'PhysicalAddress' : 'MailingAddress';
+
+    // Collect address parts
+    const street = $(`#${prefix}Street`).val() || '';
+    const city = $(`#${prefix}City`).val() || '';
+    const province = $(`#${prefix}Province`).val() || '';
+    const postal = $(`#${prefix}Postal`).val() || '';
+    const country = $(`#${prefix}Country`).val() || '';
+
+    // Concatenate address parts, filtering out empty values
+    return [street, city, province, postal, country]
+        .filter(part => part.trim() !== '')
+        .join(', ');
+};
 
 function getMergedApplicantInfo(existing, newData) {
     let merged = {};
@@ -456,7 +541,7 @@ async function generateUnityApplicantIdBtn() {
     }
 };
 
-async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj ) {
+async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj) {
     try {
         let existingApplicant = await unity.grantManager.applicants.applicant.getExistingApplicant(unityAppId);
 
@@ -508,7 +593,7 @@ function enableApplicantInfoSaveBtn(inputText) {
     $('#saveApplicantInfoBtn').prop('disabled', false);
 }
 
-function updateApplicantInfo(appId, appInfoObj) { 
+function updateApplicantInfo(appId, appInfoObj) {
     return unity.grantManager.grantApplications.grantApplication
         .updateProjectApplicantInfo(appId, appInfoObj)
         .done(function () {
