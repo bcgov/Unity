@@ -1,0 +1,95 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.TenantManagement.Web.Navigation
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Volo.Abp.TenantManagement.Localization
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Reconciliation
+@model IndexModel
+@inject IHtmlLocalizer<AbpTenantManagementResource> L
+@inject IAuthorizationService Authorization
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.BreadCrumb.Add(L["Menu:TenantManagement"].Value);
+    PageLayout.Content.MenuItemName = TenantManagementMenuNames.Reconciliation;
+    ViewBag.PageTitle = L["Reconciliation"].Value;
+}
+@section styles {
+    <abp-style-bundle name="@typeof(IndexModel).FullName">        
+        <abp-style src="/Pages/TenantManagement/Tenants/Index.css" />
+    </abp-style-bundle>
+    <abp-style src="/Pages/GrantApplications/Index.css" />
+    <style>
+        .dataTables_wrapper .dataTables_scrollHead {
+            background-color: transparent;
+        }
+
+        .submissionSummaryFilterContainer {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-rows: auto;
+        }
+
+        label {
+            font-size: 0.8rem;
+            margin: 0px !important;
+        }
+
+        .form-control {
+            font-size: 0.8rem;
+            border: 2px solid rgb(46, 93, 215);
+        }
+
+    </style>
+}
+@section scripts {
+    <abp-script-bundle name="@typeof(IndexModel).FullName">
+        <abp-script src="/client-proxies/multi-tenancy-proxy.js" />
+        <abp-script src="/Pages/FeatureManagement/feature-management-modal.js"/>
+        <abp-script src="/Pages/TenantManagement/Reconciliation/Index.js" />      
+    </abp-script-bundle>
+}
+<div class="container-fluid px-2 container-grant-application">
+    <b>Submissions Summary</b>
+    <div class="submissionSummaryFilterContainer align-items-stretch gap-2 px-1">
+        <div>
+            <abp-input type="date" id="dateFrom" label="Submission Date From:" asp-for="@Model.SubmissionDateFrom" onchange="onSubmissionSummaryFilterChanged()" abp-data-datepicker="false" />
+        </div>
+        <div>
+            <abp-input type="date" id="dateTo" label="Submission Date To:" asp-for="@Model.SubmissionDateTo" onchange="onSubmissionSummaryFilterChanged()" minDate="@Model.SubmissionDateFrom" abp-data-datepicker="false" />
+        </div>
+        <div></div>
+        <div></div>
+        <div>
+            <label for="ReconciliationTenantFilter">Tenant:</label>
+            <input type="text" placeholder="Tenant" class="form-control input-sm custom-filter-input" id="ReconciliationTenantFilter" onchange="onSubmissionSummaryFilterChanged()">
+        </div>
+        <div>
+            <label for="ReconciliationCategoryFilter">Category:</label>
+            <select name="category" class="form-control input-sm custom-filter-input" id="ReconciliationCategoryFilter" onchange="onSubmissionSummaryFilterChanged()">
+                <option value="" selected disabled hidden>Category</option>
+            </select>
+        </div>
+    </div>
+    <hr class="my-4"/>
+    <div class="ReconciliationSubmissionsSummary submissionSummaryFilterContainer gap-2 px-1">
+        <div class="ReconciliationSubmissionsSummaryItem">
+            <label for="ChefsSubmissionCount">Total Chef's Submissions Count:</label>
+            <div name="ChefsSubmissionCount" type="text" class="form-control input-sm custom-filter-input" id="ChefsSubmissionCount">Count</div>
+        </div>
+        <div class="ReconciliationSubmissionsSummaryItem">
+            <label for="UnitySubmissionCount">Total Unity Submissions Count:</label>
+            <div name="UnitySubmissionCount" type="text" class="form-control input-sm custom-filter-input" id="UnitySubmissionCount">Count</div>
+        </div>
+        <div class="ReconciliationSubmissionsSummaryItem">
+            <label for="MissingCount">Total Missing Submissions Count:</label>
+            <div name="MissingCount" type="text" class="form-control input-sm custom-filter-input" id="MissingCount">Count</div>
+        </div>
+    </div>
+    <hr class="my-4"/>
+    <b>Missing Submissions Browser</b>
+    @await Component.InvokeAsync("ActionBar")
+    <div class="application-scrollable-content">
+        <abp-table id="ReconciliationTable"></abp-table>
+    </div>
+</div>

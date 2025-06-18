@@ -31,6 +31,7 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -103,8 +104,15 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         // Pre-fetch payment requests for all applications in a single query to reduce database calls
         var applicationIds = groupedResult.SelectMany(g => g).Select(a => a.Id).ToList();
-        var paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+
+        List<PaymentDetailsDto> paymentRequests = new List<PaymentDetailsDto>();
+        if (paymentsFeatureEnabled)
+        {
+            paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+        }
+
 
         // Map applications to DTOs
         var appDtos = groupedResult.Select(grouping =>
@@ -130,7 +138,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.ContactCellPhone = firstApplication.ApplicantAgent?.Phone2;
 
             //Payment request info if the feature is enabled
-            if (paymentsFeatureEnabled)
+
+            if (paymentsFeatureEnabled && paymentRequests != null && paymentRequests is { Count: > 0 })
             {
                 var paymentInfo = new PaymentInfoDto
                 {
@@ -233,7 +242,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Sector = application.Applicant.Sector;
             appDto.OrganizationType = application.Applicant.OrganizationType;
             appDto.SubSector = application.Applicant.SubSector;
-            appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
+            appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;            
         }
 
         return appDto;
@@ -362,33 +371,33 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private async Task SanitizeAssessmentResultsZoneInputs(CreateUpdateAssessmentResultsDto input, Application application)
     {
         // Approval Zone Fields - Disabled Inputs
-        input.RequestedAmount       ??= application.RequestedAmount;
-        input.TotalProjectBudget    ??= application.TotalProjectBudget;
-        input.RecommendedAmount     ??= application.RecommendedAmount;
-        input.TotalScore            ??= application.TotalScore;
+        input.RequestedAmount ??= application.RequestedAmount;
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RecommendedAmount ??= application.RecommendedAmount;
+        input.TotalScore ??= application.TotalScore;
 
         // Sanitize if zone is disabled
         if (!await _zoneChecker.IsEnabledAsync(UnitySelector.Review.AssessmentResults.Default, application.ApplicationFormId))
         {
-            input.LikelihoodOfFunding       ??= application.LikelihoodOfFunding;
-            input.RiskRanking               ??= application.RiskRanking;
-            input.DueDiligenceStatus        ??= application.DueDiligenceStatus;
-            input.AssessmentResultStatus    ??= application.AssessmentResultStatus;
-            input.DeclineRational           ??= application.DeclineRational;
-            
-            input.NotificationDate          ??= application.NotificationDate;
-            input.DueDate                   ??= application.DueDate;
+            input.LikelihoodOfFunding ??= application.LikelihoodOfFunding;
+            input.RiskRanking ??= application.RiskRanking;
+            input.DueDiligenceStatus ??= application.DueDiligenceStatus;
+            input.AssessmentResultStatus ??= application.AssessmentResultStatus;
+            input.DeclineRational ??= application.DeclineRational;
+
+            input.NotificationDate ??= application.NotificationDate;
+            input.DueDate ??= application.DueDate;
         }
         else
         {
             // Sanitize if zone is enabled but fields are disabled
             if (application.IsInFinalDecisionState())
             {
-                input.LikelihoodOfFunding   ??= application.LikelihoodOfFunding;
-                input.RiskRanking           ??= application.RiskRanking;
-                input.DueDiligenceStatus    ??= application.DueDiligenceStatus;
+                input.LikelihoodOfFunding ??= application.LikelihoodOfFunding;
+                input.RiskRanking ??= application.RiskRanking;
+                input.DueDiligenceStatus ??= application.DueDiligenceStatus;
                 input.AssessmentResultStatus ??= application.AssessmentResultStatus;
-                input.DeclineRational       ??= application.DeclineRational;
+                input.DeclineRational ??= application.DeclineRational;
             }
         }
     }
@@ -398,10 +407,27 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
     }
 
-    [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
+    [Authorize(UnitySelector.Project.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
+        // Check if the user has the required permissions to update Project Info for either fieldset zone
+        var hasSummaryPermission = await AuthorizationService.IsGrantedAsync(UnitySelector.Project.Summary.Update.Default);
+        var hasLocationPermission = await AuthorizationService.IsGrantedAsync(UnitySelector.Project.Location.Update.Default);
+
+        if (!hasSummaryPermission || !hasLocationPermission)
+        {
+            throw new AbpAuthorizationException("The user doesn't have the required permissions to update Project Info.");
+        }
+
         var application = await _applicationRepository.GetAsync(id);
+
+        var hasSummaryZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Summary.Default, application.ApplicationFormId);
+        var hasLocationZone = await _zoneChecker.IsEnabledAsync(UnitySelector.Project.Location.Default, application.ApplicationFormId);
+
+        if (!hasSummaryZone || !hasLocationZone)
+        {
+            throw new BusinessException("The Project Info zones are not enabled for this application form.");
+        }
 
         SanitizeProjectInfoDisabledInputs(input, application);
 
@@ -438,6 +464,56 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             throw new EntityNotFoundException();
         }
     }
+    private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
+    {
+        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RequestedAmount ??= application.RequestedAmount;
+        input.ProjectFundingTotal ??= application.ProjectFundingTotal;
+    }
+
+    [Authorize(UnitySelector.Project.UpdatePolicy)]
+    public async Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input)
+    {
+        // Only update the fields we need to update based on the modified fields
+        // This is required to handle controls like the date picker that do not send null values for unchanged fields
+        var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
+        ObjectMapper.Map<UpdateProjectInfoDto, Application>(input.Data, application);
+
+        // Explicitly handle properties that are null but listed in ModifiedFields
+        var dtoProperties = typeof(UpdateProjectInfoDto).GetProperties();
+        var appProperties = typeof(Application).GetProperties().ToDictionary(p => p.Name, p => p);
+
+        foreach (var fieldName in input.ModifiedFields)
+        {
+            if (dtoProperties.FirstOrDefault(p =>
+                string.Equals(p.Name, fieldName, StringComparison.OrdinalIgnoreCase)) is { } dtoProperty)
+            {
+                var value = dtoProperty.GetValue(input.Data);
+                if (value == null && appProperties.TryGetValue(dtoProperty.Name, out var appProperty) && appProperty.CanWrite)
+                {
+                    appProperty.SetValue(application, appProperty.PropertyType.IsValueType
+                        && Nullable.GetUnderlyingType(appProperty.PropertyType) == null
+                        ? Activator.CreateInstance(appProperty.PropertyType)
+                        : null);
+                }
+            }
+        }
+
+        // Calculate the percentage of the total project budget based on
+        // the requested amount and total project budget. Percentage total has to be
+        // updated whenever RequestedAmount or TotalProjectBudget changes
+        application.UpdatePercentageTotalProjectBudget();
+
+        // Add custom worksheet data
+        if (input.Data.CustomFields is not null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        {
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
+        }
+
+        await _applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
 
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
@@ -460,104 +536,90 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
-    {
-        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
-        input.TotalProjectBudget ??= application.TotalProjectBudget;
-        input.RequestedAmount ??= application.RequestedAmount;
-        input.ProjectFundingTotal ??= application.ProjectFundingTotal;
-    }
-
     [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
+        
+        var applicant = await _applicantRepository
+            .FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+        
+        applicant.OrganizationType = input.OrganizationType ?? "";
+        applicant.OrgName = input.OrgName ?? "";
+        applicant.OrgNumber = input.OrgNumber ?? "";
+        applicant.OrgStatus = input.OrgStatus ?? "";
+        applicant.OrganizationSize = input.OrganizationSize ?? "";
+        applicant.Sector = input.Sector ?? "";
+        applicant.SubSector = input.SubSector ?? "";
+        applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
+        applicant.IndigenousOrgInd = input.IndigenousOrgInd ?? "";
+        applicant.UnityApplicantId = input.UnityApplicantId ?? "";
+        applicant.FiscalDay = input.FiscalDay;
+        applicant.FiscalMonth = input.FiscalMonth ?? "";
+        applicant.NonRegOrgName = input.NonRegOrgName ?? "";
+        applicant.ElectoralDistrict = input.ElectoralDistrict ?? "";
 
-        if (application != null)
+        _ = await _applicantRepository.UpdateAsync(applicant);
+
+        // Integrate with payments module to update / insert supplier
+        // Check that the original supplier number has changed
+        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+            && !string.IsNullOrEmpty(input.SupplierNumber)
+            && input.OriginalSupplierNumber != input.SupplierNumber)
         {
-            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
-            // This applicant should never be null!
-
-            applicant.OrganizationType = input.OrganizationType ?? "";
-            applicant.OrgName = input.OrgName ?? "";
-            applicant.OrgNumber = input.OrgNumber ?? "";
-            applicant.OrgStatus = input.OrgStatus ?? "";
-            applicant.OrganizationSize = input.OrganizationSize ?? "";
-            applicant.Sector = input.Sector ?? "";
-            applicant.SubSector = input.SubSector ?? "";
-            applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
-            applicant.IndigenousOrgInd = input.IndigenousOrgInd ?? "";
-            applicant.UnityApplicantId = input.UnityApplicantId ?? "";
-            applicant.FiscalDay = input.FiscalDay;
-            applicant.FiscalMonth = input.FiscalMonth ?? "";
-            applicant.NonRegOrgName = input.NonRegOrgName ?? "";
-
-            _ = await _applicantRepository.UpdateAsync(applicant);
-
-            // Integrate with payments module to update / insert supplier
-            // Check that the original supplier number has changed
-            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
-                && !string.IsNullOrEmpty(input.SupplierNumber)
-                && input.OriginalSupplierNumber != input.SupplierNumber)
+            var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(id);
+            if (pendingPayments != null && pendingPayments.Count > 0)
             {
-                var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(id);
-                if (pendingPayments != null && pendingPayments.Count > 0)
-                {
-                    throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
-                }
-                await _iSupplierService.UpdateApplicantSupplierInfo(input.SupplierNumber, application.ApplicantId);
+                throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
             }
+            await _iSupplierService.UpdateApplicantSupplierInfo(input.SupplierNumber, application.ApplicantId);
+        }
 
-            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId);
-            if (applicantAgent == null)
+        var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId);
+        if (applicantAgent == null)
+        {
+            applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
             {
-                applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
-                {
-                    ApplicantId = application.ApplicantId,
-                    ApplicationId = application.Id,
-                    Name = input.ContactFullName ?? "",
-                    Phone = input.ContactBusinessPhone ?? "",
-                    Phone2 = input.ContactCellPhone ?? "",
-                    Email = input.ContactEmail ?? "",
-                    Title = input.ContactTitle ?? ""
-                });
-            }
-            else
-            {
-                applicantAgent.Name = input.ContactFullName ?? "";
-                applicantAgent.Phone = input.ContactBusinessPhone ?? "";
-                applicantAgent.Phone2 = input.ContactCellPhone ?? "";
-                applicantAgent.Email = input.ContactEmail ?? "";
-                applicantAgent.Title = input.ContactTitle ?? "";
-                applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
-            }
-
-            await UpdateApplicantAddresses(input);
-
-            application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
-            application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
-            application.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
-            application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
-            application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
-
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input);
-
-            await _applicationRepository.UpdateAsync(application);
-
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
-
-            appDto.ContactFullName = applicantAgent.Name;
-            appDto.ContactEmail = applicantAgent.Email;
-            appDto.ContactTitle = applicantAgent.Title;
-            appDto.ContactBusinessPhone = applicantAgent.Phone;
-            appDto.ContactCellPhone = applicantAgent.Phone2;
-
-            return appDto;
+                ApplicantId = application.ApplicantId,
+                ApplicationId = application.Id,
+                Name = input.ContactFullName ?? "",
+                Phone = input.ContactBusinessPhone ?? "",
+                Phone2 = input.ContactCellPhone ?? "",
+                Email = input.ContactEmail ?? "",
+                Title = input.ContactTitle ?? ""
+            });
         }
         else
         {
-            throw new EntityNotFoundException();
+            applicantAgent.Name = input.ContactFullName ?? "";
+            applicantAgent.Phone = input.ContactBusinessPhone ?? "";
+            applicantAgent.Phone2 = input.ContactCellPhone ?? "";
+            applicantAgent.Email = input.ContactEmail ?? "";
+            applicantAgent.Title = input.ContactTitle ?? "";
+            applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
         }
+
+        await UpdateApplicantAddresses(input);
+
+        application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
+        application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
+        application.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
+        application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
+        application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
+
+        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input);
+
+        await _applicationRepository.UpdateAsync(application);
+
+        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+        appDto.ContactFullName = applicantAgent.Name;
+        appDto.ContactEmail = applicantAgent.Email;
+        appDto.ContactTitle = applicantAgent.Title;
+        appDto.ContactBusinessPhone = applicantAgent.Phone;
+        appDto.ContactCellPhone = applicantAgent.Phone2;
+
+        return appDto;
     }
 
     #region APPLICANT INFO

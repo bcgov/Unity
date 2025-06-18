@@ -1,23 +1,15 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @* #pragma warning disable S1128 *@
+@using Microsoft.Extensions.Localization
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
-@using Unity.GrantManager.Settings
-@using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
-@using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget;
+@using Unity.GrantManager.Web.Pages.GrantApplications
 @using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
-@using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
-@using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
-@using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
-@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
-@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
-@using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
+@using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar
 @using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
-@using Unity.GrantManager.Web.Pages.GrantApplications
-@using Microsoft.Extensions.Localization
 @using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
@@ -46,8 +38,8 @@
 @section scripts
 {
     <abp-script src="/Pages/GrantApplications/Details.js" />
-    <abp-script src="/libs/formiojs/formio.form.js" />
-    <abp-script src="/libs/jspdf/dist/jspdf.umd.js" />
+    <abp-script src="/libs/formiojs/formio.form.min.js" />
+    <abp-script src="/libs/jspdf/dist/jspdf.umd.min.js" />
     <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
 }
 
@@ -90,8 +82,16 @@
 
     public string ZoneCssClass(string zoneName) => IsZoneVisible(zoneName) ? string.Empty : "d-none";
 }
+
 <div id="main-loading">
-    <img src="/images/homepage/unity.svg" alt="unity-application-loading">
+    <div class="d-flex justify-content-center">
+        <img src="/images/homepage/unity.svg" alt="unity-application-loading">
+    </div>
+    <div class="m-4 d-flex justify-content-center">
+        <div class="spinner-border">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
 </div>
 <div class="m-0 h-100 application-details-container fade-in-load" id="main-container">
     <div id="main-left">
@@ -176,7 +176,7 @@
                 @if (IsZoneVisible(UnitySelector.Project.Default))
                 {
                     <abp-tab name="nav-project-info" title="Project Info">
-                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Project.Summary.Default)" id="projectInfoWidget">
+                        <div class="w-100 px-2" id="projectInfoWidget">
                             @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>

@@ -1,4 +1,3 @@
-﻿
 namespace Unity.GrantManager.GrantApplications;
 
 public class PaymentInfoDto

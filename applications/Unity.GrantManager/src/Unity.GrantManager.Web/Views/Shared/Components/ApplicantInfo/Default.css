@@ -49,11 +49,30 @@
 .unt-input-group-append {
     position: absolute;
     right: 0;
-    margin: 32px 10px 0px 0px;
+    margin: 25px 3px 0px 0px;
 }
 
 .unt-input-group-append .unt-btn-outline-primary {
     padding: 6px;
     min-height: 25px;
     border-radius: 2em;
+}
+
+.unt-btn-link { 
+    margin:0px;
+}
+
+.aligned-select-btn {
+    padding-top: 1.7rem !important;    
+}
+
+    .aligned-select-btn button {
+        border-radius: 2em;
+    }
+
+.select-disabled {
+    background-color: #e9ecef;
+    pointer-events: none;
+    color: #6c757d;
+    opacity: 1;
 }

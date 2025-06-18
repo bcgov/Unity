@@ -24,6 +24,7 @@
 }
 
 <input type="hidden" id="ApplicantInfoViewApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="ApplicantElectoralAddressType" value="@Model.ApplicantElectoralAddressType" />
 <div id="orgApplicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
 
 <abp-row class="px-1 pb-2 mb-4 project-info-container">
@@ -42,7 +43,7 @@
                 <abp-row class="m-0 p-0">
                     <abp-column size="_12" class="px-1 mb-4">
                         <label class="form-label">@L["ApplicantInfoView:ApplicantInfo.OrgBookSearch"].Value</label>
-                        <select asp-for="@Model.SelectedOrgBookId"
+                        <select id="orgBookSelect" asp-for="@Model.SelectedOrgBookId"
                                 class="auto-complete-select"
                                 data-autocomplete-minimum-input-length="3"
                                 data-autocomplete-api-url="/api/app/org-book/org-book-autocomplete-query"
@@ -54,36 +55,37 @@
                                 data-autocomplete-allow-clear="true">
                         </select>
                     </abp-column>
-                   
+
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantSummary.OrgName" disabled/>
+                        <abp-input asp-for="@Model.OrgName" onchange="enableApplicantInfoSaveBtn(this)" disabled />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantSummary.OrgNumber" disabled />
+                        <abp-input asp-for="@Model.OrgNumber" onchange="enableApplicantInfoSaveBtn(this)" disabled />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ApplicantSummary.OrgStatus" asp-items="@Model.OrgBookStatusListOptions"
-                                    id="orgBookStatusDropdown" disabled>
+                        <abp-select asp-for="@Model.OrgStatus" asp-items="@Model.OrgBookStatusList"
+                                    id="orgBookStatusDropdown" onchange="enableApplicantInfoSaveBtn(this)" disabled>
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ApplicantSummary.OrganizationType" asp-items="@Model.OrganizationTypeListOptions"
-                                    id="orgTypeDropdown" disabled>
+                        <abp-select asp-for="@Model.OrganizationType" asp-items="@Model.OrganizationTypeList"
+                                    id="orgTypeDropdown" onchange="enableApplicantInfoSaveBtn(this)" disabled>
                             <option value="">Please choose...</option>
-                        </abp-select> 
+                        </abp-select>
                     </abp-column>
-                    </abp-row>
-                    <abp-row class="m-0 p-0">
+                </abp-row>
+                <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantSummary.NonRegOrgName" />
+                        <abp-input asp-for="@Model.NonRegOrgName" onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input class="numeric-mask" asp-for="@Model.ApplicantSummary.OrganizationSize" />
+                        <abp-input class="numeric-mask" asp-for="@Model.OrganizationSize"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <div class="switch-container">
@@ -96,56 +98,76 @@
                                        name="ApplicantSummary.IndigenousOrgInd"
                                        id="indigenousOrgInd"
                                        value="Yes"
-                                @(Model.ApplicantSummary.IndigenousOrgInd == "Yes" ? "checked" : string.Empty) />
+                                @(Model.IndigenousOrgInd == "Yes" ? "checked" : "")
+                                       onchange="enableApplicantInfoSaveBtn(this)" />
                                 <label class="form-check-label" for="indigenousOrgInd">@L["ApplicantInfoView:ApplicantInfo.IndigenousOrgInd"].Value</label>
                             </div>
                         </div>
                     </abp-column>
                 </abp-row>
+                <abp-row>
+                    <abp-column size="_12" class="px-1 mb-4">
+                        <label class="form-label">@L["ApplicantInfoView:ApplicantInfo.ApplicantLookUp"].Value</label>
+                        <select id="applicantLookupSelect" asp-for="@Model.SelectedApplicantLookUp"
+                                class="auto-complete-select"
+                                data-autocomplete-minimum-input-length="3"
+                                data-autocomplete-api-url="/api/app/applicant/applicant-look-up-autocomplete-query"
+                                data-autocomplete-display-property="ApplicantName"
+                                data-autocomplete-value-property="Id"
+                                data-autocomplete-items-property=""
+                                data-autocomplete-filter-param-name="applicantLookUpQuery"
+                                data-autocomplete-placeholder="@L["ApplicantInfoView:ApplicantInfo.ApplicantLookUpPlaceholder"].Value"
+                                data-autocomplete-allow-clear="true">
+                        </select>
+                    </abp-column>
+                </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
                         <div class="input-group unt-input-group">
-                            <abp-input asp-for="@Model.ApplicantSummary.UnityApplicantId" maxlength="6" class="unt-input" id="applicantInfoUnityApplicantId" />
+                            <abp-input asp-for="@Model.UnityApplicantId" maxlength="6" class="unt-input" id="applicantInfoUnityApplicantId" onchange="enableApplicantInfoSaveBtn(this)" />
                             <div class="unt-input-group-append">
-                                <button class="btn unt-btn-outline-primary btn-outline-primary" id="btn-generate" type="button" onclick="generateUnityApplicantIdBtn()"><i class="unt-icon-sm fa-solid fa-shuffle"></i></button>
+                                <button class="btn unt-btn-link btn-link" id="btn-generate" type="button" onclick="generateUnityApplicantIdBtn()"><i class="unt-icon-m fa-solid fa-arrows-rotate"></i></button>
                             </div>
                         </div>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ApplicantSummary.FiscalDay" asp-items="@Model.FiscalDayListOptions">
+                        <abp-select asp-for="@Model.FiscalDay" asp-items="@Model.FiscalDayList"
+                                    onchange="enableApplicantInfoSaveBtn(this)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ApplicantSummary.FiscalMonth" asp-items="@Model.FiscalMonthListOptions">
+                        <abp-select asp-for="@Model.FiscalMonth" asp-items="@Model.FiscalMonthList"
+                                    onchange="enableApplicantInfoSaveBtn(this)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ApplicantSummary.Sector" asp-items="@Model.ApplicationSectorsList"
-                                    id="orgSectorDropdown">
+                        <abp-select asp-for="@Model.Sector" asp-items="@Model.ApplicationSectorsList"
+                                    id="orgSectorDropdown" onchange="enableApplicantInfoSaveBtn(this)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ApplicantSummary.SubSector" asp-items="@Model.ApplicationSubSectorsList"
-                                    id="orgSubSectorDropdown" >
+                        <abp-select asp-for="@Model.SubSector" asp-items="@Model.ApplicationSubSectorsList"
+                                    id="orgSubSectorDropdown" onchange="enableApplicantInfoSaveBtn(this)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <div class="switch-container">
                             <div class="form-check unt-form-switch form-switch">
-                                <input class="form-check-input" checked="@Model.ApplicantSummary.RedStop" type="checkbox" role="switch" id="redStop" disabled>
+                                <input class="form-check-input" checked="@Model.RedStop" type="checkbox" role="switch" id="redStop" disabled>
                                 <label class="form-check-label" for="redStop">@L["ApplicantInfoView:ApplicantInfo.RedStop"].Value</label>
                             </div>
                         </div>
                     </abp-column>
                     <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="px-1">
-                            <abp-input asp-for="@Model.ApplicantSummary.SectorSubSectorIndustryDesc" />
+                            <abp-input asp-for="@Model.SectorSubSectorIndustryDesc"
+                                       onchange="enableApplicantInfoSaveBtn(this)" />
                         </abp-column>
                     </abp-row>
                 </abp-row>
@@ -166,23 +188,28 @@
             <abp-row class="m-0 project-info-location">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactInfo.Name" />
+                        <abp-input asp-for="@Model.ContactFullName"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactInfo.Title" />
+                        <abp-input asp-for="@Model.ContactTitle"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactInfo.Email" />
+                        <abp-input asp-for="@Model.ContactEmail"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactInfo.Phone"
-                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" />
+                        <abp-input asp-for="@Model.ContactBusinessPhone"
+                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactInfo.Phone2"
-                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" />
+                        <abp-input asp-for="@Model.ContactCellPhone"
+                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                 </abp-row>
             </abp-row>
@@ -194,23 +221,28 @@
             <abp-row class="m-0 signin-authority-form">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityFullName" />
+                        <abp-input asp-for="@Model.SigningAuthorityFullName"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityTitle" />
+                        <abp-input asp-for="@Model.SigningAuthorityTitle"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityEmail" />
+                        <abp-input asp-for="@Model.SigningAuthorityEmail"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityBusinessPhone"
-                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" />
+                        <abp-input asp-for="@Model.SigningAuthorityBusinessPhone"
+                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityCellPhone"
-                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" />
+                        <abp-input asp-for="@Model.SigningAuthorityCellPhone"
+                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$"
+                                   onchange="enableApplicantInfoSaveBtn(this)" />
                     </abp-column>
                 </abp-row>
             </abp-row>
@@ -221,7 +253,7 @@
             update-permission-requirement="@UnitySelector.Applicant.Location.Update">
             <abp-row class="m-0 contact-info-form">
                 <div class="d-flex">
-                    <abp-row class="m-0 physical-address-form pe-2">
+                    <abp-row class="m-0 physical-address-form pe-2" style="border-bottom:none;">
                         <abp-row class="m-0 p-0">
                             <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
                                 <div class="d-flex align-items-stretch justify-content-start">
@@ -229,28 +261,34 @@
                                 </div>
                             </abp-column>
                         </abp-row>
-                        <abp-row class="m-0 p-0">
+                        <abp-row class="m-0 p-0 physical-address-fields-group">
                             <abp-column size="_5" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddress.Street" />
+                                <abp-input asp-for="@Model.PhysicalAddressStreet"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_5" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddress.Street2" />
+                                <abp-input asp-for="@Model.PhysicalAddressStreet2"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_2" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddress.Unit" />
+                                <abp-input asp-for="@Model.PhysicalAddressUnit"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddress.City" />
+                                <abp-input asp-for="@Model.PhysicalAddressCity"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddress.Province" />
+                                <abp-input asp-for="@Model.PhysicalAddressProvince"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddress.PostalCode" />
+                                <abp-input asp-for="@Model.PhysicalAddressPostalCode"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                         </abp-row>
                     </abp-row>
-                    <abp-row class="m-0 mailing-address-form ps-2">
+                    <abp-row class="m-0 mailing-address-form ps-2" style="border-bottom:none;">
                         <abp-row class="m-0 p-0">
                             <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
                                 <div class="d-flex align-items-stretch justify-content-start">
@@ -258,28 +296,71 @@
                                 </div>
                             </abp-column>
                         </abp-row>
-                        <abp-row class="m-0 p-0">
+                        <abp-row class="m-0 p-0 mailing-address-fields-group">
                             <abp-column size="_5" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddress.Street" />
+                                <abp-input asp-for="@Model.MailingAddressStreet"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_5" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddress.Street2" />
+                                <abp-input asp-for="@Model.MailingAddressStreet2"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_2" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddress.Unit" />
+                                <abp-input asp-for="@Model.MailingAddressUnit"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddress.City" />
+                                <abp-input asp-for="@Model.MailingAddressCity"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddress.Province" />
+                                <abp-input asp-for="@Model.MailingAddressProvince"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddress.PostalCode" />
+                                <abp-input asp-for="@Model.MailingAddressPostalCode"
+                                           onchange="enableApplicantInfoSaveBtn(this)" />
                             </abp-column>
                         </abp-row>
                     </abp-row>
                 </div>
+            </abp-row>
+
+            <abp-row class="m-0 contact-info-form">
+                <abp-row class="m-0 p-0">
+                    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                        <div id="ApplicantElectoralDistrictTitleRegion"
+                             class="d-flex align-items-stretch justify-content-start">
+                            <h6 class="ps-1 fw-bold mb-0">@L["ApplicantInfoView:ElectoralDistrict"].Value</h6>
+                            <button class="btn btn-link p-0 ms-2"
+                                    id="btn-toggle-lock-electoral"
+                                    type="button"
+                                    onclick="toggleElectoralDistrictLockState()"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    data-bs-title="Toggle Electoral District Edit"
+                                    style="margin-top: -0.5rem;">
+                                <i class="unt-icon-sm fa-solid fa-lock"></i>
+                            </button>
+                        </div>
+                    </abp-column>
+                </abp-row>
+                <abp-column size="_6" class="px-3">
+                    <abp-row>
+                        <abp-column size="_10" class="px-1">
+                            <abp-select asp-for="@Model.ElectoralDistrict" asp-items="@Model.ElectoralDistrictList"
+                                        onchange="enableApplicantInfoSaveBtn(this)">
+                                <option value="">Please choose...</option>
+                            </abp-select>
+                        </abp-column>
+                        <abp-column size="_2" class="px-1 aligned-select-btn">
+                            <button class="btn unt-btn-outline-primary btn-outline-primary" id="btn-refresh-electoral" type="button" onclick="refreshApplicantElectoralDistrict()">
+                                <i class="unt-icon-sm fa-solid fa-refresh"></i>
+                            </button>
+                        </abp-column>
+                    </abp-row>
+                </abp-column>
+                <div class="fs-6 mb-2"><b>NOTE: </b>@L["ApplicantInfoView:Notes.ElectoralDistrict", Model.ApplicantElectoralAddressTypeDisplay].Value</div>
             </abp-row>
         </zone-fieldset>
 
@@ -325,3 +406,293 @@
         }
     })();
 </script>
+
+
+<div class="modal fade" id="mergeDuplicateApplicantsModal" tabindex="-1" aria-labelledby="mergeApplicantsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header justify-content-center">
+                <h5 class="modal-title text-center w-100" id="mergeApplicantsModalLabel">Merge Duplicate Applicants</h5>
+                <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close" id="mergeApplicantsModalClose"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Comparison Table -->
+                <div id="mergeApplicantsStep1">
+                    <div class="text-center mb-3">
+                        <h6 class="fw-bold">Compare Accounts</h6>
+                        <p>Choose one account record as the principal, and choose the field values that you want to keep.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <tr>
+                                <th></th>
+                                <th>
+                                    <span class="fw-bold" id="existing_ApplicantNameHeader"></span>
+                                    <button type="button" class="btn btn-link unt-btn-link me-2" id="selectAllExistingBtn">Select All</button>
+                                </th>
+                                <th>
+                                    <span class="fw-bold" id="new_ApplicantNameHeader"></span>
+                                    <button type="button" class="btn btn-link unt-btn-link " id="selectAllNewBtn">Select All</button>
+                                </th>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">@L["ApplicantInfoView:ApplicantInfo.PrincipalRecord"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_ApplicantId" value="existing" class="me-2" />
+                                        <span class="fw-bold">@L["ApplicantInfoView:ApplicantInfo.Principal"].Value</span>
+                                    </label>
+                                   
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_ApplicantId" value="new" class="me-2" />
+                                        <span class="fw-bold">@L["ApplicantInfoView:ApplicantInfo.Principal"].Value</span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.UnityApplicant"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_UnityApplicantId" value="existing" class="me-2" />
+                                        <span id="existing_UnityApplicantId"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_UnityApplicantId" value="new" class="me-2" />
+                                        <span id="new_UnityApplicantId"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.ApplicantName"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_ApplicantName" value="existing" class="me-2" />
+                                        <span id="existing_ApplicantName"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_ApplicantName" value="new" class="me-2" />
+                                        <span id="new_ApplicantName"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.OrgName"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrgName" value="existing" class="me-2" />
+                                        <span id="existing_OrgName"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrgName" value="new" class="me-2" />
+                                        <span id="new_OrgName"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.OrgNumber"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrgNumber" value="existing" class="me-2" />
+                                        <span id="existing_OrgNumber"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrgNumber" value="new" class="me-2" />
+                                        <span id="new_OrgNumber"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.NonRegOrgName"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_NonRegOrgName" value="existing" class="me-2" />
+                                        <span id="existing_NonRegOrgName"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_NonRegOrgName" value="new" class="me-2" />
+                                        <span id="new_NonRegOrgName"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.OrganizationType"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrganizationType" value="existing" class="me-2" />
+                                        <span id="existing_OrganizationType"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrganizationType" value="new" class="me-2" />
+                                        <span id="new_OrganizationType"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.OrganizationSize"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrganizationSize" value="existing" class="me-2" />
+                                        <span id="existing_OrganizationSize"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrganizationSize" value="new" class="me-2" />
+                                        <span id="new_OrganizationSize"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.OrgBookStatus"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrgStatus" value="existing" class="me-2" />
+                                        <span id="existing_OrgStatus"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_OrgStatus" value="new" class="me-2" />
+                                        <span id="new_OrgStatus"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.IndigenousOrgInd"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_IndigenousOrgInd" value="existing" class="me-2" />
+                                        <span id="existing_IndigenousOrgInd"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_IndigenousOrgInd" value="new" class="me-2" />
+                                        <span id="new_IndigenousOrgInd"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.Sector"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_Sector" value="existing" class="me-2" />
+                                        <span id="existing_Sector"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_Sector" value="new" class="me-2" />
+                                        <span id="new_Sector"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.SubSector"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_SubSector" value="existing" class="me-2" />
+                                        <span id="existing_SubSector"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_SubSector" value="new" class="me-2" />
+                                        <span id="new_SubSector"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_SectorSubSectorIndustryDesc" value="existing" class="me-2" />
+                                        <span id="existing_SectorSubSectorIndustryDesc"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_SectorSubSectorIndustryDesc" value="new" class="me-2" />
+                                        <span id="new_SectorSubSectorIndustryDesc"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.FiscalDay"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_FiscalDay" value="existing" class="me-2" />
+                                        <span id="existing_FiscalDay"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_FiscalDay" value="new" class="me-2" />
+                                        <span id="new_FiscalDay"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.FiscalMonth"].Value</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_FiscalMonth" value="existing" class="me-2" />
+                                        <span id="existing_FiscalMonth"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_FiscalMonth" value="new" class="me-2" />
+                                        <span id="new_FiscalMonth"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="text-center">
+                        <span class="fw-bold">Note:</span> If a different principal is selected, the existing contact information and address will be passed over to the chosen principal.
+                        </div>
+                    <div class="d-flex justify-content-end m-3">
+                        <button type="button" class="btn btn-primary" id="mergeApplicantsNextBtn">Next</button>
+                    </div>
+                </div>
+                <!-- Step 2: Confirmation -->
+                <div id="mergeApplicantsStep2" style="display:none;">
+                    <div class="text-center mb-3">
+                        <h6 class="fw-bold">Compare Action</h6>
+                        <p>You are about to merge these applicants. This action cannot be undone.<br />
+                            The principal record will be updated with your chosen values and assigned to this application.<br />
+                            The other record will not be deleted; instead, it will be flagged as a duplicated and can be removed from the Applicant list in a separate process.
+                        </p>
+                        <p class="fw-bold">Are you sure?</p>
+
+                        <div id="mergeApplicantsSpinner" class="text-center my-3" style="display:none;">
+                            <div class="spinner-border">
+                                <span class="visually-hidden">Merging...</span>
+                            </div>
+                            <div class="mt-2">Merging, please wait...</div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between m-3">
+                        <button type="button" class="btn unt_btn btn-secondary" id="mergeApplicantsBackBtn">Back</button>
+                        <button type="button" class="btn unt_btn btn-primary" id="mergeApplicantsMergeBtn">Merge and Assign</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

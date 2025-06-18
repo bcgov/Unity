@@ -56,6 +56,7 @@ namespace Unity.GrantManager.Permissions
             public const string Default = GroupName + ".Approvals";
             public const string Complete = Default + ".Complete";
             public const string BulkApplicationApproval = Default + ".BulkApplicationApproval";
+            public const string DeferAfterApproval = Default + ".DeferAfterApproval";
         }
 
         public static class Comments
@@ -80,13 +81,6 @@ namespace Unity.GrantManager.Permissions
             public const string AddAdditionalContact = Default + ".AdditionalContact" + Operation.Create;
             public const string UpdateAdditionalContact = Default + ".AdditionalContact" + Operation.Update;
             public const string DeleteAdditionalContact = Default + ".AdditionalContact" + Operation.Delete;
-        }
-
-        public static class ProjectInfo
-        {
-            public const string Default = GroupName + ".ProjectInfo";
-            public const string Update = Default + Operation.Update;
-            public const string UpdateFinalStateFields = Update + ".UpdateFinalStateFields";
         }
 
         public static string[] GetAll()

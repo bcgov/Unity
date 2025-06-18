@@ -17,11 +17,11 @@ namespace Unity.GrantManager.Web.Mapping
             CreateMap<ContactModalViewModel, ApplicationContactDto>();
             CreateMap<ApplicationContactDto, ContactModalViewModel>();
 
-            CreateMap<ApplicantAddressDto, ApplicantInfoViewModel.ApplicantAddressViewModel>();
-            CreateMap<ApplicantSupplierDto, ApplicantInfoViewModel.ApplicantSupplierViewModel>();
-            CreateMap<ContactInfoDto, ApplicantInfoViewModel.ContactInfoViewModel>();
-            CreateMap<ApplicantSummaryDto, ApplicantInfoViewModel.ApplicantSummaryViewModel>();
-            CreateMap<SigningAuthorityDto, ApplicantInfoViewModel.SigningAuthorityViewModel>();
+            //CreateMap<ApplicantAddressDto, ApplicantInfoViewModel.ApplicantAddressViewModel>();
+            //CreateMap<ApplicantSupplierDto, ApplicantInfoViewModel.ApplicantSupplierViewModel>();
+            //CreateMap<ContactInfoDto, ApplicantInfoViewModel.ContactInfoViewModel>();
+            //CreateMap<ApplicantSummaryDto, ApplicantInfoViewModel.ApplicantSummaryViewModel>();
+            //CreateMap<SigningAuthorityDto, ApplicantInfoViewModel.SigningAuthorityViewModel>();
         }
     }
 }

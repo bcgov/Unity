@@ -38,7 +38,7 @@ parameters:
   value: unity-data-postgres
 - name: DATABASE_BACKUP_KEEP
   description: 'Number of backups to keep'
-  value: '2'
+  value: '1'
 - name: DATABASE_BACKUP_SCHEDULE
   description: 'Cron-like schedule expression m h D M DayOfWeek add +7/8 hours for UTC conversions'
   required: true

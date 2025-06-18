@@ -53,7 +53,8 @@ public class ApplicationApplicantAppService(
             ContactEmail                  = applicantInfo.ApplicantAgent?.Email ?? string.Empty,
             ContactBusinessPhone          = applicantInfo.ApplicantAgent?.Phone ?? string.Empty,
             ContactCellPhone              = applicantInfo.ApplicantAgent?.Phone2 ?? string.Empty,
-            ApplicantAddresses            = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(applicantInfo.Applicant?.ApplicantAddresses?.ToList() ?? [])
+            ApplicantAddresses            = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(applicantInfo.Applicant?.ApplicantAddresses?.ToList() ?? []),
+            ElectoralDistrict             = applicantInfo.Applicant?.ElectoralDistrict ?? string.Empty
         };
         return appInfoDto;
     }
@@ -146,7 +147,6 @@ public class ApplicationApplicantAppService(
         if (await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Default))
         {
             //applicantInfoDto.ApplicantAddresses = ObjectMapper.Map<Application, List<ApplicantAddressDto>>(application);
-            applicantInfoDto.ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(application?.Applicant?.ApplicantAddresses?.ToList() ?? []);
         }
         else
         {

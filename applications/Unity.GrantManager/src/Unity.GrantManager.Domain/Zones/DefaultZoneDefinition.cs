@@ -1,5 +1,4 @@
-﻿using Unity.GrantManager.Settings;
-using Unity.Modules.Shared;
+﻿using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.Zones;
 public static class DefaultZoneDefinition
@@ -49,12 +48,11 @@ public static class DefaultZoneDefinition
                          Name = UnitySelector.Project.Location.Default,
                          ViewComponentType = "ProjectLocationViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 2
                      },
                  ]
-             },                     
-             new ZoneTabDefinition { 
+             },
+             new ZoneTabDefinition {
                  Name = UnitySelector.Applicant.Default,
                  IsEnabled = true,
                  SortOrder = 3,

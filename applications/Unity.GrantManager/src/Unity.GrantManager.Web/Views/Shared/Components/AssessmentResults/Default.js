@@ -40,9 +40,10 @@
         });
 
 
-        // Make sure all the custom fields are set in the custom fields object
-        if (typeof Flex === 'function') {
-            Flex?.setCustomFields(assessmentResultObj);
+        if (typeof Flex === 'function' && Object.keys(assessmentResultObj.CustomFields || {}).length > 0) {
+            $("#assessmentResultsCustomForm input:checkbox").each(function () {
+                assessmentResultObj.CustomFields[this.name] = (this.checked).toString();
+            });
         }
 
         try {
