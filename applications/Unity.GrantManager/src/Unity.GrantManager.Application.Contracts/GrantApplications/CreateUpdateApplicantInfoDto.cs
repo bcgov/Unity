@@ -29,8 +29,6 @@ namespace Unity.GrantManager.GrantApplications
         public string? SigningAuthorityEmail { get; set; }
         public string? SigningAuthorityBusinessPhone { get; set; }
         public string? SigningAuthorityCellPhone { get; set; }
-        public string? SupplierNumber { get; set; }
-        public string? OriginalSupplierNumber { get; set; }
         public string? PhysicalAddressStreet { get; set; }
         public string? PhysicalAddressStreet2 { get; set; }
         public string? PhysicalAddressUnit { get; set; }

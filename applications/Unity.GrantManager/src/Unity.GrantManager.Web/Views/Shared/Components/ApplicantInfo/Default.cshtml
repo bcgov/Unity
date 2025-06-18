@@ -174,12 +174,6 @@
             </abp-row>
         </fieldset>
 
-        @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
-        {
-            <div id="supplier-info-widget">
-                @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
-            </div>
-        }
 
         <fieldset name="Unity_UI_Applicant_Contact" @IsFieldsetDisabled>
             <legend class="d-none">@L["ApplicantInfoView:ApplicantInfoContactInfo"].Value</legend>
