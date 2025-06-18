@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
+using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
@@ -29,6 +30,7 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.PaymentRequests;
+using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
@@ -57,7 +59,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
-    private readonly ISupplierService _iSupplierService;
+    private readonly IApplicantSupplierAppService _applicantSupplierService;
     private readonly IPaymentRequestAppService _paymentRequestService;
     private readonly IPaymentRequestRepository _paymentRequestsRepository;
     private readonly IZoneChecker _zoneChecker;
@@ -75,7 +77,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicantAgentRepository applicantAgentRepository,
         IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus,
-        ISupplierService iSupplierService,
+        IApplicantSupplierAppService applicantSupplierService,
         IPaymentRequestAppService paymentRequestService,
         IPaymentRequestRepository paymentRequestsRepository,
         IZoneChecker zoneChecker)
@@ -91,7 +93,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicantAddressRepository = applicantAddressRepository;
-        _iSupplierService = iSupplierService;
+        _applicantSupplierService = applicantSupplierService;
         _localEventBus = localEventBus;
         _paymentRequestService = paymentRequestService;
         _paymentRequestsRepository = paymentRequestsRepository;
@@ -536,6 +538,27 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
+    /// <summary>
+    /// Update the supplier number for the applicant associated with the application.
+    /// </summary>
+    [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
+    public async Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber)
+    {
+        // Could be moved to payments module but dependency on ApplicationId
+        // Integrate with payments module to update / insert supplier
+        var application = await _applicationRepository.GetAsync(applicationId);
+        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && application != null && !string.IsNullOrEmpty(supplierNumber))
+        {
+            var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(applicationId);
+            if (pendingPayments != null && pendingPayments.Count > 0)
+            {
+                throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
+            }
+
+            await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber);
+        }
+    }
+
     [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
@@ -560,20 +583,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         applicant.ElectoralDistrict = input.ElectoralDistrict ?? "";
 
         _ = await _applicantRepository.UpdateAsync(applicant);
-
-        // Integrate with payments module to update / insert supplier
-        // Check that the original supplier number has changed
-        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
-            && !string.IsNullOrEmpty(input.SupplierNumber)
-            && input.OriginalSupplierNumber != input.SupplierNumber)
-        {
-            var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(id);
-            if (pendingPayments != null && pendingPayments.Count > 0)
-            {
-                throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
-            }
-            await _iSupplierService.UpdateApplicantSupplierInfo(input.SupplierNumber, application.ApplicantId);
-        }
 
         var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId);
         if (applicantAgent == null)
