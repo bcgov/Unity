@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 using System;
-using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
-using Unity.GrantManager.GrantApplications;
-using Unity.Payments.PaymentRequests;
 using System.Linq;
+using System.Threading.Tasks;
+using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Enums;
+using Unity.Payments.PaymentRequests;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
@@ -44,18 +44,23 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                     RecommendedAmount = application.RecommendedAmount,
                     ApprovedAmount = application.ApprovedAmount,
                     ApplicationId = applicationId,
-                    ApplicationFormVersionId = applicationFormVersionId
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    ApplicantId = application.Applicant.Id
                 };
+                
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
-           model.TotalPaid= paymentRequests.Where(e => e.Status == PaymentRequestStatus.Submitted)
-                                  .Sum(e => e.Amount);
-            model.TotalPendingAmounts = paymentRequests
-                .Where(e => e.Status is not (PaymentRequestStatus.Paid 
-                                            or PaymentRequestStatus.L1Declined 
-                                            or PaymentRequestStatus.L2Declined 
-                                            or PaymentRequestStatus.L3Declined))
-                .Sum(e => e.Amount);
-            model.RemainingAmount = application.ApprovedAmount - model.TotalPaid;
+                
+                model.TotalPaid = paymentRequests
+                    .Where(e => e.Status == PaymentRequestStatus.Submitted)
+                    .Sum(e => e.Amount);
+                
+                model.TotalPendingAmounts = paymentRequests
+                    .Where(e => e.Status is not (PaymentRequestStatus.Paid
+                                                or PaymentRequestStatus.L1Declined
+                                                or PaymentRequestStatus.L2Declined
+                                                or PaymentRequestStatus.L3Declined))
+                    .Sum(e => e.Amount);
+                model.RemainingAmount = application.ApprovedAmount - model.TotalPaid;
 
                 return View(model);
             }

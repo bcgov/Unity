@@ -163,20 +163,10 @@ $(function () {
             reorderEnabled: false,
             languageSetValues: {},
             dataTableName: 'SiteInfoTable',
-            dynamicButtonContainerId: 'siteDynamicButtonContainerId'});
-    
-        dataTable.on('search.dt', () => handleSearch());
-        
-        $('#search').on('input', function () {
-            let table = $('#SiteInfoTable').DataTable();
-            table.search($(this).val()).draw();
+            externalSearchInputId: 'SiteInfoSearch',
+            dynamicButtonContainerId: 'siteDynamicButtonContainerId'
         });
-        
-        function handleSearch() {
-            let filter = $('.dataTables_filter input').val();
-            console.info(filter);
-        }
-    
+
         function getColumns() {
             let columnIndex = 0;
 
