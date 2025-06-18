@@ -47,9 +47,7 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Applicant.Location.Default,
             UnitySelector.Applicant.Location.Update,
             UnitySelector.Applicant.Summary.Default,
-            UnitySelector.Applicant.Summary.Update,
-            UnitySelector.Applicant.Supplier.Default,
-            UnitySelector.Applicant.Supplier.Update
+            UnitySelector.Applicant.Summary.Update
         ];
 
         public readonly List<string> ProjectInfo_CommonPermissions = [
@@ -58,6 +56,13 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Project.Summary.Update.Default,
             UnitySelector.Project.Location.Default,
             UnitySelector.Project.Location.Update.Default,
+        ];
+
+        public readonly List<string> PaymentInfo_CommonPermissions = [
+            UnitySelector.Payment.Summary.Default,
+            UnitySelector.Payment.Supplier.Default,
+            UnitySelector.Payment.Supplier.Update,
+            UnitySelector.Payment.PaymentList.Default
         ];
 
         public readonly List<string> Notifications_CommonPermissions = [

@@ -65,12 +65,6 @@ public static class DefaultZoneDefinition
                          SortOrder = 1
                      },
                      new ZoneDefinition {
-                         Name = UnitySelector.Applicant.Supplier.Default,
-                         ViewComponentType = "SupplierInfoViewComponent",
-                         IsEnabled = true,
-                         SortOrder = 2
-                     },
-                     new ZoneDefinition {
                          Name = UnitySelector.Applicant.Contact.Default,
                          ViewComponentType = "ApplicantContactInfoViewComponent",
                          IsEnabled = true,
@@ -116,12 +110,17 @@ public static class DefaultZoneDefinition
                          IsEnabled = true,
                          SortOrder = 1
                      },
-                      new ZoneDefinition {
+                     new ZoneDefinition {
+                         Name = UnitySelector.Payment.Supplier.Default,
+                         ViewComponentType = "SupplierInfoViewComponent",
+                         IsEnabled = true,
+                         SortOrder = 2
+                     },
+                     new ZoneDefinition {
                          Name = UnitySelector.Payment.PaymentList.Default,
                          ViewComponentType = "PaymentListViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
-                         SortOrder = 2
+                         SortOrder = 3
                      }
                  ]
              }

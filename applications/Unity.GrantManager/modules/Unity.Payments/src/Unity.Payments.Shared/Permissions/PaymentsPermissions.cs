@@ -2,6 +2,7 @@
 
 namespace Unity.Payments.Permissions;
 
+/// <seealso cref="Unity.Modules.Shared.UnitySelector.Payment"/>
 public static class PaymentsPermissions
 {
     public const string GroupName = "PaymentsPermissions";

@@ -130,10 +130,16 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Summary.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Applicant.Summary.Update,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Summary.Update));
-        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Supplier.Default,
-            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Supplier.Default));
-        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Supplier.Update,
-            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Supplier.Update));
+
+        //-- PAYMENT INFO
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Summary.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Supplier.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Supplier.Update));
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.PaymentList.Default));
 
         // Tenancy Policies
         authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.Default,
