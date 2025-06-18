@@ -48,5 +48,6 @@ namespace Unity.GrantManager.GrantApplications
         public Guid ApplicantId { get; set; }
         public string? NonRegOrgName { get; set; }
         public string? ElectoralDistrict { get; set; }
+        public string? ApplicantName { get; set; }
     }
 }
