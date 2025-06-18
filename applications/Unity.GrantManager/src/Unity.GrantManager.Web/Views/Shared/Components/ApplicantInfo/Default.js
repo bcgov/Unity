@@ -12,7 +12,7 @@
         $('#saveApplicantInfoBtn').prop('disabled', currentUnityAppId === previousUnityAppId);
     });
 
-    $('body').on('click', '#saveApplicantInfoBtn', function () {        
+    $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
@@ -43,12 +43,6 @@
         }
 
         try {
-            if (ApplicantInfoObj["SupplierNumber"] + "" != "undefined"
-                && ApplicantInfoObj["SupplierNumber"] + "" != ""
-                && ApplicantInfoObj["SupplierNumber"] + "" != ApplicantInfoObj["OriginalSupplierNumber"] + "") {
-                $('.cas-spinner').show();
-            }
-
             const orgName = $('#OrgName').val();
             ApplicantInfoObj['orgName'] = orgName;
             const orgNumber = $('#OrgNumber').val();
@@ -88,7 +82,6 @@
 
         }
         catch (error) {
-            $('.cas-spinner').hide();
             console.log(error);
             $('#saveApplicantInfoBtn').prop('disabled', false);
         }
@@ -273,7 +266,6 @@
         // Merge button: apply selected values to form
         $('#mergeApplicantsMergeBtn').on('click', async function () {
             $('#mergeApplicantsMergeBtn').prop('disabled', true);
-            $('.cas-spinner').show();
             $('#mergeApplicantsSpinner').show();
 
             let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
@@ -297,7 +289,7 @@
                     if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
                         ApplicantInfoObj[input.name.split(".")[1]] = null;
                     }
-                    if (input.name == 'ApplicantId' || input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
+                    if (input.name == 'ApplicantId') {
                         ApplicantInfoObj[input.name] = input.value;
                     }
                 });
@@ -307,12 +299,6 @@
                 });
                 if (typeof Flex === 'function') {
                     Flex?.setCustomFields(ApplicantInfoObj);
-                }
-
-                if (ApplicantInfoObj["SupplierNumber"] + "" != "undefined"
-                    && ApplicantInfoObj["SupplierNumber"] + "" != ""
-                    && ApplicantInfoObj["SupplierNumber"] + "" != ApplicantInfoObj["OriginalSupplierNumber"] + "") {
-                    $('.cas-spinner').show();
                 }
 
                 const orgName = $('#OrgName').val();
@@ -391,7 +377,6 @@
                 }
             }
 
-            $('.cas-spinner').hide();
             $('#mergeApplicantsSpinner').hide();
             $('#mergeDuplicateApplicantsModal').modal('hide');
         });
@@ -560,28 +545,6 @@ async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj) {
         console.log(error);
     }
 }
-function refreshSupplierInfoWidget() {
-    const applicantId = $("#ApplicantInfoViewApplicantId").val();
-    const url = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}`;
-    fetch(url)
-        .then(response => response.text())
-        .then(data => {
-            let supplierInfo = document.getElementById('supplier-info-widget');
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(data, 'text/html');
-            const siteIdValue = doc.querySelector('#SiteId').value;
-
-            if (supplierInfo) {
-                supplierInfo.innerHTML = data;
-                PubSub.publish('reload_sites_list', siteIdValue);
-            }
-            $('.cas-spinner').hide();
-        })
-        .catch(error => {
-            $('.cas-spinner').hide();
-            console.error('Error refreshing supplier-info-widget:', error);
-        });
-}
 
 function enableApplicantInfoSaveBtn(inputText) {
     if (!$("#ApplicantInfoForm").valid()
@@ -603,12 +566,6 @@ function updateApplicantInfo(appId, appInfoObj) {
             $('#saveApplicantInfoBtn').prop('disabled', true);
             PubSub.publish("refresh_detail_panel_summary");
             PubSub.publish('applicant_info_updated', appInfoObj);
-            refreshSupplierInfoWidget();
-        })
-        .then(function () {
-            $('.cas-spinner').hide();
-        }).catch(function () {
-            $('.cas-spinner').hide();
         });
 }
 

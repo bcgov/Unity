@@ -90,12 +90,12 @@
                     <abp-column size="_4" class="px-1">
                         <div class="switch-container">
                             <div class="form-check unt-form-switch form-switch">
-                                <input type="hidden" name="ApplicantSummary.IndigenousOrgInd" value="No" />
+                                <input type="hidden" name="ApplicantInfo.IndigenousOrgInd" value="No" />
 
                                 <!-- Checkbox submits "Yes" when checked -->
                                 <input class="form-check-input"
                                        type="checkbox"
-                                       name="ApplicantSummary.IndigenousOrgInd"
+                                       name="ApplicantInfo.IndigenousOrgInd"
                                        id="indigenousOrgInd"
                                        value="Yes"
                                 @(Model.IndigenousOrgInd == "Yes" ? "checked" : "")
@@ -174,13 +174,6 @@
             </abp-row>
         </zone-fieldset>
 
-        @* Zone Section : Supplier *@
-        <zone id="@UnitySelector.Applicant.Supplier.Default" form-id="@Model.ApplicationFormId" show-legend="true"
-            feature-requirement="@PaymentConsts.UnityPaymentsFeature">
-            <div id="supplier-info-widget">
-                @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
-            </div>
-        </zone>
 
         @* Zone Section : Contact Info *@
         <zone-fieldset id="@UnitySelector.Applicant.Contact.Default" form-id="@Model.ApplicationFormId" show-legend="true"

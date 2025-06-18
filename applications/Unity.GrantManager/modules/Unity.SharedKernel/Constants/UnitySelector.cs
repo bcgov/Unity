@@ -43,15 +43,6 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Delete";
         }
-
-        // TODO: Move to payments module permission
-        public static partial class Supplier
-        {
-            public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier";
-            public const string Create  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Create";
-            public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Update";
-            public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Delete";
-        }
     }
     public static partial class Application
     {
@@ -189,6 +180,15 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Payment.Summary.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Payment.Summary.Delete";
         }
+
+        public static partial class Supplier
+        {
+            public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier";
+            public const string Create  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Create";
+            public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Update";
+            public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Delete";
+        }
+
         public static partial class PaymentList
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Payment.PaymentList";
