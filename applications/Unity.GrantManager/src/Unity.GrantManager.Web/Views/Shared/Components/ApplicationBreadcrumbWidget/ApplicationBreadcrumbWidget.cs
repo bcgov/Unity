@@ -20,7 +20,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
         private readonly IApplicationApplicantAppService _applicationApplicantAppService;
         private readonly IApplicationFormVersionAppService _formVersionAppService;
 
-         public ApplicationBreadcrumbWidgetViewComponent(IApplicationApplicantAppService applicationApplicantAppService, IApplicationFormVersionAppService formVersionAppService)
+        public ApplicationBreadcrumbWidgetViewComponent(IApplicationApplicantAppService applicationApplicantAppService, IApplicationFormVersionAppService formVersionAppService)
         {
             _applicationApplicantAppService = applicationApplicantAppService;
             _formVersionAppService = formVersionAppService;

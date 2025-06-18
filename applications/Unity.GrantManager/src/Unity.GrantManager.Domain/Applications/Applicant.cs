@@ -32,4 +32,14 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
     public decimal? MatchPercentage { get; set; }
     public string? NonRegOrgName { get; set; }
+    public bool? IsDuplicated { get; set; }
+    
+    // This is the Applicant's Electoral District, not the Project Level Electoral District.
+    public string? ElectoralDistrict { get; set; }
+
+    public Applicant SetElectoralDistrict(string? electoralDistrict)
+    {
+        ElectoralDistrict = electoralDistrict;
+        return this;
+    }
 }

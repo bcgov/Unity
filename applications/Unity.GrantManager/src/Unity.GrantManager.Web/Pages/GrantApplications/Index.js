@@ -179,6 +179,7 @@
             getTotalProjectBudgetPercentageColumn(),
             getTotalPaidAmountColumn(),
             getElectoralDistrictColumn(),
+            getApplicantElectoralDistrictColumn(),
             getForestryOrNonForestryColumn(),
             getForestryFocusColumn(),
             getAcquisitionColumn(),
@@ -523,7 +524,7 @@
 
     function getElectoralDistrictColumn() {
         return {
-            title: 'Electoral District',
+            title: 'Project Electoral District',
             name: 'electoralDistrict',
             data: 'electoralDistrict',
             className: 'data-table-header',
@@ -1080,6 +1081,19 @@
                 return payoutDefinition(data?.approvedAmount ?? 0, data?.totalPaid ?? 0);
             },
             index: 62
+        }
+    }
+
+    function getApplicantElectoralDistrictColumn() {
+        return {
+            title: 'Applicant Electoral District',
+            name: 'applicantElectoralDistrict',
+            data: 'applicant.electoralDistrict',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 63
         }
     }
 
