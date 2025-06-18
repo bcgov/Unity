@@ -1,67 +1,71 @@
 ﻿@using Microsoft.AspNetCore.Mvc.Localization
-@using Unity.Payments.Localization;
-@using Unity.Payments.Web.Views.Shared.Components.SupplierInfo;
-@using Volo.Abp.Authorization.Permissions
+@using Unity.Payments.Localization
+@using Unity.Payments.Web.Views.Shared.Components.SupplierInfo
+
 @inject IHtmlLocalizer<PaymentsResource> L
-@inject IPermissionChecker PermissionChecker
+
 @model Unity.Payments.Web.Views.Shared.Components.SupplierInfo.SupplierInfoViewModel
 
-<abp-row class="m-0 project-info-location">
-    <abp-row class="m-0 p-0">
-        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-            <div id="SupplierInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-                <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:SupplierInfoTitle"].Value</h6>
-            </div>
-        </abp-column>
-    </abp-row>
-    <abp-row>
-        <abp-column class="spinner-loader">
-            <div class="spinner-grow cas-spinner"></div>
-            <span class="spinner-text cas-spinner">Retrieving CAS Supplier Information...</span>
-        </abp-column>
-    </abp-row>
-    <abp-row class="m-0 p-0">
-        <abp-column size="_12" class="px-1">
-            <abp-input asp-for="@Model.ApplicantId" type="hidden" />
-            <abp-input asp-for="@Model.SiteId" id="SiteId" type="hidden" />
-            <abp-input asp-for="@Model.SupplierCorrelationId" id="SupplierCorrelationId" type="hidden" />
-            <abp-input asp-for="@Model.SupplierCorrelationProvider" id="SupplierCorrelationProvider" type="hidden" />
-            <abp-input asp-for="@Model.SupplierId" id="SupplierId" type="hidden" />
-            <abp-input asp-for="@Model.OriginalSupplierNumber" type="hidden" />
-            <abp-input asp-for="@Model.HasEditSupplierInfo" type="hidden" />
-
-            <div style="float: right; margin-top: -60px;">
-                <abp-button id="btn-refresh-sites" button-type="Light" style="font-weight: 600">
-                    Refresh Site List <i class="fl fl-synch" ></i>
-                </abp-button>
-            </div>
-
-            <abp-row class="m-0 p-0" id="supplierSearch">
-                <abp-column size="_4" class="px-1">
-                    <abp-input readonly="@(!Model.HasEditSupplierInfo)"
-                            class="@(Model.HasEditSupplierInfo ? "" : "disabled")"
-                            asp-for="@Model.SupplierNumber" 
-                            id="SupplierNumber"
-                            onchange="enablePaymentInfoSaveBtn()" />
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.SupplierName" id="SupplierName" />
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.Status" id="Status" />
-                </abp-column>
-            </abp-row>
-            <abp-abp-row class="m-0 p-0 hidden" id="supplier-error-div">
-                <abp-column size="_12" class="px-1">
-                    <div class="error-message">
-                        <b>Warning:</b> The Supplier Name does not match the Registered/Non-Registered Organization Name. Please verify and correct.
+<abp-row id="supplier-info-widget" class="m-0 p-0 payment-info-supplier">
+    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 px-0">
+        <abp-row class="m-0 payment-info-summary">
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                    <div id="SupplierInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                        <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:SupplierInfoTitle"].Value</h6>
                     </div>
                 </abp-column>
-            </abp-abp-row>
+            </abp-row>
+            <abp-row>
+                <abp-column class="spinner-loader">
+                    <div class="spinner-grow cas-spinner"></div>
+                    <span class="spinner-text cas-spinner">Retrieving CAS Supplier Information...</span>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantId" type="hidden" />
+                    <abp-input asp-for="@Model.SiteId" id="SiteId" type="hidden" />
+                    <abp-input asp-for="@Model.SupplierCorrelationId" id="SupplierCorrelationId" type="hidden" />
+                    <abp-input asp-for="@Model.SupplierCorrelationProvider" id="SupplierCorrelationProvider" type="hidden" />
+                    <abp-input asp-for="@Model.SupplierId" id="SupplierId" type="hidden" />
+                    <abp-input asp-for="@Model.OriginalSupplierNumber" type="hidden" />
+                    <abp-input asp-for="@Model.HasEditSupplierInfo" type="hidden" />
 
-        </abp-column>
-    </abp-row>
-    <abp-row>
-        <abp-table id="SiteInfoTable" hoverable-rows="true" data-resize-aware="true"></abp-table>
-    </abp-row>
+                    <div style="float: right; margin-top: -60px;">
+                        <abp-button id="btn-refresh-sites" button-type="Light" style="font-weight: 600">
+                            Refresh Site List <i class="fl fl-synch"></i>
+                        </abp-button>
+                    </div>
+
+                    <abp-row class="m-0 p-0" id="supplierSearch">
+                        <abp-column size="_4" class="px-1">
+                            <abp-input readonly="@(!Model.HasEditSupplierInfo)"
+                                        class="@(Model.HasEditSupplierInfo ? string.Empty : "disabled")"
+                                        asp-for="@Model.SupplierNumber"
+                                        id="SupplierNumber"
+                                        onchange="enablePaymentInfoSaveBtn()" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.SupplierName" id="SupplierName" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.Status" id="Status" />
+                        </abp-column>
+                    </abp-row>
+                    <abp-abp-row class="m-0 p-0 hidden" id="supplier-error-div">
+                        <abp-column size="_12" class="px-1">
+                            <div class="error-message">
+                                <b>Warning:</b> The Supplier Name does not match the Registered/Non-Registered Organization Name. Please verify and correct.
+                            </div>
+                        </abp-column>
+                    </abp-abp-row>
+
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <abp-table id="SiteInfoTable" hoverable-rows="true" data-resize-aware="true"></abp-table>
+            </abp-row>
+        </abp-row>
+    </abp-column>
 </abp-row>
