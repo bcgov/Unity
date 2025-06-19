@@ -3,7 +3,7 @@
 This document outlines security procedures for the Economy Sector Grant Management Solution application project.
 
 - [Supported Versions](#supported-versions)
-- [Reporting a Security Bug](#reporting-a-bug)
+- [Reporting a Security Bug](#reporting-a-security-bug)
 - [Disclosure Policy](#disclosure-policy)
 - [Comments on this Policy](#comments-on-this-policy)
 
@@ -17,7 +17,7 @@ This document outlines security procedures for the Economy Sector Grant Manageme
 
 ## Reporting a Security Bug
 
-The `Unity` team and community take all security bugs seriously. Reporting security issues can be helpful to the team this can be done by sending an email to <grantmanagementsupport@gov.bc.ca>
+The `Unity` team and community take all security bugs seriously. Reporting security issues can be helpful to the team. This can be done by sending an email to <grantmanagementsupport@gov.bc.ca>
 
 ## Disclosure Policy
 
