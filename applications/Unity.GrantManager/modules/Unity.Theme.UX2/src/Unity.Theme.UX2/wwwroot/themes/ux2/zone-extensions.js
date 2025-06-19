@@ -313,6 +313,10 @@ class UnityZoneForm extends UnityChangeTrackingForm {
         this.addSubmitHandler();
     }
 
+    isValid() {
+        return this.form.valid();
+    }
+
     initializeNumericFields() {
         $('.numeric-mask').maskMoney({ precision: 0 });
         $('.percentage-mask').maskMoney();

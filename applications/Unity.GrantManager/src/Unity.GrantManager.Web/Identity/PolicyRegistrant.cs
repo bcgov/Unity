@@ -109,6 +109,55 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(UnitySelector.Review.AssessmentReviewList.Update.Complete,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.AssessmentReviewList.Update.Complete));
 
+        //-- APPLICANT INFO
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Authority.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Authority.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Authority.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Authority.Update));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Contact.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Contact.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Contact.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Contact.Update));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Location.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Location.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Location.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Location.Update));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Summary.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Summary.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.Summary.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Summary.Update));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.AdditionalContact.Default,
+    policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.AdditionalContact.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.AdditionalContact.Create,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.AdditionalContact.Create));
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.AdditionalContact.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.AdditionalContact.Update));
+
+        // Applicant Info Logical OR policy
+        authorizationBuilder.AddPolicy(UnitySelector.Applicant.UpdatePolicy,
+            policy => policy.RequireAssertion(context =>
+            context.User.HasClaim(PermissionConstant, UnitySelector.Applicant.Summary.Update) ||
+            context.User.HasClaim(PermissionConstant, UnitySelector.Applicant.Contact.Update) ||
+            context.User.HasClaim(PermissionConstant, UnitySelector.Applicant.Authority.Update) ||
+            context.User.HasClaim(PermissionConstant, UnitySelector.Applicant.Location.Update) ||
+            context.User.HasClaim(PermissionConstant, UnitySelector.Applicant.AdditionalContact.Update) ||
+
+            // NOTE: This will be replaced when Worksheets are normalized with UnitySelector.Applicant.Worksheet.Update
+            context.User.HasClaim(PermissionConstant, UnitySelector.Applicant.Default)
+        ));
+
+        //-- PAYMENT INFO
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Summary.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Supplier.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Supplier.Update));
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.PaymentList.Default));
+
         // Tenancy Policies
         authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.Default,
             policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.Default));
@@ -144,12 +193,12 @@ internal static class PolicyRegistrant
 
         // Project Info Logical OR policy
         authorizationBuilder.AddPolicy(UnitySelector.Project.UpdatePolicy,
-            policy => policy.RequireAssertion(context => 
+            policy => policy.RequireAssertion(context =>
             context.User.HasClaim(PermissionConstant, UnitySelector.Project.Location.Update.Default) ||
             context.User.HasClaim(PermissionConstant, UnitySelector.Project.Summary.Update.Default) ||
-            
+
             // NOTE: This will be replaced when Worksheets are normalized with UnitySelector.Project.Worksheet.Update
-            context.User.HasClaim(PermissionConstant, UnitySelector.Project.Default) 
+            context.User.HasClaim(PermissionConstant, UnitySelector.Project.Default)
         ));
 
         // Project Info - Summary Policies
@@ -171,7 +220,7 @@ internal static class PolicyRegistrant
         // Project Info - Worksheet Policies
         authorizationBuilder.AddPolicy(UnitySelector.Project.Worksheet.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Worksheet.Default));  // NOTE: Will be replaced when Worksheets normalized
-        
+
         authorizationBuilder.AddPolicy(UnitySelector.Project.Worksheet.Update,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Worksheet.Update));  // NOTE: Will be replaced when Worksheets normalized
     }

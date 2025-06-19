@@ -559,7 +559,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
+    [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);

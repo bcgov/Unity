@@ -35,8 +35,19 @@ namespace Unity.GrantManager.Permissions
         ];
 
         public readonly List<string> ApplicantInfo_CommonPermissions = [
-            GrantApplicationPermissions.ApplicantInfo.Default,
-            GrantApplicationPermissions.ApplicantInfo.Update,
+            UnitySelector.Applicant.Default,
+            UnitySelector.Applicant.Summary.Default,
+            UnitySelector.Applicant.Summary.Update,
+            UnitySelector.Applicant.Contact.Default,
+            UnitySelector.Applicant.Contact.Update,
+            UnitySelector.Applicant.Authority.Default,
+            UnitySelector.Applicant.Authority.Update,
+            UnitySelector.Applicant.Location.Default,
+            UnitySelector.Applicant.Location.Update,
+            UnitySelector.Applicant.AdditionalContact.Default,
+            UnitySelector.Applicant.AdditionalContact.Create,
+            UnitySelector.Applicant.AdditionalContact.Update,
+
         ];
 
         public readonly List<string> ProjectInfo_CommonPermissions = [
@@ -45,6 +56,13 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Project.Summary.Update.Default,
             UnitySelector.Project.Location.Default,
             UnitySelector.Project.Location.Update.Default,
+        ];
+
+        public readonly List<string> PaymentInfo_CommonPermissions = [
+            UnitySelector.Payment.Summary.Default,
+            UnitySelector.Payment.Supplier.Default,
+            UnitySelector.Payment.Supplier.Update,
+            UnitySelector.Payment.PaymentList.Default
         ];
 
         public readonly List<string> Notifications_CommonPermissions = [
@@ -260,8 +278,13 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Review.AssessmentReviewList.Update.Complete,
                     UnitySelector.Review.Worksheet.Default,
 
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    
+                    UnitySelector.Applicant.Default,
+                    UnitySelector.Applicant.Summary.Default,
+                    UnitySelector.Applicant.Contact.Default,
+                    UnitySelector.Applicant.Authority.Default,
+                    UnitySelector.Applicant.Location.Default,
+                    UnitySelector.Applicant.AdditionalContact.Default,
+
                     UnitySelector.Project.Default,
                     UnitySelector.Project.Summary.Default,
                     UnitySelector.Project.Location.Default,

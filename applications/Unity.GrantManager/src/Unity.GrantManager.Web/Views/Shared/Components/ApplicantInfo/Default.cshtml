@@ -6,6 +6,7 @@
 @using Unity.GrantManager.Payments;
 @using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
 @using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features;
@@ -22,23 +23,24 @@
     string IsFieldsetDisabled = await PermissionChecker.HasDisabledAttributeAsync(GrantApplicationPermissions.ApplicantInfo.Update);
 }
 
-<input type="hidden" id="ApplicantInfoViewApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="ApplicantInfo_ApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="ApplicantInfo_ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
+
 <input type="hidden" id="ApplicantElectoralAddressType" value="@Model.ApplicantElectoralAddressType" />
 <div id="orgApplicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
 
 <abp-row class="px-1 pb-2 mb-4 project-info-container">
-    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
-        <div id="ApplicantInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-            <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle"].Value</h6>
-        </div>
+    <div class="save-button-container">
         <abp-button text="Save" id="saveApplicantInfoBtn" class="floating-save-btn" icon-type="Other" icon="fl fl-save"
                     button-type="Primary" disabled="true" abp-if="@IsViewEditable" />
-    </abp-column>
+    </div>
 
     <form id="ApplicantInfoForm">
         <abp-input type="hidden" id="ApplicantInfoViewApplicantId" asp-for="@Model.ApplicantId" />
-        <fieldset name="Unity_UI_Applicant_Organization" @IsFieldsetDisabled>
-            <legend class="d-none">@L["ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle"].Value</legend>
+
+        @* Zone Section : Applicant Info Summary *@
+        <zone-fieldset id="@UnitySelector.Applicant.Summary.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+                       update-permission-requirement="@UnitySelector.Applicant.Summary.Update">
             <abp-row class="m-0 project-info-form">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_12" class="px-1 mb-4">
@@ -98,7 +100,7 @@
                                        name="ApplicantInfo.IndigenousOrgInd"
                                        id="indigenousOrgInd"
                                        value="Yes"
-                                @(Model.IndigenousOrgInd == "Yes" ? "checked" : "")
+                                       @(Model.IndigenousOrgInd == "Yes" ? "checked" : "")
                                        onchange="enableApplicantInfoSaveBtn(this)" />
                                 <label class="form-check-label" for="indigenousOrgInd">@L["ApplicantInfoView:ApplicantInfo.IndigenousOrgInd"].Value</label>
                             </div>
@@ -172,19 +174,13 @@
                     </abp-row>
                 </abp-row>
             </abp-row>
-        </fieldset>
+        </zone-fieldset>
 
 
-        <fieldset name="Unity_UI_Applicant_Contact" @IsFieldsetDisabled>
-            <legend class="d-none">@L["ApplicantInfoView:ApplicantInfoContactInfo"].Value</legend>
+        @* Zone Section : Contact Info *@
+        <zone-fieldset id="@UnitySelector.Applicant.Contact.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+                       update-permission-requirement="@UnitySelector.Applicant.Contact.Update">
             <abp-row class="m-0 project-info-location">
-                <abp-row class="m-0 p-0">
-                    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                        <div id="ContactInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-                            <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:ApplicantInfoContactInfo"].Value</h6>
-                        </div>
-                    </abp-column>
-                </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
                         <abp-input asp-for="@Model.ContactFullName"
@@ -212,19 +208,12 @@
                     </abp-column>
                 </abp-row>
             </abp-row>
-        </fieldset>
+        </zone-fieldset>
 
-        <fieldset name="Unity_UI_Applicant_SigningAuthority" @IsFieldsetDisabled>
-            <legend class="d-none">@L["ApplicantInfoView:SigningAuthorityTitle"].Value</legend>
+        @* Zone Section : Signing Authority *@
+        <zone-fieldset id="@UnitySelector.Applicant.Authority.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+                       update-permission-requirement="@UnitySelector.Applicant.Authority.Update">
             <abp-row class="m-0 signin-authority-form">
-                <abp-row class="m-0 p-0">
-                    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                        <div id="SigningAuthorityContactInfoTitleRegion"
-                             class="d-flex align-items-stretch justify-content-start">
-                            <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:SigningAuthorityTitle"].Value</h6>
-                        </div>
-                    </abp-column>
-                </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
                         <abp-input asp-for="@Model.SigningAuthorityFullName"
@@ -252,10 +241,11 @@
                     </abp-column>
                 </abp-row>
             </abp-row>
-        </fieldset>
+        </zone-fieldset>
 
-        <fieldset name="Unity_UI_Applicant_Address" @IsFieldsetDisabled>
-            <legend class="d-none">@L["ApplicantInfoView:PhysicalAddress"].Value</legend>
+        @* Zone Section : Address *@
+        <zone-fieldset id="@UnitySelector.Applicant.Location.Default" form-id="@Model.ApplicationFormId" show-legend="true"
+                       update-permission-requirement="@UnitySelector.Applicant.Location.Update">
             <abp-row class="m-0 contact-info-form">
                 <div class="d-flex">
                     <abp-row class="m-0 physical-address-form pe-2" style="border-bottom:none;">
@@ -367,36 +357,43 @@
                 </abp-column>
                 <div class="fs-6 mb-2"><b>NOTE: </b>@L["ApplicantInfoView:Notes.ElectoralDistrict", Model.ApplicantElectoralAddressTypeDisplay].Value</div>
             </abp-row>
-        </fieldset>
+        </zone-fieldset>
 
-        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-        {
+        @* Zone Section : Worksheet *@
+        <zone id="@UnitySelector.Applicant.Default" feature-requirement="Unity.Flex" form-id="@Model.ApplicationFormId" show-legend="false">
             @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
-                     new
-                     {
-                         instanceCorrelationId = Model.ApplicationId,
-                         instanceCorrelationProvider = CorrelationConsts.Application,
-                         sheetCorrelationId = Model.ApplicationFormVersionId,
-                         sheetCorrelationProvider = CorrelationConsts.FormVersion,
-                         uiAnchor = FlexConsts.ApplicantInfoUiAnchor
-                     })
-        }
+            new
+            {
+                instanceCorrelationId = Model.ApplicationId,
+                instanceCorrelationProvider = CorrelationConsts.Application,
+                sheetCorrelationId = Model.ApplicationFormVersionId,
+                sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                uiAnchor = FlexConsts.ApplicantInfoUiAnchor
+            })
+        </zone>
     </form>
 </abp-row>
-<abp-row class="px-1 pb-2 mb-4 summary-container">
-    <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
-    <div id="applicationContactsWidget">
-        @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId, isReadOnly = !IsViewEditable })
-    </div>
 
-    @if (IsViewEditable)
-    {
-        <div class="d-flex justify-content-end">
-            <abp-button text="Add Contact" id="AddContactButton" class="add_contact_btn" icon-type="Other" icon="fl fl-plus"
-                        button-type="Light" />
+<zone id="@(UnitySelector.Applicant.Contact.Default + "_Additional")"
+      zone-requirement="@UnitySelector.Applicant.Contact.Default"
+      permission-requirement="@UnitySelector.Applicant.Contact.Default"
+      update-permission-requirement="@UnitySelector.Applicant.Contact.Update"
+      form-id="@Model.ApplicationFormId" show-legend="false">
+    <abp-row class="px-1 pb-2 mb-4 summary-container">
+        <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
+        <div id="applicationContactsWidget">
+            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId, isReadOnly = !IsViewEditable })
         </div>
-    }
-</abp-row>
+
+        @if (IsViewEditable)
+        {
+            <div class="d-flex justify-content-end">
+                <abp-button text="Add Contact" id="AddContactButton" class="add_contact_btn" icon-type="Other" icon="fl fl-plus"
+                            button-type="Light" abp-if="@(await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.Contact.Create))" />
+            </div>
+        }
+    </abp-row>
+</zone>
 <script defer>
     (function () {
         if (window.jQuery) {
@@ -440,7 +437,7 @@
                                         <input type="radio" name="merge_ApplicantId" value="existing" class="me-2" />
                                         <span class="fw-bold">@L["ApplicantInfoView:ApplicantInfo.Principal"].Value</span>
                                     </label>
-                                   
+
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
@@ -663,7 +660,7 @@
                     </div>
                     <div class="text-center">
                         <span class="fw-bold">Note:</span> If a different principal is selected, the existing contact information and address will be passed over to the chosen principal.
-                        </div>
+                    </div>
                     <div class="d-flex justify-content-end m-3">
                         <button type="button" class="btn btn-primary" id="mergeApplicantsNextBtn">Next</button>
                     </div>

@@ -182,7 +182,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
             function updateGlobalReference() {
                 // After refresh, the widget will automatically call init()
                 abp.zones = abp.zones || {};
-                abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]').data('abp-widget-api')?.form || null;
+                abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]').data('abp-widget-api') || null;
             }
 
             calculatePercentage();
@@ -274,8 +274,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
 $(function () {
     // Initialize widget through ABP's widget system instead of global object
     abp.zones = abp.zones || {};
-    abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]')
-        .data('abp-widget-api')?.form || null;
+    abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]').data('abp-widget-api') || null;
 });
 
 function calculatePercentage() {
