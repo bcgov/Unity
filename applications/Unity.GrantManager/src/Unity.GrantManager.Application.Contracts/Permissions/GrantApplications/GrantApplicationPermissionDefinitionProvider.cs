@@ -166,8 +166,8 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var upx_Applicant_Location_Update                   = upx_Applicant_Location.AddUnityChild(UnitySelector.Applicant.Location.Update);
 
             var upx_Applicant_AdditionalContact                 = upx_Applicant.AddUnityChild(UnitySelector.Applicant.AdditionalContact.Default);
-            var upx_Applicant_AdditionalContact_Create          = upx_Applicant_Contact.AddUnityChild(UnitySelector.Applicant.AdditionalContact.Create);
-            var upx_Applicant_AdditionalContact_Update          = upx_Applicant_Contact.AddUnityChild(UnitySelector.Applicant.AdditionalContact.Update);
+            var upx_Applicant_AdditionalContact_Create          = upx_Applicant_AdditionalContact.AddUnityChild(UnitySelector.Applicant.AdditionalContact.Create);
+            var upx_Applicant_AdditionalContact_Update          = upx_Applicant_AdditionalContact.AddUnityChild(UnitySelector.Applicant.AdditionalContact.Update);
             #endregion
         }
 

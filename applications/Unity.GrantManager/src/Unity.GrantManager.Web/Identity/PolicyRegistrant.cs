@@ -129,7 +129,7 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(UnitySelector.Applicant.Summary.Update,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.Summary.Update));
         authorizationBuilder.AddPolicy(UnitySelector.Applicant.AdditionalContact.Default,
-    policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.AdditionalContact.Default));
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.AdditionalContact.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Applicant.AdditionalContact.Create,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Applicant.AdditionalContact.Create));
         authorizationBuilder.AddPolicy(UnitySelector.Applicant.AdditionalContact.Update,
