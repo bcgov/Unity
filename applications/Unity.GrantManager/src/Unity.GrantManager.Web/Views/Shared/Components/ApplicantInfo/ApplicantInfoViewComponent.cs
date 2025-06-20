@@ -28,9 +28,7 @@ public class ApplicantInfoViewComponent(
 {
     public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
     {
-        //var applicantInfoDto = await applicationAppicantService.GetByApplicationIdAsync(applicationId);
         var applicantInfoDto = await applicationAppicantService.GetApplicantInfoTabAsync(applicationId);
-
         var applicationForm = await applicationFormAppService.GetAsync(applicantInfoDto.ApplicationFormId);
 
         if (applicantInfoDto == null)

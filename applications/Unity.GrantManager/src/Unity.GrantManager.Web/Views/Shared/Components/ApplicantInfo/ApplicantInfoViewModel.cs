@@ -27,9 +27,22 @@ public class ApplicantInfoViewModel
     public Guid ApplicantId { get; set; }
     public Guid ApplicationFormId { get; set; }
     public Guid ApplicationFormVersionId { get; set; }
+    [Display(Name = "ApplicantInfoView:ApplicantElectoralDistrict")]
+    [SelectItems(nameof(ElectoralDistrictList))]
+    public string? ElectoralDistrict { get; set; }
 
     public List<SectorDto> ApplicationSectors { get; set; } = [];
-    public bool IsFinalDecisionMade { get; set; }
+
+    // Core Model
+    public ApplicantSummaryViewModel ApplicantSummary { get; set; } = new ApplicantSummaryViewModel();
+    public List<ApplicantAddressViewModel> ApplicantAddresses { get; set; } = new List<ApplicantAddressViewModel>();
+    public SigningAuthorityViewModel SigningAuthority { get; set; } = new SigningAuthorityViewModel();
+    public ContactInfoViewModel ContactInfo { get; set; } = new ContactInfoViewModel();
+
+    [Ignore]
+    public ApplicantAddressViewModel PhysicalAddress { get; set; } = new ApplicantAddressViewModel();
+    [Ignore]
+    public ApplicantAddressViewModel MailingAddress { get; set; } = new ApplicantAddressViewModel();
 
     public AddressType ApplicantElectoralAddressType { get; set; } = AddressType.PhysicalAddress;
     public string ApplicantElectoralAddressTypeDisplay
@@ -46,16 +59,7 @@ public class ApplicantInfoViewModel
         }
     }
 
-    // New Model
-    public ApplicantSummaryViewModel ApplicantSummary { get; set; } = new ApplicantSummaryViewModel();
-    public List<ApplicantAddressViewModel> ApplicantAddresses { get; set; } = new List<ApplicantAddressViewModel>();
-    public SigningAuthorityViewModel SigningAuthority { get; set; } = new SigningAuthorityViewModel();
-    public ContactInfoViewModel ContactInfo { get; set; } = new ContactInfoViewModel();
-
-    [Ignore]
-    public ApplicantAddressViewModel PhysicalAddress { get; set; } = new ApplicantAddressViewModel();
-    [Ignore]
-    public ApplicantAddressViewModel MailingAddress { get; set; } = new ApplicantAddressViewModel();
+    
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.Search")]
     public string? Search { get; set; }
@@ -95,7 +99,7 @@ public class ApplicantSummaryViewModel
     public string? OrgStatus { get; set; }
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.OrganizationType")]
-    [SelectItems(nameof(OrganizationType))]
+    [SelectItems(nameof(ApplicantInfoViewModel.OrganizationTypeList))]
     public string? OrganizationType { get; set; }
 
 
@@ -210,9 +214,5 @@ public class ContactInfoViewModel
     [DataType(DataType.PhoneNumber, ErrorMessage = "Invalid Phone Number")]
     [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
     public string? Phone2 { get; set; }
-
-    [Display(Name = "ApplicantInfoView:ApplicantElectoralDistrict")]
-    [SelectItems(nameof(ApplicantInfoViewModel.ElectoralDistrictList))]
-    public string? ElectoralDistrict { get; set; }
 }
 

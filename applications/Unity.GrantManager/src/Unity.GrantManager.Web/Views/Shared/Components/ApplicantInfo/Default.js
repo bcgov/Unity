@@ -477,7 +477,7 @@ function setElectoralDistrictLockState(locked) {
     electoralDistrictLocked = locked;
 
     // Toggle "disabled" look and interaction for the select
-    const $select = $('#ContactInfo_ElectoralDistrict');
+    const $select = $('#ElectoralDistrict');
     if (locked) {
         $select.addClass('select-disabled');
         $select.on('mousedown.electoralLock touchstart.electoralLock', function (e) { e.preventDefault(); });
@@ -504,7 +504,7 @@ async function refreshApplicantElectoralDistrict() {
         let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
         let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
         if (electoralDistrict?.name) {
-            $('#ContactInfo_ElectoralDistrict').val(electoralDistrict.name).trigger('change');
+            $('#ElectoralDistrict').val(electoralDistrict.name).trigger('change');
         }
     }
     catch (error) {

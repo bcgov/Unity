@@ -26,12 +26,22 @@ namespace Unity.GrantManager.GrantApplications
                 return new ApplicantInfoDto();
             }
 
-            var applicantInfoDto = ObjectMapper.Map<Application, ApplicantInfoDto>(application);
+            var applicantInfoDto = ObjectMapper.Map<Applications.Application, ApplicantInfoDto>(application);
+
+            applicantInfoDto.ApplicationId          = application.Id;
+            applicantInfoDto.ApplicantId            = application.ApplicantId;
+            applicantInfoDto.ApplicationFormId      = application.ApplicationFormId;
+            
+            applicantInfoDto.ApplicationReferenceNo = application.ReferenceNo;
+            applicantInfoDto.ApplicantName          = application.Applicant?.ApplicantName ?? string.Empty;
+            
+            applicantInfoDto.ApplicationStatusCode  = application.ApplicationStatus.StatusCode;
+            applicantInfoDto.ElectoralDistrict      = application.Applicant?.ElectoralDistrict ?? string.Empty;
 
             //-- APPLICANT INFO SUMMARY
-            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Default))
+            if (application.Applicant is not null && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Default))
             {
-                applicantInfoDto.ApplicantSummary = ObjectMapper.Map<Applicant, ApplicantSummaryDto>(application.Applicant);
+                applicantInfoDto.ApplicantSummary = ObjectMapper.Map<Applications.Applicant, ApplicantSummaryDto>(application.Applicant);
                 applicantInfoDto.ApplicantSummary.FiscalDay = application.Applicant?.FiscalDay.ToString() ?? string.Empty;
             }
             else
@@ -52,7 +62,7 @@ namespace Unity.GrantManager.GrantApplications
             //-- SIGNING AUTHORITY
             if (application != null && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Authority.Default))
             {
-                applicantInfoDto.SigningAuthority = ObjectMapper.Map<Application, SigningAuthorityDto>(application);
+                applicantInfoDto.SigningAuthority = ObjectMapper.Map<Applications.Application, SigningAuthorityDto>(application);
             }
             else
             {
@@ -62,7 +72,6 @@ namespace Unity.GrantManager.GrantApplications
             //-- APPLICANT INFO ADDRESS
             if (await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Default))
             {
-                //applicantInfoDto.ApplicantAddresses = ObjectMapper.Map<Application, List<ApplicantAddressDto>>(application);
                 applicantInfoDto.ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(application?.Applicant?.ApplicantAddresses?.ToList() ?? []);
             }
             else
@@ -80,12 +89,12 @@ namespace Unity.GrantManager.GrantApplications
 
             return new ApplicationApplicantInfoDto()
             {
-                ApplicantId = applicantInfo.Applicant.Id,
-                ApplicationFormId = applicantInfo.ApplicationFormId,
-                ApplicantName = applicantInfo.Applicant?.ApplicantName ?? string.Empty,
+                ApplicantId            = applicantInfo.Applicant.Id,
+                ApplicationFormId      = applicantInfo.ApplicationFormId,
+                ApplicantName          = applicantInfo.Applicant?.ApplicantName ?? string.Empty,
                 ApplicationReferenceNo = applicantInfo.ReferenceNo,
-                ApplicationStatus = applicantInfo.ApplicationStatus.InternalStatus,
-                ApplicationStatusCode = applicantInfo.ApplicationStatus.StatusCode,
+                ApplicationStatus      = applicantInfo.ApplicationStatus.InternalStatus,
+                ApplicationStatusCode  = applicantInfo.ApplicationStatus.StatusCode,
 
                 OrganizationName = applicantInfo.Applicant?.OrgName ?? string.Empty,
                 OrganizationSize = applicantInfo.Applicant?.OrganizationSize ?? string.Empty,
