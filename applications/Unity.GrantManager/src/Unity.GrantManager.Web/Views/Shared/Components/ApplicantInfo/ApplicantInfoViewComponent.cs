@@ -49,6 +49,8 @@ public class ApplicantInfoViewComponent(
                 ?? ApplicationForm.GetDefaultElectoralDistrictAddressType(),
         };
 
+        viewModel.ApplicantSummary.ApplicantId = applicantInfoDto.ApplicantId;
+
         await PopulateSectorsAndSubSectorsAsync(viewModel);
         await PopulateElectoralDistrictsAsync(viewModel);
 

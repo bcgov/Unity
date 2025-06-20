@@ -45,6 +45,9 @@
         @* Zone Section : Applicant Info Summary *@
         <zone-fieldset id="@UnitySelector.Applicant.Summary.Default" form-id="@Model.ApplicationFormId" show-legend="true"
                        update-permission-requirement="@UnitySelector.Applicant.Summary.Update">
+            
+            <abp-input asp-for="@Model.ApplicantSummary.ApplicantId" type="hidden" />
+
             <abp-row class="m-0 project-info-form">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_12" class="px-1 mb-4">

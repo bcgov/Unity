@@ -78,18 +78,46 @@
             //}
         },
         getPartialUpdate: function () {
-            let submissionPayload = this.serializeWidget();
-
+            const self = this;
             const customIncludes = new Set();
 
-            if (typeof Flex === 'function' && Object.keys(submissionPayload.CustomFields || {}).length > 0) {
-                // Add Worksheet Metadata and filter conditions
-                submissionPayload.CorrelationId = $("#ApplicantInfo_ApplicationFormVersionId").val();
-                submissionPayload.WorksheetId = $("#ApplicantInfo_WorksheetId").val();
+            let formData = this.zoneForm.serializeZoneArray(true, false, false);
+
+            // Create processed payload with field transformations
+            let processedPayload = {};
+            $.each(formData, (_, input) => {
+                this.processFormField(processedPayload, input);
+            });
+
+            // Now, build a nested object from the processed data
+            let nestedPayload = {};
+            for (const [key, value] of Object.entries(processedPayload)) {
+                if (key.includes('.')) {
+                    const parts = key.split('.');
+                    let current = nestedPayload;
+
+                    // Create the object hierarchy
+                    for (let i = 0; i < parts.length - 1; i++) {
+                        if (!current[parts[i]]) current[parts[i]] = {};
+                        current = current[parts[i]];
+                    }
+
+                    // Set the leaf value
+                    current[parts[parts.length - 1]] = value;
+                } else {
+                    nestedPayload[key] = value;
+                }
+            }
+
+            // Handle custom fields
+            if (typeof Flex === 'function' && Object.keys(nestedPayload.CustomFields || {}).length > 0) {
+                // Add Worksheet Metadata
+                nestedPayload.CorrelationId = $("#ApplicantInfo_ApplicationFormVersionId").val();
+                nestedPayload.WorksheetId = $("#ApplicantInfo_WorksheetId").val();
 
                 // Normalize checkboxes to string for custom worksheets
                 $(`#Unity_GrantManager_ApplicationManagement_Applicant_Worksheet input:checkbox`).each(function () {
-                    submissionPayload.CustomFields[this.name] = (this.checked).toString();
+                    nestedPayload.CustomFields[this.name] = (this.checked).toString();
                 });
 
                 customIncludes
@@ -98,23 +126,22 @@
                     .add('WorksheetId');
             }
 
+            // Create filtered object in one functional operation
             let modifiedFieldData = Object.fromEntries(
-                Object.entries(submissionPayload).filter(([key, _]) => {
+                Object.entries(projectInfoObj).filter(([key, _]) => {
                     // Check if it's a directly included widget field
                     if (customIncludes.has(key)) return true;
 
                     // Check if it's a modified widget field
-                    //return this.zoneForm.modifiedFields.has(`ApplicantInfo.${key}`);
-
-                    return true;
+                    return self.zoneForm.modifiedFields.has(`ProjectInfo.${key}`);
                 })
             );
 
+            // Filter the payload to only include modified fields
+            let modifiedFieldData = filterNestedObject(nestedPayload);
+
             let partialSubmissionPayload = {
-                modifiedFields: Array.from(this.zoneForm.modifiedFields).map(field => {
-                    const parts = field.split('.');
-                    return parts.length > 1 ? parts.slice(1).join('.') : field;
-                }),
+                modifiedFields: Array.from(this.zoneForm.modifiedFields),
                 data: modifiedFieldData
             };
 

@@ -1,4 +1,5 @@
 ﻿using AutoMapper.Configuration.Annotations;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
@@ -85,7 +86,7 @@ public class ApplicantInfoViewModel
 
 public class ApplicantSummaryViewModel
 {
-    // ApplicantSummary is a sub-set of Applicant
+    [HiddenInput]
     public Guid ApplicantId { get; set; }
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.OrgName")]
