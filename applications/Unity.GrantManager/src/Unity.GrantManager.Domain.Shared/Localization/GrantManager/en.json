@@ -205,6 +205,9 @@
     "Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update": "Edit Signing Authority",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location": "Address",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location.Update": "Edit Address",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact": "Additional Contact(s)",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Create": "Add Additional Contact(s)",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Update": "Edit Additional Contact(s)",
 
     "Unity.GrantManager.ApplicationManagement.Funding": "Funding",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Funding Agreement",
@@ -213,6 +216,8 @@
     "Unity.GrantManager.ApplicationManagement.Payment": "Payment",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary.Update": "Edit Payment Summary",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
 
     "Permission:GrantApplicationManagement.ProjectInfo": "Project Info",
@@ -362,9 +367,6 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-
-    "Permission:GrantApplicationManagement.ApplicantInfo": "Applicant Info",
-    "Permission:GrantApplicationManagement.ApplicantInfo.Update": "Applicant Info Update",
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",

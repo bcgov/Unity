@@ -11,11 +11,12 @@ abp.widgets.ProjectInfo = function ($wrapper) {
             let $widgetForm = $wrapper.find('form');
 
             // Create a new form instance and store it on the widget API
-            this.form = new UnityZoneForm($widgetForm, {
-                saveButtonSelector: '#saveProjectInfoBtn'
+            this.zoneForm = new UnityZoneForm($widgetForm, {
+                saveButtonSelector: '#saveProjectInfoBtn',
+                modifiedClass: 'bg-info-subtle'
             });
 
-            this.form.init();
+            this.zoneForm.init();
 
             // Set up additional event handlers here
             this.setupEventHandlers();
@@ -24,9 +25,9 @@ abp.widgets.ProjectInfo = function ($wrapper) {
             const self = this;
 
             // Save button handler
-            self.form.saveButton.on('click', function () {
+            self.zoneForm.saveButton.on('click', function () {
                 let applicationId = document.getElementById('ProjectInfo_ApplicationId').value; 
-                let formData = self.form.serializeZoneArray();
+                let formData = self.zoneForm.serializeZoneArray();
                 
                 let projectInfoObj = {};
                 
@@ -60,12 +61,12 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                         if (customIncludes.has(key)) return true;
                         
                         // Check if it's a modified widget field
-                        return self.form.modifiedFields.has(`ProjectInfo.${key}`);
+                        return self.zoneForm.modifiedFields.has(`ProjectInfo.${key}`);
                     })
                 );
 
                 let projectInfoSubmission = {
-                    modifiedFields: Array.from(self.form.modifiedFields).map(field => {
+                    modifiedFields: Array.from(self.zoneForm.modifiedFields).map(field => {
                         const parts = field.split('.');
                         return parts.length > 1 ? parts.slice(1).join('.') : field;
                     }),
@@ -77,14 +78,14 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                         .updatePartialProjectInfo(applicationId, projectInfoSubmission)
                         .done(function () {
                             abp.notify.success('The project info has been updated.');
-                            self.form.resetTracking();
+                            self.zoneForm.resetTracking();
                             PubSub.publish('project_info_saved', projectInfoObj);
                             PubSub.publish('refresh_detail_panel_summary');
                         });
                 }
                 catch (error) {
                     console.log(error);
-                    self.form.resetTracking();
+                    self.zoneForm.resetTracking();
                 }
             });
 
@@ -182,7 +183,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
             function updateGlobalReference() {
                 // After refresh, the widget will automatically call init()
                 abp.zones = abp.zones || {};
-                abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]').data('abp-widget-api')?.form || null;
+                abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]').data('abp-widget-api') || null;
             }
 
             calculatePercentage();
@@ -274,8 +275,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
 $(function () {
     // Initialize widget through ABP's widget system instead of global object
     abp.zones = abp.zones || {};
-    abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]')
-        .data('abp-widget-api')?.form || null;
+    abp.zones.projectInfo = $('[data-widget-name="ProjectInfo"]').data('abp-widget-api') || null;
 });
 
 function calculatePercentage() {

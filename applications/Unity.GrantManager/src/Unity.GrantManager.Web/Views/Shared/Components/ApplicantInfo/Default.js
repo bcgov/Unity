@@ -1,155 +1,219 @@
-﻿$(function () {
-    $('.numeric-mask').maskMoney({ precision: 0 });
-    $('.numeric-mask').each(function () {
-        $(this).maskMoney('mask', this.value);
-    });
+﻿abp.widgets.ApplicantInfo = function ($wrapper) {
+    let widgetManager = $wrapper.data('abp-widget-manager');
 
-    const $unityAppId = $('#applicantInfoUnityApplicantId');
-    let previousUnityAppId = $unityAppId.val();
+    let widgetApi = {
+        getFilters: function () {
+            return {
+                applicationId: $wrapper.find('#ApplicantInfo_ApplicationId').val(),
+                applicationFormVersionId: $wrapper.find("#ApplicantInfo_ApplicationFormVersionId").val()
+            };
+        },
+        init: function (filters) {
+            let $widgetForm = $wrapper.find('form');
 
-    $unityAppId.on('input', function () {
-        const currentUnityAppId = $(this).val().trim();
-        $('#saveApplicantInfoBtn').prop('disabled', currentUnityAppId === previousUnityAppId);
-    });
+            // Create a new form instance and store it on the widget API
+            this.zoneForm = new UnityZoneForm($widgetForm, {
+                saveButtonSelector: '#saveApplicantInfoBtn',
+                modifiedClass: 'bg-info-subtle'
+            });
 
-    $('body').on('click', '#saveApplicantInfoBtn', function () {
-        let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
-        let formData = $("#ApplicantInfoForm").serializeArray();
-        let ApplicantInfoObj = {};
-        let formVersionId = $("#ApplicationFormVersionId").val();
-        let worksheetId = $("#ApplicantInfo_WorksheetId").val();
+            console.log("Applicant Info Initialized");
 
-        $.each(formData, function (_, input) {
-            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
-                Flex.includeCustomFieldObj(ApplicantInfoObj, input);
-            }
-            else {
-                ApplicantInfoObj[input.name] = input.value;
+            this.zoneForm.init();
 
-                if (ApplicantInfoObj[input.name] == '') {
-                    ApplicantInfoObj[input.name] = null;
+            // Set up additional event handlers here
+            this.setupEventHandlers();
+            registerElectoralDistrictControls(this.zoneForm.form);
+            registerApplicantInfoSummaryDropdowns(this.zoneForm.form);
+        },
+        refresh: function () {
+            widgetManager.refresh($wrapper);
+        },
+        setupEventHandlers: function () {
+            const self = this;
+
+            PubSub.subscribe(
+                'fields_applicantinfo',
+                () => {
+                    enableApplicantInfoSaveBtn();
                 }
-            }
-        });
+            );
 
-        // Update checkboxes which are serialized if unchecked
-        $(`#ApplicantInfoForm input:checkbox`).each(function () {
-            ApplicantInfoObj[this.name] = (this.checked).toString();
-        });
+            PubSub.subscribe(
+                'applicant_info_merged',
+                () => {
+                    self.refresh();
+                }
+            );
 
-        // Make sure all the custom fields are set in the custom fields object
-        if (typeof Flex === 'function') {
-            Flex?.setCustomFields(ApplicantInfoObj);
-        }
+            // Save button handler
+            self.zoneForm.saveButton.on('click', function () {
+                let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
+                let applicantInfoSubmission = self.getPartialUpdate();
+                debugger;
+                try {
+                    unity.grantManager.grantApplications.applicationApplicant
+                        .updatePartialApplicantInfo(applicationId, applicantInfoSubmission)
+                        .done(function () {
+                            abp.notify.success('The Applicant Info has been updated.');
+                            self.zoneForm.resetTracking();
+                            PubSub.publish("refresh_detail_panel_summary");
+                            PubSub.publish('applicant_info_updated', appInfoObj);
+                        });
+                }
+                catch (error) {
+                    console.log(error);
+                    self.zoneForm.resetTracking();
+                }
+            });
+        },
+        enableProjectInfoSaveBtn: function () {
+            //if (!this.zoneForm.form.valid() || formHasInvalidCurrencyCustomFields("projectInfoForm")) {
+            //    $('#saveProjectInfoBtn').prop('disabled', true);
+            //    return;
+            //}
 
-        try {
-            const orgName = $('#OrgName').val();
-            ApplicantInfoObj['orgName'] = orgName;
-            const orgNumber = $('#OrgNumber').val();
-            ApplicantInfoObj['orgNumber'] = orgNumber;
-            const orgStatus = $('#orgBookStatusDropdown').val();
-            ApplicantInfoObj['orgStatus'] = orgStatus;
-            const organizationType = $('#orgTypeDropdown').val();
-            ApplicantInfoObj['organizationType'] = organizationType;
-            const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
-            if (indigenousOrgInd) {
-                ApplicantInfoObj['IndigenousOrgInd'] = "Yes";
-            }
-            else {
-                ApplicantInfoObj['IndigenousOrgInd'] = "No";
-            }
+            //if (abp.auth.isGranted('GrantApplicationManagement.ProjectInfo.Update')) {
+            //    $('#saveProjectInfoBtn').prop('disabled', false);
+            //}
+        },
+        getPartialUpdate: function () {
+            const self = this;
+            const customIncludes = new Set();
 
+            let formData = this.zoneForm.serializeZoneArray(true, false, false);
 
+            // Create processed payload with field transformations
+            let processedPayload = {};
+            $.each(formData, (_, input) => {
+                this.processFormField(processedPayload, input);
+            });
 
-            ApplicantInfoObj['correlationId'] = formVersionId;
-            ApplicantInfoObj['worksheetId'] = worksheetId;
+            // Now, build a nested object from the processed data
+            let nestedPayload = {};
+            for (const [key, value] of Object.entries(processedPayload)) {
+                if (key.includes('.')) {
+                    const parts = key.split('.');
+                    let current = nestedPayload;
 
-            let currentUnityAppId = ApplicantInfoObj['UnityApplicantId'];
+                    // Create the object hierarchy
+                    for (let i = 0; i < parts.length - 1; i++) {
+                        if (!current[parts[i]]) current[parts[i]] = {};
+                        current = current[parts[i]];
+                    }
 
-            if (currentUnityAppId !== null) {
-                if (previousUnityAppId !== currentUnityAppId) {
-                    checkUnityApplicantIdExist(currentUnityAppId, applicationId, ApplicantInfoObj);
+                    // Set the leaf value
+                    current[parts[parts.length - 1]] = value;
                 } else {
-                    updateApplicantInfo(applicationId, ApplicantInfoObj);
+                    nestedPayload[key] = value;
                 }
-            } else {
-                updateApplicantInfo(applicationId, ApplicantInfoObj);
             }
 
-            previousUnityAppId = currentUnityAppId;
-            $('#saveApplicantInfoBtn').prop('disabled', true);
-            PubSub.publish("applicant_info_updated", ApplicantInfoObj);
+            // Handle custom fields
+            if (typeof Flex === 'function' && Object.keys(nestedPayload.CustomFields || {}).length > 0) {
+                // Add Worksheet Metadata
+                nestedPayload.CorrelationId = $("#ApplicantInfo_ApplicationFormVersionId").val();
+                nestedPayload.WorksheetId = $("#ApplicantInfo_WorksheetId").val();
 
+                // Normalize checkboxes to string for custom worksheets
+                $(`#Unity_GrantManager_ApplicationManagement_Applicant_Worksheet input:checkbox`).each(function () {
+                    nestedPayload.CustomFields[this.name] = (this.checked).toString();
+                });
+
+                customIncludes
+                    .add('CustomFields')
+                    .add('CorrelationId')
+                    .add('WorksheetId');
+            }
+
+            // Create filtered object in one functional operation
+            let modifiedFieldData = Object.fromEntries(
+                Object.entries(projectInfoObj).filter(([key, _]) => {
+                    // Check if it's a directly included widget field
+                    if (customIncludes.has(key)) return true;
+
+                    // Check if it's a modified widget field
+                    return self.zoneForm.modifiedFields.has(`ProjectInfo.${key}`);
+                })
+            );
+
+            // Filter the payload to only include modified fields
+            let modifiedFieldData = filterNestedObject(nestedPayload);
+
+            let partialSubmissionPayload = {
+                modifiedFields: Array.from(this.zoneForm.modifiedFields),
+                data: modifiedFieldData
+            };
+
+            return partialSubmissionPayload;
+        },
+        serializeWidget: function () {
+            let formData = this.zoneForm.serializeZoneArray();
+            let submissionPayload = {};
+
+            // Process all form fields
+            $.each(formData, (_, input) => {
+                this.processFormField(submissionPayload, input);
+            });
+
+            return submissionPayload;
+        },
+        processFormField: function (submissionPayload, input) {
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+                Flex.includeCustomFieldObj(submissionPayload, input);
+                return;
+            }
+
+            const fieldName = input.name;
+            const inputElement = $(`[name="${fieldName}"]`);
+            let fieldValue = input.value;
+
+            if (fieldName.startsWith('ApplicantInfo.')) {
+                const propertyName = fieldName.split('.')[1];
+
+                if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
+                    fieldValue = fieldValue.replace(/,/g, '');
+                }
+
+                if (this.isNumberField(input)) {
+                    fieldValue = fieldValue === '' ? 0 :
+                        (parseFloat(fieldValue), this.getMaxNumberField(input));
+                } else if (fieldValue === '') {
+                    fieldValue = null;
+                }
+
+                submissionPayload[propertyName] = fieldValue;
+            } else {
+                submissionPayload[fieldName] = fieldValue;
+            }
+        },
+
+        isNumberField: function (input) {
+            return this.isCurrencyField(input) || this.isPercentageField(input);
+        },
+
+        isCurrencyField: function (input) {
+            const currencyFields = [
+                'ProjectInfo.RequestedAmount',
+                'ProjectInfo.TotalProjectBudget',
+                'ProjectInfo.ProjectFundingTotal'
+            ];
+            return currencyFields.includes(input.name);
+        },
+
+        isPercentageField: function (input) {
+            return input.name == 'ProjectInfo.PercentageTotalProjectBudget';
         }
-        catch (error) {
-            console.log(error);
-            $('#saveApplicantInfoBtn').prop('disabled', false);
-        }
-    });
-
-    $('#orgSectorDropdown').change(function () {
-        const selectedValue = $(this).val();
-        let sectorList = JSON.parse($('#orgApplicationSectorList').text());
-
-        let childDropdown = $('#orgSubSectorDropdown');
-        childDropdown.empty();
-
-        let subSectors = sectorList.find(sector => (sector.sectorName === selectedValue))?.subSectors;
-        childDropdown.append($('<option>', {
-            value: '',
-            text: 'Please choose...'
-        }));
-        $.each(subSectors, function (index, item) {
-            childDropdown.append($('<option>', {
-                value: item.subSectorName,
-                text: item.subSectorName
-            }));
-        });
-    });
-
-    $unityAppId.on('change', function () {
-        if ($unityAppId.val().trim() !== previousUnityAppId) {
-            $('#saveApplicantInfoBtn').prop('disabled', false);
-        } else {
-            $('#saveApplicantInfoBtn').prop('disabled', true);
-        }
-    })
-
-    PubSub.subscribe(
-        'fields_applicantinfo',
-        () => {
-            enableApplicantInfoSaveBtn();
-        }
-    );
-
-    $('.unity-currency-input').maskMoney();
-
-    $('#orgBookSelect').on('select2:select', function (e) {
-        let selectedData = e.params.data;
-        let orgBookId = selectedData.id;
-
-        abp.ajax({
-            url: '/api/app/org-book/org-book-details-query/' + orgBookId,
-            type: 'GET'
-        }).done(function (response) {
-
-            $('#OrgName').val(response.names[0].text);
-            $('#OrgNumber').val(orgBookId);
-            let entry_status = getAttributeObjectByType("entity_status", response.attributes);
-            let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
-            $('#orgBookStatusDropdown').val(org_status);
-            let entity_type = getAttributeObjectByType("entity_type", response.attributes);
-            $('#orgTypeDropdown').val(entity_type.value);
-
-
-            enableApplicantInfoSaveBtn();
-
-        });
-    });
-
-    function getAttributeObjectByType(type, attributes) {
-        return attributes.find(attr => attr.type === type);
     }
+
+    return widgetApi;
+}
+
+$(function () {
+    // Initialize widget through ABP's widget system instead of global object
+    abp.zones = abp.zones || {};
+    abp.zones.applicantInfo = $('[data-widget-name="ApplicantInfo"]')
+        .data('abp-widget-api') || null;
 
     $('#applicantLookupSelect').select2({
         ajax: {
@@ -197,20 +261,20 @@
         let getVal = id => $(`#${id}`).val() || '';
         let existing = {
             ApplicantId: getVal('ApplicantId'),
-            UnityApplicantId: getVal('applicantInfoUnityApplicantId'),
+            UnityApplicantId: getVal('ApplicantSummary_UnityApplicantId'),
             ApplicantName: $('.application-details-breadcrumb .applicant-name').text(),
-            OrgName: getVal('OrgName'),
-            OrgNumber: getVal('OrgNumber'),
-            NonRegOrgName: getVal('NonRegOrgName'),
-            OrganizationType: getVal('orgTypeDropdown'),
-            OrganizationSize: getVal('OrganizationSize'),
-            OrgStatus: getVal('orgBookStatusDropdown'),
+            OrgName: getVal('ApplicantSummary_OrgName'),
+            OrgNumber: getVal('ApplicantSummary_OrgNumber'),
+            NonRegOrgName: getVal('ApplicantSummary_NonRegOrgName'),
+            OrganizationType: getVal('ApplicantSummary_OrganizationType'),
+            OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
+            OrgStatus: getVal('ApplicantSummary_OrgStatus'),
             IndigenousOrgInd: $('#indigenousOrgInd').is(':checked') ? 'Yes' : 'No',
-            Sector: getVal('orgSectorDropdown'),
-            SubSector: getVal('orgSubSectorDropdown'),
-            SectorSubSectorIndustryDesc: getVal('SectorSubSectorIndustryDesc'),
-            FiscalDay: getVal('FiscalDay'),
-            FiscalMonth: getVal('FiscalMonth')
+            Sector: getVal('ApplicantSummary_Sector'),
+            SubSector: getVal('ApplicantSummary_SubSector'),
+            SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
+            FiscalDay: getVal('ApplicantSummary_FiscalDay'),
+            FiscalMonth: getVal('ApplicantSummary_FiscalMonth')
         };
 
         let newData = {
@@ -311,14 +375,15 @@
                     }
                 });
 
-                const orgName = $('#OrgName').val();
-                ApplicantInfoObj['OrgName'] = orgName;
-                const orgNumber = $('#OrgNumber').val();
-                ApplicantInfoObj['OrgNumber'] = orgNumber;
-                const orgStatus = $('#orgBookStatusDropdown').val();
-                ApplicantInfoObj['OrgStatus'] = orgStatus;
-                const organizationType = $('#orgTypeDropdown').val();
+                const orgName = $('#ApplicantSummary_OrgName').val();
+                ApplicantInfoObj['ApplicantSummary.OrgName'] = orgName;
+                const orgNumber = $('#ApplicantSummary_OrgNumber').val();
+                ApplicantInfoObj['ApplicantSummary.OrgNumber'] = orgNumber;
+                const orgStatus = $('#ApplicantSummary_OrgStatus').val();
+                ApplicantInfoObj['ApplicantSummary.OrgStatus'] = orgStatus;
+                const organizationType = $('#ApplicantSummary_OrganizationType').val();
                 ApplicantInfoObj['OrganizationType'] = organizationType;
+
                 const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
                 ApplicantInfoObj['IndigenousOrgInd'] = indigenousOrgInd ? "Yes" : "No";
                 ApplicantInfoObj['correlationId'] = formVersionId;
@@ -332,58 +397,8 @@
                 }
             }
 
-            // Update form fields with merged values
-            for (const key in mergedApplicantInfo) {
-                switch (key) {
-                    case 'ApplicantId':
-                        $('#ApplicantId').val(mergedApplicantInfo[key]);
-                        $('#ApplicantInfoViewApplicantId').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'UnityApplicantId':
-                        $('#applicantInfoUnityApplicantId').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'ApplicantName':
-                        $('.application-details-breadcrumb .applicant-name').val(mergedApplicantInfo[key]);
-                        $('.application-details-breadcrumb .applicant-name').text(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrgName':
-                        $('#OrgName').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrgNumber':
-                        $('#OrgNumber').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'NonRegOrgName':
-                        $('#NonRegOrgName').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrganizationType':
-                        $('#orgTypeDropdown').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrganizationSize':
-                        $('#OrganizationSize').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrgStatus':
-                        $('#orgBookStatusDropdown').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'IndigenousOrgInd':
-                        $('#indigenousOrgInd').prop('checked', mergedApplicantInfo[key] === 'Yes');
-                        break;
-                    case 'Sector':
-                        $('#orgSectorDropdown').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'SubSector':
-                        $('#orgSubSectorDropdown').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'SectorSubSectorIndustryDesc':
-                        $('#SectorSubSectorIndustryDesc').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'FiscalDay':
-                        $('#FiscalDay').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'FiscalMonth':
-                        $('#FiscalMonth').val(mergedApplicantInfo[key]);
-                        break;
-                }
-            }
+            // Triggers a refresh of the ApplicantInfo widget on merge
+            PubSub.publish('applicant_info_merged');
 
             $('#mergeApplicantsSpinner').hide();
             $('#mergeDuplicateApplicantsModal').modal('hide');
@@ -411,12 +426,17 @@
             $(this).prop('checked', true);
         });
     });
+});
 
-    $('[data-bs-toggle="tooltip"]').tooltip();
+
+
+function registerElectoralDistrictControls($container) {
+    $container.find('[data-bs-toggle="tooltip"]').tooltip();
     setElectoralDistrictLockState(true);
 
     // Listen for changes in physical address fields
-    $('.physical-address-fields-group').on('change', 'input', function () {
+    $container.find('.physical-address-fields-group').on('change', 'input', function () {
+        debugger;
         if (
             $('#ApplicantElectoralAddressType').val() === "PhysicalAddress" &&
             !electoralDistrictLocked
@@ -426,7 +446,7 @@
     });
 
     // Listen for changes in mailing address fields
-    $('.mailing-address-fields-group').on('change', 'input', function () {
+    $container.find('.mailing-address-fields-group').on('change', 'input', function () {
         if (
             $('#ApplicantElectoralAddressType').val() === "MailingAddress" &&
             !electoralDistrictLocked
@@ -434,10 +454,57 @@
             refreshApplicantElectoralDistrict();
         }
     });
+}
 
-});
+function registerApplicantInfoSummaryDropdowns($container) {
+    $container.find('#ApplicantSummary_Sector').on('change', function () {
+        const selectedValue = $(this).val();
+        let sectorList = JSON.parse($('#orgApplicationSectorList').text());
+
+        let childDropdown = $('#ApplicantSummary_SubSector');
+        childDropdown.empty();
+
+        let subSectors = sectorList.find(sector => (sector.sectorName === selectedValue))?.subSectors;
+        childDropdown.append($('<option>', {
+            value: '',
+            text: 'Please choose...'
+        }));
+
+        $.each(subSectors, function (index, item) {
+            childDropdown.append($('<option>', {
+                value: item.subSectorName,
+                text: item.subSectorName
+            }));
+        });
+    });
+
+    $container.find('#orgBookSelect').on('select2:select', function (e) {
+        let selectedData = e.params.data;
+        let orgBookId = selectedData.id;
+
+        abp.ajax({
+            url: '/api/app/org-book/org-book-details-query/' + orgBookId,
+            type: 'GET'
+        }).done(function (response) {
+
+            let entry_status = getAttributeObjectByType("entity_status", response.attributes);
+            let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
+            let entity_type = getAttributeObjectByType("entity_type", response.attributes);
+
+
+            $container.find('#ApplicantSummary_OrgName').val(response.names[0].text).trigger('change');
+            $container.find('#ApplicantSummary_OrgNumber').val(orgBookId).trigger('change');
+            $container.find('#ApplicantSummary_OrgStatus').val(org_status).trigger('change');
+            $container.find('#ApplicantSummary_OrganizationType').val(entity_type.value).trigger('change');
+        });
+    });
+}
 
 let electoralDistrictLocked = true; // Default: locked
+
+function getAttributeObjectByType(type, attributes) {
+    return attributes.find(attr => attr.type === type);
+}
 
 function setElectoralDistrictLockState(locked) {
     $('#btn-toggle-lock-electoral').tooltip('hide');
@@ -526,7 +593,7 @@ async function handleApplicantMerge(applicationId, principalApplicantId, nonPrin
 async function generateUnityApplicantIdBtn() {
     try {
         let nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
-        document.getElementById('applicantInfoUnityApplicantId').value = nextUnityApplicantId;
+        document.getElementById('ApplicantSummary_UnityApplicantId').value = nextUnityApplicantId;
         $('#saveApplicantInfoBtn').prop('disabled', false);
     }
     catch (error) {
@@ -556,7 +623,7 @@ async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj) {
 
 function enableApplicantInfoSaveBtn(inputText) {
     if (!$("#ApplicantInfoForm").valid()
-        || !abp.auth.isGranted('GrantApplicationManagement.ApplicantInfo.Update')
+        || !abp.auth.isGranted('GrantApplicationManagement.ApplicantInfo.Update')  // TODO
         || formHasInvalidCurrencyCustomFields("ApplicantInfoForm")) {
         $('#saveApplicantInfoBtn').prop('disabled', true);
         return;
