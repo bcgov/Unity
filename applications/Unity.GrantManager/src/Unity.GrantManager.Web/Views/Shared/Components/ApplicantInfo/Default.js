@@ -320,14 +320,17 @@ $(function () {
                 let ApplicantInfoObj = {};
                 let formVersionId = $("#ApplicationFormVersionId").val();
                 let worksheetId = $("#WorksheetId").val();
-
+                
                 $.each(formData, function (_, input) {
-                    ApplicantInfoObj[input.name.split(".")[1]] = input.value;
-                    if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
-                        ApplicantInfoObj[input.name.split(".")[1]] = null;
+                    if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+                        Flex.includeCustomFieldObj(ApplicantInfoObj, input);
                     }
-                    if (input.name == 'ApplicantId') {
+                    else {
                         ApplicantInfoObj[input.name] = input.value;
+
+                        if (ApplicantInfoObj[input.name] == '') {
+                            ApplicantInfoObj[input.name] = null;
+                        }
                     }
                 });
 
@@ -337,6 +340,13 @@ $(function () {
                 if (typeof Flex === 'function') {
                     Flex?.setCustomFields(ApplicantInfoObj);
                 }
+
+                Object.assign(ApplicantInfoObj, mergedApplicantInfo);
+                Object.keys(ApplicantInfoObj).forEach(key => {
+                    if (ApplicantInfoObj[key] === "") {
+                        ApplicantInfoObj[key] = null;
+                    }
+                });
 
                 const orgName = $('#ApplicantSummary_OrgName').val();
                 ApplicantInfoObj['ApplicantSummary.OrgName'] = orgName;
@@ -352,9 +362,7 @@ $(function () {
                 ApplicantInfoObj['correlationId'] = formVersionId;
                 ApplicantInfoObj['worksheetId'] = worksheetId;
                 ApplicantInfoObj.ApplicantId = principalApplicantId;
-                Object.assign(ApplicantInfoObj, mergedApplicantInfo);
-
-
+              
                 try {
                     await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
                 } catch (err) {

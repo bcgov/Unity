@@ -60,6 +60,8 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applicants.Default));
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Applicants.Edit,
             policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applicants.Edit));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Applicants.AssignApplicant,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applicants.AssignApplicant));
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Assignments.Default,
             policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Assignments.Default));
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Assignments.AssignInitial,

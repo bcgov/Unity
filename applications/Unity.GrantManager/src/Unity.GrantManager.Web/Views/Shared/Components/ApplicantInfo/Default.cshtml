@@ -107,18 +107,19 @@
                 </abp-row>
                 <abp-row>
                     <abp-column size="_12" class="px-1 mb-4">
-                        <label class="form-label">@L["ApplicantInfoView:ApplicantInfo.ApplicantLookUp"].Value</label>
-                        <select id="applicantLookupSelect" asp-for="@Model.SelectedApplicantLookUp"
-                                class="auto-complete-select"
-                                data-autocomplete-minimum-input-length="3"
-                                data-autocomplete-api-url="/api/app/applicant/applicant-look-up-autocomplete-query"
-                                data-autocomplete-display-property="ApplicantName"
-                                data-autocomplete-value-property="Id"
-                                data-autocomplete-items-property=""
-                                data-autocomplete-filter-param-name="applicantLookUpQuery"
-                                data-autocomplete-placeholder="@L["ApplicantInfoView:ApplicantInfo.ApplicantLookUpPlaceholder"].Value"
-                                data-autocomplete-allow-clear="true">
-                        </select>
+                            <label class="form-label">@L["ApplicantInfoView:ApplicantInfo.ApplicantLookUp"].Value</label>
+                            <select id="applicantLookupSelect" asp-for="@Model.SelectedApplicantLookUp"
+                                    class="auto-complete-select"
+                                    data-autocomplete-minimum-input-length="3"
+                                    data-autocomplete-api-url="/api/app/applicant/applicant-look-up-autocomplete-query"
+                                    data-autocomplete-display-property="ApplicantName"
+                                    data-autocomplete-value-property="Id"
+                                    data-autocomplete-items-property=""
+                                    data-autocomplete-filter-param-name="applicantLookUpQuery"
+                                    data-autocomplete-placeholder="@L["ApplicantInfoView:ApplicantInfo.ApplicantLookUpPlaceholder"].Value"
+                                    data-autocomplete-allow-clear="true"
+                                    disabled="@(!IsAssignApplicant)">
+                            </select>
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
