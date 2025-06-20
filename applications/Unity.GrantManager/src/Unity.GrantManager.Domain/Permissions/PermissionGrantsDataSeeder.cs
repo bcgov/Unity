@@ -136,6 +136,7 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Assignments.AssignInitial,
+                    GrantApplicationPermissions.Applicants.AssignApplicant,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
