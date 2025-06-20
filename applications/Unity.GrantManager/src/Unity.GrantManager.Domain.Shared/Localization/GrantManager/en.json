@@ -205,8 +205,8 @@
     "Unity.GrantManager.ApplicationManagement.Applicant.Location": "Address",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location.Update": "Edit Address",
     "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact": "Additional Contact(s)",
-    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Create": "Add Additional Contacts",
-    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Update": "Edit Additional Contacts",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Create": "Add Additional Contact(s)",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Update": "Edit Additional Contact(s)",
 
     "Unity.GrantManager.ApplicationManagement.Funding": "Funding",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Funding Agreement",

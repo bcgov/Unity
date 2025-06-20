@@ -16,7 +16,6 @@
         // OPTIONS NOTE: Zones to include
         // OPTIONS NOTE: Properties to include
 
-
         // Initialize result object
         const resultObject = {};
         // Collection phase: Gather all field data in a single pass
@@ -41,8 +40,16 @@
 
                 data.push({ name: this.name, value: value });
             });
-        }
+        } else {
+            // Add only disabled fields marked with data-zone-include="true"
+            $form.find(':disabled[name][data-zone-include="true"]').each(function () {
+                const value = $(this).is(":checkbox") ?
+                    $(this).is(':checked') :
+                    $(this).val();
 
+                data.push({ name: this.name, value: value });
+            });
+        }
 
         // Convert field names to camelCase if required
         if (camelCase) {
@@ -137,7 +144,7 @@ class UnityChangeTrackingForm {
     constructor($form, options = {}) {
 
         this.options = {
-            modifiedClass: 'unity-modified-field-marker',
+            modifiedClass: options.modifiedClass || 'unity-modified-field-marker',
             saveButtonSelector: options.saveButtonSelector || '#saveButton',
             ...options
         };
@@ -173,6 +180,9 @@ class UnityChangeTrackingForm {
                     if ($el.prop('checked')) {
                         this.originalValues[name] = $el.val();
                     }
+                } else if ($el.attr('data-zone-include') === 'true') {
+                    // Store whether this field should be included even when disabled
+                    this.originalValues[name] = $el.val();
                 } else {
                     this.originalValues[name] = $el.val();
                 }
@@ -193,6 +203,7 @@ class UnityChangeTrackingForm {
 
     checkFieldModified($element, name) {
         let currentValue;
+        debugger;
 
         if ($element.is(':checkbox')) {
             currentValue = $element.prop('checked');
@@ -202,12 +213,15 @@ class UnityChangeTrackingForm {
             } else {
                 return; // Skip radio buttons that aren't checked
             }
+        } else if ($element.attr('data-zone-include') === 'true') {
+            // Store whether this field should be included even when disabled
+            currentValue = $element.val();
         } else {
             currentValue = $element.val();
         }
 
         const originalValue = this.originalValues[name];
-
+    
         if (currentValue !== originalValue) {
             this.markAsModified($element, name);
         } else {

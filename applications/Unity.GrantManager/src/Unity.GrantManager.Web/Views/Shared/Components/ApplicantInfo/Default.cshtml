@@ -18,9 +18,12 @@
 
 @model ApplicantInfoViewModel
 @{
+
     Layout = null;
-    bool IsViewEditable = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.ApplicantInfo.Update);
-    string IsFieldsetDisabled = await PermissionChecker.HasDisabledAttributeAsync(GrantApplicationPermissions.ApplicantInfo.Update);
+    bool IsViewEditable = await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.UpdatePolicy);
+
+    bool IsAdditionalContactAddable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Create);
+    bool IsAdditionalContactEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update);
 }
 
 <input type="hidden" id="ApplicantInfo_ApplicationId" value="@Model.ApplicationId" />
@@ -35,7 +38,7 @@
                     button-type="Primary" disabled="true" abp-if="@IsViewEditable" />
     </div>
 
-    <form id="ApplicantInfoForm">
+    <form id="ApplicantInfoForm" autocomplete="off">
         <abp-input type="hidden" id="ApplicantInfoViewApplicantId" asp-for="@Model.ApplicantId" />
 
         @* Zone Section : Applicant Info Summary *@
@@ -61,14 +64,14 @@
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.OrgName" onchange="enableApplicantInfoSaveBtn(this)" disabled />
+                        <abp-input asp-for="@Model.OrgName" data-zone-include="true" disabled="true" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.OrgNumber" onchange="enableApplicantInfoSaveBtn(this)" disabled />
+                        <abp-input asp-for="@Model.OrgNumber" data-zone-include="true" disabled="true" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <abp-select asp-for="@Model.OrgStatus" asp-items="@Model.OrgBookStatusList"
-                                    id="orgBookStatusDropdown" onchange="enableApplicantInfoSaveBtn(this)" disabled>
+                                    id="orgBookStatusDropdown" data-zone-include="true" disabled="true">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
@@ -76,7 +79,7 @@
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
                         <abp-select asp-for="@Model.OrganizationType" asp-items="@Model.OrganizationTypeList"
-                                    id="orgTypeDropdown" onchange="enableApplicantInfoSaveBtn(this)" disabled>
+                                    id="orgTypeDropdown" data-zone-include="true" disabled="true">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
@@ -374,33 +377,25 @@
     </form>
 </abp-row>
 
-<zone id="@(UnitySelector.Applicant.Contact.Default + "_Additional")"
-      zone-requirement="@UnitySelector.Applicant.Contact.Default"
-      permission-requirement="@UnitySelector.Applicant.Contact.Default"
-      update-permission-requirement="@UnitySelector.Applicant.Contact.Update"
-      form-id="@Model.ApplicationFormId" show-legend="false">
+<zone id="@UnitySelector.Applicant.AdditionalContact.Default"
+      permission-requirement="@UnitySelector.Applicant.AdditionalContact.Default"
+      form-id="@Model.ApplicationFormId" show-legend="false"
+      editable-if="IsAdditionalContactEditable">
     <abp-row class="px-1 pb-2 mb-4 summary-container">
         <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
         <div id="applicationContactsWidget">
-            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId, isReadOnly = !IsViewEditable })
+            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId, isReadOnly = !IsAdditionalContactEditable })
         </div>
 
-        @if (IsViewEditable)
+        @if (IsAdditionalContactAddable)
         {
             <div class="d-flex justify-content-end">
                 <abp-button text="Add Contact" id="AddContactButton" class="add_contact_btn" icon-type="Other" icon="fl fl-plus"
-                            button-type="Light" abp-if="@(await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.Contact.Create))" />
+                            button-type="Light" />
             </div>
         }
     </abp-row>
 </zone>
-<script defer>
-    (function () {
-        if (window.jQuery) {
-            $('.unity-currency-input').maskMoney();
-        }
-    })();
-</script>
 
 
 <div class="modal fade" id="mergeDuplicateApplicantsModal" tabindex="-1" aria-labelledby="mergeApplicantsModalLabel" aria-hidden="true">

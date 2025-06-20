@@ -560,6 +560,88 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     }
 
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
+    public async Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(Guid id, PartialUpdateDto<CreateUpdateApplicantInfoDto> input)
+    {
+        // Only update the fields we need to update based on the modified fields
+        // This is required to handle controls like the date picker that do not send null values for unchanged fields
+        var application = await _applicationRepository.GetAsync(id);
+        var applicant = await _applicantRepository
+            .FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+
+        ObjectMapper.Map<CreateUpdateApplicantInfoDto, Application>(input.Data, application);
+        ObjectMapper.Map<CreateUpdateApplicantInfoDto, Applicant>(input.Data, applicant);
+
+        //// Explicitly handle properties that are null but listed in ModifiedFields
+        var dtoProperties = typeof(CreateUpdateApplicantInfoDto).GetProperties();
+        var applicantProperties = typeof(Applicant).GetProperties().ToDictionary(p => p.Name, p => p);
+
+        foreach (var fieldName in input.ModifiedFields)
+        {
+            if (dtoProperties.FirstOrDefault(p =>
+                string.Equals(p.Name, fieldName, StringComparison.OrdinalIgnoreCase)) is { } dtoProperty)
+            {
+                var value = dtoProperty.GetValue(input.Data);
+                if (value == null && applicantProperties.TryGetValue(dtoProperty.Name, out var appProperty) && appProperty.CanWrite)
+                {
+                    appProperty.SetValue(application, appProperty.PropertyType.IsValueType
+                        && Nullable.GetUnderlyingType(appProperty.PropertyType) == null
+                        ? Activator.CreateInstance(appProperty.PropertyType)
+                        : null);
+                }
+            }
+        }
+
+        await _applicantRepository.UpdateAsync(applicant);
+        // Add custom worksheet data
+        if (input.Data.CustomFields is not null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        {
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
+        }
+
+        await _applicationRepository.UpdateAsync(application);
+
+
+        // 2. Process Applicant Agent
+        // 3. Process Applicant Addresses
+        // 4. Process Signing Authority -> Application
+
+        //return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+        return appDto;
+    }
+
+    protected internal async Task<ApplicantAgent?> CreateOrUpdateApplicantAgentAsync(Application application, ContactInfoDto? input)
+    {
+        if (input == null
+            || !await AuthorizationService.IsGrantedAnyAsync(UnitySelector.Applicant.Contact.Create, UnitySelector.Applicant.Contact.Update))
+        {
+            return null;
+        }
+
+        var applicantAgent = await _applicantAgentRepository
+            .FirstOrDefaultAsync(a => a.ApplicantId == application.ApplicantId)
+            ?? new ApplicantAgent
+            {
+                ApplicantId   = application.ApplicantId,
+                ApplicationId = application.Id
+            };
+
+        applicantAgent.Name = input?.Name ?? string.Empty;
+        applicantAgent.Phone = input?.Phone ?? string.Empty;
+        applicantAgent.Phone2 = input?.Phone2 ?? string.Empty;
+        applicantAgent.Email = input?.Email ?? string.Empty;
+        applicantAgent.Title = input?.Title ?? string.Empty;
+
+        if (applicantAgent.Id == Guid.Empty)
+        {
+            return await _applicantAgentRepository.InsertAsync(applicantAgent);
+        }
+
+        return await _applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);

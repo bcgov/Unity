@@ -86,6 +86,33 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
                     => srcMember != null
                     && !IsDefault(srcMember));
             });
+
+        CreateMap<CreateUpdateApplicantInfoDto, Applicant>()
+            .ForAllMembers(opts =>
+            {
+                opts.AllowNull(); // Ignore Null Values for Lists and Collections
+                opts.Condition((src, dest, srcMember) // Ignore Null and Default Values for Properties
+                    => srcMember != null
+                    && !IsDefault(srcMember));
+            });
+
+        CreateMap<CreateUpdateApplicantInfoDto, Application>()
+            .ForAllMembers(opts =>
+            {
+                opts.AllowNull(); // Ignore Null Values for Lists and Collections
+                opts.Condition((src, dest, srcMember) // Ignore Null and Default Values for Properties
+                    => srcMember != null
+                    && !IsDefault(srcMember));
+            });
+
+        CreateMap<CreateUpdateApplicantInfoDto, SigningAuthorityDto>()
+            .ForAllMembers(opts =>
+            {
+                opts.AllowNull(); // Ignore Null Values for Lists and Collections
+                opts.Condition((src, dest, srcMember) // Ignore Null and Default Values for Properties
+                    => srcMember != null
+                    && !IsDefault(srcMember));
+            });
     }
 
     private static bool IsDefault(object value)
