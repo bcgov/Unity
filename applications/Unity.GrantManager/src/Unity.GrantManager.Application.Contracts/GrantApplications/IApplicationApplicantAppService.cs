@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Unity.Modules.Shared;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.GrantApplications
@@ -8,5 +9,6 @@ namespace Unity.GrantManager.GrantApplications
     {
         Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId);
         Task<ApplicantInfoDto> GetApplicantInfoTabAsync(Guid applicationId);
+        Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(Guid id, PartialUpdateDto<ApplicantInfoDto> input);
     }
 }

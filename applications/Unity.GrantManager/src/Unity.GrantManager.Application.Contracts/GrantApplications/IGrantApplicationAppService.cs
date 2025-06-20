@@ -15,7 +15,6 @@ namespace Unity.GrantManager.GrantApplications
         Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input);
         Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input);
         Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input);
-        Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(Guid id, PartialUpdateDto<UpsertApplicantInfoDto> input);
         Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input);
         Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber);
         Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync();

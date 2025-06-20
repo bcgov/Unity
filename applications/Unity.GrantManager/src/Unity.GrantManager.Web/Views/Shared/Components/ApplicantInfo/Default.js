@@ -52,7 +52,7 @@
                 let applicantInfoSubmission = self.getPartialUpdate();
                 debugger;
                 try {
-                    unity.grantManager.grantApplications.grantApplication
+                    unity.grantManager.grantApplications.applicationApplicant
                         .updatePartialApplicantInfo(applicationId, applicantInfoSubmission)
                         .done(function () {
                             abp.notify.success('The Applicant Info has been updated.');

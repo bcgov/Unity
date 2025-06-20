@@ -93,22 +93,17 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicantAddress, ApplicantAddressDto>();
 
         //-- APPLICANT INFO - INBOUND MAPS
-        CreateMap<UpsertApplicantInfoDto, Applicant>()
+        CreateMap<ApplicantInfoDto, Applicant>()
             .IgnoreNullAndDefaultValues();
-
-        CreateMap<UpsertApplicantInfoDto, Application>()
+        CreateMap<ApplicantInfoDto, Application>()
             .IgnoreNullAndDefaultValues();
-
-        CreateMap<UpsertApplicantInfoDto, SigningAuthorityDto>()
+        CreateMap<SigningAuthorityDto, Application>()
             .IgnoreNullAndDefaultValues();
-
-        CreateMap<CreateUpdateApplicantInfoDto, Applicant>()
+        CreateMap<ApplicantSummaryDto, Applicant>()
             .IgnoreNullAndDefaultValues();
-
-        CreateMap<CreateUpdateApplicantInfoDto, Application>()
+        CreateMap<ContactInfoDto, ApplicantAgent>()
             .IgnoreNullAndDefaultValues();
-
-        CreateMap<CreateUpdateApplicantInfoDto, SigningAuthorityDto>()
+        CreateMap<ApplicantAddressDto, ApplicantAddress>()
             .IgnoreNullAndDefaultValues();
     }
 }
