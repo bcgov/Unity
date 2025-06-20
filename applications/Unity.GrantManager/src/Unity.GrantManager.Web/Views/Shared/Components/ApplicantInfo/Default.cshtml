@@ -24,6 +24,7 @@
 
     bool IsAdditionalContactAddable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Create);
     bool IsAdditionalContactEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update);
+    bool IsAssignApplicant = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.AssignApplicant);
 }
 
 <input type="hidden" id="ApplicantInfo_ApplicationId" value="@Model.ApplicationId" />
