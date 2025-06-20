@@ -36,6 +36,7 @@ namespace Unity.GrantManager.Permissions
         {
             public const string Default = GroupName + ".Applicants";
             public const string Edit = Default + Operation.Update;
+            public const string AssignApplicant = Default + ".AssignApplicant";
         }
 
         public static class Assignments
