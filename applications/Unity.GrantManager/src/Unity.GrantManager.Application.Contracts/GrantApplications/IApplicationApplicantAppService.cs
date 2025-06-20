@@ -7,5 +7,6 @@ namespace Unity.GrantManager.GrantApplications
     public interface IApplicationApplicantAppService : IApplicationService
     {
         Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId);
+        Task<ApplicantInfoDto> GetApplicantInfoTabAsync(Guid applicationId);
     }
 }

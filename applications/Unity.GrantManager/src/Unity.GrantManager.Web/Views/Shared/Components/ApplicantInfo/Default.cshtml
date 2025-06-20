@@ -64,47 +64,42 @@
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.OrgName" data-zone-include="true" disabled="true" />
+                        <abp-input asp-for="@Model.ApplicantSummary.OrgName" data-zone-include="true" disabled />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.OrgNumber" data-zone-include="true" disabled="true" />
+                        <abp-input asp-for="@Model.ApplicantSummary.OrgNumber" data-zone-include="true" disabled />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.OrgStatus" asp-items="@Model.OrgBookStatusList"
-                                    id="orgBookStatusDropdown" data-zone-include="true" disabled="true">
+                        <abp-select asp-for="@Model.ApplicantSummary.OrgStatus" asp-items="@Model.OrgBookStatusList" data-zone-include="true" disabled>
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.OrganizationType" asp-items="@Model.OrganizationTypeList"
-                                    id="orgTypeDropdown" data-zone-include="true" disabled="true">
+                        <abp-select asp-for="@Model.ApplicantSummary.OrganizationType" asp-items="@Model.OrganizationTypeList" data-zone-include="true" disabled>
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.NonRegOrgName" onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ApplicantSummary.NonRegOrgName" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input class="numeric-mask" asp-for="@Model.OrganizationSize"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input class="numeric-mask" asp-for="@Model.ApplicantSummary.OrganizationSize" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <div class="switch-container">
                             <div class="form-check unt-form-switch form-switch">
-                                <input type="hidden" name="ApplicantInfo.IndigenousOrgInd" value="No" />
+                                <input type="hidden" name="ApplicantInfo.IndigenousOrgInd" value="No" /> // TODO
 
                                 <!-- Checkbox submits "Yes" when checked -->
                                 <input class="form-check-input"
                                        type="checkbox"
-                                       name="ApplicantInfo.IndigenousOrgInd"
                                        id="indigenousOrgInd"
                                        value="Yes"
-                                       @(Model.IndigenousOrgInd == "Yes" ? "checked" : "")
-                                       onchange="enableApplicantInfoSaveBtn(this)" />
+                                       @(Model.ApplicantSummary?.IndigenousOrgInd == "Yes" ? "checked" : string.Empty) />
                                 <label class="form-check-label" for="indigenousOrgInd">@L["ApplicantInfoView:ApplicantInfo.IndigenousOrgInd"].Value</label>
                             </div>
                         </div>
@@ -129,50 +124,45 @@
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
                         <div class="input-group unt-input-group">
-                            <abp-input asp-for="@Model.UnityApplicantId" maxlength="6" class="unt-input" id="applicantInfoUnityApplicantId" onchange="enableApplicantInfoSaveBtn(this)" />
+                            <abp-input asp-for="@Model.ApplicantSummary.UnityApplicantId" maxlength="6" class="unt-input" id="applicantInfoUnityApplicantId" />
                             <div class="unt-input-group-append">
                                 <button class="btn unt-btn-link btn-link" id="btn-generate" type="button" onclick="generateUnityApplicantIdBtn()"><i class="unt-icon-m fa-solid fa-arrows-rotate"></i></button>
                             </div>
                         </div>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.FiscalDay" asp-items="@Model.FiscalDayList"
-                                    onchange="enableApplicantInfoSaveBtn(this)">
+                        <abp-select asp-for="@Model.ApplicantSummary.FiscalDay" asp-items="@Model.FiscalDayList">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.FiscalMonth" asp-items="@Model.FiscalMonthList"
-                                    onchange="enableApplicantInfoSaveBtn(this)">
+                        <abp-select asp-for="@Model.ApplicantSummary.FiscalMonth" asp-items="@Model.FiscalMonthList">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.Sector" asp-items="@Model.ApplicationSectorsList"
-                                    id="orgSectorDropdown" onchange="enableApplicantInfoSaveBtn(this)">
+                        <abp-select asp-for="@Model.ApplicantSummary.Sector" asp-items="@Model.ApplicationSectorsList">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.SubSector" asp-items="@Model.ApplicationSubSectorsList"
-                                    id="orgSubSectorDropdown" onchange="enableApplicantInfoSaveBtn(this)">
+                        <abp-select asp-for="@Model.ApplicantSummary.SubSector" asp-items="@Model.ApplicationSubSectorsList">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <div class="switch-container">
                             <div class="form-check unt-form-switch form-switch">
-                                <input class="form-check-input" checked="@Model.RedStop" type="checkbox" role="switch" id="redStop" disabled>
-                                <label class="form-check-label" for="redStop">@L["ApplicantInfoView:ApplicantInfo.RedStop"].Value</label>
+                                <input class="form-check-input" checked="@Model.ApplicantSummary.RedStop" type="checkbox" role="switch" id="ApplicantSummary_RedStop" disabled>
+                                <label class="form-check-label" for="ApplicantSummary_RedStop">@L["ApplicantInfoView:ApplicantInfo.RedStop"].Value</label>
                             </div>
                         </div>
                     </abp-column>
                     <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="px-1">
-                            <abp-input asp-for="@Model.SectorSubSectorIndustryDesc"
-                                       onchange="enableApplicantInfoSaveBtn(this)" />
+                            <abp-input asp-for="@Model.ApplicantSummary.SectorSubSectorIndustryDesc" />
                         </abp-column>
                     </abp-row>
                 </abp-row>
@@ -186,28 +176,23 @@
             <abp-row class="m-0 project-info-location">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactFullName"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ContactInfo.Name" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactTitle"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ContactInfo.Title" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactEmail"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ContactInfo.Email" />
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactBusinessPhone"
-                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ContactInfo.Phone"
+                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ContactCellPhone"
-                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ContactInfo.Phone2"
+                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" />
                     </abp-column>
                 </abp-row>
             </abp-row>
@@ -219,28 +204,21 @@
             <abp-row class="m-0 signin-authority-form">
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthorityFullName"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityFullName" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthorityTitle"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityTitle" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthorityEmail"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityEmail" />
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthorityBusinessPhone"
-                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityBusinessPhone" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.SigningAuthorityCellPhone"
-                                   pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$"
-                                   onchange="enableApplicantInfoSaveBtn(this)" />
+                        <abp-input asp-for="@Model.SigningAuthority.SigningAuthorityCellPhone" />
                     </abp-column>
                 </abp-row>
             </abp-row>
@@ -261,28 +239,22 @@
                         </abp-row>
                         <abp-row class="m-0 p-0 physical-address-fields-group">
                             <abp-column size="_5" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddressStreet"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.PhysicalAddress.Street" />
                             </abp-column>
                             <abp-column size="_5" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddressStreet2"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.PhysicalAddress.Street2" />
                             </abp-column>
                             <abp-column size="_2" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddressUnit"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.PhysicalAddress.Unit" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddressCity"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.PhysicalAddress.City" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddressProvince"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.PhysicalAddress.Province" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.PhysicalAddressPostalCode"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.PhysicalAddress.PostalCode" />
                             </abp-column>
                         </abp-row>
                     </abp-row>
@@ -296,28 +268,22 @@
                         </abp-row>
                         <abp-row class="m-0 p-0 mailing-address-fields-group">
                             <abp-column size="_5" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddressStreet"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.MailingAddress.Street" />
                             </abp-column>
                             <abp-column size="_5" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddressStreet2"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.MailingAddress.Street2" />
                             </abp-column>
                             <abp-column size="_2" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddressUnit"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.MailingAddress.Unit" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddressCity"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.MailingAddress.City" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddressProvince"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.MailingAddress.Province" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@Model.MailingAddressPostalCode"
-                                           onchange="enableApplicantInfoSaveBtn(this)" />
+                                <abp-input asp-for="@Model.MailingAddress.PostalCode" />
                             </abp-column>
                         </abp-row>
                     </abp-row>
@@ -346,8 +312,7 @@
                 <abp-column size="_6" class="px-3">
                     <abp-row>
                         <abp-column size="_10" class="px-1">
-                            <abp-select asp-for="@Model.ElectoralDistrict" asp-items="@Model.ElectoralDistrictList"
-                                        onchange="enableApplicantInfoSaveBtn(this)">
+                            <abp-select asp-for="@Model.ContactInfo.ElectoralDistrict" asp-items="@Model.ElectoralDistrictList">
                                 <option value="">Please choose...</option>
                             </abp-select>
                         </abp-column>

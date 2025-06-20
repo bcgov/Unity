@@ -1,5 +1,8 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal.Mappers;
+using Microsoft.AspNetCore.Http.HttpResults;
 using System;
+using System.Collections.Generic;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -78,44 +81,70 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
 
         CreateMap<TagSummaryCount, TagSummaryCountDto>();
 
+        //-- PROJECT INFO
         CreateMap<UpdateProjectInfoDto, Application>()
-            .ForAllMembers(opts =>
-            {
-                opts.AllowNull(); // Ignore Null Values for Lists and Collections
-                opts.Condition((src, dest, srcMember) // Ignore Null and Default Values for Properties
-                    => srcMember != null
-                    && !IsDefault(srcMember));
-            });
+            .IgnoreNullAndDefaultValues();
+
+        //-- APPLICANT INFO - OUTBOUND MAPS
+        CreateMap<Application, ApplicantInfoDto>();
+        CreateMap<Application, SigningAuthorityDto>();
+        CreateMap<Applicant, ApplicantSummaryDto>();
+        CreateMap<ApplicantAgent, ContactInfoDto>();
+        CreateMap<ApplicantAddress, ApplicantAddressDto>();
+
+        //-- APPLICANT INFO - INBOUND MAPS
+        CreateMap<UpsertApplicantInfoDto, Applicant>()
+            .IgnoreNullAndDefaultValues();
+
+        CreateMap<UpsertApplicantInfoDto, Application>()
+            .IgnoreNullAndDefaultValues();
+
+        CreateMap<UpsertApplicantInfoDto, SigningAuthorityDto>()
+            .IgnoreNullAndDefaultValues();
 
         CreateMap<CreateUpdateApplicantInfoDto, Applicant>()
-            .ForAllMembers(opts =>
-            {
-                opts.AllowNull(); // Ignore Null Values for Lists and Collections
-                opts.Condition((src, dest, srcMember) // Ignore Null and Default Values for Properties
-                    => srcMember != null
-                    && !IsDefault(srcMember));
-            });
+            .IgnoreNullAndDefaultValues();
 
         CreateMap<CreateUpdateApplicantInfoDto, Application>()
-            .ForAllMembers(opts =>
-            {
-                opts.AllowNull(); // Ignore Null Values for Lists and Collections
-                opts.Condition((src, dest, srcMember) // Ignore Null and Default Values for Properties
-                    => srcMember != null
-                    && !IsDefault(srcMember));
-            });
+            .IgnoreNullAndDefaultValues();
 
         CreateMap<CreateUpdateApplicantInfoDto, SigningAuthorityDto>()
-            .ForAllMembers(opts =>
-            {
-                opts.AllowNull(); // Ignore Null Values for Lists and Collections
-                opts.Condition((src, dest, srcMember) // Ignore Null and Default Values for Properties
-                    => srcMember != null
-                    && !IsDefault(srcMember));
-            });
+            .IgnoreNullAndDefaultValues();
+    }
+}
+
+// Extension methods for reusable mapping configurations
+public static class MappingExtensions
+{
+    /// <summary>
+    /// Configures the mapping to ignore null and default values for all members.
+    /// Useful for patch/update scenarios where only non-default values should be mapped.
+    /// </summary>
+    /// <typeparam name="TSource">The source type.</typeparam>
+    /// <typeparam name="TDestination">The destination type.</typeparam>
+    /// <param name="expression">The mapping expression.</param>
+    /// <returns>The updated mapping expression.</returns>
+    public static IMappingExpression<TSource, TDestination> IgnoreNullAndDefaultValues<TSource, TDestination>(
+        this IMappingExpression<TSource, TDestination> expression)
+    {
+        expression.ForAllMembers(opts =>
+        {
+            opts.AllowNull(); // Ignore Null Values for Lists and Collections
+            opts.Condition((src, dest, srcMember) =>  
+                srcMember != null && !IsValueDefault(srcMember)); // Ignore Null and Default Values for Properties
+        });
+
+        return expression;
     }
 
-    private static bool IsDefault(object value)
+    /// <summary>
+    /// Determines whether the provided value is the default value for its type.
+    /// </summary>
+    /// <param name="value">The value to check.</param>
+    /// <returns>
+    /// <c>true</c> if the value is null or the default for its type; otherwise, <c>false</c>.
+    /// </returns>
+    public static bool IsValueDefault(object value)
     {
         if (value == null)
             return true;

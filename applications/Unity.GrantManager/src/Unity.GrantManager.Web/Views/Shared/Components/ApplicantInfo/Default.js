@@ -1,4 +1,6 @@
 ﻿abp.widgets.ApplicantInfo = function ($wrapper) {
+    let widgetManager = $wrapper.data('abp-widget-manager');
+
     let widgetApi = {
         getFilters: function () {
             return {
@@ -24,6 +26,9 @@
             registerElectoralDistrictControls(this.zoneForm.form);
             registerApplicantInfoSummaryDropdowns(this.zoneForm.form);
         },
+        refresh: function () {
+            widgetManager.refresh($wrapper);
+        },
         setupEventHandlers: function () {
             const self = this;
 
@@ -34,12 +39,18 @@
                 }
             );
 
+            PubSub.subscribe(
+                'applicant_info_merged',
+                () => {
+                    self.refresh();
+                }
+            );
+
             // Save button handler
             self.zoneForm.saveButton.on('click', function () {
                 let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
-
                 let applicantInfoSubmission = self.getPartialUpdate();
-
+                debugger;
                 try {
                     unity.grantManager.grantApplications.grantApplication
                         .updatePartialApplicantInfo(applicationId, applicantInfoSubmission)
@@ -177,12 +188,6 @@ $(function () {
     abp.zones.applicantInfo = $('[data-widget-name="ApplicantInfo"]')
         .data('abp-widget-api') || null;
 
-
-
-
-
-    
-
     $('#applicantLookupSelect').select2({
         ajax: {
             url: '/api/app/applicant/applicant-look-up-autocomplete-query',
@@ -229,20 +234,20 @@ $(function () {
         let getVal = id => $(`#${id}`).val() || '';
         let existing = {
             ApplicantId: getVal('ApplicantId'),
-            UnityApplicantId: getVal('applicantInfoUnityApplicantId'),
+            UnityApplicantId: getVal('ApplicantSummary_UnityApplicantId'),
             ApplicantName: $('.application-details-breadcrumb .applicant-name').text(),
-            OrgName: getVal('OrgName'),
-            OrgNumber: getVal('OrgNumber'),
-            NonRegOrgName: getVal('NonRegOrgName'),
-            OrganizationType: getVal('orgTypeDropdown'),
-            OrganizationSize: getVal('OrganizationSize'),
-            OrgStatus: getVal('orgBookStatusDropdown'),
+            OrgName: getVal('ApplicantSummary_OrgName'),
+            OrgNumber: getVal('ApplicantSummary_OrgNumber'),
+            NonRegOrgName: getVal('ApplicantSummary_NonRegOrgName'),
+            OrganizationType: getVal('ApplicantSummary_OrganizationType'),
+            OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
+            OrgStatus: getVal('ApplicantSummary_OrgStatus'),
             IndigenousOrgInd: $('#indigenousOrgInd').is(':checked') ? 'Yes' : 'No',
-            Sector: getVal('orgSectorDropdown'),
-            SubSector: getVal('orgSubSectorDropdown'),
-            SectorSubSectorIndustryDesc: getVal('SectorSubSectorIndustryDesc'),
-            FiscalDay: getVal('FiscalDay'),
-            FiscalMonth: getVal('FiscalMonth')
+            Sector: getVal('ApplicantSummary_Sector'),
+            SubSector: getVal('ApplicantSummary_SubSector'),
+            SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
+            FiscalDay: getVal('ApplicantSummary_FiscalDay'),
+            FiscalMonth: getVal('ApplicantSummary_FiscalMonth')
         };
 
         let newData = {
@@ -333,14 +338,15 @@ $(function () {
                     Flex?.setCustomFields(ApplicantInfoObj);
                 }
 
-                const orgName = $('#OrgName').val();
-                ApplicantInfoObj['OrgName'] = orgName;
-                const orgNumber = $('#OrgNumber').val();
-                ApplicantInfoObj['OrgNumber'] = orgNumber;
-                const orgStatus = $('#orgBookStatusDropdown').val();
-                ApplicantInfoObj['OrgStatus'] = orgStatus;
-                const organizationType = $('#orgTypeDropdown').val();
+                const orgName = $('#ApplicantSummary_OrgName').val();
+                ApplicantInfoObj['ApplicantSummary.OrgName'] = orgName;
+                const orgNumber = $('#ApplicantSummary_OrgNumber').val();
+                ApplicantInfoObj['ApplicantSummary.OrgNumber'] = orgNumber;
+                const orgStatus = $('#ApplicantSummary_OrgStatus').val();
+                ApplicantInfoObj['ApplicantSummary.OrgStatus'] = orgStatus;
+                const organizationType = $('#ApplicantSummary_OrganizationType').val();
                 ApplicantInfoObj['OrganizationType'] = organizationType;
+
                 const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
                 ApplicantInfoObj['IndigenousOrgInd'] = indigenousOrgInd ? "Yes" : "No";
                 ApplicantInfoObj['correlationId'] = formVersionId;
@@ -356,58 +362,8 @@ $(function () {
                 }
             }
 
-            // Update form fields with merged values
-            for (const key in mergedApplicantInfo) {
-                switch (key) {
-                    case 'ApplicantId':
-                        $('#ApplicantId').val(mergedApplicantInfo[key]);
-                        $('#ApplicantInfoViewApplicantId').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'UnityApplicantId':
-                        $('#applicantInfoUnityApplicantId').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'ApplicantName':
-                        $('.application-details-breadcrumb .applicant-name').val(mergedApplicantInfo[key]);
-                        $('.application-details-breadcrumb .applicant-name').text(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrgName':
-                        $('#OrgName').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrgNumber':
-                        $('#OrgNumber').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'NonRegOrgName':
-                        $('#NonRegOrgName').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrganizationType':
-                        $('#orgTypeDropdown').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrganizationSize':
-                        $('#OrganizationSize').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'OrgStatus':
-                        $('#orgBookStatusDropdown').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'IndigenousOrgInd':
-                        $('#indigenousOrgInd').prop('checked', mergedApplicantInfo[key] === 'Yes');
-                        break;
-                    case 'Sector':
-                        $('#orgSectorDropdown').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'SubSector':
-                        $('#orgSubSectorDropdown').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'SectorSubSectorIndustryDesc':
-                        $('#SectorSubSectorIndustryDesc').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'FiscalDay':
-                        $('#FiscalDay').val(mergedApplicantInfo[key]);
-                        break;
-                    case 'FiscalMonth':
-                        $('#FiscalMonth').val(mergedApplicantInfo[key]);
-                        break;
-                }
-            }
+            // Triggers a refresh of the ApplicantInfo widget on merge
+            PubSub.publish('applicant_info_merged');
 
             $('#mergeApplicantsSpinner').hide();
             $('#mergeDuplicateApplicantsModal').modal('hide');
@@ -437,27 +393,12 @@ $(function () {
     });
 });
 
-function submitFormHandler(applicationId, applicantInfoSubmission) {
-    try {
-        unity.grantManager.grantApplications.grantApplication
-            .updatePartialProjectInfo(applicationId, applicantInfoSubmission)
-            .done(function () {
-                abp.notify.success('The project info has been updated.');
-                self.zoneForm.resetTracking();
-                PubSub.publish('project_info_saved', projectInfoObj);
-                PubSub.publish('refresh_detail_panel_summary');
-            });
-    }
-    catch (error) {
-        console.log(error);
-        self.zoneForm.resetTracking();
-    }
-}
+
 
 function registerElectoralDistrictControls($container) {
     $container.find('[data-bs-toggle="tooltip"]').tooltip();
     setElectoralDistrictLockState(true);
-    debugger;
+
     // Listen for changes in physical address fields
     $container.find('.physical-address-fields-group').on('change', 'input', function () {
         debugger;
@@ -481,11 +422,11 @@ function registerElectoralDistrictControls($container) {
 }
 
 function registerApplicantInfoSummaryDropdowns($container) {
-    $container.find('#orgSectorDropdown').on('change', function () {
+    $container.find('#ApplicantSummary_Sector').on('change', function () {
         const selectedValue = $(this).val();
         let sectorList = JSON.parse($('#orgApplicationSectorList').text());
 
-        let childDropdown = $('#orgSubSectorDropdown');
+        let childDropdown = $('#ApplicantSummary_SubSector');
         childDropdown.empty();
 
         let subSectors = sectorList.find(sector => (sector.sectorName === selectedValue))?.subSectors;
@@ -511,16 +452,15 @@ function registerApplicantInfoSummaryDropdowns($container) {
             type: 'GET'
         }).done(function (response) {
 
-            $('#OrgName').val(response.names[0].text).trigger('change');
-            $('#OrgNumber').val(orgBookId).trigger('change');
             let entry_status = getAttributeObjectByType("entity_status", response.attributes);
             let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
-            $('#orgBookStatusDropdown').val(org_status).trigger('change');
             let entity_type = getAttributeObjectByType("entity_type", response.attributes);
-            $('#orgTypeDropdown').val(entity_type.value).trigger('change');
 
-            enableApplicantInfoSaveBtn();
 
+            $container.find('#ApplicantSummary_OrgName').val(response.names[0].text).trigger('change');
+            $container.find('#ApplicantSummary_OrgNumber').val(orgBookId).trigger('change');
+            $container.find('#ApplicantSummary_OrgStatus').val(org_status).trigger('change');
+            $container.find('#ApplicantSummary_OrganizationType').val(entity_type.value).trigger('change');
         });
     });
 }
@@ -537,7 +477,7 @@ function setElectoralDistrictLockState(locked) {
     electoralDistrictLocked = locked;
 
     // Toggle "disabled" look and interaction for the select
-    const $select = $('#ElectoralDistrict');
+    const $select = $('#ContactInfo_ElectoralDistrict');
     if (locked) {
         $select.addClass('select-disabled');
         $select.on('mousedown.electoralLock touchstart.electoralLock', function (e) { e.preventDefault(); });
@@ -564,7 +504,7 @@ async function refreshApplicantElectoralDistrict() {
         let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
         let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
         if (electoralDistrict?.name) {
-            $('#ElectoralDistrict').val(electoralDistrict.name).trigger('change');
+            $('#ContactInfo_ElectoralDistrict').val(electoralDistrict.name).trigger('change');
         }
     }
     catch (error) {
@@ -618,7 +558,7 @@ async function handleApplicantMerge(applicationId, principalApplicantId, nonPrin
 async function generateUnityApplicantIdBtn() {
     try {
         let nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
-        document.getElementById('applicantInfoUnityApplicantId').value = nextUnityApplicantId;
+        document.getElementById('ApplicantSummary_UnityApplicantId').value = nextUnityApplicantId;
         $('#saveApplicantInfoBtn').prop('disabled', false);
     }
     catch (error) {

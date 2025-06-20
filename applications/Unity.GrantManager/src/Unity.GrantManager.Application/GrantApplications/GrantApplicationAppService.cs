@@ -560,7 +560,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     }
 
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
-    public async Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(Guid id, PartialUpdateDto<CreateUpdateApplicantInfoDto> input)
+    public async Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(Guid id, PartialUpdateDto<UpsertApplicantInfoDto> input)
     {
         // Only update the fields we need to update based on the modified fields
         // This is required to handle controls like the date picker that do not send null values for unchanged fields
@@ -568,8 +568,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var applicant = await _applicantRepository
             .FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
 
-        ObjectMapper.Map<CreateUpdateApplicantInfoDto, Application>(input.Data, application);
-        ObjectMapper.Map<CreateUpdateApplicantInfoDto, Applicant>(input.Data, applicant);
+        ObjectMapper.Map<UpsertApplicantInfoDto, Application>(input.Data, application);
+        ObjectMapper.Map<UpsertApplicantInfoDto, Applicant>(input.Data, applicant);
 
         //// Explicitly handle properties that are null but listed in ModifiedFields
         var dtoProperties = typeof(CreateUpdateApplicantInfoDto).GetProperties();
@@ -609,6 +609,70 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
         return appDto;
+
+        //applicant.OrganizationType = input.OrganizationType ?? "";
+        //applicant.OrgName = input.OrgName ?? "";
+        //applicant.OrgNumber = input.OrgNumber ?? "";
+        //applicant.OrgStatus = input.OrgStatus ?? "";
+        //applicant.OrganizationSize = input.OrganizationSize ?? "";
+        //applicant.Sector = input.Sector ?? "";
+        //applicant.SubSector = input.SubSector ?? "";
+        //applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
+        //applicant.IndigenousOrgInd = input.IndigenousOrgInd ?? "";
+        //applicant.UnityApplicantId = input.UnityApplicantId ?? "";
+        //applicant.FiscalDay = input.FiscalDay;
+        //applicant.FiscalMonth = input.FiscalMonth ?? "";
+        //applicant.NonRegOrgName = input.NonRegOrgName ?? "";
+        //applicant.ElectoralDistrict = input.ElectoralDistrict ?? "";
+        //applicant.ApplicantName = input.ApplicantName ?? "";
+
+        //_ = await _applicantRepository.UpdateAsync(applicant);
+
+        //var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId);
+        //if (applicantAgent == null)
+        //{
+        //    applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
+        //    {
+        //        ApplicantId = application.ApplicantId,
+        //        ApplicationId = application.Id,
+        //        Name = input.ContactFullName ?? "",
+        //        Phone = input.ContactBusinessPhone ?? "",
+        //        Phone2 = input.ContactCellPhone ?? "",
+        //        Email = input.ContactEmail ?? "",
+        //        Title = input.ContactTitle ?? ""
+        //    });
+        //}
+        //else
+        //{
+        //    applicantAgent.Name = input.ContactFullName ?? "";
+        //    applicantAgent.Phone = input.ContactBusinessPhone ?? "";
+        //    applicantAgent.Phone2 = input.ContactCellPhone ?? "";
+        //    applicantAgent.Email = input.ContactEmail ?? "";
+        //    applicantAgent.Title = input.ContactTitle ?? "";
+        //    applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
+        //}
+
+        //await UpdateApplicantAddresses(input);
+
+
+        //// Signing Authority Coveret by Mapping to 
+        //application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
+        //application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
+        //application.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
+        //application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
+        //application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
+
+        //await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input);
+
+        //await _applicationRepository.UpdateAsync(application);
+
+        //var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+        //appDto.ContactFullName = applicantAgent.Name;
+        //appDto.ContactEmail = applicantAgent.Email;
+        //appDto.ContactTitle = applicantAgent.Title;
+        //appDto.ContactBusinessPhone = applicantAgent.Phone;
+        //appDto.ContactCellPhone = applicantAgent.Phone2;
     }
 
     protected internal async Task<ApplicantAgent?> CreateOrUpdateApplicantAgentAsync(Application application, ContactInfoDto? input)

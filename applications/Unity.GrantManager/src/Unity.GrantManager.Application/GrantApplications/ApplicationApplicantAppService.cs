@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -15,6 +16,61 @@ namespace Unity.GrantManager.GrantApplications
         public ApplicationApplicantAppService(IApplicationRepository applicationRepository)
         {
             _applicationRepository = applicationRepository;
+        }
+
+        public async Task<ApplicantInfoDto> GetApplicantInfoTabAsync(Guid applicationId)
+        {
+            var application = await _applicationRepository.WithBasicDetailsAsync(applicationId);
+            if (application == null || !await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Default))
+            {
+                return new ApplicantInfoDto();
+            }
+
+            var applicantInfoDto = ObjectMapper.Map<Application, ApplicantInfoDto>(application);
+
+            //-- APPLICANT INFO SUMMARY
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Default))
+            {
+                applicantInfoDto.ApplicantSummary = ObjectMapper.Map<Applicant, ApplicantSummaryDto>(application.Applicant);
+                applicantInfoDto.ApplicantSummary.FiscalDay = application.Applicant?.FiscalDay.ToString() ?? string.Empty;
+            }
+            else
+            {
+                applicantInfoDto.ApplicantSummary = new ApplicantSummaryDto();
+            }
+
+            //-- APPLICANT INFO CONTACT
+            if (application?.ApplicantAgent is not null && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Default))
+            {
+                applicantInfoDto.ContactInfo = ObjectMapper.Map<ApplicantAgent, ContactInfoDto>(application.ApplicantAgent);
+            }
+            else
+            {
+                applicantInfoDto.ContactInfo = new ContactInfoDto();
+            }
+
+            //-- SIGNING AUTHORITY
+            if (application != null && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Authority.Default))
+            {
+                applicantInfoDto.SigningAuthority = ObjectMapper.Map<Application, SigningAuthorityDto>(application);
+            }
+            else
+            {
+                applicantInfoDto.SigningAuthority = new SigningAuthorityDto();
+            }
+
+            //-- APPLICANT INFO ADDRESS
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Default))
+            {
+                //applicantInfoDto.ApplicantAddresses = ObjectMapper.Map<Application, List<ApplicantAddressDto>>(application);
+                applicantInfoDto.ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(application?.Applicant?.ApplicantAddresses?.ToList() ?? []);
+            }
+            else
+            {
+                applicantInfoDto.ApplicantAddresses = [];
+            }
+
+            return applicantInfoDto;
         }
 
         public async Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId)

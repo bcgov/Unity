@@ -203,7 +203,6 @@ class UnityChangeTrackingForm {
 
     checkFieldModified($element, name) {
         let currentValue;
-        debugger;
 
         if ($element.is(':checkbox')) {
             currentValue = $element.prop('checked');
@@ -326,6 +325,10 @@ class UnityZoneForm extends UnityChangeTrackingForm {
         this.initializeNumericFields();
         this.addSubmitHandler();
     }
+
+    // TODO Get Zone Status
+    // TODO Get field by name or id
+    // TODO Get field value by name or id
 
     isValid() {
         return this.form.valid();
