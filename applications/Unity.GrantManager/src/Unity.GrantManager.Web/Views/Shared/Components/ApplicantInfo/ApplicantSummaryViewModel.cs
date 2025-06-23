@@ -32,8 +32,7 @@ public class ApplicantSummaryViewModel
     public string? OrganizationSize { get; set; }
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd")]
-    [SelectItems(nameof(ApplicantInfoViewModel.IndigenousList))]
-    public bool? IndigenousOrgInd { get; set; }
+    public bool IndigenousOrgInd { get; set; } = false;
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.UnityApplicant")]
     public string? UnityApplicantId { get; set; }

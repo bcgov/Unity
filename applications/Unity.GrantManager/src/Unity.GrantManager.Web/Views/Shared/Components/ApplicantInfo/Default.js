@@ -526,7 +526,6 @@ function setElectoralDistrictLockState(locked) {
 
 async function refreshApplicantElectoralDistrict() {
     try {
-        debugger;
         let address = extractAddressInfo();
         let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
         let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
