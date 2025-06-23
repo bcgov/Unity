@@ -5,7 +5,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
 public class SigningAuthorityViewModel
 {
     [Display(Name = "ApplicantInfoView:ApplicantInfo.SigningAuthorityFullName")]
-    [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]
+    [MaxLength(600, ErrorMessage = "Must be a maximum of 600 characters")]
     public string? SigningAuthorityFullName { get; set; }
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.SigningAuthorityTitle")]
