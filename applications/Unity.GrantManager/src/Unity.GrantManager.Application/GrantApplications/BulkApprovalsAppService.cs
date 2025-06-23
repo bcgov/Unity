@@ -154,8 +154,15 @@ namespace Unity.GrantManager.GrantApplications
             {
                 return false;
             }
-            if(application.ApplicationForm.IsDirectApproval)
+
+            // Specific ruleset for the Is Direct Approval flow
+            if (application.ApplicationForm.IsDirectApproval)
             {
+                if (application.ApplicationStatus.StatusCode == GrantApplicationState.GRANT_APPROVED)
+                {
+                    return false;
+                }
+
                 return true;
             }
 
