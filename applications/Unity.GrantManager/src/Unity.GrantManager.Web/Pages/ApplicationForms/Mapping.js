@@ -67,7 +67,7 @@
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
         linkWorksheets: $('#btn-link-worksheets'),
-        uiConfigurationTab: $('#nav-ui-configuration')
+        uiConfigurationTab: $('#nav-ui-configuration')        
     };
 
     init();
@@ -103,7 +103,7 @@
         UIElements.btnClose.on('click', handleCancelMapping);
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
         UIElements.selectVersionList.on('change', handleSelectVersion);
-        UIElements.linkWorksheets.on('click', handleLinkWorksheets);
+        UIElements.linkWorksheets.on('click', handleLinkWorksheets);        
     }
 
     function handleLinkWorksheets() {
@@ -624,33 +624,5 @@
         for (let i = 0; i < depth; i++) {
             prettyJson.push(TAB);
         }
-    }
-
-    $("#directApproval").on('change', function (e) {
-
-        let config = {
-            "isDirectApproval": this.checked
-        }
-        $.ajax(
-            {
-                url: `/api/app/application-form/${applicationFormId}/other-config`,
-                data: JSON.stringify(config),
-                contentType: "application/json",
-                type: "PUT",
-                success: function (data) {
-
-                    abp.notify.success(
-                        data.responseText,
-                        'Settings Saved Successfully'
-                    );
-                },
-                error: function (data) {
-                    abp.notify.error(
-                        data.responseText,
-                        'Settings Not Saved Successful'
-                    );
-                }
-            }
-        );
-    })
+    }    
 });

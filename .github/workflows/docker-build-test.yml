@@ -1,4 +1,6 @@
 name: Test - Build & Push docker images
+permissions:
+  contents: read
 
 on:
   push:
@@ -110,6 +112,8 @@ jobs:
       TAGVERSION: ${{steps.tag_selector.outputs.TAGVERSION}}
   PushVariables:
     needs: [Setup,Branch,GenerateTag]
+    permissions:
+      actions: write
     runs-on: ubuntu-latest
     environment: test
     steps:

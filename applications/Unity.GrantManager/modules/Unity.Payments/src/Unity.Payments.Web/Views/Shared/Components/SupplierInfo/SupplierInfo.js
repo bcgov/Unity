@@ -4,22 +4,46 @@ $(function () {
 
     const UIElements = {
         navOrgInfoTab: $('#nav-organization-info-tab'),
-        applicantId: $("#ApplicantId"),
         siteId: $("#SiteId"),
         originalSupplierNumber: $("#OriginalSupplierNumber"),
         supplierNumber: $("#SupplierNumber"),
+        supplierName: $("#SupplierName"),
         hasEditSupplier: $("#HasEditSupplierInfo"),
-        refreshSitesBtn: $("#btn-refresh-sites")
+        refreshSitesBtn: $("#btn-refresh-sites"),
+        orgName: $("#ApplicantInfo_OrgName"), // Note: Dependent on Applicant Info Tab
+        nonRegisteredOrgName: $("#ApplicantInfo_NonRegOrgName"), // Note: Dependent on Applicant Info Tab
+        supplierOrgInfoErrorDiv: $("#supplier-error-div")
     };
 
     function init() {
         $(document).ready(function () {
             loadSiteInfoTable();
-            bindUIEvents();
+            bindUIEvents();  
+            validateMatchingSupplierToOrgInfo();
         });
     }
 
     init();
+
+    function validateMatchingSupplierToOrgInfo() {
+        const supplierName = (UIElements.supplierName.val() || '').toLowerCase().trim();
+        
+        if (!supplierName) {
+            UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
+            return;
+        }
+        let isMatch = true;
+        const orgName = (UIElements.orgName.val() || '').toLowerCase().trim();
+        const nonRegisteredOrgName = (UIElements.nonRegisteredOrgName.val() || '').toLowerCase().trim();
+
+        if(orgName != '') {
+            isMatch = !supplierName || !orgName || supplierName === orgName;
+        } else if(nonRegisteredOrgName != '') {
+            isMatch = !supplierName || !nonRegisteredOrgName || supplierName === nonRegisteredOrgName;
+        }
+        
+        UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', isMatch);
+    }
 
     function bindUIEvents() {
         UIElements.navOrgInfoTab.one('click', function () { 
@@ -27,6 +51,10 @@ $(function () {
                 dataTable.columns.adjust(); 
             }
         });
+
+        UIElements.supplierName.on('change', validateMatchingSupplierToOrgInfo);
+        UIElements.orgName.on('change', validateMatchingSupplierToOrgInfo);
+        UIElements.nonRegisteredOrgName.on('change', validateMatchingSupplierToOrgInfo);
             
         UIElements.refreshSitesBtn.on('click', function () { 
             let originalSupplierNumber = UIElements.originalSupplierNumber.val();
@@ -134,20 +162,10 @@ $(function () {
             reorderEnabled: false,
             languageSetValues: {},
             dataTableName: 'SiteInfoTable',
-            dynamicButtonContainerId: 'siteDynamicButtonContainerId'});
-    
-        dataTable.on('search.dt', () => handleSearch());
-        
-        $('#search').on('input', function () {
-            let table = $('#SiteInfoTable').DataTable();
-            table.search($(this).val()).draw();
+            externalSearchInputId: 'SiteInfoSearch',
+            dynamicButtonContainerId: 'siteDynamicButtonContainerId'
         });
-        
-        function handleSearch() {
-            let filter = $('.dataTables_filter input').val();
-            console.info(filter);
-        }
-    
+
         function getColumns() {
             let columnIndex = 0;
 
@@ -269,40 +287,15 @@ $(function () {
 
 function saveSiteDefault(siteId) {
     let applicantId = $("#ApplicantId").val();
-    $.ajax({ url: `/api/app/applicant/${applicantId}/site/${siteId}`,
+    $.ajax({
+        url: `/api/app/applicant/${applicantId}/site/${siteId}`,
         type: "POST",
         data: JSON.stringify({ ApplicantId: applicantId, SiteId: siteId }),
     })
-    .then(response => {
-        abp.notify.success('Default site has been successfully saved.', 'Default Site Saved');
-    })
-    .catch(error => {
-        console.error('There was a problem with the post operation:', error);
-    });
-}
-
-let siteInfoModal = new abp.ModalManager({
-    viewUrl: '../SiteInfo/SiteInfoModal'
-});
-
-siteInfoModal.onResult(function () {
-    PubSub.publish('refresh_sites_list');
-    abp.notify.success(
-        'Site Information is successfully saved.',
-        'Site Information'
-    );
-});
-
-function openSiteInfoModal(siteId, actionType) {
-    const applicantId = $("#ApplicantInfoViewApplicantId").val();
-    const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
-    const supplierId = $("#SupplierId").val();
-
-    siteInfoModal.open({
-        applicantId: applicantId,
-        siteId: siteId,
-        actionType: actionType,
-        supplierNumber: supplierNumber,
-        supplierId: supplierId
-    });
+        .then(response => {
+            abp.notify.success('Default site has been successfully saved.', 'Default Site Saved');
+        })
+        .catch(error => {
+            console.error('There was a problem with the post operation:', error);
+        });
 }

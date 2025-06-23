@@ -22,8 +22,9 @@
     <form id="assessmentResultForm">
         @* Zone Section : Approval *@
         <zone-fieldset id="@UnitySelector.Review.Approval.Default" form-id="@Model.ApplicationFormId"
-            update-permission-requirement="@UnitySelector.Review.Approval.Update.Default"
-            check-if=@(Model.ApprovalView != null) show-legend="true">
+                       update-permission-requirement="@UnitySelector.Review.Approval.Update.Default" show-legend="true"
+                       check-if=@(Model.ApprovalView != null) 
+                       editable-if="@Model.IsPostEditFieldsAllowed_Approval">
             @if (Model?.ApprovalView != null) // To handle CS8602 - Handled by Zone
             {
             <abp-row class="m-0 assessment-result-form">
@@ -60,8 +61,9 @@
 
         @* Zone Section : Application Assessment Result *@
         <zone-fieldset id="@UnitySelector.Review.AssessmentResults.Default" form-id="@Model.ApplicationFormId"
-            update-permission-requirement="@UnitySelector.Review.AssessmentResults.Update.Default" show-legend="true"
-            check-if=@(Model.AssessmentResultsView != null)>
+                       update-permission-requirement="@UnitySelector.Review.AssessmentResults.Update.Default" show-legend="true"
+                       check-if=@(Model.AssessmentResultsView != null)
+                       editable-if="@Model.IsPostEditFieldsAllowed_AssessmentResults">
             @if (Model?.AssessmentResultsView != null) // To handle CS8602 - Handled by Zone
             {
             <abp-row class="m-0 assessment-result-form">
@@ -78,7 +80,8 @@
                             <div class="unity-input-group">
                                 <span class="unity-input-prepend">$</span>
                                 <abp-input asp-for="@Model.AssessmentResultsView.TotalProjectBudget" id="TotalBudgetInputAR"
-                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input" />
+                                           onchange="enableAssessmentResultsSaveBtn(this)" class="unity-currency-input"
+                                               disabled="@(!Model.IsEditGranted)" />
                             </div>
                         </abp-column>
                         <abp-column size="_4" class="px-1">

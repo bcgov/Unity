@@ -60,6 +60,8 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applicants.Default));
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Applicants.Edit,
             policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applicants.Edit));
+        authorizationBuilder.AddPolicy(GrantApplicationPermissions.Applicants.AssignApplicant,
+            policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Applicants.AssignApplicant));
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Assignments.Default,
             policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Assignments.Default));
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Assignments.AssignInitial,
@@ -79,6 +81,7 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Comments.Add,
             policy => policy.RequireClaim(PermissionConstant, GrantApplicationPermissions.Comments.Add));
 
+        // R&A Policies
         authorizationBuilder.AddPolicy(UnitySelector.Review.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Review.Default));
 
@@ -136,6 +139,43 @@ internal static class PolicyRegistrant
             context.User.IsInRole(IdentityConsts.ITAdminRoleName) ||
             context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITAdminPermissionName)
         ));
+
+        // Project Info Policies
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Default));
+
+        // Project Info Logical OR policy
+        authorizationBuilder.AddPolicy(UnitySelector.Project.UpdatePolicy,
+            policy => policy.RequireAssertion(context => 
+            context.User.HasClaim(PermissionConstant, UnitySelector.Project.Location.Update.Default) ||
+            context.User.HasClaim(PermissionConstant, UnitySelector.Project.Summary.Update.Default) ||
+            
+            // NOTE: This will be replaced when Worksheets are normalized with UnitySelector.Project.Worksheet.Update
+            context.User.HasClaim(PermissionConstant, UnitySelector.Project.Default) 
+        ));
+
+        // Project Info - Summary Policies
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Summary.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Summary.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Summary.Update.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Summary.Update.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Summary.Update.UpdateFinalStateFields));
+
+        // Project Info - Location Policies
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Location.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Location.Update.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Location.Update.UpdateFinalStateFields,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.UpdateFinalStateFields));
+
+        // Project Info - Worksheet Policies
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Worksheet.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Worksheet.Default));  // NOTE: Will be replaced when Worksheets normalized
+        
+        authorizationBuilder.AddPolicy(UnitySelector.Project.Worksheet.Update,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Worksheet.Update));  // NOTE: Will be replaced when Worksheets normalized
     }
 }
 

@@ -133,26 +133,69 @@ function initializeDataTable(options) {
                 ...(Array.isArray(listColumnDefs) && listColumnDefs.length > 0 ? listColumnDefs : [])
             ],
             processing: true,
-            stateSaveParams: function (settings, data) {
-                let searchValue = $(settings.oInit.externalSearchInputId).val();
-                data.search.search = searchValue;
+           stateSaveParams: function (settings, data) {
+               let searchValue = $(settings.oInit.externalSearchInputId).val();
+               data.search.search = searchValue;
 
-                let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
-                $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
+               // Assign unique keys to columns based on their original index
+               data.columns.forEach((col, idx) => {
+                   let aoCol = settings.aoColumns[idx];
+                   let originalIdx = typeof aoCol._ColReorder_iOrigCol !== "undefined" ? aoCol._ColReorder_iOrigCol : idx;
+                   let originalCol = settings.aoColumns.find(col => col.index === originalIdx);
+                   data.columns[originalIdx].uniqueKey = originalCol.name;
+               });
+
+               let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
+               $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
             },
-            stateLoadParams: function (settings, data) {
-                $(settings.oInit.externalSearchInputId).val(data.search.search);
+           stateLoadParams: function (settings, data) {
+               $(settings.oInit.externalSearchInputId).val(data.search.search);
+               let stateCorrupted = false;
+               const tableId = settings.sTableId || settings.nTable.id;
 
-                data.columns.forEach((column, index) => {
-                    if(settings.aoColumns[index] +"" != "undefined") {
-                        const title = settings.aoColumns[index].sTitle;
-                        const value = column.search.search;
-                        filterData[title] = value;
-                    }
-                });
+               data.columns.forEach((column, index) => {
+                   if (settings.aoColumns[index] + "" != "undefined") {
+                       const title = settings.aoColumns[index].sTitle;
+                       const name = settings.aoColumns[index].name;
+                       const dataObj = data.columns.find(col => col.uniqueKey === name);
+                       if (typeof dataObj === "undefined") {
+                           localStorage.removeItem(`DataTables_${tableId}_${window.location.pathname}`);
+                           cleanInvalidStateRestore(tableId);
+                           stateCorrupted = true;
+                       } else {
+                           const value = dataObj?.search?.search ?? '';
+                           filterData[title] = value;
+                       }
+                   }
+               });
+
+               if (stateCorrupted) {
+                   window.location.reload();
+                   return false;
+               }
             }
         })
     );
+
+    function cleanInvalidStateRestore(tableId) {
+        Object.keys(localStorage)
+            .filter(key => key.includes('DataTables_stateRestore') && key.includes(`${tableId}`))
+            .forEach(key => {
+                try {
+                    const value = localStorage.getItem(key);
+                    if (!value) return;
+                    const obj = JSON.parse(value);
+                    if (Array.isArray(obj.columns)) {
+                        const hasMissingUniqueKey = obj.columns.some(col => !('uniqueKey' in col));
+                        if (hasMissingUniqueKey) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Could not process DataTables state for key: ${key}`, e);
+                }
+            });
+    }
 
     // Add custom manage columns button that remains sorted alphabetically
     if (!disableColumnSelect) {

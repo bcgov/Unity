@@ -25,5 +25,8 @@ public class UnityZoneTagHelper(UnityZoneTagHelperService tagHelperService)
     public Guid FormId { get; set; } = Guid.Empty;
 
     [HtmlAttributeName("check-if")]
-    public bool Condition { get; set; } = true;
+    public bool? ReadCondition { get; set; }
+
+    [HtmlAttributeName("editable-if")]
+    public bool? UpdateCondition { get; set; }
 }

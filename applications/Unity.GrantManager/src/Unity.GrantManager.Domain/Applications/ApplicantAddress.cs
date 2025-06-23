@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text.Json.Serialization;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Entities.Auditing;
@@ -28,4 +29,27 @@ public class ApplicantAddress : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? Unit { get; set; } = string.Empty;
     public AddressType AddressType { get; set; } = AddressType.PhysicalAddress;
     public Guid? TenantId { get; set; }
+
+    /// <summary>
+    /// Returns the address as a single comma-separated string, ordered by relevance.
+    /// </summary>
+    public string GetFullAddress()
+    {
+        var parts = new[]
+        {
+            Street,
+            Street2,
+            Unit,
+            City,
+            Province,
+            Postal,
+            Country
+        };
+
+        var address = string.Join(", ", parts
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => p!.Trim()));
+
+        return address;
+    }
 }

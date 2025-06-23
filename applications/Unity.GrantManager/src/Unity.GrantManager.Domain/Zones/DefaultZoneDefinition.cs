@@ -48,7 +48,6 @@ public static class DefaultZoneDefinition
                          Name = UnitySelector.Project.Location.Default,
                          ViewComponentType = "ProjectLocationViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 2
                      },
                  ]

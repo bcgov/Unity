@@ -10,6 +10,8 @@ using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
 using Unity.GrantManager.Locality;
 using Volo.Abp.DependencyInjection;
 using Xunit;
+using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Components
 {
@@ -64,6 +66,14 @@ namespace Unity.GrantManager.Components
             var appService = Substitute.For<IApplicationApplicantAppService>();
             appService.GetByApplicationIdAsync(Arg.Any<Guid>()).Returns(applicationDto);
             var sectorService = Substitute.For<ISectorService>();
+
+            var applicationElectoralDistrictAppService = Substitute.For<IElectoralDistrictService>();
+            var applicationFormAppService = Substitute.For<IApplicationFormAppService>();
+            applicationFormAppService.GetAsync(Arg.Any<Guid>()).Returns(new ApplicationFormDto
+            {
+                ElectoralDistrictAddressType = ApplicationForm.GetDefaultElectoralDistrictAddressType()
+            });
+
             var viewContext = new ViewContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -73,7 +83,10 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new ApplicantInfoViewComponent(appService, sectorService)
+            var viewComponent = new ApplicantInfoViewComponent(appService, 
+                sectorService,
+                applicationElectoralDistrictAppService,
+                applicationFormAppService)
             {
                 ViewComponentContext = viewComponentContext,
                 LazyServiceProvider = lazyServiceProvider
@@ -108,27 +121,27 @@ namespace Unity.GrantManager.Components
             var expectedMailingAddressProvince = "some province";
             var expectedMailingAddressPostalCode = "some postal";
 
-            resultModel!.ApplicantInfo!.ContactFullName.ShouldBe(expectedFullName);
-            resultModel!.ApplicantInfo!.ContactTitle.ShouldBe(expectedTitle);
-            resultModel!.ApplicantInfo!.ContactEmail.ShouldBe(expectedEmail);
-            resultModel!.ApplicantInfo!.ContactBusinessPhone.ShouldBe(expectedBusinessPhone);
-            resultModel!.ApplicantInfo!.ContactCellPhone.ShouldBe(expectedCellPhone);
-            resultModel!.ApplicantInfo!.SigningAuthorityFullName.ShouldBe(expectedSigningAuthorityFullName);
-            resultModel!.ApplicantInfo!.SigningAuthorityTitle.ShouldBe(expectedSigningAuthorityTitle);
-            resultModel!.ApplicantInfo!.SigningAuthorityEmail.ShouldBe(expectedSigningAuthorityEmail);
-            resultModel!.ApplicantInfo!.SigningAuthorityBusinessPhone.ShouldBe(expectedSigningAuthorityBusinessPhone);
-            resultModel!.ApplicantInfo!.SigningAuthorityCellPhone.ShouldBe(expectedSigningAuthorityCellPhone);
+            resultModel!.ContactFullName.ShouldBe(expectedFullName);
+            resultModel!.ContactTitle.ShouldBe(expectedTitle);
+            resultModel!.ContactEmail.ShouldBe(expectedEmail);
+            resultModel!.ContactBusinessPhone.ShouldBe(expectedBusinessPhone);
+            resultModel!.ContactCellPhone.ShouldBe(expectedCellPhone);
+            resultModel!.SigningAuthorityFullName.ShouldBe(expectedSigningAuthorityFullName);
+            resultModel!.SigningAuthorityTitle.ShouldBe(expectedSigningAuthorityTitle);
+            resultModel!.SigningAuthorityEmail.ShouldBe(expectedSigningAuthorityEmail);
+            resultModel!.SigningAuthorityBusinessPhone.ShouldBe(expectedSigningAuthorityBusinessPhone);
+            resultModel!.SigningAuthorityCellPhone.ShouldBe(expectedSigningAuthorityCellPhone);
 
-            resultModel!.ApplicantInfo!.PhysicalAddressStreet.ShouldBe(expectedPhysicalAddressStreet);
-            resultModel!.ApplicantInfo!.PhysicalAddressCity.ShouldBe(expectedPhysicalAddressCity);
-            resultModel!.ApplicantInfo!.PhysicalAddressUnit.ShouldBe(expectedPhysicalAddressUnit);
-            resultModel!.ApplicantInfo!.PhysicalAddressProvince.ShouldBe(expectedPhysicalAddressProvince);
-            resultModel!.ApplicantInfo!.PhysicalAddressPostalCode.ShouldBe(expectedPhysicalAddressPostalCode);
-            resultModel!.ApplicantInfo!.MailingAddressStreet.ShouldBe(expectedMailingAddressStreet);
-            resultModel!.ApplicantInfo!.MailingAddressCity.ShouldBe(expectedMailingAddressCity);
-            resultModel!.ApplicantInfo!.MailingAddressUnit.ShouldBe(expectedMailingAddressUnit);
-            resultModel!.ApplicantInfo!.MailingAddressProvince.ShouldBe(expectedMailingAddressProvince);
-            resultModel!.ApplicantInfo!.MailingAddressPostalCode.ShouldBe(expectedMailingAddressPostalCode);
+            resultModel!.PhysicalAddressStreet.ShouldBe(expectedPhysicalAddressStreet);
+            resultModel!.PhysicalAddressCity.ShouldBe(expectedPhysicalAddressCity);
+            resultModel!.PhysicalAddressUnit.ShouldBe(expectedPhysicalAddressUnit);
+            resultModel!.PhysicalAddressProvince.ShouldBe(expectedPhysicalAddressProvince);
+            resultModel!.PhysicalAddressPostalCode.ShouldBe(expectedPhysicalAddressPostalCode);
+            resultModel!.MailingAddressStreet.ShouldBe(expectedMailingAddressStreet);
+            resultModel!.MailingAddressCity.ShouldBe(expectedMailingAddressCity);
+            resultModel!.MailingAddressUnit.ShouldBe(expectedMailingAddressUnit);
+            resultModel!.MailingAddressProvince.ShouldBe(expectedMailingAddressProvince);
+            resultModel!.MailingAddressPostalCode.ShouldBe(expectedMailingAddressPostalCode);
         }
     }
 }

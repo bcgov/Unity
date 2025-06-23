@@ -11,7 +11,6 @@ oc delete templates --all
 oc create -f $repository\database\unity-backup-cronjob.yaml
 oc create -f $repository\database\unity-database.yaml
 oc create -f $repository\openshift\unity-imagestream.yaml
-oc create -f $repository\openshift\unity-applicantportal-web.yaml
 oc create -f $repository\openshift\unity-grantmanager-dbmigrator-job.yaml
 oc create -f $repository\openshift\unity-grantmanager-web.yaml
 oc create -f $repository\openshift\unity-networkpolicy.yaml
@@ -33,24 +32,24 @@ As a best practice, store copies of these files in a secure location.
 "metabase.env"
 "rabbitmq.env"
 ```
+
 Use oc get templates to find all available parameters of a project template.
-```
 oc get templates
 
-NAME                                DESCRIPTION                                                                        PARAMETERS         OBJECTS
-unity-app-data-web                  An example Nginx HTTP server and a reverse proxy (nginx) application that ser...   11 (1 blank)       3
-unity-applicantportal-web           Template for running a DotNet web application on OpenShift.                        17 (1 generated)   5
-unity-backup-cronjob                Template for running a recurring backup script in OpenShift.                       16 (1 generated)   1
-unity-chefs-data-web                An example Nginx HTTP server and a reverse proxy (nginx) application that ser...   4 (all set)        1
-unity-database                      PostgreSQL database service with persistent storage....                            18 (1 generated)   6
-unity-grantmanager-dbmigrator-job   Template for running a dotnet console application once in OpenShift.               12 (1 generated)   1
-unity-grantmanager-web              Template for running a DotNet web application on OpenShift.                        42 (1 blank)       6
-unity-imagestream                   Template for tracking of changes in the application image.                         2 (all set)        1
-unity-metabase                      Template for running a DotNet web application on OpenShift.                        19 (1 generated)   4
-unity-networkpolicy                 Template for communications rules in OpenShift.                                    2 (all set)        3
-unity-rabbitmq                      Template for running RabbitMQ message queue application on OpenShift.              12 (all set)       4
-unity-s3-object-storage             Template for S3 connection information in OpenShift.                               9 (2 generated)    2
-```
+| **NAME**  | **DESCRIPTION** |
+|-----------|-----------------|
+| unity-app-data-web                   | An example Nginx HTTP server and a reverse proxy (nginx) application that serves web content. |
+| unity-backup-cronjob                 | Template for running a recurring backup script in OpenShift.                   |
+| unity-chefs-data-web                 | An example Nginx HTTP server and a reverse proxy (nginx) application that serves web content. |
+| unity-database                       | PostgreSQL database service with persistent storage.                           |
+| unity-grantmanager-dbmigrator-job    | Template for running a dotnet console application once in OpenShift.           |
+| unity-grantmanager-pgbackup-job      | Template for running a dotnet console application once in OpenShift.           |
+| unity-grantmanager-web               | Template for running a DotNet web application on OpenShift.                    |
+| unity-imagestream                    | Template for tracking of changes in the application image.                     |
+| unity-metabase                       | Template for running a DotNet web application on OpenShift.                    |
+| unity-networkpolicy                  | Template for communications rules in OpenShift.                                |
+| unity-rabbitmq                       | Template for running RabbitMQ message queue application on OpenShift.          |
+| unity-s3-object-storage              | Template for S3 connection information in OpenShift.                           |
 
 ## Step 3: Create or replace project resources
 

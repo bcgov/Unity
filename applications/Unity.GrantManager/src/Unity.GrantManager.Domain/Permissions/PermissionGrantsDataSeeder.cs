@@ -31,10 +31,7 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Review.AssessmentReviewList.Default,
             UnitySelector.Review.AssessmentReviewList.Create,
             UnitySelector.Review.AssessmentReviewList.Update.SendBack,
-            UnitySelector.Review.AssessmentReviewList.Update.Complete,
-
-            UnitySelector.Review.Worksheet.Default,
-            UnitySelector.Review.Worksheet.Update,
+            UnitySelector.Review.AssessmentReviewList.Update.Complete
         ];
 
         public readonly List<string> ApplicantInfo_CommonPermissions = [
@@ -43,8 +40,11 @@ namespace Unity.GrantManager.Permissions
         ];
 
         public readonly List<string> ProjectInfo_CommonPermissions = [
-            GrantApplicationPermissions.ProjectInfo.Default,
-            GrantApplicationPermissions.ProjectInfo.Update,
+            UnitySelector.Project.Default,
+            UnitySelector.Project.Summary.Default,
+            UnitySelector.Project.Summary.Update.Default,
+            UnitySelector.Project.Location.Default,
+            UnitySelector.Project.Location.Update.Default,
         ];
 
         public readonly List<string> Notifications_CommonPermissions = [
@@ -136,6 +136,7 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Assignments.AssignInitial,
+                    GrantApplicationPermissions.Applicants.AssignApplicant,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
@@ -151,7 +152,11 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
-                    .. Dashboard_CommonPermissions
+                    .. Dashboard_CommonPermissions,
+
+                    // Role Specific Permissions
+                    UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
+                    UnitySelector.Project.Location.Update.UpdateFinalStateFields,
                 ], context.TenantId);
 
             // - Approver
@@ -257,7 +262,10 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Review.Worksheet.Default,
 
                     GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Default,
+                    
+                    UnitySelector.Project.Default,
+                    UnitySelector.Project.Summary.Default,
+                    UnitySelector.Project.Location.Default,
 
                     NotificationsPermissions.Email.Default,
                 ], context.TenantId);

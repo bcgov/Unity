@@ -46,6 +46,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             // Applicant
             var applicatPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applicants.Default, L("Permission:GrantApplicationManagement.Applicants.Default"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagement.Applicants.Edit"));
+            applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.AssignApplicant, L("Permission:GrantApplicationManagement.Applicants.AssignApplicant"));
 
             // Assignment
             var assignmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assignments.Default, L("Permission:GrantApplicationManagement.Assignments.Default"));
@@ -74,9 +75,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             applicantInfoPermissions.AddChild(GrantApplicationPermissions.ApplicantInfo.Update, L($"Permission:{GrantApplicationPermissions.ApplicantInfo.Update}"));
 
             // Project Info
-            var projectInfoPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.ProjectInfo.Default, L("Permission:GrantApplicationManagement.ProjectInfo"));
-            var updateProjectInfoPermissions = projectInfoPermissions.AddChild(GrantApplicationPermissions.ProjectInfo.Update, L("Permission:GrantApplicationManagement.ProjectInfo.Update"));
-            updateProjectInfoPermissions.AddChild(GrantApplicationPermissions.ProjectInfo.UpdateFinalStateFields, L("Permission:GrantApplicationManagement.ProjectInfo.Update.UpdateFinalStateFields"));
+           grantApplicationPermissionsGroup.AddApplication_ProjectInfo_Permissions();
 
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
@@ -132,23 +131,24 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var upx_Review_AssessmentReviewList                     = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Default);
             var upx_Review_AssessmentReviewList_Create              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Create);
             
-            // Assessment Review Transitions are implied update functions but not in the update hierarchy at this time
-            // var upx_Review_AssessmentReviewList_Update           = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.Default);
             var upx_Review_AssessmentReviewList_SendBack            = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.SendBack);
             var upx_Review_AssessmentReviewList_Complete            = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Update.Complete);
-
-            //var upx_Review_Worksheet                                = upx_Review.AddUnityChild(UnitySelector.Review.Worksheet.Default);
-            //var upx_Review_Worksheet_Update                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Update);
             #endregion
+        }
 
-            // Available Permission Hooks
-            // var upx_Review_Approval_Create                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Create);
-            // var upx_Review_Approval_Delete                          = upx_Review_Approval.AddUnityChild(UnitySelector.Review.Approval.Delete);
-            // var upx_Review_AssessmentResults_Create                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Create);
-            // var upx_Review_AssessmentResults_Delete                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Delete);
-            // var upx_Review_AssessmentReviewList_Delete              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Delete);
-            // var upx_Review_Worksheet_Create                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Create);
-            // var upx_Review_Worksheet_Delete                         = upx_Review_Worksheet.AddUnityChild(UnitySelector.Review.Worksheet.Delete);
+        public static void AddApplication_ProjectInfo_Permissions(this PermissionGroupDefinition grantApplicationPermissionsGroup)
+        {
+            #region PROJECT INFO GRANULAR PERMISSIONS
+            var upx_Project                                         = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Project.Default, L(UnitySelector.Project.Default));
+
+            var upx_Project_Summary                                 = upx_Project.AddUnityChild(UnitySelector.Project.Summary.Default);
+            var upx_Project_Summary_Update                          = upx_Project_Summary.AddUnityChild(UnitySelector.Project.Summary.Update.Default);
+            var upx_Project_Summary_UpdateFinalStateFields          = upx_Project_Summary_Update.AddUnityChild(UnitySelector.Project.Summary.Update.UpdateFinalStateFields);
+
+            var upx_Project_Location                                = upx_Project.AddUnityChild(UnitySelector.Project.Location.Default);
+            var upx_Project_Location_Update                         = upx_Project_Location.AddUnityChild(UnitySelector.Project.Location.Update.Default);
+            var upx_Project_Location_UpdateFinalStateFields         = upx_Project_Location_Update.AddUnityChild(UnitySelector.Project.Location.Update.UpdateFinalStateFields);
+            #endregion
         }
 
         public static PermissionDefinition AddUnityChild(this PermissionDefinition parent, string name)

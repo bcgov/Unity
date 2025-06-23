@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RestSharp;
 using System.Threading.Tasks;
@@ -11,34 +12,26 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Integrations.Geocoder
 {
-    [IntegrationService]    
-    [ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderApiService))]
-    public class GeocoderApiService : ApplicationService, IGeocoderApiService
+    //[IntegrationService]
+    //[ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderApiService))]
+    [AllowAnonymous]
+    public class GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration) : ApplicationService, IGeocoderApiService
     {
-        private readonly IResilientHttpRequest _resilientRestClient;
-        private readonly IConfiguration _configuration;
-
-        public GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration)
-        {
-            _resilientRestClient = resilientRestClient;
-            _configuration = configuration;
-        }
-
         public async Task<AddressDetailsDto> GetAddressDetailsAsync(string address)
         {
-            var resource = $"{_configuration["Geocoder:LocationDetails:BaseUri"]}/addresses.json?outputSRS=3005&addressString={address}";
+            var resource = $"{configuration["Geocoder:LocationDetails:BaseUri"]}/addresses.json?outputSRS=3005&addressString={address}";
 
             return ResultMapper.MapToLocation(await GetGeoCodeDataSegmentAsync(resource));
         }
 
         public async Task<ElectoralDistrictDto> GetElectoralDistrictAsync(LocationCoordinates locationCoordinates)
         {
-            var resource = $"{_configuration["Geocoder:BaseUri"]}" +
-                $"{_configuration["Geocoder:ElectoralDistrict:feature"]}" +
+            var resource = $"{configuration["Geocoder:BaseUri"]}" +
+                $"{configuration["Geocoder:ElectoralDistrict:feature"]}" +
                 $"&srsname=EPSG:4326" +
-                $"&propertyName={_configuration["Geocoder:ElectoralDistrict:property"]}" +
+                $"&propertyName={configuration["Geocoder:ElectoralDistrict:property"]}" +
                 $"&outputFormat=application/json" +
-                $"&cql_filter=INTERSECTS({_configuration["Geocoder:ElectoralDistrict:querytype"]}" +
+                $"&cql_filter=INTERSECTS({configuration["Geocoder:ElectoralDistrict:querytype"]}" +
                 $",POINT(" + locationCoordinates.Latitude.ToString() + " " + locationCoordinates.Longitude.ToString() + "))";
 
             return ResultMapper.MapToElectoralDistrict(await GetGeoCodeDataSegmentAsync(resource));
@@ -46,12 +39,12 @@ namespace Unity.GrantManager.Integrations.Geocoder
 
         public async Task<EconomicRegionDto> GetEconomicRegionAsync(LocationCoordinates locationCoordinates)
         {
-            var resource = $"{_configuration["Geocoder:BaseUri"]}" +
-                 $"{_configuration["Geocoder:EconomicRegion:feature"]}" +
+            var resource = $"{configuration["Geocoder:BaseUri"]}" +
+                 $"{configuration["Geocoder:EconomicRegion:feature"]}" +
                  $"&srsname=EPSG:4326" +
-                 $"&propertyName={_configuration["Geocoder:EconomicRegion:property"]}" +
+                 $"&propertyName={configuration["Geocoder:EconomicRegion:property"]}" +
                  $"&outputFormat=application%2Fjson" +
-                 $"&cql_filter=INTERSECTS({_configuration["Geocoder:EconomicRegion:querytype"]}" +
+                 $"&cql_filter=INTERSECTS({configuration["Geocoder:EconomicRegion:querytype"]}" +
                  $",POINT(" + locationCoordinates.Latitude.ToString() + " " + locationCoordinates.Longitude.ToString() + "))";
 
             return ResultMapper.MapToEconomicRegion(await GetGeoCodeDataSegmentAsync(resource));
@@ -59,12 +52,12 @@ namespace Unity.GrantManager.Integrations.Geocoder
 
         public async Task<RegionalDistrictDto> GetRegionalDistrictAsync(LocationCoordinates locationCoordinates)
         {
-            var resource = $"{_configuration["Geocoder:BaseUri"]}" +
-               $"{_configuration["Geocoder:RegionalDistrict:feature"]}" +
+            var resource = $"{configuration["Geocoder:BaseUri"]}" +
+               $"{configuration["Geocoder:RegionalDistrict:feature"]}" +
                $"&srsname=EPSG:4326" +
-               $"&propertyName={_configuration["Geocoder:RegionalDistrict:property"]}" +
+               $"&propertyName={configuration["Geocoder:RegionalDistrict:property"]}" +
                $"&outputFormat=application/json" +
-               $"&cql_filter=INTERSECTS({_configuration["Geocoder:RegionalDistrict:querytype"]}" +
+               $"&cql_filter=INTERSECTS({configuration["Geocoder:RegionalDistrict:querytype"]}" +
                $",POINT(" + locationCoordinates.Latitude.ToString() + " " + locationCoordinates.Longitude.ToString() + "))";
 
             return ResultMapper.MapToRegionalDistrict(await GetGeoCodeDataSegmentAsync(resource));
@@ -72,7 +65,7 @@ namespace Unity.GrantManager.Integrations.Geocoder
 
         private async Task<dynamic?> GetGeoCodeDataSegmentAsync(string resource)
         {
-            var response = await _resilientRestClient.HttpAsync(Method.Get, resource);
+            var response = await resilientRestClient.HttpAsync(Method.Get, resource);
 
             if (response != null
                 && response.Content != null

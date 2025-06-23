@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
@@ -12,4 +13,5 @@ public interface IApplicantRepository : IRepository<Applicant, Guid>
     Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName);
     Task<List<Applicant>> GetApplicantsWithUnityApplicantIdAsync();
     Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId);
+    Task<JsonDocument> GetApplicantAutocompleteQueryAsync(string? applicantLookUpQuery);
 }

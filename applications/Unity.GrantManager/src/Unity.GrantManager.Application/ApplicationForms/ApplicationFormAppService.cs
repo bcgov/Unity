@@ -12,6 +12,7 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Security.Encryption;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -130,12 +131,14 @@ namespace Unity.GrantManager.ApplicationForms
             await _applicationFormRepository.UpdateAsync(appForm);
         }
 
-        public  async Task<ApplicationFormDto> UpdateOtherConfig(Guid id, OtherConfigDto config)
+        public async Task PatchOtherConfig(Guid id, OtherConfigDto config)
         {
-            var appForm = await _applicationFormRepository.GetAsync(id);
-            appForm.IsDirectApproval = config.IsDirectApproval;
-            await _applicationFormRepository.UpdateAsync(appForm);
-            return ObjectMapper.Map<ApplicationForm, ApplicationFormDto>(appForm);
+            var form = await _applicationFormRepository.GetAsync(id);
+
+            form.IsDirectApproval = config.IsDirectApproval;            
+            form.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
+            
+            await _applicationFormRepository.UpdateAsync(form);
         }
     }
 }
