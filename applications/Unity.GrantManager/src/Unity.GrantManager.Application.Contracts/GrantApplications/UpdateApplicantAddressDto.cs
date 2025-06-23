@@ -12,5 +12,5 @@ public class UpdateApplicantAddressDto
     public string? Unit { get; set; }
     public string? City { get; set; }
     public string? Province { get; set; }
-    public string? Postal { get; set; }
+    public string? PostalCode { get; set; }
 }

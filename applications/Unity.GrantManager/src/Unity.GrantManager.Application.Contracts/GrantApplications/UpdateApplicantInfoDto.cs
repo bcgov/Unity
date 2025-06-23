@@ -10,11 +10,11 @@ public class UpdateApplicantInfoDto : CustomDataFieldDto
     public Guid ApplicantId { get; set; }
     public Guid ApplicationFormId { get; set; }
 
-    //public string ApplicantName { get; set; } = string.Empty;
     public string? ElectoralDistrict { get; set; }
 
     public ApplicantSummaryDto? ApplicantSummary { get; set; }
-    public List<UpdateApplicantAddressDto>? ApplicantAddresses { get; set; }
+    public UpdateApplicantAddressDto? PhysicalAddress { get; set; }
+    public UpdateApplicantAddressDto? MailingAddress { get; set; }
     public SigningAuthorityDto? SigningAuthority { get; set; }
     public ContactInfoDto? ContactInfo { get; set; }
 }

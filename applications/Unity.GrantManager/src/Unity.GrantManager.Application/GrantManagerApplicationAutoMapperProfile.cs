@@ -104,6 +104,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ContactInfoDto, ApplicantAgent>()
             .IgnoreNullAndDefaultValues();
         CreateMap<UpdateApplicantAddressDto, ApplicantAddress>()
+            .ForMember(dest => dest.Postal, opt => opt.MapFrom(src => src.PostalCode))
             .IgnoreNullAndDefaultValues();
     }
 }

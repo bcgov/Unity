@@ -92,12 +92,12 @@
                     .add('WorksheetId');
             }
 
-            // NOTE: This is currently bypassed for debugging
+            customIncludes.add('ApplicantId');
+
             let modifiedFieldData = Object.fromEntries(
                 Object.entries(submissionPayload).filter(([key, _]) => {
                     // Check if it's a modified widget field
-                    //return this.zoneForm.modifiedFields.has(`ApplicantInfo.${key}`) || customIncludes.has(key);
-                    return true;
+                    return this.zoneForm.modifiedFields.has(key) || customIncludes.has(key);
                 })
             );
 
@@ -604,7 +604,11 @@ async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj) {
 
 function enableApplicantInfoSaveBtn(inputText) {
     if (!$("#ApplicantInfoForm").valid()
-        || !abp.auth.isGranted('GrantApplicationManagement.ApplicantInfo.Update')  // TODO
+        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant') // Note: Will replace after worksheet permissions added
+        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update')
+        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update')
+        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant.Location.Update')
+        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update')
         || formHasInvalidCurrencyCustomFields("ApplicantInfoForm")) {
         $('#saveApplicantInfoBtn').prop('disabled', true);
         return;

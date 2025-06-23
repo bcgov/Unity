@@ -177,10 +177,18 @@ public class ApplicationApplicantAppService(
         }
 
         //-- APPLICANT INFO - ADDRESS
-        if (input.Data.ApplicantAddresses != null && input.Data.ApplicantAddresses.Count > 0 
+        if (input.Data.PhysicalAddress != null
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
         {
-            await CreateOrUpdateApplicantAddresses(application.ApplicantId, input.Data.ApplicantAddresses);
+            input.Data.PhysicalAddress.AddressType = AddressType.PhysicalAddress;
+            await CreateOrUpdateApplicantAddress(application.ApplicantId, input.Data.PhysicalAddress);
+        }
+
+        if (input.Data.MailingAddress != null
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        {
+            input.Data.MailingAddress.AddressType = AddressType.MailingAddress;
+            await CreateOrUpdateApplicantAddress(application.ApplicantId, input.Data.MailingAddress);
         }
 
         //-- APPLICANT INFO CUSTOM FIELDS
@@ -220,12 +228,12 @@ public class ApplicationApplicantAppService(
     {
         ObjectMapper.Map<ApplicantSummaryDto, Applications.Applicant>(applicantSummary, applicant);
 
-        if (modifiedFields != null && modifiedFields.Count > 0) // Ensure modifiedFields is not null
-        {
-            var modifiedSummaryFields = modifiedFields?
+        var modifiedSummaryFields = modifiedFields?
                 .Where(f => f.StartsWith("ApplicantSummary.", StringComparison.Ordinal))
-                .Select(f => f["ApplicantSummary.".Length..]);
+                .Select(f => f["ApplicantSummary.".Length..]).ToList() ?? [];
 
+        if (modifiedSummaryFields != null && modifiedSummaryFields.Count > 0) // Ensure modifiedFields is not null
+        {
             // Handle null values for changed fields
             PropertyHelper.ApplyNullValuesFromDto(
                 applicantSummary,
@@ -243,7 +251,7 @@ public class ApplicationApplicantAppService(
     /// <param name="contactInfo"></param>
     /// <returns></returns>
     [Authorize(UnitySelector.Applicant.Contact.Update)]
-    protected internal async Task<ApplicantAgent?> CreateOrUpdateContactInfoAsync(Guid applicantId, ContactInfoDto contactInfo, List<string>? modifiedFields = default)
+    protected internal async Task<ApplicantAgent?> CreateOrUpdateContactInfoAsync(Guid applicantId, ContactInfoDto contactInfo)
     {
         var applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicantId == applicantId)
         ?? new ApplicantAgent
@@ -253,15 +261,6 @@ public class ApplicationApplicantAppService(
         };
 
         ObjectMapper.Map<ContactInfoDto, ApplicantAgent>(contactInfo, applicantAgent);
-
-        if (modifiedFields != default && modifiedFields.Count > 0)
-        {
-            // Handle null values for changed fields
-            PropertyHelper.ApplyNullValuesFromDto(
-                contactInfo,
-                applicantAgent,
-                modifiedFields);
-        }
 
         if (applicantAgent.Id == Guid.Empty)
         {
@@ -280,37 +279,26 @@ public class ApplicationApplicantAppService(
     /// <param name="modifiedFields"></param>
     /// <returns></returns>
     [Authorize(UnitySelector.Applicant.Location.Update)]
-    protected internal async Task CreateOrUpdateApplicantAddresses(Guid applicantId, List<UpdateApplicantAddressDto> applicantAddress, List<string>? modifiedFields = default)
+    protected internal async Task CreateOrUpdateApplicantAddress(Guid applicantId, UpdateApplicantAddressDto updatedAddress)
     {
-        var addresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
-        foreach (var updatedAddress in applicantAddress)
+        var applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
+        
+        ApplicantAddress? dbAddress = applicantAddresses.FirstOrDefault(a => a.AddressType == updatedAddress.AddressType)
+        ?? new ApplicantAddress
         {
-            ApplicantAddress? dbAddress = addresses.FirstOrDefault(a => a.AddressType == updatedAddress.AddressType)
-            ?? new ApplicantAddress
-            {
-                ApplicantId = applicantId,
-                AddressType = updatedAddress.AddressType,
-            };
+            ApplicantId = applicantId,
+            AddressType = updatedAddress.AddressType,
+        };
 
-            ObjectMapper.Map<UpdateApplicantAddressDto, ApplicantAddress>(updatedAddress);
+        ObjectMapper.Map<UpdateApplicantAddressDto, ApplicantAddress>(updatedAddress, dbAddress);
 
-            if (modifiedFields != default && modifiedFields.Count > 0)
-            {
-                // Handle null values for changed fields
-                PropertyHelper.ApplyNullValuesFromDto(
-                    updatedAddress,
-                    dbAddress,
-                    modifiedFields);
-            }
-
-            if (dbAddress.Id == Guid.Empty)
-            {
-                await applicantAddressRepository.InsertAsync(dbAddress);
-            }
-            else
-            {
-                await applicantAddressRepository.UpdateAsync(dbAddress);
-            }
+        if (dbAddress.Id == Guid.Empty)
+        {
+            await applicantAddressRepository.InsertAsync(dbAddress);
+        }
+        else
+        {
+            await applicantAddressRepository.UpdateAsync(dbAddress);
         }
     }
 
