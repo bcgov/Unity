@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Unity.Flex.Worksheets;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -24,66 +23,5 @@ public class ApplicationApplicantInfoDto : GrantApplicationApplicantDto
     public GrantApplicationState ApplicationStatusCode { get; set; }
     public List<ApplicantAddressDto> ApplicantAddresses { get; set; } = [];
     public Guid ApplicationFormId { get; set; }
-    public string NonRegOrgName { get; set; } = string.Empty;        
-}
-
-public class ApplicantInfoDto : CustomDataFieldDto
-{
-    public Guid ApplicationId { get; set; }
-    public Guid ApplicantId { get; set; }
-    public Guid ApplicationFormId { get; set; }
-
-    public string ApplicationReferenceNo { get; set; } = string.Empty;
-    public string ApplicantName { get; set; } = string.Empty;
-    public GrantApplicationState ApplicationStatusCode { get; set; }
-    public string? ElectoralDistrict { get; set; }
-
-    public ApplicantSummaryDto? ApplicantSummary { get; set; }
-    public List<ApplicantAddressDto>? ApplicantAddresses { get; set; }
-    public SigningAuthorityDto? SigningAuthority { get; set; }
-    public ContactInfoDto? ContactInfo { get; set; }
-}
-
-public class ApplicantSummaryDto
-{
-    public Guid ApplicantId { get; set; }
-    public string? ApplicantName { get; set; }
-    public string? Sector { get; set; }
-    public string? SubSector { get; set; }
-    public string? OrgNumber { get; set; }
-    public string? OrgName { get; set; }
-    public string? NonRegOrgName { get; set; }
-    public string? OrgStatus { get; set; }
-    public string? OrganizationType { get; set; }
-    public string? OrganizationSize { get; set; }
-    public string? SectorSubSectorIndustryDesc { get; set; }
-    public bool RedStop { get; set; }
-    public string? IndigenousOrgInd { get; set; }
-    public string? UnityApplicantId { get; set; }
-    public string? FiscalDay { get; set; }
-    public string? FiscalMonth { get; set; }
-    public string? ElectoralDistrict { get; set; }
-}
-
-public class SigningAuthorityDto
-{
-    public Guid? ApplicationId { get; set; }
-
-    public string? SigningAuthorityFullName { get; set; }
-    public string? SigningAuthorityTitle { get; set; }
-    public string? SigningAuthorityEmail { get; set; }
-    public string? SigningAuthorityBusinessPhone { get; set; }
-    public string? SigningAuthorityCellPhone { get; set; }
-}
-
-public class ContactInfoDto
-{
-    public Guid? ApplicantAgentId { get; set; }
-    public Guid? ApplicationId { get; set; }
-
-    public string? Name { get; set; }
-    public string? Title { get; set; }
-    public string? Email { get; set; }
-    public string? Phone { get; set; }
-    public string? Phone2 { get; set; }
+    public string NonRegOrgName { get; set; } = string.Empty;
 }

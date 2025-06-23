@@ -355,9 +355,72 @@ class UnityZoneForm extends UnityChangeTrackingForm {
         $('.unity-currency-input').maskMoney();
     }
 
+    reportZones() {
+        let tableData = [];
+        const self = this; // Store reference to the class instance
+
+        this.form.find('fieldset').each(function () {
+            const fieldName = $(this).attr('name');
+
+            $(this).find(':input').each(function () {
+                const $el = $(this);
+                const name = this.name || '(no name)';
+
+                // Get current value based on input type
+                let currentValue;
+                if ($el.is(':checkbox')) {
+                    currentValue = $el.prop('checked');
+                } else if ($el.is(':radio')) {
+                    if ($el.prop('checked')) {
+                        currentValue = $el.val();
+                    } else {
+                        currentValue = '(unchecked radio)';
+                    }
+                } else {
+                    currentValue = $el.val() || '(no value)';
+                }
+
+                // Get original value if it exists
+                const originalValue = name !== '(no name)' && self.originalValues.hasOwnProperty(name) ?
+                    self.originalValues[name] : '(not tracked)';
+
+                const isModified = self.modifiedFields.has(name);
+
+                tableData.push({
+                    'fieldsetName': self.#extractZoneSuffix(fieldName),
+                    'id': this.id,
+                    'name': name,
+                    'tag': this.tagName.toLowerCase(),
+                    'type': this.type,
+                    'originalValue': originalValue,
+                    'currentValue': currentValue,
+                    'modified': isModified
+                });
+            });
+        });
+
+        console.table(tableData);
+    }
+
+    /**
+    * Extracts the last two segments from a string separated by underscores,
+    * and returns them joined by an underscore (e.g., "Unity_GrantManager_ApplicationManagement_Applicant_Summary" => "Applicant_Summary").
+    * If the input does not have at least two segments, returns the original string.
+    * @private
+    * @param {string} input
+    * @returns {string}
+    */
+    #extractZoneSuffix(input) {
+        if (typeof input !== 'string') return input;
+        const parts = input.split('_');
+        if (parts.length < 2) return input;
+        return parts.slice(-2).join('_');
+    }
+
     addSubmitHandler() {
         this.form.on('submit', (e) => {
             e.preventDefault();
+            // Include submission handler callback
             this.resetTracking();
         });
     }

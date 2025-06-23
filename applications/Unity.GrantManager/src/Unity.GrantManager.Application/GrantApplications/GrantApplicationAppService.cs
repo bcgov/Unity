@@ -589,6 +589,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return await _applicantAgentRepository.UpdateAsync(applicantAgent);
     }
 
+    [Obsolete("Use ApplicationApplicantAppService.UpdatePartialApplicantInfoAsync instead.")]
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {

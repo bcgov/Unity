@@ -10,9 +10,12 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Flex;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
+using static Unity.GrantManager.Permissions.GrantApplicationPermissions;
+using static Unity.Modules.Shared.UnitySelector;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -24,6 +27,7 @@ public class ApplicationApplicantAppService(
     IApplicantAddressRepository applicantAddressRepository,
     ILocalEventBus localEventBus) : GrantManagerAppService, IApplicationApplicantAppService
 {
+    [Authorize(UnitySelector.Applicant.Default)]
     public async Task<ApplicantInfoDto> GetApplicantInfoTabAsync(Guid applicationId)
     {
         var application = await applicationRepository.WithBasicDetailsAsync(applicationId);
@@ -45,7 +49,7 @@ public class ApplicationApplicantAppService(
         applicantInfoDto.ElectoralDistrict = application.Applicant?.ElectoralDistrict ?? string.Empty;
 
         //-- APPLICANT INFO SUMMARY
-        if (application.Applicant is not null && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Default))
+        if (application.Applicant != null && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Default))
         {
             applicantInfoDto.ApplicantSummary = ObjectMapper.Map<Applications.Applicant, ApplicantSummaryDto>(application.Applicant);
             applicantInfoDto.ApplicantSummary.FiscalDay = application.Applicant?.FiscalDay.ToString() ?? string.Empty;
@@ -56,7 +60,7 @@ public class ApplicationApplicantAppService(
         }
 
         //-- APPLICANT INFO CONTACT
-        if (application?.ApplicantAgent is not null && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Default))
+        if (application?.ApplicantAgent != null && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Default))
         {
             applicantInfoDto.ContactInfo = ObjectMapper.Map<ApplicantAgent, ContactInfoDto>(application.ApplicantAgent);
         }
@@ -88,6 +92,8 @@ public class ApplicationApplicantAppService(
         return applicantInfoDto;
     }
 
+    [Obsolete("Use GetApplicantInfoTabAsync instead.")]
+    [Authorize(UnitySelector.Applicant.Default)]
     public async Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId)
     {
         var applicantInfo = await applicationRepository.WithBasicDetailsAsync(applicationId);
@@ -136,126 +142,162 @@ public class ApplicationApplicantAppService(
     }
 
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
-    public async Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(Guid id, PartialUpdateDto<ApplicantInfoDto> input)
+    public async Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(Guid applicationId, PartialUpdateDto<UpdateApplicantInfoDto> input)
     {
-        var application = await applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException();
+        var application = await applicationRepository.GetAsync(applicationId) ?? throw new EntityNotFoundException();
 
-        // Only update the fields we need to update based on the modified fields
-        // This is required to handle controls like the date picker that do not send null values for unchanged fields
-        ObjectMapper.Map<ApplicantInfoDto, Application>(input.Data, application);
-
-        // Explicitly handle applicant summary properties with dropdowns that are null but listed in ModifiedFields
-        var dtoProperties = typeof(ApplicantSummaryDto).GetProperties();
-        var appProperties = typeof(Applicant).GetProperties().ToDictionary(p => p.Name, p => p);
-
-        foreach (var fieldName in input.ModifiedFields)
+        if (input == null || input.Data == null)
         {
-            if (dtoProperties.FirstOrDefault(p =>
-                string.Equals(p.Name, fieldName, StringComparison.OrdinalIgnoreCase)) is { } dtoProperty)
-            {
-                var value = dtoProperty.GetValue(input.Data);
-                if (value == null && appProperties.TryGetValue(dtoProperty.Name, out var appProperty) && appProperty.CanWrite)
-                {
-                    appProperty.SetValue(application, appProperty.PropertyType.IsValueType
-                        && Nullable.GetUnderlyingType(appProperty.PropertyType) == null
-                        ? Activator.CreateInstance(appProperty.PropertyType)
-                        : null);
-                }
-            }
+            throw new ArgumentNullException(nameof(input), "Input data cannot be null.");
         }
 
-        // TODO: Check how deep the mapping is needed here
+        // Only update the fields we need to update based on the modified
+        ObjectMapper.Map<UpdateApplicantInfoDto, Applications.Application>(input.Data, application);
 
-        // ORGANIZATION INFO
-        await UpdateApplicantSummaryInfoAsync(application.ApplicantId, input?.Data.ApplicantSummary);
-
-        // APPLICANT AGENT
-        var applicantAgent = await UpsertContactInfoAsync(application, input?.Data.ContactInfo);
-
-        // APPLICANT ADDRESS
-        if (input?.Data.ApplicantAddresses != null
-            && input.Data.ApplicantAddresses.Count > 0)
+        //-- APPLICANT INFO - SUMMARY
+        if (input.Data.ApplicantSummary != null 
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Update))
         {
-            await UpsertApplicantAddresses(application.ApplicantId, input?.Data.ApplicantAddresses);
+            await InternalPartialUpdateApplicantSummaryInfoAsync(application.Applicant, input.Data.ApplicantSummary, input.ModifiedFields);
         }
 
-        // SIGNING AUTHORITY
-        if (input?.Data.SigningAuthority is not null)
+        //-- APPLICANT INFO - CONTACT (APPLICANT AGENT)
+        if (input.Data.ContactInfo != null 
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
         {
-            ObjectMapper.Map(input?.Data.SigningAuthority, application);
+            await CreateOrUpdateContactInfoAsync(application.ApplicantId, input.Data.ContactInfo);
         }
 
-        // CUSTOM FIELDS
-        //await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input?.CustomFields);
-        await applicationRepository.UpdateAsync(application);
+        //-- APPLICANT INFO - SIGNING AUTHORITY (APPLICATION)
+        if (input.Data.SigningAuthority != null 
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Authority.Update))
+        {
+            // Move to applicaiton service
+            ObjectMapper.Map(input.Data.SigningAuthority, application);
+        }
 
-        // Add custom worksheet data
-        if (input?.Data.CustomFields is not null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        //-- APPLICANT INFO - ADDRESS
+        if (input.Data.ApplicantAddresses != null && input.Data.ApplicantAddresses.Count > 0 
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        {
+            await CreateOrUpdateApplicantAddresses(application.ApplicantId, input.Data.ApplicantAddresses);
+        }
+
+        //-- APPLICANT INFO CUSTOM FIELDS
+        if (input.Data.CustomFields != null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
         {
             await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input.Data);
         }
 
-        // TODO: REVIEW
-        await applicationRepository.UpdateAsync(application);
-        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+        var updatedApplication = await applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Applications.Application, GrantApplicationDto>(updatedApplication);
     }
 
+    /// <summary>
+    /// Updates the Applicant Summary information for the given applicant while ignoring null values unless explicitly specified in modifiedFields.
+    /// </summary>
+    /// <param name="applicantId"></param>
+    /// <param name="applicantSummary"></param>
+    /// <param name="modifiedFields"></param>
+    /// <returns></returns>
+    /// <exception cref="EntityNotFoundException"></exception>
     [Authorize(UnitySelector.Applicant.Summary.Update)]
-    protected internal async Task<Applicant?> UpdateApplicantSummaryInfoAsync(Guid applicantId, ApplicantSummaryDto? input)
+    protected internal async Task<Applications.Applicant> PartialUpdateApplicantSummaryInfoAsync(Guid applicantId, ApplicantSummaryDto applicantSummary, List<string>? modifiedFields = default)
     {
-        if (input == null || !await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Update))
+        var applicant = await applicantRepository.GetAsync(applicantId) ?? throw new EntityNotFoundException();
+        return await InternalPartialUpdateApplicantSummaryInfoAsync(applicant, applicantSummary, modifiedFields);
+    }
+
+    /// <summary>
+    /// Updates the Applicant Summary information for the given applicant while ignoring null values unless explicitly specified in modifiedFields.
+    /// </summary>
+    /// <param name="applicantId"></param>
+    /// <param name="applicantSummary"></param>
+    /// <param name="modifiedFields"></param>
+    /// <returns></returns>
+    /// <exception cref="EntityNotFoundException"></exception>
+    private async Task<Applications.Applicant> InternalPartialUpdateApplicantSummaryInfoAsync(Applications.Applicant applicant, ApplicantSummaryDto applicantSummary, List<string>? modifiedFields = default)
+    {
+        ObjectMapper.Map<ApplicantSummaryDto, Applications.Applicant>(applicantSummary, applicant);
+
+        if (modifiedFields != default && modifiedFields.Count > 0)
         {
-            return null;
+            // Handle null values for changed fields
+            PropertyHelper.ApplyNullValuesFromDto(
+                applicantSummary,
+                applicant,
+                modifiedFields);
         }
-
-        var applicant = await applicantRepository.GetAsync(applicantId)
-        ?? throw new EntityNotFoundException();
-
-        ObjectMapper.Map<ApplicantSummaryDto, Applicant>(input, applicant);
 
         return await applicantRepository.UpdateAsync(applicant);
     }
 
+    /// <summary>
+    /// Creates or updates the appicant agent (contact info) for the given applicant. Ignores null values unless explicitly specified in modifiedFields.
+    /// </summary>
+    /// <param name="applicantId"></param>
+    /// <param name="contactInfo"></param>
+    /// <returns></returns>
     [Authorize(UnitySelector.Applicant.Contact.Update)]
-    public async Task<ApplicantAgent?> UpsertContactInfoAsync(Application application, ContactInfoDto? input)
+    protected internal async Task<ApplicantAgent?> CreateOrUpdateContactInfoAsync(Guid applicantId, ContactInfoDto contactInfo, List<string>? modifiedFields = default)
     {
-        if (input == null)
-        {
-            return null;
-        }
-
-        // TODO Review
-        var applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicantId == application.ApplicantId)
+        var applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicantId == applicantId)
         ?? new ApplicantAgent
         {
-            ApplicantId   = application.ApplicantId,
-            ApplicationId = application.Id
+            ApplicantId   = applicantId,
+            ApplicationId = contactInfo.ApplicationId,
         };
 
-        ObjectMapper.Map<ContactInfoDto, ApplicantAgent>(input, applicantAgent);
+        ObjectMapper.Map<ContactInfoDto, ApplicantAgent>(contactInfo, applicantAgent);
+
+        if (modifiedFields != default && modifiedFields.Count > 0)
+        {
+            // Handle null values for changed fields
+            PropertyHelper.ApplyNullValuesFromDto(
+                contactInfo,
+                applicantAgent,
+                modifiedFields);
+        }
 
         if (applicantAgent.Id == Guid.Empty)
         {
             return await applicantAgentRepository.InsertAsync(applicantAgent);
+        } else
+        {
+            return await applicantAgentRepository.UpdateAsync(applicantAgent);
         }
-
-        return await applicantAgentRepository.UpdateAsync(applicantAgent);
     }
 
+    /// <summary>
+    /// Creates or updates the applicant addresses for the given applicant. Ignores null values unless explicitly specified in modifiedFields. 
+    /// </summary>
+    /// <param name="applicantId"></param>
+    /// <param name="applicantAddress"></param>
+    /// <param name="modifiedFields"></param>
+    /// <returns></returns>
     [Authorize(UnitySelector.Applicant.Location.Update)]
-    public async Task UpsertApplicantAddresses(Guid applicantId, List<ApplicantAddressDto> updatedAddresses)
+    protected internal async Task CreateOrUpdateApplicantAddresses(Guid applicantId, List<UpdateApplicantAddressDto> applicantAddress, List<string>? modifiedFields = default)
     {
-        var applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
-        foreach (var updatedAddress in updatedAddresses)
+        var addresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
+        foreach (var updatedAddress in applicantAddress)
         {
-            ApplicantAddress? dbAddress = applicantAddresses.FirstOrDefault(a => a.Id == updatedAddress.Id && a.AddressType == updatedAddress.AddressType)
+            ApplicantAddress? dbAddress = addresses.FirstOrDefault(a => a.AddressType == updatedAddress.AddressType)
             ?? new ApplicantAddress
             {
                 ApplicantId = applicantId,
                 AddressType = updatedAddress.AddressType,
             };
 
-            ObjectMapper.Map<ApplicantAddressDto, ApplicantAddress>(updatedAddress);
+            ObjectMapper.Map<UpdateApplicantAddressDto, ApplicantAddress>(updatedAddress);
+
+            if (modifiedFields != default && modifiedFields.Count > 0)
+            {
+                // Handle null values for changed fields
+                PropertyHelper.ApplyNullValuesFromDto(
+                    updatedAddress,
+                    dbAddress,
+                    modifiedFields);
+            }
 
             if (dbAddress.Id == Guid.Empty)
             {
