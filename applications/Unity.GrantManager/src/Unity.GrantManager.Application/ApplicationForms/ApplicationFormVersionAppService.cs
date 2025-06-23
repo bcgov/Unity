@@ -270,26 +270,43 @@ namespace Unity.GrantManager.ApplicationForms
         public async Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId)
         {
             var formSubmission = await _formSubmissionRepository.GetByApplicationAsync(applicationId);
+            
             if (formSubmission.FormVersionId == null)
             {
-                try
-                {
-                    var submissionJson = JObject.Parse(formSubmission.Submission);
-                    var tokenFormVersionId = submissionJson?.SelectToken("submission.formVersionId")?.ToString();
-                    if (tokenFormVersionId == null) return 0;
-
-                    var formVersionId = Guid.Parse(tokenFormVersionId);
-                    formSubmission.FormVersionId = formVersionId;
-                    await _formSubmissionRepository.UpdateAsync(formSubmission);
-                    return await GetVersion(formVersionId);
-                }
-                catch
-                {
-                    return 0;
-                }
+                return await HandleEmptyFormVersionIdAsync(formSubmission);
             }
 
             return await GetVersion(formSubmission.FormVersionId ?? Guid.Empty);
+        }
+
+        /// <summary>
+        /// Handles the case where the form version ID is empty or null in the form submission.
+        /// This method is for backward compatibility with legacy submissions that may not have the form version ID set.
+        /// This method should be reviewed later as it can be removed once all submissions have been migrated to include the form version ID.
+        /// </summary>
+        /// <param name="formSubmission"></param>
+        /// <returns></returns>
+        private async Task<int> HandleEmptyFormVersionIdAsync(ApplicationFormSubmission formSubmission)
+        {
+            try
+            {
+                var submissionJson = JObject.Parse(formSubmission.Submission);
+                var legacyTokenFormVersionId = submissionJson?.SelectToken("submission.formVersionId")?.ToString();
+                var newTokenFormVersionId = submissionJson?.SelectToken("formVersionId")?.ToString();
+
+                var formVersionIdString = legacyTokenFormVersionId ?? newTokenFormVersionId;
+                if (formVersionIdString == null)
+                    return 0;
+
+                var formVersionId = Guid.Parse(formVersionIdString);
+                formSubmission.FormVersionId = formVersionId;
+                await _formSubmissionRepository.UpdateAsync(formSubmission);
+                return await GetVersion(formVersionId);
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         public async Task DeleteWorkSheetMappingByFormName(string formName, Guid formVersionId)

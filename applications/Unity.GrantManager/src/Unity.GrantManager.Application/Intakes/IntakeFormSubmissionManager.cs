@@ -67,18 +67,20 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormId = applicationForm.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
                 ApplicationId = application.Id,
-                Submission = dataNode?.ToString() ?? string.Empty
+                Submission = dataNode?.ToString() ?? string.Empty                
             };
 
             _ = await _applicationFormSubmissionRepository.InsertAsync(newSubmission);
 
             ApplicationFormVersion? localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
+
             await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id,
                 localFormVersion?.Id ?? Guid.Empty,
                 formSubmission,
             formVersionSubmissionHeaderMapping);
 
             newSubmission.ApplicationFormVersionId = localFormVersion?.Id;
+            newSubmission.FormVersionId = string.IsNullOrWhiteSpace(localFormVersion?.ChefsFormVersionGuid) ? null : Guid.Parse(localFormVersion.ChefsFormVersionGuid);
 
             // Extend any further processing of the application here through local event bus and handlers
             await localEventBus.PublishAsync(new ApplicationProcessEvent
