@@ -50,7 +50,6 @@
             self.zoneForm.saveButton.on('click', function () {
                 let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
                 let applicantInfoSubmission = self.getPartialUpdate();
-                debugger;
                 try {
                     unity.grantManager.grantApplications.applicationApplicant
                         .updatePartialApplicantInfo(applicationId, applicantInfoSubmission)
@@ -58,66 +57,33 @@
                             abp.notify.success('The Applicant Info has been updated.');
                             self.zoneForm.resetTracking();
                             PubSub.publish("refresh_detail_panel_summary");
-                            PubSub.publish('applicant_info_updated', appInfoObj);
+                            PubSub.publish('applicant_info_updated', applicantInfoSubmission);
+                        })
+                        .fail(function (error) {
+                            abp.notify.error('Failed to update Applicant Info.');
+                            console.log(error);
+                            self.zoneForm.resetTracking();
                         });
-                }
-                catch (error) {
+                } catch (error) {
+                    abp.notify.error('An unexpected error occurred.');
                     console.log(error);
                     self.zoneForm.resetTracking();
                 }
             });
         },
-        enableProjectInfoSaveBtn: function () {
-            //if (!this.zoneForm.form.valid() || formHasInvalidCurrencyCustomFields("projectInfoForm")) {
-            //    $('#saveProjectInfoBtn').prop('disabled', true);
-            //    return;
-            //}
-
-            //if (abp.auth.isGranted('GrantApplicationManagement.ProjectInfo.Update')) {
-            //    $('#saveProjectInfoBtn').prop('disabled', false);
-            //}
-        },
         getPartialUpdate: function () {
-            const self = this;
+            let submissionPayload = this.serializeWidget();
+
             const customIncludes = new Set();
 
-            let formData = this.zoneForm.serializeZoneArray(true, false, false);
-
-            // Create processed payload with field transformations
-            let processedPayload = {};
-            $.each(formData, (_, input) => {
-                this.processFormField(processedPayload, input);
-            });
-
-            // Now, build a nested object from the processed data
-            let nestedPayload = {};
-            for (const [key, value] of Object.entries(processedPayload)) {
-                if (key.includes('.')) {
-                    const parts = key.split('.');
-                    let current = nestedPayload;
-
-                    // Create the object hierarchy
-                    for (let i = 0; i < parts.length - 1; i++) {
-                        if (!current[parts[i]]) current[parts[i]] = {};
-                        current = current[parts[i]];
-                    }
-
-                    // Set the leaf value
-                    current[parts[parts.length - 1]] = value;
-                } else {
-                    nestedPayload[key] = value;
-                }
-            }
-
-            // Handle custom fields
-            if (typeof Flex === 'function' && Object.keys(nestedPayload.CustomFields || {}).length > 0) {
-                // Add Worksheet Metadata
-                nestedPayload.CorrelationId = $("#ApplicantInfo_ApplicationFormVersionId").val();
-                nestedPayload.WorksheetId = $("#ApplicantInfo_WorksheetId").val();
+            if (typeof Flex === 'function' && Object.keys(submissionPayload.CustomFields || {}).length > 0) {
+                // Add Worksheet Metadata and filter conditions
+                submissionPayload.CorrelationId = $("#ApplicantInfo_ApplicationFormVersionId").val();
+                submissionPayload.WorksheetId = $("#ApplicantInfo_WorksheetId").val();
 
                 // Normalize checkboxes to string for custom worksheets
                 $(`#Unity_GrantManager_ApplicationManagement_Applicant_Worksheet input:checkbox`).each(function () {
-                    nestedPayload.CustomFields[this.name] = (this.checked).toString();
+                    submissionPayload.CustomFields[this.name] = (this.checked).toString();
                 });
 
                 customIncludes
@@ -126,23 +92,18 @@
                     .add('WorksheetId');
             }
 
-            // Create filtered object in one functional operation
+            // NOTE: This is currently bypassed for debugging
             let modifiedFieldData = Object.fromEntries(
-                Object.entries(projectInfoObj).filter(([key, _]) => {
-                    // Check if it's a directly included widget field
-                    if (customIncludes.has(key)) return true;
-
+                Object.entries(submissionPayload).filter(([key, _]) => {
                     // Check if it's a modified widget field
-                    return self.zoneForm.modifiedFields.has(`ProjectInfo.${key}`);
+                    //return this.zoneForm.modifiedFields.has(`ApplicantInfo.${key}`) || customIncludes.has(key);
+                    return true;
                 })
             );
 
-            // Filter the payload to only include modified fields
-            let modifiedFieldData = filterNestedObject(nestedPayload);
-
             let partialSubmissionPayload = {
                 modifiedFields: Array.from(this.zoneForm.modifiedFields),
-                data: modifiedFieldData
+                data: unflattenObject(modifiedFieldData)
             };
 
             return partialSubmissionPayload;
@@ -429,6 +390,26 @@ $(function () {
 });
 
 
+// Move to zone-extensions
+function unflattenObject(flatObj) {
+    const result = {};
+    for (const flatKey in flatObj) {
+        const value = flatObj[flatKey];
+        if (!flatKey) continue;
+        const keys = flatKey.split('.');
+        let cur = result;
+        for (let i = 0; i < keys.length; i++) {
+            const k = keys[i];
+            if (i === keys.length - 1) {
+                cur[k] = value;
+            } else {
+                cur[k] = cur[k] || {};
+                cur = cur[k];
+            }
+        }
+    }
+    return result;
+}
 
 function registerElectoralDistrictControls($container) {
     $container.find('[data-bs-toggle="tooltip"]').tooltip();
@@ -436,7 +417,6 @@ function registerElectoralDistrictControls($container) {
 
     // Listen for changes in physical address fields
     $container.find('.physical-address-fields-group').on('change', 'input', function () {
-        debugger;
         if (
             $('#ApplicantElectoralAddressType').val() === "PhysicalAddress" &&
             !electoralDistrictLocked
@@ -535,6 +515,7 @@ function setElectoralDistrictLockState(locked) {
 
 async function refreshApplicantElectoralDistrict() {
     try {
+        debugger;
         let address = extractAddressInfo();
         let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
         let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
@@ -559,11 +540,11 @@ function extractAddressInfo() {
     const prefix = isPhysical ? 'PhysicalAddress' : 'MailingAddress';
 
     // Collect address parts
-    const street = $(`#${prefix}Street`).val() || '';
-    const city = $(`#${prefix}City`).val() || '';
-    const province = $(`#${prefix}Province`).val() || '';
-    const postal = $(`#${prefix}Postal`).val() || '';
-    const country = $(`#${prefix}Country`).val() || '';
+    const street   = $(`#${prefix}_Street`).val() || '';
+    const city     = $(`#${prefix}_City`).val() || '';
+    const province = $(`#${prefix}_Province`).val() || '';
+    const postal   = $(`#${prefix}_Postal`).val() || '';
+    const country  = $(`#${prefix}_Country`).val() || '';
 
     // Concatenate address parts, filtering out empty values
     return [street, city, province, postal, country]

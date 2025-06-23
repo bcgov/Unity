@@ -20,6 +20,7 @@ public class GrantApplicationsMapper : Profile
         CreateMap<ApplicantSummaryDto, ApplicantSummaryViewModel>();
         CreateMap<ContactInfoDto, ContactInfoViewModel>();
         CreateMap<SigningAuthorityDto, SigningAuthorityViewModel>();
-        CreateMap<ApplicantAddressDto, ApplicantAddressViewModel>();
+        CreateMap<ApplicantAddressDto, ApplicantAddressViewModel>()
+            .ForMember(dest => dest.PostalCode, opt => opt.MapFrom(src => src.Postal));
     }
 }

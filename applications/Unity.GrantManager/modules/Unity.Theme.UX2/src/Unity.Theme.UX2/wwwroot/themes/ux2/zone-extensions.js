@@ -4,6 +4,29 @@
     }
 
     /**
+     * Unflatten dot separated JSON objects into nested objects
+     */
+    $.fn.unflattenObject = function(flatObj) {
+        const result = {};
+        for (const flatKey in flatObj) {
+            const value = flatObj[flatKey];
+            if (!flatKey) continue;
+            const keys = flatKey.split('.');
+            let cur = result;
+            for (let i = 0; i < keys.length; i++) {
+                const k = keys[i];
+                if (i === keys.length - 1) {
+                    cur[k] = value;
+                } else {
+                    cur[k] = cur[k] || {};
+                    cur = cur[k];
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * @public
      * Handles zone fieldset serialization with DTO nesting
      * @param {any} includeDisabled

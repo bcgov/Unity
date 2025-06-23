@@ -220,13 +220,17 @@ public class ApplicationApplicantAppService(
     {
         ObjectMapper.Map<ApplicantSummaryDto, Applications.Applicant>(applicantSummary, applicant);
 
-        if (modifiedFields != default && modifiedFields.Count > 0)
+        if (modifiedFields != null && modifiedFields.Count > 0) // Ensure modifiedFields is not null
         {
+            var modifiedSummaryFields = modifiedFields?
+                .Where(f => f.StartsWith("ApplicantSummary.", StringComparison.Ordinal))
+                .Select(f => f["ApplicantSummary.".Length..]);
+
             // Handle null values for changed fields
             PropertyHelper.ApplyNullValuesFromDto(
                 applicantSummary,
                 applicant,
-                modifiedFields);
+                modifiedSummaryFields ?? []); // Provide a fallback for null
         }
 
         return await applicantRepository.UpdateAsync(applicant);
