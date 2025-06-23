@@ -1,8 +1,5 @@
 ﻿using AutoMapper;
-using AutoMapper.Internal.Mappers;
-using Microsoft.AspNetCore.Http.HttpResults;
 using System;
-using System.Collections.Generic;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -88,7 +85,11 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         //-- APPLICANT INFO - OUTBOUND MAPS
         CreateMap<Application, ApplicantInfoDto>();
         CreateMap<Application, SigningAuthorityDto>();
-        CreateMap<Applicant, ApplicantSummaryDto>();
+        CreateMap<Applicant, ApplicantSummaryDto>()
+            .ForMember(dest => dest.IndigenousOrgInd,
+                opt => opt.MapFrom(src =>
+                    src.IndigenousOrgInd == "Yes" ? true :
+                    src.IndigenousOrgInd == "No" ? false : (bool?)null));
         CreateMap<ApplicantAgent, ContactInfoDto>();
         CreateMap<ApplicantAddress, ApplicantAddressDto>();
 
@@ -99,7 +100,11 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             .IgnoreNullAndDefaultValues();
         CreateMap<SigningAuthorityDto, Application>()
             .IgnoreNullAndDefaultValues();
-        CreateMap<ApplicantSummaryDto, Applicant>()
+        CreateMap<UpdateApplicantSummaryDto, Applicant>()
+            .ForMember(dest => dest.IndigenousOrgInd,
+                opt => opt.MapFrom(src =>
+                        src.IndigenousOrgInd == true ? "Yes" :
+                        src.IndigenousOrgInd == false ? "No" : null))
             .IgnoreNullAndDefaultValues();
         CreateMap<ContactInfoDto, ApplicantAgent>()
             .IgnoreNullAndDefaultValues();
@@ -126,7 +131,7 @@ public static class MappingExtensions
         expression.ForAllMembers(opts =>
         {
             opts.AllowNull(); // Ignore Null Values for Lists and Collections
-            opts.Condition((src, dest, srcMember) =>  
+            opts.Condition((src, dest, srcMember) =>
                 srcMember != null && !IsValueDefault(srcMember)); // Ignore Null and Default Values for Properties
         });
 

@@ -95,16 +95,8 @@
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <div class="switch-container">
-                            <div class="form-check unt-form-switch form-switch">
-                                <input type="hidden" name="ApplicantSummary.IndigenousOrgInd" value="No" /> // TODO
-
-                                <!-- Checkbox submits "Yes" when checked -->
-                                <input class="form-check-input"
-                                       type="checkbox"
-                                       id="indigenousOrgInd"
-                                       value="Yes"
-                                       @(Model.ApplicantSummary?.IndigenousOrgInd == "Yes" ? "checked" : string.Empty) />
-                                <label class="form-check-label" for="indigenousOrgInd">@L["ApplicantInfoView:ApplicantInfo.IndigenousOrgInd"].Value</label>
+                            <div class="px-3 form-check unt-form-switch form-switch">
+                                <abp-input type="checkbox" asp-for="@Model.ApplicantSummary.IndigenousOrgInd" />
                             </div>
                         </div>
                     </abp-column>
@@ -159,9 +151,8 @@
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <div class="switch-container">
-                            <div class="form-check unt-form-switch form-switch">
-                                <input class="form-check-input" checked="@Model.ApplicantSummary.RedStop" type="checkbox" role="switch" id="ApplicantSummary_RedStop" disabled>
-                                <label class="form-check-label" for="ApplicantSummary_RedStop">@L["ApplicantInfoView:ApplicantInfo.RedStop"].Value</label>
+                            <div class="px-3 form-check unt-form-switch form-switch">
+                                <abp-input type="checkbox" asp-for="@Model.ApplicantSummary.RedStop" />
                             </div>
                         </div>
                     </abp-column>

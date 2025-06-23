@@ -62,12 +62,10 @@
                         .fail(function (error) {
                             abp.notify.error('Failed to update Applicant Info.');
                             console.log(error);
-                            self.zoneForm.resetTracking();
                         });
                 } catch (error) {
                     abp.notify.error('An unexpected error occurred.');
                     console.log(error);
-                    self.zoneForm.resetTracking();
                 }
             });
         },
@@ -120,13 +118,26 @@
             return submissionPayload;
         },
         processFormField: function (submissionPayload, input) {
+            const fieldName = input.name;
+            const inputElement = $(`[name="${fieldName}"]`);
+
+            // Handle checkboxes explicitly
+            if (inputElement.length && inputElement.attr('type') === 'checkbox') {
+                // Only process the actual checkbox, not the hidden field
+                // If multiple elements with the same name, pick the checkbox
+                const checkbox = inputElement.filter('[type="checkbox"]');
+                if (checkbox.length) {
+                    submissionPayload[fieldName] = checkbox.is(':checked');
+                    return;
+                }
+            }
+
+            // Existing logic for custom fields
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(submissionPayload, input);
                 return;
             }
 
-            const fieldName = input.name;
-            const inputElement = $(`[name="${fieldName}"]`);
             let fieldValue = input.value;
 
             if (fieldName.startsWith('ApplicantInfo.')) {

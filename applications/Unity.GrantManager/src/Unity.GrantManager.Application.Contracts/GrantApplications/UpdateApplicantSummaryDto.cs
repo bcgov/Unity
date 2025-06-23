@@ -1,10 +1,7 @@
-﻿using System;
+﻿namespace Unity.GrantManager.GrantApplications;
 
-namespace Unity.GrantManager.GrantApplications;
-
-public class ApplicantSummaryDto
+public class UpdateApplicantSummaryDto
 {
-    public Guid ApplicantId { get; set; }
     public string? ApplicantName { get; set; }
     public string? Sector { get; set; }
     public string? SubSector { get; set; }

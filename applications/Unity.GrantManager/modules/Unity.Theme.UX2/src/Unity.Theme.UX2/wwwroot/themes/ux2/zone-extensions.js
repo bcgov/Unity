@@ -349,9 +349,9 @@ class UnityZoneForm extends UnityChangeTrackingForm {
         this.addSubmitHandler();
     }
 
-    // TODO Get Zone Status
-    // TODO Get field by name or id
-    // TODO Get field value by name or id
+    // NOTE Get Zone Status
+    // NOTE Get field by name or id
+    // NOTE Get field value by name or id
 
     isValid() {
         return this.form.valid();

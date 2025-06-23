@@ -210,7 +210,7 @@ public class ApplicationApplicantAppService(
     /// <returns></returns>
     /// <exception cref="EntityNotFoundException"></exception>
     [Authorize(UnitySelector.Applicant.Summary.Update)]
-    protected internal async Task<Applications.Applicant> PartialUpdateApplicantSummaryInfoAsync(Guid applicantId, ApplicantSummaryDto applicantSummary, List<string>? modifiedFields = default)
+    protected internal async Task<Applications.Applicant> PartialUpdateApplicantSummaryInfoAsync(Guid applicantId, UpdateApplicantSummaryDto applicantSummary, List<string>? modifiedFields = default)
     {
         var applicant = await applicantRepository.GetAsync(applicantId) ?? throw new EntityNotFoundException();
         return await InternalPartialUpdateApplicantSummaryInfoAsync(applicant, applicantSummary, modifiedFields);
@@ -224,9 +224,9 @@ public class ApplicationApplicantAppService(
     /// <param name="modifiedFields"></param>
     /// <returns></returns>
     /// <exception cref="EntityNotFoundException"></exception>
-    private async Task<Applications.Applicant> InternalPartialUpdateApplicantSummaryInfoAsync(Applications.Applicant applicant, ApplicantSummaryDto applicantSummary, List<string>? modifiedFields = default)
+    private async Task<Applications.Applicant> InternalPartialUpdateApplicantSummaryInfoAsync(Applications.Applicant applicant, UpdateApplicantSummaryDto applicantSummary, List<string>? modifiedFields = default)
     {
-        ObjectMapper.Map<ApplicantSummaryDto, Applications.Applicant>(applicantSummary, applicant);
+        ObjectMapper.Map<UpdateApplicantSummaryDto, Applications.Applicant>(applicantSummary, applicant);
 
         var modifiedSummaryFields = modifiedFields?
                 .Where(f => f.StartsWith("ApplicantSummary.", StringComparison.Ordinal))
