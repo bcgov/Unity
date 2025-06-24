@@ -32,13 +32,6 @@
             const self = this;
 
             PubSub.subscribe(
-                'fields_applicantinfo',
-                () => {
-                    enableApplicantInfoSaveBtn();
-                }
-            );
-
-            PubSub.subscribe(
                 'applicant_info_merged',
                 () => {
                     self.refresh();

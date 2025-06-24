@@ -378,7 +378,30 @@ class UnityZoneForm extends UnityChangeTrackingForm {
         $('.unity-currency-input').maskMoney();
     }
 
-    reportZones() {
+    /**
+    * Extracts the last two segments from a string separated by underscores,
+    * and returns them joined by an underscore (e.g., "Unity_GrantManager_ApplicationManagement_Applicant_Summary" => "Applicant_Summary").
+    * If the input does not have at least two segments, returns the original string.
+    * @private
+    * @param {string} input
+    * @returns {string}
+    */
+    #extractZoneSuffix(input) {
+        if (typeof input !== 'string') return input;
+        const parts = input.split('_');
+        if (parts.length < 2) return input;
+        return parts.slice(-2).join('_');
+    }
+
+    addSubmitHandler() {
+        this.form.on('submit', (e) => {
+            e.preventDefault();
+            // Include submission handler callback
+            this.resetTracking();
+        });
+    }
+
+    reportZones(viewExpanded = false) {
         let tableData = [];
         const self = this; // Store reference to the class instance
 
@@ -409,42 +432,32 @@ class UnityZoneForm extends UnityChangeTrackingForm {
 
                 const isModified = self.modifiedFields.has(name);
 
-                tableData.push({
+                let tableOutput = {
                     'fieldsetName': self.#extractZoneSuffix(fieldName),
-                    'id': this.id,
-                    'name': name,
-                    'tag': this.tagName.toLowerCase(),
-                    'type': this.type,
+                    'id': this.id
+                }
+                
+                if (viewExpanded) {
+                    let expandedProperties = {
+                        'name': name,
+                        'tag': this.tagName.toLowerCase(),
+                        'type': this.type
+                    };
+
+                    tableOutput = { ...tableOutput, ...expandedProperties };
+                }
+                
+                let changeProperties = {
                     'originalValue': originalValue,
                     'currentValue': currentValue,
                     'modified': isModified
-                });
+                };
+                tableOutput = { ...tableOutput, ...changeProperties }; 
+
+                tableData.push(tableOutput);
             });
         });
 
         console.table(tableData);
-    }
-
-    /**
-    * Extracts the last two segments from a string separated by underscores,
-    * and returns them joined by an underscore (e.g., "Unity_GrantManager_ApplicationManagement_Applicant_Summary" => "Applicant_Summary").
-    * If the input does not have at least two segments, returns the original string.
-    * @private
-    * @param {string} input
-    * @returns {string}
-    */
-    #extractZoneSuffix(input) {
-        if (typeof input !== 'string') return input;
-        const parts = input.split('_');
-        if (parts.length < 2) return input;
-        return parts.slice(-2).join('_');
-    }
-
-    addSubmitHandler() {
-        this.form.on('submit', (e) => {
-            e.preventDefault();
-            // Include submission handler callback
-            this.resetTracking();
-        });
     }
 }

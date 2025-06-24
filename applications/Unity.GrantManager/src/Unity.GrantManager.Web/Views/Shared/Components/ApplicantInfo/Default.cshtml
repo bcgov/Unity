@@ -20,7 +20,17 @@
 @{
 
     Layout = null;
-    bool IsViewEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.UpdatePolicy);
+    var updatePermissionResult = await PermissionChecker.IsGrantedAsync(
+        new[]
+        {
+            UnitySelector.Applicant.Summary.Update,
+            UnitySelector.Applicant.Contact.Update,
+            UnitySelector.Applicant.Location.Update,
+            UnitySelector.Applicant.Authority.Update,
+            UnitySelector.Applicant.Default // NOTE: Will be removed when worksheet permissions added
+        });
+
+    bool IsViewEditable = !updatePermissionResult.AllProhibited;
     bool IsAdditionalContactAddable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Create);
     bool IsAdditionalContactEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update);
     bool IsAssignApplicant = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.AssignApplicant);
