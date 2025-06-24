@@ -113,3 +113,7 @@
 .batch-approval-summary {
     text-align: center;
 }
+
+.batch-direct-approval-indicator {
+    padding-left: 1rem;
+}

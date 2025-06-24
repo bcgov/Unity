@@ -44,6 +44,7 @@ namespace Unity.GrantManager.GrantApplications
 
                     application.ValidateAndChangeFinalDecisionDate(applicationToUpdateAndApprove.FinalDecisionDate);
                     application.ValidateMinAndChangeApprovedAmount(applicationToUpdateAndApprove.ApprovedAmount);
+                    application.ValidateMinAndChangeRecommendedAmount(applicationToUpdateAndApprove.RecommendedAmount, applicationToUpdateAndApprove.IsDirectApproval);
                     application.ApprovedAmount = applicationToUpdateAndApprove.ApprovedAmount;
 
                     if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(GrantApplicationAction.Approve)))
@@ -116,7 +117,9 @@ namespace Unity.GrantManager.GrantApplications
                     ApplicantName = application.Applicant.ApplicantName ?? string.Empty,
                     ApplicationStatus = application.ApplicationStatus.InternalStatus,
                     FormName = application.ApplicationForm?.ApplicationFormName ?? string.Empty,
-                    IsValid = !validationMessages.Exists(s => s.Item1)
+                    IsValid = !validationMessages.Exists(s => s.Item1),
+                    IsDirectApproval = application.ApplicationForm?.IsDirectApproval,
+                    RecommendedAmount = application.RecommendedAmount
                 });
             }
 

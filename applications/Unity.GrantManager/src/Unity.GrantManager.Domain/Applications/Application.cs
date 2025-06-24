@@ -213,6 +213,14 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         }
     }
 
+    public void ValidateMinAndChangeRecommendedAmount(decimal recommendedAmount, bool? isDirectApproval)
+    {
+        if (isDirectApproval != true && (RecommendedAmount != recommendedAmount) && recommendedAmount <= 0m)
+        {
+            throw new BusinessException("Recommended amount cannot be 0.");
+        }
+    }
+
     /// <summary>
     /// Calculates and updates the PercentageTotalProjectBudget property based on
     /// RequestedAmount and TotalProjectBudget values.
