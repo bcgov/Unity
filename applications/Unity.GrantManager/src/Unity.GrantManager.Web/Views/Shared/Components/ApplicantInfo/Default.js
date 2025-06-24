@@ -13,8 +13,7 @@
 
             // Create a new form instance and store it on the widget API
             this.zoneForm = new UnityZoneForm($widgetForm, {
-                saveButtonSelector: '#saveApplicantInfoBtn',
-                modifiedClass: 'bg-info-subtle'
+                saveButtonSelector: '#saveApplicantInfoBtn'
             });
 
             console.log("Applicant Info Initialized");
@@ -426,20 +425,14 @@ function registerElectoralDistrictControls($container) {
     $container.find('[data-bs-toggle="tooltip"]').tooltip();
     setElectoralDistrictLockState(true);
 
-    // Listen for changes in physical address fields
-    $container.find('.physical-address-fields-group').on('change', 'input', function () {
-        if (
-            $('#ApplicantElectoralAddressType').val() === "PhysicalAddress" &&
-            !electoralDistrictLocked
-        ) {
-            refreshApplicantElectoralDistrict();
-        }
-    });
+    const $electoralType = $('#ApplicantElectoralAddressType');
 
-    // Listen for changes in mailing address fields
-    $container.find('.mailing-address-fields-group').on('change', 'input', function () {
+    // Delegate change event for both address groups
+    $container.on('change', '.physical-address-fields-group input, .mailing-address-fields-group input', function () {
+        const type = $electoralType.val();
         if (
-            $('#ApplicantElectoralAddressType').val() === "MailingAddress" &&
+            ((type === "PhysicalAddress" && $(this).closest('.physical-address-fields-group').length) ||
+                (type === "MailingAddress" && $(this).closest('.mailing-address-fields-group').length)) &&
             !electoralDistrictLocked
         ) {
             refreshApplicantElectoralDistrict();
@@ -477,11 +470,9 @@ function registerApplicantInfoSummaryDropdowns($container) {
             url: '/api/app/org-book/org-book-details-query/' + orgBookId,
             type: 'GET'
         }).done(function (response) {
-
             let entry_status = getAttributeObjectByType("entity_status", response.attributes);
             let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
             let entity_type = getAttributeObjectByType("entity_type", response.attributes);
-
 
             $container.find('#ApplicantSummary_OrgName').val(response.names[0].text).trigger('change');
             $container.find('#ApplicantSummary_OrgNumber').val(orgBookId).trigger('change');
@@ -491,12 +482,11 @@ function registerApplicantInfoSummaryDropdowns($container) {
     });
 }
 
-let electoralDistrictLocked = true; // Default: locked
-
 function getAttributeObjectByType(type, attributes) {
     return attributes.find(attr => attr.type === type);
 }
 
+let electoralDistrictLocked = true; // Default: locked
 function setElectoralDistrictLockState(locked) {
     $('#btn-toggle-lock-electoral').tooltip('hide');
 
@@ -584,8 +574,7 @@ async function handleApplicantMerge(applicationId, principalApplicantId, nonPrin
 async function generateUnityApplicantIdBtn() {
     try {
         let nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
-        document.getElementById('ApplicantSummary_UnityApplicantId').value = nextUnityApplicantId;
-        $('#saveApplicantInfoBtn').prop('disabled', false);
+        $('[data-widget-name="ApplicantInfo"]').find('#ApplicantSummary_UnityApplicantId').val(nextUnityApplicantId).trigger('change');
     }
     catch (error) {
         console.log(error);
