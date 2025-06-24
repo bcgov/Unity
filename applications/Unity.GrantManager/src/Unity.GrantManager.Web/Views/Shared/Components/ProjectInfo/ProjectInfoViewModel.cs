@@ -112,7 +112,7 @@ public class ProjectInfoViewModel : PageModel
         public string? Community { get; set; }
 
         [Display(Name = "ProjectInfoView:ProjectInfo.ContactFullName")]
-        [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]
+        [MaxLength(600, ErrorMessage = "Must be a maximum of 600 characters")]
         public string? ContactFullName { get; set; }
 
         [Display(Name = "ProjectInfoView:ProjectInfo.ContactTitle")]

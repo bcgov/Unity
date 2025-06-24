@@ -82,9 +82,19 @@
         return {
             recordsTotal: result.totalCount,
             recordsFiltered: result.totalCount,
-            data: result.items
+            data: formatItems(result.items)
         };
     };
+
+    let formatItems = function (items) {
+        const newData = items.map((item, index) => {
+            return {
+                ...item,
+                rowCount: index
+            };
+        });
+        return newData;
+    }
 
     dataTable = initializeDataTable({
         dt,
