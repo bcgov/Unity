@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
@@ -14,8 +15,6 @@ using Unity.Modules.Shared.Utils;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
-using static Unity.GrantManager.Permissions.GrantApplicationPermissions;
-using static Unity.Modules.Shared.UnitySelector;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -155,21 +154,21 @@ public class ApplicationApplicantAppService(
         ObjectMapper.Map<UpdateApplicantInfoDto, Applications.Application>(input.Data, application);
 
         //-- APPLICANT INFO - SUMMARY
-        if (input.Data.ApplicantSummary != null 
+        if (input.Data.ApplicantSummary != null
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Summary.Update))
         {
             await InternalPartialUpdateApplicantSummaryInfoAsync(application.Applicant, input.Data.ApplicantSummary, input.ModifiedFields);
         }
 
         //-- APPLICANT INFO - CONTACT (APPLICANT AGENT)
-        if (input.Data.ContactInfo != null 
+        if (input.Data.ContactInfo != null
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
         {
             await CreateOrUpdateContactInfoAsync(application.ApplicantId, input.Data.ContactInfo);
         }
 
         //-- APPLICANT INFO - SIGNING AUTHORITY (APPLICATION)
-        if (input.Data.SigningAuthority != null 
+        if (input.Data.SigningAuthority != null
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Authority.Update))
         {
             // Move to applicaiton service
@@ -192,7 +191,7 @@ public class ApplicationApplicantAppService(
         }
 
         //-- APPLICANT INFO CUSTOM FIELDS
-        if (input.Data.CustomFields != null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        if (input.Data.CustomFields?.ValueKind != JsonValueKind.Null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
         {
             await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input.Data);
         }
@@ -265,7 +264,8 @@ public class ApplicationApplicantAppService(
         if (applicantAgent.Id == Guid.Empty)
         {
             return await applicantAgentRepository.InsertAsync(applicantAgent);
-        } else
+        }
+        else
         {
             return await applicantAgentRepository.UpdateAsync(applicantAgent);
         }
@@ -282,7 +282,7 @@ public class ApplicationApplicantAppService(
     protected internal async Task CreateOrUpdateApplicantAddress(Guid applicantId, UpdateApplicantAddressDto updatedAddress)
     {
         var applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
-        
+
         ApplicantAddress? dbAddress = applicantAddresses.FirstOrDefault(a => a.AddressType == updatedAddress.AddressType)
         ?? new ApplicantAddress
         {

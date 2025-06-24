@@ -324,7 +324,11 @@
         </zone-fieldset>
 
         @* Zone Section : Worksheet *@
-        <zone id="@UnitySelector.Applicant.Default" feature-requirement="Unity.Flex" form-id="@Model.ApplicationFormId" show-legend="false">
+        <zone id="Unity_GrantManager_ApplicationManagement_Applicant_Worksheet"
+            zone-requirement="@UnitySelector.Applicant.Default"
+            permission-requirement="@UnitySelector.Applicant.Default"
+            update-permission-requirement="@UnitySelector.Applicant.Default"
+            feature-requirement="Unity.Flex" form-id="@Model.ApplicationFormId" show-legend="false">
             @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
             new
             {
@@ -338,6 +342,7 @@
     </form>
 </abp-row>
 
+@* Zone Section : AdditionalContact *@
 <zone id="@UnitySelector.Applicant.AdditionalContact.Default"
       permission-requirement="@UnitySelector.Applicant.AdditionalContact.Default"
       form-id="@Model.ApplicationFormId" show-legend="false"

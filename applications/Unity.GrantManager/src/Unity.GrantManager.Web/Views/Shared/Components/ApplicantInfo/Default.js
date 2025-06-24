@@ -94,7 +94,7 @@
             let modifiedFieldData = Object.fromEntries(
                 Object.entries(submissionPayload).filter(([key, _]) => {
                     // Check if it's a modified widget field
-                    return this.zoneForm.modifiedFields.has(key) || customIncludes.has(key);
+                    return this.zoneForm.modifiedFields.has(key) || customIncludes.has(key) || key.startsWith('custom_');
                 })
             );
 
@@ -126,7 +126,11 @@
                 // If multiple elements with the same name, pick the checkbox
                 const checkbox = inputElement.filter('[type="checkbox"]');
                 if (checkbox.length) {
-                    submissionPayload[fieldName] = checkbox.is(':checked');
+                    if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+                        Flex.includeCustomFieldObj(submissionPayload, input);
+                    } else {
+                        submissionPayload[fieldName] = checkbox.is(':checked');
+                    }
                     return;
                 }
             }
@@ -139,41 +143,16 @@
 
             let fieldValue = input.value;
 
+            if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
+                fieldValue = fieldValue.replace(/,/g, '');
+            }
+
             if (fieldName.startsWith('ApplicantInfo.')) {
                 const propertyName = fieldName.split('.')[1];
-
-                if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
-                    fieldValue = fieldValue.replace(/,/g, '');
-                }
-
-                if (this.isNumberField(input)) {
-                    fieldValue = fieldValue === '' ? 0 :
-                        (parseFloat(fieldValue), this.getMaxNumberField(input));
-                } else if (fieldValue === '') {
-                    fieldValue = null;
-                }
-
                 submissionPayload[propertyName] = fieldValue;
             } else {
                 submissionPayload[fieldName] = fieldValue;
             }
-        },
-
-        isNumberField: function (input) {
-            return this.isCurrencyField(input) || this.isPercentageField(input);
-        },
-
-        isCurrencyField: function (input) {
-            const currencyFields = [
-                'ProjectInfo.RequestedAmount',
-                'ProjectInfo.TotalProjectBudget',
-                'ProjectInfo.ProjectFundingTotal'
-            ];
-            return currencyFields.includes(input.name);
-        },
-
-        isPercentageField: function (input) {
-            return input.name == 'ProjectInfo.PercentageTotalProjectBudget';
         }
     }
 
