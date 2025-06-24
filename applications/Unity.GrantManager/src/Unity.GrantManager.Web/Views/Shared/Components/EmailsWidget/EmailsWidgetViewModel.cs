@@ -30,7 +30,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         [TextArea(Rows = 4)]
         [Placeholder("Body of email")]
         [DisplayName("Email Body")]
-        [MaxLength(40000)]
         [Required]
         public string EmailBody { get; set; } = string.Empty;
         public Guid OwnerId { get; set; }
