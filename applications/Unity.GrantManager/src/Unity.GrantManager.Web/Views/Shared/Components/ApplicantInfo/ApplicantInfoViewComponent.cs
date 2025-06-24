@@ -29,7 +29,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
             var applicantInfoDto = await applicationAppicantService.GetByApplicationIdAsync(applicationId);
-            var applicationForm = await applicationFormAppService.GetAsync(applicantInfoDto.ApplicationFormId);
+            var electoralDistrictAddressType = await applicationFormAppService.GetElectoralDistrictAddressTypeAsync(applicantInfoDto.ApplicationFormId);
 
             ApplicantInfoViewModel model = new()
             {
@@ -62,8 +62,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 FiscalMonth = applicantInfoDto.FiscalMonth,
                 NonRegOrgName = applicantInfoDto.NonRegOrgName,
                 ElectoralDistrict = applicantInfoDto.ElectoralDistrict,
-                ApplicantElectoralAddressType = applicationForm.ElectoralDistrictAddressType 
-                    ?? ApplicationForm.GetDefaultElectoralDistrictAddressType(),
+                ApplicantElectoralAddressType = electoralDistrictAddressType,
             };
 
             await PopulateSectorsAndSubSectorsAsync(model);
