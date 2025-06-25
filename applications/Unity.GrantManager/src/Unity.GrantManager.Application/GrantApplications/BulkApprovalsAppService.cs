@@ -104,26 +104,37 @@ namespace Unity.GrantManager.GrantApplications
 
             foreach (var application in applications)
             {
-                List<(bool, string)> validationMessages = await RunValidations(application);
-
-                applicationsForApproval.Add(new BulkApprovalDto()
-                {
-                    ApplicationId = application.Id,
-                    ApprovedAmount = application.ApprovedAmount,
-                    RequestedAmount = application.RequestedAmount,
-                    FinalDecisionDate = application.FinalDecisionDate,
-                    ReferenceNo = application.ReferenceNo,
-                    ValidationMessages = validationMessages.Select(s => s.Item2).ToList(),
-                    ApplicantName = application.Applicant.ApplicantName ?? string.Empty,
-                    ApplicationStatus = application.ApplicationStatus.InternalStatus,
-                    FormName = application.ApplicationForm?.ApplicationFormName ?? string.Empty,
-                    IsValid = !validationMessages.Exists(s => s.Item1),
-                    IsDirectApproval = application.ApplicationForm?.IsDirectApproval,
-                    RecommendedAmount = application.RecommendedAmount
-                });
+                applicationsForApproval
+                    .Add(MapBulkApproval(application, await RunValidations(application)));
             }
 
             return applicationsForApproval;
+        }
+
+
+        /// <summary>
+        /// Map the application to a BulkApprovalDto with validation messages
+        /// </summary>
+        /// <param name="application"></param>
+        /// <param name="validationMessages"></param>
+        /// <returns></returns>
+        private static BulkApprovalDto MapBulkApproval(Application application, List<(bool, string)> validationMessages)
+        {
+            return new BulkApprovalDto()
+            {
+                ApplicationId = application.Id,
+                ApprovedAmount = application.ApprovedAmount,
+                RequestedAmount = application.RequestedAmount,
+                FinalDecisionDate = application.FinalDecisionDate,
+                ReferenceNo = application.ReferenceNo,
+                ValidationMessages = validationMessages.Select(s => s.Item2).ToList(),
+                ApplicantName = application.Applicant.ApplicantName ?? string.Empty,
+                ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                FormName = application.ApplicationForm?.ApplicationFormName ?? string.Empty,
+                IsValid = !validationMessages.Exists(s => s.Item1),
+                IsDirectApproval = application.ApplicationForm?.IsDirectApproval,
+                RecommendedAmount = application.RecommendedAmount
+            };
         }
 
         /// <summary>
@@ -141,6 +152,27 @@ namespace Unity.GrantManager.GrantApplications
                 validationMessages.Add(new(true, "INVALID_STATUS"));
             if (!authorized)
                 validationMessages.Add(new(true, "INVALID_PERMISSIONS"));
+
+            if (application.ApplicationForm?.IsDirectApproval == true)
+            {
+                application.ApprovedAmount = application.ApprovedAmount == 0m ? application.RequestedAmount : application.ApprovedAmount;
+            }
+            else // this is null or false
+            {
+                // If the recommended amount is 0 we need to show an error
+                if (application.RecommendedAmount == 0m)
+                {
+                    validationMessages.Add(new(false, "INVALID_RECOMMENDED_AMOUNT"));
+                }
+
+                application.ApprovedAmount = application.ApprovedAmount == 0m ? application.RecommendedAmount : application.ApprovedAmount;
+            }
+
+            // If approved amount is still 0.00 after default sets then it is an error
+            if (application.ApprovedAmount == 0m)
+            {
+                validationMessages.Add(new(false, "INVALID_APPROVED_AMOUNT"));
+            }
 
             return validationMessages;
         }

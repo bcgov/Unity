@@ -68,10 +68,10 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
                 ApplicationStatus = application.ApplicationStatus,
                 FormName = application.FormName,
                 IsValid = application.IsValid,
-                IsDirectApproval = application.IsDirectApproval,                                
+                IsDirectApproval = application.IsDirectApproval         
             };
 
-            SetNotesAndUpdateAmounts(application, bulkApproval);
+            SetNotes(application, bulkApproval);
             BulkApplicationApprovals.Add(bulkApproval);
         }
 
@@ -79,10 +79,10 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         ApplicationsCount = applications.Count;
     }
 
-    private void SetNotesAndUpdateAmounts(BulkApprovalDto application, BulkApplicationApprovalViewModel bulkApproval)
+    private void SetNotes(BulkApprovalDto application, BulkApplicationApprovalViewModel bulkApproval)
     {
         /* 
-        * 0 - Decision Date
+        * 0 - Decision Date Defaulted
         * 1 - Approved Amount Defaulted
         * 2 - Invalid Status
         * 3 - Invalid Permissions
@@ -97,35 +97,9 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
             notes[0] = new ApprovalNoteViewModel(notes[0].Key, true, notes[0].Description, notes[0].IsError);
         }
 
-        if (bulkApproval.ApprovedAmount == 0m) // this will be defaulted either way
+        if (bulkApproval.ApprovedAmount == 0m) // this will be defaulted either way if is 0
         {
             notes[1] = new ApprovalNoteViewModel(notes[1].Key, true, notes[1].Description, notes[1].IsError);
-        }
-
-        /*
-         *  if directApproval = true the populate from the requested amount
-         *  if directApproval = false or null then populate from recommended amount
-        */
-
-        if (application.IsDirectApproval == true)
-        {
-            bulkApproval.ApprovedAmount = application.ApprovedAmount == 0m ? application.RequestedAmount : application.ApprovedAmount;
-        }
-        else // this is null or false
-        {
-            // If the recommended amount is 0 we need to show an error
-            if (application.RecommendedAmount == 0m)
-            {
-                notes[5] = new ApprovalNoteViewModel(notes[5].Key, true, notes[5].Description, notes[5].IsError);
-            }
-
-            bulkApproval.ApprovedAmount = application.ApprovedAmount == 0m ? application.RecommendedAmount : application.ApprovedAmount;
-        }
-
-        // If approved amount is still 0.00 after default sets then it is an error
-        if (bulkApproval.ApprovedAmount == 0m)
-        {
-            notes[4] = new ApprovalNoteViewModel(notes[4].Key, true, notes[4].Description, notes[4].IsError);
         }
 
         foreach (var validation in application.ValidationMessages)
@@ -165,6 +139,7 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
     private List<BulkApprovalDto> MapBulkApprovalRequests()
     {
         var bulkApprovals = new List<BulkApprovalDto>();
+
         foreach (var application in BulkApplicationApprovals ?? [])
         {
             bulkApprovals.Add(new BulkApprovalDto()
@@ -172,6 +147,8 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
                 ApplicantName = application.ApplicantName ?? string.Empty,
                 ApplicationId = application.ApplicationId,
                 ApprovedAmount = application.ApprovedAmount,
+                RecommendedAmount = application.RecommendedAmount,
+                IsDirectApproval = application.IsDirectApproval,
                 FinalDecisionDate = application.DecisionDate,
                 ReferenceNo = application.ReferenceNo,
                 RequestedAmount = application.RequestedAmount,
