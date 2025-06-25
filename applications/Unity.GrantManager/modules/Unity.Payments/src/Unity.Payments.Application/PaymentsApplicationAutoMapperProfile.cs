@@ -31,5 +31,7 @@ public class PaymentsApplicationAutoMapperProfile : Profile
         CreateMap<PaymentConfiguration, PaymentConfigurationDto>();
         CreateMap<IUserData, PaymentUserDto>();
         CreateMap<PaymentTag, PaymentTagDto>();
+
+        CreateMap<TagSummaryCount, TagSummaryCountDto>();
     }
 }

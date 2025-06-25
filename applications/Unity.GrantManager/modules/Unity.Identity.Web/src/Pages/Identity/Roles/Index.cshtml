@@ -1,13 +1,13 @@
 ﻿@page
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Mvc.Localization
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout
-@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Pages.Shared.Components.AbpPageToolbar
-@using Volo.Abp.Identity
-@using Volo.Abp.Identity.Localization
 @using Unity.Identity.Web.Navigation
 @using Unity.Identity.Web.Pages.Identity.Roles
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Volo.Abp.Identity.Localization
+
 @model IndexModel
+
 @inject IHtmlLocalizer<IdentityResource> L
 @inject IAuthorizationService Authorization
 @inject IPageLayout PageLayout

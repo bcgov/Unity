@@ -31,20 +31,38 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Review.AssessmentReviewList.Default,
             UnitySelector.Review.AssessmentReviewList.Create,
             UnitySelector.Review.AssessmentReviewList.Update.SendBack,
-            UnitySelector.Review.AssessmentReviewList.Update.Complete,
-
-            UnitySelector.Review.Worksheet.Default,
-            UnitySelector.Review.Worksheet.Update,
+            UnitySelector.Review.AssessmentReviewList.Update.Complete
         ];
 
         public readonly List<string> ApplicantInfo_CommonPermissions = [
-            GrantApplicationPermissions.ApplicantInfo.Default,
-            GrantApplicationPermissions.ApplicantInfo.Update,
+            UnitySelector.Applicant.Default,
+            UnitySelector.Applicant.Summary.Default,
+            UnitySelector.Applicant.Summary.Update,
+            UnitySelector.Applicant.Contact.Default,
+            UnitySelector.Applicant.Contact.Update,
+            UnitySelector.Applicant.Authority.Default,
+            UnitySelector.Applicant.Authority.Update,
+            UnitySelector.Applicant.Location.Default,
+            UnitySelector.Applicant.Location.Update,
+            UnitySelector.Applicant.AdditionalContact.Default,
+            UnitySelector.Applicant.AdditionalContact.Create,
+            UnitySelector.Applicant.AdditionalContact.Update,
+
         ];
 
         public readonly List<string> ProjectInfo_CommonPermissions = [
-            GrantApplicationPermissions.ProjectInfo.Default,
-            GrantApplicationPermissions.ProjectInfo.Update,
+            UnitySelector.Project.Default,
+            UnitySelector.Project.Summary.Default,
+            UnitySelector.Project.Summary.Update.Default,
+            UnitySelector.Project.Location.Default,
+            UnitySelector.Project.Location.Update.Default,
+        ];
+
+        public readonly List<string> PaymentInfo_CommonPermissions = [
+            UnitySelector.Payment.Summary.Default,
+            UnitySelector.Payment.Supplier.Default,
+            UnitySelector.Payment.Supplier.Update,
+            UnitySelector.Payment.PaymentList.Default
         ];
 
         public readonly List<string> Notifications_CommonPermissions = [
@@ -136,18 +154,27 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Assignments.AssignInitial,
+                    GrantApplicationPermissions.Applicants.AssignApplicant,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantApplicationPermissions.Approvals.BulkApplicationApproval,
+                    GrantApplicationPermissions.Approvals.DeferAfterApproval,
+                    UnitySelector.SettingManagement.Tags.Default,
+                    UnitySelector.SettingManagement.Tags.Update,
+                    UnitySelector.SettingManagement.Tags.Delete,
 
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
-                    .. Dashboard_CommonPermissions
+                    .. Dashboard_CommonPermissions,
+
+                    // Role Specific Permissions
+                    UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
+                    UnitySelector.Project.Location.Update.UpdateFinalStateFields,
                 ], context.TenantId);
 
             // - Approver
@@ -156,6 +183,7 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Approvals.Complete,
+                    GrantApplicationPermissions.Approvals.DeferAfterApproval,
                     GrantApplicationPermissions.Comments.Add,
 
                     .. ReviewAndAssessment_CommonPermissions,
@@ -183,7 +211,10 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
 
-                    UnitySettingManagementPermissions.BackgroundJobSettings
+                    UnitySettingManagementPermissions.BackgroundJobSettings,
+                    UnitySelector.SettingManagement.Tags.Default,
+                    UnitySelector.SettingManagement.Tags.Update,
+                    UnitySelector.SettingManagement.Tags.Delete
                 ], context.TenantId);
 
 
@@ -248,8 +279,16 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Review.AssessmentReviewList.Update.Complete,
                     UnitySelector.Review.Worksheet.Default,
 
-                    GrantApplicationPermissions.ApplicantInfo.Default,
-                    GrantApplicationPermissions.ProjectInfo.Default,
+                    UnitySelector.Applicant.Default,
+                    UnitySelector.Applicant.Summary.Default,
+                    UnitySelector.Applicant.Contact.Default,
+                    UnitySelector.Applicant.Authority.Default,
+                    UnitySelector.Applicant.Location.Default,
+                    UnitySelector.Applicant.AdditionalContact.Default,
+
+                    UnitySelector.Project.Default,
+                    UnitySelector.Project.Summary.Default,
+                    UnitySelector.Project.Location.Default,
 
                     NotificationsPermissions.Email.Default,
                 ], context.TenantId);

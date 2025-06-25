@@ -1,11 +1,11 @@
 ﻿@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Unity.Payments.Localization
 @using Microsoft.Extensions.Localization
-@using Unity.Payments.Localization;
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
-@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
-@model Unity.Payments.Web.Pages.Payments.CreatePaymentRequestsModel
-@inject IStringLocalizer<PaymentsResource> L
 
+@model Unity.Payments.Web.Pages.Payments.CreatePaymentRequestsModel
+
+@inject IStringLocalizer<PaymentsResource> L
 @{
     Layout = null;
 }

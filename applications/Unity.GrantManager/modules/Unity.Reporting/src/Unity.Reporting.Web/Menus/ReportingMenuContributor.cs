@@ -21,6 +21,13 @@ public class ReportingMenuContributor : IMenuContributor
                     "~/ReportingAdmin",
                     requiredPermissionName: IdentityConsts.ITAdminPermissionName
         ));
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                    ReportingMenus.Prefix,
+                    displayName: "Reconciliation",
+                    "~/TenantManagement/Reconciliation",
+                    requiredPermissionName: IdentityConsts.ITAdminPermissionName
+        ));
         return Task.CompletedTask;
     }
 }

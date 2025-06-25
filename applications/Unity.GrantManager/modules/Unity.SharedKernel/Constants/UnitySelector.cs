@@ -14,7 +14,8 @@ public static partial class UnitySelector
 
     public static partial class Applicant
     {
-        public const string Default     = "Unity.GrantManager.ApplicationManagement.Applicant";
+        public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant";
+        public const string UpdatePolicy = "Unity.GrantManager.ApplicationManagement.Applicant.UpdatePolicy"; // Custom Policy
         public static partial class Authority
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.Authority";
@@ -29,6 +30,13 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Delete";
         }
+        public static partial class AdditionalContact
+        {
+            public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact";
+            public const string Create  = "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Create";
+            public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Update";
+            public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Delete";
+        }
         public static partial class Location
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.Location";
@@ -42,13 +50,6 @@ public static partial class UnitySelector
             public const string Create  = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Create";
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Delete";
-        }
-        public static partial class Supplier
-        {
-            public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier";
-            public const string Create  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Create";
-            public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Update";
-            public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Supplier.Delete";
         }
     }
     public static partial class Application
@@ -163,6 +164,7 @@ public static partial class UnitySelector
     {
         public const string Default = "Unity.GrantManager.ApplicationManagement.History";
     }
+
     public static partial class Notification
     {
         public const string Default = "Unity.GrantManager.ApplicationManagement.Notification";
@@ -177,8 +179,10 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Notification.Draft.Update";
         }
     }
+
     public static partial class Payment
     {
+        // NOTE: Review Payment namespace for permissions
         public const string Default = "Unity.GrantManager.ApplicationManagement.Payment";
         public static partial class Summary
         {
@@ -187,6 +191,15 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Payment.Summary.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Payment.Summary.Delete";
         }
+
+        public static partial class Supplier
+        {
+            public const string Default = "Unity.GrantManager.ApplicationManagement.Payment.Supplier";
+            public const string Create  = "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Create";
+            public const string Update  = "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update";
+            public const string Delete  = "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Delete";
+        }
+
         public static partial class PaymentList
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Payment.PaymentList";
@@ -195,22 +208,50 @@ public static partial class UnitySelector
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Payment.PaymentList.Delete";
         }
     }
+
     public static partial class Project
     {
         public const string Default = "Unity.GrantManager.ApplicationManagement.Project";
+        public const string UpdatePolicy = "Unity.GrantManager.ApplicationManagement.Project.UpdatePolicy"; // Custom Policy
+
         public static partial class Location
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Project.Location";
             public const string Create  = "Unity.GrantManager.ApplicationManagement.Project.Location.Create";
-            public const string Update  = "Unity.GrantManager.ApplicationManagement.Project.Location.Update";
+            public static partial class Update // Supports Override
+            {
+                public const string Default  = "Unity.GrantManager.ApplicationManagement.Project.Location.Update";
+            }
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Project.Location.Delete";
         }
         public static partial class Summary
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Project.Summary";
             public const string Create  = "Unity.GrantManager.ApplicationManagement.Project.Summary.Create";
-            public const string Update  = "Unity.GrantManager.ApplicationManagement.Project.Summary.Update";
+            public static partial class Update // Supports Override
+            {
+                public const string Default  = "Unity.GrantManager.ApplicationManagement.Project.Summary.Update";
+            }
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Project.Summary.Delete";
+        }
+
+        public static partial class Worksheet
+        {
+            public const string Default = "Unity.GrantManager.ApplicationManagement.Project.Worksheet";
+            public const string Create  = "Unity.GrantManager.ApplicationManagement.Project.Worksheet.Create";
+            public const string Update  = "Unity.GrantManager.ApplicationManagement.Project.Worksheet.Update";
+            public const string Delete  = "Unity.GrantManager.ApplicationManagement.Project.Worksheet.Delete";
+        }
+    }
+
+    public static partial class SettingManagement
+    {
+        public static class Tags
+        {
+            public const string Default = "Unity.GrantManager.SettingManagement.Tags";
+            public const string Create  = "Unity.GrantManager.SettingManagement.Tags.Create";
+            public const string Update  = "Unity.GrantManager.SettingManagement.Tags.Update";
+            public const string Delete  = "Unity.GrantManager.SettingManagement.Tags.Delete";
         }
     }
 }

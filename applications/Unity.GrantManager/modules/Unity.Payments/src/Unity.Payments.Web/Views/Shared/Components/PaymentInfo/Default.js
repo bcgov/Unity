@@ -56,32 +56,57 @@
         else {
             paymentInfoObj[input.name.split(".")[1]] = input.value;
         }
-        if (isNumberField(input)) {
-            if (paymentInfoObj[input.name.split(".")[1]] == '') {
-                paymentInfoObj[input.name.split(".")[1]] = 0;
-            } else if (paymentInfoObj[input.name.split(".")[1]] > getMaxNumberField(input)) {
-                paymentInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
-            }
+
+        if (input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
+            paymentInfoObj[input.name] = input.value;
         }
-        else if (paymentInfoObj[input.name.split(".")[1]] == '') {
+
+        if (paymentInfoObj[input.name.split(".")[1]] == '') {
             paymentInfoObj[input.name.split(".")[1]] = null;
         }
     }
 
     function updatePaymentInfo(applicationId, paymentInfoObj) {
+        const showSpinner = () => $('.cas-spinner').show();
+        const hideSpinner = () => $('.cas-spinner').hide();
+        const disableSaveButton = (state) => $('#savePaymentInfoBtn').prop('disabled', state);
+
         try {
-            unity.payments.paymentInfo.paymentInfo
-                .update(applicationId, paymentInfoObj)
-                .done(function () {
-                    abp.notify.success(
-                        'The payment info has been updated.'
-                    );
-                    $('#savePaymentInfoBtn').prop('disabled', true);                    
+            // Create an initial promise - either the supplier update or a resolved promise
+            const shouldUpdateSupplier = abp.auth.isGranted('PaymentsPermissions.Payments.EditSupplierInfo') &&
+                paymentInfoObj['SupplierNumber'] &&
+                paymentInfoObj['SupplierNumber'] !== paymentInfoObj['OriginalSupplierNumber'];
+
+            const supplierUpdatePromise = shouldUpdateSupplier
+                ? (showSpinner(), unity.grantManager.grantApplications.grantApplication.updateSupplierNumber(applicationId, paymentInfoObj['SupplierNumber']))
+                : Promise.resolve();
+
+            abp.ui.block({
+                elm: '[data-widget-name="PaymentInfo"]',
+                busy: true
+            });
+
+            // Chain the payment info update after the supplier update (if any)
+            supplierUpdatePromise
+                .then(() => unity.payments.paymentInfo.paymentInfo.update(applicationId, paymentInfoObj))
+                .then(() => {
+                    abp.notify.success('The payment info has been updated.');
+                    disableSaveButton(true);
+                    refreshSupplierInfoWidget();
+                })
+                .catch((error) => {
+                    console.error(error);
+                    disableSaveButton(false);
+                })
+                .finally(() => {
+                    hideSpinner();
+                    abp.ui.unblock();
                 });
-        }
-        catch (error) {
-            console.log(error);
-            $('#savePaymentInfoBtn').prop('disabled', false);
+        } catch (error) {
+            console.error(error);
+            disableSaveButton(false);
+            hideSpinner();
+            abp.ui.unblock();
         }
     }
 
@@ -148,6 +173,7 @@
         reorderEnabled: true,
         languageSetValues: {},
         dataTableName: 'ApplicationPaymentRequestListTable',
+        externalSearchId: 'PaymentListSearch',
         dynamicButtonContainerId: 'dynamicButtonContainerId'});
 
     dataTable.on('search.dt', () => handleSearch());
@@ -393,11 +419,6 @@
         dataTable.columns.adjust();
     });
 
-    $('#search').on('input', function () {
-        let table = $('#ApplicationPaymentRequestListTable').DataTable();
-        table.search($(this).val()).draw();
-    });
-
     $('.select-all-application-payments').click(function () {
         if ($(this).is(':checked')) {
             dataTable.rows({ 'page': 'current' }).select();
@@ -426,11 +447,36 @@ function openCasResponseModal(casResponse) {
 }
 
 function enablePaymentInfoSaveBtn() {
-    if (!$("#paymentInfoForm").valid() || formHasInvalidCurrencyCustomFields("paymentInfoForm")) {
+    if (!$("#paymentInfoForm").valid()
+        || !abp.auth.isGranted('PaymentsPermissions.Payments.EditSupplierInfo')
+        || formHasInvalidCurrencyCustomFields("paymentInfoForm")) {
         $('#savePaymentInfoBtn').prop('disabled', true);
         return;
     }
     $('#savePaymentInfoBtn').prop('disabled', false);
+}
+
+function refreshSupplierInfoWidget() {
+    const applicantId = $("#PaymentInfo_ApplicantId").val();
+    const refreshUrl = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}`;
+    fetch(refreshUrl)
+        .then(response => response.text())
+        .then(data => {
+            let supplierInfo = document.getElementById('supplier-info-widget');
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            const siteIdValue = doc.querySelector('#SiteId').value;
+
+            if (supplierInfo) {
+                supplierInfo.innerHTML = data;
+                PubSub.publish('reload_sites_list', siteIdValue);
+            }
+            $('.cas-spinner').hide();
+        })
+        .catch(error => {
+            $('.cas-spinner').hide();
+            console.error('Error refreshing supplier-info-widget:', error);
+        });
 }
 
 function nullToEmpty(value) {

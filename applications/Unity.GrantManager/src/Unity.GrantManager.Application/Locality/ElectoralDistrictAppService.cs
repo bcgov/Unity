@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Locality
         public virtual async Task<IList<ElectoralDistrictDto>> GetListAsync()
         {
             var electoralDistrictsCache = await cache.GetOrAddAsync(
-                SettingsConstants.EconomicRegionsCacheKey,
+                SettingsConstants.ElectoralDistrictsCacheKey,
                 GetElectoralDistrictsAsync,
                 () => new DistributedCacheEntryOptions
                 {

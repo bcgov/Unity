@@ -1,22 +1,23 @@
-﻿using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
-using Volo.Abp.DependencyInjection;
-using Unity.GrantManager.Intakes;
-using System;
-using Unity.GrantManager.Intakes.Mapping;
-using Unity.GrantManager.GrantApplications;
-using Unity.Payments.Events;
-using Volo.Abp;
-using System.Collections.Generic;
-using Unity.GrantManager.Integration.Orgbook;
-using Newtonsoft.Json.Linq;
-using System.Linq;
-using Unity.Modules.Shared.Utils;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Unity.Payments.Integrations.Cas;
 using Microsoft.Extensions.Logging.Abstractions;
-using Unity.Payments.Suppliers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Text.Json;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Intakes.Mapping;
+using Unity.GrantManager.Integration.Orgbook;
+using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
+using Unity.Payments.Events;
+using Unity.Payments.Integrations.Cas;
+using Unity.Payments.Suppliers;
+using Volo.Abp;
+using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -28,7 +29,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  ISiteAppService siteAppService,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
-                                 IApplicantAgentRepository applicantAgentRepository) : GrantManagerAppService, IApplicantAppService
+                                 IApplicantAgentRepository applicantAgentRepository,
+                                 IApplicationRepository applicationRepository) : GrantManagerAppService, IApplicantAppService
 {   
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
@@ -43,6 +45,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicant = await CreateNewApplicantAsync(intakeMap);
         } else {
             applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
+            applicant.ElectoralDistrict = intakeMap.ElectoralDistrict ?? applicant.ElectoralDistrict;
             applicant.NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegisteredBusinessName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
             applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
@@ -163,16 +166,46 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(true)]
     public async Task<int> GetNextUnityApplicantIdAsync()
     {
-        List<Applicant> applicants = await applicantRepository.GetApplicantsWithUnityApplicantIdAsync();
-        // Convert UnityApplicantId to int, filter only valid numbers
-        var unityIds = applicants
-            .Where(a => int.TryParse(a.UnityApplicantId, out _)) // Ensure it's numeric
-            .Select(a => int.Parse(a.UnityApplicantId!))
+        // Finds the first available Unity Applicant ID, starting from 100000.
+        var applicantQuery = await applicantRepository.GetQueryableAsync();
+
+        var relevantUnityIds = await applicantQuery
+            .Where(a => a.UnityApplicantId != null)
+            .Select(a => new { UnityApplicantId = a.UnityApplicantId, ParsedId = (int?)null })
+            .ToListAsync();
+
+        var updatedRelevantUnityIds = relevantUnityIds
+            .Select(item =>
+            {
+                if (int.TryParse(item.UnityApplicantId, out var parsedId) && parsedId >= 100000)
+                {
+                    return new { UnityApplicantId = item.UnityApplicantId ?? string.Empty, ParsedId = (int?)parsedId };
+                }
+                return new { UnityApplicantId = item.UnityApplicantId ?? string.Empty, ParsedId = item.ParsedId };
+            })
             .ToList();
 
-        int nextId = unityIds.Count > 0 ? unityIds.Max() + 1 : 000001;
+        var orderedIds = updatedRelevantUnityIds
+            .Where(a => a.ParsedId.HasValue)
+            .Select(a => a.ParsedId!.Value) // Use the null-forgiving operator (!) to assert that ParsedId is not null
+            .OrderBy(id => id)
+            .ToList();
 
-        return nextId;
+        int candidate = 100000; // Starting ID for availability search.
+
+        foreach (var id in orderedIds)
+        {
+            if (id == candidate)
+            {
+                candidate++;
+            }
+            else // Gap found: candidate is the first available ID.
+            {
+                break;
+            }
+        }
+
+        return candidate;
     }
 
     [RemoteService(true)]
@@ -188,40 +221,37 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             string? orgbookLookup = string.IsNullOrEmpty(applicant.OrgNumber) ? applicant.ApplicantName : applicant.OrgNumber;
             if (string.IsNullOrEmpty(orgbookLookup)) return applicant;
-
-            JObject? result = await orgBookService.GetOrgBookQueryAsync(orgbookLookup);
-            var orgData = result?.SelectToken("results")?.Children().FirstOrDefault();
-            if (orgData == null) return applicant;
-
+            // Use the built-in System.Text.Json API
+            using JsonDocument result = await orgBookService.GetOrgBookAutocompleteQueryAsync(orgbookLookup);
+            if (!result.RootElement.TryGetProperty("results", out JsonElement results) ||
+                results.GetArrayLength() == 0)
+                return applicant;
+            JsonElement orgData = results[0];
             await UpdateApplicantOrgNumberAsync(applicant, orgData);
-            await UpdateApplicantNamesAsync(applicant, orgData.SelectToken("names")?.Children());
+            await UpdateApplicantNamesAsync(applicant, orgData.GetProperty("names").EnumerateArray());
         }
         catch (Exception ex)
         {
             Logger.LogInformation(ex, "UpdateApplicantOrgMatchAsync: Exception: {ExceptionMessage}", ex.Message);
         }
-
         return applicant;
     }
 
-    private async Task UpdateApplicantOrgNumberAsync(Applicant applicant, JToken orgData)
+    private async Task UpdateApplicantOrgNumberAsync(Applicant applicant, JsonElement orgData)
     {
-        var orgNumber = orgData.SelectToken("source_id");
-        if (applicant.OrgNumber == null && orgNumber != null)
+        if (orgData.TryGetProperty("source_id", out JsonElement orgNumberElement) && applicant.OrgNumber == null)
         {
-            applicant.OrgNumber = orgNumber.ToString();
+            applicant.OrgNumber = orgNumberElement.GetString();
             await applicantRepository.UpdateAsync(applicant);
         }
     }
 
-    private async Task UpdateApplicantNamesAsync(Applicant applicant, IEnumerable<JToken>? namesChildren)
+    private async Task UpdateApplicantNamesAsync(Applicant applicant, IEnumerable<JsonElement> namesChildren)
     {
-        if (namesChildren == null) return;
-
         foreach (var name in namesChildren)
         {
-            string nameType = name.SelectToken("type")?.ToString() ?? string.Empty;
-            string nameText = name.SelectToken("text")?.ToString() ?? string.Empty;
+            string nameType = name.TryGetProperty("type", out JsonElement typeEl) ? typeEl.GetString() ?? string.Empty : string.Empty;
+            string nameText = name.TryGetProperty("text", out JsonElement textEl) ? textEl.GetString() ?? string.Empty : string.Empty;
 
             if (nameType == "entity_name")
             {
@@ -248,6 +278,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         var applicant = new Applicant
         {
             ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
+            ElectoralDistrict = intakeMap.ElectoralDistrict,
             NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
             OrgNumber = intakeMap.OrgNumber,
@@ -310,5 +341,120 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         List<Applicant> applicants = await applicantRepository.GetApplicantsBySiteIdAsync(siteId);
         return applicants;
     }
+    [RemoteService(true)]
+    public async Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery)
+    {
+        JsonDocument result = await applicantRepository.GetApplicantAutocompleteQueryAsync(applicantLookUpQuery);
+        return result;
+    }
 
+    [RemoteService(true)]
+    public async Task UpdateApplicantIdAsync(UpdateApplicantIdDto dto)
+    {
+        // Validate input
+        if (dto == null)
+        {
+            Logger.LogWarning("UpdateApplicantIdAsync called with null dto.");
+            return;
+        }
+
+        //Update Application
+        var application = await applicationRepository.GetAsync(dto.ApplicationId);
+        if (application == null)
+        {
+            Logger.LogWarning("Application not found for ApplicationId: {ApplicationId}", dto.ApplicationId);
+            return;
+        }
+
+        var oldApplicantId = application.ApplicantId;
+        if (oldApplicantId == dto.ApplicantId)
+        {
+            Logger.LogInformation("ApplicantId is already set to the requested value. No update required.");
+            return;
+        }
+
+        application.ApplicantId = dto.ApplicantId;
+        await applicationRepository.UpdateAsync(application);
+
+        //Update ApplicationFormSubmissions
+        await UpdateApplicationFormSubmissionsAsync(dto.ApplicationId, dto.ApplicantId);
+
+        //Update ApplicantAgent records
+        await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
+    }
+
+    [RemoteService(true)]
+    public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
+    {
+        // Set principal as not duplicated
+        var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
+        if (principal != null && principal.IsDuplicated != false)
+        {
+            principal.IsDuplicated = false;
+            await applicantRepository.UpdateAsync(principal);
+        }
+
+        // Set non-principal as duplicated
+        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
+        if (nonPrincipal != null && nonPrincipal.IsDuplicated != true)
+        {
+            nonPrincipal.IsDuplicated = true;
+            await applicantRepository.UpdateAsync(nonPrincipal);
+        }
+    }
+
+    private async Task UpdateApplicationFormSubmissionsAsync(Guid applicationId, Guid newApplicantId)
+    {
+        try
+        {
+            var formSubmissionRepository = LazyServiceProvider.LazyGetRequiredService<IApplicationFormSubmissionRepository>();
+            var formSubmissions = await (await formSubmissionRepository.GetQueryableAsync())
+                .Where(s => s.ApplicationId == applicationId)
+                .ToListAsync();
+
+            foreach (var submission in formSubmissions)
+            {
+                submission.ApplicantId = newApplicantId;
+                await formSubmissionRepository.UpdateAsync(submission);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating ApplicationFormSubmissions for ApplicationId: {ApplicationId}", applicationId);
+            throw new UserFriendlyException("An error occurred while updating application form submissions.");
+        }
+    }
+
+    private async Task UpdateApplicantAgentRecordsAsync(Guid oldApplicantId, Guid newApplicantId, Guid applicationId)
+    {
+        try
+        {
+            var agentQueryable = await applicantAgentRepository.GetQueryableAsync();
+
+            // Detach old agent from application
+            var oldAgent = await agentQueryable
+                .FirstOrDefaultAsync(a => a.ApplicantId == oldApplicantId && a.ApplicationId == applicationId);
+
+            if (oldAgent != null)
+            {
+                oldAgent.ApplicationId = null;
+                await applicantAgentRepository.UpdateAsync(oldAgent);
+            }
+
+            // Attach new agent to application
+            var newAgent = await agentQueryable
+                .FirstOrDefaultAsync(a => a.ApplicantId == newApplicantId);
+
+            if (newAgent != null)
+            {
+                newAgent.ApplicationId = applicationId;
+                await applicantAgentRepository.UpdateAsync(newAgent);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating ApplicantAgent records for ApplicationId: {ApplicationId}", applicationId);
+            throw new UserFriendlyException("An error occurred while updating applicant agent records.");
+        }
+    }
 }

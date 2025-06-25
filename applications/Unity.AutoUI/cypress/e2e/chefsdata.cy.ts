@@ -1,14 +1,19 @@
+/// <reference types="cypress" />
 describe('Unity Login and check data from CHEFS', () => {
+	
   it('Verify Login', () => {
     cy.login()
   })
   // 19.) Verify that the info panel populates with mapped data
   it('Verify the UI is populated with valid data from CHEFS', () => {
+    
     cy.getSubmissionDetail('confirmationID').then(id => {cy.log(`Confirmation ID: ${id}`);});
+
 	cy.get('#search').should('exist').clear(); // Ensure the field exists and clear its contents
 	cy.get('#search').click() // click the search field
 	cy.getSubmissionDetail('confirmationID').then(id => cy.get('#search').type(id)); // Fetch the confirmation ID and type it into the search field
     cy.getSubmissionDetail('confirmationID').then(id => cy.contains('tr', id).find('.checkbox-select').click()); // Fetch the confirmation ID, find its row, and click the checkbox
+
 	cy.get('#applicationLink').should('exist').click() // open the info panel
     // 19.) Verify that the info panel populates with mapped data
     // Category: AutoUI
@@ -153,17 +158,15 @@ describe('Unity Login and check data from CHEFS', () => {
       })
     // 25	Verify that the Payment Info tab populates with mapped data
     cy.get('#nav-payment-info-tab').should('exist').click() // open the Payment Info tab
-    // Requested Amount: 89000.00
-    cy.get('#RequestedAmount').should('have.value', '89000.00')
+    // Requested Amount: 89,000.00
+    cy.get('#RequestedAmount').should('have.value', '89,000.00')
     // 26.) Verify that the Submission tab populates with all form data
     cy.get('#nav-summery-tab').should('exist').click() // open the Submission tab 
-    cy.getSubmissionDetail('formObjectID').then(formId => { // Fetch formObjectID
-      let headers = ['1. INTRODUCTION','2. ELIGIBILITY','3. APPLICANT INFORMATION','4. PROJECT INFORMATION','5. PROJECT TIMELINES','6. PROJECT BUDGET','7. ATTESTATION']; // Define headers
-      headers.forEach((header, index) => { // Iterate over headers
-        cy.get(`#${formId} > div:nth-child(${index + 1}) > div.card-header.bg-default > h4`) // Select header element
-        .should('contain', header) // Assert header text
-        .click(); // Click header to expand/collapse
-      });
+    const headers = ['1. INTRODUCTION', '2. ELIGIBILITY', '3. APPLICANT INFORMATION','4. PROJECT INFORMATION', '5. PROJECT TIMELINES', '6. PROJECT BUDGET', '7. ATTESTATION'];
+    headers.forEach(header => {
+      cy.contains('h4', header)
+        .should('exist')
+        .click();
     });
   })
   it('Verify Logout', () => {

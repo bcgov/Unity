@@ -1,5 +1,6 @@
-
 redis:
+  # Bitnami chart version: updated from previous to 21.1.11
+  # Redis image tag: updated from 7.2.4-debian-12-r9 to 7.2.5 (see Chart.yaml)
   fullnameOverride: redis-ha
   architecture: replication
   auth:
@@ -9,7 +10,7 @@ redis:
   image:
     registry: docker.io
     repository: bitnami/redis
-    tag: 7.2.4-debian-12-r9
+    tag: 7.2.5 # updated from 7.2.4-debian-12-r9, now using default Bitnami Redis 7.2.5 image
   sentinel:
     enabled: true
     masterSet: "redisMasterSet"

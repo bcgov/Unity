@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -24,5 +25,6 @@ namespace Unity.GrantManager.ApplicationForms
         public Guid? ScoresheetId { get; set; }
         public Guid? TenantId { get; set; }
         public bool IsDirectApproval { get; set; }
+        public AddressType? ElectoralDistrictAddressType { get; set; }
     }
 }
