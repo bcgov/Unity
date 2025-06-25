@@ -2,6 +2,16 @@
 
 This project uses a Cypress folder structure to automate end-to-end testing for the Unity Grant Manager application. The Cypress testing framework executes automated tests to ensure the quality and reliability of the web application using continuous integration.
 
+## Subfolders and Files
+
+- `cypress/`: Cypress configuration and test files.
+- `cypress.config.ts`: Cypress configuration in TypeScript.
+- `cypress.pipeline.env.json`: CI/CD environment overrides.
+- `package.json`, `package-lock.json`: Project dependencies and metadata.
+- `tsconfig.json`: TypeScript configuration.
+
+See the README for setup and usage instructions.
+
 ## Getting Started
 
 To get started with this Cypress project, follow these steps:
