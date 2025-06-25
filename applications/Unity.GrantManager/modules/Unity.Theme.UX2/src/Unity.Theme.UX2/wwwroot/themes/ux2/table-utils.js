@@ -447,7 +447,7 @@ function getColumnToggleButtonsSorted(displayListColumns, dataTable) {
                 }
             },
             className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable),
-            extend: 'columnToggle',
+            // extend: 'columnToggle', - intentionally not using extend to avoid default behavior
             columns: a.index
         }));
     return res;
