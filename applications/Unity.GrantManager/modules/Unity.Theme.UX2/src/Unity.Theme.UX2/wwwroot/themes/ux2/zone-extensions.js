@@ -4,6 +4,29 @@
     }
 
     /**
+     * Unflatten dot separated JSON objects into nested objects
+     */
+    $.fn.unflattenObject = function(flatObj) {
+        const result = {};
+        for (const flatKey in flatObj) {
+            const value = flatObj[flatKey];
+            if (!flatKey) continue;
+            const keys = flatKey.split('.');
+            let cur = result;
+            for (let i = 0; i < keys.length; i++) {
+                const k = keys[i];
+                if (i === keys.length - 1) {
+                    cur[k] = value;
+                } else {
+                    cur[k] = cur[k] || {};
+                    cur = cur[k];
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * @public
      * Handles zone fieldset serialization with DTO nesting
      * @param {any} includeDisabled
@@ -15,7 +38,6 @@
         // OPTIONS NOTE: Zones to exclude
         // OPTIONS NOTE: Zones to include
         // OPTIONS NOTE: Properties to include
-
 
         // Initialize result object
         const resultObject = {};
@@ -41,8 +63,16 @@
 
                 data.push({ name: this.name, value: value });
             });
-        }
+        } else {
+            // Add only disabled fields marked with data-zone-include="true"
+            $form.find(':disabled[name][data-zone-include="true"]').each(function () {
+                const value = $(this).is(":checkbox") ?
+                    $(this).is(':checked') :
+                    $(this).val();
 
+                data.push({ name: this.name, value: value });
+            });
+        }
 
         // Convert field names to camelCase if required
         if (camelCase) {
@@ -137,7 +167,7 @@ class UnityChangeTrackingForm {
     constructor($form, options = {}) {
 
         this.options = {
-            modifiedClass: 'unity-modified-field-marker',
+            modifiedClass: options.modifiedClass || 'unity-modified-field-marker',
             saveButtonSelector: options.saveButtonSelector || '#saveButton',
             ...options
         };
@@ -173,6 +203,9 @@ class UnityChangeTrackingForm {
                     if ($el.prop('checked')) {
                         this.originalValues[name] = $el.val();
                     }
+                } else if ($el.attr('data-zone-include') === 'true') {
+                    // Store whether this field should be included even when disabled
+                    this.originalValues[name] = $el.val();
                 } else {
                     this.originalValues[name] = $el.val();
                 }
@@ -202,12 +235,15 @@ class UnityChangeTrackingForm {
             } else {
                 return; // Skip radio buttons that aren't checked
             }
+        } else if ($element.attr('data-zone-include') === 'true') {
+            // Store whether this field should be included even when disabled
+            currentValue = $element.val();
         } else {
             currentValue = $element.val();
         }
 
         const originalValue = this.originalValues[name];
-
+    
         if (currentValue !== originalValue) {
             this.markAsModified($element, name);
         } else {
@@ -313,6 +349,14 @@ class UnityZoneForm extends UnityChangeTrackingForm {
         this.addSubmitHandler();
     }
 
+    // NOTE Get Zone Status
+    // NOTE Get field by name or id
+    // NOTE Get field value by name or id
+
+    isValid() {
+        return this.form.valid();
+    }
+
     initializeNumericFields() {
         $('.numeric-mask').maskMoney({ precision: 0 });
         $('.percentage-mask').maskMoney();
@@ -334,10 +378,86 @@ class UnityZoneForm extends UnityChangeTrackingForm {
         $('.unity-currency-input').maskMoney();
     }
 
+    /**
+    * Extracts the last two segments from a string separated by underscores,
+    * and returns them joined by an underscore (e.g., "Unity_GrantManager_ApplicationManagement_Applicant_Summary" => "Applicant_Summary").
+    * If the input does not have at least two segments, returns the original string.
+    * @private
+    * @param {string} input
+    * @returns {string}
+    */
+    #extractZoneSuffix(input) {
+        if (typeof input !== 'string') return input;
+        const parts = input.split('_');
+        if (parts.length < 2) return input;
+        return parts.slice(-2).join('_');
+    }
+
     addSubmitHandler() {
         this.form.on('submit', (e) => {
             e.preventDefault();
+            // Include submission handler callback
             this.resetTracking();
         });
+    }
+
+    reportZones(viewExpanded = false) {
+        let tableData = [];
+        const self = this; // Store reference to the class instance
+
+        this.form.find('fieldset').each(function () {
+            const fieldName = $(this).attr('name');
+
+            $(this).find(':input').each(function () {
+                const $el = $(this);
+                const name = this.name || '(no name)';
+
+                // Get current value based on input type
+                let currentValue;
+                if ($el.is(':checkbox')) {
+                    currentValue = $el.prop('checked');
+                } else if ($el.is(':radio')) {
+                    if ($el.prop('checked')) {
+                        currentValue = $el.val();
+                    } else {
+                        currentValue = '(unchecked radio)';
+                    }
+                } else {
+                    currentValue = $el.val() || '(no value)';
+                }
+
+                // Get original value if it exists
+                const originalValue = name !== '(no name)' && self.originalValues.hasOwnProperty(name) ?
+                    self.originalValues[name] : '(not tracked)';
+
+                const isModified = self.modifiedFields.has(name);
+
+                let tableOutput = {
+                    'fieldsetName': self.#extractZoneSuffix(fieldName),
+                    'id': this.id
+                }
+                
+                if (viewExpanded) {
+                    let expandedProperties = {
+                        'name': name,
+                        'tag': this.tagName.toLowerCase(),
+                        'type': this.type
+                    };
+
+                    tableOutput = { ...tableOutput, ...expandedProperties };
+                }
+                
+                let changeProperties = {
+                    'originalValue': originalValue,
+                    'currentValue': currentValue,
+                    'modified': isModified
+                };
+                tableOutput = { ...tableOutput, ...changeProperties }; 
+
+                tableData.push(tableOutput);
+            });
+        });
+
+        console.table(tableData);
     }
 }

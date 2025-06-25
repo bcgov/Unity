@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Integration.Geocoder;
 using Unity.GrantManager.Integrations.Exceptions;
 using Unity.GrantManager.Integrations.Http;
-using Volo.Abp;
 using Volo.Abp.Application.Services;
-using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Integrations.Geocoder
 {

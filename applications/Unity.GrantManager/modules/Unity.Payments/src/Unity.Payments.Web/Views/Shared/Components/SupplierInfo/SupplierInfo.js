@@ -107,7 +107,6 @@ $(function () {
 
     function loadSiteInfoTable() {
         let dt = $('#SiteInfoTable');
-        let dataTable;
 
         let inputAction = function() {
             const supplierId = $("#SupplierId").val();
