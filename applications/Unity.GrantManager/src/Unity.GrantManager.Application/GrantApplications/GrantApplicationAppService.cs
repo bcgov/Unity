@@ -558,7 +558,38 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
+    protected internal async Task<ApplicantAgent?> CreateOrUpdateApplicantAgentAsync(Application application, ContactInfoDto? input)
+    {
+        if (input == null
+            || !await AuthorizationService.IsGrantedAnyAsync(UnitySelector.Applicant.Contact.Create, UnitySelector.Applicant.Contact.Update))
+        {
+            return null;
+        }
+
+        var applicantAgent = await _applicantAgentRepository
+            .FirstOrDefaultAsync(a => a.ApplicantId == application.ApplicantId)
+            ?? new ApplicantAgent
+            {
+                ApplicantId   = application.ApplicantId,
+                ApplicationId = application.Id
+            };
+
+        applicantAgent.Name = input?.Name ?? string.Empty;
+        applicantAgent.Phone = input?.Phone ?? string.Empty;
+        applicantAgent.Phone2 = input?.Phone2 ?? string.Empty;
+        applicantAgent.Email = input?.Email ?? string.Empty;
+        applicantAgent.Title = input?.Title ?? string.Empty;
+
+        if (applicantAgent.Id == Guid.Empty)
+        {
+            return await _applicantAgentRepository.InsertAsync(applicantAgent);
+        }
+
+        return await _applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    [Obsolete("Use ApplicationApplicantAppService.UpdatePartialApplicantInfoAsync instead.")]
+    [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);

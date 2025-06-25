@@ -187,7 +187,7 @@
                 @if (IsZoneVisible(UnitySelector.Applicant.Default))
                 {
                     <abp-tab name="nav-organization-info" title="Applicant Info">
-                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Applicant.Summary.Default)" id="ApplicantInfoWidget">
+                        <div class="w-100 px-2" id="ApplicantInfoWidget">
                             @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
