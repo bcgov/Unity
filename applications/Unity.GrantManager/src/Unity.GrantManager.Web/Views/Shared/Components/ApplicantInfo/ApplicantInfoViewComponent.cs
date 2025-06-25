@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Locality;
 using Volo.Abp.AspNetCore.Mvc;
@@ -29,7 +28,7 @@ public class ApplicantInfoViewComponent(
     public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
     {
         var applicantInfoDto = await applicationAppicantService.GetApplicantInfoTabAsync(applicationId);
-        var applicationForm = await applicationFormAppService.GetAsync(applicantInfoDto.ApplicationFormId);
+        var electoralDistrictAddressType = await applicationFormAppService.GetElectoralDistrictAddressTypeAsync(applicantInfoDto.ApplicationFormId);
 
         if (applicantInfoDto == null)
         {
@@ -45,8 +44,7 @@ public class ApplicantInfoViewComponent(
             ApplicantSummary         = ObjectMapper.Map<ApplicantSummaryDto, ApplicantSummaryViewModel>(applicantInfoDto.ApplicantSummary ?? new ApplicantSummaryDto()),
             ContactInfo              = ObjectMapper.Map<ContactInfoDto, ContactInfoViewModel>(applicantInfoDto.ContactInfo ?? new ContactInfoDto()),
             SigningAuthority         = ObjectMapper.Map<SigningAuthorityDto, SigningAuthorityViewModel>(applicantInfoDto.SigningAuthority ?? new SigningAuthorityDto()),
-            ApplicantElectoralAddressType = applicationForm.ElectoralDistrictAddressType
-                ?? ApplicationForm.GetDefaultElectoralDistrictAddressType(),
+            ApplicantElectoralAddressType = electoralDistrictAddressType,
         };
 
         viewModel.ApplicantSummary.ApplicantId = applicantInfoDto.ApplicantId;
