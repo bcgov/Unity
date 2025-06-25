@@ -92,7 +92,7 @@ public class ApplicationApplicantAppService(
     }
 
     [Obsolete("Use GetApplicantInfoTabAsync instead.")]
-    [Authorize(UnitySelector.Applicant.Default)]
+    [Authorize]
     public async Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId)
     {
         var applicantInfo = await applicationRepository.WithBasicDetailsAsync(applicationId);

@@ -49,6 +49,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();
+        CreateMap<ApplicationFormDto, ApplicationForm>();
         CreateMap<ApplicationFormVersion, ApplicationFormVersionDto>();
         CreateMap<ApplicationFormVersionDto, ApplicationFormVersion>();
         CreateMap<CreateUpdateApplicationFormVersionDto, ApplicationFormVersion>();
