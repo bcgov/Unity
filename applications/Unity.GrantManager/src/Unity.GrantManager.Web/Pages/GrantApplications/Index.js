@@ -23,6 +23,22 @@
         'orgNumber',
         'orgBookStatus'];
 
+    const resetColumns = ['select',
+        'applicantName',
+        'category',
+        'referenceNo',
+        'submissionDate',
+        'status',
+        'subStatusDisplayValue',
+        'community',
+        'requestedAmount',
+        'approvedAmount',
+        'projectName',
+        'applicantId',
+        'applicationTag',
+        'assignees'
+    ]
+
     //For stateRestore label in modal
     let languageSetValues = {
         buttons: {
@@ -69,6 +85,35 @@
             },
             buttons: [
                 { extend: 'createState', text: 'Save As View' },
+                {
+                    text: "Reset to Default View",
+                    action: function (e, dt, node, config)
+                    {
+                        dt.columns().visible(false);
+
+                        const allColumnNames = dt.settings()[0].aoColumns.map(col => col.name).filter(colName => !resetColumns.includes(colName));
+                        const orderedIndexes = [];
+
+                        resetColumns.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                dt.column(colIdx).visible(true);
+                                orderedIndexes.push(colIdx);
+                            }
+                        });
+
+                        allColumnNames.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                orderedIndexes.push(colIdx);
+                            }
+                        })
+                        dt.colReorder.order(orderedIndexes);
+
+                        dt.order([4, 'asc']).search('').draw();
+
+                    }
+                },
                 { extend: 'removeAllStates', text: 'Delete All Views' },
                 {
                     extend: 'spacer',
