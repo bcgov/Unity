@@ -1,6 +1,7 @@
 redis:
   fullnameOverride: prod-redis-ha
   sentinel:
+    masterSet: redisMasterSet
     resources:
       requests:
         memory: "64Mi"
@@ -9,7 +10,7 @@ redis:
     replicaCount: 3
     persistence:
       enabled: true
-      size: 64Mi
+      size: 128Mi
     resources:
       requests:
         memory: "64Mi"

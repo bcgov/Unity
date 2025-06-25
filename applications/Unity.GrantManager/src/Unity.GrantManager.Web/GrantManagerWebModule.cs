@@ -76,6 +76,7 @@ using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Web.Views.Settings;
 using Unity.Notifications.Web.Bundling;
 using Unity.Reporting.Web;
+using Unity.GrantManager.Web.Views.Settings;
 
 namespace Unity.GrantManager.Web;
 
@@ -123,6 +124,10 @@ public class GrantManagerWebModule : AbpModule
             options.IsCleanupEnabled = false; // not used
         });
     }
+
+    private static readonly string[] _liveHealthCheckTags = ["live"];
+    private static readonly string[] _readyHealthCheckTags = ["ready"];
+    private static readonly string[] _startupHealthCheckTags = ["startup"];
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
@@ -199,16 +204,17 @@ public class GrantManagerWebModule : AbpModule
         Configure<SettingManagementPageOptions>(options =>
         {
             options.Contributors.Add(new BackgroundJobsPageContributor());
+            options.Contributors.Add(new TagManagementPageContributor());
         });
 
         context.Services.AddHealthChecks()
-            .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
+            .AddCheck<LiveHealthCheck>("live", tags: _liveHealthCheckTags);
 
         context.Services.AddHealthChecks()
-           .AddCheck<ReadyHealthCheck>("ready", tags: new[] { "ready" });
+            .AddCheck<ReadyHealthCheck>("ready", tags: _readyHealthCheckTags);
 
         context.Services.AddHealthChecks()
-           .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
+            .AddCheck<StartupHealthCheck>("startup", tags: _startupHealthCheckTags);
 
         Configure<SettingManagementPageOptions>(options =>
         {

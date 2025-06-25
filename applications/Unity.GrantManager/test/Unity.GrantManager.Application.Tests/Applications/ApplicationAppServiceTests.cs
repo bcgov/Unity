@@ -69,7 +69,6 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         }
     }
 
-
     [Fact]
     [Trait("Category", "Integration")]
     public async Task CreateCommentAsync_Should_Create_Comment()

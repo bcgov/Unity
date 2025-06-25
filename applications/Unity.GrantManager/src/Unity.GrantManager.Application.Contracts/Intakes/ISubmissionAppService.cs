@@ -17,7 +17,7 @@ public interface ISubmissionAppService : IApplicationService
     /// <param name="formId">ID of the form</param>
     /// <param name="fields">A list of form fields to search on. Refer to the related &#x60;versions/{formVersionId}/fields&#x60; endpoint for a list of valid values to query for. The list should be comma separated.</param>
     /// <returns>List&lt;FormSubmissionSummary&gt;</returns>
-    Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId);
+    Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(bool allSubmissions);
 
     /// <summary>
     /// Get a form submission 

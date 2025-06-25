@@ -30,5 +30,23 @@ public static partial class UnitySelector
             }
         }
     }
-}
 
+    public static partial class Project
+    {
+        public static partial class Summary
+        {
+            public static partial class Update
+            {
+                public const string UpdateFinalStateFields  = "Unity.GrantManager.ApplicationManagement.Project.Summary.Update.UpdateFinalStateFields";
+            }
+        }
+
+        public static partial class Location
+        {
+            public static partial class Update
+            {
+                public const string UpdateFinalStateFields  = "Unity.GrantManager.ApplicationManagement.Project.Location.Update.UpdateFinalStateFields";
+            }
+        }
+    }
+}

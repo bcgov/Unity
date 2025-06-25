@@ -40,6 +40,12 @@
     <None Update="Views\Shared\**\*.css">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Views\Settings\**\*.js">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Views\Settings\**\*.css">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Components\**\*.js">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

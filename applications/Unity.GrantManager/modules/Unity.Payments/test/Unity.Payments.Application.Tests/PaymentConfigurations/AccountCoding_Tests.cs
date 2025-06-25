@@ -1,7 +1,7 @@
 ﻿using Xunit;
 using Shouldly;
-using Unity.Payments.Domain.PaymentConfigurations;
 using System.ComponentModel;
+using Unity.Payments.Domain.AccountCodings;
 
 namespace Unity.Payments.PaymentConfigurations
 {

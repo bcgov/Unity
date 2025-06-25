@@ -1,5 +1,8 @@
 fullnameOverride: crunchy-postgres
 
+# Set this to true for OpenShift deployments to avoid incompatible securityContext values
+openshift: true
+
 labels:
   app.kubernetes.io/part-of: crunchydb-postgres
 

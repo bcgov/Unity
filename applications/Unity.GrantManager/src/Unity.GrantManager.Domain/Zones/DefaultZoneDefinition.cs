@@ -1,5 +1,4 @@
-﻿using Unity.GrantManager.Settings;
-using Unity.Modules.Shared;
+﻿using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.Zones;
 public static class DefaultZoneDefinition
@@ -49,12 +48,11 @@ public static class DefaultZoneDefinition
                          Name = UnitySelector.Project.Location.Default,
                          ViewComponentType = "ProjectLocationViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 2
                      },
                  ]
-             },                     
-             new ZoneTabDefinition { 
+             },
+             new ZoneTabDefinition {
                  Name = UnitySelector.Applicant.Default,
                  IsEnabled = true,
                  SortOrder = 3,
@@ -70,22 +68,24 @@ public static class DefaultZoneDefinition
                          Name = UnitySelector.Applicant.Contact.Default,
                          ViewComponentType = "ApplicantContactInfoViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 2
                      },
                      new ZoneDefinition {
                          Name = UnitySelector.Applicant.Authority.Default,
                          ViewComponentType = "ApplicantSigningAuthorityViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 3
                      },
                      new ZoneDefinition {
                          Name = UnitySelector.Applicant.Location.Default,
                          ViewComponentType = "ApplicantPhysicalAddressViewComponent",
                          IsEnabled = true,
-                         IsConfigurationDisabled = true,
                          SortOrder = 4
+                     },
+                     new ZoneDefinition {
+                         Name = UnitySelector.Applicant.AdditionalContact.Default,
+                         IsEnabled = true,
+                         SortOrder = 5
                      },
                  ]
              },
@@ -113,14 +113,22 @@ public static class DefaultZoneDefinition
                          Name = UnitySelector.Payment.Summary.Default,
                          ViewComponentType = "PaymentInfoViewComponent",
                          IsEnabled = true,
+                         IsConfigurationDisabled = true,
                          SortOrder = 1
                      },
-                      new ZoneDefinition {
+                     new ZoneDefinition {
+                         Name = UnitySelector.Payment.Supplier.Default,
+                         ViewComponentType = "SupplierInfoViewComponent",
+                         IsEnabled = true,
+                         IsConfigurationDisabled = true,
+                         SortOrder = 2
+                     },
+                     new ZoneDefinition {
                          Name = UnitySelector.Payment.PaymentList.Default,
                          ViewComponentType = "PaymentListViewComponent",
                          IsEnabled = true,
                          IsConfigurationDisabled = true,
-                         SortOrder = 2
+                         SortOrder = 3
                      }
                  ]
              }

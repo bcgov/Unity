@@ -1,5 +1,13 @@
 # Unity Grant Manager Application
 
+This is the main grant management application for the Unity platform. It includes backend services, web components, and database management.
+
+## Subfolders
+
+- `modules/`: Application modules.
+- `src/`: Source code for the application.
+- `test/`: Test projects and files.
+
 ## Getting Started
 
 1. With .NET Core installed, run `dotnet tool install -g Volo.Abp.Cli`
@@ -26,4 +34,4 @@
 - [ABP Platform Roadmap](https://docs.abp.io/en/abp/latest/Road-Map)
 - [ABP Platform Module Packages](https://abp.io/packages)
 
-- [EF Core Database Migrations](https://docs.abp.io/en/abp/latest/Entity-Framework-Core-Migrations) 
+- [EF Core Database Migrations](https://docs.abp.io/en/abp/latest/Entity-Framework-Core-Migrations)
