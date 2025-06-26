@@ -1,10 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup><LangVersion>latest</LangVersion>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <AssemblyName>Unity.TenantManagement.Web</AssemblyName>
     <PackageId>Unity.TenantManagement.Web</PackageId>
-    <IsPackable>true</IsPackable>
-    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <IsPackable>true</IsPackable>    
     <OutputType>Library</OutputType>
     <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
   </PropertyGroup>
@@ -29,16 +28,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
-    <PackageReference Include="Volo.Abp.FeatureManagement.Web" Version="8.3.4" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.5" />
+    <PackageReference Include="System.Text.Json" Version="9.0.5" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.Web" Version="9.1.3" />
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
-    <PackageReference Include="Volo.Abp.AutoMapper" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.AutoMapper" Version="9.1.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.8" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.5" />
   </ItemGroup>
 
 </Project>

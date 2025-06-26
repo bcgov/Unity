@@ -40,12 +40,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 
             summaryDto.SubmissionDate = summaryDto.SubmissionDate?.AddMinutes(-offset);
 
+            if (string.IsNullOrEmpty(summaryDto.TotalScore))
+            {
+                summaryDto.TotalScore = "0";
+            }
+
             SummaryWidgetViewModel summaryWidgetViewModel = ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto);
             summaryWidgetViewModel.ApplicationId = applicationId;
             summaryWidgetViewModel.IsReadOnly = isReadOnly;
 
             return View(summaryWidgetViewModel);
-        }      
+        }
     }
 
     public class SummaryWidgetStyleBundleContributor : BundleContributor
