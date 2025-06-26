@@ -331,37 +331,24 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
+    private List<string>? ParseEmailList(string? emails)
+    {
+        if (string.IsNullOrWhiteSpace(emails))
+            return null;
+
+        var emailList = emails.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
+                         .Select(e => e.Trim())
+                         .Where(e => !string.IsNullOrWhiteSpace(e))
+                         .ToList();
+
+        return emailList.Count > 0 ? emailList : null;
+    }
+
     protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
     {
-        List<string> toList = new();
-        string[] emails = emailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (string email in emails)
-        {
-            toList.Add(email.Trim());
-        }
-
-        List<string>? ccList = null;
-        if (!string.IsNullOrWhiteSpace(emailCC))
-        {
-            ccList = new List<string>();
-            string[] ccEmails = emailCC.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
-            foreach (string email in ccEmails)
-            {
-                ccList.Add(email.Trim());
-            }
-        }
-
-        List<string>? bccList = null;
-        if (!string.IsNullOrWhiteSpace(emailBCC))
-        {
-            bccList = new List<string>();
-            string[] bccEmails = emailBCC.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
-            foreach (string email in bccEmails)
-            {
-                bccList.Add(email.Trim());
-            }
-        }
+        var toList = ParseEmailList(emailTo) ?? [];
+        var ccList = ParseEmailList(emailCC);
+        var bccList = ParseEmailList(emailBCC);
 
         var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
 
@@ -388,9 +375,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.Subject = emailDynamicObject.subject;
         emailLog.BodyType = emailDynamicObject.bodyType;
         emailLog.FromAddress = emailDynamicObject.from;
-        emailLog.ToAddress = String.Join(",", emailDynamicObject.to);
-        emailLog.CC = emailDynamicObject.cc != null ? String.Join(",", emailDynamicObject.cc) : "";
-        emailLog.BCC = emailDynamicObject.bcc != null ? String.Join(",", emailDynamicObject.bcc) : "";
+        emailLog.ToAddress = string.Join(",", emailDynamicObject.to);
+        emailLog.CC = emailDynamicObject.cc != null ? string.Join(",", (IEnumerable<string>)emailDynamicObject.cc) : string.Empty;
+        emailLog.BCC = emailDynamicObject.bcc != null ? string.Join(",", (IEnumerable<string>)emailDynamicObject.bcc) : string.Empty;
         emailLog.TemplateName = emailDynamicObject.templateName;
         return emailLog;
     }

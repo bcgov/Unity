@@ -48,6 +48,8 @@
         UIElements.btnSendClose.on('click', handleCloseEmail);
         UIElements.inputEmailSubject.on('change', handleKeyUpTrim);
         UIElements.inputEmailFrom.on('change', handleKeyUpTrim);
+        UIElements.inputEmailCC.on('change', handleKeyUpTrim);
+        UIElements.inputEmailBCC.on('change', handleKeyUpTrim);
         UIElements.inputEmailBody.on('change', handleKeyUpTrim);
         UIElements.inputEmailTo.on('change', validateEmailTo);
 
@@ -82,6 +84,8 @@
         UIElements.btnSave.attr('disabled', true);
         UIElements.btnDiscard.attr('disabled', true);
         UIElements.inputEmailTo.attr('disabled', true);
+        UIElements.inputEmailCC.attr('disabled', true);
+        UIElements.inputEmailBCC.attr('disabled', true);
         UIElements.inputEmailFrom.attr('disabled', true);
         UIElements.inputEmailSubject.attr('disabled', true);
         UIElements.inputEmailBody.attr('disabled', true);
@@ -92,6 +96,8 @@
         UIElements.btnSave.attr('disabled', false);
         UIElements.btnDiscard.attr('disabled', false);
         UIElements.inputEmailTo.attr('disabled', false);
+        UIElements.inputEmailCC.attr('disabled', false);
+        UIElements.inputEmailBCC.attr('disabled', false);
         UIElements.inputEmailFrom.attr('disabled', false);
         UIElements.inputEmailSubject.attr('disabled', false);
         UIElements.inputEmailBody.attr('disabled', false);
@@ -113,6 +119,8 @@
 
     function handleDiscardEmail() {
         UIElements.inputEmailTo.val(UIElements.inputOriginalEmailTo.val());
+        UIElements.inputEmailCC.val(UIElements.inputOriginalEmailCC.val());
+        UIElements.inputEmailBCC.val(UIElements.inputOriginalEmailBCC.val());
         UIElements.inputEmailFrom.val(UIElements.inputOriginalEmailFrom.val());
         UIElements.inputEmailSubject.val(UIElements.inputOriginalEmailSubject.val());
         UIElements.inputEmailBody.val(UIElements.inputOriginalEmailBody.val());
@@ -147,6 +155,8 @@
         UIElements.inputEmailId.val(emptyGuid);
         // Support discard to empty email template for new emails
         UIElements.inputOriginalEmailTo.val(defaultValues.emailTo);
+        UIElements.inputOriginalEmailCC.val(defaultValues.emailCC);
+        UIElements.inputOriginalEmailBCC.val(defaultValues.emailBCC);
         UIElements.inputOriginalEmailFrom.val(defaultValues.emailFrom);
         UIElements.inputOriginalEmailSubject.val("");
         UIElements.inputOriginalEmailBody.val("");
@@ -256,6 +266,8 @@
                 emailId: UIElements.inputEmailId[0].value,
                 applicationId: UIElements.applicationId,
                 emailTo: UIElements.inputEmailTo[0].value,
+                emailCC: UIElements.inputEmailCC[0].value,
+                emailBCC: UIElements.inputEmailBCC[0].value,
                 emailFrom: UIElements.inputEmailFrom[0].value,
                 emailBody: editorInstance.getContent(),
                 emailSubject: UIElements.inputEmailSubject[0].value,
@@ -305,6 +317,8 @@
                 emailId: UIElements.inputEmailId[0].value,
                 applicationId: UIElements.applicationId,
                 emailTo: UIElements.inputEmailTo[0].value,
+                emailCC: UIElements.inputEmailCC[0].value,
+                emailBCC: UIElements.inputEmailBCC[0].value,
                 emailFrom: UIElements.inputEmailFrom[0].value,
                 emailBody: editorInstance.getContent(),
                 emailSubject: UIElements.inputEmailSubject[0].value,
@@ -380,6 +394,8 @@
 
     function checkDraftChanges() {
         return UIElements.inputEmailTo.val() !== UIElements.inputOriginalEmailTo.val() ||
+               UIElements.inputEmailCC.val() !== UIElements.inputOriginalEmailCC.val() ||
+               UIElements.inputEmailBCC.val() !== UIElements.inputOriginalEmailBCC.val() ||
                UIElements.inputEmailFrom.val() !== UIElements.inputOriginalEmailFrom.val() ||
                UIElements.inputEmailSubject.val() !== UIElements.inputOriginalEmailSubject.val() ||
                UIElements.inputEmailBody.val() !== UIElements.inputOriginalEmailBody.val();
@@ -528,6 +544,8 @@
         $('#templateText').prop('disabled', true);
         UIElements.inputEmailId.val(data.id);
         UIElements.inputOriginalEmailTo.val(data.toAddress);
+        UIElements.inputOriginalEmailCC.val(data.cc || '');
+        UIElements.inputOriginalEmailBCC.val(data.bcc || '');
         UIElements.inputOriginalEmailFrom.val(data.fromAddress);
         UIElements.inputOriginalEmailSubject.val(data.subject);
          resetEmailBody(); 
@@ -553,6 +571,8 @@
             }
         });
         UIElements.inputEmailTo.val(data.toAddress);
+        UIElements.inputEmailCC.val(data.cc || '');
+        UIElements.inputEmailBCC.val(data.bcc || '');
         UIElements.inputEmailFrom.val(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
         UIElements.inputEmailBody.val(data.body);

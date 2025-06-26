@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
@@ -89,9 +90,12 @@ namespace Unity.GrantManager.Events
 
            
                 string emailToAddress = String.Join(",", eventData.EmailAddressList);
+                string? emailCC = eventData.Cc?.Any() == true ? String.Join(",", eventData.Cc) : null;
+                string? emailBCC = eventData.Bcc?.Any() == true ? String.Join(",", eventData.Bcc) : null;
+                
                 if (eventData.Id == Guid.Empty)
                 {
-                    await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName, eventData.EmailCC, eventData.EmailBCC);
+                    await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName, emailCC, emailBCC);
                 }
                 else
                 {
@@ -104,8 +108,8 @@ namespace Unity.GrantManager.Events
                         eventData.EmailFrom,
                         EmailStatus.Initialized,
                         eventData.EmailTemplateName,
-                        eventData.EmailCC,
-                        eventData.EmailBCC);
+                        emailCC,
+                        emailBCC);
 
                     if (emailLog != null)
                     {
@@ -124,6 +128,8 @@ namespace Unity.GrantManager.Events
 
             
                 string emailToAddress = String.Join(",", eventData.EmailAddressList);
+                string? emailCC = eventData.Cc?.Any() == true ? String.Join(",", eventData.Cc) : null;
+                string? emailBCC = eventData.Bcc?.Any() == true ? String.Join(",", eventData.Bcc) : null;
 
                 if (eventData.Id != Guid.Empty)
                 {
@@ -136,8 +142,8 @@ namespace Unity.GrantManager.Events
                         eventData.EmailFrom,
                         EmailStatus.Draft,
                         eventData.EmailTemplateName,
-                        eventData.EmailCC,
-                        eventData.EmailBCC);
+                        emailCC,
+                        emailBCC);
                 }
                 else
                 {
@@ -149,8 +155,8 @@ namespace Unity.GrantManager.Events
                         eventData.EmailFrom,
                         EmailStatus.Draft, 
                         eventData.EmailTemplateName,
-                        eventData.EmailCC,
-                        eventData.EmailBCC);
+                        emailCC,
+                        emailBCC);
                 }
             
         }

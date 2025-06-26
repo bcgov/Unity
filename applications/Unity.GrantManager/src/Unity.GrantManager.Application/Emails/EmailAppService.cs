@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
@@ -36,12 +37,29 @@ namespace Unity.GrantManager.Emails
             List<string> toList = [];
             string[] emails = dto.EmailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
 
-            dto.Bcc = dto.EmailBCC.Split(";").Select(e => e?.Trim()).Concat(email.Bcc?.Any() ?? false ? email.Bcc : []).NotNullOrWhiteSpace();
-
             foreach (string email in emails)
             {
                 toList.Add(email.Trim());
             }
+
+            // Parse CC emails
+            IEnumerable<string> ccList = [];
+            if (!string.IsNullOrWhiteSpace(dto.EmailCC))
+            {
+                ccList = dto.EmailCC.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
+                                   .Select(email => email.Trim())
+                                   .Where(email => !string.IsNullOrWhiteSpace(email));
+            }
+
+            // Parse BCC emails
+            IEnumerable<string> bccList = [];
+            if (!string.IsNullOrWhiteSpace(dto.EmailBCC))
+            {
+                bccList = dto.EmailBCC.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
+                                     .Select(email => email.Trim())
+                                     .Where(email => !string.IsNullOrWhiteSpace(email));
+            }
+
             return
             new EmailNotificationEvent
             {
@@ -51,8 +69,8 @@ namespace Unity.GrantManager.Emails
                 EmailAddress = dto.EmailTo,
                 EmailAddressList = toList,
                 EmailFrom = dto.EmailFrom,
-                EmailCC = dto.EmailCC,
-                EmailBCC = dto.EmailBCC,
+                Cc = ccList,
+                Bcc = bccList,
                 Subject = dto.EmailSubject,
                 Body = dto.EmailBody,
                 EmailTemplateName = dto.EmailTemplateName
