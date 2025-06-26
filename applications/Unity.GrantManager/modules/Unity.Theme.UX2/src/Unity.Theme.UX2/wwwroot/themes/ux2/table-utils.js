@@ -446,8 +446,7 @@ function getColumnToggleButtonsSorted(displayListColumns, dataTable) {
                     node.removeClass('dt-button-active');
                 }
             },
-            className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable),
-            extend: 'columnToggle',
+            className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title, dataTable),            
             columns: a.index
         }));
     return res;
