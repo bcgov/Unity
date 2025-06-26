@@ -206,10 +206,17 @@ public class SubmissionAppService(
                     }
                 }
 
+                logger.LogInformation("Total number of submissions retrieved from CHEFS: {Count}", chefsSubmissions.Count);
+                logger.LogInformation("Total number of submissions retrieved from Unity: {Count}", appDtos.Count);
+
+                logger.LogInformation("All Unity submission ids: {Ids}", string.Join(", ", appDtos.Select(a => a.ReferenceNo)));
+                logger.LogInformation("All Chef's submission ids: {Ids}", string.Join(", ", chefsSubmissions.Select(a => a.ConfirmationId.ToString())));
+
                 // Set inUnity property for each submission based on whether it exists in appDtos
                 foreach (var submission in chefsSubmissions)
                 {
                     submission.inUnity = appDtos.Any(appDto => submission.ConfirmationId.ToString() == appDto.ReferenceNo);
+                    logger.LogInformation("Submission {ConfirmationId} in Unity: {InUnity}", submission.ConfirmationId, submission.inUnity);
                 }
                 
 
