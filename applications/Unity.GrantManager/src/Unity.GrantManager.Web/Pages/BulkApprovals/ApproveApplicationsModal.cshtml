@@ -30,14 +30,14 @@
                                     </div>
                                 </abp-column>
                                 <abp-column size="_3" class="bulk-approval-remove-row d-flex justify-content-end col-3 gap-1 align-items-center">
-                                    <label class="form-check-label" for="isDirectApproval">Direct Approval</label>
+                                    <label class="form-check-label" for="isDirectApproval_@Model.BulkApplicationApprovals[i].ApplicationId">Direct Approval</label>
                                     <div class="form-switch">
                                         <input class="form-check-input"
                                                checked="@Model.BulkApplicationApprovals[i].IsDirectApproval"
                                                type="checkbox"
-                                               id="isDirectApproval"
+                                               id="isDirectApproval_@Model.BulkApplicationApprovals[i].ApplicationId"
                                                disabled
-                                               name="isDirectApproval" />
+                                               name="isDirectApproval_@Model.BulkApplicationApprovals[i].ApplicationId" />
                                     </div>
                                     <abp-button onclick='removeApplicationApproval("@Model.BulkApplicationApprovals[i].ApplicationId" + "_container")'
                                                 size="Small"
