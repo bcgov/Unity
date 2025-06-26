@@ -42,10 +42,10 @@ namespace Unity.GrantManager.GrantApplications
                     using var uowFields = unitofWorkManager.Begin(requiresNew: true);
                     application = await applicationRepository.GetAsync(applicationToUpdateAndApprove.ApplicationId);
 
-                    application.ValidateAndChangeFinalDecisionDate(applicationToUpdateAndApprove.FinalDecisionDate);
-                    application.ValidateMinAndChangeApprovedAmount(applicationToUpdateAndApprove.ApprovedAmount);
-                    application.ValidateMinAndChangeRecommendedAmount(applicationToUpdateAndApprove.RecommendedAmount, applicationToUpdateAndApprove.IsDirectApproval);
-                    application.ApprovedAmount = applicationToUpdateAndApprove.ApprovedAmount;
+                    application.ValidateDirectApprovalRecommendedAmount(applicationToUpdateAndApprove.RecommendedAmount, applicationToUpdateAndApprove.IsDirectApproval);
+
+                    application.ValidateAndSetFinalDecisionDate(applicationToUpdateAndApprove.FinalDecisionDate);
+                    application.ValidateAndSetApprovedAmount(applicationToUpdateAndApprove.ApprovedAmount);                                        
 
                     if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(GrantApplicationAction.Approve)))
                     {
@@ -159,7 +159,7 @@ namespace Unity.GrantManager.GrantApplications
             }
             else // this is null or false
             {
-                // If the recommended amount is 0 we need to show an error
+                // Validate RequestedAmount for direct approval branch
                 if (application.RecommendedAmount == 0m)
                 {
                     validationMessages.Add(new(false, "INVALID_RECOMMENDED_AMOUNT"));

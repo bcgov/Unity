@@ -310,7 +310,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         await SanitizeApprovalZoneInputs(input, application);
         await SanitizeAssessmentResultsZoneInputs(input, application);
 
-        application.ValidateAndChangeDueDate(input.DueDate);
+        application.ValidateAndSetDueDate(input.DueDate);
         application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate, input.RiskRanking);
 
         if (application.IsInFinalDecisionState())
@@ -329,7 +329,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             if (await CurrentUserCanUpdateAssessmentFieldsAsync())
             {
-                application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
+                application.ValidateAndSetFinalDecisionDate(input.FinalDecisionDate);
                 application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
                 application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
