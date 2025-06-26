@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Events
             }
         }
 
-        private async Task InitializeAndSendEmailToQueue(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName)
+        private async Task InitializeAndSendEmailToQueue(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
         {
             EmailLog emailLog = await InitializeEmail(
                                                 emailTo,
@@ -34,12 +34,14 @@ namespace Unity.GrantManager.Events
                                                 applicationId,
                                                 emailFrom,
                                                 EmailStatus.Initialized,
-                                                emailTemplateName);
+                                                emailTemplateName,
+                                                emailCC,
+                                                emailBCC);
 
             await emailNotificationService.SendEmailToQueue(emailLog);
         }
 
-        private async Task<EmailLog> InitializeEmail(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string status, string? emailTemplateName)
+        private async Task<EmailLog> InitializeEmail(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
         {
             EmailLog emailLog = await emailNotificationService.InitializeEmailLog(
                                                 emailTo,
@@ -48,7 +50,9 @@ namespace Unity.GrantManager.Events
                                                 applicationId,
                                                 emailFrom,
                                                 status,
-                                                emailTemplateName) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
+                                                emailTemplateName,
+                                                emailCC,
+                                                emailBCC) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
             return emailLog;
         }
 
@@ -87,7 +91,7 @@ namespace Unity.GrantManager.Events
                 string emailToAddress = String.Join(",", eventData.EmailAddressList);
                 if (eventData.Id == Guid.Empty)
                 {
-                    await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom,eventData.EmailTemplateName);
+                    await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName, eventData.EmailCC, eventData.EmailBCC);
                 }
                 else
                 {
@@ -99,7 +103,9 @@ namespace Unity.GrantManager.Events
                         eventData.ApplicationId,
                         eventData.EmailFrom,
                         EmailStatus.Initialized,
-                        eventData.EmailTemplateName);
+                        eventData.EmailTemplateName,
+                        eventData.EmailCC,
+                        eventData.EmailBCC);
 
                     if (emailLog != null)
                     {
@@ -129,7 +135,9 @@ namespace Unity.GrantManager.Events
                         eventData.ApplicationId,
                         eventData.EmailFrom,
                         EmailStatus.Draft,
-                        eventData.EmailTemplateName);
+                        eventData.EmailTemplateName,
+                        eventData.EmailCC,
+                        eventData.EmailBCC);
                 }
                 else
                 {
@@ -140,7 +148,9 @@ namespace Unity.GrantManager.Events
                         eventData.ApplicationId,
                         eventData.EmailFrom,
                         EmailStatus.Draft, 
-                        eventData.EmailTemplateName);
+                        eventData.EmailTemplateName,
+                        eventData.EmailCC,
+                        eventData.EmailBCC);
                 }
             
         }

@@ -98,14 +98,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailLogsRepository.DeleteAsync(id);
     }
 
-    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status,string? emailTemplateName)
+    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
     {
         if (string.IsNullOrEmpty(emailTo))
         {
             return null;
         }
         
-        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName);
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName, emailCC, emailBCC);
         EmailLog emailLog = await _emailLogsRepository.GetAsync(emailId);
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
@@ -117,19 +117,19 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return loggedEmail;
     }
 
-    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName)
+    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
     {
-        return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized, emailTemplateName);
+        return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized, emailTemplateName, emailCC, emailBCC);
     }
 
     [RemoteService(false)]
-    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName)
+    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
     {
         if (string.IsNullOrEmpty(emailTo))
         {
             return null;
         }
-        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName);
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName, emailCC, emailBCC);
         EmailLog emailLog = new EmailLog();
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
@@ -234,9 +234,12 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
     /// <param name="emailFrom">From Email Address</param>
-    ///  <param name="emailBodyType">Type of body email: html or text</param>
+    /// <param name="emailBodyType">Type of body email: html or text</param>
+    /// <param name="emailTemplateName">Template name for the email</param>
+    /// <param name="emailCC">CC email addresses</param>
+    /// <param name="emailBCC">BCC email addresses</param>
     /// <returns>HttpResponseMessage indicating the result of the operation</returns>
-    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName)
+    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
     {
         try
         {
@@ -250,7 +253,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
 
             }
             // Send the email using the CHES client service
-            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName);
+            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC);
             var response = await _chesClientService.SendAsync(emailObject);
 
             // Assuming SendAsync returns a HttpResponseMessage or equivalent:
@@ -328,7 +331,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
-    protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName)
+    protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
     {
         List<string> toList = new();
         string[] emails = emailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
@@ -338,12 +341,36 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             toList.Add(email.Trim());
         }
 
+        List<string>? ccList = null;
+        if (!string.IsNullOrWhiteSpace(emailCC))
+        {
+            ccList = new List<string>();
+            string[] ccEmails = emailCC.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
+            foreach (string email in ccEmails)
+            {
+                ccList.Add(email.Trim());
+            }
+        }
+
+        List<string>? bccList = null;
+        if (!string.IsNullOrWhiteSpace(emailBCC))
+        {
+            bccList = new List<string>();
+            string[] bccEmails = emailBCC.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
+            foreach (string email in bccEmails)
+            {
+                bccList.Add(email.Trim());
+            }
+        }
+
         var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
 
         var emailObject = new
         {
             body,
             bodyType = emailBodyType ?? "text",
+            cc = ccList,
+            bcc = bccList,
             encoding = "utf-8",
             from = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca",
             priority = "normal",
@@ -362,6 +389,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.BodyType = emailDynamicObject.bodyType;
         emailLog.FromAddress = emailDynamicObject.from;
         emailLog.ToAddress = String.Join(",", emailDynamicObject.to);
+        emailLog.CC = emailDynamicObject.cc != null ? String.Join(",", emailDynamicObject.cc) : "";
+        emailLog.BCC = emailDynamicObject.bcc != null ? String.Join(",", emailDynamicObject.bcc) : "";
         emailLog.TemplateName = emailDynamicObject.templateName;
         return emailLog;
     }

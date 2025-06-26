@@ -13,10 +13,14 @@
         inputEmailId: $('#EmailId'),
         inputEmailTo: $($('#EmailTo')[0]),
         inputEmailToField: $('#EmailTo')[0],
+        inputEmailCC: $($('#EmailCC')[0]),
+        inputEmailBCC: $($('#EmailBCC')[0]),
         inputEmailFrom: $($('#EmailFrom')[0]),
         inputEmailSubject: $($('#EmailSubject')[0]),
         inputEmailBody: $($('#EmailBody')[0]),
         inputOriginalEmailTo: $($('#OriginalDraftEmailTo')[0]),
+        inputOriginalEmailCC: $($('#OriginalDraftEmailCC')[0]),
+        inputOriginalEmailBCC: $($('#OriginalDraftEmailBCC')[0]),
         inputOriginalEmailFrom: $($('#OriginalDraftEmailFrom')[0]),
         inputOriginalEmailSubject: $($('#OriginalDraftEmailSubject')[0]),
         inputOriginalEmailBody: $($('#OriginalDraftEmailBody')[0]),
@@ -27,7 +31,9 @@
 
     let defaultValues = {
         emailTo: '',
-        emailFrom: ''
+        emailFrom: '',
+        emailCC: '',
+        emailBCC: ''
     };
     let applicationDetails;
     let mappingConfig;
@@ -46,6 +52,8 @@
         UIElements.inputEmailTo.on('change', validateEmailTo);
 
         UIElements.inputEmailTo.on('input', handleDraftChange);
+        UIElements.inputEmailCC.on('input', handleDraftChange);
+        UIElements.inputEmailBCC.on('input', handleDraftChange);
         UIElements.inputEmailFrom.on('input', handleDraftChange);
         UIElements.inputEmailSubject.on('input', handleDraftChange);
         UIElements.inputEmailBody.on('input', handleDraftChange);
@@ -57,6 +65,8 @@
         bindUIEvents();
         defaultValues.emailTo = UIElements.inputOriginalEmailTo.val();
         defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
+        defaultValues.emailCC = UIElements.inputOriginalEmailCC.val() || '';
+        defaultValues.emailBCC = UIElements.inputOriginalEmailBCC.val() || '';
         toastr.options.positionClass = 'toast-top-center';
         initTemplateDetails();
         $('#templateTextContainer').hide();
