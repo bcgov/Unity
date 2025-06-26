@@ -7,24 +7,6 @@
     const listColumns = getColumns();
     const defaultVisibleColumns = ['select',
         'applicantName',
-        'referenceNo',
-        'category',
-        'submissionDate',
-        'projectName',
-        'subsector',
-        'totalProjectBudget',
-        'assignees',
-        'status',
-        'requestedAmount',
-        'approvedAmount',
-        'economicRegion',
-        'regionalDistrict',
-        'community',
-        'orgNumber',
-        'orgBookStatus'];
-
-    const resetColumns = ['select',
-        'applicantName',
         'category',
         'referenceNo',
         'submissionDate',
@@ -91,10 +73,12 @@
                     {
                         dt.columns().visible(false);
 
-                        const allColumnNames = dt.settings()[0].aoColumns.map(col => col.name).filter(colName => !resetColumns.includes(colName));
+                        // List of all columns not including default columns
+                        const allColumnNames = dt.settings()[0].aoColumns.map(col => col.name).filter(colName => !defaultVisibleColumns.includes(colName));
                         const orderedIndexes = [];
 
-                        resetColumns.forEach((colName) => {
+                        // Set the visible columns, and collect id's for the reorder
+                        defaultVisibleColumns.forEach((colName) => {
                             const colIdx = dt.column(`${colName}:name`).index();
                             if (colIdx !== undefined && colIdx !== -1) {
                                 dt.column(colIdx).visible(true);
@@ -102,6 +86,7 @@
                             }
                         });
 
+                        // Column reorder only works if all columns included in new order, so get the rest of the columns
                         allColumnNames.forEach((colName) => {
                             const colIdx = dt.column(`${colName}:name`).index();
                             if (colIdx !== undefined && colIdx !== -1) {
@@ -112,6 +97,12 @@
 
                         dt.order([4, 'asc']).search('').draw();
 
+                        // Close the dropdown
+                        dt.buttons('.grp-savedStates')
+                            .container()
+                            .find('.dt-button-collection')
+                            .hide();
+                        $('div.dt-button-background').trigger('click');
                     }
                 },
                 { extend: 'removeAllStates', text: 'Delete All Views' },
