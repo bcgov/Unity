@@ -210,7 +210,7 @@
                 @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && IsZoneEnabled(UnitySelector.Payment.Default))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
-                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Payment.Summary.Default)" id="PaymentInfoWidget">
+                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Payment.Default)" id="PaymentInfoWidget">
                             @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
