@@ -153,18 +153,20 @@ namespace Unity.GrantManager.GrantApplications
             if (!authorized)
                 validationMessages.Add(new(true, "INVALID_PERMISSIONS"));
 
+            // If this application belongs to a direct approval form, we default to RequestedAmount if the ApprovedAmount is 0.00
             if (application.ApplicationForm?.IsDirectApproval == true)
             {
                 application.ApprovedAmount = application.ApprovedAmount == 0m ? application.RequestedAmount : application.ApprovedAmount;
             }
-            else // this is null or false
+            else
             {
-                // Validate RequestedAmount for direct approval branch
+                // If this application does not belong to a direct approval form, ensure that RecommendedAmount is not 0.00.                                    
                 if (application.RecommendedAmount == 0m)
                 {
                     validationMessages.Add(new(false, "INVALID_RECOMMENDED_AMOUNT"));
                 }
 
+                // If ApprovedAmount is 0.00, we default it to RecommendedAmount
                 application.ApprovedAmount = application.ApprovedAmount == 0m ? application.RecommendedAmount : application.ApprovedAmount;
             }
 
