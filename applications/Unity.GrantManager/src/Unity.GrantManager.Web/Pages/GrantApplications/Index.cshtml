@@ -1,39 +1,28 @@
-﻿@page "{formId:guid?}"
+﻿@page
+
 @using Unity.GrantManager.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
+
 @model IndexModel
+
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @{
     PageLayout.Content.MenuItemName = "GrantManager.GrantApplications";
     PageLayout.Content.Title = L["Applications"].Value;
-    ViewBag.UserName = "Test User";
     ViewBag.PageTitle = "Applications";
 }
+
 @section scripts
 {
-    @if (Model.FormId == null)
-    {
-        <script>
-            let users = [];
-            @foreach (var user in Model.Users)
-            {
-                @:users.push("{'Id':" + "'@user.Id', 'UserName':" + "'@user.UserName', 'FirstName':" + "'@user.Name', 'LastName':" + "'@user.Surname', 'Email':" + "'@user.Email'}");
-            }
-        </script>
-        <abp-script src="/libs/select2/js/select2.full.min.js" />
-        <abp-script src="/Pages/GrantApplications/Index.js" />        
-    }
-    else
-    {
-        <abp-script src="/Pages/GrantApplications/Intake.js" />
-    }
+    <abp-script src="/libs/select2/js/select2.full.min.js" />
+    <abp-script src="/Pages/GrantApplications/Index.js" />
 }
 
 @section styles {
-    <abp-style src="/Pages/GrantApplications/Index.css" />    
+    <abp-style src="/Pages/GrantApplications/Index.css" />
 }
 
 <div class="container-fluid px-2 container-grant-application">
@@ -42,5 +31,3 @@
         <abp-table id="GrantApplicationsTable"></abp-table>
     </div>
 </div>
-<label class="dot hidden" id="hdnDot"></label>
-<input type="hidden" id="PassFormIdToJavaScript" value=@Model.FormId />

@@ -38,7 +38,7 @@ parameters:
   value: unity-data-postgres
 - name: DATABASE_BACKUP_KEEP
   description: 'Number of backups to keep'
-  value: '2'
+  value: '1'
 - name: DATABASE_BACKUP_VOLUME_CLAIM
   description: 'Name of the volume claim to be used as storage'
   required: true

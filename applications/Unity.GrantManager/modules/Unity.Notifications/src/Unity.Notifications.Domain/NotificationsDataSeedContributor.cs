@@ -41,7 +41,8 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
             new EmailTempateVariableDto { Name = "Project Name", Token = "project_name", MapTo = "projectName" },
             new EmailTempateVariableDto { Name = "Project Summary", Token = "project_summary", MapTo = "projectSummary" },
             new EmailTempateVariableDto { Name = "Signing Authority Full Name", Token = "signing_authority_full_name", MapTo = "signingAuthorityFullName" },
-            new EmailTempateVariableDto { Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" }
+            new EmailTempateVariableDto { Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" },
+            new EmailTempateVariableDto { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" }
         };
 
         foreach (var template in emailTemplateVariableDtos)
@@ -53,6 +54,11 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
                     new TemplateVariable { Name = template.Name, Token = template.Token, MapTo = template.MapTo },
                     autoSave: true
                 );
+            }
+            else if (existingVariable.Token == "category" && existingVariable.MapTo == "category")
+            {
+                existingVariable.MapTo = "applicationForm.category";
+                await _templateVariablesRepository.UpdateAsync(existingVariable, autoSave: true);
             }
         }
     }

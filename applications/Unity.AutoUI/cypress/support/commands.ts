@@ -75,21 +75,22 @@ Cypress.Commands.add('getMetabaseDetail', (key: string) => {
 });
 
 Cypress.Commands.add('metabaseLogin', () => {
-  cy.getMetabaseDetail('baseURL').then(baseURL => {cy.visit(baseURL); // Visit the URL fetched from metabase.json
-    cy.get('#root > div > div > main > div > div.emotion-iq817s.euvero02 > div > div.emotion-1spv9yy > div > form > div:nth-child(1) > div.emotion-17sifsc.edcfyzd6 > input[name="username"]')
-    .should('exist')
-    .click();
-	cy.get('#root > div > div > main > div > div.emotion-iq817s.euvero02 > div > div.emotion-1spv9yy > div > form > div:nth-child(1) > div.emotion-17sifsc.edcfyzd6 > input[name="username"]')
-    .type('iDontHave@ValidEmail.com'); // the test account doesn't have an email address
-	cy.get('#root > div > div > main > div > div.emotion-iq817s.euvero02 > div > div.emotion-1spv9yy > div > form > div:nth-child(2) > div.emotion-17sifsc.edcfyzd6 > input[name="password"]')
+  cy.getMetabaseDetail('baseURL').then((baseURL) => {
+    cy.visit(baseURL);
+
+    // Target the username field using its `name` attribute
+    cy.get('input[name="username"]')
       .should('exist')
-      .click();
-	cy.get('#root > div > div > main > div > div.emotion-iq817s.euvero02 > div > div.emotion-1spv9yy > div > form > div:nth-child(2) > div.emotion-17sifsc.edcfyzd6 > input[name="password"]')
+      .click()
+      .type('iDontHave@ValidEmail.com'); // Placeholder email address
+
+    // Target the password field using its `name` attribute
+    cy.get('input[name="password"]')
       .should('exist')
-      .type('pointless'); // there's no point adding a valid password yet because the test account doesn't have an email address
-	  //.type(Cypress.env('test1password'))
+      .click()
+      .type('pointless'); // Placeholder password
   });
- });
+});
 
 interface chefsDetail {
   unityEnv: string;

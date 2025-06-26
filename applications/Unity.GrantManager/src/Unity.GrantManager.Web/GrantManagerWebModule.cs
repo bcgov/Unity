@@ -76,6 +76,7 @@ using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Web.Views.Settings;
 using Unity.Notifications.Web.Bundling;
 using Unity.Reporting.Web;
+using Unity.GrantManager.Web.Views.Settings;
 
 namespace Unity.GrantManager.Web;
 
@@ -123,6 +124,10 @@ public class GrantManagerWebModule : AbpModule
             options.IsCleanupEnabled = false; // not used
         });
     }
+
+    private static readonly string[] _liveHealthCheckTags = ["live"];
+    private static readonly string[] _readyHealthCheckTags = ["ready"];
+    private static readonly string[] _startupHealthCheckTags = ["startup"];
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
@@ -199,16 +204,17 @@ public class GrantManagerWebModule : AbpModule
         Configure<SettingManagementPageOptions>(options =>
         {
             options.Contributors.Add(new BackgroundJobsPageContributor());
+            options.Contributors.Add(new TagManagementPageContributor());
         });
 
         context.Services.AddHealthChecks()
-            .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
+            .AddCheck<LiveHealthCheck>("live", tags: _liveHealthCheckTags);
 
         context.Services.AddHealthChecks()
-           .AddCheck<ReadyHealthCheck>("ready", tags: new[] { "ready" });
+            .AddCheck<ReadyHealthCheck>("ready", tags: _readyHealthCheckTags);
 
         context.Services.AddHealthChecks()
-           .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
+            .AddCheck<StartupHealthCheck>("startup", tags: _startupHealthCheckTags);
 
         Configure<SettingManagementPageOptions>(options =>
         {
@@ -218,30 +224,28 @@ public class GrantManagerWebModule : AbpModule
 
     private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)
     {
+        /* The rest of the Redis Configuration happens in the application layer */
         if (!Convert.ToBoolean(configuration["DataProtection:IsEnabled"])) return;
         if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
 
-        var configurationOptions = new ConfigurationOptions
+        // Configure Data Protection
+        if (Convert.ToBoolean(configuration["DataProtection:IsEnabled"]) && Convert.ToBoolean(configuration["Redis:IsEnabled"]))
         {
-            EndPoints = { $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]}" },
-            Password = configuration["Redis:Password"],
-            ClientName = configuration["Redis:InstanceName"]
-        };
+            context.Services.AddDataProtection()
+            .SetApplicationName("UnityGrantManagerWeb")
+            .PersistKeysToStackExchangeRedis(
+                () =>
+                {
+                    var multiplexer = context.Services.GetRequiredService<IConnectionMultiplexer>();
+                    return multiplexer.GetDatabase();
+                },
+               "Unity-DataKeys");
 
-        IDataProtectionBuilder dataProtectionBuilder = context
-            .Services
-            .AddDataProtection()
-            .SetApplicationName("UnityGrantManagerWeb");
-
-        var redis = ConnectionMultiplexer
-          .Connect(configurationOptions);
-
-        dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Unity-DataKeys");
-
-        context.Services.AddSession(options =>
-        {
-            options.IdleTimeout = TimeSpan.FromHours(8);
-        });
+            context.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromHours(8);
+            });
+        }
     }
 
     private static void ConfigureUtils(ServiceConfigurationContext context)
@@ -381,7 +385,7 @@ public class GrantManagerWebModule : AbpModule
     }
 
     private void ConfigureBundles()
-    {        
+    {
         Configure<AbpBundlingOptions>(options =>
         {
             options
@@ -396,7 +400,7 @@ public class GrantManagerWebModule : AbpModule
                 NotificationsBundles.Styles.Notifications,
                 bundle =>
                 {
-                    bundle.AddContributors(typeof(NotificationsStyleBundleContributor));                    
+                    bundle.AddContributors(typeof(NotificationsStyleBundleContributor));
                 });
         });
     }
@@ -602,7 +606,9 @@ public class GrantManagerWebModule : AbpModule
             options.SupportedUICultures = supportedCultures;
         });
 
-        if (Convert.ToBoolean(configuration["DataProtection:IsEnabled"]))
+        // If both Redis and Data Protection are enabled then we can enable this session middleware
+        if (Convert.ToBoolean(configuration["Redis:IsEnabled"])
+            && Convert.ToBoolean(configuration["DataProtection:IsEnabled"]))
         {
             app.UseSession();
         }

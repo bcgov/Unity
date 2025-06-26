@@ -25,6 +25,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
         public decimal? RemainingAmount { get; set; }
 
         public Guid ApplicationId { get; set; }
-        public Guid ApplicationFormVersionId { get; set; } 
+        public Guid ApplicationFormVersionId { get; set; }
+        public Guid ApplicantId { get; set; }
     }
 }

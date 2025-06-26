@@ -51,8 +51,10 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
     public override async Task<bool> DeleteAsync(BlobProviderDeleteArgs args)
     {
         string s3ObjectKey = args.BlobName;
-        var attachmentType = _httpContextAccessor.HttpContext.Request.Form["AttachmentType"];
-        var attachmentTypeId = _httpContextAccessor.HttpContext.Request.Form["AttachmentTypeId"];
+        var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No active HttpContext.");
+        var form = httpContext.Request?.Form ?? throw new InvalidOperationException("No form data in the current request.");
+        string attachmentType = form.TryGetValue("AttachmentType", out var typeValue) ? typeValue.ToString() : string.Empty;
+        string attachmentTypeId = form.TryGetValue("AttachmentTypeId", out var idValue) ? idValue.ToString() : string.Empty;
         var config = args.Configuration.GetS3BlobProviderConfiguration();
         
         var deleteObjectRequest = new DeleteObjectRequest
@@ -142,7 +144,8 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
 
     public override async Task SaveAsync(BlobProviderSaveArgs args)
     {
-        var queryParams = _httpContextAccessor.HttpContext.Request.Query;
+        var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No active HttpContext.");
+        var queryParams = httpContext.Request?.Query ?? throw new InvalidOperationException("No query parameters in the current request.");
         var routeData = _httpContextAccessor.HttpContext.GetRouteData();
         var assessmentId = routeData.Values["assessmentId"];
         

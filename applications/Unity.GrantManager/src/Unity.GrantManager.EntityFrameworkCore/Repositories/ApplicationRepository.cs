@@ -60,7 +60,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
             .AsQueryable();
     }
 
-    private IQueryable<Application> ApplySorting(IQueryable<Application> query, string? sorting)
+    private static IQueryable<Application> ApplySorting(IQueryable<Application> query, string? sorting)
     {
         if (string.IsNullOrEmpty(sorting))
         {
@@ -84,7 +84,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         return query;
     }
 
-    private string? MapSortingField(string field)
+    private static string? MapSortingField(string field)
     {
         if (field.StartsWith("status ", StringComparison.OrdinalIgnoreCase) || field.Equals("status", StringComparison.OrdinalIgnoreCase))
         {

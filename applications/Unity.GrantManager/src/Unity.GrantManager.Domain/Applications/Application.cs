@@ -109,7 +109,9 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? ForestryFocus { get; set; }
 
+    // This is the Project Level Electoral District, not the Applicant's Electoral District.
     public string? ElectoralDistrict { get; set; }
+
     public string? Place { get; set; }
 
     public string? RegionalDistrict { get; set; }
@@ -143,6 +145,9 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         TotalProjectBudget = totalProjectBudget ?? 0;
         NotificationDate = notificationDate;
         RiskRanking = riskRanking;
+
+        // Recalculate percentage when TotalProjectBudget changes
+        UpdatePercentageTotalProjectBudget();
     }
 
     public void UpdateApprovalFieldsRequiringPostEditPermission(decimal? approvedAmount)
@@ -154,6 +159,9 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         RequestedAmount = requestedAmount ?? 0;
         TotalScore = totalScore ?? 0;
+
+        // Recalculate percentage when RequestedAmount changes
+        UpdatePercentageTotalProjectBudget();
     }
 
     public void UpdateAssessmentResultStatus(string? assessmentResultStatus)
@@ -168,7 +176,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? recommendedAmount, string? declineRational)
     {
-        DueDiligenceStatus = dueDiligenceStatus;        
+        DueDiligenceStatus = dueDiligenceStatus;
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
     }
@@ -204,4 +212,26 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
             throw new BusinessException("Approved amount cannot be 0.");
         }
     }
+
+    /// <summary>
+    /// Calculates and updates the PercentageTotalProjectBudget property based on
+    /// RequestedAmount and TotalProjectBudget values.
+    /// This method should be called whenever either of those properties change.
+    /// </summary>
+    public void UpdatePercentageTotalProjectBudget()
+    {
+        PercentageTotalProjectBudget
+            = (this.TotalProjectBudget == 0)
+            ? 0 : decimal.Multiply(decimal.Divide(this.RequestedAmount, this.TotalProjectBudget), 100).To<double>();
+    }
+
+    /// <summary>
+    /// Sets the Electoral District for the application.
+    /// </summary>
+    /// <param name="electoralDistrict"></param>
+    public void SetElectoralDistrict(string electoralDistrict)
+    {
+        ElectoralDistrict = electoralDistrict;
+    }
 }
+

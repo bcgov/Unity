@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -48,6 +49,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();
+        CreateMap<ApplicationFormDto, ApplicationForm>();
         CreateMap<ApplicationFormVersion, ApplicationFormVersionDto>();
         CreateMap<ApplicationFormVersionDto, ApplicationFormVersion>();
         CreateMap<CreateUpdateApplicationFormVersionDto, ApplicationFormVersion>();
@@ -74,6 +76,87 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ZoneGroupDefinition, ZoneGroupDefinitionDto>().ReverseMap();
         CreateMap<ZoneTabDefinition, ZoneTabDefinitionDto>().ReverseMap();
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
+
+        CreateMap<TagSummaryCount, TagSummaryCountDto>();
+
+        //-- PROJECT INFO
+        CreateMap<UpdateProjectInfoDto, Application>()
+            .IgnoreNullAndDefaultValues();
+
+        //-- APPLICANT INFO - OUTBOUND MAPS
+        CreateMap<Application, ApplicantInfoDto>();
+        CreateMap<Application, SigningAuthorityDto>();
+        CreateMap<Applicant, ApplicantSummaryDto>()
+            .ForMember(dest => dest.IndigenousOrgInd,
+                opt => opt.MapFrom(src =>
+                    src.IndigenousOrgInd == "Yes" ? true :
+                    src.IndigenousOrgInd == "No" ? false : (bool?)null));
+        CreateMap<ApplicantAgent, ContactInfoDto>();
+        CreateMap<ApplicantAddress, ApplicantAddressDto>();
+
+        //-- APPLICANT INFO - INBOUND MAPS
+        CreateMap<UpdateApplicantInfoDto, Applicant>()
+            .IgnoreNullAndDefaultValues();
+        CreateMap<UpdateApplicantInfoDto, Application>()
+            .IgnoreNullAndDefaultValues();
+        CreateMap<SigningAuthorityDto, Application>()
+            .IgnoreNullAndDefaultValues();
+        CreateMap<UpdateApplicantSummaryDto, Applicant>()
+            .ForMember(dest => dest.IndigenousOrgInd,
+                opt => opt.MapFrom(src =>
+                        src.IndigenousOrgInd == true ? "Yes" :
+                        src.IndigenousOrgInd == false ? "No" : null))
+            .IgnoreNullAndDefaultValues();
+        CreateMap<ContactInfoDto, ApplicantAgent>()
+            .IgnoreNullAndDefaultValues();
+        CreateMap<UpdateApplicantAddressDto, ApplicantAddress>()
+            .ForMember(dest => dest.Postal, opt => opt.MapFrom(src => src.PostalCode))
+            .IgnoreNullAndDefaultValues();
     }
 }
 
+// Extension methods for reusable mapping configurations
+public static class MappingExtensions
+{
+    /// <summary>
+    /// Configures the mapping to ignore null and default values for all members.
+    /// Useful for patch/update scenarios where only non-default values should be mapped.
+    /// </summary>
+    /// <typeparam name="TSource">The source type.</typeparam>
+    /// <typeparam name="TDestination">The destination type.</typeparam>
+    /// <param name="expression">The mapping expression.</param>
+    /// <returns>The updated mapping expression.</returns>
+    public static IMappingExpression<TSource, TDestination> IgnoreNullAndDefaultValues<TSource, TDestination>(
+        this IMappingExpression<TSource, TDestination> expression)
+    {
+        expression.ForAllMembers(opts =>
+        {
+            opts.AllowNull(); // Ignore Null Values for Lists and Collections
+            opts.Condition((src, dest, srcMember) =>
+                srcMember != null && !IsValueDefault(srcMember)); // Ignore Null and Default Values for Properties
+        });
+
+        return expression;
+    }
+
+    /// <summary>
+    /// Determines whether the provided value is the default value for its type.
+    /// </summary>
+    /// <param name="value">The value to check.</param>
+    /// <returns>
+    /// <c>true</c> if the value is null or the default for its type; otherwise, <c>false</c>.
+    /// </returns>
+    public static bool IsValueDefault(object value)
+    {
+        if (value == null)
+            return true;
+
+        Type type = value.GetType();
+        // For reference types, null is the only default
+        if (!type.IsValueType)
+            return false;
+
+        // For value types, compare with default instance
+        return value.Equals(Activator.CreateInstance(type));
+    }
+}

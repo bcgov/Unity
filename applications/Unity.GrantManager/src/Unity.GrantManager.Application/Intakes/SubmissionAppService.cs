@@ -9,48 +9,28 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
+using Volo.Abp.TenantManagement;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Intakes;
 
 [Authorize]
-public class SubmissionAppService : GrantManagerAppService, ISubmissionAppService
-{
-    private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
-    private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
-    private readonly RestClient _intakeClient;
-    private readonly IStringEncryptionService _stringEncryptionService;
-    private static List<string> SummaryFieldsFilter
-    {
-        // NOTE: This will be replaced by a customizable filter.
-        get
-        {
-            return new List<string>(new string[] {
-                "projectTitle",
-                "projectLocation",
-                "contactName",
-                "organizationLegalName",
-                "eligibleCost",
-                "totalRequest"
-            });
-        }
-    }
-
-    public SubmissionAppService(
+public class SubmissionAppService(
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IRepository<ApplicationForm, Guid> applicationFormRepository,
         RestClient restClient,
-        IStringEncryptionService stringEncryptionService
-        )
-    {
-        _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
-        _applicationFormRepository = applicationFormRepository;
-        _intakeClient = restClient;
-        _stringEncryptionService = stringEncryptionService;
-    }
+        IStringEncryptionService stringEncryptionService,
+        IApplicationRepository applicationRepository,
+        ITenantRepository tenantRepository
+        ) : GrantManagerAppService, ISubmissionAppService
+{
 
+    protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     public async Task<object?> GetSubmission(Guid? formSubmissionId)
     {
@@ -116,10 +96,10 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
 
         var request = new RestRequest($"/files/{chefsFileAttachmentId}", Method.Get)
         {
-            Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
+            Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
         };
 
-        var response = await _intakeClient.GetAsync(request);
+        var response = await restClient.GetAsync(request);
 
 
         if (((int)response.StatusCode) != 200)
@@ -137,8 +117,8 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
 
         if (formSubmissionId != null)
         {
-            var query = from applicationSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()
-                        join applicationForm in await _applicationFormRepository.GetQueryableAsync() on applicationSubmission.ApplicationFormId equals applicationForm.Id
+            var query = from applicationSubmission in await applicationFormSubmissionRepository.GetQueryableAsync()
+                        join applicationForm in await applicationFormRepository.GetQueryableAsync() on applicationSubmission.ApplicationFormId equals applicationForm.Id
                         where applicationSubmission.ChefsSubmissionGuid == formSubmissionId.ToString()
                         select applicationForm;
             applicationFormData = await AsyncExecuter.FirstOrDefaultAsync(query);
@@ -152,7 +132,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
 
         if (formSubmissionId != null)
         {
-            var query = from applicationFormSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()
+            var query = from applicationFormSubmission in await applicationFormSubmissionRepository.GetQueryableAsync()
                         where applicationFormSubmission.ChefsSubmissionGuid == formSubmissionId.ToString()
                         select applicationFormSubmission;
             applicationFormSubmissionData = await AsyncExecuter.FirstOrDefaultAsync(query);
@@ -160,46 +140,89 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         return applicationFormSubmissionData;
     }
 
-    public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId)
+    public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(bool allSubmissions)
     {
-        if (formId == null)
+        List<FormSubmissionSummaryDto> chefsSubmissions = new List<FormSubmissionSummaryDto>();
+
+        var tenants = await tenantRepository.GetListAsync();
+        foreach (var tenant in tenants)
         {
-            throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
+            using (CurrentTenant.Change(tenant.Id))
+            {
+                var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, int.MaxValue);
+                var appDtos = new List<GrantApplicationDto>();
+                var rowCounter = 0;
+
+                List<string> checkedForms = new List<string>();
+
+                foreach (var grouping in groupedResult)
+                {
+                    var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
+                    appDto.RowCount = rowCounter;
+                    appDtos.Add(appDto);
+                    rowCounter++;
+
+                    // Chef's API call to get submissions
+                    if (!checkedForms.Contains(appDto.ApplicationForm.ChefsApplicationFormGuid ?? string.Empty))
+                    {
+
+                        var id = appDto.ApplicationForm.ChefsApplicationFormGuid;
+                        var apiKey = stringEncryptionService.Decrypt(appDto.ApplicationForm.ApiKey! ?? string.Empty);
+                        var request = new RestRequest($"/forms/{id}/submissions", Method.Get)
+                            .AddParameter("fields", "applicantAgent.name");
+                        request.Authenticator = new HttpBasicAuthenticator(id ?? "ID", apiKey ?? "no api key given");
+
+                        RestResponse? response = null;
+                        try
+                        {
+                            response = await restClient.GetAsync(request);
+                            var submissionOptions = new JsonSerializerOptions
+                            {
+                                WriteIndented = true,
+                                PropertyNameCaseInsensitive = true,
+                                ReadCommentHandling = JsonCommentHandling.Skip,
+                                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                            };
+
+                            var submissions = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
+                            if (submissions != null)
+                            {
+                                foreach (var submission in submissions)
+                                {
+                                    submission.tenant = tenant.Name;
+                                    submission.form = appDto.ApplicationForm.ApplicationFormName ?? string.Empty;
+                                    submission.category = appDto.ApplicationForm.Category ?? string.Empty;
+                                }
+                                chefsSubmissions.AddRange(submissions);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            var ExceptionMessage = ex.Message;
+                            logger.LogError(ex, "GetSubmissionsList Exception: {ExceptionMessage}", ExceptionMessage);
+                        }
+
+                        checkedForms.Add(id ?? string.Empty);
+                    }
+                }
+
+                // Set inUnity property for each submission based on whether it exists in appDtos
+                foreach (var submission in chefsSubmissions)
+                {
+                    submission.inUnity = appDtos.Any(appDto => submission.ConfirmationId.ToString() == appDto.ReferenceNo);
+                }
+                
+
+                // Remove chef's submissions if Unity has an application with the same reference number
+                if (!allSubmissions)
+                {
+                    chefsSubmissions.RemoveAll(r => appDtos.Any(appDto => r.ConfirmationId.ToString() == appDto.ReferenceNo));
+                }
+            }
         }
 
-        var request = new RestRequest($"/forms/{formId}/submissions", Method.Get)
-            .AddParameter("fields", SummaryFieldsFilter.JoinAsString(","));
-
-        var response = await _intakeClient.GetAsync(request);
-
-        if (((int)response.StatusCode) >= 400)
-        {
-            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
-        }
-        else if (((int)response.StatusCode) == 0)
-        {
-            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.ErrorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
-        }
-
-        var submissionOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
-        List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
-
-        if (null == jsonResponse)
-        {
-            return new PagedResultDto<FormSubmissionSummaryDto>(0, new List<FormSubmissionSummaryDto>());
-        }
-        else
-        {
-            // Remove all deleted and draft submissions
-            jsonResponse.RemoveAll(r => r.Deleted || r.FormSubmissionStatusCode != "SUBMITTED");
-            return new PagedResultDto<FormSubmissionSummaryDto>(jsonResponse.Count, jsonResponse);
-        }
+        // Remove all deleted submissions
+        chefsSubmissions.RemoveAll(r => r.Deleted);
+        return new PagedResultDto<FormSubmissionSummaryDto>(chefsSubmissions.Count, chefsSubmissions);
     }
 }

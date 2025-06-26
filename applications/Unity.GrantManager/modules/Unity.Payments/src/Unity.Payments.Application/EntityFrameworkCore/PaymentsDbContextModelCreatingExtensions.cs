@@ -79,6 +79,9 @@ public static class PaymentsDbContextModelCreatingExtensions
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            b.Property(x => x.Text)
+                .IsRequired()
+                .HasMaxLength(250);
         });
     }
 }

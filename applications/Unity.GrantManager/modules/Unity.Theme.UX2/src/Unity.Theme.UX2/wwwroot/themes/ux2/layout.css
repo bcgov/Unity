@@ -1,6 +1,5 @@
 
 /** Layout/Component based styles */
-
 html, body {
     height: 100%;
     width: 100%;
@@ -167,13 +166,18 @@ body {
     font-size: var(--bc-font-size-sm);
 }
 
-    .dataTables_wrapper table th:first-child {
-        border-top-left-radius: 10px;
-    }
+.dataTables_wrapper table th:first-child {
+    border-top-left-radius: 10px;
+}
 
-    .dataTables_wrapper table th:last-child {
-        border-top-right-radius: 10px;
-    }
+.dataTables_wrapper table th:last-child {
+    border-top-right-radius: 10px;
+}
+
+.dataTables_wrapper table thead tr:not(:first-child) th:first-child,
+.dataTables_wrapper table thead tr:not(:first-child) th:last-child {
+    border-radius: inherit;
+}
 
 .dataTables_wrapper thead tr.filters th {
     border-top-left-radius: 0;
@@ -439,7 +443,7 @@ div.dataTables_wrapper div.dataTables_length label {
 }
 
 .nav-item > a {
-    padding: 1.2rem;
+    padding: 10px 20px;
     width: 100%;
     height: 100%;
     display: flex;
