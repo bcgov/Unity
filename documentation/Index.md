@@ -1,6 +1,6 @@
-![img](images/unity_text.png)
-
 ## Unity Case Management
+
+
 [![img](images/roadmap.png)](Product-Roadmap)
 [![img](images/capabilities.png)](Capabilities)
 
