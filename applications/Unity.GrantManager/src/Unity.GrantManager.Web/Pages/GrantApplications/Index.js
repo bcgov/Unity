@@ -200,8 +200,8 @@
     }
 
     function getColumns() {
-        return [
-            getSelectColumn('Select Application', 'rowCount','applications'),
+        const sortedColumns = [
+            getSelectColumn('Select Application', 'rowCount', 'applications'),
             getApplicantNameColumn(),
             getApplicationNumberColumn(),
             getCategoryColumn(),
@@ -265,8 +265,9 @@
             getFyeMonthColumn(),
             getApplicantIdColumn(),
             getPayoutColumn()
-        ]
-            .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
+        ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
+            .sort((a, b) => a.index - b.index);
+        return sortedColumns;
     }
 
     function getApplicantNameColumn() {
