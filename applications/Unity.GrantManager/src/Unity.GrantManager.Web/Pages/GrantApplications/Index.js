@@ -7,21 +7,19 @@
     const listColumns = getColumns();
     const defaultVisibleColumns = ['select',
         'applicantName',
-        'referenceNo',
         'category',
+        'referenceNo',
         'submissionDate',
-        'projectName',
-        'subsector',
-        'totalProjectBudget',
-        'assignees',
         'status',
+        'subStatusDisplayValue',
+        'community',
         'requestedAmount',
         'approvedAmount',
-        'economicRegion',
-        'regionalDistrict',
-        'community',
-        'orgNumber',
-        'orgBookStatus'];
+        'projectName',
+        'applicantId',
+        'applicationTag',
+        'assignees'
+    ]
 
     //For stateRestore label in modal
     let languageSetValues = {
@@ -69,6 +67,44 @@
             },
             buttons: [
                 { extend: 'createState', text: 'Save As View' },
+                {
+                    text: "Reset to Default View",
+                    action: function (e, dt, node, config)
+                    {
+                        dt.columns().visible(false);
+
+                        // List of all columns not including default columns
+                        const allColumnNames = dt.settings()[0].aoColumns.map(col => col.name).filter(colName => !defaultVisibleColumns.includes(colName));
+                        const orderedIndexes = [];
+
+                        // Set the visible columns, and collect id's for the reorder
+                        defaultVisibleColumns.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                dt.column(colIdx).visible(true);
+                                orderedIndexes.push(colIdx);
+                            }
+                        });
+
+                        // Column reorder only works if all columns included in new order, so get the rest of the columns
+                        allColumnNames.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                orderedIndexes.push(colIdx);
+                            }
+                        })
+                        dt.colReorder.order(orderedIndexes);
+
+                        dt.order([4, 'asc']).search('').draw();
+
+                        // Close the dropdown
+                        dt.buttons('.grp-savedStates')
+                            .container()
+                            .find('.dt-button-collection')
+                            .hide();
+                        $('div.dt-button-background').trigger('click');
+                    }
+                },
                 { extend: 'removeAllStates', text: 'Delete All Views' },
                 {
                     extend: 'spacer',
@@ -164,8 +200,8 @@
     }
 
     function getColumns() {
-        return [
-            getSelectColumn('Select Application', 'rowCount','applications'),
+        const sortedColumns = [
+            getSelectColumn('Select Application', 'rowCount', 'applications'),
             getApplicantNameColumn(),
             getApplicationNumberColumn(),
             getCategoryColumn(),
@@ -229,8 +265,9 @@
             getFyeMonthColumn(),
             getApplicantIdColumn(),
             getPayoutColumn()
-        ]
-            .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
+        ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
+            .sort((a, b) => a.index - b.index);
+        return sortedColumns;
     }
 
     function getApplicantNameColumn() {

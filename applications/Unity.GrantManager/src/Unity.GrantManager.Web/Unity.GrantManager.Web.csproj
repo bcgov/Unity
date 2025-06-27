@@ -3,10 +3,9 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <RootNamespace>Unity.GrantManager.Web</RootNamespace>
-    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <RootNamespace>Unity.GrantManager.Web</RootNamespace>    
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -56,23 +55,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="8.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="9.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
-    <PackageReference Include="MiniProfiler.AspNetCore.Mvc" Version="4.3.8" />
-    <PackageReference Include="MiniProfiler.EntityFrameworkCore" Version="4.3.8" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
+    <PackageReference Include="MiniProfiler.AspNetCore.Mvc" Version="4.5.4" />
+    <PackageReference Include="MiniProfiler.EntityFrameworkCore" Version="4.5.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Npgsql" Version="8.0.6" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.2" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.2" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="2.0.0" />
-    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="Npgsql" Version="9.0.3" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+    <PackageReference Include="System.Formats.Asn1" Version="9.0.5" />
+    <PackageReference Include="System.Text.Json" Version="9.0.5" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-    <PackageReference Include="Volo.Abp.BlobStoring" Version="8.3.4" />    
+    <PackageReference Include="Volo.Abp.BlobStoring" Version="9.1.3" />    
   </ItemGroup>
 
   <ItemGroup>
@@ -82,13 +81,13 @@
 	<ProjectReference Include="..\Unity.GrantManager.HttpApi.Client\Unity.GrantManager.HttpApi.Client.csproj" />
 	<ProjectReference Include="..\Unity.GrantManager.HttpApi\Unity.GrantManager.HttpApi.csproj" />
 	<ProjectReference Include="..\Unity.GrantManager.EntityFrameworkCore\Unity.GrantManager.EntityFrameworkCore.csproj" />
-	<PackageReference Include="Volo.Abp.Autofac" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.Swashbuckle" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Web" Version="8.3.4" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="8.3.4" />
-	<PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="8.3.4" />
-	<PackageReference Include="Volo.Abp.Http.Client.IdentityModel.Web" Version="8.3.4" />
+	<PackageReference Include="Volo.Abp.Autofac" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.Swashbuckle" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Web" Version="9.1.3" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="9.1.3" />
+	<PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="9.1.3" />
+	<PackageReference Include="Volo.Abp.Http.Client.IdentityModel.Web" Version="9.1.3" />
   </ItemGroup>
 
   <ItemGroup>

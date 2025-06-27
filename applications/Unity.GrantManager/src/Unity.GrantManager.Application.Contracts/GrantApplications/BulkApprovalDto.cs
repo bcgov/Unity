@@ -25,5 +25,7 @@ namespace Unity.GrantManager.GrantApplications
         public string ApplicantName { get; set; }
         public string FormName { get; set; }
         public string ApplicationStatus { get; set; }
+        public bool? IsDirectApproval { get; set; }
+        public decimal RecommendedAmount { get; set; }
     }
 }
