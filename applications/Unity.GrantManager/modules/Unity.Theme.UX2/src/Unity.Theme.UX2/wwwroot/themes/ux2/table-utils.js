@@ -209,7 +209,7 @@ function initializeDataTable(options) {
                 try {
                     dtApi = new $.fn.dataTable.Api(settings);
 
-                    if (!dtApi || !dtApi.table().node()) {
+                    if (!dtApi?.table()?.node()) {
                         throw new Error('Invalid DataTable instance.');
                     }
 
@@ -510,26 +510,6 @@ function initializeFilterButtonPopover(iDt) {
 function toggleFilterRow() {
     $(this).popover('toggle');
     $('#dtFilterRow').toggleClass('hidden');
-}
-function updateColvisButtonState($btn, api, colIndex) {
-    const visible = api.column(colIndex).visible();
-    $btn.toggleClass('dt-button-active', visible);
-}
-
-function syncColvisButtonStates(api) {
-    const aoColumns = api.settings()[0].aoColumns;
-
-    let x = $('.dt-button-collection .dt-button');
-    let z = $('.dt-button-collection a.dt-button');
-    $('.dt-button-collection a.dt-button').each(function () {
-        const $btn = $(this);
-        const colName = $btn.attr('data-cv-name');
-
-        const colIndex = aoColumns.findIndex((col) => col.name === colName);
-        if (colIndex !== -1) {
-            updateColvisButtonState($btn, api, colIndex);
-        }
-    });
 }
 
 function findColumnByTitle(title, dataTable) {
