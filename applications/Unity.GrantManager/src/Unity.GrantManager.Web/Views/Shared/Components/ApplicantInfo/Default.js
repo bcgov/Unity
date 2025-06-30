@@ -375,10 +375,10 @@ $(document).on('click', '#btnClearOrgbook', function (e) {
     e.preventDefault();
     const $f = $('#ApplicantInfoForm');
 
-    if ($('#orgBookSelect').val()) $('#saveApplicantInfoBtn').prop('disabled', false);
+    if ($f.find('#ApplicantSummary_OrgName').val()) $('#saveApplicantInfoBtn').prop('disabled', false);
 
-    $f.find('#ApplicantSummary_OrgName').val('');
-    $f.find('#ApplicantSummary_OrgNumber').val('');
+    $f.find('#ApplicantSummary_OrgName').val('').trigger('change');
+    $f.find('#ApplicantSummary_OrgNumber').val('').trigger('change');
     $f.find('#ApplicantSummary_OrgStatus').val('').trigger('change');
     $f.find('#ApplicantSummary_OrganizationType').val('').trigger('change');
 
