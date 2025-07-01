@@ -163,6 +163,13 @@ function initializeDataTable(options) {
                     data.columns[originalIdx].uniqueKey = originalCol.name;
                 });
 
+                if (Array.isArray(data.order)) {
+                    data.orderByUniqueKey = data.order.map(([colIdx, dir]) => {
+                        const col = data.columns[colIdx];
+                        return col ? { uniqueKey: col.uniqueKey, dir } : null;
+                    }).filter(x => x);
+                }
+
                 let hasFilter =
                     data.columns.some((value) => value.search.search !== '') ||
                     searchValue !== '';
@@ -175,6 +182,16 @@ function initializeDataTable(options) {
                 let stateCorrupted = false;
                 const tableId = settings.sTableId || settings.nTable.id;
                 const aoColumns = settings.aoColumns;
+
+                // Restore order from uniqueKey if available
+                if (Array.isArray(data.orderByUniqueKey)) {
+                    data.order = data.orderByUniqueKey.map(orderObj => {
+                        // Find the current index for this uniqueKey
+                        const idx = data.columns.findIndex(col => col.uniqueKey === orderObj.uniqueKey);
+                        return [idx, orderObj.dir];
+                    }).filter(([idx]) => idx !== -1);
+                }
+
                 data.columns.forEach((column, index) => {
                     if (aoColumns[index] + '' != 'undefined') {
                         const name = aoColumns[index].name;
@@ -239,7 +256,15 @@ function initializeDataTable(options) {
                         );
                     }
 
-                    dtApi.columns.adjust().draw(false);
+                    if (Array.isArray(data.order) && data.order.length > 0) {
+                        const adjustedOrder = data.order.map(([visualIdx, dir]) => {
+                            const originalIdx = dtApi.colReorder?.transpose?.(visualIdx);
+                            return [originalIdx, dir];
+                        });
+                        dtApi.order(adjustedOrder).draw();
+                    } else {
+                        dtApi.columns.adjust().draw(false);
+                    }
                 } catch (err) {
                     console.warn('StateLoaded failed:', err);
                     const stateKey = `DataTables_${tableId}_${window.location.pathname}`;
@@ -408,10 +433,11 @@ function getSelectColumn(title, dataField, uniqueTableId) {
         className: 'notexport text-center',
         data: dataField,
         name: 'select',
+        index: 0,
         render: function (data) {
             return `<input class="checkbox-select chkbox" id="row_${data}" type="checkbox" value="" title="${title}">`;
         },
-        index: 0,
+
     };
 }
 
