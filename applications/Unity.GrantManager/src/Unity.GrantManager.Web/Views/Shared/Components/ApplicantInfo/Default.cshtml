@@ -61,18 +61,33 @@
                 <abp-row class="m-0 p-0" abp-if="@IsLookupEnabled">
                     <abp-column size="_12" class="px-1 mb-4">
                         <label class="form-label">@L["ApplicantInfoView:ApplicantInfo.OrgBookSearch"].Value</label>
-                        <select id="orgBookSelect" asp-for="@Model.SelectedOrgBookId"
-                                class="auto-complete-select"
-                                data-autocomplete-minimum-input-length="3"
-                                data-autocomplete-api-url="/api/app/org-book/org-book-autocomplete-query"
-                                data-autocomplete-display-property="value"
-                                data-autocomplete-value-property="topic_source_id"
-                                data-autocomplete-items-property="results"
-                                data-autocomplete-filter-param-name="orgBookQuery"
-                                data-autocomplete-placeholder="@L["ApplicantInfoView:ApplicantInfo.OrgBookSearchPlaceholder"].Value"
-                                data-autocomplete-allow-clear="true">
-                        </select>
+                        <abp-row>
+                            <abp-column size="_11">
+                                <select id="orgBookSelect" asp-for="@Model.SelectedOrgBookId"
+                                        class="auto-complete-select"
+                                        data-autocomplete-minimum-input-length="3"
+                                        data-autocomplete-api-url="/api/app/org-book/org-book-autocomplete-query"
+                                        data-autocomplete-display-property="value"
+                                        data-autocomplete-value-property="topic_source_id"
+                                        data-autocomplete-items-property="results"
+                                        data-autocomplete-filter-param-name="orgBookQuery"
+                                        data-autocomplete-placeholder="@L["ApplicantInfoView:ApplicantInfo.OrgBookSearchPlaceholder"].Value">
+                                </select>
+                            </abp-column>
+                            <abp-column size="_1">
+                                <abp-button button-type="Default"
+                                            id="btnClearOrgbook"
+                                            title="Remove registered organisation"
+                                            style="margin: -3px; margin-left: -5px;"
+                                            type="button"
+                                            icon="xmark"
+                                            class="p-0">
+                                    <i class="fa fa-xmark"></i>
+                                </abp-button>
+                            </abp-column>
+                        </abp-row>
                     </abp-column>
+                    
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
