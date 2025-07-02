@@ -27,21 +27,21 @@ $(function () {
 
     function validateMatchingSupplierToOrgInfo() {
         const supplierName = (UIElements.supplierName.val() || '').toLowerCase().trim();
-        
+
         if (!supplierName) {
             UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
             return;
         }
-        let isMatch = true;
+
         const orgName = (UIElements.orgName.val() || '').toLowerCase().trim();
         const nonRegisteredOrgName = (UIElements.nonRegisteredOrgName.val() || '').toLowerCase().trim();
 
-        if(orgName != '') {
-            isMatch = !supplierName || !orgName || supplierName === orgName;
-        } else if(nonRegisteredOrgName != '') {
-            isMatch = !supplierName || !nonRegisteredOrgName || supplierName === nonRegisteredOrgName;
-        }
-        
+        // Match if either orgName or nonRegisteredOrgName matches supplierName
+        const isMatch =
+            (!orgName && !nonRegisteredOrgName) ||
+            supplierName === orgName ||
+            supplierName === nonRegisteredOrgName;
+
         UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', isMatch);
     }
 
