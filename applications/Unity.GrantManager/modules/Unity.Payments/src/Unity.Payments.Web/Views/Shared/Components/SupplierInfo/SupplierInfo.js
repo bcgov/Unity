@@ -10,8 +10,8 @@ $(function () {
         supplierName: $("#SupplierName"),
         hasEditSupplier: $("#HasEditSupplierInfo"),
         refreshSitesBtn: $("#btn-refresh-sites"),
-        orgName: $("#ApplicantInfo_OrgName"), // Note: Dependent on Applicant Info Tab
-        nonRegisteredOrgName: $("#ApplicantInfo_NonRegOrgName"), // Note: Dependent on Applicant Info Tab
+        orgName: $("#ApplicantSummary_OrgName"), // Note: Dependent on Applicant Info Tab
+        nonRegisteredOrgName: $("#ApplicantSummary_NonRegOrgName"), // Note: Dependent on Applicant Info Tab
         supplierOrgInfoErrorDiv: $("#supplier-error-div")
     };
 
@@ -29,6 +29,16 @@ $(function () {
         const supplierName = (UIElements.supplierName.val() || '').toLowerCase().trim();
 
         if (!supplierName) {
+            UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
+            return;
+        }
+
+        // Check if orgName and nonRegisteredOrgName elements exist
+        const orgNameExists = UIElements.orgName.length > 0;
+        const nonRegisteredOrgNameExists = UIElements.nonRegisteredOrgName.length > 0;
+
+        // If neither element exists, fallback on API check
+        if (!orgNameExists && !nonRegisteredOrgNameExists) {
             UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
             return;
         }
