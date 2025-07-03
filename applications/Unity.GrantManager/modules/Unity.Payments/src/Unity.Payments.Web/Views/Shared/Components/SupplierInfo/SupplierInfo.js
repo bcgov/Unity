@@ -5,6 +5,7 @@ $(function () {
     const UIElements = {
         navOrgInfoTab: $('#nav-organization-info-tab'),
         siteId: $("#SiteId"),
+        paymentApplicantId: $("#PaymentInfo_ApplicantId"),
         originalSupplierNumber: $("#OriginalSupplierNumber"),
         supplierNumber: $("#SupplierNumber"),
         supplierName: $("#SupplierName"),
@@ -26,7 +27,14 @@ $(function () {
     init();
 
     function validateMatchingSupplierToOrgInfo() {
-        const supplierName = (UIElements.supplierName.val() || '').toLowerCase().trim();
+        if (UIElements.paymentApplicantId.length === 0) {
+            console.warn('Payment Applicant ID element not found. Skipping validation.');
+            UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
+            return
+        }
+
+        const applicantId = UIElements.paymentApplicantId.val();
+        let supplierName = ($("#SupplierName").val() || '').toLowerCase().trim();
 
         if (!supplierName) {
             UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
@@ -38,24 +46,31 @@ $(function () {
         const orgNameExists = orgNameElem.length > 0;
         const nonRegOrgNameExists = nonRegOrgNameElem.length > 0;
 
-        let hideWarning = false;
-
         // If neither element exists, fallback on API check
         if (!orgNameExists && !nonRegOrgNameExists) {
-            hideWarning = true;
+            // NOTE: External module dependency on Unity.GrantManager.GrantApplication.ApplicationApplicantAppService
+            unity.grantManager.grantApplications
+                .applicationApplicant
+                .getSupplierNameMatchesCheck(applicantId, supplierName)
+                .then((isMatch) => {
+                    abp.notify.success(`Supplier info is now ${isMatch}`);
+                    $("#supplier-error-div").toggleClass('hidden', isMatch);
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
         } else {
             // Only fetch values if elements exist
             const orgName = orgNameExists ? (orgNameElem.val() || '').toLowerCase().trim() : '';
             const nonRegisteredOrgName = nonRegOrgNameExists ? (nonRegOrgNameElem.val() || '').toLowerCase().trim() : '';
 
             // Hides warning if there is a match
-            hideWarning =
+            let isMatch =
                 (!orgName && !nonRegisteredOrgName) ||
                 supplierName === orgName ||
                 supplierName === nonRegisteredOrgName;
+            $("#supplier-error-div").toggleClass('hidden', isMatch);
         }
-
-        UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', hideWarning);
     }
 
     function bindUIEvents() {
@@ -289,6 +304,7 @@ $(function () {
         (msg, data) => {
             UIElements.siteId.val(data);
             loadSiteInfoTable();
+            validateMatchingSupplierToOrgInfo();
         }
     );
 
@@ -304,10 +320,10 @@ function saveSiteDefault(siteId) {
         type: "POST",
         data: JSON.stringify({ ApplicantId: applicantId, SiteId: siteId }),
     })
-        .then(response => {
-            abp.notify.success('Default site has been successfully saved.', 'Default Site Saved');
-        })
-        .catch(error => {
-            console.error('There was a problem with the post operation:', error);
-        });
+    .then(response => {
+        abp.notify.success('Default site has been successfully saved.', 'Default Site Saved');
+    })
+    .catch(error => {
+        console.error('There was a problem with the post operation:', error);
+    });
 }
