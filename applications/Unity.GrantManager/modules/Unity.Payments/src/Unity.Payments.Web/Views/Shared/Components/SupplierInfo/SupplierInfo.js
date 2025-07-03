@@ -33,26 +33,29 @@ $(function () {
             return;
         }
 
-        // Check if orgName and nonRegisteredOrgName elements exist
-        const orgNameExists = UIElements.orgName.length > 0;
-        const nonRegisteredOrgNameExists = UIElements.nonRegisteredOrgName.length > 0;
+        const orgNameElem = UIElements.orgName;
+        const nonRegOrgNameElem = UIElements.nonRegisteredOrgName;
+        const orgNameExists = orgNameElem.length > 0;
+        const nonRegOrgNameExists = nonRegOrgNameElem.length > 0;
+
+        let hideWarning = false;
 
         // If neither element exists, fallback on API check
-        if (!orgNameExists && !nonRegisteredOrgNameExists) {
-            UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
-            return;
+        if (!orgNameExists && !nonRegOrgNameExists) {
+            hideWarning = true;
+        } else {
+            // Only fetch values if elements exist
+            const orgName = orgNameExists ? (orgNameElem.val() || '').toLowerCase().trim() : '';
+            const nonRegisteredOrgName = nonRegOrgNameExists ? (nonRegOrgNameElem.val() || '').toLowerCase().trim() : '';
+
+            // Hides warning if there is a match
+            hideWarning =
+                (!orgName && !nonRegisteredOrgName) ||
+                supplierName === orgName ||
+                supplierName === nonRegisteredOrgName;
         }
 
-        const orgName = (UIElements.orgName.val() || '').toLowerCase().trim();
-        const nonRegisteredOrgName = (UIElements.nonRegisteredOrgName.val() || '').toLowerCase().trim();
-
-        // Match if either orgName or nonRegisteredOrgName matches supplierName
-        const isMatch =
-            (!orgName && !nonRegisteredOrgName) ||
-            supplierName === orgName ||
-            supplierName === nonRegisteredOrgName;
-
-        UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', isMatch);
+        UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', hideWarning);
     }
 
     function bindUIEvents() {
