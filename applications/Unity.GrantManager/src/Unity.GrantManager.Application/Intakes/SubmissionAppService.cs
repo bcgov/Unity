@@ -16,8 +16,6 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
-using static Unity.Modules.Shared.UnitySelector.Attachment;
-
 namespace Unity.GrantManager.Intakes;
 
 [Authorize]
