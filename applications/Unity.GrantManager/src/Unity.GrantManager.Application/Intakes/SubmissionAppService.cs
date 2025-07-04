@@ -150,6 +150,8 @@ public class SubmissionAppService(
         };
 
         var tenants = await tenantRepository.GetListAsync();
+        var unityRefNos = new HashSet<string>();
+        var checkedForms = new HashSet<string>();
         foreach (var tenant in tenants)
         {
             using (CurrentTenant.Change(tenant.Id))
@@ -157,8 +159,6 @@ public class SubmissionAppService(
                 var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, int.MaxValue);
                 var appDtos = new List<GrantApplicationDto>();
                 var rowCounter = 0;
-
-                var checkedForms = new HashSet<string>();
 
                 foreach (var grouping in groupedResult)
                 {
@@ -198,26 +198,27 @@ public class SubmissionAppService(
                     }
                 }
 
-                var unityRefNos = appDtos
+                unityRefNos.UnionWith(appDtos
                                   .Select(a => a.ReferenceNo)
                                   .Where(r => !string.IsNullOrWhiteSpace(r))
-                                  .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                  .ToHashSet(StringComparer.OrdinalIgnoreCase));
 
                 logger.LogInformation("In tenant: {tenant} | allSubmissions: {allSubmissions} | Total CHEFS: {Chefs}  | Total Unity: {Unity}",
                                       tenant.Name, allSubmissions, chefsSubmissions.Count, unityRefNos.Count);
 
-                // Set inUnity flag
-                foreach (var submission in chefsSubmissions)
-                {
-                    submission.inUnity = unityRefNos.Contains(submission.ConfirmationId.ToString());
-                }
-
-                // Remove duplicates unless caller asked for *all* submissions
-                if (!allSubmissions)
-                {
-                    chefsSubmissions.RemoveAll(s => unityRefNos.Contains(s.ConfirmationId.ToString()));
-                }
             }
+        }
+
+        // Set inUnity flag
+        foreach (var submission in chefsSubmissions)
+        {
+            submission.inUnity = unityRefNos.Contains(submission.ConfirmationId.ToString());
+        }
+
+        // Remove duplicates unless caller asked for *all* submissions
+        if (!allSubmissions)
+        {
+            chefsSubmissions.RemoveAll(s => unityRefNos.Contains(s.ConfirmationId.ToString()));
         }
 
 
