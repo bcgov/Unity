@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using RestSharp;
 using RestSharp.Authenticators;
 using System;
@@ -14,9 +16,6 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace Unity.GrantManager.Intakes;
 
 [Authorize]
@@ -204,8 +203,8 @@ public class SubmissionAppService(
                                   .Where(r => !string.IsNullOrWhiteSpace(r))
                                   .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                logger.LogInformation("Total CHEFS: {Chefs}  | Total Unity: {Unity}",
-                                      chefsSubmissions.Count, unityRefNos.Count);
+                logger.LogInformation("In tenant: {tenant} | allSubmissions: {allSubmissions} | Total CHEFS: {Chefs}  | Total Unity: {Unity}",
+                                      tenant.Name, allSubmissions, chefsSubmissions.Count, unityRefNos.Count);
 
                 // Set inUnity flag
                 foreach (var submission in chefsSubmissions)
@@ -221,7 +220,11 @@ public class SubmissionAppService(
             }
         }
 
+
         chefsSubmissions.RemoveAll(r => r.Deleted);
+        logger.LogInformation("Final before return: allSubmissions: {allSubmissions} | Total CHEFS: {Chefs}  | Total Unity: {Unity}",
+                              allSubmissions, chefsSubmissions.Count, chefsSubmissions.Where(r => r.inUnity).Count());
+
         return new PagedResultDto<FormSubmissionSummaryDto>(chefsSubmissions.Count, chefsSubmissions);
     }
 
