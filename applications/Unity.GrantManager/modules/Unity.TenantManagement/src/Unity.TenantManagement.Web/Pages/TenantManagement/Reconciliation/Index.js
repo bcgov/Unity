@@ -20,6 +20,7 @@ $(function () {
                 categoriesSelect.appendChild(option);
             });
         }
+        onSubmissionSummaryFilterChanged();
     });
 
     let inputAction = function (requestData, dataTableSettings) {
@@ -33,6 +34,7 @@ $(function () {
     });
 
     function onSubmissionSummaryFilterChanged() {
+        console.log("hi");
         let dateTo = new Date($('#dateTo').val());
         let dateFrom = new Date($('#dateFrom').val());
 
@@ -40,7 +42,7 @@ $(function () {
             x.tenant.toLowerCase().includes($('#ReconciliationTenantFilter').val().toLowerCase()) &&
             (isNaN(dateTo.getTime()) || new Date(x.createdAt) <= dateTo) &&
             (isNaN(dateFrom.getTime()) || new Date(x.createdAt) >= dateFrom) &&
-            (x.category == $("#ReconciliationCategoryFilter").val() || $("#ReconciliationCategoryFilter").val() == null)
+            (x.category == $("#ReconciliationCategoryFilter").val() || $("#ReconciliationCategoryFilter").val() == "all")
         );
 
         let totalSubmissions = filtered_submissions.length;
