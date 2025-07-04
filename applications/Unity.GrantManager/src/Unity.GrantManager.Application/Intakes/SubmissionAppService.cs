@@ -142,137 +142,86 @@ public class SubmissionAppService(
 
     public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(bool allSubmissions)
     {
-        List<FormSubmissionSummaryDto> chefsSubmissions = new List<FormSubmissionSummaryDto>();
-        logger.LogInformation("\n\nStarting GetSubmissionsList, allSubmissions Flag: {flag}", allSubmissions);
+        var chefsSubmissions = new List<FormSubmissionSummaryDto>();
 
         var tenants = await tenantRepository.GetListAsync();
         foreach (var tenant in tenants)
         {
-            logger.LogInformation("Looking into Tenant: {tenantName}", tenant.Name);
             using (CurrentTenant.Change(tenant.Id))
             {
                 var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, int.MaxValue);
                 var appDtos = new List<GrantApplicationDto>();
                 var rowCounter = 0;
 
-                List<string> checkedForms = new List<string>();
+                var checkedForms = new HashSet<string>();
 
                 foreach (var grouping in groupedResult)
                 {
                     var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
-                    logger.LogInformation("Looking into application: {applicationID}, in form {FORMID}", appDto.Id, appDto.ApplicationForm.ApplicationFormName);
-                    appDto.RowCount = rowCounter;
+                    appDto.RowCount = rowCounter++;
                     appDtos.Add(appDto);
-                    rowCounter++;
 
                     // Chef's API call to get submissions
-                    if (!checkedForms.Contains(appDto.ApplicationForm.ChefsApplicationFormGuid ?? string.Empty))
+                    var formGuid = appDto.ApplicationForm.ChefsApplicationFormGuid ?? string.Empty;
+                    if (!checkedForms.Add(formGuid)) continue;   // already queried this form
+
+
+                    var apiKey = stringEncryptionService.Decrypt(appDto.ApplicationForm.ApiKey!);
+                    var request = new RestRequest($"/forms/{formGuid}/submissions", Method.Get)
+                                    .AddParameter("fields", "applicantAgent.name");
+                    request.Authenticator = new HttpBasicAuthenticator(formGuid, apiKey ?? string.Empty);
+
+                    try
                     {
-                        logger.LogInformation("Entering Form {FormId}", appDto.ApplicationForm.ChefsApplicationFormGuid);
-                        var id = appDto.ApplicationForm.ChefsApplicationFormGuid;
-                        var apiKey = stringEncryptionService.Decrypt(appDto.ApplicationForm.ApiKey! ?? string.Empty);
-                        var request = new RestRequest($"/forms/{id}/submissions", Method.Get)
-                            .AddParameter("fields", "applicantAgent.name");
-                        request.Authenticator = new HttpBasicAuthenticator(id ?? "ID", apiKey ?? "no api key given");
+                        var response = await restClient.GetAsync(request);
+                        var submissions = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(
+                                              response.Content ?? "[]",
+                                              new JsonSerializerOptions
+                                              {
+                                                  PropertyNameCaseInsensitive = true,
+                                                  ReadCommentHandling = JsonCommentHandling.Skip,
+                                                  DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                                              }) ?? [];
 
-                        RestResponse? response = null;
-                        try
+                        foreach (var s in submissions)
                         {
-                            response = await restClient.GetAsync(request);
-                            var submissionOptions = new JsonSerializerOptions
-                            {
-                                WriteIndented = true,
-                                PropertyNameCaseInsensitive = true,
-                                ReadCommentHandling = JsonCommentHandling.Skip,
-                                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                            };
-
-                            var submissions = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
-                            if (submissions != null)
-                            {
-                                foreach (var submission in submissions)
-                                {
-                                    submission.tenant = tenant.Name;
-                                    submission.form = appDto.ApplicationForm.ApplicationFormName ?? string.Empty;
-                                    submission.category = appDto.ApplicationForm.Category ?? string.Empty;
-                                }
-                                chefsSubmissions.AddRange(submissions);
-                                logger.LogInformation("Retrieved {Count} submissions for form {FormId}", submissions.Count, id);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            var ExceptionMessage = ex.Message;
-                            logger.LogError(ex, "GetSubmissionsList Exception: {ExceptionMessage}", ExceptionMessage);
+                            s.tenant = tenant.Name;
+                            s.form = appDto.ApplicationForm.ApplicationFormName ?? string.Empty;
+                            s.category = appDto.ApplicationForm.Category ?? string.Empty;
                         }
 
-                        checkedForms.Add(id ?? string.Empty);
+                        chefsSubmissions.AddRange(submissions);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "GetSubmissionsList Exception: {Message}", ex.Message);
                     }
                 }
 
-                logger.LogInformation("Total number of submissions retrieved from CHEFS: {Count}", chefsSubmissions.Count);
-                logger.LogInformation("Total number of submissions retrieved from Unity: {Count}", appDtos.Count);
+                var unityRefNos = appDtos
+                                  .Select(a => a.ReferenceNo)
+                                  .Where(r => !string.IsNullOrWhiteSpace(r))
+                                  .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                logger.LogInformation("All Unity submission ids: {Ids}", string.Join(", ", appDtos.Select(a => a.ReferenceNo)));
-                logger.LogInformation("All Chef's submission ids: {Ids}", string.Join(", ", chefsSubmissions.Select(a => a.ConfirmationId.ToString())));
+                logger.LogInformation("Total CHEFS: {Chefs}  | Total Unity: {Unity}",
+                                      chefsSubmissions.Count, unityRefNos.Count);
 
-                // Set inUnity property for each submission based on whether it exists in appDtos
+                // Set inUnity flag
                 foreach (var submission in chefsSubmissions)
                 {
-                    submission.inUnity = appDtos.Any(appDto => submission.ConfirmationId.ToString() == appDto.ReferenceNo);
-                    logger.LogInformation("Submission {ConfirmationId} in Unity: {InUnity}", submission.ConfirmationId, submission.inUnity);
+                    submission.inUnity = unityRefNos.Contains(submission.ConfirmationId.ToString());
                 }
 
-                var inUnityCount = chefsSubmissions.Count(s => s.inUnity);
-                logger.LogInformation("Count of chefsSubmissions with inUnity == true: {Count}", inUnityCount);
-
-                // Remove chef's submissions if Unity has an application with the same reference number
+                // Remove duplicates unless caller asked for *all* submissions
                 if (!allSubmissions)
                 {
-                    var toRemove = chefsSubmissions
-                    .Where(r => appDtos.Any(appDto => r.ConfirmationId.ToString() == appDto.ReferenceNo))
-                    .ToList();
-                    foreach (var submission in toRemove)
-                    {
-                        logger.LogInformation("Removing submission: ConfirmationId={ConfirmationId}, ProjectTitle={ProjectTitle}, Organization={OrganizationLegalName}, Tenant={tenant}, Form={form}, Category={category}",
-                            submission.ConfirmationId,
-                            submission.ProjectTitle,
-                            submission.OrganizationLegalName,
-                            submission.tenant,
-                            submission.form,
-                            submission.category
-                        );
-                    }
-                    // Log any ConfirmationIds in toRemove that are not in chefsSubmissions with inUnity == true
-                    var toRemoveIds = toRemove.Select(r => r.ConfirmationId.ToString()).ToHashSet();
-                    var inUnityIds = chefsSubmissions.Where(s => s.inUnity).Select(s => s.ConfirmationId.ToString()).ToHashSet();
-                    var notInInUnity = toRemoveIds.Except(inUnityIds).ToList();
-                    if (notInInUnity.Any())
-                    {
-                        logger.LogWarning("Submissions in toRemove but not marked inUnity: {Ids}", string.Join(", ", notInInUnity));
-                    }
-
-                    // Log any inUnity == true that are not in toRemove
-                    var notInToRemove = inUnityIds.Except(toRemoveIds).ToList();
-                    if (notInToRemove.Any())
-                    {
-                        logger.LogWarning("Submissions marked inUnity but not in toRemove: {Ids}", string.Join(", ", notInToRemove));
-                    }
-
-                    // Log any ReferenceNo in appDtos that do not match any ConfirmationId in chefsSubmissions
-                    var chefIds = chefsSubmissions.Select(s => s.ConfirmationId.ToString()).ToHashSet();
-                    var unmatchedReferenceNos = appDtos.Select(a => a.ReferenceNo).Where(rn => !chefIds.Contains(rn)).ToList();
-                    if (unmatchedReferenceNos.Any())
-                    {
-                        logger.LogWarning("ReferenceNos in appDtos not found in chefsSubmissions: {Ids}", string.Join(", ", unmatchedReferenceNos));
-                    }
-                    chefsSubmissions.RemoveAll(r => appDtos.Any(appDto => r.ConfirmationId.ToString() == appDto.ReferenceNo));
+                    chefsSubmissions.RemoveAll(s => unityRefNos.Contains(s.ConfirmationId.ToString()));
                 }
             }
         }
 
-        // Remove all deleted submissions
         chefsSubmissions.RemoveAll(r => r.Deleted);
         return new PagedResultDto<FormSubmissionSummaryDto>(chefsSubmissions.Count, chefsSubmissions);
     }
+
 }
