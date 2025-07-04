@@ -143,6 +143,12 @@ public class SubmissionAppService(
     public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(bool allSubmissions)
     {
         var chefsSubmissions = new List<FormSubmissionSummaryDto>();
+        var serializerOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
 
         var tenants = await tenantRepository.GetListAsync();
         foreach (var tenant in tenants)
@@ -176,12 +182,7 @@ public class SubmissionAppService(
                         var response = await restClient.GetAsync(request);
                         var submissions = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(
                                               response.Content ?? "[]",
-                                              new JsonSerializerOptions
-                                              {
-                                                  PropertyNameCaseInsensitive = true,
-                                                  ReadCommentHandling = JsonCommentHandling.Skip,
-                                                  DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                                              }) ?? [];
+                                              serializerOptions) ?? [];
 
                         foreach (var s in submissions)
                         {
