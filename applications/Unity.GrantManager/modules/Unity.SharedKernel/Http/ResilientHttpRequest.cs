@@ -17,7 +17,7 @@ namespace Unity.Modules.Shared.Http
         private static int _maxRetryAttempts = 3;
         private const int OneMinuteInSeconds = 60;       
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
-        private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(OneMinuteInSeconds);
+        private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(OneMinuteInSeconds*2); // Default to 2 minutes
 
         public ResilientHttpRequest(IHttpClientFactory httpClientFactory)
         {
