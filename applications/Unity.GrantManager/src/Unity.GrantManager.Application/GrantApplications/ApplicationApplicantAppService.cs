@@ -325,4 +325,29 @@ public class ApplicationApplicantAppService(
             }
         }
     }
+
+    public async Task<bool> GetSupplierNameMatchesCheck(Guid applicantId, string? supplierName)
+    {
+        if (string.IsNullOrWhiteSpace(supplierName))
+        {
+            return true; // If supplierName is null or empty, there is nothing to warn about
+        }
+
+        var applicant = await applicantRepository.GetAsync(applicantId) ?? throw new EntityNotFoundException();
+
+        var normalizedSupplierName = supplierName?.Trim();
+        var organizationName = applicant.OrgName?.Trim();
+        var nonRegisteredOrganizationName = applicant.NonRegOrgName?.Trim();
+
+        // Match if either orgName or nonRegisteredOrgName matches supplierName
+        // - If both orgName and nonRegisteredOrgName are null or empty, return true
+        // - Otherwise, return true if supplierName matches either orgName or nonRegisteredOrgName (case-insensitive)
+        if (string.IsNullOrEmpty(organizationName) && string.IsNullOrEmpty(nonRegisteredOrganizationName))
+        {
+            return true;
+        }
+
+        return string.Equals(normalizedSupplierName, organizationName, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(normalizedSupplierName, nonRegisteredOrganizationName, StringComparison.OrdinalIgnoreCase);
+    }
 }

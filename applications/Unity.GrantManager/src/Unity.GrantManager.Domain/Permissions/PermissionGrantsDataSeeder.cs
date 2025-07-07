@@ -81,6 +81,12 @@ namespace Unity.GrantManager.Permissions
             GrantApplicationPermissions.Dashboard.RequestApprovedCount,
         ];
 
+        public readonly List<string> SettingManagement_Tags_CommonPermissions = [
+            UnitySelector.SettingManagement.Tags.Default,
+            UnitySelector.SettingManagement.Tags.Update,
+            UnitySelector.SettingManagement.Tags.Delete
+        ];
+
         public async Task SeedAsync(DataSeedContext context)
         {
             // Default permission grants based on role
@@ -109,6 +115,7 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
 
+                    .. SettingManagement_Tags_CommonPermissions,
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
@@ -162,10 +169,8 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantApplicationPermissions.Approvals.BulkApplicationApproval,
                     GrantApplicationPermissions.Approvals.DeferAfterApproval,
-                    UnitySelector.SettingManagement.Tags.Default,
-                    UnitySelector.SettingManagement.Tags.Update,
-                    UnitySelector.SettingManagement.Tags.Delete,
 
+                    .. SettingManagement_Tags_CommonPermissions,
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
@@ -204,6 +209,7 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.ApplicationForms.Default,
 
 
+                    .. SettingManagement_Tags_CommonPermissions,
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
@@ -212,9 +218,6 @@ namespace Unity.GrantManager.Permissions
                     .. Dashboard_CommonPermissions,
 
                     UnitySettingManagementPermissions.BackgroundJobSettings,
-                    UnitySelector.SettingManagement.Tags.Default,
-                    UnitySelector.SettingManagement.Tags.Update,
-                    UnitySelector.SettingManagement.Tags.Delete
                 ], context.TenantId);
 
 

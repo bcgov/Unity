@@ -93,12 +93,12 @@
                     abp.notify.success('The payment info has been updated.');
                     disableSaveButton(true);
                     refreshSupplierInfoWidget();
+                    hideSpinner();
+                    abp.ui.unblock();
                 })
                 .catch((error) => {
                     console.error(error);
                     disableSaveButton(false);
-                })
-                .then(() => {
                     hideSpinner();
                     abp.ui.unblock();
                 });
