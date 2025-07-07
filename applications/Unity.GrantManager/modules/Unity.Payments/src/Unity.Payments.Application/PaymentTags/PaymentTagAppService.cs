@@ -1,14 +1,20 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
 using Unity.Modules.Shared;
 using Unity.Payments.Domain.PaymentTags;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp.EventBus.Local;
+using Unity.Payments.Events;
+
 
 namespace Unity.Payments.PaymentTags
 {
@@ -17,9 +23,11 @@ namespace Unity.Payments.PaymentTags
     public class PaymentTagAppService : PaymentsAppService, IPaymentTagAppService
     {
         private readonly IPaymentTagRepository _paymentTagRepository;
-        public PaymentTagAppService(IPaymentTagRepository paymentTagRepository)
+        private readonly ILocalEventBus _localEventBus;
+        public PaymentTagAppService(IPaymentTagRepository paymentTagRepository, ILocalEventBus localEventBus)
         {
             _paymentTagRepository = paymentTagRepository;
+            _localEventBus = localEventBus;
         }
         public async Task<IList<PaymentTagDto>> GetListAsync()
         {
@@ -28,9 +36,9 @@ namespace Unity.Payments.PaymentTags
         }
         public async Task<IList<PaymentTagDto>> GetListWithPaymentRequestIdsAsync(List<Guid> ids)
         {
-            var tags = await _paymentTagRepository.GetListAsync(e => ids.Contains(e.PaymentRequestId));
-
-            return ObjectMapper.Map<List<PaymentTag>, List<PaymentTagDto>>(tags.OrderBy(t => t.Id).ToList());
+            var tags = await _paymentTagRepository.WithDetailsAsync(pt => pt.Tag);
+            var filteredTags = tags.Where(e => ids.Contains(e.PaymentRequestId)).ToList();
+            return ObjectMapper.Map<List<PaymentTag>, List<PaymentTagDto>>(filteredTags.OrderBy(t => t.Id).ToList());
         }
         public async Task<PaymentTagDto?> GetPaymentTagsAsync(Guid id)
         {
@@ -40,39 +48,57 @@ namespace Unity.Payments.PaymentTags
 
             return ObjectMapper.Map<PaymentTag, PaymentTagDto>(paymentTags);
         }
-        public async Task<PaymentTagDto> CreateorUpdateTagsAsync(Guid id, PaymentTagDto input)
+       
+
+        public async Task<List<PaymentTagDto>> AssignTagsAsync(AssignPaymentTagDto input)
         {
-            var paymentTag = await _paymentTagRepository.FirstOrDefaultAsync(e => e.PaymentRequestId == id);
+            var existingApplicationTags = await _paymentTagRepository.GetListAsync(e => e.PaymentRequestId == input.PaymentRequestId);
 
-            // Sanitize input tag text string
-            var tagInput = input.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
-            input.Text = string.Join(',', tagInput.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
+            // 2. Extract existing TagIds
+            var existingTagIds = existingApplicationTags.Select(t => t.TagId).ToHashSet();
+            var inputTagIds = input.Tags?.Select(t => t.Id).ToHashSet() ?? new HashSet<Guid>();
+            var newTagsToAdd = input.Tags?
+                .Where(tag => !existingTagIds.Contains(tag.Id))
+                .Select(tag => new PaymentTag
+                {
+                    PaymentRequestId = input.PaymentRequestId,
+                    TagId = tag.Id
+                })
+                .ToList();
+            var tagsToRemove = existingApplicationTags
+           .Where(et => !inputTagIds.Contains(et.TagId))
+            .ToList();
 
-            if (paymentTag == null)
+
+            if (tagsToRemove.Any())
             {
-                var newTag = await _paymentTagRepository.InsertAsync(new PaymentTag(
-                        Guid.NewGuid(), // Generate a new ID for the PaymentTag  
-                        input.PaymentRequestId,
-                        input.Text
-                    ),
-                    autoSave: true
-                );
+                await _paymentTagRepository.DeleteManyAsync(tagsToRemove, autoSave: true);
+            }
+            // 4. Insert new tags if any
+            if (newTagsToAdd?.Count > 0)
+            {
+                await _paymentTagRepository.InsertManyAsync(newTagsToAdd, autoSave: true);
+                var tagIds = newTagsToAdd.Select(x => x.TagId).ToList();
 
-                return ObjectMapper.Map<PaymentTag, PaymentTagDto>(newTag);
+                var insertedTagsWithNavProps = await (await _paymentTagRepository.GetQueryableAsync())
+                    .Where(x => x.PaymentRequestId == input.PaymentRequestId && tagIds.Contains(x.TagId))
+                    .Include(x => x.Tag)
+                    .ToListAsync();
+
+                return ObjectMapper.Map<List<PaymentTag>, List<PaymentTagDto>>(insertedTagsWithNavProps);
             }
             else
             {
-                paymentTag.Text = input.Text;
-                await _paymentTagRepository.UpdateAsync(paymentTag, autoSave: true);
-                return ObjectMapper.Map<PaymentTag, PaymentTagDto>(paymentTag);
+                return new List<PaymentTagDto>();
             }
         }
 
         [Authorize(UnitySelector.SettingManagement.Tags.Default)]
         public async Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync()
         {
-            var tagSummary = ObjectMapper.Map<List<TagSummaryCount>, List<TagSummaryCountDto>>(
-            await _paymentTagRepository.GetTagSummary());
+            var summary = await _paymentTagRepository.GetTagSummary();
+            var tagSummary = ObjectMapper.Map<List<PaymentTagSummaryCount>, List<TagSummaryCountDto>>(summary
+           );
 
             return new PagedResultDto<TagSummaryCountDto>(
                 tagSummary.Count,
@@ -153,48 +179,21 @@ namespace Unity.Payments.PaymentTags
         /// </summary>
         /// <param name="deleteTag">String of tag to be deleted.</param>
         [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
-        public async Task DeleteTagAsync(string deleteTag)
+        public async Task DeleteTagAsync(Guid id )
         {
-            Check.NotNullOrWhiteSpace(deleteTag, nameof(deleteTag));
-
-            // Remove commas from the originalTag and replacementTag
-            deleteTag = deleteTag.Replace(",", string.Empty).Trim();
-
-            var paymentRequestTags = await _paymentTagRepository.GetListAsync(e => e.Text.Contains(deleteTag));
-
-            var updatedTags = new List<PaymentTag>();
-            var deletedTags = new List<PaymentTag>();
-
-            foreach (var item in paymentRequestTags)
-            {
-                var tagSet = new HashSet<string>(
-                item.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-                    StringComparer.InvariantCultureIgnoreCase);
-
-                // Only replace whole word tags - skip substring matches
-                if (tagSet.Remove(deleteTag))
-                {
-                    if (tagSet.Count > 0)
-                    {
-                        item.Text = string.Join(',', tagSet.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
-                        updatedTags.Add(item);
-                    }
-                    else
-                    {
-                        deletedTags.Add(item);
-                    }
-                }
-            }
-
-            if (deletedTags.Count > 0)
-            {
-                await _paymentTagRepository.DeleteManyAsync(deletedTags, autoSave: true);
-            }
-
-            if (updatedTags.Count > 0)
-            {
-                await _paymentTagRepository.UpdateManyAsync(updatedTags, autoSave: true);
-            }
+           await _paymentTagRepository.DeleteAsync(id);
+        } 
+        
+        
+        [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
+        public async Task DeleteTagWithTagIdAsync(Guid tagId)
+        {
+            var existingApplicationTags = await _paymentTagRepository.GetListAsync(e => e.Tag.Id == tagId);
+            var idsToDelete = existingApplicationTags.Select(x => x.Id).ToList();
+            await _paymentTagRepository.DeleteManyAsync(idsToDelete, autoSave: true);
+            await _localEventBus.PublishAsync(new TagDeletedEto { TagId = tagId });
         }
+
+
     }
 }

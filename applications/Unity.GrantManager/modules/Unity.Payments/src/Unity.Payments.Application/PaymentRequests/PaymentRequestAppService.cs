@@ -321,6 +321,7 @@ namespace Unity.Payments.PaymentRequests
                 var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
                 var paymentsWithTags = await paymentsQueryable
                     .Include(pr => pr.PaymentTags)
+                        .ThenInclude(pt => pt.Tag)
                     .ToListAsync();
 
                 var mappedPayments = await MapToDtoAndLoadDetailsAsync(paymentsWithTags);

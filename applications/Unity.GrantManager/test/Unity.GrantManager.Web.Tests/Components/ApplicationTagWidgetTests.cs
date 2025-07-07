@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Components
             var expected = "Mock";
             var applicationId = Guid.NewGuid();
             var httpContext = new DefaultHttpContext();
-            applicationService.GetApplicationTagsAsync(applicationId).Returns(await Task.FromResult(new ApplicationTagsDto() { ApplicationId = Guid.Empty, Text = "Mock" }));
+            applicationService.GetApplicationTagsAsync(applicationId).Returns(await Task.FromResult(new ApplicationTagsDto() { ApplicationId = Guid.Empty, Tag = { } }));
 
             var viewContext = new ViewContext
             {

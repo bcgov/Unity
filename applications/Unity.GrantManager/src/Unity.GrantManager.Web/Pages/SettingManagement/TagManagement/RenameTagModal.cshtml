@@ -18,6 +18,7 @@
         <abp-modal-header title="Edit Tag"></abp-modal-header>
         <abp-modal-body>
             <abp-input type="hidden" asp-for="@Model.ViewModel.OriginalTag" />
+            <abp-input type="hidden" asp-for="@Model.ViewModel.TagId" />
             <abp-input type="text" asp-for="@Model.ViewModel.ReplacementTag" />
         </abp-modal-body>
         <abp-modal-footer>

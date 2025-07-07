@@ -19,6 +19,7 @@ using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Flex;
+using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.GrantManager.Permissions;
@@ -36,6 +37,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
+using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -124,7 +126,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
             appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = firstApplication.ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
+            appDto.ApplicationTag = ObjectMapper.Map< List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags.ToList());
             appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
             appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
             appDto.OrganizationType = firstApplication.Applicant?.OrganizationType ?? string.Empty;

@@ -1,4 +1,5 @@
 $(function () {
+
     let suggestionsArray = [];
 
     // Plugin Constructor
@@ -34,22 +35,18 @@ $(function () {
     // Add Tags
     TagsInput.prototype.addTag = function (tagData) {
         let defaultClass = 'tags-common';
-        let tagText, tagClass;
+        let id, tagText, tagClass;
 
-        if (typeof tagData === 'string') {
-            tagText = tagData;
-            tagClass = defaultClass;
+        id = tagData.Id;
+        tagText = tagData.Name || '';
+        tagClass = tagData.class || defaultClass;
 
-        } else {
-            tagText = tagData.text || '';
-            tagClass = tagData.class || defaultClass;
 
-        }
 
         if (this.anyErrors(tagText))
             return;
 
-        this.arr.push(tagText);
+        this.arr.push({ Id: id, Name: tagText });
 
         let tagInput = this;
 
@@ -74,15 +71,16 @@ $(function () {
         tag.appendChild(closeIcon);
         this.wrapper.insertBefore(tag, this.input);
         this.orignal_input.value = JSON.stringify(this.arr);
-
+        updateSelectedTagsInput(this.arr)
         return this;
     }
 
     // Delete Tags
     TagsInput.prototype.deleteTag = function (tag, i) {
         let self = this;
-        if (this.arr[i] == 'Uncommon Tags') {
-            abp.message.confirm('Are you sure to delete all the uncommon tags?')
+
+        if (this.arr[i].Name === 'Uncommon Tags') {
+            abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
                 .then(function (confirmed) {
                     if (confirmed) {
                         tag.remove();
@@ -90,16 +88,13 @@ $(function () {
                         self.orignal_input.value = JSON.stringify(self.arr);
                         return self;
                     }
-
                 });
-        }
-        else {
+        } else {
             tag.remove();
             this.arr.splice(i, 1);
             this.orignal_input.value = JSON.stringify(this.arr);
             return this;
         }
-
     }
 
     // Make sure input string have no error with the plugin
@@ -109,8 +104,11 @@ $(function () {
             return true;
         }
 
-        if (!this.options.duplicate && this.arr.indexOf(string) != -1) {
-            console.log('duplicate found " ' + string + ' " ')
+        if (
+            !this.options.duplicate &&
+            this.arr.some(tag => tag.Name === string)
+        ) {
+            console.log('duplicate found "' + string + '"');
             return true;
         }
 
@@ -165,7 +163,8 @@ $(function () {
 
             // Show suggestions only after the first character entry
             if (inputValue.length > 1) {
-                const suggestions = suggestionsArray.filter(tag => tag.toLowerCase().includes(inputValue));
+                const suggestions = suggestionsArray.filter(tag =>
+                    (tag.Name.toLowerCase()).includes(inputValue));
 
                 // Display suggestions below the input element
                 if (suggestions.length) {
@@ -198,7 +197,7 @@ $(function () {
         suggestions.forEach(suggestion => {
             const suggestionElement = document.createElement('div');
             suggestionElement.className = 'tags-suggestion-element';
-            suggestionElement.innerText = suggestion;
+            suggestionElement.innerText = typeof suggestion === 'string' ? suggestion : suggestion.Name;
 
             // Add click event to add suggestion as a new tag
             suggestionElement.addEventListener('click', function () {
@@ -230,7 +229,7 @@ $(function () {
 
         // for saving tags that are typed, but not added as a chip/pill
         tags.input.addEventListener('focusout', function () {
-            $('#paymentTagsModelSaveBtn').click(function () {
+            $('#assignTagsModelSaveBtn').click(function () {
                 trimAndAddTag(tags);
             })
         });
@@ -248,12 +247,34 @@ $(function () {
         });
     }
 
+    // Modified function to only allow adding tags from suggestions
     function trimAndAddTag(tags) {
         let str = tags.input.value.trim();
-        if (str != "") {
-            tags.addTag(str);
+        if (!str) {
+            tags.input.value = "";
+            return;
         }
+
+        // Check if it matches any suggestion exactly (case-insensitive)
+        const matched = suggestionsArray.find(s =>
+
+            s.Name.toLowerCase() === str.toLowerCase()
+        );
+
+        if (matched) {
+            tags.addTag(typeof matched === 'string' ? { name: matched } : matched);
+        } else {
+            abp.message.warn('Please select a tag from the suggestions.');
+        }
+
         tags.input.value = "";
+    }
+
+    function updateSelectedTagsInput(tagsArray) {
+
+        let jsonValue = JSON.stringify(tagsArray);
+        $('#SelectedTagsJson').val(jsonValue);
+
     }
 
     TagsInput.prototype.getTags = function () {
@@ -272,5 +293,3 @@ $(function () {
     window.TagsInput = TagsInput;
 
 });
-
-

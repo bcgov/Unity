@@ -1,0 +1,23 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.Tags.CreateTagsModalModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="createTagForm">
+    <abp-modal id="tagCreateModal">
+    <abp-modal-header title="Tags"></abp-modal-header>
+    <abp-modal-body>
+        <div>
+                <abp-input type="text" id="NewTags" asp-for="@Model.Tag"/>
+               
+              
+        </div>       
+    </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="createTagsModelSaveBtn" >Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+</abp-modal>
+</form>

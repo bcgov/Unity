@@ -7,5 +7,5 @@ namespace Unity.Payments.PaymentTags;
 public class PaymentTagDto : AuditedEntityDto<Guid>
 {
     public Guid PaymentRequestId { get; set; }
-    public string Text { get; set; } = string.Empty;
+    public GlobalTagDto? Tag { get; set; }
 }

@@ -2,12 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.EntityFrameworkCore;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
+using Unity.GrantManager.GlobalTag;
 
 namespace Unity.GrantManager.Repositories;
 
@@ -22,16 +24,17 @@ public class ApplicationTagsRepository(IDbContextProvider<GrantTenantDbContext> 
     public virtual async Task<List<TagSummaryCount>> GetTagSummary()
     {
         var dbSet = await GetDbSetAsync();
-        var results = dbSet
-            .AsNoTracking()
-            .AsEnumerable() // Forces client-side evaluation  
-            .SelectMany(tag => tag.Text.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(t => t.Trim()))
-            .GroupBy(tag => tag)
-            .Select(group => new TagSummaryCount(
-                group.Key,
-                group.Count()
-            )).ToList();
+        var results = await dbSet
+                .AsNoTracking()
+                .Include(x => x.Tag) // Ensure Tag is loaded
+                .GroupBy(x => x.Tag)
+                .Select(group => new TagSummaryCount(
+                    group.Key,
+                    group.Count()
+                ))
+                .ToListAsync();
+
+
 
         return results;
     }
@@ -45,15 +48,15 @@ public class ApplicationTagsRepository(IDbContextProvider<GrantTenantDbContext> 
     {
         var dbContext = await GetDbContextAsync();
         var entityType = dbContext.Model.FindEntityType(typeof(ApplicationTags));
-        var property = entityType?.FindProperty(nameof(ApplicationTags.Text));
+        var property = entityType?.FindProperty(nameof(ApplicationTags.Tag.Name));
 
         int maxColumnLength = property?.GetMaxLength() ?? 0;
 
         var dbSet = await GetDbSetAsync();
         int? maxTagSetLength = await dbSet
             .AsNoTracking()
-            .Where(t => t.Text.Contains(originalTag))
-            .Select(t => t.Text.Length)
+            .Where(t => t.Tag.Name.Contains(originalTag))
+            .Select(t => t.Tag.Name.Length)
             .OrderByDescending(len => len)
             .FirstOrDefaultAsync();
 
@@ -63,5 +66,12 @@ public class ApplicationTagsRepository(IDbContextProvider<GrantTenantDbContext> 
         }
 
         return maxColumnLength + originalTag.Length - maxTagSetLength.Value;
+    }
+
+     public override async Task<IQueryable<ApplicationTags>> WithDetailsAsync()
+ {
+        // Uses the extension method defined above
+        return (await GetQueryableAsync())
+         .Include(x => x.Tag); // Explicitly include the navigation property
     }
 }

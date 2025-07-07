@@ -56,19 +56,19 @@ namespace Unity.GrantManager.GrantApplications
 
         [Fact]
         [Trait("Category", "Integration")]
-        public async Task CreateorUpdateTagsAsync_Should_Create_ApplicationTag()
+        public async Task AssignTags()
         {
             // Arrange            
             Login(GrantManagerTestData.User1_UserId);
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
-          
+
 
             // Act
-            var addedTag  = await _applicationTagssAppService.CreateorUpdateTagsAsync(application.Id, new ApplicationTagsDto()
+            var addedTag = await _applicationTagssAppService.AssignTagsAsync(new AssignApplicationTagsDto()
             {
                 ApplicationId = application.Id,
-                Text = "Tag"
+                Tags = []
             });
 
             // Assert

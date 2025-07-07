@@ -666,7 +666,11 @@
             data: 'applicationTag',
             className: '',
             render: function (data) {
-                return data.replace(/,/g, ', ') ?? '';
+
+                let tagNames = data
+                    .filter(x => x.tag && x.tag.name)      // Ensure tag and name exist
+                    .map(x => x.tag.name);   
+                return tagNames.join(', ') ?? '';
             },
             index: 31
         }

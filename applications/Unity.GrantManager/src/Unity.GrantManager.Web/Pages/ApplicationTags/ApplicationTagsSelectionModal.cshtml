@@ -4,24 +4,34 @@
 @{
     Layout = null;
 }
+@using Newtonsoft.Json
 
 <form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="applicationTagForm">
+
     <abp-modal id="tagApplicationsModal">
     <abp-modal-header title="Tags"></abp-modal-header>
     <abp-modal-body>
         <div>
-                <abp-input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
+                <input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
+                <input type="hidden" id="SelectedTagsJson" name="SelectedTagsJson" />
                 <abp-input type="hidden" id="SelectedApplicationIds" asp-for="@Model.SelectedApplicationIds" />
                 <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
-                <abp-input type="hidden" id="CommonTags" asp-for="@Model.CommonTags" />
-                <abp-input type="hidden" id="UncommonTags" asp-for="@Model.UncommonTags" />
-                <abp-input type="hidden" id="AllTags" asp-for="@Model.AllTags" />
-                <abp-input type="hidden" id="Tags" asp-for="@Model.Tags" />
+              
+                <input type="hidden" id="CommonTags" name="CommonTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.CommonTags))' />
+               
+                <input type="hidden" id="UncommonTags" name="UncommonTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.UncommonTags))' />
+
+               
+                <input type="hidden" id="AllTags" name="AllTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.AllTags))' />
+
+               
+                <input type="hidden" id="Tags" name="Tags" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
+                <input type="hidden" id="TagsJson" name="TagsJson" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
               
         </div>       
     </abp-modal-body>
         <abp-modal-footer>
-            <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="applicationTagsModelSaveBtn" >Save</button>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="assignTagsModelSaveBtn">Save</button>
             <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
         </abp-modal-footer>
 </abp-modal>

@@ -1,6 +1,11 @@
-﻿namespace Unity.GrantManager.Applications;
-public class TagSummaryCount(string name, int count)
+﻿
+using Unity.GrantManager.GlobalTag;
+
+namespace Unity.GrantManager.Applications;
+
+
+public class TagSummaryCount(Tag tag, int count)
 {
-    public string Text { get; set; } = name;
+    public Tag Tag { get; set; } = tag;
     public int Count { get; set; } = count;
 }
