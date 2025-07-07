@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -7,22 +8,21 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.Integrations.RabbitMQ;
+using Unity.Notifications.Permissions;
+using Unity.Notifications.Settings;
 using Unity.Notifications.TeamsNotifications;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.Users;
-using Volo.Abp.SettingManagement;
-using Unity.Notifications.Settings;
-using Unity.Notifications.Permissions;
-using Volo.Abp;
 using Volo.Abp.Features;
-using Microsoft.AspNetCore.Http;
-using Unity.Modules.Shared.Utils;
+using Volo.Abp.SettingManagement;
+using Volo.Abp.Users;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -105,7 +105,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         {
             return null;
         }
-        
+
         var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName, emailCC, emailBCC);
         EmailLog emailLog = await _emailLogsRepository.GetAsync(emailId);
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
@@ -377,7 +377,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
     }
 
-    private async Task UpdateTenantSettings(string settingKey, string valueString) {
+    private async Task UpdateTenantSettings(string settingKey, string valueString)
+    {
         if (!valueString.IsNullOrWhiteSpace())
         {
             await _settingManager.SetForCurrentTenantAsync(settingKey, valueString);
