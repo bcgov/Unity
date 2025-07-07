@@ -125,8 +125,6 @@ namespace Unity.GrantManager.Events
 
         private async Task HandleSaveDraftEmail(EmailNotificationEvent eventData)
         {
-
-            
                 string emailToAddress = String.Join(",", eventData.EmailAddressList);
                 string? emailCC = eventData.Cc?.Any() == true ? String.Join(",", eventData.Cc) : null;
                 string? emailBCC = eventData.Bcc?.Any() == true ? String.Join(",", eventData.Bcc) : null;

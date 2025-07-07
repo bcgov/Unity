@@ -98,7 +98,7 @@
                     console.error(error);
                     disableSaveButton(false);
                 })
-                .finally(() => {
+                .then(() => {
                     hideSpinner();
                     abp.ui.unblock();
                 });

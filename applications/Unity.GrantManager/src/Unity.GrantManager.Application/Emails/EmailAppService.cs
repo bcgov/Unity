@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Volo.Abp.Application.Services;
@@ -34,34 +35,11 @@ namespace Unity.GrantManager.Emails
 
         private static EmailNotificationEvent GetEmailNotificationEvent(CreateEmailDto dto)
         {
-            List<string> toList = [];
-            string[] emails = dto.EmailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
+            var toList = dto.EmailTo.ParseEmailList() ?? [];
+            var ccList = dto.EmailCC.ParseEmailList() ?? [];
+            var bccList = dto.EmailBCC.ParseEmailList() ?? [];
 
-            foreach (string email in emails)
-            {
-                toList.Add(email.Trim());
-            }
-
-            // Parse CC emails
-            IEnumerable<string> ccList = [];
-            if (!string.IsNullOrWhiteSpace(dto.EmailCC))
-            {
-                ccList = dto.EmailCC.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
-                                   .Select(email => email.Trim())
-                                   .Where(email => !string.IsNullOrWhiteSpace(email));
-            }
-
-            // Parse BCC emails
-            IEnumerable<string> bccList = [];
-            if (!string.IsNullOrWhiteSpace(dto.EmailBCC))
-            {
-                bccList = dto.EmailBCC.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
-                                     .Select(email => email.Trim())
-                                     .Where(email => !string.IsNullOrWhiteSpace(email));
-            }
-
-            return
-            new EmailNotificationEvent
+            return new EmailNotificationEvent
             {
                 Id = dto.EmailId,
                 ApplicationId = dto.ApplicationId,

@@ -22,6 +22,7 @@ using Unity.Notifications.Permissions;
 using Volo.Abp;
 using Volo.Abp.Features;
 using Microsoft.AspNetCore.Http;
+using Unity.Modules.Shared.Utils;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -331,24 +332,11 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
-    private List<string>? ParseEmailList(string? emails)
-    {
-        if (string.IsNullOrWhiteSpace(emails))
-            return null;
-
-        var emailList = emails.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
-                         .Select(e => e.Trim())
-                         .Where(e => !string.IsNullOrWhiteSpace(e))
-                         .ToList();
-
-        return emailList.Count > 0 ? emailList : null;
-    }
-
     protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
     {
-        var toList = ParseEmailList(emailTo) ?? [];
-        var ccList = ParseEmailList(emailCC);
-        var bccList = ParseEmailList(emailBCC);
+        var toList = emailTo.ParseEmailList() ?? [];
+        var ccList = emailCC.ParseEmailList();
+        var bccList = emailBCC.ParseEmailList();
 
         var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
 
