@@ -34,7 +34,6 @@ $(function () {
     });
 
     function onSubmissionSummaryFilterChanged() {
-        console.log("hi");
         let dateTo = new Date($('#dateTo').val());
         let dateFrom = new Date($('#dateFrom').val());
 
