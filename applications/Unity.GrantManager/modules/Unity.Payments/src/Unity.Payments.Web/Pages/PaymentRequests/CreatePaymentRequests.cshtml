@@ -9,20 +9,35 @@
 @{
     Layout = null;
 }
+
 <form method="post" asp-page-handler="OnPostAsync" id="paymentform">
     <abp-modal size="ExtraLarge" id="payment-modal">
         <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentRequest:Title"].Value"></abp-modal-header>
         <abp-modal-body>
-            <abp-card>
+            <abp-card class="pb-0">
+                <abp-card-body class="pb-0 mb-0">
+                    <abp-row class="m-0 p-1">
+                        <abp-column size="_4">
+                            <abp-input asp-for="@Model.BatchNumberDisplay" type="text" label="@L["ApplicationPaymentRequest:BatchNumberName"]" disabled="true" />
+                        </abp-column>
+                        <abp-column size="_4">
+                            <abp-input id="ApplicationCount" type="text" asp-for="ApplicationPaymentRequestForm.Count" label="@L["ApplicationPaymentRequest:NumberPayment"]" disabled="true" />
+                        </abp-column>
+                        <abp-column size="_4">
+                            <abp-input asp-for="@Model.TotalAmount" class="totalAmount unity-currency-input" type="text" label="@L["ApplicationPaymentRequest:TotalAmount"]" disabled="true" />
+                        </abp-column>
+                    </abp-row>
+                </abp-card-body>
+            </abp-card>
+            <abp-card class="pt-0">
                 <abp-card-body class="payment-card">
                     <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
-                    <abp-input id="ApplicationCount" type="hidden" asp-for="ApplicationPaymentRequestForm.Count" />
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
                         <div id="@($"{Model.ApplicationPaymentRequestForm[i].CorrelationId}_container")" class="single-payment">
                             <abp-row class="m-0 p-2">
                                 <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@Model.ApplicationPaymentRequestForm[i].ApplicantName/@Model.ApplicationPaymentRequestForm[i].InvoiceNumber</h6></abp-column>
-                                <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPayment("@Model.ApplicationPaymentRequestForm[i].CorrelationId" + "_container")' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@Model.ApplicationPaymentRequestForm[i].CorrelationId" /></abp-column>
+                                <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPaymentRequest("@Model.ApplicationPaymentRequestForm[i].CorrelationId" + "_container")' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@Model.ApplicationPaymentRequestForm[i].CorrelationId" /></abp-column>
                             </abp-row>
 
                             <input name="ApplicationPaymentRequestForm.Index" type="hidden" value="@i" />

@@ -10,6 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.Payment.Shared;
 using System.Text.Json;
 using Unity.Payments.Domain.Suppliers;
+using System.Linq;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -46,6 +47,20 @@ namespace Unity.Payments.Web.Pages.Payments
         [BindProperty]
         public bool HasPaymentConfiguration { get; set; }
 
+        [BindProperty]
+        public string BatchNumberDisplay { get; set; } = string.Empty;
+
+
+        [BindProperty]
+        public decimal TotalAmount { get; set; }
+
+        public decimal ApplicationPaymentRequestFormTotalAmount
+        {
+            get
+            {
+                return ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
+            }
+        }
 
         public async Task OnGetAsync(string applicationIds)
         {
@@ -105,6 +120,9 @@ namespace Unity.Payments.Web.Pages.Payments
                 ApplicationPaymentRequestForm!.Add(request);
             }
 
+            var batchName = await _paymentRequestService.GetNextBatchInfoAsync();
+            BatchNumberDisplay = batchName;
+            TotalAmount = ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
         }
 
         private static List<string> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, decimal remainingAmount)
