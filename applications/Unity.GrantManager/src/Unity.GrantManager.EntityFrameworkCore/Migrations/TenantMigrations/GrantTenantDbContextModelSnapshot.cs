@@ -816,6 +816,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<string>("ElectoralDistrict")
+                        .HasColumnType("text");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -829,6 +832,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("IndigenousOrgInd")
                         .HasColumnType("text");
+
+                    b.Property<bool?>("IsDuplicated")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")

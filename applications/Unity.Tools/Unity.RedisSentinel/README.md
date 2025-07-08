@@ -1,6 +1,6 @@
 # Redis Sentinel Configuration
 
-This repository contains a Docker Compose configuration for setting up Redis with Sentinel for high availability.
+This directory contains a Docker Compose configuration for setting up Redis with Sentinel for high availability.
 
 ## Overview
 
@@ -292,3 +292,46 @@ When deploying to Kubernetes:
 - Service endpoints in Kubernetes typically follow the format `service-name.namespace.svc.cluster.local`.
 - Using a single service endpoint is sufficient as Kubernetes will handle load balancing to the appropriate sentinel pods.
 - If using Helm charts for Redis HA, the service endpoint is usually exposed as part of the deployment.
+
+## Unity.RedisSentinel
+
+Unity.RedisSentinel is a library for integrating Redis Sentinel with Unity applications. It provides easy-to-use APIs for:
+
+- **Configuration**: Simplify Redis and Sentinel configuration in Unity.
+- **Connection Management**: Automatically manage Redis connections and failover.
+- **Data Caching**: Easy-to-use caching mechanisms for Unity objects and data.
+
+### Getting Started with Unity.RedisSentinel
+
+1. **Install the Package**: Add Unity.RedisSentinel to your Unity project.
+2. **Configure Redis**: Set up your Redis connection in Unity's configuration files or through code.
+3. **Use the API**: Leverage Unity.RedisSentinel APIs to interact with Redis.
+
+### Example
+
+Basic example of using Unity.RedisSentinel in a Unity script:
+
+```csharp
+using Unity.RedisSentinel;
+
+public class RedisExample : MonoBehaviour
+{
+    void Start()
+    {
+        // Initialize Redis connection
+        RedisManager.Init("mymaster", "192.168.1.x:26379,192.168.1.x:26380,192.168.1.x:26381", "YourRedisPassword");
+
+        // Set a value
+        RedisManager.Set("key", "value");
+
+        // Get a value
+        string value = RedisManager.Get("key");
+
+        Debug.Log("Redis value: " + value);
+    }
+}
+```
+
+### Documentation
+
+Refer to the [Unity.RedisSentinel documentation](https://github.com/your-repo/Unity.RedisSentinel) for detailed usage, API references, and advanced configuration options.

@@ -125,6 +125,7 @@
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
+    "Permission:GrantApplicationManagement.Applicants.AssignApplicant": "Assign Applicant to an Application",
     "Permission:GrantApplicationManagement.Assignments.Default": "Assignment",
     "Permission:GrantApplicationManagement.Assignments.AssignInitial": "Initial Assignment",
     "Permission:GrantApplicationManagement.Reviews.Default": "Reviews",
@@ -161,8 +162,8 @@
     "ApplicationForms:RenderFormIoToHtml": "Render FormIO to HTML",
     "ApplicationForms:ConfigureWorksheets": "Configure Worksheets",
     "ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow": "Enabling this feature will bypass the Assessment workflow when you approve submissions associated with this form.",
-    "ApplicationForms.Configuration.Notes:SelectedElectoralAddress": "The selected address type will determine which submitted application address is used to extract the electoral district.",
-    "ApplicationForms.Configuration.Warnings:ElectoralAddressTypeChange": "Changing the address type will only affect new submissions. Existing applications will retain the electoral district extracted from their original address type.",
+    "ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress": "The selected address type will determine which submitted applicant address is used to extract the electoral district.",
+    "ApplicationForms.Configuration.Warnings:ApplicantElectoralAddressTypeChange": "Changing the address type will only affect new submissions. Existing applications will retain the electoral district extracted from their original address type.",
 
     "Intakes": "Intakes",
 
@@ -204,6 +205,9 @@
     "Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update": "Edit Signing Authority",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location": "Address",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location.Update": "Edit Address",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact": "Additional Contact(s)",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Create": "Add Additional Contact(s)",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Update": "Edit Additional Contact(s)",
 
     "Unity.GrantManager.ApplicationManagement.Funding": "Funding",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Funding Agreement",
@@ -212,6 +216,8 @@
     "Unity.GrantManager.ApplicationManagement.Payment": "Payment",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary.Update": "Edit Payment Summary",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
 
     "Permission:GrantApplicationManagement.ProjectInfo": "Project Info",
@@ -345,7 +351,7 @@
     "ProjectInfoView:ProjectInfo.SubSector": "Sub Sector",
     "ProjectInfoView:ProjectInfo.Community": "Community",
     "ProjectInfoView:ProjectInfo.EconomicRegion": "Economic Region",
-    "ProjectInfoView:ProjectInfo.ElectoralDistrict": "Electoral District",
+    "ProjectInfoView:ProjectInfo.ElectoralDistrict": "Project Electoral District",
     "ProjectInfoView:ProjectInfo.CommunityPopulation": "Community Population",
     "ProjectInfoView:ProjectInfo.Place": "Place",
     "ProjectInfoView:ProjectInfo.Acquisition": "Acquisition",
@@ -361,9 +367,6 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-
-    "Permission:GrantApplicationManagement.ApplicantInfo": "Applicant Info",
-    "Permission:GrantApplicationManagement.ApplicantInfo.Update": "Applicant Info Update",
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
@@ -403,6 +406,16 @@
     "ApplicantInfoView:ApplicantInfo.NonRegOrgName": "Non-Registered Organization Name",
     "ApplicantInfoView:ApplicantInfo.OrgBookSearchPlaceholder": "Start typing to search for your registered organization name",
     "ApplicantInfoView:ApplicantInfo.OrgBookSearch": "Search in BC Registries",
+    "ApplicantInfoView:ElectoralDistrict": "Electoral District",
+    "ApplicantInfoView:ApplicantElectoralDistrict": "Applicant Electoral District",
+    "ApplicantInfoView:Notes.ElectoralDistrict": "The electoral district is identified based on the {0}",
+    "ApplicantInfoView:ApplicantInfo.ApplicantLookUp": "Applicant Look up",
+    "ApplicantInfoView:ApplicantInfo.ApplicantLookUpPlaceholder": "Start typing applicant name or number to search for applicant...",
+    "ApplicantInfoView:ApplicantInfo.PrincipalRecord": "Principal Record",
+    "ApplicantInfoView:ApplicantInfo.Principal": "Use as a Principal",
+    "ApplicantInfoView:ApplicantInfo.ApplicantName": "Applicant Name",
+
+
 
     "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement",
     "FundingAgreementInfoView:FundingAgreementInfoContract": "Contract",
@@ -435,6 +448,7 @@
     "ApplicationBatchApprovalRequest:InvalidStatus": "The assessment for the selected item is not in the Assessment Completed state",
     "ApplicationBatchApprovalRequest:InvalidPermissions": "Invalid permissions",
     "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
-    "ApplicationBatchApprovalRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer"
+    "ApplicationBatchApprovalRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer",
+    "ApplicationBatchApprovalRequest:InvalidRecommendedAmount":  "Invalid Recommended Amount, it must be greater than 0.00"
   }
 }

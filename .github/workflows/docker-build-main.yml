@@ -1,4 +1,6 @@
 name: Main - Build & Push docker images
+permissions:
+  contents: read
 
 on:
   push:
@@ -36,7 +38,7 @@ env:
   UGM_RELEASE_PREFIX: Unity_Grant_Manager_v
   UGM_RELEASE_MESSAGE: "Production deployment"
 
-jobs:
+jobs:  
   Setup:
     runs-on: ubuntu-latest
     environment: main
@@ -87,6 +89,8 @@ jobs:
     needs: [Setup,Branch]
     runs-on: ubuntu-latest
     environment: main
+    permissions:
+      contents: write
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -138,6 +142,8 @@ jobs:
     needs: [Setup,Branch,GenerateTag]
     runs-on: ubuntu-latest
     environment: main
+    permissions:
+      actions: write
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4

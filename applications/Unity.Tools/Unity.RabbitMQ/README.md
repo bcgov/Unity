@@ -1,5 +1,13 @@
 # Unity RabbitMQ
 
+This directory contains the setup for RabbitMQ message broker in an OpenShift container. It includes configuration for administrator and client users, as well as virtual hosts for development environments.
+
+## Contents
+- RabbitMQ configuration files
+- User and vhost setup instructions
+
+See the README for setup and usage instructions.
+
 Setup of RabbitMQ message broker in an OpenShift container requires an administrator user (`unity-admin`) and two client users each associated with their own virtual hosts (`/dev` and `/dev2`).
 
 ## Prerequisites
