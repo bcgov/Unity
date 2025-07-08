@@ -134,7 +134,7 @@ namespace Unity.Payments.PaymentRequests
             return createdPayments;
         }
 
-        public async Task<(decimal BatchNumber, string BatchName)> GetNextBatchInfoAsync()
+        public async Task<string> GetNextBatchInfoAsync()
         {
             var (paymentConfig, _) = await GetPaymentConfigurationWithThresholdAsync();
             var paymentIdPrefix = string.Empty;
@@ -147,7 +147,7 @@ namespace Unity.Payments.PaymentRequests
             var batchNumber = await GetMaxBatchNumberAsync();
             var batchName = $"{paymentIdPrefix}_UNITY_BATCH_{batchNumber}";
 
-            return (batchNumber, batchName);
+            return batchName;
         }
 
         private static string GenerateInvoiceNumberAsync(string referenceNumber, string invoiceNumber, string sequencePart)

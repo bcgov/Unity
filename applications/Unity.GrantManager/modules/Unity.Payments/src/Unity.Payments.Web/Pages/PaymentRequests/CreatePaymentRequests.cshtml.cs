@@ -48,7 +48,7 @@ namespace Unity.Payments.Web.Pages.Payments
         public bool HasPaymentConfiguration { get; set; }
 
         [BindProperty]
-        public string BatchNumberDisplay { get; set; }
+        public string BatchNumberDisplay { get; set; } = string.Empty;
 
 
         [BindProperty]
@@ -120,7 +120,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 ApplicationPaymentRequestForm!.Add(request);
             }
 
-            var (batchNumber, batchName) = await _paymentRequestService.GetNextBatchInfoAsync();
+            var batchName = await _paymentRequestService.GetNextBatchInfoAsync();
             BatchNumberDisplay = batchName;
             TotalAmount = ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
         }
