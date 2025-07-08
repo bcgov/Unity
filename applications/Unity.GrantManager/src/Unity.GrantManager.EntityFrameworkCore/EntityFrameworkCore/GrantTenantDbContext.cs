@@ -257,7 +257,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                    .IsRequired()
                    .HasMaxLength(250);
                 b.HasOne(x => x.Tag)
-                 .WithMany() // No navigation property in Tags
+                 .WithMany() 
                  .HasForeignKey(x => x.TagId)
                  .IsRequired();
 

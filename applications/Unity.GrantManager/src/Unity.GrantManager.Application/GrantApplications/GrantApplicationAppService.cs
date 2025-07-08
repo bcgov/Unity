@@ -19,7 +19,6 @@ using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Flex;
-using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.GrantManager.Permissions;
@@ -37,7 +36,6 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
-using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications;
 

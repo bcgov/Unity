@@ -33,9 +33,6 @@ public class ApplicationTagsRepository(IDbContextProvider<GrantTenantDbContext> 
                     group.Count()
                 ))
                 .ToListAsync();
-
-
-
         return results;
     }
 
@@ -70,8 +67,8 @@ public class ApplicationTagsRepository(IDbContextProvider<GrantTenantDbContext> 
 
      public override async Task<IQueryable<ApplicationTags>> WithDetailsAsync()
  {
-        // Uses the extension method defined above
+        
         return (await GetQueryableAsync())
-         .Include(x => x.Tag); // Explicitly include the navigation property
+         .Include(x => x.Tag); 
     }
 }

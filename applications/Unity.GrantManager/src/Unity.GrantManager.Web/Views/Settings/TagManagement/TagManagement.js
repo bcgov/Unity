@@ -15,8 +15,8 @@ function defineTagSummaryColumnDefs() {
         {
             title: "TagData",
             name: 'tag',
-            data: 'tag',           // Entire tag object
-            visible: false,        // <--- This hides the column
+            data: 'tag',           
+            visible: false,        
             searchable: false,
             orderable: false
         },

@@ -76,16 +76,8 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                 {
                     CommonTags = new List<TagDto>();
                     UncommonTags = new List<TagDto>();
-                    // Get all tags from the system (used for lookup)
                     var allTags = await _tagsService.GetListAsync();
-
-                    // Get tag assignments per application
                     var tags = await _applicationTagsService.GetListWithApplicationIdsAsync(applications);
-
-                    // Add placeholders for applications with no tags
-                    
-
-                    // Group by ApplicationId to build NewTagItem list
                     var groupedTags = tags
                         .Where(x => x.Tag != null)
                         .GroupBy(x => x.ApplicationId)
@@ -97,8 +89,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                     {
                         groupedTags[missingId] = new List<TagDto>();
                     }
-
-                    // Identify common tags by Id across all applications
                     List<TagDto> commonTags = new();
 
                     if (groupedTags.Values.Any())
@@ -107,7 +97,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                             .Aggregate((prev, next) => prev.IntersectBy(next.Select(t => t.Id), t => t.Id).ToList());
                     }
 
-                    // Create NewTagItem list
                     Tags = groupedTags.Select(kvp =>
                     {
                         var appId = kvp.Key;
@@ -128,8 +117,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                     if (Tags.Count > 0)
                     {
 
-
-                        // Set CommonTags and UncommonTags from NewTagItem list
                         CommonTags = Tags
                             .SelectMany(item => item.CommonTags)
                             .GroupBy(tag => tag.Id)
@@ -144,7 +131,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                             .OrderBy(tag => tag.Name)
                             .ToList();
                     }
-                    // Set allTags
                     AllTags = allTags
                         .DistinctBy(tag => tag.Id)
                         .OrderBy(tag => tag.Name)
@@ -221,7 +207,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error processing ApplicationId {item}: {ex.Message}");
-                    // Optionally continue, or log with a logger
+                   
                 }
             }
 

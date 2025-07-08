@@ -605,7 +605,7 @@ $(function () {
             index: columnIndex,
             render: function (data) {
                 let tagNames = data
-                    .filter(x => x.tag && x.tag.name)      // Ensure tag and name exist
+                    .filter(x => x.tag && x.tag.name)     
                     .map(x => x.tag.name);
                 return tagNames.join(', ') ?? '';
             }

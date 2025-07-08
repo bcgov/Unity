@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
-using Unity.GrantManager.GrantApplications;
 using Unity.Modules.Shared;
 using Unity.Payments.Domain.PaymentTags;
 using Volo.Abp;
@@ -54,7 +52,7 @@ namespace Unity.Payments.PaymentTags
         {
             var existingApplicationTags = await _paymentTagRepository.GetListAsync(e => e.PaymentRequestId == input.PaymentRequestId);
 
-            // 2. Extract existing TagIds
+            
             var existingTagIds = existingApplicationTags.Select(t => t.TagId).ToHashSet();
             var inputTagIds = input.Tags?.Select(t => t.Id).ToHashSet() ?? new HashSet<Guid>();
             var newTagsToAdd = input.Tags?
@@ -74,7 +72,7 @@ namespace Unity.Payments.PaymentTags
             {
                 await _paymentTagRepository.DeleteManyAsync(tagsToRemove, autoSave: true);
             }
-            // 4. Insert new tags if any
+            
             if (newTagsToAdd?.Count > 0)
             {
                 await _paymentTagRepository.InsertManyAsync(newTagsToAdd, autoSave: true);

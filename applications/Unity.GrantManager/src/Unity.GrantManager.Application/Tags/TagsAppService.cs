@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Modules.Shared;
 using Unity.Payments.Events;
@@ -44,31 +43,22 @@ public class TagsAppService : ApplicationService, ITagsService
         {
             return ObjectMapper.Map<List<Tag>, List<TagDto>>(tags.OrderBy(t => t.Id).ToList());
         }
-
-        
     }
 
     
     public async Task<TagDto> CreateTagsAsync(TagDto input)
     {
-        
             var newTag = await _tagsRepository.InsertAsync(new Tag
             {
                 Name = input.Name
             }, autoSave: true);
 
             return ObjectMapper.Map<Tag, TagDto>(newTag);
-       
     }
 
     public async Task<TagDto> CreateorUpdateTagsAsync(Guid id, TagDto input)
     {
         var tag = await _tagsRepository.FirstOrDefaultAsync(e => e.Name.ToLower() == input.Name.ToLower());
-
-        // Sanitize input tag text string
-        //var tagInput = input.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
-        //input.Text = string.Join(',', tagInput.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
-
         if (tag == null)
         {
             var newTag = await _tagsRepository.InsertAsync(new Tag
@@ -114,7 +104,7 @@ public class TagsAppService : ApplicationService, ITagsService
         Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
-        // Remove commas and trim whitespace from tags
+        
         originalTag = originalTag.Replace(",", string.Empty).Trim();
         replacementTag = replacementTag.Replace(",", string.Empty).Trim();
 
@@ -139,7 +129,8 @@ public class TagsAppService : ApplicationService, ITagsService
             return [];
 
         tag.Name = replacementTag;
-            await _tagsRepository.UpdateAsync(tag, autoSave: true);
+        
+        await _tagsRepository.UpdateAsync(tag, autoSave: true);
         
 
         return [tag.Id];

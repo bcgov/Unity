@@ -84,14 +84,14 @@ public static class PaymentsDbContextModelCreatingExtensions
                 .IsRequired()
                 .HasMaxLength(250);
             b.HasOne(x => x.Tag)
-                .WithMany() // No navigation property in Tags
+                .WithMany() 
                 .HasForeignKey(x => x.TagId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.NoAction);
         });
         modelBuilder.Entity<Tag>(b =>
         {
-            b.ToTable(GrantManagerConsts.TenantTablePrefix + "Tags", GrantManagerConsts.DbSchema); // Ensure this matches exactly
+            b.ToTable(GrantManagerConsts.TenantTablePrefix + "Tags", GrantManagerConsts.DbSchema); 
             b.ConfigureByConvention();
         });
     }

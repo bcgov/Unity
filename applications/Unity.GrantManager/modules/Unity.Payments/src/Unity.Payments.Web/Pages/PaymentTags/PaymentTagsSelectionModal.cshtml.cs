@@ -7,10 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Unity.GrantManager.GlobalTag;
-using Unity.GrantManager.GrantApplications;
 using Unity.Payments.PaymentTags;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using static Unity.GrantManager.Permissions.GrantApplicationPermissions;
+
 
 namespace Unity.Payments.Web.Pages.PaymentTags
 {
@@ -72,9 +71,6 @@ namespace Unity.Payments.Web.Pages.PaymentTags
         {
             CommonTags = new List<GlobalTagDto>();
             UncommonTags = new List<GlobalTagDto>();
-            // Get all tags from the system (used for lookup)
-            
-
             SelectedPaymentRequestIds = paymentRequestIds;
             ActionType = actionType;
             var paymentRequests = JsonConvert.DeserializeObject<List<Guid>>(SelectedPaymentRequestIds);
@@ -84,9 +80,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
                 {
                     var allTags = await _tagsService.GetListAsync();
 
-                    var tags = await _paymentTagsService.GetListWithPaymentRequestIdsAsync(paymentRequests);
-
-                    // Add default objects for missing paymentRequestIds
+                    var tags = await _paymentTagsService.GetListWithPaymentRequestIdsAsync(paymentRequests);                   
                     var groupedTags = tags
                         .Where(x => x.Tag != null)
                         .GroupBy(x => x.PaymentRequestId)
@@ -99,7 +93,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
                         groupedTags[missingId] = new List<GlobalTagDto>();
                     }
 
-                    // Identify common tags by Id across all applications
+         
                     List<GlobalTagDto> commonTags = new();
 
                     if (groupedTags.Values.Any())
@@ -108,7 +102,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
                             .Aggregate((prev, next) => prev.IntersectBy(next.Select(t => t.Id), t => t.Id).ToList());
                     }
 
-                    // Create NewTagItem list
+                    
                     Tags = groupedTags.Select(kvp =>
                     {
                         var appId = kvp.Key;
@@ -129,8 +123,6 @@ namespace Unity.Payments.Web.Pages.PaymentTags
                     if (Tags.Count > 0)
                     {
 
-
-                        // Set CommonTags and UncommonTags from NewTagItem list
                         CommonTags = Tags
                             .SelectMany(item => item.CommonTags)
                             .GroupBy(tag => tag.Id)
@@ -145,7 +137,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
                             .OrderBy(tag => tag.Name)
                             .ToList();
                     }
-                    // Set allTags
+
                     AllTags = allTags
                      .DistinctBy(tag => tag.Id)
                      .OrderBy(tag => tag.Name)
@@ -166,7 +158,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
 
         public async Task<IActionResult> OnPostAsync()
         {
-            const string uncommonTags = "Uncommon Tags"; // Move to constants?
+            const string uncommonTags = "Uncommon Tags";
             if (SelectedPaymentRequestIds == null) return NoContent();
 
             try
@@ -174,7 +166,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
                 var paymentRequestIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedPaymentRequestIds);
                 if (SelectedTags != null)
                 {
-                   // string[]? stringArray = JsonConvert.DeserializeObject<string[]>(SelectedTags);
+               
                     var selectedTagList = DeserializeJson<List<TagDto>>(SelectedTags) ?? [];
                     if (null != paymentRequestIds)
                     {

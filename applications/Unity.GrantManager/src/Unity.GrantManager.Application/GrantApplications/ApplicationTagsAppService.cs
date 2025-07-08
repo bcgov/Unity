@@ -59,8 +59,6 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     public async Task<List<ApplicationTagsDto>> AssignTagsAsync(AssignApplicationTagsDto input)
     {
         var existingApplicationTags = await _applicationTagsRepository.GetListAsync(e => e.ApplicationId == input.ApplicationId);
-
-        // 2. Extract existing TagIds
         var existingTagIds = existingApplicationTags.Select(t => t.TagId).ToHashSet();
         var inputTagIds = input.Tags?.Select(t => t.Id).ToHashSet() ?? new HashSet<Guid>();
         var newTagsToAdd = input.Tags?
@@ -80,7 +78,6 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         {
             await _applicationTagsRepository.DeleteManyAsync(tagsToRemove, autoSave: true);
         }
-        // 4. Insert new tags if any
         if (newTagsToAdd?.Count > 0)
         {
             await _applicationTagsRepository.InsertManyAsync(newTagsToAdd, autoSave: true);

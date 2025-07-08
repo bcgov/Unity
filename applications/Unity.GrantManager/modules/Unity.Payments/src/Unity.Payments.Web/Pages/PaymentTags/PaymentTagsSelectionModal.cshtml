@@ -15,18 +15,11 @@
                 <input type="hidden" id="SelectedTagsJson" name="SelectedTagsJson" />
                 <abp-input type="hidden" id="SelectedPaymentRequestIds" asp-for="@Model.SelectedPaymentRequestIds" />
                 <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
-
                 <input type="hidden" id="CommonTags" name="CommonTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.CommonTags))' />
-
                 <input type="hidden" id="UncommonTags" name="UncommonTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.UncommonTags))' />
-
-
                 <input type="hidden" id="AllTags" name="AllTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.AllTags))' />
-
-
                 <input type="hidden" id="Tags" name="Tags" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
                 <input type="hidden" id="TagsJson" name="TagsJson" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
-
 
             </div>
         </abp-modal-body>

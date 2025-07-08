@@ -79,12 +79,9 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<Tag, TagDto>();
         CreateMap<TagSummaryCount, TagSummaryCountDto>();
         CreateMap<TagUsageSummary, TagUsageSummaryDto>();
-        
-         CreateMap<ApplicationTags, ApplicationTagsDto>();
+        CreateMap<ApplicationTags, ApplicationTagsDto>();
         CreateMap<ApplicationTags, ApplicationTagsDto>()
         .ForMember(dest => dest.Tag, opt => opt.MapFrom(src => src.Tag));
-
-    
 
         CreateMap<UpdateProjectInfoDto, Application>()
             .ForAllMembers(opts =>
