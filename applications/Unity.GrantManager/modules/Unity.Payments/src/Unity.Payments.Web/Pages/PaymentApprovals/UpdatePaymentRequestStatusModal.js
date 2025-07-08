@@ -1,5 +1,5 @@
 
-function removeApplicationPayment(applicationId, groupId) {
+function removeApplicationPaymentApproval(applicationId, groupId) {
     $('#' + applicationId).remove();
     let applicationCount = $('#ApplicationCount').val();
     let groupCount = $(`#${groupId}_count`).val();

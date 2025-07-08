@@ -1,5 +1,18 @@
 
-function removeApplicationPayment(applicationId) {
+function removeApplicationPaymentRequest(applicationId) {
+    let $container = $('#' + applicationId);
+
+    // Get the amount value inside this container before removing it
+    let amountValue = $container.find('.amount').val();
+    let amount = parseFloat((amountValue || "0").replace(/,/g, ''));
+
+    // Update the total amount
+    let $totalInput = $('.totalAmount');
+    let currentTotal = parseFloat(($totalInput.val() || "0").replace(/,/g, '')) || 0;
+    let newTotal = currentTotal - amount;
+    if (newTotal < 0) newTotal = 0;
+    $totalInput.val(newTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
     $('#' + applicationId).remove();
     let applicationCount = $('#ApplicationCount').val();
     $('#ApplicationCount').val(applicationCount - 1);
@@ -10,7 +23,7 @@ function removeApplicationPayment(applicationId) {
     if (!$('div.single-payment').length) {
         $('#no-payment-msg').css("display", "block");
         $("#payment-modal").find('#btnSubmitPayment').prop("disabled", true);
-    }
+    } 
     else {
         $('#no-payment-msg').css("display", "none");
     }
@@ -44,5 +57,3 @@ function submitPayments() {
         $('#paymentform').submit();
     }
 };
-
-
