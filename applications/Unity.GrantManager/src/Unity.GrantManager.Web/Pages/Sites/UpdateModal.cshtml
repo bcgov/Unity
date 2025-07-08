@@ -1,0 +1,32 @@
+﻿@page
+@using Unity.GrantManager.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+
+@model Unity.GrantManager.Web.Pages.Sites.UpdateModalModel
+
+@inject IStringLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+
+<abp-dynamic-form abp-model="Site" asp-page="/Sites/UpdateModal">
+    <abp-modal>
+        <abp-modal-header title="@L["Common:Command:Update"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-input asp-for="Id" />
+            @if (Model.Site != null && Model.Site.ShowBankAccountWarning)
+            {
+                <div class="alert alert-warning mt-2" role="alert">
+                    @Model.Site.BankAccountWarningMessage
+                </div>
+            }            
+            <abp-form-content />
+
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</abp-dynamic-form>
