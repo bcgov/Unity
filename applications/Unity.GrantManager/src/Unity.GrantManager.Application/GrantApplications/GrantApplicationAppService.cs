@@ -540,7 +540,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     /// <summary>
     /// Update the supplier number for the applicant associated with the application.
     /// </summary>
-    [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
+    [Authorize(UnitySelector.Payment.Supplier.Update)]
     public async Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber)
     {
         // Could be moved to payments module but dependency on ApplicationId

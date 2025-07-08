@@ -41,10 +41,10 @@
                     <abp-row class="m-0 p-0" id="supplierSearch">
                         <abp-column size="_4" class="px-1">
                             <abp-input readonly="@(!Model.HasEditSupplierInfo)"
-                                        class="@(Model.HasEditSupplierInfo ? string.Empty : "disabled")"
                                         asp-for="@Model.SupplierNumber"
                                         id="SupplierNumber"
-                                        onchange="enablePaymentInfoSaveBtn()" />
+                                        onchange="enablePaymentInfoSaveBtn()"
+                                        disabled=@Model.HasEditSupplierInfo />
                         </abp-column>
                         <abp-column size="_4" class="px-1">
                             <abp-input asp-for="@Model.SupplierName" id="SupplierName" />

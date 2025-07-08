@@ -73,7 +73,7 @@
 
         try {
             // Create an initial promise - either the supplier update or a resolved promise
-            const shouldUpdateSupplier = abp.auth.isGranted('PaymentsPermissions.Payments.EditSupplierInfo') &&
+            const shouldUpdateSupplier = abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update') &&
                 paymentInfoObj['SupplierNumber'] &&
                 paymentInfoObj['SupplierNumber'] !== paymentInfoObj['OriginalSupplierNumber'];
 
@@ -448,7 +448,7 @@ function openCasResponseModal(casResponse) {
 
 function enablePaymentInfoSaveBtn() {
     if (!$("#paymentInfoForm").valid()
-        || !abp.auth.isGranted('PaymentsPermissions.Payments.EditSupplierInfo')
+        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update')
         || formHasInvalidCurrencyCustomFields("paymentInfoForm")) {
         $('#savePaymentInfoBtn').prop('disabled', true);
         return;

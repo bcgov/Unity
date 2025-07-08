@@ -128,6 +128,12 @@
     "Enum:PaymentRequestStatus.NotValidated": "Not Validated",
     "Enum:PaymentRequestStatus.Paid": "Paid",
     "Enum:PaymentRequestStatus.Failed": "Payment Failed",
-    "Enum:PaymentRequestStatus.PaymentFailed": "Payment Failed"
+    "Enum:PaymentRequestStatus.PaymentFailed": "Payment Failed",
+
+    "Unity.GrantManager.ApplicationManagement.Payment": "Payment Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List"
   }
 }

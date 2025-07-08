@@ -1,6 +1,7 @@
 ﻿using Unity.GrantManager.Localization;
 using Unity.Modules.Shared;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Features;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
 
@@ -72,7 +73,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- APPLICANT INFO PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_ApplicantInfo_Permissions();
 
-            // Project Info
+            //-- PROJECT INFO PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_ProjectInfo_Permissions();
 
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);

@@ -151,6 +151,8 @@ internal static class PolicyRegistrant
         ));
 
         //-- PAYMENT INFO
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Default,
+           policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Summary.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
