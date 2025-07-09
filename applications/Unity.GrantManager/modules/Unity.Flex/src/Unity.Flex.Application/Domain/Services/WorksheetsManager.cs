@@ -179,9 +179,23 @@ namespace Unity.Flex.Domain.Services
 
                 if (worksheet != null)
                 {
-                    var worksheetLink = await worksheetLinkRepository.GetExistingLinkAsync(worksheet.Id, eventData.SheetCorrelationId, eventData.SheetCorrelationProvider);
+                    var worksheetLink = await worksheetLinkRepository.GetExistingLinkAsync(worksheet.Id,
+                        eventData.SheetCorrelationId,
+                        eventData.SheetCorrelationProvider);
+
+                    bool worksheetIntanceExists = false;
 
                     if (worksheetLink != null)
+                    {
+                        worksheetIntanceExists = await worksheetInstanceRepository.GetExistingAsync(worksheet.Id,
+                            eventData.InstanceCorrelationId,
+                            eventData.InstanceCorrelationProvider,
+                            eventData.SheetCorrelationId,
+                            eventData.SheetCorrelationProvider,
+                            worksheetLink.UiAnchor);
+                    }
+
+                    if (worksheetLink != null && !worksheetIntanceExists)
                     {
                         var newInstance = new WorksheetInstance(Guid.NewGuid(),
                          worksheet.Id,

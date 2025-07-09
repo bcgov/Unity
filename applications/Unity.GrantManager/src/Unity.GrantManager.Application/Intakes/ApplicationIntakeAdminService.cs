@@ -1,0 +1,67 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.Integration.Chefs;
+using Volo.Abp.Domain.Entities;
+
+namespace Unity.GrantManager.Intakes
+{
+    [Authorize]
+    public class ApplicationIntakeAdminService(CustomFieldsIntakeSubmissionMapper customFieldsIntakeSubmissionMapper,
+        IApplicationRepository applicationRepository,
+        IApplicationFormSubmissionRepository applicationFormSubmissionsRepository,
+        IApplicationFormVersionRepository applicationFormVersionRepository,
+        IApplicationFormRepository applicationFormRepository,
+        ISubmissionsApiService submissionsApiService)
+        : GrantManagerAppService
+    {
+        /// <summary>
+        /// Fix any missing worksheet instances that may have failed to create during intake
+        /// </summary>
+        /// <param name="referenceNo"></param>
+        /// <returns></returns>
+        /// <exception cref="EntityNotFoundException"></exception>
+        public async Task FixMissingWorksheetsAsync(string referenceNo)
+        {
+            var application =
+                (await applicationRepository.GetQueryableAsync())
+                .FirstOrDefault(a => a.ReferenceNo == referenceNo)
+                    ?? throw new EntityNotFoundException("Application not found");
+
+            var submission =
+                (await applicationFormSubmissionsRepository.GetQueryableAsync())
+                .FirstOrDefault(s => s.ApplicationId == application.Id)
+                    ?? throw new EntityNotFoundException("Application Form Submission not found");
+
+            var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId)
+                    ?? throw new EntityNotFoundException("Application Form not found");
+
+            var formVersionId = submission.ApplicationFormVersionId;
+
+            if (formVersionId == null || formVersionId == Guid.Empty)
+            {
+                throw new EntityNotFoundException("Application Form Version not found for the submission");
+            }
+
+            var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
+
+            if (applicationForm.ChefsApplicationFormGuid == null || formVersion.ChefsApplicationFormGuid == Guid.Empty.ToString())
+            {
+                throw new EntityNotFoundException("Chefs Application Form Guid not found for the form version");
+            }
+
+            JObject? submissionData = await submissionsApiService
+                .GetSubmissionDataAsync(Guid.Parse(applicationForm.ChefsApplicationFormGuid), Guid.Parse(submission.ChefsSubmissionGuid))
+                    ?? throw new EntityNotFoundException("No Submission retrieved from CHEFS");
+
+            await customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(
+                application.Id,
+                formVersionId.Value,
+                submissionData,
+                formVersion.SubmissionHeaderMapping);
+        }
+    }
+}
