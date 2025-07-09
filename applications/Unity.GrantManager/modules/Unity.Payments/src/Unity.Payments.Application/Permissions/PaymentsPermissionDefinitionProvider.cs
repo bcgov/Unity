@@ -1,5 +1,4 @@
-﻿using Unity.GrantManager.Localization;
-using Unity.Modules.Shared;
+﻿using Unity.Modules.Shared;
 using Unity.Payments.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
