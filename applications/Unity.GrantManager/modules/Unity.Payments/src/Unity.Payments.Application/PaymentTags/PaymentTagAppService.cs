@@ -189,12 +189,12 @@ namespace Unity.Payments.PaymentTags
         
         
         [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
-        public async Task DeleteTagWithTagIdAsync(Guid id)
+        public async Task DeleteTagWithTagIdAsync(Guid tagId)
         {
-            var existingApplicationTags = await _paymentTagRepository.GetListAsync(e => e.Tag.Id == id);
+            var existingApplicationTags = await _paymentTagRepository.GetListAsync(e => e.Tag.Id == tagId);
             var idsToDelete = existingApplicationTags.Select(x => x.Id).ToList();
             await _paymentTagRepository.DeleteManyAsync(idsToDelete, autoSave: true);
-            await _localEventBus.PublishAsync(new TagDeletedEto { TagId = id });
+            await _localEventBus.PublishAsync(new TagDeletedEto { TagId = tagId });
         }
 
 
