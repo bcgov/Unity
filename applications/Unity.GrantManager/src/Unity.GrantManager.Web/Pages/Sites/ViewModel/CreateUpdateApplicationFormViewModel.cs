@@ -38,6 +38,6 @@ namespace Unity.GrantManager.Web.Pages.Sites.ViewModels
 
         [HiddenInput]
         public string BankAccountWarningMessage =>
-            "Warning: Bank Account is required when Payment Group is set to EFT.";
+            "Warning: The site must have a bank account in order for the payment to process with the payment group of EFT";
     }
 }

@@ -25,7 +25,7 @@ public class UpdateModalModel(ISiteAppService siteAppService) : GrantManagerPage
     public async Task<IActionResult> OnPostAsync()
     {
         var updateDto = ObjectMapper.Map<CreateUpdateSiteViewModel, SiteDto>(Site!);
-        await siteAppService.UpdateAsync(updateDto);
+        await siteAppService.UpdatePaygroupAsync(updateDto.PaymentGroup, updateDto.Id);
         return NoContent();
     }
 }

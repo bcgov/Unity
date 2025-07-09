@@ -15,12 +15,12 @@
         <abp-modal-header title="@L["Common:Command:Update"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Id" />
-            @if (Model.Site != null && Model.Site.ShowBankAccountWarning)
+            @if (Model.Site != null)
             {
-                <div class="alert alert-warning mt-2" role="alert">
+                <div id="bank-account-warning-div" class="alert alert-warning mt-2 hidden" role="alert">
                     @Model.Site.BankAccountWarningMessage
                 </div>
-            }            
+            }           
             <abp-form-content />
 
         </abp-modal-body>

@@ -3,6 +3,37 @@ $(function () {
     const l = abp.localization.getResource('Payments');
     let updateModal = new abp.ModalManager(abp.appPath + 'Sites/UpdateModal');
 
+    updateModal.onResult(function (data) {
+        dataTable.ajax.reload();
+        abp.notify.success(
+            'Site Updated successfully.',
+            'Site Updated'
+        );
+    });
+
+    updateModal.onOpen(function () {
+        const UIElements = {
+            payGroup: $('#Site_PaymentGroup'),
+            bankAccount: $('#Site_BankAccount'),
+            bankAccountWarningDiv: $('#bank-account-warning-div')
+        };
+        
+        bindUIEvents();
+        validateBankeAccount();
+
+        function bindUIEvents() {
+            UIElements.payGroup.on('change', validateBankeAccount);
+        }
+
+        function validateBankeAccount() {
+            if (UIElements.payGroup.val() == 1 && UIElements.bankAccount.val() == '') { // EFT
+                UIElements.bankAccountWarningDiv.removeClass('hidden');
+            } else {
+                UIElements.bankAccountWarningDiv.addClass('hidden');                
+            }
+        }
+    });
+
     const UIElements = {
         navOrgInfoTab: $('#nav-organization-info-tab'),
         siteId: $("#SiteId"),
@@ -304,7 +335,11 @@ $(function () {
                     [
                         {
                             text: 'Edit',
-                            action: (data) => updateModal.open({ id: data.record.id })
+                            action: (data) => updateModal.open(
+                                { id: data.record.id },
+                                
+ 
+                            )
                         }
                     ]
             }
