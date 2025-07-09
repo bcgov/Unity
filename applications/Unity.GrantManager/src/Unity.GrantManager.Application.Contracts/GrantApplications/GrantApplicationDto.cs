@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Unity.GrantManager.ApplicationForms;
-using Unity.GrantManager.GlobalTag;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications;

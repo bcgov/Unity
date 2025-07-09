@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
 using Unity.Payments.Domain.PaymentTags;
 using Unity.Payments.EntityFrameworkCore;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;

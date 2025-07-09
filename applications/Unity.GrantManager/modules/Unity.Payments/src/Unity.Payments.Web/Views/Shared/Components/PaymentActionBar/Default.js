@@ -25,7 +25,7 @@ $(function () {
             tagInputArray.push({ tagId: '00000000-0000-0000-0000-000000000000', Name: 'Uncommon Tags', class: 'tags-uncommon', Id: '00000000-0000-0000-0000-000000000000' })
 
         }
-        if (commonTags && commonTags.length) {
+        if (commonTags?.length) {
             commonTags.forEach(function (item, index) {
 
                 tagInputArray.push({ tagId: item.Id, Name: item.Name, class: 'tags-common', Id: item.Id })

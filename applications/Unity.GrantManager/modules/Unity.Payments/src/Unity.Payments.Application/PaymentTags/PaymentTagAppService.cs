@@ -34,9 +34,14 @@ namespace Unity.Payments.PaymentTags
         }
         public async Task<IList<PaymentTagDto>> GetListWithPaymentRequestIdsAsync(List<Guid> ids)
         {
-            var tags = await _paymentTagRepository.WithDetailsAsync(pt => pt.Tag);
-            var filteredTags = tags.Where(e => ids.Contains(e.PaymentRequestId)).ToList();
-            return ObjectMapper.Map<List<PaymentTag>, List<PaymentTagDto>>(filteredTags.OrderBy(t => t.Id).ToList());
+            var tagsQuery = (await _paymentTagRepository.GetQueryableAsync())
+                           .Include(pt => pt.Tag)
+                           .Where(e => ids.Contains(e.PaymentRequestId))
+                           .OrderBy(t => t.Id);
+
+            var tags = await tagsQuery.ToListAsync();
+
+            return ObjectMapper.Map<List<PaymentTag>, List<PaymentTagDto>>(tags);
         }
         public async Task<PaymentTagDto?> GetPaymentTagsAsync(Guid id)
         {
@@ -68,7 +73,7 @@ namespace Unity.Payments.PaymentTags
             .ToList();
 
 
-            if (tagsToRemove.Any())
+            if (tagsToRemove.Count > 0)
             {
                 await _paymentTagRepository.DeleteManyAsync(tagsToRemove, autoSave: true);
             }
@@ -184,12 +189,12 @@ namespace Unity.Payments.PaymentTags
         
         
         [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
-        public async Task DeleteTagWithTagIdAsync(Guid tagId)
+        public async Task DeleteTagWithTagIdAsync(Guid id)
         {
-            var existingApplicationTags = await _paymentTagRepository.GetListAsync(e => e.Tag.Id == tagId);
+            var existingApplicationTags = await _paymentTagRepository.GetListAsync(e => e.Tag.Id == id);
             var idsToDelete = existingApplicationTags.Select(x => x.Id).ToList();
             await _paymentTagRepository.DeleteManyAsync(idsToDelete, autoSave: true);
-            await _localEventBus.PublishAsync(new TagDeletedEto { TagId = tagId });
+            await _localEventBus.PublishAsync(new TagDeletedEto { TagId = id });
         }
 
 

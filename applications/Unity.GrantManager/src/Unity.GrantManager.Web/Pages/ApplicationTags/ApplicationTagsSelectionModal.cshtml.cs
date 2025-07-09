@@ -50,10 +50,10 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
 
         [BindProperty]
         [DisplayName("Tags")]
-        public List<NewTagItem> Tags { get; set; } = new();//
+        public List<NewTagItem> Tags { get; set; } = new();
 
         [BindProperty]
-        public string? SelectedTagsJson { get; set; } // receives raw JSON string
+        public string? SelectedTagsJson { get; set; } 
 
         [BindProperty]
         public string? TagsJson { get; set; }
@@ -91,7 +91,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                     }
                     List<TagDto> commonTags = new();
 
-                    if (groupedTags.Values.Any())
+                    if (groupedTags.Values.Count > 0)
                     {
                         commonTags = groupedTags.Values
                             .Aggregate((prev, next) => prev.IntersectBy(next.Select(t => t.Id), t => t.Id).ToList());
@@ -154,7 +154,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                 if (SelectedTags != null && applicationIds != null && applicationIds.Count > 0)
                 {
                     var selectedTagList = DeserializeJson<List<TagDto>>(SelectedTags) ?? [];
-                    var tagItems = DeserializeJson<List<NewTagItem>>(TagsJson);
+                    var tagItems = string.IsNullOrWhiteSpace(TagsJson)? null : DeserializeJson<List<NewTagItem>>(TagsJson);
                     await ProcessTagsAsync(uncommonTags, selectedTagList, applicationIds.ToArray(), tagItems);
                  
                 }

@@ -726,7 +726,7 @@
             render: function (data) {
 
                 let tagNames = data
-                    .filter(x => x.tag && x.tag.name)      
+                    .filter(x =>  x?.tag?.name)      
                     .map(x => x.tag.name);   
                 return tagNames.join(', ') ?? '';
             },

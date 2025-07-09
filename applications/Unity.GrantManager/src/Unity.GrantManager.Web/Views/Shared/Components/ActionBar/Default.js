@@ -44,7 +44,7 @@ $(function () {
 
         }
       
-        if (commonTags && commonTags.length) {
+        if (commonTags?.length) {
 
           
 

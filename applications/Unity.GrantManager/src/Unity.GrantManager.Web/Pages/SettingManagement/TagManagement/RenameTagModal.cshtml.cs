@@ -11,7 +11,7 @@ using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Web.Pages.SettingManagement.TagManagement;
 
-public class RenameTagModal(IApplicationTagsService applicationTagService, ITagsService tagService) : AbpPageModel
+public class RenameTagModal(ITagsService tagService) : AbpPageModel
 {
     [HiddenInput]
     [BindProperty(SupportsGet = true)]

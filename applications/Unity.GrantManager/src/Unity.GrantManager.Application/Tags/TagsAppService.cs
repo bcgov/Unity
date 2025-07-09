@@ -34,21 +34,15 @@ public class TagsAppService : ApplicationService, ITagsService
     public async Task<IList<TagDto>> GetListAsync()
     {
         var tags = await _tagsRepository.GetListAsync();
-
-        try
-        {
-            return ObjectMapper.Map<List<Tag>, List<TagDto>>(tags.OrderBy(t => t.Id).ToList());
-        }
-        catch(Exception ex)
-        {
-            return ObjectMapper.Map<List<Tag>, List<TagDto>>(tags.OrderBy(t => t.Id).ToList());
-        }
+        return ObjectMapper.Map<List<Tag>, List<TagDto>>(tags.OrderBy(t => t.Id).ToList());
     }
 
     
     public async Task<TagDto> CreateTagsAsync(TagDto input)
     {
-        var tag = await _tagsRepository.FirstOrDefaultAsync(e => e.Name.ToLower() == input.Name.ToLower());
+        var normalizedName = input.Name.ToLower();
+        var tag = await _tagsRepository
+            .FirstOrDefaultAsync(e => e.Name.ToLower() == normalizedName);
 
         if (tag != null)
         {
@@ -67,7 +61,9 @@ public class TagsAppService : ApplicationService, ITagsService
 
     public async Task<TagDto> CreateorUpdateTagsAsync(Guid id, TagDto input)
     {
-        var tag = await _tagsRepository.FirstOrDefaultAsync(e => e.Name.ToLower() == input.Name.ToLower());
+        var normalizedName = input.Name.ToLower();
+        var tag = await _tagsRepository
+            .FirstOrDefaultAsync(e => e.Name.ToLower() == normalizedName);
         if (tag == null)
         {
             var newTag = await _tagsRepository.InsertAsync(new Tag
@@ -108,7 +104,7 @@ public class TagsAppService : ApplicationService, ITagsService
     /// <returns>A list of IDs for the ApplicationTags entities that were updated.</returns>
     /// <exception cref="BusinessException">Thrown if the original and replacement tags are the same.</exception>
     [Authorize(UnitySelector.SettingManagement.Tags.Update)]
-    public async Task<List<Guid>> RenameTagAsync(Guid Id, string originalTag, string replacementTag)
+    public async Task<List<Guid>> RenameTagAsync(Guid id, string originalTag, string replacementTag)
     {
         Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
@@ -116,7 +112,7 @@ public class TagsAppService : ApplicationService, ITagsService
         
       
         var duplicateTag = await _tagsRepository
-           .FindAsync(e => e.Name.Equals(replacementTag) && e.Id != Id);
+           .FindAsync(e => e.Name.Equals(replacementTag) && e.Id != id);
         if (duplicateTag != null)
         {
             throw new BusinessException(
@@ -126,7 +122,7 @@ public class TagsAppService : ApplicationService, ITagsService
         }
 
         var tag = await _tagsRepository
-            .FindAsync(e => e.Id.Equals(Id));
+            .FindAsync(e => e.Id.Equals(id));
 
         if (tag == null)
             return [];

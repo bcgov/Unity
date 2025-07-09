@@ -74,7 +74,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
        .ToList();
 
 
-        if (tagsToRemove.Any())
+        if (tagsToRemove.Count > 0)
         {
             await _applicationTagsRepository.DeleteManyAsync(tagsToRemove, autoSave: true);
         }
@@ -214,10 +214,10 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     /// </summary>
     /// <param name="deleteTag">String of tag to be deleted.</param>
     [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
-    public async Task DeleteTagWithTagIdAsync(Guid tagId)
+    public async Task DeleteTagWithTagIdAsync(Guid id)
     {
 
-        var existingApplicationTags = await _applicationTagsRepository.GetListAsync(e => e.Tag.Id == tagId);
+        var existingApplicationTags = await _applicationTagsRepository.GetListAsync(e => e.Tag.Id == id);
         var idsToDelete = existingApplicationTags.Select(x => x.Id).ToList();
         await _applicationTagsRepository.DeleteManyAsync(idsToDelete, autoSave: true);
         

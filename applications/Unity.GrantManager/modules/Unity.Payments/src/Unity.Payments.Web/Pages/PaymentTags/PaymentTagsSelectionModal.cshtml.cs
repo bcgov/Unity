@@ -51,10 +51,10 @@ namespace Unity.Payments.Web.Pages.PaymentTags
 
         [BindProperty]
         [DisplayName("Tags")]
-        public List<NewTagItem> Tags { get; set; } = new();//
+        public List<NewTagItem> Tags { get; set; } = new();
 
         [BindProperty]
-        public string? SelectedTagsJson { get; set; } // receives raw JSON string
+        public string? SelectedTagsJson { get; set; } 
 
         [BindProperty]
         public string? TagsJson { get; set; }
@@ -96,7 +96,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
          
                     List<GlobalTagDto> commonTags = new();
 
-                    if (groupedTags.Values.Any())
+                    if (groupedTags.Values.Count > 0)
                     {
                         commonTags = groupedTags.Values
                             .Aggregate((prev, next) => prev.IntersectBy(next.Select(t => t.Id), t => t.Id).ToList());
@@ -172,7 +172,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
                     {
                         var selectedPaymentRequestIds = paymentRequestIds.ToArray();
 
-                        if (Tags != null)
+                        if (TagsJson != null)
                         {
                             var tags = JsonConvert.DeserializeObject<NewTagItem[]>(TagsJson)?.ToList();
 

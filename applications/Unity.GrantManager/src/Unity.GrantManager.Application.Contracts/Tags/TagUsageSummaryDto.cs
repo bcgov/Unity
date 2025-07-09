@@ -7,7 +7,7 @@ namespace Unity.GrantManager.GlobalTag;
 public class TagUsageSummaryDto : EntityDto<Guid>
 {
     public Guid TagId { get; set; }
-    public string TagName { get; set; }
+    public string TagName { get; set; } = string.Empty;
     public int ApplicationTagCount { get; set; }
     public int PaymentTagCount { get; set; }
     public int TotalUsageCount => ApplicationTagCount + PaymentTagCount;
