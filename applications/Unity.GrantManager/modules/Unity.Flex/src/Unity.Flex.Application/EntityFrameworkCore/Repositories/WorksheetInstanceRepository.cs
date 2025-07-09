@@ -63,7 +63,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .FirstOrDefaultAsync(wi => wi.Id == worksheetInstanceId);
         }
 
-        public async Task<bool> GetExistingAsync(Guid worksheetId, 
+        public async Task<bool> ExistsAsync(Guid worksheetId, 
             Guid instanceCorrelationId, 
             string instanceCorrelationProvider, 
             Guid sheetCorrelationId, 
