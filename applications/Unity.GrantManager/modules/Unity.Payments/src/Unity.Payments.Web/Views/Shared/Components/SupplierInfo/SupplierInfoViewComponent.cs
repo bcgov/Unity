@@ -6,7 +6,6 @@ using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
-using Unity.Payments.Permissions;
 using Unity.Payments.Suppliers;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
