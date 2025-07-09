@@ -58,5 +58,7 @@ public class ApplicantSummaryViewModel
     public string? SectorSubSectorIndustryDesc { get; set; }
 
     public bool RedStop { get; set; }
+
+    public string? ApplicantName { get; set; }
 }
 
