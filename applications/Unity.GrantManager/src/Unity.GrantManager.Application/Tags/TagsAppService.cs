@@ -48,6 +48,15 @@ public class TagsAppService : ApplicationService, ITagsService
     
     public async Task<TagDto> CreateTagsAsync(TagDto input)
     {
+        var tag = await _tagsRepository.FirstOrDefaultAsync(e => e.Name.ToLower() == input.Name.ToLower());
+
+        if (tag != null)
+        {
+            throw new BusinessException(
+
+               "400" , "Another tag with the same name already exists."
+            );
+        }
             var newTag = await _tagsRepository.InsertAsync(new Tag
             {
                 Name = input.Name
@@ -105,20 +114,14 @@ public class TagsAppService : ApplicationService, ITagsService
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
         
-        originalTag = originalTag.Replace(",", string.Empty).Trim();
-        replacementTag = replacementTag.Replace(",", string.Empty).Trim();
-
-        if (string.Equals(originalTag, replacementTag, StringComparison.InvariantCultureIgnoreCase))
-        {
-            throw new BusinessException("Cannot update a tag to itself.");
-        }
+      
         var duplicateTag = await _tagsRepository
            .FindAsync(e => e.Name.Equals(replacementTag) && e.Id != Id);
         if (duplicateTag != null)
         {
             throw new BusinessException(
                 
-                "Another tag with the same name already exists."
+                "400","Another tag with the same name already exists."
             );
         }
 

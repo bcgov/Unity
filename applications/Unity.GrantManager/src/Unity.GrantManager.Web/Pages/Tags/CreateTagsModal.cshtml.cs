@@ -9,7 +9,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Web.Pages.Tags 
 {
@@ -47,7 +49,9 @@ namespace Unity.GrantManager.Web.Pages.Tags
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, message: "Error updating application tags");
+                Logger.LogError(ex, message: "Error creating application tags");
+                throw new AbpValidationException(ex.Message);
+
             }
 
             return NoContent();
