@@ -29,31 +29,31 @@ $(function () {
             max: 50
         });
         let suggestionsArray = [];
-        let uncommonTags = $('#UncommonTags').val();
-        let commonTags = $('#CommonTags').val();
-        let allTags = $('#AllTags').val();
+        let uncommonTags = JSON.parse($('#UncommonTags').val());
+        let commonTags = JSON.parse($('#CommonTags').val());
+        let allTags =  JSON.parse($('#AllTags').val());
         if (allTags) {
-            suggestionsArray = allTags.split(',');
+            suggestionsArray = allTags;
         }
         tagInput.setSuggestions(suggestionsArray);
 
         let tagInputArray = [];
 
-        if (uncommonTags && uncommonTags != null) {
-            tagInputArray.push({ text: 'Uncommon Tags', class: 'tags-uncommon', id: 0 })
+        if (uncommonTags && uncommonTags.length != 0) {
+            tagInputArray.push({ tagId: '00000000-0000-0000-0000-000000000000', Name: 'Uncommon Tags', class: 'tags-uncommon', Id: '00000000-0000-0000-0000-000000000000' })
 
         }
-        const commonTagsArray = commonTags.split(',');
-        if (commonTags && commonTagsArray.length) {
+      
+        if (commonTags?.length) {
 
-            if (commonTagsArray.length) {
+          
 
-                commonTagsArray.forEach(function (item, index) {
+            commonTags.forEach(function (item, index) {
 
-                    tagInputArray.push({ text: item, class: 'tags-common', id: index + 1 })
+                tagInputArray.push({ tagId: item.Id, Name: item.Name, class: 'tags-common', Id: item.Id })
                 });
 
-            }
+            
         }
         tagInput.addData(tagInputArray);
 

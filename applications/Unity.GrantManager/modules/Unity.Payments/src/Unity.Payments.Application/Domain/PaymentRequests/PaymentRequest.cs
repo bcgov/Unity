@@ -52,7 +52,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual string RequesterName { get; private set; } = string.Empty;
         public virtual string BatchName { get; private set; } = string.Empty;
         public virtual decimal BatchNumber { get; private set; } = 0;
-        public virtual Collection<PaymentTag>? PaymentTags { get; set; }
+        public virtual Collection<PaymentTag>? PaymentTags { get; set; } 
         public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
 

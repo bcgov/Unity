@@ -11,6 +11,7 @@ public class DeleteTagHandler(PaymentTagAppService paymentTagAppService) :
 {
     public async Task HandleEventAsync(DeleteTagEto eventData)
     {
-        await paymentTagAppService.DeleteTagAsync(eventData.TagName);
+        await paymentTagAppService.DeleteTagWithTagIdAsync(eventData.TagId);
+        
     }
 }

@@ -8,6 +8,8 @@ using Volo.Abp.Uow;
 using Unity.GrantManager.Applications;
 using Xunit.Abstractions;
 using System.Collections.Generic;
+using Unity.GrantManager.GlobalTag;
+using System.Xml.Linq;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -15,8 +17,8 @@ namespace Unity.GrantManager.GrantApplications
     {
         private readonly IApplicationTagsService _applicationTagssAppService;
         private readonly IRepository<Application, Guid> _applicationsRepository;
-       
-       
+
+        private readonly ITagsService _tagsService;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public ApplicationTagsAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
@@ -24,6 +26,7 @@ namespace Unity.GrantManager.GrantApplications
             _applicationTagssAppService = GetRequiredService<IApplicationTagsService>();
             _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
             _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
+            _tagsService = GetRequiredService<ITagsService>();
         }
 
         [Fact]
@@ -56,21 +59,30 @@ namespace Unity.GrantManager.GrantApplications
 
         [Fact]
         [Trait("Category", "Integration")]
-        public async Task CreateorUpdateTagsAsync_Should_Create_ApplicationTag()
+        public async Task AssignTags()
         {
             // Arrange            
             Login(GrantManagerTestData.User1_UserId);
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
-          
+
+            var newTag = await _tagsService.CreateTagsAsync(new TagDto { Name = "Environment" });
+
+           
+            var tag = new TagDto
+            {
+                Id = newTag.Id,    
+                Name = "Environment"
+            };
 
             // Act
-            var addedTag  = await _applicationTagssAppService.CreateorUpdateTagsAsync(application.Id, new ApplicationTagsDto()
+            var assignDto = new AssignApplicationTagsDto
             {
                 ApplicationId = application.Id,
-                Text = "Tag"
-            });
+                Tags = new List<TagDto> { tag }   
+            };
 
+            var addedTag = await _applicationTagssAppService.AssignTagsAsync(assignDto);
             // Assert
             (await _applicationTagssAppService.GetApplicationTagsAsync(application.Id))
                 .ShouldNotBeNull();

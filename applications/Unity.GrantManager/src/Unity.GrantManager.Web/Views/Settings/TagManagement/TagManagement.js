@@ -1,18 +1,35 @@
 ﻿const TagTypes = {};
 let userCanUpdate = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Update');
 let userCanDelete = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Delete');
+let addNewTagModal = new abp.ModalManager({
+    viewUrl: 'Tags/CreateTagsModal'
+});
 
 function defineTagSummaryColumnDefs() {
-    // Define columns - start with fixed columns
     const columnDefs = [
         {
             title: "Tags",
-            name: 'text',
-            data: 'text'
+            name: 'tag',
+            data: 'tag.name'
+        },
+        {
+            title: "TagData",
+            name: 'tag',
+            data: 'tag',           
+            visible: false,        
+            searchable: false,
+            orderable: false
+        },
+        {
+            title: "TagId",
+            name: 'tag.id',
+            data: 'tag.id',
+            visible: false,
+            searchable: false,
+            orderable: false
         }
     ];
 
-    // Add a column for each tag type
     Object.values(TagTypes).forEach(tagType => {
         columnDefs.push({
             title: `${tagType.name} Count`,
@@ -31,11 +48,10 @@ function defineTagSummaryColumnDefs() {
         data: 'totalCount'
     });
 
-    // Add the actions column
     columnDefs.push({
         title: "Actions",
         name: 'actions',
-        data: 'text',
+        data: 'tag.name',
         orderable: false,
         render: function (data, type, row) {
             let $buttonWrapper = $('<div>').addClass('d-flex flex-nowrap gap-1');
@@ -79,60 +95,65 @@ function mapTagWithType(tag, tagType) {
     return {
         ...tag,
         tagType: tagType.name,
-        tagTypeKey: Object.keys(TagTypes).find(key => TagTypes[key] === tagType)
+        tagTypeKey: Object.keys(TagTypes).find(key => TagTypes[key] === tagType),
+        tag: {
+            ...tag.tag
+        }
     };
 }
 
-function getUnifiedTagSummaryAjax(requestData, callback, settings) {
-    // Fetch data from all tag types and combine
-    let promises = Object.values(TagTypes).map(tagType =>
-        tagType.service.getTagSummary()
-            .then(result =>
-                (result.items || []).map(tag => mapTagWithType(tag, tagType))
-            )
-    );
 
-    Promise.all(promises).then(results => {
-        // Combine all tags into a single array
-        const allTags = results.flat();
 
-        // Create a map to combine tags with the same text
+function loadUnifiedTagSummary() {
+    return unity.grantManager.globalTag.tags.getTagSummary().then(result => {
+        const allTags = result.items || [];
         const tagMap = new Map();
 
         allTags.forEach(tag => {
-            if (!tagMap.has(tag.text)) {
-                // Initialize a new entry for this tag text
-                tagMap.set(tag.text, {
-                    text: tag.text,
+            const tagName = tag.tagName;
+
+            if (!tagMap.has(tagName)) {
+                tagMap.set(tagName, {
+                    tag: {
+                        id: tag.tagId,
+                        name: tagName
+                    },
                     totalCount: 0,
                     tagTypeCounts: {},
                     tagTypeKeys: {}
                 });
             }
 
-            const tagEntry = tagMap.get(tag.text);
-            const tagTypeName = tag.tagType;
+            const tagEntry = tagMap.get(tagName);
 
-            // Add count for this tag type
-            tagEntry.tagTypeCounts[tagTypeName] = tag.count;
+            if (tag.applicationTagCount > 0) {
+                tagEntry.tagTypeCounts["Application"] = tag.applicationTagCount;
+                tagEntry.totalCount += tag.applicationTagCount;
+                tagEntry.tagTypeKeys["Application"] = "APPLICATIONS";
+            }
 
-            // Add to total count
-            tagEntry.totalCount += tag.count;
-
-            // Store the tag type key for action buttons
-            tagEntry.tagTypeKeys[tagTypeName] = tag.tagTypeKey;
+            if (tag.paymentTagCount > 0) {
+                tagEntry.tagTypeCounts["Payment"] = tag.paymentTagCount;
+                tagEntry.totalCount += tag.paymentTagCount;
+                tagEntry.tagTypeKeys["Payment"] = "PAYMENTS";
+            }
         });
 
-        // Convert map to array for DataTable
-        const combinedTags = Array.from(tagMap.values());
-
+        return Array.from(tagMap.values()).map(entry => ({
+            ...entry,
+            tag: { ...entry.tag }
+        }));
+    });
+}
+function getUnifiedTagSummaryAjax(requestData, callback, settings) {
+    loadUnifiedTagSummary().then(combinedTags => {
         callback({
             recordsTotal: combinedTags.length,
             recordsFiltered: combinedTags.length,
             data: combinedTags
         });
     }).catch(error => {
-        console.error("Error fetching global tags:", error);
+        console.error("Error fetching tag summary:", error);
         callback({
             recordsTotal: 0,
             recordsFiltered: 0,
@@ -140,11 +161,9 @@ function getUnifiedTagSummaryAjax(requestData, callback, settings) {
         });
     });
 }
-
 $(function () {
     abp.log.debug('TagManagement.js initialized!');
 
-    // Modal Validation Configuration
     abp.modals.RenameTag = function () {
         let formElements = {};
         let initialFormState = {};
@@ -159,11 +178,8 @@ $(function () {
 
             initialFormState = formElements.form.serialize();
 
-            // Set up form change event listener
-            formElements.form.on('change input', function() {
-                // Trigger validation
+            formElements.form.on('change input', function () {
                 $(this).valid();
-                // Update save button state based on form validity
                 let currentFormState = formElements.form.serialize();
                 formElements.saveButton.prop('disabled', !$(this).valid() || initialFormState === currentFormState);
             });
@@ -212,36 +228,38 @@ $(function () {
 
     globalTagsTable.on('click', 'td button.edit-button', function (event) {
         event.stopPropagation();
-        let rowData = globalTagsTable.row(event.target.closest('tr')).data();
-        handleUpdateTag(rowData.text);
+        let rowData = globalTagsTable.row(event.target.closest('tr')).data(); 
+        console.log("rowData", rowData)
+        handleUpdateTag(rowData.tag.id,rowData.tag.name);
     });
 
     globalTagsTable.on('click', 'td button.delete-button', function (event) {
         event.stopPropagation();
         let rowData = globalTagsTable.row(event.target.closest('tr')).data();
-        handleDeleteTag(rowData.text);
+        handleDeleteTag(rowData.tag.id,rowData.tag.name);
     });
 
     abp.log.debug('Global Tags Table initialized!');
 
-    function handleUpdateTag(tagText) {
+    function handleUpdateTag(id, tagText) {
+        console.log("handleUpdateTag ")
         _renameTagModal.open({
+            SelectedTagId : id,
             SelectedTagText: tagText
         });
     }
 
-    function handleDeleteTag(tagText) {
+    function handleDeleteTag(id,tagText) {
+        console.log("handleDeleteTag")
         abp.message.confirm(`Are you sure you want to delete the "${tagText}" tag?`, "Delete Tag?")
             .then(function (confirmed) {
                 if (confirmed) {
                     try {
-                        // Needs to be fixed to work globally
-                        unity.grantManager.grantApplications.applicationTags.deleteTagGlobal(tagText)
+                        unity.grantManager.globalTag.tags.deleteTagGlobal(id)
                             .done(function (result) {
                                 abp.notify.success(`The tag "${tagText}" has been deleted.`);
-
                                 if (globalTagsTable) {
-                                    globalTagsTable.ajax.reload(); // Also refresh global table
+                                    globalTagsTable.ajax.reload();
                                 }
                             })
                             .fail(onTagDeleteFailure);
@@ -258,8 +276,23 @@ $(function () {
             console.log(error);
         }
     }
-
+    function refreshGlobalTagsTable() {
+        loadUnifiedTagSummary().then(combinedTags => {
+            globalTagsTable.clear();
+            globalTagsTable.rows.add(combinedTags);
+            globalTagsTable.draw();
+        });
+    }
     _renameTagModal.onResult(function () {
-        globalTagsTable.ajax.reload();
+        
+        refreshGlobalTagsTable();
+    });
+
+    $('#addNewTag').click(function () {
+        addNewTagModal.open();
+    });
+    addNewTagModal.onResult(function () {
+      
+        refreshGlobalTagsTable();
     });
 });

@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.GlobalTag;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.PaymentTags;
@@ -30,6 +32,7 @@ public class PaymentsApplicationAutoMapperProfile : Profile
         CreateMap<Supplier, SupplierDto>();
         CreateMap<PaymentConfiguration, PaymentConfigurationDto>();
         CreateMap<IUserData, PaymentUserDto>();
+        CreateMap<Tag, GlobalTagDto>();
         CreateMap<PaymentTag, PaymentTagDto>();
 
         CreateMap<TagSummaryCount, TagSummaryCountDto>();

@@ -724,7 +724,11 @@
             data: 'applicationTag',
             className: '',
             render: function (data) {
-                return data.replace(/,/g, ', ') ?? '';
+
+                let tagNames = data
+                    .filter(x =>  x?.tag?.name)      
+                    .map(x => x.tag.name);   
+                return tagNames.join(', ') ?? '';
             },
             index: columnIndex
         }

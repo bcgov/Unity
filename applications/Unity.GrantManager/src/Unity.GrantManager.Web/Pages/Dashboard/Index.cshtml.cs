@@ -153,8 +153,8 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
         private async Task GetTagsFilter()
         {
-            var tagResult = await _applicationTagsRepository.GetListAsync();
-            var tags = tagResult.SelectMany(tag => tag.Text.Split(',').Select(t => t.Trim())).Distinct();
+            var tagResult = await _applicationTagsRepository.GetListAsync(true);
+            var tags = tagResult.SelectMany(tag => tag.Tag.Name.Split(',').Select(t => t.Trim())).Distinct();
 
             TagsOptionsList = tags.Select(tag => new SelectListItem
             {
