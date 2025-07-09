@@ -29,7 +29,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationTagsWidget
             string applicationText = "";
             if(applicationTags != null)
             {
-                applicationText = applicationTags.Tag.Name;
+                applicationText = applicationTags?.Tag?.Name;
             }
         
             return View(new ApplicationTagsWidgetViewModel() { ApplicationTags = applicationText.Replace(",", ", ")});

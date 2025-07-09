@@ -5,6 +5,7 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Web.Views.Shared.Components.ApplicationTagsWidget;
 using Xunit;
@@ -16,12 +17,18 @@ namespace Unity.GrantManager.Components
         [Fact]
         public async Task ApplicationTagsWidgetReturnsStatus()
         {
-            // Arrange
+            // Arrange  
             var applicationService = Substitute.For<IApplicationTagsService>();
             var expected = "Mock";
             var applicationId = Guid.NewGuid();
             var httpContext = new DefaultHttpContext();
-            applicationService.GetApplicationTagsAsync(applicationId).Returns(await Task.FromResult(new ApplicationTagsDto() { ApplicationId = Guid.Empty, Tag = { } }));
+
+            // Fix: Ensure 'Tag' is initialized to avoid null dereference  
+            applicationService.GetApplicationTagsAsync(applicationId).Returns(await Task.FromResult(new ApplicationTagsDto()
+            {
+                ApplicationId = Guid.Empty,
+                Tag = new TagDto { Id = Guid.Empty, Name = "Mock" }
+            }));
 
             var viewContext = new ViewContext
             {
@@ -37,13 +44,13 @@ namespace Unity.GrantManager.Components
                 ViewComponentContext = viewComponentContext
             };
 
-            //Act
+            // Act  
             var result = await viewComponent.InvokeAsync(applicationId) as ViewViewComponentResult;
             ApplicationTagsWidgetViewModel? resultModel;
 
             resultModel = result!.ViewData!.Model! as ApplicationTagsWidgetViewModel;
 
-            //Assert
+            // Assert  
             resultModel!.ApplicationTags.ShouldBe(expected);
         }
     }
