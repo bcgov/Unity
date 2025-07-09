@@ -185,7 +185,7 @@ namespace Unity.Flex.Domain.Services
 
                     // Make sure we do not create an instance if it already exists
                     if (worksheetLink != null
-                        && await WorksheetInstanceDoesNotAlreadyExist(worksheet.Id, eventData, worksheetLink.UiAnchor))
+                        && !(await WorksheetInstanceAlreadyExists(worksheet.Id, eventData, worksheetLink.UiAnchor)))
                     {
                         var newInstance = new WorksheetInstance(Guid.NewGuid(),
                          worksheet.Id,
@@ -214,18 +214,16 @@ namespace Unity.Flex.Domain.Services
             return newWorksheetInstances;
         }
 
-        private async Task<bool> WorksheetInstanceDoesNotAlreadyExist(Guid worksheetId,
+        private async Task<bool> WorksheetInstanceAlreadyExists(Guid worksheetId,
             CreateWorksheetInstanceByFieldValuesEto eventData,
             string uiAnchor)
         {
-            var worksheetIntanceExists = await worksheetInstanceRepository.ExistsAsync(worksheetId,
+            return await worksheetInstanceRepository.ExistsAsync(worksheetId,
                 eventData.InstanceCorrelationId,
                 eventData.InstanceCorrelationProvider,
                 eventData.SheetCorrelationId,
                 eventData.SheetCorrelationProvider,
                 uiAnchor);
-
-            return !worksheetIntanceExists;
         }
 
         public async Task<Worksheet> CloneWorksheetAsync(Guid id)

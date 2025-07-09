@@ -39,19 +39,15 @@ namespace Unity.GrantManager.Intakes
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId)
                     ?? throw new EntityNotFoundException("Application Form not found");
 
-            var formVersionId = submission.ApplicationFormVersionId;
-
-            if (formVersionId == null || formVersionId == Guid.Empty)
-            {
-                throw new EntityNotFoundException("Application Form Version not found for the submission");
-            }
-
-            var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
-
-            if (applicationForm.ChefsApplicationFormGuid == null || formVersion.ChefsApplicationFormGuid == Guid.Empty.ToString())
+            if (applicationForm.ChefsApplicationFormGuid == null)
             {
                 throw new EntityNotFoundException("Chefs Application Form Guid not found for the form version");
             }
+
+            var formVersionId = submission.ApplicationFormVersionId 
+                ?? throw new EntityNotFoundException("Application Form Version not found for the submission");
+
+            var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId);
 
             JObject? submissionData = await submissionsApiService
                 .GetSubmissionDataAsync(Guid.Parse(applicationForm.ChefsApplicationFormGuid), Guid.Parse(submission.ChefsSubmissionGuid))
@@ -59,7 +55,7 @@ namespace Unity.GrantManager.Intakes
 
             await customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(
                 application.Id,
-                formVersionId.Value,
+                formVersionId,
                 submissionData,
                 formVersion.SubmissionHeaderMapping);
         }
