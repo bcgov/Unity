@@ -21,6 +21,10 @@
     "ApplicationPaymentRequest:SiteNumber": "Site #",
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
+    "ApplicationPaymentRequest:BatchNumberName": "Batch #",
+    "ApplicationPaymentRequest:NumberPayment": "Number of Payments",
+    "ApplicationPaymentRequest:TotalAmount": "Total Amount",
+
     "ApplicationPaymentRequest:Validations:RemainingAmountExceeded": "Cannot add a payment that exceeds the remaining amount of ",
     "ApplicationPaymentRequest:Validations:L2ApproverRestriction": "You cannot approve this payment as you have already approved it as an L1 Approver.",
     "ApplicationPaymentRequest:Validations:L2ApproverRestrictionBatch": "Highlighted payments were already approved with L1 permission. L1 and L2 approvers must be different individuals",
