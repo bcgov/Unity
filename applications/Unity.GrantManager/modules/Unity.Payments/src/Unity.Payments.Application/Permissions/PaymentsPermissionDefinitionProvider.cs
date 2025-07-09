@@ -53,6 +53,6 @@ public static class PaymentPermissionGroupDefinitionExtensions
 
     public static PermissionDefinition AddPaymentChild(this PermissionDefinition parent, string name)
     {
-        return parent.AddChild(name, LocalizableString.Create<GrantManagerResource>(name)).RequireFeatures("Unity.Payments");
+        return parent.AddChild(name, LocalizableString.Create<PaymentsResource>(name)).RequireFeatures("Unity.Payments");
     }
 }
