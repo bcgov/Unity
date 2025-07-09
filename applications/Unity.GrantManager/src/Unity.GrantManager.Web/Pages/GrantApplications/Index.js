@@ -95,7 +95,7 @@
                         })
                         dt.colReorder.order(orderedIndexes);
 
-                        dt.order([4, 'asc']).search('').draw();
+                        dt.order([4, 'desc']).search('').draw();
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
