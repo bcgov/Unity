@@ -9,8 +9,6 @@ namespace Unity.GrantManager.Web.Pages.Sites.ViewModels
 {
     public class CreateUpdateSiteViewModel
     {
-        [HiddenInput]
-        public Guid Id { get; set; }
 
         [DisplayName("Site #")]
         [ReadOnlyInput]
@@ -21,15 +19,20 @@ namespace Unity.GrantManager.Web.Pages.Sites.ViewModels
         public PaymentGroup PaymentGroup { get; set; }
 
         [ReadOnlyInput]
-        [DisplayName("Email Address")]
-        public string? EmailAddress { get; set; }
+        [DisplayName("Bank Account")]
+        public string? BankAccount { get; set; }
+
+        [ReadOnlyInput]
+        [DisplayName("Mailing Address")]
+        public string? MailingAddress { get; set; }
+
         [ReadOnlyInput]
         [DisplayName("Status")]
         public string? Status { get; set; }
 
-        [ReadOnlyInput]
-        [DisplayName("Bank Account")]
-        public string? BankAccount { get; set; }
+
+        [HiddenInput]
+        public Guid Id { get; set; }
 
         // Property to display a warning if PaymentGroup is 1 and BankAccount is not set
         [HiddenInput]
@@ -38,6 +41,6 @@ namespace Unity.GrantManager.Web.Pages.Sites.ViewModels
 
         [HiddenInput]
         public string BankAccountWarningMessage =>
-            "Warning: The site must have a bank account in order for the payment to process with the payment group of EFT";
+            "Warning: A bank account is required for EFT payments. If you select EFT without one, your payment will fail. Please contact CAS to add a bank account.";
     }
 }

@@ -12,21 +12,20 @@
 
 <abp-dynamic-form abp-model="Site" asp-page="/Sites/UpdateModal">
     <abp-modal>
-        <abp-modal-header title="@L["Common:Command:Update"].Value"></abp-modal-header>
+        <abp-modal-header title="Edit Site"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Id" />
+            <abp-form-content />           
             @if (Model.Site != null)
             {
                 <div id="bank-account-warning-div" class="alert alert-warning mt-2 hidden" role="alert">
                     @Model.Site.BankAccountWarningMessage
                 </div>
-            }           
-            <abp-form-content />
-
+            }
         </abp-modal-body>
         <abp-modal-footer>
-            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
-            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">SAVE CHANGES</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">CANCEL</button>
         </abp-modal-footer>
     </abp-modal>
 </abp-dynamic-form>
