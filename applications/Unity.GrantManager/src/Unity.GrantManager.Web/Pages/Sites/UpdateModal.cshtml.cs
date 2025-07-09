@@ -20,7 +20,7 @@ public class UpdateModalModel(ISiteAppService siteAppService) : GrantManagerPage
     {
         if (Id == Guid.Empty)
         {
-            throw new ArgumentException("Id cannot be empty", nameof(Id));
+            throw new ArgumentException("Id cannot be empty");
         }
 
         Site = new();
