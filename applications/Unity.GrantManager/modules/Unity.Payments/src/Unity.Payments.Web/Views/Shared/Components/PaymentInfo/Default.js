@@ -158,6 +158,7 @@
         });
         return newData;
     }
+
     dataTable = initializeDataTable({
         dt,
         defaultVisibleColumns,
@@ -448,7 +449,8 @@ function openCasResponseModal(casResponse) {
 
 function enablePaymentInfoSaveBtn() {
     if (!$("#paymentInfoForm").valid()
-        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update')
+        // NOTE: Required for worksheets, replace on adding worksheet permissions
+        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment') 
         || formHasInvalidCurrencyCustomFields("paymentInfoForm")) {
         $('#savePaymentInfoBtn').prop('disabled', true);
         return;
