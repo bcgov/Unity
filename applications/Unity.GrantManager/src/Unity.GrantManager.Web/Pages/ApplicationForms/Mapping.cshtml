@@ -1,18 +1,14 @@
 ﻿@page
 @using Unity.GrantManager.ApplicationForms
-@using Unity.GrantManager.Localization;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
-@using Microsoft.Extensions.Localization;
-@using Microsoft.AspNetCore.Authorization;
 @using Unity.GrantManager.Permissions;
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
 @using Volo.Abp.Authorization.Permissions;
 @using Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationFormConfigWidget;
 
 @model MappingModel
-@inject IAuthorizationService AuthorizationService
-@inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @inject IPermissionChecker PermissionChecker
 @{
@@ -56,6 +52,7 @@
                 <button class="nav-link" id="nav-ui-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-ui-configuration" type="button" role="tab">UI Configuration</button>
             }
             <button class="nav-link" id="nav-payment-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-configuration" type="button" role="tab">Payment Configuration</button>
+            <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
         </div>
     </nav>
     <div class="tab-content unt-tab-content" id="nav-tabContent">
@@ -197,12 +194,17 @@
 
         <!--Tab Content: UI Configuration loaded by initializeUIConfiguration-->
         <div class="tab-pane fade" id="nav-ui-configuration" role="tabpanel" aria-labelledby="nav-ui-configuration-tab"></div>
-        
+
         <!--Tab Content: Payment Configuration-->
         <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
             <div id="paymentConfigurationWidget">
                 @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model?.ApplicationFormDto?.Id})
             </div>
+        </div>
+
+        <!--Tab Content: Other Configuration-->
+        <div class="tab-pane fade" id="nav-other-configuration" role="tabpanel" aria-labelledby="nav-other-configuration-tab">
+            @await Component.InvokeAsync(typeof(ApplicationFormConfigWidget), new { configType = "Other", applicationForm = Model?.ApplicationFormDto })
         </div>
     </div>
 

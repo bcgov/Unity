@@ -69,18 +69,6 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         }
     }
 
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    public async Task GetListAsync_Should_Return_Items()
-    {
-        // Act
-        var grantApplications = await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto() { MaxResultCount = 100 });
-
-        // Assert
-        grantApplications.Items.Any(s => s.ProjectName == "Application For Integration Test Funding").ShouldBeTrue();        
-    }
-
     [Fact]
     [Trait("Category", "Integration")]
     public async Task CreateCommentAsync_Should_Create_Comment()

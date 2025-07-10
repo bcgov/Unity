@@ -9,6 +9,7 @@ using System.Linq;
 using Volo.Abp;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.PaymentRequests;
+using Unity.Payments.Domain.PaymentTags;
 
 namespace Unity.Payments.Domain.PaymentRequests
 {
@@ -51,7 +52,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual string RequesterName { get; private set; } = string.Empty;
         public virtual string BatchName { get; private set; } = string.Empty;
         public virtual decimal BatchNumber { get; private set; } = 0;
-
+        public virtual Collection<PaymentTag>? PaymentTags { get; set; } 
         public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
 
@@ -62,6 +63,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         protected PaymentRequest()
         {
             ExpenseApprovals = [];
+            PaymentTags = [];
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
@@ -97,6 +99,7 @@ namespace Unity.Payments.Domain.PaymentRequests
             SubmissionConfirmationCode = createPaymentRequestDto.SubmissionConfirmationCode;
             BatchName = createPaymentRequestDto.BatchName;
             BatchNumber = createPaymentRequestDto.BatchNumber;
+            PaymentTags = null;
             ExpenseApprovals = GenerateExpenseApprovals(createPaymentRequestDto.Amount, createPaymentRequestDto.PaymentThreshold);
             ValidatePaymentRequest();
         }
@@ -139,7 +142,19 @@ namespace Unity.Payments.Domain.PaymentRequests
 
         public PaymentRequest SetPaymentDate(string paymentDate)
         {
-            PaymentDate = paymentDate;
+            if (!string.IsNullOrEmpty(paymentDate)
+                && DateTime.TryParseExact(paymentDate,
+                                          "dd-MMM-yyyy",
+                                          System.Globalization.CultureInfo.InvariantCulture,
+                                          System.Globalization.DateTimeStyles.None,
+                                          out DateTime date))
+            {
+                PaymentDate = date.ToString("yyyy-MM-dd");
+            }
+            else if(!string.IsNullOrEmpty(paymentDate))
+            {
+                PaymentDate = paymentDate;
+            }
             return this;
         }
 

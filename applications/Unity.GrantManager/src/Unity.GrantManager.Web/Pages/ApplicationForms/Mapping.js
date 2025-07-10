@@ -5,6 +5,7 @@
     let intakeFieldsString = document.getElementById('intakeProperties').value;
     let chefsFormId = document.getElementById('chefsFormId').value;
     let formVersionId = document.getElementById('formVersionId').value;
+    let applicationFormId = document.getElementById('applicationFormId').value;
     let intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
     let dataTable;
@@ -66,12 +67,12 @@
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
         linkWorksheets: $('#btn-link-worksheets'),
-        uiConfigurationTab: $('#nav-ui-configuration')
+        uiConfigurationTab: $('#nav-ui-configuration')        
     };
 
     init();
 
-    worksheetsModal.onResult(function (_, response) {           
+    worksheetsModal.onResult(function (_, response) {
         navigateToVersion(response.responseText.chefsFormVersionId);
     });
 
@@ -102,11 +103,11 @@
         UIElements.btnClose.on('click', handleCancelMapping);
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
         UIElements.selectVersionList.on('change', handleSelectVersion);
-        UIElements.linkWorksheets.on('click', handleLinkWorksheets);
+        UIElements.linkWorksheets.on('click', handleLinkWorksheets);        
     }
 
     function handleLinkWorksheets() {
-        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });        
+        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });
     }
 
     function initializeUIConfiguration() {
@@ -371,7 +372,8 @@
     }
 
     function initializeIntakeMap(availableChefsFields) {
-        try {            
+        try {
+
             let intakeFields = JSON.parse(intakeFieldsString);
 
             for (let intakeField of intakeFields) {
@@ -388,13 +390,19 @@
 
             let keys = Object.keys(availableChefsFields);
             dataTable.clear();
+
+            let rowsToAdd = [];
             for (let key of keys) {
                 let jsonObj = JSON.parse(availableChefsFields[key]);
-
                 if (allowableTypes.includes(jsonObj.type.trim())) {
-                    dataTable.row.add([stripHtml(jsonObj.label), key, jsonObj.type, key]).draw();
+                    rowsToAdd.push([stripHtml(jsonObj.label), key, jsonObj.type, key]);
                 }
             }
+
+            if (rowsToAdd.length > 0) {
+                dataTable.rows.add(rowsToAdd);
+            }
+            dataTable.draw();
         }
         catch (err) {
             console.info('Mapping error: ' + err);
@@ -616,5 +624,5 @@
         for (let i = 0; i < depth; i++) {
             prettyJson.push(TAB);
         }
-    }
+    }    
 });

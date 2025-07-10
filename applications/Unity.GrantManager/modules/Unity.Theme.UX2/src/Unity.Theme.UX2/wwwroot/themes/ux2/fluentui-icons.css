@@ -108,6 +108,11 @@
     content: '\E89F';
 }
 
+/*GID144 : U+E740*/
+.fl-fullscreen:before {
+    content: '\E740';
+}
+
 /*GID144 : U+E871*/
 .fl-back-to-window:before {
     content: '\E73F';
@@ -239,10 +244,6 @@
 
 .fl-review-list:before {
     content: '\EA4A';
-}
-
-.fl-history:before {
-    content: '\E81C';
 }
 
 .fl-comments:before {

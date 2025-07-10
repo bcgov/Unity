@@ -1,25 +1,21 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Collections.Generic;
 using System.Linq;
-using Microsoft.AspNetCore.Authorization;
-using Volo.Abp.Features;
+using System.Threading.Tasks;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
-using Unity.Payments.Permissions;
-using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using Volo.Abp.Features;
 
 namespace Unity.Payments.Suppliers
 {
     [RequiresFeature("Unity.Payments")]
-    [Authorize]
-    public class SupplierAppService(ISupplierRepository supplierRepository, 
+    public class SupplierAppService(ISupplierRepository supplierRepository,
                                     ISiteAppService siteAppService) : PaymentsAppService, ISupplierAppService
     {
         protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
-        [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
         public virtual async Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto)
         {
             Supplier supplier = new Supplier(Guid.NewGuid(),
@@ -43,7 +39,6 @@ namespace Unity.Payments.Suppliers
             return ObjectMapper.Map<Supplier, SupplierDto>(result);
         }
 
-        [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
         public virtual async Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto)
         {
             var supplier = await supplierRepository.GetAsync(id);
@@ -69,11 +64,15 @@ namespace Unity.Payments.Suppliers
         }
 
         public virtual async Task<SupplierDto?> GetAsync(Guid id)
-        {   try {
+        {
+            try
+            {
                 var result = await supplierRepository.GetAsync(id);
                 if (result == null) return null;
                 return ObjectMapper.Map<Supplier, SupplierDto>(result);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 logger.LogError(ex, "Error fetching supplier");
                 return null;
             }

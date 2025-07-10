@@ -65,7 +65,8 @@ namespace Unity.GrantManager.Intakes
                     InstanceCorrelationId = applicationId,
                     InstanceCorrelationProvider = CorrelationConsts.Application,
                     CustomFields = customIntakeValues,
-                    VersionData = version?.ToString()                    
+                    VersionData = version?.ToString(),
+                    TenantId = CurrentTenant.Id
                 });
             }
         }

@@ -9,6 +9,7 @@
     "Unity.Payments:Errors:ConfigurationExists": "Configuration already exitst",
     "Unity.Payments:Errors:ConfigurationDoesNotExist": "Configuration does not exits",
     "Unity.Payments:Errors:InvalidAccountCodingFiled": "Invalid account coding field {field} : {length}",
+    "Unity.Payments:Errors:L2ApproverRestriction": "You cannot approve one or more selected payments as you have already approved them as an L1 Approver.",
 
     "Setting:Payments.ThresholdAmount.DisplayName": "Payment threshold amount",
     "Setting:Payments.ThresholdAmount.Description": "Payment threshold that triggers additional approvals and checks",
@@ -20,7 +21,14 @@
     "ApplicationPaymentRequest:SiteNumber": "Site #",
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
+    "ApplicationPaymentRequest:BatchNumberName": "Batch #",
+    "ApplicationPaymentRequest:NumberPayment": "Number of Payments",
+    "ApplicationPaymentRequest:TotalAmount": "Total Amount",
+
     "ApplicationPaymentRequest:Validations:RemainingAmountExceeded": "Cannot add a payment that exceeds the remaining amount of ",
+    "ApplicationPaymentRequest:Validations:L2ApproverRestriction": "You cannot approve this payment as you have already approved it as an L1 Approver.",
+    "ApplicationPaymentRequest:Validations:L2ApproverRestrictionBatch": "Highlighted payments were already approved with L1 permission. L1 and L2 approvers must be different individuals",
+
 
     "ApplicationPaymentTable:BatchNumber": "Batch Number",
     "ApplicationPaymentTable:TotalAmount": "Total Amount",
@@ -108,7 +116,6 @@
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
     "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
     "Permission:Payments.RequestPayment": "Request Payment",
-    "Permission:Payments.EditSupplierInfo": "Update Supplier Info",
     "Permission:Payments.EditFormPaymentConfiguration": "Edit Form Payment Configuration",
     "Enum:PaymentRequestStatus.L1Pending": "L1 Pending",
     "Enum:PaymentRequestStatus.L1Approved": "L1 Approved",
@@ -124,6 +131,12 @@
     "Enum:PaymentRequestStatus.NotValidated": "Not Validated",
     "Enum:PaymentRequestStatus.Paid": "Paid",
     "Enum:PaymentRequestStatus.Failed": "Payment Failed",
-    "Enum:PaymentRequestStatus.PaymentFailed": "Payment Failed"
+    "Enum:PaymentRequestStatus.PaymentFailed": "Payment Failed",
+
+    "Unity.GrantManager.ApplicationManagement.Payment": "Payment Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List"
   }
 }

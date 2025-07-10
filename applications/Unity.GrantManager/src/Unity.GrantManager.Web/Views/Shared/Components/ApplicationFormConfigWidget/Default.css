@@ -1,0 +1,4 @@
+﻿.configuration-warning {
+    color: var(--lpx-danger);
+    border-color: var(--lpx-danger);
+}

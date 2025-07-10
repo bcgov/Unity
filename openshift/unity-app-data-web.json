@@ -62,6 +62,41 @@
           "kind": "Service",
           "name": "${APPLICATION_NAME}"
         },
+        "httpHeaders": {
+          "actions": {
+            "request": null,
+            "response": [
+              {
+                "action": {
+                  "set": { "value": "SAMEORIGIN" },
+                  "type": "Set"
+                },
+                "name": "X-Frame-Options"
+              },
+              {
+                "action": {
+                  "set": { "value": "nosniff" },
+                  "type": "Set"
+                },
+                "name": "X-Content-Type-Options"
+              },
+              {
+                "action": {
+                  "set": { "value": "strict-origin-when-cross-origin" },
+                  "type": "Set"
+                },
+                "name": "Referrer-Policy"
+              },
+              {
+                "action": {
+                  "set": { "value": "object-src 'none'; frame-ancestors 'none'" },
+                  "type": "Set"
+                },
+                "name": "Content-Security-Policy"
+              }
+            ]
+          }
+        },
         "tls": {
           "termination": "edge",
           "insecureEdgeTerminationPolicy": "Redirect"

@@ -1,39 +1,21 @@
-﻿using System;
-using System.Linq;
-using Unity.Payments.Domain.Exceptions;
+﻿using Unity.Payments.Domain.Exceptions;
 using Volo.Abp;
-using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.MultiTenancy;
-
 
 namespace Unity.Payments.Domain.AccountCodings
 {
-    public class AccountCoding : FullAuditedAggregateRoot<Guid>, IMultiTenant
-    {        
-        public Guid? TenantId { get; set; }
-
-        public string MinistryClient { get; set; } = string.Empty;
-
-        public string Responsibility { get; set; } = string.Empty;
-
-        public string ServiceLine { get; set; } = string.Empty;
-
-        public string Stob { get; set; } = string.Empty;
-
-        public string ProjectNumber { get; set; } = string.Empty;
-
-        // Constructor for ORM
-        protected AccountCoding()
-        {
-
-        }
-
-        public AccountCoding(
-            string ministryClient,
+    public record AccountCoding
+    {
+        public string MinistryClient { get; private set; } = string.Empty;
+        public string Responsibility { get; private set; } = string.Empty;
+        public string ServiceLine { get; private set; } = string.Empty;
+        public string Stob { get; private set; } = string.Empty;
+        public string ProjectNumber { get; private set; } = string.Empty;
+        
+        private AccountCoding(string ministryClient,
             string responsibility,
             string serviceLine,
             string stob,
-            string projectNumber) 
+            string projectNumber)            
         {
             MinistryClient = ministryClient;
             Responsibility = responsibility;
@@ -49,7 +31,7 @@ namespace Unity.Payments.Domain.AccountCodings
         string stob,
         string projectNumber)
         {
-            ValidateField(ministryClient, 3, nameof(MinistryClient), false);
+            ValidateField(ministryClient, 3, nameof(MinistryClient), false);  
             ValidateField(responsibility, 5, nameof(Responsibility), false);
             ValidateField(serviceLine, 5, nameof(serviceLine));
             ValidateField(stob, 4, nameof(stob));
@@ -60,11 +42,6 @@ namespace Unity.Payments.Domain.AccountCodings
 
         private static void ValidateField(string field, uint length, string fieldName, bool validAlphanumeric = true)
         {
-
-            if (validAlphanumeric)
-            {
-                validAlphanumeric = field.All(char.IsLetterOrDigit);
-            }
 
             if (field.Length != length || !validAlphanumeric)
             {

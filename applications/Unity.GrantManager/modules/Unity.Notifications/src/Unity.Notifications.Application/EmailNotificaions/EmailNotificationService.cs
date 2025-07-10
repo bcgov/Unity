@@ -98,14 +98,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailLogsRepository.DeleteAsync(id);
     }
 
-    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status)
+    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status,string? emailTemplateName)
     {
         if (string.IsNullOrEmpty(emailTo))
         {
             return null;
         }
         
-        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "text");
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName);
         EmailLog emailLog = await _emailLogsRepository.GetAsync(emailId);
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
@@ -117,19 +117,19 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return loggedEmail;
     }
 
-    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
+    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName)
     {
-        return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized);
+        return await InitializeEmailLog(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized, emailTemplateName);
     }
 
     [RemoteService(false)]
-    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status)
+    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName)
     {
         if (string.IsNullOrEmpty(emailTo))
         {
             return null;
         }
-        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "text");
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName);
         EmailLog emailLog = new EmailLog();
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
@@ -203,7 +203,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
                 foreach (var email in input.MentionNamesEmail)
                 {
                     var toEmail = email;
-                    res = await SendEmailNotification(toEmail, htmlBody, subject, fromEmail, "html");
+                    res = await SendEmailNotification(toEmail, htmlBody, subject, fromEmail, "html", input.EmailTemplateName);
                 }
             }
             else
@@ -236,7 +236,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="emailFrom">From Email Address</param>
     ///  <param name="emailBodyType">Type of body email: html or text</param>
     /// <returns>HttpResponseMessage indicating the result of the operation</returns>
-    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType)
+    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName)
     {
         try
         {
@@ -250,7 +250,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
 
             }
             // Send the email using the CHES client service
-            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType);
+            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName);
             var response = await _chesClientService.SendAsync(emailObject);
 
             // Assuming SendAsync returns a HttpResponseMessage or equivalent:
@@ -328,7 +328,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
-    protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType)
+    protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName)
     {
         List<string> toList = new();
         string[] emails = emailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
@@ -349,7 +349,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             priority = "normal",
             subject,
             tag = "tag",
-            to = toList
+            to = toList,
+            templateName = emailTemplateName,
         };
         return emailObject;
     }
@@ -360,7 +361,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.Subject = emailDynamicObject.subject;
         emailLog.BodyType = emailDynamicObject.bodyType;
         emailLog.FromAddress = emailDynamicObject.from;
-        emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault() ?? "";
+        emailLog.ToAddress = String.Join(",", emailDynamicObject.to);
+        emailLog.TemplateName = emailDynamicObject.templateName;
         return emailLog;
     }
 

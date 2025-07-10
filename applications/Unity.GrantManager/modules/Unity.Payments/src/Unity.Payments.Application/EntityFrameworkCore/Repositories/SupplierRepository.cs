@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace Unity.Payments.Repositories
 
         public async Task<Supplier?> GetByCorrelationAsync(Guid correlationId, string correlationProvider, bool includeDetails = false)
         {
-            var dbSet = await GetDbSetAsync();
+            var dbSet = await GetDbSetAsync();         
             return await dbSet
                     .IncludeDetails(includeDetails)
                     .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
@@ -27,9 +28,22 @@ namespace Unity.Payments.Repositories
         public async Task<Supplier?> GetBySupplierNumberAsync(string supplierNumber, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
-            return await dbSet
-                    .IncludeDetails(includeDetails)
-                    .FirstOrDefaultAsync(s => s.Number == supplierNumber);
+
+            if (string.IsNullOrWhiteSpace(supplierNumber))
+            {
+                return null;
+            }
+
+            try {
+                return await dbSet
+                        .IncludeDetails(includeDetails)
+                        .FirstOrDefaultAsync(s => s.Number == supplierNumber);
+            }
+            catch (Exception ex)
+            {        
+              Logger.LogError(ex, "SupplierRepository->GetBySupplierNumberAsync Exception: {Message}", ex.Message);
+              return null;
+            }
         }
 
         public override async Task<IQueryable<Supplier>> WithDetailsAsync()

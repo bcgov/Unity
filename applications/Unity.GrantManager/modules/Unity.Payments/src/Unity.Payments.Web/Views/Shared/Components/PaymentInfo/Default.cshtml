@@ -1,61 +1,82 @@
-﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
-@using Unity.GrantManager.Flex
+﻿@using Volo.Abp.Features
+@using Volo.Abp.Authorization.Permissions
+@using Unity.Payments.Web.Views.Shared.Components.PaymentInfo
+@using Unity.Payments.Localization
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
-@using Unity.Payments.Localization;
-@using Unity.Payments.Web.Views.Shared.Components.PaymentInfo;
-@using Volo.Abp.Authorization.Permissions;
-@using Volo.Abp.Features
+@using Unity.GrantManager.Flex
+@using Microsoft.AspNetCore.Mvc.Localization
+
 @inject IHtmlLocalizer<PaymentsResource> L
 @inject IPermissionChecker PermissionChecker
 @inject IFeatureChecker FeatureChecker
+
 @model Unity.Payments.Web.Views.Shared.Components.PaymentInfo.PaymentInfoViewModel
+
 @{
     Layout = null;
 }
-@{
-}
 
 <input type="hidden" id="PaymentInfoViewApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="PaymentInfo_ApplicantId" value="@Model.ApplicantId" />
 
-<abp-row class="m-0 payment-info">
-    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
-        <div id="PaymentInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-            <h6 class="ps-1 fw-bold">@L["PaymentInfoView:PaymentInfoTitle"].Value</h6>
-        </div>
-        <abp-button text="Save" id="savePaymentInfoBtn" class="floating-save-btn" icon-type="Other"
+<abp-row class="px-1 pb-2 mb-4 payment-info-container">
+    <div class="save-button-container">
+        <abp-button id="savePaymentInfoBtn" class="floating-save-btn"
+                    form="projectInfoForm" action="submit"
+                    text="Save"
+                    icon-type="Other"
                     icon="fl fl-save" button-type="Primary" disabled="true" />
-    </abp-column>
-    <abp-row class="m-0 p-0 payment-info-summary">
-        <abp-column size="_6" class="px-1">
-            <div class="unity-input-group">
-                <span class="unity-input-prepend">$</span>
-                <abp-input class="unity-currency-input" asp-for="@Model.RequestedAmount" disabled />
-            </div>
-            <div class="unity-input-group">
-                <span class="unity-input-prepend">$</span>
-                <abp-input class="unity-currency-input" asp-for="@Model.ApprovedAmount" disabled />
-            </div>
-            <div class="unity-input-group">
-                <span class="unity-input-prepend">$</span>
-                <abp-input class="unity-currency-input" asp-for="@Model.TotalPendingAmounts" disabled />
-            </div>
-        </abp-column>
-        <abp-column size="_6" class="px-1">
-            <div class="unity-input-group">
-                <span class="unity-input-prepend">$</span>
-                <abp-input class="unity-currency-input" asp-for="@Model.RecommendedAmount" disabled />
-            </div>
-            <div class="unity-input-group">
-                <span class="unity-input-prepend">$</span>
-                <abp-input class="unity-currency-input" asp-for="@Model.TotalPaid" disabled />
-            </div>
-            <div class="unity-input-group">
-                <span class="unity-input-prepend">$</span>
-                <abp-input class="unity-currency-input" asp-for="@Model.RemainingAmount" disabled />
-            </div>
-        </abp-column>
-    </abp-row>
-    <form id="paymentInfoForm">
+    </div>
+
+    <form id="paymentInfoForm" autocomplete="off">
+        @* Zone Section : Payment.Summary *@
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Summary.Default))
+        {
+        <abp-row class="m-0 p-0 payment-info-summary">
+            <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 px-0">
+                <div id="PaymentInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                    <h6 class="ps-1 fw-bold">@L["PaymentInfoView:PaymentInfoTitle"].Value</h6>
+                </div>
+            </abp-column>
+            <abp-column size="_6" class="px-1">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.RequestedAmount" disabled />
+                </div>
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.ApprovedAmount" disabled />
+                </div>
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.TotalPendingAmounts" disabled />
+                </div>
+            </abp-column>
+            <abp-column size="_6" class="px-1">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.RecommendedAmount" disabled />
+                </div>
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.TotalPaid" disabled />
+                </div>
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.RemainingAmount" disabled />
+                </div>
+            </abp-column>
+        </abp-row>
+        }
+
+        @* Zone Section : Payment.Supplier *@
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Supplier.Default))
+        {
+            @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
+        }
+
+        @* Zone Section : Payment.Worksheet *@
         @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
             @await Component.InvokeAsync("WorksheetInstanceWidget",
@@ -68,22 +89,30 @@
                          uiAnchor = FlexConsts.PaymentInfoUiAnchor
                      })
         }
+
+        @* Zone Section : Payment.PaymentList *@
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default))
+        {
+        <abp-row class="m-0 p-0">
+            <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                <div id="PaymentInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                    <h6 class="ps-1 fw-bold">@L["PaymentInfoView:PaymentInfoTableTitle"].Value</h6>
+                </div>
+            </abp-column>
+        </abp-row>
+        }
+        <abp-row class="m-0 p-0 @(await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default) ? string.Empty : "d-none")">
+            @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default))
+            {
+            <abp-column size="_12" class="px-1">
+                @await Component.InvokeAsync("PaymentActionBar")
+            </abp-column>
+            }
+            <abp-column size="_12" class="px-1">
+                <abp-table id="ApplicationPaymentRequestListTable"></abp-table>
+            </abp-column>
+        </abp-row>
     </form>
-    <abp-row class="m-0 p-0">
-        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-            <div id="PaymentInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-                <h6 class="ps-1 fw-bold">@L["PaymentInfoView:PaymentInfoTableTitle"].Value</h6>
-            </div>
-        </abp-column>
-    </abp-row>
-    <abp-row class="m-0 p-0">
-        <abp-column size="_12" class="px-1">
-            @await Component.InvokeAsync("PaymentActionBar")
-        </abp-column>
-        <abp-column size="_12" class="px-1">
-            <abp-table id="ApplicationPaymentRequestListTable"></abp-table>
-        </abp-column>
-    </abp-row>
 </abp-row>
 
 

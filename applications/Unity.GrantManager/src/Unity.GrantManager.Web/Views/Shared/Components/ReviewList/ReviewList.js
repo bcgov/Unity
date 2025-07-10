@@ -3,7 +3,7 @@ const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsVie
 
 const actionButtonConfigMap = {
     Create: { buttonType: 'createButton', order: 1 },
-    Confirm: { buttonType: 'unityWorkflow', order: 2 },
+    Complete: { buttonType: 'unityWorkflow', order: 2 },
     SendBack: { buttonType: 'unityWorkflow', order: 3 },
     _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }

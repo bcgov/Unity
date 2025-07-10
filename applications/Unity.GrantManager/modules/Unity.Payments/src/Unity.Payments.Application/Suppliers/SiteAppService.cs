@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Payments.Domain.Suppliers;
@@ -10,7 +9,6 @@ using Volo.Abp;
 namespace Unity.Payments.Suppliers
 {
     [RequiresFeature("Unity.Payments")]
-    [Authorize]
     public class SiteAppService : PaymentsAppService, ISiteAppService
     {
         private const string SITE_ID_KEY = "SiteId";
@@ -69,6 +67,30 @@ namespace Unity.Payments.Suppliers
             }
         }
 
+        public virtual async Task<Guid> UpdatePaygroupAsync(Enums.PaymentGroup paymentGroup, Guid siteId)
+        {
+            try{
+                Site updateSite = await siteRepository.GetAsync(siteId);
+                updateSite.PaymentGroup = paymentGroup;
+                await siteRepository.UpdateAsync(updateSite, true);            
+                return updateSite.Id;
+            }
+            catch (BusinessException ex)
+            {
+                // Log BusinessExceptions with context and rethrow with additional data
+                logger.LogWarning(ex, "Business exception occurred while updating site {SiteId}", siteId);
+                throw new BusinessException("Error updating site: " + ex.Message)
+                    .WithData(SITE_ID_KEY, siteId)
+                    .WithData("OriginalError", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // General exception logging
+                logger.LogError(ex, "Error updating site {SiteId}", siteId);
+                throw new BusinessException("Error updating site").WithData(SITE_ID_KEY, siteId);
+            }
+        }
+  
         public virtual async Task<Guid> UpdateAsync(SiteDto siteDto)
         {
             try

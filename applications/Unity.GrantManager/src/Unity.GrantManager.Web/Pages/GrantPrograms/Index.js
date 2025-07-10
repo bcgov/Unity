@@ -26,7 +26,6 @@
         },
         {
             title: l('Actions'),
-            data: 'tenantId',
             orderable: false,
             className: 'notexport text-center',
             name: 'rowActions',
@@ -55,6 +54,7 @@
         data: {},
         responseCallback,
         actionButtons: [...commonTableActionButtons('Grant Programs')],
+        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},

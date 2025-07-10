@@ -1,22 +1,23 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Intakes.Events;
 using Unity.GrantManager.Intakes.Mapping;
-using Unity.GrantManager.Reporting.DataGenerators;
-using Unity.Modules.Shared.Features;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
-using Volo.Abp.Features;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Intakes
 {
+    [RemoteService(IsEnabled = false)]
     public class IntakeFormSubmissionManager(IUnitOfWorkManager _unitOfWorkManager,
                                              IApplicantAppService applicantService,
                                              IApplicationRepository _applicationRepository,
@@ -25,11 +26,8 @@ namespace Unity.GrantManager.Intakes
                                              IIntakeFormSubmissionMapper _intakeFormSubmissionMapper,
                                              IApplicationFormVersionRepository _applicationFormVersionRepository,
                                              CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper,
-                                             IReportingDataGenerator _reportingDataGenerator,
-                                             IFeatureChecker featureChecker) : DomainService, IIntakeFormSubmissionManager
+                                             ILocalEventBus localEventBus) : DomainService, IIntakeFormSubmissionManager
     {
-        protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
-
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
         {
             var applicationFormVersion = (await _applicationFormVersionRepository
@@ -59,6 +57,9 @@ namespace Unity.GrantManager.Intakes
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
             await _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
 
+            JObject submission = JObject.Parse(formSubmission.ToString());
+            JToken? dataNode = submission.SelectToken("submission");
+
             var newSubmission = new ApplicationFormSubmission
             {
                 OidcSub = Guid.Empty.ToString(),
@@ -66,23 +67,29 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormId = applicationForm.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
                 ApplicationId = application.Id,
-                Submission = ChefsFormIOReplacement.ReplaceAdvancedFormIoControls(formSubmission)
+                Submission = dataNode?.ToString() ?? string.Empty                
             };
 
             _ = await _applicationFormSubmissionRepository.InsertAsync(newSubmission);
 
-            var localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
+            ApplicationFormVersion? localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
+
             await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id,
                 localFormVersion?.Id ?? Guid.Empty,
                 formSubmission,
             formVersionSubmissionHeaderMapping);
 
-            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
-            {
-                newSubmission.ReportData = _reportingDataGenerator.Generate(formSubmission, localFormVersion?.ReportKeys, newSubmission.Id);
-            }
-
             newSubmission.ApplicationFormVersionId = localFormVersion?.Id;
+            newSubmission.FormVersionId = string.IsNullOrWhiteSpace(localFormVersion?.ChefsFormVersionGuid) ? null : Guid.Parse(localFormVersion.ChefsFormVersionGuid);
+
+            // Extend any further processing of the application here through local event bus and handlers
+            await localEventBus.PublishAsync(new ApplicationProcessEvent
+            {
+                Application = application,
+                FormVersion = localFormVersion,
+                ApplicationFormSubmission = newSubmission,
+                RawSubmission = formSubmission
+            });
 
             await uow.SaveChangesAsync();
 
@@ -100,7 +107,7 @@ namespace Unity.GrantManager.Intakes
                     ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
-                    ApplicationStatusId = submittedStatus.Id,
+                    ApplicationStatusId = submittedStatus.Id,                    
                     ReferenceNo = intakeMap.ConfirmationId ?? string.Empty,
                     Acquisition = intakeMap.Acquisition,
                     Forestry = intakeMap.Forestry,
@@ -126,23 +133,27 @@ namespace Unity.GrantManager.Intakes
                     ProjectSummary = intakeMap.ProjectSummary,
                 }
             );
-            ApplicantAgentDto applicantAgentDto = new ApplicantAgentDto
+
+            ApplicantAgentDto applicantAgentDto = new()
             {
                 Applicant = applicant,
                 Application = application,
                 IntakeMap = intakeMap
             };
-            
+
             await applicantService.CreateApplicantAgentAsync(applicantAgentDto);
 
-            try {
+            try
+            {
                 await applicantService.RelateDefaultSupplierAsync(applicantAgentDto);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 // This was failing with SSL Certificate errors, so we're catching the exception and logging it
                 string MessageException = ex.Message;
-                logger.LogError(ex, "Error Relating Default Supplier {MessageException}", MessageException);
+                Logger.LogError(ex, "Error Relating Default Supplier {MessageException}", MessageException);
             }
-            
+
             return application;
         }
 

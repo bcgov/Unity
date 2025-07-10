@@ -7,5 +7,6 @@ namespace Unity.Flex.Domain.ScoresheetInstances
     public interface IScoresheetInstanceRepository : IBasicRepository<ScoresheetInstance, Guid>
     {
         Task<ScoresheetInstance?> GetByCorrelationAsync(Guid correlationId);
+        Task<ScoresheetInstance?> GetWithAnswersAsync(Guid scoresheetInstanceId);
     }
 }

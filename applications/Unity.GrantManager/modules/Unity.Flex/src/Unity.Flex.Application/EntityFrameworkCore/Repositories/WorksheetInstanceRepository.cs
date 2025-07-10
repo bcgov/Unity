@@ -53,5 +53,32 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                         && s.WorksheetCorrelationProvider == worksheetCorrelationProvider)
                 .ToListAsync();
         }
+
+        public async Task<WorksheetInstance?> GetWithValuesAsync(Guid worksheetInstanceId)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .Include(wi => wi.Values)
+                .FirstOrDefaultAsync(wi => wi.Id == worksheetInstanceId);
+        }
+
+        public async Task<bool> ExistsAsync(Guid worksheetId, 
+            Guid instanceCorrelationId, 
+            string instanceCorrelationProvider, 
+            Guid sheetCorrelationId, 
+            string sheetCorrelationProvider, 
+            string? uiAnchor)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .AnyAsync(s => s.WorksheetId == worksheetId
+                    && s.CorrelationId == instanceCorrelationId
+                    && s.CorrelationProvider == instanceCorrelationProvider
+                    && s.WorksheetCorrelationId == sheetCorrelationId
+                    && s.WorksheetCorrelationProvider == sheetCorrelationProvider
+                    && s.UiAnchor == uiAnchor);
+        }
     }
 }

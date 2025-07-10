@@ -29,7 +29,9 @@
         emailTo: '',
         emailFrom: ''
     };
-
+    let applicationDetails;
+    let mappingConfig;
+    let editorInstance;
     function bindUIEvents() {
         UIElements.btnNewEmail.on('click', handleNewEmail);
         UIElements.btnSend.on('click', handleSendEmail);
@@ -56,6 +58,13 @@
         defaultValues.emailTo = UIElements.inputOriginalEmailTo.val();
         defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
         toastr.options.positionClass = 'toast-top-center';
+        initTemplateDetails();
+        $('#templateTextContainer').hide();
+    }
+
+    async function initTemplateDetails() {
+       applicationDetails = await loadApplicationDetails();
+       mappingConfig = await getTemplateVariables();
     }
 
     function disableEmail() {
@@ -103,14 +112,58 @@
         $('#modal-content, #modal-background').removeClass('active');
     }
 
+    function getToolbarOptions() {
+        return 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image | code preview';
+    }
+
+    function getPlugins() {
+        return 'lists link image preview code';
+    }
+    function resetEmailBody() {
+        const id = 'EmailBody';
+
+        // 1. Remove any existing editor instance
+        if (tinymce.get(id)) {
+            tinymce.get(id).remove();
+        }
+
+        // 2. Clear the underlying <textarea>
+        $('#' + id).val('');           // ← this line prevents the old HTML from coming back
+    }
     function handleNewEmail() {
+        resetEmailBody();  
+        $('#templateListContainer').show();
+        $('#templateTextContainer').hide();
         UIElements.inputEmailId.val(emptyGuid);
         // Support discard to empty email template for new emails
         UIElements.inputOriginalEmailTo.val(defaultValues.emailTo);
         UIElements.inputOriginalEmailFrom.val(defaultValues.emailFrom);
         UIElements.inputOriginalEmailSubject.val("");
         UIElements.inputOriginalEmailBody.val("");
-
+        
+        if (tinymce.get("EmailBody")) {
+            tinymce.get("EmailBody").remove(); // remove existing instance
+        }
+        tinymce.init({
+            license_key: 'gpl',
+            selector: `#EmailBody`,
+            plugins: getPlugins(),
+            toolbar: getToolbarOptions(),
+            statusbar: false,
+            promotion: false,
+            content_css: false,
+            skin: false,
+            setup: function (editor) {
+               
+                editor.on("input", (e) => {
+                    UIElements.inputEmailBody.val(editor.getContent())
+                    handleDraftChange();
+                });
+                editorInstance = editor;
+                editorInstance.setContent('');
+            }
+        });
+        console.log(editorInstance.getContent())
         handleDraftChange();
         showModalEmail();
         resetValidationErrors();
@@ -176,15 +229,28 @@
     function handleConfirmSendEmail() {
         UIElements.confirmationModal.hide();
         UIElements.emailSpinner.show();
+        let templateName = '';
+        if (!UIElements.inputEmailId[0].value || UIElements.inputEmailId[0].value === emptyGuid) {
+            // id is either null/undefined/"" OR the empty GUID
+            templateName = $("#template option:selected").text();
+            if (!templateName || templateName == '' || templateName == 'Please select') {
+                // id is either null/undefined/"" OR the empty GUID
+                templateName = "No Template Selected"
+            }
+        }
+        else {
+            templateName = $('#templateText').val();
+        }
         unity.grantManager.emails.email
             .create({
                 emailId: UIElements.inputEmailId[0].value,
                 applicationId: UIElements.applicationId,
                 emailTo: UIElements.inputEmailTo[0].value,
                 emailFrom: UIElements.inputEmailFrom[0].value,
-                emailBody: UIElements.inputEmailBody[0].value,
+                emailBody: editorInstance.getContent(),
                 emailSubject: UIElements.inputEmailSubject[0].value,
                 currentUserId: decodeURIComponent(abp.currentUser.id),
+                emailTemplateName: templateName,
             })
             .then(function () {
                 hideConfirmation();
@@ -210,15 +276,30 @@
 
     function handleSaveEmail(e) {
         if (validateEmailForm(e)) {
+
+            let templateName = ''; 
+            if (!UIElements.inputEmailId[0].value || UIElements.inputEmailId[0].value === emptyGuid) {
+                // id is either null/undefined/"" OR the empty GUID
+                templateName = $("#template option:selected").text();
+                if (!templateName || templateName == '' || templateName == 'Please select') {
+                    // id is either null/undefined/"" OR the empty GUID
+                    templateName = "No Template Selected"
+                }
+            }
+            else {
+                templateName = $('#templateText').val();
+            }
+           
         unity.grantManager.emails.email
             .saveDraft({
                 emailId: UIElements.inputEmailId[0].value,
                 applicationId: UIElements.applicationId,
                 emailTo: UIElements.inputEmailTo[0].value,
                 emailFrom: UIElements.inputEmailFrom[0].value,
-                emailBody: UIElements.inputEmailBody[0].value,
+                emailBody: editorInstance.getContent(),
                 emailSubject: UIElements.inputEmailSubject[0].value,
                 currentUserId: decodeURIComponent(abp.currentUser.id),
+                emailTemplateName: templateName,
             })
             .then(function () {
                 handleCloseEmail();
@@ -237,13 +318,39 @@
         // Prevent form submission and stop propagation
         e.stopPropagation();
         e.preventDefault();
+        let isValid = UIElements.emailForm.valid();
+        let validator = UIElements.emailForm.validate();
 
         // Validate the "Email To" field
         if (!validateEmailTo()) {
             return false; // If validation fails, stop further processing
         }
+        let fieldName = 'EmailBody';
+       
+        let errorList = validator.errorList;
 
-        return UIElements.emailForm.valid();
+        let tinymceContent = tinymce.get(fieldName).getContent({ format: 'text' }).trim();
+
+        let onlyErrorIsTinyMCE = (
+            errorList.length === 1 &&
+            errorList[0].element.name === fieldName &&
+            tinymceContent.length > 0
+        );
+        if (!isValid && onlyErrorIsTinyMCE) {
+            let fieldElement = $('textarea[name="' + fieldName + '"]');
+
+            // Remove error message (if inserted by validator)
+            fieldElement.removeClass('input-validation-error'); // if ABP uses this
+            fieldElement.siblings('.field-validation-error').remove(); // for inline messages
+            return true;
+            // Proceed with your form logic here
+            // ...
+        } else if (isValid) {
+            return true;
+        } else {
+            return false;
+        }
+        
     }
     function handleSendEmail(e) {
         // Check if the form is valid
@@ -273,15 +380,168 @@
             $(this).removeClass('field-validation-error').addClass('field-validation-valid').html('');
         });
     }
+   
+ 
+    $('#template').on('change', async function () {
+        console.log(this.value);
+
+        try {
+            resetValidationErrors();
+            let templateDetails = await loadTemplateDetails(this.value);
+            const templateData = extractTemplateData(applicationDetails, mappingConfig);
+            const template = Handlebars.compile(templateDetails.bodyHTML);
+
+            // Render the compiled template with data
+            const renderedHtml = template(templateData);
+            $('#EmailFrom').val(templateDetails.sendFrom)
+            $('#EmailSubject').val(templateDetails.subject)
+            editorInstance.setContent(renderedHtml);
+            UIElements.btnSave.attr('disabled', false);
+        } catch (error) {
+            console.error("Error loading data:", error);
+        }
+    });
+    function getTemplateVariables() {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: `/api/app/template/template-variables`,
+                type: 'GET',
+                success: function (response) {
+                    resolve(response);
+                },
+                error: function (xhr, status, error) {
+                    reject(error);
+                }
+            });
+        });
+    }
+
+    function loadTemplateDetails(templateId) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: `/api/app/template/${templateId}/template-by-id`,
+                type: 'GET',
+                success: function (response) {
+                    resolve(response);
+                },
+                error: function (xhr, status, error) {
+                    reject(error);
+                }
+            });
+        });
+    }
+
+    function loadApplicationDetails() {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: `/api/app/grant-application/${UIElements.applicationId}`,
+                type: 'GET',
+                success: function (response) {
+                    resolve(response);
+                },
+                error: function (xhr, status, error) {
+                    reject(error);
+                }
+            });
+        });
+    }
+    function toTitleCase(str) {
+        return str.replace(/\b\w/g, function (char) {
+            return char.toUpperCase();
+        }).replace(/\B\w/g, function (char) {
+            return char.toLowerCase();
+        });
+    }
+    function processString(token,inputString) {
+        let lookupArray = ['category', 'status', 'decline_rationale'];
+        let datesArray = ['submission_date', 'approval_date', 'project_start_date', 'project_end_date']
+
+        if(typeof inputString !== 'string') {
+            return inputString;
+        }
+
+        if (datesArray.includes(token)) {
+            let date = new Date(inputString);
+            if (!isNaN(date.getTime())) {
+
+                return luxon.DateTime.fromISO(inputString, {
+                    locale: abp.localization.currentCulture.name,
+                }).toUTC().toLocaleString()
+            }
+            else {
+                return '';
+            }
+        }
+        else {
+           
+            if (lookupArray.includes(token)) {
+                inputString = inputString.replace(/_/g, ' ');
+                return toTitleCase(inputString);
+            }
+            return inputString;
+            
+        }
+    }
+
+    function extractTemplateData(apiResponse, mappingConfig) {
+        const templateData = {};
+
+        mappingConfig.forEach(mapping => {
+            const { token, mapTo } = mapping;
+
+            if (!mapTo) {
+                templateData[token] = ""; // handle empty MapTo
+                return;
+            }
+
+            const value = getValueByPath(apiResponse, mapTo);
+
+            let formatValue = processString(token,value);
+            templateData[token] = formatValue !== undefined ? formatValue : "";
+        });
+
+        return templateData;
+    }
+
+    // Helper to resolve nested properties from a string path (e.g., "applicant.applicantName")
+    function getValueByPath(obj, path) {
+        return path.split('.').reduce((acc, key) => acc?.[key], obj);
+    }
+
 
     PubSub.subscribe('email_selected', (msg, data) => {
-        
+        resetValidationErrors();
+        console.log("data", data)
+        $('#templateListContainer').hide();
+        $('#templateTextContainer').show();
+        $('#templateText').val(data.templateName);
+        $('#templateText').prop('disabled', true);
         UIElements.inputEmailId.val(data.id);
         UIElements.inputOriginalEmailTo.val(data.toAddress);
         UIElements.inputOriginalEmailFrom.val(data.fromAddress);
         UIElements.inputOriginalEmailSubject.val(data.subject);
-        UIElements.inputOriginalEmailBody.val(data.body);
-
+         resetEmailBody(); 
+        if (tinymce.get("EmailBody")) {
+            tinymce.get("EmailBody").remove(); // remove existing instance
+        }
+        tinymce.init({
+            license_key: 'gpl',
+            selector: `#EmailBody`,
+            plugins: getPlugins(),
+            toolbar: getToolbarOptions(),
+            statusbar: false,
+            promotion: false,
+            content_css: false,
+            skin: false,
+            setup: function (editor) {
+                editor.on("input", (e) => {
+                    UIElements.inputEmailBody.val(editor.getContent())
+                    handleDraftChange();
+                });
+                editorInstance = editor;
+                editorInstance.setContent(data.body);
+            }
+        });
         UIElements.inputEmailTo.val(data.toAddress);
         UIElements.inputEmailFrom.val(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);

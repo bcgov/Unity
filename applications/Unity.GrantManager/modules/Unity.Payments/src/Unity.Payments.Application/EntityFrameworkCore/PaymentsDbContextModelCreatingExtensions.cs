@@ -7,7 +7,9 @@ using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.PaymentThresholds;
-
+using Unity.Payments.Domain.PaymentTags;
+using Unity.GrantManager;
+using Unity.GrantManager.GlobalTag;
 namespace Unity.Payments.EntityFrameworkCore;
 
 public static class PaymentsDbContextModelCreatingExtensions
@@ -87,6 +89,24 @@ public static class PaymentsDbContextModelCreatingExtensions
             b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentThresholds",
                 PaymentsDbProperties.DbSchema);
 
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<PaymentTag>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentTags",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne(x => x.Tag)
+                .WithMany() 
+                .HasForeignKey(x => x.TagId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+        modelBuilder.Entity<Tag>(b =>
+        {
+            b.ToTable(GrantManagerConsts.TenantTablePrefix + "Tags", GrantManagerConsts.DbSchema); 
             b.ConfigureByConvention();
         });
     }

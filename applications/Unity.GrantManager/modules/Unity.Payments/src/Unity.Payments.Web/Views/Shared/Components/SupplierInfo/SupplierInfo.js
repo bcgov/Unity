@@ -1,25 +1,108 @@
 $(function () {
     let dataTable;
     const l = abp.localization.getResource('Payments');
+    let updateModal = new abp.ModalManager(abp.appPath + 'Sites/UpdateModal');
+
+    updateModal.onResult(function (data) {
+        dataTable.ajax.reload();
+        abp.notify.success(
+            'Site Updated successfully.',
+            'Site Updated'
+        );
+    });
+
+    updateModal.onOpen(function () {
+        const UIElements = {
+            payGroup: $('#Site_PaymentGroup'),
+            bankAccount: $('#Site_BankAccount'),
+            bankAccountWarningDiv: $('#bank-account-warning-div')
+        };
+        
+        bindUIEvents();
+        validateBankeAccount();
+
+        function bindUIEvents() {
+            UIElements.payGroup.on('change', validateBankeAccount);
+        }
+
+        function validateBankeAccount() {
+            if (UIElements.payGroup.val() == 1 && UIElements.bankAccount.val() == '') { // EFT
+                UIElements.bankAccountWarningDiv.removeClass('hidden');
+            } else {
+                UIElements.bankAccountWarningDiv.addClass('hidden');                
+            }
+        }
+    });
 
     const UIElements = {
         navOrgInfoTab: $('#nav-organization-info-tab'),
-        applicantId: $("#ApplicantId"),
         siteId: $("#SiteId"),
+        paymentApplicantId: $("#PaymentInfo_ApplicantId"),
         originalSupplierNumber: $("#OriginalSupplierNumber"),
         supplierNumber: $("#SupplierNumber"),
+        supplierName: $("#SupplierName"),
         hasEditSupplier: $("#HasEditSupplierInfo"),
-        refreshSitesBtn: $("#btn-refresh-sites")
+        refreshSitesBtn: $("#btn-refresh-sites"),
+        orgName: $("#ApplicantSummary_OrgName"), // Note: Dependent on Applicant Info Tab
+        nonRegisteredOrgName: $("#ApplicantSummary_NonRegOrgName"), // Note: Dependent on Applicant Info Tab
+        supplierOrgInfoErrorDiv: $("#supplier-error-div")
     };
 
     function init() {
         $(document).ready(function () {
             loadSiteInfoTable();
-            bindUIEvents();
+            bindUIEvents();  
+            validateMatchingSupplierToOrgInfo();
         });
     }
 
     init();
+
+    function validateMatchingSupplierToOrgInfo() {
+        if (UIElements.paymentApplicantId.length === 0) {
+            console.warn('Payment Applicant ID element not found. Skipping validation.');
+            UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
+            return
+        }
+
+        const applicantId = UIElements.paymentApplicantId.val();
+        let supplierName = ($("#SupplierName").val() || '').toLowerCase().trim();
+
+        if (!supplierName) {
+            UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
+            return;
+        }
+
+        const orgNameElem = UIElements.orgName;
+        const nonRegOrgNameElem = UIElements.nonRegisteredOrgName;
+        const orgNameExists = orgNameElem.length > 0;
+        const nonRegOrgNameExists = nonRegOrgNameElem.length > 0;
+
+        // If neither element exists, fallback on API check
+        if (!orgNameExists && !nonRegOrgNameExists) {
+            // NOTE: External module dependency on Unity.GrantManager.GrantApplication.ApplicationApplicantAppService
+            unity.grantManager.grantApplications
+                .applicationApplicant
+                .getSupplierNameMatchesCheck(applicantId, supplierName)
+                .then((isMatch) => {
+                    $("#supplier-error-div").toggleClass('hidden', isMatch);
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        } else {
+            // Only fetch values if elements exist
+            const orgName = orgNameExists ? (orgNameElem.val() || '').toLowerCase().trim() : '';
+            const nonRegisteredOrgName = nonRegOrgNameExists ? (nonRegOrgNameElem.val() || '').toLowerCase().trim() : '';
+
+            // Hides warning if there is a match
+            let isMatch =
+                (!orgName && !nonRegisteredOrgName) ||
+                supplierName === orgName ||
+                supplierName === nonRegisteredOrgName;
+            $("#supplier-error-div").toggleClass('hidden', isMatch);
+        }
+    }
 
     function bindUIEvents() {
         UIElements.navOrgInfoTab.one('click', function () { 
@@ -27,6 +110,10 @@ $(function () {
                 dataTable.columns.adjust(); 
             }
         });
+
+        UIElements.supplierName.on('change', validateMatchingSupplierToOrgInfo);
+        UIElements.orgName.on('change', validateMatchingSupplierToOrgInfo);
+        UIElements.nonRegisteredOrgName.on('change', validateMatchingSupplierToOrgInfo);
             
         UIElements.refreshSitesBtn.on('click', function () { 
             let originalSupplierNumber = UIElements.originalSupplierNumber.val();
@@ -79,7 +166,6 @@ $(function () {
 
     function loadSiteInfoTable() {
         let dt = $('#SiteInfoTable');
-        let dataTable;
 
         let inputAction = function() {
             const supplierId = $("#SupplierId").val();
@@ -104,7 +190,7 @@ $(function () {
         };
         
         const listColumns = getColumns();
-        const defaultVisibleColumns = ['number','paymentGroup','addressLine1','bankAccount','status','id'];
+        const defaultVisibleColumns = ['number','paymentGroup','addressLine1','bankAccount','status','id', 'rowActions'];
 
         let actionButtons = [
             {
@@ -129,24 +215,16 @@ $(function () {
             responseCallback,
             actionButtons,
             colReorder: false,
+            serverSideEnabled: false,
             pagingEnabled: false,
             reorderEnabled: false,
+            useNullPlaceholder: true,
             languageSetValues: {},
             dataTableName: 'SiteInfoTable',
-            dynamicButtonContainerId: 'siteDynamicButtonContainerId'});
-    
-        dataTable.on('search.dt', () => handleSearch());
-        
-        $('#search').on('input', function () {
-            let table = $('#SiteInfoTable').DataTable();
-            table.search($(this).val()).draw();
+            externalSearchInputId: 'SiteInfoSearch',
+            dynamicButtonContainerId: 'siteDynamicButtonContainerId'
         });
-        
-        function handleSearch() {
-            let filter = $('.dataTables_filter input').val();
-            console.info(filter);
-        }
-    
+
         function getColumns() {
             let columnIndex = 0;
 
@@ -156,7 +234,8 @@ $(function () {
                 getMailingAddress(columnIndex++),
                 getBankAccount(columnIndex++),
                 getStatus(columnIndex++),
-                getSiteDefaultRadio(columnIndex++)
+                getSiteDefaultRadio(columnIndex++),
+                getEditButtonColumn(columnIndex++)
             ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
         }    
     }
@@ -236,9 +315,39 @@ $(function () {
                 if(full.markDeletedInUse) {
                     return 'Deleted-In Use';
                 }
-                return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+
+                if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update')) {
+                    return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+                }
+
+                return `<input type="radio" class="site-radio" name="default-site" ${checked} ${disabled}/>`;
             },
             index: columnIndex
+        }
+    }
+    
+    function getEditButtonColumn(columnIndex) {
+        return {
+            title: 'Actions',
+            data: 'id',
+            name: 'rowActions',
+            className: 'data-table-header',
+            orderable: false,            
+            sortable: false,            
+            index: columnIndex,
+            rowAction: {
+                items:
+                    [
+                        {
+                            text: 'Edit',
+                            action: (data) => updateModal.open(
+                                { id: data.record.id },
+                                
+ 
+                            )
+                        }
+                    ]
+            }
         }
     }
 
@@ -258,6 +367,7 @@ $(function () {
         (msg, data) => {
             UIElements.siteId.val(data);
             loadSiteInfoTable();
+            validateMatchingSupplierToOrgInfo();
         }
     );
 
@@ -268,7 +378,8 @@ $(function () {
 
 function saveSiteDefault(siteId) {
     let applicantId = $("#ApplicantId").val();
-    $.ajax({ url: `/api/app/applicant/${applicantId}/site/${siteId}`,
+    $.ajax({
+        url: `/api/app/applicant/${applicantId}/site/${siteId}`,
         type: "POST",
         data: JSON.stringify({ ApplicantId: applicantId, SiteId: siteId }),
     })
@@ -277,31 +388,5 @@ function saveSiteDefault(siteId) {
     })
     .catch(error => {
         console.error('There was a problem with the post operation:', error);
-    });
-}
-
-let siteInfoModal = new abp.ModalManager({
-    viewUrl: '../SiteInfo/SiteInfoModal'
-});
-
-siteInfoModal.onResult(function () {
-    PubSub.publish('refresh_sites_list');
-    abp.notify.success(
-        'Site Information is successfully saved.',
-        'Site Information'
-    );
-});
-
-function openSiteInfoModal(siteId, actionType) {
-    const applicantId = $("#ApplicantInfoViewApplicantId").val();
-    const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
-    const supplierId = $("#SupplierId").val();
-
-    siteInfoModal.open({
-        applicantId: applicantId,
-        siteId: siteId,
-        actionType: actionType,
-        supplierNumber: supplierNumber,
-        supplierId: supplierId
     });
 }

@@ -12,7 +12,7 @@
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(assessmentResultObj, input);
             }
-            else if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "AssessmentResults.Notes")) {
+            else if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "ApprovalView.Notes")) {
                 assessmentResultObj[input.name.split(".")[1]] = input.value;
             } else {
                 let inputElement = $('[name="' + input.name + '"]');
@@ -40,9 +40,10 @@
         });
 
 
-        // Make sure all the custom fields are set in the custom fields object
-        if (typeof Flex === 'function') {
-            Flex?.setCustomFields(assessmentResultObj);
+        if (typeof Flex === 'function' && Object.keys(assessmentResultObj.CustomFields || {}).length > 0) {
+            $("#assessmentResultsCustomForm input:checkbox").each(function () {
+                assessmentResultObj.CustomFields[this.name] = (this.checked).toString();
+            });
         }
 
         try {
@@ -82,15 +83,16 @@
     }
 
     function isCurrencyField(input) {
-        const currencyFields = ['AssessmentResults.RequestedAmount',
-            'AssessmentResults.TotalProjectBudget',
-            'AssessmentResults.RecommendedAmount',
-            'AssessmentResults.ApprovedAmount'];
+        const currencyFields = [
+            'AssessmentResultsView.RequestedAmount',
+            'AssessmentResultsView.TotalProjectBudget',
+            'AssessmentResultsView.RecommendedAmount',
+            'AssessmentResultsView.ApprovedAmount'];
         return currencyFields.includes(input.name);
     }
 
     function isScoreField(input) {
-        return input.name == 'AssessmentResults.TotalScore';
+        return input.name == 'AssessmentResultsView.TotalScore';
     }
 
     function initDatePicker() {
@@ -104,8 +106,8 @@
             if (day < 10)
                 day = '0' + day.toString();
             let todayDate = year + '-' + month + '-' + day;
-            $('#AssessmentResults_FinalDecisionDate').attr({ 'max': todayDate });
-            $('#AssessmentResults_DueDate').attr({ 'min': todayDate });
+            $('#ApprovalView_FinalDecisionDate').attr({ 'max': todayDate });
+            $('#AssessmentResultsView_DueDate').attr({ 'min': todayDate });
         }, 500)
     }
     initDatePicker();
@@ -163,15 +165,15 @@ function hasInvalidExplicitValidations() {
     let explicitChangedValueValidations = [
         {
             flag: dueDateHasChanged,
-            name: 'AssessmentResults_DueDate'
+            name: 'AssessmentResultsView_DueDate'
         },
         {
             flag: decisionDateHasChanged,
-            name: 'AssessmentResults_FinalDecisionDate'
+            name: 'ApprovalView_FinalDecisionDate'
         },
         {
             flag: notificationDateHasChanged,
-            name: 'AssessmentResults_NotificationDate'
+            name: 'AssessmentResultsView_NotificationDate'
         }
     ];
 

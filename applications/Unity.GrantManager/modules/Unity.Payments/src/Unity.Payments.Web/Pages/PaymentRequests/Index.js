@@ -113,7 +113,7 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 11,
+        defaultSortColumn: 13,
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
         data: {},
         responseCallback,
@@ -140,7 +140,7 @@ $(function () {
     });
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
-    let history_button = dataTable.buttons(['.history']);    
+    let history_button = dataTable.buttons(['.history']);
 
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
@@ -278,7 +278,8 @@ $(function () {
             getDescriptionColumn(columnIndex++),
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
-            getCASResponseColumn(columnIndex++)
+            getCASResponseColumn(columnIndex++),
+            getTagsColumn(columnIndex++)
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -437,9 +438,7 @@ $(function () {
             data: 'creationTime',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
         };
     }
     function getUpdatedOnColumn(columnIndex) {
@@ -449,21 +448,27 @@ $(function () {
             data: 'lastModificationTime',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
         };
     }
     function getPaidOnColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:PaidOn'),
             name: 'paidOn',
-            data: 'paidOn',
+            data: 'paymentDate',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                return formatDate(data);
-            }
+            render: function(data) {
+                if (!data) return null;
+                // Check if date is in DD-MMM-YYYY format
+                if (/^\d{2}-[A-Z]{3}-\d{4}$/.test(data)) {
+                    // Parse and reformat
+                    const date = luxon.DateTime.fromFormat(data, 'dd-MMM-yyyy');
+                    return date.toFormat('yyyy-MM-dd');
+                }
+                // Use default render for other formats
+                return DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)(data);
+            }        
         };
     }
 
@@ -591,7 +596,21 @@ $(function () {
         };
     }
 
-
+    function getTagsColumn(columnIndex) {
+        return {
+            title: 'Tags',
+            name: 'paymentTags',
+            data: 'paymentTags',
+            className: '',
+            index: columnIndex,
+            render: function (data) {
+                let tagNames = data
+                    .filter(x =>x?.tag?.name)     
+                    .map(x => x.tag.name);
+                return tagNames.join(', ') ?? '';
+            }
+        }
+    }
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
@@ -667,6 +686,16 @@ $(function () {
             dataTable.rows({ 'page': 'current' }).deselect();
         }
     });
+
+    PubSub.subscribe(
+        'refresh_payment_list',
+        (msg, data) => {
+            dataTable.ajax.reload(null, false);
+            $(".select-all-payments").prop("checked", false);
+            PubSub.publish('clear_selected_payment');
+        }
+    );
+
 });
 
 

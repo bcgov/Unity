@@ -51,6 +51,13 @@
     margin: auto;
 }
 
+.unity-navbar-nav {
+    display: flex;
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+}
+
     .unity-navbar .unity-container-fluid {
         display: flex;
     }
@@ -342,7 +349,6 @@ thead input {
 }
 
 .abp-widget-wrapper {
-    /* position: sticky; */
     top: 0;
     z-index: 2;
 }
@@ -525,6 +531,7 @@ div.dt-buttons div.dropdown-menu {
 
 .dataTables_filter {
     margin-bottom: .5rem;
+    display: none;
 }
 
 .custom-table-btn {
@@ -565,10 +572,6 @@ div.dt-buttons div.dropdown-menu {
     background-color: var(--bc-colors-blue-primary);
     border-radius: 50%;
     margin-left: 5px;
-}
-
-.dataTables_filter {
-    display: none;
 }
 
 ul.pagination {
@@ -766,6 +769,10 @@ div.dataTables_wrapper div.dataTables_filter {
 
 .unt-icon-sm {
     font-size: 14px !important;
+}
+
+.unt-icon-m {
+    font-size: 16px !important;
 }
 
 .unt-accordion {

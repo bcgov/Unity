@@ -21,7 +21,7 @@
                     {
                         <div id="@($"{Model.BulkApplicationApprovals[i].ApplicationId}_container")" class="batch-approval-container">
                             <abp-row class="m-0 p-2 bulk-approval-row-header d-flex flex-nowrap">
-                                <abp-column size="_11" class="px-1 flex-grow-1">
+                                <abp-column size="_9" class="px-1 flex-grow-1">
                                     <div class="approval-details-header">
                                         <div class="reference-no">@Model.BulkApplicationApprovals[i].ReferenceNo</div>
                                         <div class="applicant-name">@Model.BulkApplicationApprovals[i].ApplicantName</div>
@@ -29,7 +29,16 @@
                                         <div class="application-status">@Model.BulkApplicationApprovals[i].ApplicationStatus</div>
                                     </div>
                                 </abp-column>
-                                <abp-column size="_1" class="bulk-approval-remove-row d-flex justify-content-end">
+                                <abp-column size="_3" class="bulk-approval-remove-row d-flex justify-content-end col-3 gap-1 align-items-center">
+                                    <label class="form-check-label" for="isDirectApproval_@Model.BulkApplicationApprovals[i].ApplicationId">Direct Approval</label>
+                                    <div class="form-switch">
+                                        <input class="form-check-input"
+                                               checked="@Model.BulkApplicationApprovals[i].IsDirectApproval"
+                                               type="checkbox"
+                                               id="isDirectApproval_@Model.BulkApplicationApprovals[i].ApplicationId"
+                                               disabled
+                                               name="isDirectApproval_@Model.BulkApplicationApprovals[i].ApplicationId" />
+                                    </div>
                                     <abp-button onclick='removeApplicationApproval("@Model.BulkApplicationApprovals[i].ApplicationId" + "_container")'
                                                 size="Small"
                                                 icon-type="Other"
@@ -46,13 +55,16 @@
                             <abp-input type="hidden" asp-for="@Model.BulkApplicationApprovals[i].ReferenceNo" />
 
                             <abp-row class="m-0 p-3">
-                                <abp-column size="_4" class="px-3">
+                                <abp-column size="_3" class="px-3">
                                     <abp-input asp-for="@Model.BulkApplicationApprovals[i].RequestedAmount" class="unity-currency-input" disabled=true />
                                 </abp-column>
-                                <abp-column size="_4" class="px-3">
+                                <abp-column size="_3" class="px-3">
+                                    <abp-input asp-for="@Model.BulkApplicationApprovals[i].RecommendedAmount" class="unity-currency-input" disabled=true />
+                                </abp-column>
+                                <abp-column size="_3" class="px-3">
                                     <abp-input asp-for="@Model.BulkApplicationApprovals[i].ApprovedAmount" disabled="@(!Model.BulkApplicationApprovals[i].IsValid)" class="unity-currency-input" onchange="approvedAmountUpdated(event)" />
                                 </abp-column>
-                                <abp-column size="_4">
+                                <abp-column size="_3">
                                     <abp-input asp-for="@Model.BulkApplicationApprovals[i].DecisionDate" disabled="@(!Model.BulkApplicationApprovals[i].IsValid)" type="date" max="@DateTime.Now.ToString("yyyy-MM-dd")" onchange="decisionDateUpdated(event)" />
                                 </abp-column>
                                 @for (var j = 0; j < Model.BulkApplicationApprovals[i].Notes?.Count; j++)

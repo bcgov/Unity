@@ -1,0 +1,33 @@
+﻿@using Unity.Modules.Shared
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
+
+<abp-script src="/Views/Settings/TagManagement/TagManagement.js" />
+
+<div class="container-fluid px-0">
+    <div class="filter-search-action-bar">
+        <div class="unity-page-titlebar">
+            <h4 class="m-0">Manage Tags</h4>
+        </div>
+        <div class="filter-search-action-bar_search-wrapper">
+           
+        </div>
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.SettingManagement.Tags.Create))
+        {
+        <button id="addNewTag" class="btn flex-none btn-light rounded-1"  type="button" title="Create"><span><i class="fl fl-add-to align-middle"></i> <span>Add Tag</span></span></button>
+        }
+    </div>
+    
+    <div class="unity-setting-body p-3">
+        <div class="row">
+            <div class="container">
+                <abp-table id="GlobalTagsTable" data-resize-aware="true"></abp-table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

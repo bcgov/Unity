@@ -42,7 +42,7 @@ $(function () {
 
     function getChefsFileNameColumn() {
         return {
-            title: l('AssessmentResultAttachments:DocumentName'),
+            title: 'Document Name',
             name: 'chefsFileName',
             data: 'fileName',
             className: 'data-table-header text-break',

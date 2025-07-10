@@ -1,4 +1,6 @@
 name: Dev - Build & Push docker images
+permissions:
+  contents: read
 
 on:
   push:
@@ -87,6 +89,8 @@ jobs:
     needs: [Setup,Branch]
     runs-on: ubuntu-latest
     environment: dev
+    permissions:
+      actions: write
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4

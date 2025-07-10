@@ -107,9 +107,8 @@
     "Enum:AssessmentState.COMPLETED": "Completed",
 
     "Enum:AssessmentAction.Create": "Create Assessment",
-    "Enum:AssessmentAction.SendTo": "Send To...",
-    "Enum:AssessmentAction.Confirm": "Complete Assessment",
     "Enum:AssessmentAction.SendBack": "Send Back",
+    "Enum:AssessmentAction.Complete": "Complete Assessment",
 
     "Permission:GrantManagerManagement": "Grant Manager Management",
     "Permission:GrantManagerManagement.Default": "Default",
@@ -126,6 +125,7 @@
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
+    "Permission:GrantApplicationManagement.Applicants.AssignApplicant": "Assign Applicant to an Application",
     "Permission:GrantApplicationManagement.Assignments.Default": "Assignment",
     "Permission:GrantApplicationManagement.Assignments.AssignInitial": "Initial Assignment",
     "Permission:GrantApplicationManagement.Reviews.Default": "Reviews",
@@ -136,12 +136,14 @@
     "Permission:GrantApplicationManagement.Assessments.Complete": "Complete Assessment",
     "Permission:GrantApplicationManagement.Approvals.Default": "Approvals",
     "Permission:GrantApplicationManagement.Approvals.Complete": "Complete Approval",
+    "Permission:GrantApplicationManagement.Approvals.DeferAfterApproval": "Defer After Approval",
     "Permission:GrantApplicationManagement.Comments.Default": "Comments",
     "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment",
     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
     "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
     "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
+    "Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval": "Bulk Application Approval",
 
     "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",
@@ -159,6 +161,9 @@
     "ApplicationForms:Payable": "Payable",
     "ApplicationForms:RenderFormIoToHtml": "Render FormIO to HTML",
     "ApplicationForms:ConfigureWorksheets": "Configure Worksheets",
+    "ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow": "Enabling this feature will bypass the Assessment workflow when you approve submissions associated with this form.",
+    "ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress": "The selected address type will determine which submitted applicant address is used to extract the electoral district.",
+    "ApplicationForms.Configuration.Warnings:ApplicantElectoralAddressTypeChange": "Changing the address type will only affect new submissions. Existing applications will retain the electoral district extracted from their original address type.",
 
     "Intakes": "Intakes",
 
@@ -183,11 +188,13 @@
     "Unity.GrantManager.ApplicationManagement.Review.Results.Update": "Edit Application Assessment Results",
     "Unity.GrantManager.ApplicationManagement.Review.ReviewList": "Assessment List",
 
-    "Unity.GrantManager.ApplicationManagement.Project": "Project",
+    "Unity.GrantManager.ApplicationManagement.Project": "Project Info",
     "Unity.GrantManager.ApplicationManagement.Project.Summary": "Project Summary",
     "Unity.GrantManager.ApplicationManagement.Project.Summary.Update": "Edit Project Summary",
+    "Unity.GrantManager.ApplicationManagement.Project.Summary.Update.UpdateFinalStateFields": "Edit Project Summary after approval",
     "Unity.GrantManager.ApplicationManagement.Project.Location": "Project Location",
     "Unity.GrantManager.ApplicationManagement.Project.Location.Update": "Edit Project Location",
+    "Unity.GrantManager.ApplicationManagement.Project.Location.Update.UpdateFinalStateFields": "Edit Project Location after approval",
 
     "Unity.GrantManager.ApplicationManagement.Applicant": "Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary": "Applicant Info",
@@ -198,19 +205,28 @@
     "Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update": "Edit Signing Authority",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location": "Address",
     "Unity.GrantManager.ApplicationManagement.Applicant.Location.Update": "Edit Address",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact": "Additional Contact(s)",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Create": "Add Additional Contact(s)",
+    "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Update": "Edit Additional Contact(s)",
 
     "Unity.GrantManager.ApplicationManagement.Funding": "Funding",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Funding Agreement",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement.Update": "Edit Funding Agreement",
 
-    "Unity.GrantManager.ApplicationManagement.Payment": "Payment",
+    "Unity.GrantManager.ApplicationManagement.Payment": "Payment Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
-    "Unity.GrantManager.ApplicationManagement.Payment.Summary.Update": "Edit Payment Summary",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
 
     "Permission:GrantApplicationManagement.ProjectInfo": "Project Info",
     "Permission:GrantApplicationManagement.ProjectInfo.Update": "Project Info Update",
     "Permission:GrantApplicationManagement.ProjectInfo.Update.UpdateFinalStateFields": "Edit Project Info Fields After Approval",
+
+    "Unity.GrantManager.SettingManagement.Tags": "Manage Tags",
+    "Unity.GrantManager.SettingManagement.Tags.Create": "Create Tag",
+    "Unity.GrantManager.SettingManagement.Tags.Update": "Edit Tag",
+    "Unity.GrantManager.SettingManagement.Tags.Delete": "Delete Tag",
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
@@ -323,7 +339,7 @@
     "Summary:Assessment.Batch": "Batch #",
     "Summary:ApplicationTags": "Application Tags",
 
-    "ProjectInfoView:ProjectInfoTitle": "Project Summary",
+    "Unity.GrantManager.ApplicationManagement.Project.Summary:DisplayName": "Project Summary",
     "ProjectInfoView:ProjectInfo.ProjectName": "Project Name",
     "ProjectInfoView:ProjectInfo.ProjectSummary": "Project Summary",
     "ProjectInfoView:ProjectInfo.ProjectStartDate": "Project Start Date",
@@ -336,7 +352,7 @@
     "ProjectInfoView:ProjectInfo.SubSector": "Sub Sector",
     "ProjectInfoView:ProjectInfo.Community": "Community",
     "ProjectInfoView:ProjectInfo.EconomicRegion": "Economic Region",
-    "ProjectInfoView:ProjectInfo.ElectoralDistrict": "Electoral District",
+    "ProjectInfoView:ProjectInfo.ElectoralDistrict": "Project Electoral District",
     "ProjectInfoView:ProjectInfo.CommunityPopulation": "Community Population",
     "ProjectInfoView:ProjectInfo.Place": "Place",
     "ProjectInfoView:ProjectInfo.Acquisition": "Acquisition",
@@ -344,16 +360,14 @@
     "ProjectInfoView:ProjectInfo.ForestryFocus": "Forestry Focus",
     "ProjectInfoView:ProjectInfo.CensusSubdivision": "Census Subdivision",
     "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District",
-    "ProjectInfoView:ProjectInfoLocation": "Project Location",
+
+    "Unity.GrantManager.ApplicationManagement.Project.Location:DisplayName": "Project Location",
     "ProjectInfoView:ProjectInfoContactInfo": "Contact Info",
     "ProjectInfoView:ProjectInfo.ContactFullName": "Contact Full Name",
     "ProjectInfoView:ProjectInfo.ContactTitle": "Contact Title",
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-
-    "Permission:GrantApplicationManagement.ApplicantInfo": "Applicant Info",
-    "Permission:GrantApplicationManagement.ApplicantInfo.Update": "Applicant Info Update",
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
@@ -393,6 +407,16 @@
     "ApplicantInfoView:ApplicantInfo.NonRegOrgName": "Non-Registered Organization Name",
     "ApplicantInfoView:ApplicantInfo.OrgBookSearchPlaceholder": "Start typing to search for your registered organization name",
     "ApplicantInfoView:ApplicantInfo.OrgBookSearch": "Search in BC Registries",
+    "ApplicantInfoView:ElectoralDistrict": "Electoral District",
+    "ApplicantInfoView:ApplicantElectoralDistrict": "Applicant Electoral District",
+    "ApplicantInfoView:Notes.ElectoralDistrict": "The electoral district is identified based on the {0}",
+    "ApplicantInfoView:ApplicantInfo.ApplicantLookUp": "Applicant Look up",
+    "ApplicantInfoView:ApplicantInfo.ApplicantLookUpPlaceholder": "Start typing applicant name or number to search for applicant...",
+    "ApplicantInfoView:ApplicantInfo.PrincipalRecord": "Principal Record",
+    "ApplicantInfoView:ApplicantInfo.Principal": "Use as a Principal",
+    "ApplicantInfoView:ApplicantInfo.ApplicantName": "Applicant Name",
+
+
 
     "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement",
     "FundingAgreementInfoView:FundingAgreementInfoContract": "Contract",
@@ -425,6 +449,7 @@
     "ApplicationBatchApprovalRequest:InvalidStatus": "The assessment for the selected item is not in the Assessment Completed state",
     "ApplicationBatchApprovalRequest:InvalidPermissions": "Invalid permissions",
     "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
-    "ApplicationBatchApprovalRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer"
+    "ApplicationBatchApprovalRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer",
+    "ApplicationBatchApprovalRequest:InvalidRecommendedAmount": "Invalid Recommended Amount, it must be greater than 0.00"
   }
 }

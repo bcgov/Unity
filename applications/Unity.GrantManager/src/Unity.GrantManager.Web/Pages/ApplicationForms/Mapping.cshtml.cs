@@ -113,7 +113,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             IntakeProperties = JsonSerializer.Serialize(await GenerateMappingFieldsAsync());
         }
-
+        
         private async Task<List<MapField>> GenerateMappingFieldsAsync()
         {
             IntakeMapping intakeMapping = new();
