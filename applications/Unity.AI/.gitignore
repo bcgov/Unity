@@ -1,0 +1,4 @@
+.env
+venv
+embedded_schema
+__pycache__
