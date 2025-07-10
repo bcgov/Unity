@@ -177,6 +177,8 @@ internal static class PolicyRegistrant
         // Setting Management - Tag Management
         authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Create,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Create));
         authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Update,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Update));
         authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Delete,

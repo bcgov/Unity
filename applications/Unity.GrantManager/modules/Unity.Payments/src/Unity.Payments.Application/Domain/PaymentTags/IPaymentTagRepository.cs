@@ -8,7 +8,6 @@ namespace Unity.Payments.Domain.PaymentTags
     public interface IPaymentTagRepository : IRepository<PaymentTag, Guid>
     {
         Task<List<PaymentTag>> GetTagsByPaymentRequestIdAsync(Guid paymentRequestId);
-        Task<List<TagSummaryCount>> GetTagSummary();
-        Task<int> GetMaxRenameLengthAsync(string originalTag);
+        Task<List<PaymentTagSummaryCount>> GetTagSummary();
     }
 }
