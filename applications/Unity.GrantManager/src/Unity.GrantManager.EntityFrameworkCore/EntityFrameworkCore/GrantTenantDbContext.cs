@@ -253,13 +253,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationTags",
                     GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
-                b.Property(x => x.Text)
-                   .IsRequired()
-                   .HasMaxLength(250);
                 b.HasOne(x => x.Tag)
                  .WithMany() 
                  .HasForeignKey(x => x.TagId)
-                 .IsRequired();
+                 .IsRequired()
+                 .OnDelete(DeleteBehavior.NoAction);
 
 
             });
