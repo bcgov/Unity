@@ -110,18 +110,6 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     }
 
     /// <summary>
-    /// For a given Tag, finds the maximum length available for renaming.
-    /// </summary>
-    /// <param name="originalTag">The tag to be replaced.</param>
-    /// <returns>The maximum length available for renaming</returns>
-    [Authorize(UnitySelector.SettingManagement.Tags.Update)]
-    public async Task<int> GetMaxRenameLengthAsync(string originalTag)
-    {
-        Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
-        return await _applicationTagsRepository.GetMaxRenameLengthAsync(originalTag);
-    }
-
-    /// <summary>
     /// Renames a tag across all application tags, replacing the original tag with the replacement tag.
     /// Only whole-word tags are replaced; substring matches are ignored.
     /// Throws a BusinessException if the original and replacement tags are the same.
@@ -150,15 +138,6 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
         if (applicationTags.Count == 0)
             return [];
-
-        int maxRemainingLength = await GetMaxRenameLengthAsync(originalTag);
-        if (replacementTag.Length > maxRemainingLength)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(replacementTag),
-                $"String length exceeds maximum allowed length of {maxRemainingLength}. Actual length: {replacementTag.Length}"
-            );
-        }
 
         var updatedTags = new List<ApplicationTags>(applicationTags.Count);
 

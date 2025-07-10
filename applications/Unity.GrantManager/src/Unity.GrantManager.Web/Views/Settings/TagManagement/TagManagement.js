@@ -288,11 +288,13 @@ $(function () {
         refreshGlobalTagsTable();
     });
 
-    $('#addNewTag').click(function () {
-        addNewTagModal.open();
-    });
+    if (abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Create')) {
+        $('#addNewTag').click(function () {
+            addNewTagModal.open();
+        });
+    }
+
     addNewTagModal.onResult(function () {
-      
         refreshGlobalTagsTable();
     });
 });

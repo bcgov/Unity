@@ -15,6 +15,10 @@ using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.GlobalTag;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    category: "Performance", 
+    checkId:"CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", 
+    Justification = "EF Core cannot translate StringComparison.OrdinalIgnoreCase, so use ToLower() for comparison")]
 [Authorize]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(TagsAppService), typeof(ITagsService))]
@@ -37,7 +41,7 @@ public class TagsAppService : ApplicationService, ITagsService
         return ObjectMapper.Map<List<Tag>, List<TagDto>>(tags.OrderBy(t => t.Id).ToList());
     }
 
-    
+    [Authorize(UnitySelector.SettingManagement.Tags.Create)]
     public async Task<TagDto> CreateTagsAsync(TagDto input)
     {
         var normalizedName = input.Name.ToLower();
@@ -48,15 +52,15 @@ public class TagsAppService : ApplicationService, ITagsService
         {
             throw new BusinessException(
 
-               "400" , "Another tag with the same name already exists."
+               "400", "Another tag with the same name already exists."
             );
         }
-            var newTag = await _tagsRepository.InsertAsync(new Tag
-            {
-                Name = input.Name
-            }, autoSave: true);
+        var newTag = await _tagsRepository.InsertAsync(new Tag
+        {
+            Name = input.Name
+        }, autoSave: true);
 
-            return ObjectMapper.Map<Tag, TagDto>(newTag);
+        return ObjectMapper.Map<Tag, TagDto>(newTag);
     }
 
     public async Task<TagDto> CreateorUpdateTagsAsync(Guid id, TagDto input)
@@ -64,6 +68,7 @@ public class TagsAppService : ApplicationService, ITagsService
         var normalizedName = input.Name.ToLower();
         var tag = await _tagsRepository
             .FirstOrDefaultAsync(e => e.Name.ToLower() == normalizedName);
+
         if (tag == null)
         {
             var newTag = await _tagsRepository.InsertAsync(new Tag
@@ -81,19 +86,6 @@ public class TagsAppService : ApplicationService, ITagsService
         }
     }
 
-
-    /// <summary>
-    /// For a given Tag, finds the maximum length available for renaming.
-    /// </summary>
-    /// <param name="originalTag">The tag to be replaced.</param>
-    /// <returns>The maximum length available for renaming</returns>
-    [Authorize(UnitySelector.SettingManagement.Tags.Update)]
-    public async Task<int> GetMaxRenameLengthAsync(string originalTag)
-    {
-        Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
-        return await _tagsRepository.GetMaxRenameLengthAsync(originalTag);
-    }
-
     /// <summary>
     /// Renames a tag across all application tags, replacing the original tag with the replacement tag.
     /// Only whole-word tags are replaced; substring matches are ignored.
@@ -109,15 +101,13 @@ public class TagsAppService : ApplicationService, ITagsService
         Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
-        
-      
         var duplicateTag = await _tagsRepository
-           .FindAsync(e => e.Name.Equals(replacementTag) && e.Id != id);
+           .FirstOrDefaultAsync(e => e.Name.ToLower() == replacementTag.ToLower() && e.Id != id);
         if (duplicateTag != null)
         {
             throw new BusinessException(
-                
-                "400","Another tag with the same name already exists."
+
+                "400", "Another tag with the same name already exists."
             );
         }
 
@@ -128,9 +118,8 @@ public class TagsAppService : ApplicationService, ITagsService
             return [];
 
         tag.Name = replacementTag;
-        
+
         await _tagsRepository.UpdateAsync(tag, autoSave: true);
-        
 
         return [tag.Id];
     }
@@ -148,7 +137,7 @@ public class TagsAppService : ApplicationService, ITagsService
         // NOTE: Unable to get the MIN of the MaxRenameLength for both Application and Payments. Must get on front-end by 2 API calls.
         // May result in one EntityType tag renaming with the other failing in rare cases.
 
-        await RenameTagAsync(id,originalTag, replacementTag);
+        await RenameTagAsync(id, originalTag, replacementTag);
         await _localEventBus.PublishAsync(
             new RenameTagEto
             {
@@ -175,10 +164,10 @@ public class TagsAppService : ApplicationService, ITagsService
     [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
     public virtual async Task DeleteTagGlobalAsync(Guid id)
     {
-      
+
         await _applicationTagsService.DeleteTagWithTagIdAsync(id);
         await _localEventBus.PublishAsync(new DeleteTagEto { TagId = id });
-       
+
     }
 
     public async Task<PagedResultDto<TagUsageSummaryDto>> GetTagSummaryAsync()

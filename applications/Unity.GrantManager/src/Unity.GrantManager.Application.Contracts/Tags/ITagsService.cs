@@ -12,7 +12,6 @@ public interface ITagsService : IApplicationService
     Task<TagDto> CreateorUpdateTagsAsync(Guid id, TagDto input);
     Task<TagDto> CreateTagsAsync (TagDto input);
     Task<PagedResultDto<TagUsageSummaryDto>> GetTagSummaryAsync();
-    Task<int> GetMaxRenameLengthAsync(string originalTag);
     Task<List<Guid>> RenameTagAsync(Guid id, string originalTag, string replacementTag);
     Task RenameTagGlobalAsync(Guid id,string originalTag, string replacementTag);
     Task DeleteTagAsync(Guid id);

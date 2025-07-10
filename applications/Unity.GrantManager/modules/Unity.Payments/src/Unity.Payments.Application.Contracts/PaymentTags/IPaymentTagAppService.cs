@@ -14,7 +14,6 @@ namespace Unity.Payments.PaymentTags
         Task<PaymentTagDto?> GetPaymentTagsAsync(Guid id);
 
         Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync();
-        Task<int> GetMaxRenameLengthAsync(string originalTag);
         Task<List<Guid>> RenameTagAsync(string originalTag, string replacementTag);
         Task DeleteTagAsync(Guid id);
         Task DeleteTagWithTagIdAsync(Guid tagId);
