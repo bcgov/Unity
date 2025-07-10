@@ -66,33 +66,24 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             // 1. Flatten and insert unique tags from PaymentTags.Text and ApplicationTags.Text
             migrationBuilder.Sql(@"
-                -- Insert unique tags from PaymentTags (distinct by TenantId and tag)
                 INSERT INTO ""Tags"" (""Id"", ""TenantId"", ""Name"", ""ExtraProperties"", ""ConcurrencyStamp"", ""CreationTime"")
-                SELECT DISTINCT gen_random_uuid(), pt.""TenantId"", TRIM(tag), '', '', NOW()
+                SELECT gen_random_uuid(), src.""TenantId"", src.""Name"", '', '', NOW()
                 FROM (
-                    SELECT ""TenantId"", unnest(string_to_array(""Text"", ',')) AS tag
-                    FROM ""Payments"".""PaymentTags""
-                ) AS pt
-                WHERE TRIM(tag) <> ''
-                  AND NOT EXISTS (
+                    SELECT DISTINCT ""TenantId"", TRIM(tag) AS ""Name""
+                    FROM (
+                        SELECT ""TenantId"", unnest(string_to_array(""Text"", ',')) AS tag
+                        FROM ""Payments"".""PaymentTags""
+                        UNION ALL
+                        SELECT ""TenantId"", unnest(string_to_array(""Text"", ',')) AS tag
+                        FROM ""ApplicationTags""
+                    ) AS all_tags
+                    WHERE TRIM(tag) <> ''
+                ) AS src
+                WHERE NOT EXISTS (
                     SELECT 1 FROM ""Tags"" t
-                    WHERE t.""TenantId"" IS NOT DISTINCT FROM pt.""TenantId""
-                      AND t.""Name"" = TRIM(tag)
-                  );
-
-                -- Insert unique tags from ApplicationTags (distinct by TenantId and tag)
-                INSERT INTO ""Tags"" (""Id"", ""TenantId"", ""Name"", ""ExtraProperties"", ""ConcurrencyStamp"", ""CreationTime"")
-                SELECT DISTINCT gen_random_uuid(), at.""TenantId"", TRIM(tag), '', '', NOW()
-                FROM (
-                    SELECT ""TenantId"", unnest(string_to_array(""Text"", ',')) AS tag
-                    FROM ""ApplicationTags""
-                ) AS at
-                WHERE TRIM(tag) <> ''
-                  AND NOT EXISTS (
-                    SELECT 1 FROM ""Tags"" t
-                    WHERE t.""TenantId"" IS NOT DISTINCT FROM at.""TenantId""
-                      AND t.""Name"" = TRIM(tag)
-                  );
+                    WHERE t.""TenantId"" IS NOT DISTINCT FROM src.""TenantId""
+                      AND t.""Name"" = src.""Name""
+                );
             ");
 
             // 2. Normalize PaymentTags: create a new row for each tag in the Text column
@@ -135,7 +126,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                  AND t.""Name"" = f.""TagName"";
             ");
 
-            // Normalize ApplicationTags: create a new row for each tag in the Text column
+            // 3. Normalize ApplicationTags: create a new row for each tag in the Text column
             migrationBuilder.Sql(@"
                 WITH flattened AS (
                     SELECT
@@ -179,6 +170,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             migrationBuilder.Sql(@"DELETE FROM ""Payments"".""PaymentTags"" WHERE POSITION(',' IN ""Text"") > 0;");
             migrationBuilder.Sql(@"DELETE FROM ""ApplicationTags"" WHERE POSITION(',' IN ""Text"") > 0;");
 
+            // 5. After normalization, remove duplicate tag rows
+            migrationBuilder.Sql(@"DELETE FROM ""Payments"".""PaymentTags"" WHERE ""TagId"" = '00000000-0000-0000-0000-000000000000';");
+            migrationBuilder.Sql(@"DELETE FROM ""ApplicationTags"" WHERE ""TagId"" = '00000000-0000-0000-0000-000000000000';");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentTags_TagId",
