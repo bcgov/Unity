@@ -116,7 +116,6 @@
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
     "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
     "Permission:Payments.RequestPayment": "Request Payment",
-    "Permission:Payments.EditSupplierInfo": "Update Supplier Info",
 
     "Enum:PaymentRequestStatus.L1Pending": "L1 Pending",
     "Enum:PaymentRequestStatus.L1Approved": "L1 Approved",
@@ -132,6 +131,12 @@
     "Enum:PaymentRequestStatus.NotValidated": "Not Validated",
     "Enum:PaymentRequestStatus.Paid": "Paid",
     "Enum:PaymentRequestStatus.Failed": "Payment Failed",
-    "Enum:PaymentRequestStatus.PaymentFailed": "Payment Failed"
+    "Enum:PaymentRequestStatus.PaymentFailed": "Payment Failed",
+
+    "Unity.GrantManager.ApplicationManagement.Payment": "Payment Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
+    "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List"
   }
 }
