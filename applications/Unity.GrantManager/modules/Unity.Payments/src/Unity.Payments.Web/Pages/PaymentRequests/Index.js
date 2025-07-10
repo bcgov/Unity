@@ -600,11 +600,14 @@ $(function () {
         return {
             title: 'Tags',
             name: 'paymentTags',
-            data: 'paymentTags[0].text',
+            data: 'paymentTags',
             className: '',
             index: columnIndex,
             render: function (data) {
-                return data.replace(/,/g, ', ') ?? '';
+                let tagNames = data
+                    .filter(x =>x?.tag?.name)     
+                    .map(x => x.tag.name);
+                return tagNames.join(', ') ?? '';
             }
         }
     }

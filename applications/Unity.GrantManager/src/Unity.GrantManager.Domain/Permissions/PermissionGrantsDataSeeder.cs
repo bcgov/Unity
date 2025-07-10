@@ -83,6 +83,7 @@ namespace Unity.GrantManager.Permissions
 
         public readonly List<string> SettingManagement_Tags_CommonPermissions = [
             UnitySelector.SettingManagement.Tags.Default,
+            UnitySelector.SettingManagement.Tags.Create,
             UnitySelector.SettingManagement.Tags.Update,
             UnitySelector.SettingManagement.Tags.Delete
         ];
