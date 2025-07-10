@@ -80,9 +80,6 @@ public static class PaymentsDbContextModelCreatingExtensions
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
-            b.Property(x => x.Text)
-                .IsRequired()
-                .HasMaxLength(250);
             b.HasOne(x => x.Tag)
                 .WithMany() 
                 .HasForeignKey(x => x.TagId)
