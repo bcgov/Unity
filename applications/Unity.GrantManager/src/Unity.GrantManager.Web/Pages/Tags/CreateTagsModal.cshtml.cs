@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -5,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Unity.GrantManager.GlobalTag;
+using Unity.Modules.Shared;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Validation;
 
@@ -17,6 +19,7 @@ namespace Unity.GrantManager.Web.Pages.Tags
         public List<TagDto> UncommonTags { get; set; } = new();
     }
 
+    [Authorize(UnitySelector.SettingManagement.Tags.Create)]
     public class CreateTagsModalModel : AbpPageModel
     {
     

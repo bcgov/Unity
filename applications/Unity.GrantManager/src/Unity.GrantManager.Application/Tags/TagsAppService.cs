@@ -37,33 +37,33 @@ public class TagsAppService : ApplicationService, ITagsService
         return ObjectMapper.Map<List<Tag>, List<TagDto>>(tags.OrderBy(t => t.Id).ToList());
     }
 
-    
+    [Authorize(UnitySelector.SettingManagement.Tags.Create)]
     public async Task<TagDto> CreateTagsAsync(TagDto input)
     {
         var normalizedName = input.Name.ToLower();
         var tag = await _tagsRepository
-            .FirstOrDefaultAsync(e => e.Name.ToLower() == normalizedName);
+            .FirstOrDefaultAsync(e => e.Name.Equals(normalizedName, StringComparison.OrdinalIgnoreCase));
 
         if (tag != null)
         {
             throw new BusinessException(
 
-               "400" , "Another tag with the same name already exists."
+               "400", "Another tag with the same name already exists."
             );
         }
-            var newTag = await _tagsRepository.InsertAsync(new Tag
-            {
-                Name = input.Name
-            }, autoSave: true);
+        var newTag = await _tagsRepository.InsertAsync(new Tag
+        {
+            Name = input.Name
+        }, autoSave: true);
 
-            return ObjectMapper.Map<Tag, TagDto>(newTag);
+        return ObjectMapper.Map<Tag, TagDto>(newTag);
     }
 
     public async Task<TagDto> CreateorUpdateTagsAsync(Guid id, TagDto input)
     {
         var normalizedName = input.Name.ToLower();
         var tag = await _tagsRepository
-            .FirstOrDefaultAsync(e => e.Name.ToLower() == normalizedName);
+            .FirstOrDefaultAsync(e => e.Name.Equals(normalizedName, StringComparison.OrdinalIgnoreCase));
         if (tag == null)
         {
             var newTag = await _tagsRepository.InsertAsync(new Tag
@@ -109,15 +109,13 @@ public class TagsAppService : ApplicationService, ITagsService
         Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
-        
-      
         var duplicateTag = await _tagsRepository
            .FindAsync(e => e.Name.Equals(replacementTag) && e.Id != id);
         if (duplicateTag != null)
         {
             throw new BusinessException(
-                
-                "400","Another tag with the same name already exists."
+
+                "400", "Another tag with the same name already exists."
             );
         }
 
@@ -128,9 +126,8 @@ public class TagsAppService : ApplicationService, ITagsService
             return [];
 
         tag.Name = replacementTag;
-        
+
         await _tagsRepository.UpdateAsync(tag, autoSave: true);
-        
 
         return [tag.Id];
     }
@@ -148,7 +145,7 @@ public class TagsAppService : ApplicationService, ITagsService
         // NOTE: Unable to get the MIN of the MaxRenameLength for both Application and Payments. Must get on front-end by 2 API calls.
         // May result in one EntityType tag renaming with the other failing in rare cases.
 
-        await RenameTagAsync(id,originalTag, replacementTag);
+        await RenameTagAsync(id, originalTag, replacementTag);
         await _localEventBus.PublishAsync(
             new RenameTagEto
             {
@@ -175,10 +172,10 @@ public class TagsAppService : ApplicationService, ITagsService
     [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
     public virtual async Task DeleteTagGlobalAsync(Guid id)
     {
-      
+
         await _applicationTagsService.DeleteTagWithTagIdAsync(id);
         await _localEventBus.PublishAsync(new DeleteTagEto { TagId = id });
-       
+
     }
 
     public async Task<PagedResultDto<TagUsageSummaryDto>> GetTagSummaryAsync()
