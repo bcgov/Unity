@@ -109,18 +109,6 @@ namespace Unity.Payments.PaymentTags
             );
         }
 
-        /// <summary>
-        /// For a given Tag, finds the maximum length available for renaming.
-        /// </summary>
-        /// <param name="originalTag">The tag to be replaced.</param>
-        /// <returns>The maximum length available for renaming</returns>
-        [Authorize(UnitySelector.SettingManagement.Tags.Update)]
-        public async Task<int> GetMaxRenameLengthAsync(string originalTag)
-        {
-            Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
-            return await _paymentTagRepository.GetMaxRenameLengthAsync(originalTag);
-        }
-
         [Authorize(UnitySelector.SettingManagement.Tags.Update)]
         public async Task<List<Guid>> RenameTagAsync(string originalTag, string replacementTag)
         {
@@ -141,15 +129,6 @@ namespace Unity.Payments.PaymentTags
 
             if (paymentRequestTags.Count == 0)
                 return [];
-
-            int maxRemainingLength = await GetMaxRenameLengthAsync(originalTag);
-            if (replacementTag.Length > maxRemainingLength)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(replacementTag),
-                    $"String length exceeds maximum allowed length of {maxRemainingLength}. Actual length: {replacementTag.Length}"
-                );
-            }
 
             var updatedTags = new List<PaymentTag>(paymentRequestTags.Count);
 

@@ -81,19 +81,6 @@ public class TagsAppService : ApplicationService, ITagsService
         }
     }
 
-
-    /// <summary>
-    /// For a given Tag, finds the maximum length available for renaming.
-    /// </summary>
-    /// <param name="originalTag">The tag to be replaced.</param>
-    /// <returns>The maximum length available for renaming</returns>
-    [Authorize(UnitySelector.SettingManagement.Tags.Update)]
-    public async Task<int> GetMaxRenameLengthAsync(string originalTag)
-    {
-        Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
-        return await _tagsRepository.GetMaxRenameLengthAsync(originalTag);
-    }
-
     /// <summary>
     /// Renames a tag across all application tags, replacing the original tag with the replacement tag.
     /// Only whole-word tags are replaced; substring matches are ignored.

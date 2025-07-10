@@ -34,30 +34,6 @@ public class TagsRepository
         _currentTenant = currentTenant;
     }
 
-    public virtual async Task<int> GetMaxRenameLengthAsync(string originalTag)
-    {
-        var dbContext = await GetDbContextAsync();
-        var entityType = dbContext.Model.FindEntityType(typeof(Tag));
-        var property = entityType?.FindProperty(nameof(Tag.Name));
-
-        int maxColumnLength = property?.GetMaxLength() ?? 0;
-
-        var dbSet = await GetDbSetAsync();
-        int? maxTagSetLength = await dbSet
-            .AsNoTracking()
-            .Where(t => t.Name.Contains(originalTag))
-            .Select(t => t.Name.Length)
-            .OrderByDescending(len => len)
-            .FirstOrDefaultAsync();
-
-        if (maxTagSetLength == null || maxTagSetLength == 0)
-        {
-            return maxColumnLength;
-        }
-
-        return maxColumnLength + originalTag.Length - maxTagSetLength.Value;
-    }
-
     [DisableEntityChangeTracking]
     public virtual async Task<List<TagUsageSummary>> GetTagUsageSummaryAsync()
     {
