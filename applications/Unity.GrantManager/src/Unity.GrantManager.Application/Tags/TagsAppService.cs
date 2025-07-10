@@ -15,6 +15,10 @@ using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.GlobalTag;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    category: "Performance", 
+    checkId:"CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", 
+    Justification = "EF Core cannot translate StringComparison.OrdinalIgnoreCase, so use ToLower() for comparison")]
 [Authorize]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(TagsAppService), typeof(ITagsService))]
@@ -42,7 +46,7 @@ public class TagsAppService : ApplicationService, ITagsService
     {
         var normalizedName = input.Name.ToLower();
         var tag = await _tagsRepository
-            .FirstOrDefaultAsync(e => e.Name.Equals(normalizedName, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefaultAsync(e => e.Name.ToLower() == normalizedName);
 
         if (tag != null)
         {
@@ -63,7 +67,8 @@ public class TagsAppService : ApplicationService, ITagsService
     {
         var normalizedName = input.Name.ToLower();
         var tag = await _tagsRepository
-            .FirstOrDefaultAsync(e => e.Name.Equals(normalizedName, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefaultAsync(e => e.Name.ToLower() == normalizedName);
+
         if (tag == null)
         {
             var newTag = await _tagsRepository.InsertAsync(new Tag
@@ -97,7 +102,7 @@ public class TagsAppService : ApplicationService, ITagsService
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
         var duplicateTag = await _tagsRepository
-           .FindAsync(e => e.Name.Equals(replacementTag) && e.Id != id);
+           .FindAsync(e => e.Name.ToLower() == replacementTag.ToLower() && e.Id != id);
         if (duplicateTag != null)
         {
             throw new BusinessException(
