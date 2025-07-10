@@ -102,7 +102,7 @@ public class TagsAppService : ApplicationService, ITagsService
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
 
         var duplicateTag = await _tagsRepository
-           .FindAsync(e => e.Name.ToLower() == replacementTag.ToLower() && e.Id != id);
+           .FirstOrDefaultAsync(e => e.Name.ToLower() == replacementTag.ToLower() && e.Id != id);
         if (duplicateTag != null)
         {
             throw new BusinessException(
