@@ -17,14 +17,17 @@
             <abp-card class="pb-0">
                 <abp-card-body class="pb-0 mb-0">
                     <abp-row class="m-0 p-1">
-                        <abp-column size="_4">
-                            <abp-input asp-for="@Model.BatchNumberDisplay" type="text" label="@L["ApplicationPaymentRequest:BatchNumberName"]" disabled="true" />
+                        <abp-column size="_4" >
+                            <label for="@Model.BatchNumberDisplay" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:BatchNumberName"]</label>
+                            <input type="text" class="form-control" value="@Model.BatchNumberDisplay" disabled />
                         </abp-column>
                         <abp-column size="_4">
-                            <abp-input id="ApplicationCount" type="text" asp-for="ApplicationPaymentRequestForm.Count" label="@L["ApplicationPaymentRequest:NumberPayment"]" disabled="true" />
+                            <label for="@Model.ApplicationPaymentRequestForm?.Count" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
+                            <input type="text" class="form-control" id="ApplicationCount" value="@Model.ApplicationPaymentRequestForm?.Count" disabled />
                         </abp-column>
                         <abp-column size="_4">
-                            <abp-input asp-for="@Model.TotalAmount" class="totalAmount unity-currency-input" type="text" label="@L["ApplicationPaymentRequest:TotalAmount"]" disabled="true" />
+                            <label for="@Model.TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
+                            <input type="text" class="form-control totalAmount unity-currency-input" id="ApplicationCount" value="@Model.TotalAmount" disabled />
                         </abp-column>
                     </abp-row>
                 </abp-card-body>
@@ -34,7 +37,7 @@
                     <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
-                        <div id="@($"{Model.ApplicationPaymentRequestForm[i].CorrelationId}_container")" class="single-payment">
+                        <div id="@($"{Model.ApplicationPaymentRequestForm[i].CorrelationId}_container")" class="single-payment payment-item">
                             <abp-row class="m-0 p-2">
                                 <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@Model.ApplicationPaymentRequestForm[i].ApplicantName/@Model.ApplicationPaymentRequestForm[i].InvoiceNumber</h6></abp-column>
                                 <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPaymentRequest("@Model.ApplicationPaymentRequestForm[i].CorrelationId" + "_container")' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@Model.ApplicationPaymentRequestForm[i].CorrelationId" /></abp-column>
@@ -49,16 +52,15 @@
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SupplierNumber" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].RemainingAmount" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId" />
-                            
                             <abp-row class="m-0 p-3">
                                 <abp-column size="_2" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>
                                 </abp-column>
                                 <abp-column size="_2" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" 
-                                            class="amount unity-currency-input" 
-                                            disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"
-                                               onchange='checkMaxValue("@Model.ApplicationPaymentRequestForm[i].CorrelationId",this, @Model.ApplicationPaymentRequestForm[i].RemainingAmount)' />
+                                            class="amount unity-currency-input"
+                                               disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"
+                                               onchange='checkMaxValueRequest("@Model.ApplicationPaymentRequestForm[i].CorrelationId",this, @Model.ApplicationPaymentRequestForm[i].RemainingAmount)' />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].SiteName" alt="@Model.ApplicationPaymentRequestForm[i].SiteName" disabled="true"/>
