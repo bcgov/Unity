@@ -221,6 +221,8 @@ namespace Unity.Payments.PaymentRequests
                 try
                 {
                     var payment = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
+                    payment.SetNote(dto.Note);
+
                     var triggerAction = await DetermineTriggerActionAsync(dto, payment, paymentThreshold);
 
                     if (triggerAction != PaymentApprovalAction.None)
@@ -312,7 +314,8 @@ namespace Unity.Payments.PaymentRequests
                 CreationTime = payment.CreationTime,
                 Status = payment.Status,
                 ReferenceNumber = payment.ReferenceNumber,
-                SubmissionConfirmationCode = payment.SubmissionConfirmationCode
+                SubmissionConfirmationCode = payment.SubmissionConfirmationCode,
+                Note = payment.Note
             };
         }
 
