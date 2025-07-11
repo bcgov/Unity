@@ -56,9 +56,9 @@ function submitPayments() {
 };
 
 function calculateTotalAmount() {
-    var total = 0;
+    let total = 0;
     $('.amount').each(function () {
-        var value = parseFloat($(this).val().replace(/,/g, '')) || 0;
+        let value = parseFloat($(this).val().replace(/,/g, '')) || 0;
         total += value;
     });
     $('.totalAmount').val(total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
