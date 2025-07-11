@@ -128,6 +128,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? new List<ApplicationTags>());
             appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
             appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
+            appDto.NonRegisteredBusinessName = firstApplication.Applicant?.NonRegisteredBusinessName ?? string.Empty;
+            appDto.NonRegOrgName = firstApplication.Applicant?.NonRegOrgName ?? string.Empty;
             appDto.OrganizationType = firstApplication.Applicant?.OrganizationType ?? string.Empty;
             appDto.Assignees = BuildApplicationAssignees(firstApplication.ApplicationAssignments);
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
@@ -239,7 +241,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.OrgNumber = application.Applicant.OrgNumber;
             appDto.OrganizationSize = application.Applicant.OrganizationSize;
             appDto.OrgStatus = application.Applicant.OrgStatus;
-            appDto.OrganizationName = application.Applicant.OrgName;
+            appDto.NonRegisteredBusinessName = application.Applicant.NonRegisteredBusinessName;
+            appDto.NonRegOrgName = application.Applicant.NonRegOrgName;
             appDto.Sector = application.Applicant.Sector;
             appDto.OrganizationType = application.Applicant.OrganizationType;
             appDto.SubSector = application.Applicant.SubSector;
