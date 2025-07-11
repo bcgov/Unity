@@ -5,5 +5,5 @@ namespace Unity.Payments.Events;
 [Serializable]
 public class DeleteTagEto
 {
-    public required string TagName { get; set; }
+    public required Guid TagId { get; set; }
 }

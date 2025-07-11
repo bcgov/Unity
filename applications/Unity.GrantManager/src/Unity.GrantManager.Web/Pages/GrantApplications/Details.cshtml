@@ -207,7 +207,7 @@
                 @*-------- Funding Agreement Section END ---------*@
 
                 @*-------- Payments Section ---------*@
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && IsZoneEnabled(UnitySelector.Payment.Default))
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && await IsZoneVisible(UnitySelector.Payment.Default))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
                         <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Payment.Default)" id="PaymentInfoWidget">

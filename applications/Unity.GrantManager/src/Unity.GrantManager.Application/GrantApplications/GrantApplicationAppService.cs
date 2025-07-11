@@ -125,7 +125,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
             appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = firstApplication.ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
+            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? new List<ApplicationTags>());
             appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
             appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
             appDto.OrganizationType = firstApplication.Applicant?.OrganizationType ?? string.Empty;
@@ -540,7 +540,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     /// <summary>
     /// Update the supplier number for the applicant associated with the application.
     /// </summary>
-    [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
+    [Authorize(UnitySelector.Payment.Supplier.Update)]
     public async Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber)
     {
         // Could be moved to payments module but dependency on ApplicationId

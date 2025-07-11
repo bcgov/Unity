@@ -1,6 +1,38 @@
 $(function () {
     let dataTable;
     const l = abp.localization.getResource('Payments');
+    let updateModal = new abp.ModalManager(abp.appPath + 'Sites/UpdateModal');
+
+    updateModal.onResult(function (data) {
+        dataTable.ajax.reload();
+        abp.notify.success(
+            'Site Updated successfully.',
+            'Site Updated'
+        );
+    });
+
+    updateModal.onOpen(function () {
+        const UIElements = {
+            payGroup: $('#Site_PaymentGroup'),
+            bankAccount: $('#Site_BankAccount'),
+            bankAccountWarningDiv: $('#bank-account-warning-div')
+        };
+        
+        bindUIEvents();
+        validateBankeAccount();
+
+        function bindUIEvents() {
+            UIElements.payGroup.on('change', validateBankeAccount);
+        }
+
+        function validateBankeAccount() {
+            if (UIElements.payGroup.val() == 1 && UIElements.bankAccount.val() == '') { // EFT
+                UIElements.bankAccountWarningDiv.removeClass('hidden');
+            } else {
+                UIElements.bankAccountWarningDiv.addClass('hidden');                
+            }
+        }
+    });
 
     const UIElements = {
         navOrgInfoTab: $('#nav-organization-info-tab'),
@@ -53,7 +85,6 @@ $(function () {
                 .applicationApplicant
                 .getSupplierNameMatchesCheck(applicantId, supplierName)
                 .then((isMatch) => {
-                    abp.notify.success(`Supplier info is now ${isMatch}`);
                     $("#supplier-error-div").toggleClass('hidden', isMatch);
                 })
                 .catch((error) => {
@@ -159,7 +190,7 @@ $(function () {
         };
         
         const listColumns = getColumns();
-        const defaultVisibleColumns = ['number','paymentGroup','addressLine1','bankAccount','status','id'];
+        const defaultVisibleColumns = ['number','paymentGroup','addressLine1','bankAccount','status','id', 'rowActions'];
 
         let actionButtons = [
             {
@@ -187,6 +218,7 @@ $(function () {
             serverSideEnabled: false,
             pagingEnabled: false,
             reorderEnabled: false,
+            useNullPlaceholder: true,
             languageSetValues: {},
             dataTableName: 'SiteInfoTable',
             externalSearchInputId: 'SiteInfoSearch',
@@ -202,7 +234,8 @@ $(function () {
                 getMailingAddress(columnIndex++),
                 getBankAccount(columnIndex++),
                 getStatus(columnIndex++),
-                getSiteDefaultRadio(columnIndex++)
+                getSiteDefaultRadio(columnIndex++),
+                getEditButtonColumn(columnIndex++)
             ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
         }    
     }
@@ -282,9 +315,39 @@ $(function () {
                 if(full.markDeletedInUse) {
                     return 'Deleted-In Use';
                 }
-                return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+
+                if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update')) {
+                    return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+                }
+
+                return `<input type="radio" class="site-radio" name="default-site" ${checked} ${disabled}/>`;
             },
             index: columnIndex
+        }
+    }
+    
+    function getEditButtonColumn(columnIndex) {
+        return {
+            title: 'Actions',
+            data: 'id',
+            name: 'rowActions',
+            className: 'data-table-header',
+            orderable: false,            
+            sortable: false,            
+            index: columnIndex,
+            rowAction: {
+                items:
+                    [
+                        {
+                            text: 'Edit',
+                            action: (data) => updateModal.open(
+                                { id: data.record.id },
+                                
+ 
+                            )
+                        }
+                    ]
+            }
         }
     }
 

@@ -4,6 +4,7 @@
 @{
     Layout = null;
 }
+@using Newtonsoft.Json
 
 <form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="paymentTagForm">
     <abp-modal id="tagPaymentsModal">
@@ -11,12 +12,14 @@
         <abp-modal-body>
             <div>
                 <abp-input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
+                <input type="hidden" id="SelectedTagsJson" name="SelectedTagsJson" />
                 <abp-input type="hidden" id="SelectedPaymentRequestIds" asp-for="@Model.SelectedPaymentRequestIds" />
                 <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
-                <abp-input type="hidden" id="CommonTags" asp-for="@Model.CommonTags" />
-                <abp-input type="hidden" id="UncommonTags" asp-for="@Model.UncommonTags" />
-                <abp-input type="hidden" id="AllTags" asp-for="@Model.AllTags" />
-                <abp-input type="hidden" id="Tags" asp-for="@Model.Tags" />
+                <input type="hidden" id="CommonTags" name="CommonTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.CommonTags))' />
+                <input type="hidden" id="UncommonTags" name="UncommonTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.UncommonTags))' />
+                <input type="hidden" id="AllTags" name="AllTags" value='@Html.Raw(JsonConvert.SerializeObject(Model.AllTags))' />
+                <input type="hidden" id="Tags" name="Tags" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
+                <input type="hidden" id="TagsJson" name="TagsJson" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
 
             </div>
         </abp-modal-body>

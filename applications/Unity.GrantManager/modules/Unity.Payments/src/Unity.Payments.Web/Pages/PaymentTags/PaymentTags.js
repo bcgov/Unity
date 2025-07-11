@@ -1,12 +1,13 @@
 $(function () {
+
     let suggestionsArray = [];
 
-    // Plugin Constructor
+    
     let TagsInput = function (opts) {
         this.options = Object.assign(TagsInput.defaults, opts);
         this.init();
     }
-    // Initialize the plugin
+    
     TagsInput.prototype.init = function (opts) {
         this.options = opts ? Object.assign(this.options, opts) : this.options;
 
@@ -31,25 +32,21 @@ $(function () {
     }
 
 
-    // Add Tags
+    
     TagsInput.prototype.addTag = function (tagData) {
         let defaultClass = 'tags-common';
-        let tagText, tagClass;
+        let id, tagText, tagClass;
 
-        if (typeof tagData === 'string') {
-            tagText = tagData;
-            tagClass = defaultClass;
+        id = tagData.Id;
+        tagText = tagData.Name || '';
+        tagClass = tagData.class || defaultClass;
 
-        } else {
-            tagText = tagData.text || '';
-            tagClass = tagData.class || defaultClass;
 
-        }
 
         if (this.anyErrors(tagText))
             return;
 
-        this.arr.push(tagText);
+        this.arr.push({ Id: id, Name: tagText });
 
         let tagInput = this;
 
@@ -60,7 +57,7 @@ $(function () {
         let closeIcon = document.createElement('a');
         closeIcon.innerHTML = '&times;';
 
-        // delete the tag when icon is clicked
+        
         closeIcon.addEventListener('click', function (e) {
             e.preventDefault();
             let tag = this.parentNode;
@@ -74,15 +71,16 @@ $(function () {
         tag.appendChild(closeIcon);
         this.wrapper.insertBefore(tag, this.input);
         this.orignal_input.value = JSON.stringify(this.arr);
-
+        updateSelectedTagsInput(this.arr)
         return this;
     }
 
-    // Delete Tags
+    
     TagsInput.prototype.deleteTag = function (tag, i) {
         let self = this;
-        if (this.arr[i] == 'Uncommon Tags') {
-            abp.message.confirm('Are you sure to delete all the uncommon tags?')
+
+        if (this.arr[i].Name === 'Uncommon Tags') {
+            abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
                 .then(function (confirmed) {
                     if (confirmed) {
                         tag.remove();
@@ -90,34 +88,34 @@ $(function () {
                         self.orignal_input.value = JSON.stringify(self.arr);
                         return self;
                     }
-
                 });
-        }
-        else {
+        } else {
             tag.remove();
             this.arr.splice(i, 1);
             this.orignal_input.value = JSON.stringify(this.arr);
             return this;
         }
-
     }
 
-    // Make sure input string have no error with the plugin
+    
     TagsInput.prototype.anyErrors = function (string) {
         if (this.options.max != null && this.arr.length >= this.options.max) {
             console.log('max tags limit reached');
             return true;
         }
 
-        if (!this.options.duplicate && this.arr.indexOf(string) != -1) {
-            console.log('duplicate found " ' + string + ' " ')
+        if (
+            !this.options.duplicate &&
+            this.arr.some(tag => tag.Name === string)
+        ) {
+            console.log('duplicate found "' + string + '"');
             return true;
         }
 
         return false;
     }
 
-    // Add tags programmatically 
+    
     TagsInput.prototype.addData = function (array) {
         let plugin = this;
 
@@ -127,7 +125,7 @@ $(function () {
         return this;
     }
 
-    // Get the Input String
+   
     TagsInput.prototype.getInputString = function () {
         return this.arr.join(',');
     }
@@ -136,7 +134,7 @@ $(function () {
     }
 
 
-    // destroy the plugin
+    
     TagsInput.prototype.destroy = function () {
         this.orignal_input.removeAttribute('hidden');
 
@@ -154,7 +152,7 @@ $(function () {
         this.initialized = false;
     }
 
-    // Private function to initialize the tag input plugin
+    
     function init(tags) {
         tags.wrapper.append(tags.input);
         tags.wrapper.classList.add(tags.options.wrapperClass);
@@ -163,11 +161,12 @@ $(function () {
         tags.input.addEventListener('input', function () {
             const inputValue = tags.input.value.trim().toLowerCase();
 
-            // Show suggestions only after the first character entry
+           
             if (inputValue.length > 1) {
-                const suggestions = suggestionsArray.filter(tag => tag.toLowerCase().includes(inputValue));
+                const suggestions = suggestionsArray.filter(tag =>
+                    (tag.Name.toLowerCase()).includes(inputValue));
 
-                // Display suggestions below the input element
+                
                 if (suggestions.length) {
                     displaySuggestions(tags, suggestions);
                 } else {
@@ -175,18 +174,18 @@ $(function () {
                 }
 
             } else {
-                // Remove suggestions if input is empty
+               
                 removeSuggestions(tags);
             }
         });
     }
 
-    // Function to display auto-completion suggestions
+   
     function displaySuggestions(tags, suggestions) {
-        // Remove previous suggestions
+        
         removeSuggestions(tags);
 
-        // Create suggestion container
+        
         const suggestionContainer = document.createElement('div');
         suggestionContainer.classList.add('tags-suggestion-container');
         const suggestionTitleElement = document.createElement('div');
@@ -194,13 +193,13 @@ $(function () {
         suggestionTitleElement.innerText = 'ALL TAGS';
         suggestionContainer.appendChild(suggestionTitleElement);
 
-        // Add suggestions to the container
+        
         suggestions.forEach(suggestion => {
             const suggestionElement = document.createElement('div');
             suggestionElement.className = 'tags-suggestion-element';
-            suggestionElement.innerText = suggestion;
+            suggestionElement.innerText = typeof suggestion === 'string' ? suggestion : suggestion.Name;
 
-            // Add click event to add suggestion as a new tag
+           
             suggestionElement.addEventListener('click', function () {
                 tags.addTag(suggestion);
                 removeSuggestions(tags);
@@ -210,11 +209,11 @@ $(function () {
             suggestionContainer.appendChild(suggestionElement);
         });
 
-        // Append the suggestion container below the input
+        
         tags.wrapper.appendChild(suggestionContainer);
     }
 
-    // Function to remove auto-completion suggestions
+    
     function removeSuggestions(tags) {
         const suggestionContainer = tags.wrapper.querySelector('.tags-suggestion-container');
         if (suggestionContainer) {
@@ -228,9 +227,9 @@ $(function () {
             tags.input.focus();
         });
 
-        // for saving tags that are typed, but not added as a chip/pill
+       
         tags.input.addEventListener('focusout', function () {
-            $('#paymentTagsModelSaveBtn').click(function () {
+            $('#assignTagsModelSaveBtn').click(function () {
                 trimAndAddTag(tags);
             })
         });
@@ -248,19 +247,41 @@ $(function () {
         });
     }
 
+    
     function trimAndAddTag(tags) {
         let str = tags.input.value.trim();
-        if (str != "") {
-            tags.addTag(str);
+        if (!str) {
+            tags.input.value = "";
+            return;
         }
+
+        
+        const matched = suggestionsArray.find(s =>
+
+            s.Name.toLowerCase() === str.toLowerCase()
+        );
+
+        if (matched) {
+            tags.addTag(typeof matched === 'string' ? { name: matched } : matched);
+        } else {
+            abp.message.warn('Please select a tag from the suggestions.');
+        }
+
         tags.input.value = "";
+    }
+
+    function updateSelectedTagsInput(tagsArray) {
+
+        let jsonValue = JSON.stringify(tagsArray);
+        $('#SelectedTagsJson').val(jsonValue);
+
     }
 
     TagsInput.prototype.getTags = function () {
         return this.arr.slice(); // Return a copy of the array to prevent external modification
     }
 
-    // Set All the Default Values
+   
     TagsInput.defaults = {
         selector: '',
         wrapperClass: 'tags-input-wrapper',
@@ -272,5 +293,3 @@ $(function () {
     window.TagsInput = TagsInput;
 
 });
-
-

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Payments;
+using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Integrations.Cas;
@@ -42,7 +43,7 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
     /// <summary>
     /// Update the supplier number for the applicant regardless of application. 
     /// </summary>
-    [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
+    [Authorize(UnitySelector.Payment.Supplier.Update)]
     public async Task UpdateApplicantSupplierNumberAsync(Guid applicantId, string supplierNumber)
     {
         if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && !string.IsNullOrEmpty(supplierNumber))

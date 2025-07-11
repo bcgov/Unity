@@ -151,6 +151,19 @@
                         </div>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
+                        <abp-input asp-for="@Model.ApplicantSummary.ApplicantName" />
+                    </abp-column>
+                    <abp-column size="_4" class="px-1">
+                        <div class="switch-container">
+                            <div class="px-3 form-check unt-form-switch form-switch">
+                                <abp-input type="checkbox" asp-for="@Model.ApplicantSummary.RedStop" disabled />
+                            </div>
+                        </div>
+                    </abp-column>
+                </abp-row>
+
+                <abp-row class="m-0 p-0">
+                    <abp-column size="_4" class="px-1">
                         <abp-select asp-for="@Model.ApplicantSummary.FiscalDay" asp-items="@Model.FiscalDayList">
                             <option value="">Please choose...</option>
                         </abp-select>
@@ -173,17 +186,8 @@
                         </abp-select>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <div class="switch-container">
-                            <div class="px-3 form-check unt-form-switch form-switch">
-                                <abp-input type="checkbox" asp-for="@Model.ApplicantSummary.RedStop" disabled />
-                            </div>
-                        </div>
+                        <abp-input asp-for="@Model.ApplicantSummary.SectorSubSectorIndustryDesc" />
                     </abp-column>
-                    <abp-row class="m-0 p-0">
-                        <abp-column size="_12" class="px-1">
-                            <abp-input asp-for="@Model.ApplicantSummary.SectorSubSectorIndustryDesc" />
-                        </abp-column>
-                    </abp-row>
                 </abp-row>
             </abp-row>
         </zone-fieldset>

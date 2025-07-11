@@ -13,5 +13,6 @@ namespace Unity.Flex.WorksheetInstances
         public List<(string fieldName, string chefsPropertyName, object? value)> CustomFields { get; set; } = [];
         public Guid? VersionId { get; set; }
         public string? VersionData { get; set; }
+        public Guid? TenantId { get; set; }
     }
 }

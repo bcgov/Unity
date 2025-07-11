@@ -73,7 +73,7 @@
 
         try {
             // Create an initial promise - either the supplier update or a resolved promise
-            const shouldUpdateSupplier = abp.auth.isGranted('PaymentsPermissions.Payments.EditSupplierInfo') &&
+            const shouldUpdateSupplier = abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update') &&
                 paymentInfoObj['SupplierNumber'] &&
                 paymentInfoObj['SupplierNumber'] !== paymentInfoObj['OriginalSupplierNumber'];
 
@@ -158,6 +158,7 @@
         });
         return newData;
     }
+
     dataTable = initializeDataTable({
         dt,
         defaultVisibleColumns,
@@ -448,7 +449,8 @@ function openCasResponseModal(casResponse) {
 
 function enablePaymentInfoSaveBtn() {
     if (!$("#paymentInfoForm").valid()
-        || !abp.auth.isGranted('PaymentsPermissions.Payments.EditSupplierInfo')
+        // NOTE: Required for worksheets, replace on adding worksheet permissions
+        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment') 
         || formHasInvalidCurrencyCustomFields("paymentInfoForm")) {
         $('#savePaymentInfoBtn').prop('disabled', true);
         return;

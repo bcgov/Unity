@@ -72,7 +72,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- APPLICANT INFO PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_ApplicantInfo_Permissions();
 
-            // Project Info
+            //-- PROJECT INFO PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_ProjectInfo_Permissions();
 
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
@@ -81,6 +81,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             // Settings - Tag Management
             var tagManagement = settingManagement.AddPermission(UnitySelector.SettingManagement.Tags.Default, L(UnitySelector.SettingManagement.Tags.Default));
+            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Create, L(UnitySelector.SettingManagement.Tags.Create));
             tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Update, L(UnitySelector.SettingManagement.Tags.Update));
             tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Delete, L(UnitySelector.SettingManagement.Tags.Delete));
 

@@ -7,6 +7,7 @@ using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Forms;
+using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
@@ -76,8 +77,12 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ZoneGroupDefinition, ZoneGroupDefinitionDto>().ReverseMap();
         CreateMap<ZoneTabDefinition, ZoneTabDefinitionDto>().ReverseMap();
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
-
+        CreateMap<Tag, TagDto>();
         CreateMap<TagSummaryCount, TagSummaryCountDto>();
+        CreateMap<TagUsageSummary, TagUsageSummaryDto>();
+        CreateMap<ApplicationTags, ApplicationTagsDto>();
+        CreateMap<ApplicationTags, ApplicationTagsDto>()
+        .ForMember(dest => dest.Tag, opt => opt.MapFrom(src => src.Tag));
 
         //-- PROJECT INFO
         CreateMap<UpdateProjectInfoDto, Application>()
