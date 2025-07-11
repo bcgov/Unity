@@ -205,7 +205,7 @@ namespace Unity.GrantManager.ApplicationForms
 
                             foreach (string submissionId in missingSubmissions)
                             {
-                                missingSubmissionsReportBuilder.AppendLine($"{missingSubmissionsCounter}-{applicationFormDto.ApplicationFormName}-{submissionId}<br>");
+                                missingSubmissionsReportBuilder.AppendLine($"{missingSubmissionsCounter}-\"{applicationFormDto.ApplicationFormName}\"-{submissionId}<br>");
                                 missingSubmissionsCounter++;
                             }
 

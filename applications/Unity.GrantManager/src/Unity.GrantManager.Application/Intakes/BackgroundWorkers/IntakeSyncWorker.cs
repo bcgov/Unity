@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Quartz;
+using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Settings;
@@ -78,8 +79,9 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
 
             emailBodyBuilder.AppendLine("<br> Bests");
             string emailBody = emailBodyBuilder.ToString();
+            string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-            if (sendEmail) {
+            if (sendEmail && string.Equals(envInfo, "Production", StringComparison.OrdinalIgnoreCase)) {
                 string htmlBody = $@"
                 <html>
                     <body style='font-family: Arial, sans-serif;'>
