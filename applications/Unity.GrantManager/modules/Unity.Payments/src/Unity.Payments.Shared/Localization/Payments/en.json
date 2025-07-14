@@ -60,6 +60,7 @@
     "ApplicationPaymentListTable:CASResponse": "CAS Response",
     "ApplicationPaymentListTable:InvoiceStatus": "Invoice Status",
     "ApplicationPaymentListTable:PaymentStatus": "CAS Payment Status",
+    "ApplicationPaymentListTable:Note": "Note",
 
     "ApplicantInfoView:SupplierInfoTitle": "Supplier Info",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
