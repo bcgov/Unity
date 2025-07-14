@@ -13,7 +13,7 @@ public interface IApplicationTagsService : IApplicationService
 
     Task<List<ApplicationTagsDto>> AssignTagsAsync(AssignApplicationTagsDto input);
 
-    Task<ApplicationTagsDto?> GetApplicationTagsAsync(Guid id);
+    Task<List<ApplicationTagsDto>> GetApplicationTagsAsync(Guid id);
 
     Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync();
     Task<List<Guid>> RenameTagAsync(string originalTag, string replacementTag);
