@@ -156,6 +156,7 @@ $(function () {
             'The payment tags have been successfully updated.',
             'Payment Tags'
         );
+        selectedPaymentIds = [];
         PubSub.publish("refresh_payment_list");
     });
 
