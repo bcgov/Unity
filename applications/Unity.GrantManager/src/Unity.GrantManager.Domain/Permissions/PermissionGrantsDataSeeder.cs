@@ -62,7 +62,6 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Payment.Default,
             UnitySelector.Payment.Summary.Default,
             UnitySelector.Payment.Supplier.Default,
-            UnitySelector.Payment.Supplier.Update,
             UnitySelector.Payment.PaymentList.Default
         ];
 
@@ -122,6 +121,7 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
+                    UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions
             ], context.TenantId);
@@ -180,6 +180,7 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
+                    UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions,
 
@@ -221,6 +222,7 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
+                    UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
