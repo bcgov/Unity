@@ -560,7 +560,8 @@
             data: 'paymentInfo',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return data?.totalPaid ?? '';
+                let totalPaid = data?.totalPaid ?? '';
+                return formatter.format(totalPaid);
             },
             index: columnIndex
         }
