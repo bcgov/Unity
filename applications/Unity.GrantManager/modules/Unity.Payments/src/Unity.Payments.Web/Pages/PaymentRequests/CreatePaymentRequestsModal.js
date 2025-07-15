@@ -1,21 +1,12 @@
 
 function removeApplicationPaymentRequest(applicationId) {
     let $container = $('#' + applicationId);
-
-    // Get the amount value inside this container before removing it
-    let amountValue = $container.find('.amount').val();
-    let amount = parseFloat((amountValue || "0").replace(/,/g, ''));
-
-    // Update the total amount
-    let $totalInput = $('.totalAmount');
-    let currentTotal = parseFloat(($totalInput.val() || "0").replace(/,/g, '')) || 0;
-    let newTotal = currentTotal - amount;
-    if (newTotal < 0) newTotal = 0;
-    $totalInput.val(newTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    $container.remove();
 
     $('#' + applicationId).remove();
     let applicationCount = $('#ApplicationCount').val();
     $('#ApplicationCount').val(applicationCount - 1);
+
     if ((applicationCount - 1) == 1) {
         $('.max-error').css("display", "none");
         $('.payment-divider').css("display", "none");
@@ -27,13 +18,16 @@ function removeApplicationPaymentRequest(applicationId) {
     else {
         $('#no-payment-msg').css("display", "none");
     }
+
+    // Always recalculate the total after removal
+    calculateTotalAmount();
 }
 
 function closePaymentModal() {
     $('#payment-modal').modal('hide');
 }
 
-function checkMaxValue(applicationId, input, amountRemaining) {
+function checkMaxValueRequest(applicationId, input, amountRemaining) {
     let enteredValue = parseFloat(input.value.replace(/,/g, ""));
     let remainingErrorId = "#column_" + applicationId + "_remaining_error";
     if (amountRemaining < enteredValue) {
@@ -41,6 +35,9 @@ function checkMaxValue(applicationId, input, amountRemaining) {
     } else {
         $(remainingErrorId).css("display", "none");
     }
+
+    // Update the total amount after checking the value
+    calculateTotalAmount();
 }
 
 function submitPayments() {
@@ -57,3 +54,12 @@ function submitPayments() {
         $('#paymentform').submit();
     }
 };
+
+function calculateTotalAmount() {
+    let total = 0;
+    $('.amount').each(function () {
+        let value = parseFloat($(this).val().replace(/,/g, '')) || 0;
+        total += value;
+    });
+    $('.totalAmount').val(total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+}
