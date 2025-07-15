@@ -37,8 +37,8 @@ $(function () {
         let defaultClass = 'tags-common';
         let id,tagText, tagClass;
 
-            id = tagData.Id;
-            tagText = tagData.Name || '';
+            id = tagData.id;
+            tagText = tagData.name || '';
             tagClass = tagData.class || defaultClass;
 
         
@@ -79,7 +79,7 @@ $(function () {
     TagsInput.prototype.deleteTag = function (tag, i) {
         let self = this;
 
-        if (this.arr[i].Name === 'Uncommon Tags') {
+        if (this.arr[i].name === 'Uncommon Tags') {
             abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
                 .then(function (confirmed) {
                     if (confirmed) {
@@ -106,7 +106,7 @@ $(function () {
 
         if (
             !this.options.duplicate &&
-            this.arr.some(tag => tag.Name === string)
+            this.arr.some(tag => tag.name === string)
         ) {
             console.log('duplicate found "' + string + '"');
             return true;
@@ -164,7 +164,7 @@ $(function () {
             
             if (inputValue.length > 1) {
                 const suggestions = suggestionsArray.filter(tag =>
-                    (tag.Name.toLowerCase()).includes(inputValue));
+                    (tag.name.toLowerCase()).includes(inputValue));
 
                 
                 if (suggestions.length) {
@@ -197,7 +197,7 @@ $(function () {
         suggestions.forEach(suggestion => {
             const suggestionElement = document.createElement('div');
             suggestionElement.className = 'tags-suggestion-element';
-            suggestionElement.innerText = typeof suggestion === 'string' ? suggestion : suggestion.Name;
+            suggestionElement.innerText = typeof suggestion === 'string' ? suggestion : suggestion.name;
 
             
             suggestionElement.addEventListener('click', function () {
@@ -258,7 +258,7 @@ $(function () {
         
         const matched = suggestionsArray.find(s =>
        
-                 s.Name.toLowerCase() === str.toLowerCase()
+                 s.name.toLowerCase() === str.toLowerCase()
         );
 
         if (matched) {

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.ViewComponents;
 using NSubstitute;
 using Shouldly;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.GrantApplications;
@@ -24,11 +25,16 @@ namespace Unity.GrantManager.Components
             var httpContext = new DefaultHttpContext();
 
             // Fix: Ensure 'Tag' is initialized to avoid null dereference  
-            applicationService.GetApplicationTagsAsync(applicationId).Returns(await Task.FromResult(new ApplicationTagsDto()
-            {
-                ApplicationId = Guid.Empty,
-                Tag = new TagDto { Id = Guid.Empty, Name = "Mock" }
-            }));
+            applicationService.GetApplicationTagsAsync(applicationId).Returns(callInfo =>
+                Task.FromResult(new List<ApplicationTagsDto>
+                {
+                    new ApplicationTagsDto
+                    {
+                        ApplicationId = Guid.Empty,
+                        Tag = new TagDto { Id = Guid.Empty, Name = "Mock" }
+                    }
+                })
+            );
 
             var viewContext = new ViewContext
             {

@@ -72,7 +72,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- APPLICANT INFO PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_ApplicantInfo_Permissions();
 
-            // Project Info
+            //-- PROJECT INFO PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_ProjectInfo_Permissions();
 
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
