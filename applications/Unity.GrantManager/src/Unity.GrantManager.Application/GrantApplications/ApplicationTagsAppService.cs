@@ -45,15 +45,14 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Id).ToList());
     }
 
-    public async Task<ApplicationTagsDto?> GetApplicationTagsAsync(Guid id)
+    public async Task<List<ApplicationTagsDto>> GetApplicationTagsAsync(Guid id)
     {
-        var applicationTags = await (await _applicationTagsRepository.GetQueryableAsync())
-        .Include(x => x.Tag)
-        .FirstOrDefaultAsync(x => x.ApplicationId == id);
+        var tags = await (await _applicationTagsRepository
+                 .WithDetailsAsync(x => x.Tag)) 
+             .Where(e => e.ApplicationId == id)
+             .ToListAsync();
 
-        if (applicationTags == null) return null;
-
-        return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(applicationTags);
+        return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags);
     }
 
     public async Task<List<ApplicationTagsDto>> AssignTagsAsync(AssignApplicationTagsDto input)
