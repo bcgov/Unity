@@ -4,38 +4,116 @@ $(function () {
         viewUrl: 'PaymentTags/PaymentTagsSelectionModal',
     });
 
-    tagPaymentModal.onOpen(function () {
+    tagPaymentModal.onOpen(async function () {
         let tagInput = new TagsInput({
             selector: 'SelectedTags',
             duplicate: false,
             max: 50
         });
-        let suggestionsArray = [];
-        let uncommonTags = JSON.parse($('#UncommonTags').val());
-        let commonTags = JSON.parse($('#CommonTags').val());
-        let allTags = JSON.parse($('#AllTags').val());
-        if (allTags) {
-            suggestionsArray = allTags;
-        }
-        tagInput.setSuggestions(suggestionsArray);
+        let selectedIds = $('#SelectedPaymentRequestIds').val();
+        let paymentRequestIds = JSON.parse(selectedIds);
 
-        let tagInputArray = [];
+        if (!paymentRequestIds || paymentRequestIds.length === 0) return;
+        try {
+            let commonTags = [];
+            let uncommonTags = [];
+            let allTags = [];
+            let groupedTags = {};
 
-        if (uncommonTags && uncommonTags.length != 0) {
-            tagInputArray.push({ tagId: '00000000-0000-0000-0000-000000000000', Name: 'Uncommon Tags', class: 'tags-uncommon', Id: '00000000-0000-0000-0000-000000000000' })
 
-        }
-        if (commonTags?.length) {
-            commonTags.forEach(function (item, index) {
+            allTags = await unity.grantManager.globalTag.tags.getList();
 
-                tagInputArray.push({ tagId: item.Id, Name: item.Name, class: 'tags-common', Id: item.Id })
+            let tags = await unity.payments.paymentTags.paymentTag.getListWithPaymentRequestIds(paymentRequestIds);
+
+
+            tags.forEach(function (item) {
+                if (!item.tag) return;
+                let paymentId = item.paymentRequestId;
+                if (!groupedTags[paymentId]) {
+                    groupedTags[paymentId] = [];
+                }
+
+                let exists = groupedTags[paymentId].some(t => t.id === item.tag.id);
+                if (!exists) {
+                    groupedTags[paymentId].push(item.tag);
+                }
             });
+
+            paymentRequestIds.forEach(function (id) {
+                if (!groupedTags.hasOwnProperty(id)) {
+                    groupedTags[id] = [];
+                }
+            });
+
+
+            let groupedValues = Object.values(groupedTags);
+            if (groupedValues.length > 0) {
+                commonTags = groupedValues.reduce(function (prev, next) {
+                    return prev.filter(p => next.some(n => n.id === p.id));
+                });
+            }
+            let alltags = Object.entries(groupedTags).map(([paymentId, tagList]) => {
+                let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+
+                return {
+                    paymentRequestId : paymentId,
+                    commonTags: [...commonTags].sort((a, b) => a.name.localeCompare(b.name)),
+                    uncommonTags: uncommon.sort((a, b) => a.name.localeCompare(b.name))
+                };
+            });
+
+
+            $('#TagsJson').val(JSON.stringify(alltags));
+
+            let tagInputArray = [];
+
+
+            Object.entries(groupedTags).forEach(function ([paymentId, tagList]) {
+                let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+                uncommonTags = uncommonTags.concat(uncommon);
+
+
+            });
+
+
+            if (uncommonTags.length > 0) {
+                tagInputArray.unshift({
+                    tagId: '00000000-0000-0000-0000-000000000000',
+                    name: 'Uncommon Tags',
+                    class: 'tags-uncommon',
+                    id: '00000000-0000-0000-0000-000000000000'
+                });
+            }
+
+
+            if (commonTags.length > 0) {
+                commonTags.forEach(function (tag) {
+                    tagInputArray.push({
+                        tagId: tag.id,
+                        name: tag.name,
+                        class: 'tags-common',
+                        id: tag.id
+                    });
+                });
+            }
+
+            tagInput.setSuggestions(
+                (allTags || []).filter((value, index, self) =>
+                    index === self.findIndex(t => t.id === value.id)
+                ).sort((a, b) => a.name.localeCompare(b.name))
+            );
+
+            tagInput.addData(tagInputArray);
+        } catch (error) {
+            console.error("Error loading tag select list", error);
         }
-        tagInput.addData(tagInputArray);
+        
     });
 
     PubSub.subscribe("select_batchpayment_application", (msg, data) => {
-        selectedPaymentIds.push(data.id);
+        if (!selectedPaymentIds.includes(data.id)) {
+            selectedPaymentIds.push(data.id);
+        }
         manageActionButtons();
     });
 

@@ -25,14 +25,16 @@ namespace Unity.GrantManager.Components
             var httpContext = new DefaultHttpContext();
 
             // Fix: Ensure 'Tag' is initialized to avoid null dereference  
-            applicationService.GetApplicationTagsAsync(applicationId).Returns(Task.FromResult(new List<ApplicationTagsDto>
-            {
-                new ApplicationTagsDto
+            applicationService.GetApplicationTagsAsync(applicationId).Returns(callInfo =>
+                Task.FromResult(new List<ApplicationTagsDto>
                 {
-                    ApplicationId = Guid.Empty,
-                    Tag = new TagDto { Id = Guid.Empty, Name = "Mock" }
-                }
-            }));
+                    new ApplicationTagsDto
+                    {
+                        ApplicationId = Guid.Empty,
+                        Tag = new TagDto { Id = Guid.Empty, Name = "Mock" }
+                    }
+                })
+            );
 
             var viewContext = new ViewContext
             {
