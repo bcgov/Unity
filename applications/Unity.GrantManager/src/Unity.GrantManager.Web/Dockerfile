@@ -70,6 +70,8 @@ RUN mkdir -p /.aspnet && \
     chmod 755 /app/logs && \
     chmod 644 /usr/local/share/ca-certificates/cas.crt && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
+    chmod 644 /usr/local/share/ca-certificates/sslcomroot.crt && \
+    chmod 644 /usr/local/share/ca-certificates/ssoroot.crt && \
     update-ca-certificates
 
 COPY --from=publish /app/publish .
