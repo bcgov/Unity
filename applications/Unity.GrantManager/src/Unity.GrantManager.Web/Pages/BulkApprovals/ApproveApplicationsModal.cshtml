@@ -57,11 +57,11 @@
                             <abp-row class="m-0 p-3">
                                 <abp-column size="_3" class="px-3">
                                     <abp-input asp-for="@Model.BulkApplicationApprovals[i].RequestedAmount" class="unity-currency-input" disabled=true />
-                                    <input type="hidden" name="BulkApplicationApprovals[@i].RequestedAmount" value="@Model.BulkApplicationApprovals[i].RequestedAmount" />
+                                    <input type="hidden" asp-for="@Model.BulkApplicationApprovals[i].RequestedAmount" />
                                 </abp-column>
                                 <abp-column size="_3" class="px-3">
                                     <abp-input asp-for="@Model.BulkApplicationApprovals[i].RecommendedAmount" class="unity-currency-input" disabled=true />
-                                    <input type="hidden" name="BulkApplicationApprovals[@i].RecommendedAmount" value="@Model.BulkApplicationApprovals[i].RecommendedAmount" />
+                                    <input type="hidden" asp-for="@Model.BulkApplicationApprovals[i].RecommendedAmount" />
                                 </abp-column>
                                 <abp-column size="_3" class="px-3">
                                     <abp-input asp-for="@Model.BulkApplicationApprovals[i].ApprovedAmount" disabled="@(!Model.BulkApplicationApprovals[i].IsValid)" class="unity-currency-input" onchange="approvedAmountUpdated(event)" />
