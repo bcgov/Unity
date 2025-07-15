@@ -22,41 +22,110 @@ $(function () {
         viewUrl: 'PaymentRequests/CreatePaymentRequests',
     });
 
-    tagApplicationModal.onOpen(function () {
+    tagApplicationModal.onOpen(async function () {
         let tagInput = new TagsInput({
             selector: 'SelectedTags',
             duplicate: false,
             max: 50
         });
-        let suggestionsArray = [];
-        let uncommonTags = JSON.parse($('#UncommonTags').val());
-        let commonTags = JSON.parse($('#CommonTags').val());
-        let allTags =  JSON.parse($('#AllTags').val());
-        if (allTags) {
-            suggestionsArray = allTags;
-        }
-        tagInput.setSuggestions(suggestionsArray);
+        let selectedIds = $('#SelectedApplicationIds').val(); 
+        let applicationIds = JSON.parse(selectedIds);
 
-        let tagInputArray = [];
+        if (!applicationIds || applicationIds.length === 0) return;
 
-        if (uncommonTags && uncommonTags.length != 0) {
-            tagInputArray.push({ tagId: '00000000-0000-0000-0000-000000000000', Name: 'Uncommon Tags', class: 'tags-uncommon', Id: '00000000-0000-0000-0000-000000000000' })
+        try {
+            let commonTags = [];
+            let uncommonTags = [];
+            let allTags = [];
+            let groupedTags = {};
 
-        }
-      
-        if (commonTags?.length) {
+           
+            allTags = await unity.grantManager.globalTag.tags.getList();
 
-          
+            let tags = await unity.grantManager.grantApplications.applicationTags.getListWithApplicationIds(applicationIds);
+            
+            
+            tags.forEach(function (item) {
+                if (!item.tag) return;
+                let appId = item.applicationId;
+                if (!groupedTags[appId]) {
+                    groupedTags[appId] = [];
+                }
 
-            commonTags.forEach(function (item, index) {
+                let exists = groupedTags[appId].some(t => t.id === item.tag.id);
+                if (!exists) {
+                    groupedTags[appId].push(item.tag);
+                }
+            });
 
-                tagInputArray.push({ tagId: item.Id, Name: item.Name, class: 'tags-common', Id: item.Id })
-                });
+            applicationIds.forEach(function (id) {
+                if (!groupedTags.hasOwnProperty(id)) {
+                    groupedTags[id] = [];
+                }
+            });
 
             
-        }
-        tagInput.addData(tagInputArray);
+            let groupedValues = Object.values(groupedTags);
+            if (groupedValues.length > 0) {
+                commonTags = groupedValues.reduce(function (prev, next) {
+                    return prev.filter(p => next.some(n => n.id === p.id));
+                });
+            }
 
+            let alltags = Object.entries(groupedTags).map(([appId, tagList]) => {
+                let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+
+                return {
+                    applicationId: appId,
+                    commonTags: [...commonTags].sort((a, b) => a.name.localeCompare(b.name)),
+                    uncommonTags: uncommon.sort((a, b) => a.name.localeCompare(b.name))
+                };
+            });
+
+           
+            $('#TagsJson').val(JSON.stringify(alltags));
+            let tagInputArray = [];
+
+            
+            Object.entries(groupedTags).forEach(function ([appId, tagList]) {
+                let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+                uncommonTags = uncommonTags.concat(uncommon);
+
+             
+            });
+
+           
+            if (uncommonTags.length > 0) {
+                tagInputArray.unshift({
+                    tagId: '00000000-0000-0000-0000-000000000000',
+                    name: 'Uncommon Tags',
+                    class: 'tags-uncommon',
+                    id: '00000000-0000-0000-0000-000000000000'
+                });
+            }
+
+           
+            if (commonTags.length > 0) {
+                commonTags.forEach(function (tag) {
+                    tagInputArray.push({
+                        tagId: tag.id,
+                        name: tag.name,
+                        class: 'tags-common',
+                        id: tag.id
+                    });
+                });
+            }
+
+            tagInput.setSuggestions(
+                (allTags || []).filter((value, index, self) =>
+                    index === self.findIndex(t => t.id === value.id)
+                ).sort((a, b) => a.name.localeCompare(b.name))
+            );
+
+            tagInput.addData(tagInputArray);
+        } catch (error) {
+            console.error("Error loading tag select list", error);
+        }
 
     });
 

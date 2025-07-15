@@ -64,83 +64,13 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
             _tagsService = tagsService ?? throw new ArgumentNullException(nameof(tagsService));
         }
 
-        public async Task OnGetAsync(string applicationIds, string actionType)
+        public Task OnGetAsync(string applicationIds, string actionType)
         {
             SelectedApplicationIds = applicationIds;
             ActionType = actionType;
 
-            var applications = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-            if (applications != null && applications.Count > 0)
-            {
-                try
-                {
-                    CommonTags = new List<TagDto>();
-                    UncommonTags = new List<TagDto>();
-                    var allTags = await _tagsService.GetListAsync();
-                    var tags = await _applicationTagsService.GetListWithApplicationIdsAsync(applications);
-                    var groupedTags = tags
-                        .Where(x => x.Tag != null)
-                        .GroupBy(x => x.ApplicationId)
-                        .ToDictionary(
-                            g => g.Key,
-                            g => g.Select(x => x.Tag!).DistinctBy(t => t.Id).ToList()
-                        );
-                    foreach (var missingId in applications.Except(groupedTags.Keys))
-                    {
-                        groupedTags[missingId] = new List<TagDto>();
-                    }
-                    List<TagDto> commonTags = new();
-
-                    if (groupedTags.Values.Count > 0)
-                    {
-                        commonTags = groupedTags.Values
-                            .Aggregate((prev, next) => prev.IntersectBy(next.Select(t => t.Id), t => t.Id).ToList());
-                    }
-
-                    Tags = groupedTags.Select(kvp =>
-                    {
-                        var appId = kvp.Key;
-                        var tagList = kvp.Value;
-
-                        var uncommonTags = tagList
-                            .Where(tag => !commonTags.Any(ct => ct.Id == tag.Id))
-                            .ToList();
-
-                        return new NewTagItem
-                        {
-                            ApplicationId = appId.ToString(),
-                            CommonTags = commonTags.OrderBy(t => t.Name).ToList(),
-                            UncommonTags = uncommonTags.OrderBy(t => t.Name).ToList()
-                        };
-                    }).ToList();
-
-                    if (Tags.Count > 0)
-                    {
-
-                        CommonTags = Tags
-                            .SelectMany(item => item.CommonTags)
-                            .GroupBy(tag => tag.Id)
-                            .Select(group => group.First())
-                            .OrderBy(tag => tag.Name)
-                            .ToList();
-
-                        UncommonTags = Tags
-                            .SelectMany(item => item.UncommonTags)
-                            .GroupBy(tag => tag.Id)
-                            .Select(group => group.First())
-                            .OrderBy(tag => tag.Name)
-                            .ToList();
-                    }
-                    AllTags = allTags
-                        .DistinctBy(tag => tag.Id)
-                        .OrderBy(tag => tag.Name)
-                        .ToList();
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, message: "Error loading tag select list");
-                }
-            }
+            // Return a completed task to ensure all code paths return a value
+            return Task.CompletedTask;
         }
         public async Task<IActionResult> OnPostAsync()
         {

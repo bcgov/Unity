@@ -315,7 +315,12 @@ $(function () {
                 if(full.markDeletedInUse) {
                     return 'Deleted-In Use';
                 }
-                return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+
+                if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update')) {
+                    return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+                }
+
+                return `<input type="radio" class="site-radio" name="default-site" ${checked} ${disabled}/>`;
             },
             index: columnIndex
         }

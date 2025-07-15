@@ -9,6 +9,7 @@
     --bc-colors-grey-text-100: #9F9D9C;
     --bc-colors-blue-text-links: #1A5A96;
     --bc-colors-blue-background: #013366;
+    --bc-colors-ligh-gray-background: #FAF9F8;
     --bc-colors-white-background: #F2F2F2;
     --bc-colors-blue-primary-500: #003366;
     --bc-colors-white-primary-500: #FFF;
@@ -862,6 +863,12 @@ div.dataTables_wrapper div.dataTables_filter {
 
 .unt-form-switch label {
     opacity: 0.8 !important;
+}
+
+.unt-form-label-primary {
+    color: var(--bc-colors-blue-primary);
+    -webkit-font-smoothing: antialiased;
+    font-weight: bold;
 }
 
 .filter-search-action-bar {
