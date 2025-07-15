@@ -42,6 +42,11 @@ namespace Unity.GrantManager.GrantApplications
                     using var uowFields = unitofWorkManager.Begin(requiresNew: true);
                     application = await applicationRepository.GetAsync(applicationToUpdateAndApprove.ApplicationId);
 
+                    // Manually map fixed fields directly from Application
+                    applicationToUpdateAndApprove.RequestedAmount = application.RequestedAmount;
+                    applicationToUpdateAndApprove.RecommendedAmount = application.RecommendedAmount;
+                    applicationToUpdateAndApprove.IsDirectApproval = application.ApplicationForm?.IsDirectApproval ?? false;
+
                     application.ValidateDirectApprovalRecommendedAmount(applicationToUpdateAndApprove.RecommendedAmount, applicationToUpdateAndApprove.IsDirectApproval);
 
                     application.ValidateAndSetFinalDecisionDate(applicationToUpdateAndApprove.FinalDecisionDate);
