@@ -59,6 +59,8 @@ COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotne
 # CAS Dev/Test Certs changed
 COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
 COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/sslcomroot.crt", "/usr/local/share/ca-certificates/sslcomroot.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/ssoroot.crt", "/usr/local/share/ca-certificates/ssoroot.crt"]
 
 RUN mkdir -p /.aspnet && \
     mkdir -p /.dotnet && \
@@ -68,6 +70,8 @@ RUN mkdir -p /.aspnet && \
     chmod 755 /app/logs && \
     chmod 644 /usr/local/share/ca-certificates/cas.crt && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
+    chmod 644 /usr/local/share/ca-certificates/sslcomroot.crt && \
+    chmod 644 /usr/local/share/ca-certificates/ssoroot.crt && \
     update-ca-certificates
 
 COPY --from=publish /app/publish .
