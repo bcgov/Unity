@@ -250,16 +250,28 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
     }
 
     public async Task UploadToS3(BlobProviderSaveArgs args, string bucket, string key, string mimeType)
-    {
-        PutObjectRequest putRequest = new()
+    {        
+        byte[] fileBytes;
+        if (args.BlobStream.CanSeek)
+        {
+            args.BlobStream.Position = 0;
+        }        
+        using (var memoryStream = new MemoryStream())
+        {
+            await args.BlobStream.CopyToAsync(memoryStream);
+            fileBytes = memoryStream.ToArray();
+        }        
+        using var uploadStream = new MemoryStream(fileBytes);
+        var putRequest = new PutObjectRequest
         {
             BucketName = bucket,
             Key = key,
             ContentType = mimeType,
-            InputStream = args.BlobStream,
+            InputStream = uploadStream,
+            UseChunkEncoding = false,
+            DisablePayloadSigning = false
         };
-
-        await _amazonS3Client.PutObjectAsync(putRequest);
+        await _amazonS3Client.PutObjectAsync(putRequest);        
     }
 
     
