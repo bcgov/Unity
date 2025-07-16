@@ -32,6 +32,7 @@ namespace Unity.Payments.PaymentRequests
         public decimal BatchNumber { get; set; }
         public string ReferenceNumber { get;  set; } = string.Empty;
         public string SubmissionConfirmationCode { get; set; } = string.Empty;
+        public string? Note { get; set; }
         public string? ErrorSummary { get; set; }
         public PaymentUserDto? CreatorUser { get; set; }
         public Collection<PaymentTagDto> PaymentTags { get; set; }

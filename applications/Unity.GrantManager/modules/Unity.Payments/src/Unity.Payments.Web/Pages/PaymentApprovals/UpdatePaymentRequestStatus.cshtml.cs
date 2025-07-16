@@ -43,6 +43,11 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         [BindProperty]
         public bool IsErrors { get; set; }
 
+        [BindProperty]
+        public decimal TotalAmount { get; set; }
+
+        [BindProperty]
+        public string Note { get; set; } = string.Empty;
         public List<Guid> SelectedPaymentIds { get; set; }
 
         public string FromStatusText { get; set; } = string.Empty;
@@ -136,6 +141,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             }
 
             DisableSubmit = (paymentApprovals.Count == 0 || !ModelState.IsValid);
+            TotalAmount = paymentApprovals?.Sum(x => x.Amount) ?? 0m;
         }
 
         private async Task<PaymentsApprovalModel> CheckUserPermissionsAsync(PaymentRequestStatus status, bool IsApproval, bool isExceedThreshold, PaymentsApprovalModel request)
@@ -179,7 +185,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
             if (ModelState.IsValid)
             {
-                var payments = MapPaymentRequests(IsApproval);
+                var payments = MapPaymentRequests(IsApproval, Note);
                 await _paymentRequestService.UpdateStatusAsync(payments);
             }
 
@@ -202,7 +208,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             }
         }
 
-        private List<UpdatePaymentStatusRequestDto> MapPaymentRequests(bool isApprove)
+        private List<UpdatePaymentStatusRequestDto> MapPaymentRequests(bool isApprove, string note)
         {
             var payments = new List<UpdatePaymentStatusRequestDto>();
 
@@ -216,6 +222,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                     {
                         PaymentRequestId = payment.Id,
                         IsApprove = isApprove,
+                        Note = note
                     });
                 }
             }
