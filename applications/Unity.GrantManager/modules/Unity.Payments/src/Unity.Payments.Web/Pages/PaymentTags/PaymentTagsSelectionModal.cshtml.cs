@@ -67,92 +67,14 @@ namespace Unity.Payments.Web.Pages.PaymentTags
 
         }
 
-        public async Task OnGetAsync(string paymentRequestIds, string actionType)
+        public  Task OnGetAsync(string paymentRequestIds, string actionType)
         {
-            CommonTags = new List<GlobalTagDto>();
-            UncommonTags = new List<GlobalTagDto>();
+           
             SelectedPaymentRequestIds = paymentRequestIds;
             ActionType = actionType;
-            var paymentRequests = JsonConvert.DeserializeObject<List<Guid>>(SelectedPaymentRequestIds);
-            if (paymentRequests != null && paymentRequests.Count > 0)
-            {
-                try
-                {
-                    var allTags = await _tagsService.GetListAsync();
 
-                    var tags = await _paymentTagsService.GetListWithPaymentRequestIdsAsync(paymentRequests);                   
-                    var groupedTags = tags
-                        .Where(x => x.Tag != null)
-                        .GroupBy(x => x.PaymentRequestId)
-                        .ToDictionary(
-                            g => g.Key,
-                            g => g.Select(x => x.Tag!).DistinctBy(t => t.Id).ToList()
-                        );
-                    foreach (var missingId in paymentRequests.Except(groupedTags.Keys))
-                    {
-                        groupedTags[missingId] = new List<GlobalTagDto>();
-                    }
 
-         
-                    List<GlobalTagDto> commonTags = new();
-
-                    if (groupedTags.Values.Count > 0)
-                    {
-                        commonTags = groupedTags.Values
-                            .Aggregate((prev, next) => prev.IntersectBy(next.Select(t => t.Id), t => t.Id).ToList());
-                    }
-
-                    
-                    Tags = groupedTags.Select(kvp =>
-                    {
-                        var appId = kvp.Key;
-                        var tagList = kvp.Value;
-
-                        var uncommonTags = tagList
-                            .Where(tag => !commonTags.Any(ct => ct.Id == tag.Id))
-                            .ToList();
-
-                        return new NewTagItem
-                        {
-                            PaymentRequestId = appId.ToString(),
-                            CommonTags = commonTags.OrderBy(t => t.Name).ToList(),
-                            UncommonTags = uncommonTags.OrderBy(t => t.Name).ToList()
-                        };
-                    }).ToList();
-
-                    if (Tags.Count > 0)
-                    {
-
-                        CommonTags = Tags
-                            .SelectMany(item => item.CommonTags)
-                            .GroupBy(tag => tag.Id)
-                            .Select(group => group.First())
-                            .OrderBy(tag => tag.Name)
-                            .ToList();
-
-                        UncommonTags = Tags
-                            .SelectMany(item => item.UncommonTags)
-                            .GroupBy(tag => tag.Id)
-                            .Select(group => group.First())
-                            .OrderBy(tag => tag.Name)
-                            .ToList();
-                    }
-
-                    AllTags = allTags
-                     .DistinctBy(tag => tag.Id)
-                     .OrderBy(tag => tag.Name)
-                     .Select(tag => new GlobalTagDto
-                     {
-                         Id = tag.Id,
-                         Name = tag.Name
-                     })
-                     .ToList();
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, message: "Error loading tag select list");
-                }
-            }
+            return Task.CompletedTask;
 
         }
 
