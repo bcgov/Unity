@@ -278,7 +278,7 @@ $(function () {
             let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
             let principalApplicantId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
             let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
-            let applicationId = $('#ApplicantInfoViewApplicationId').val();
+            let applicationId = $('#ApplicantInfo_ApplicationId').val();
 
             // Merge and update applicant info
             let mergedApplicantInfo = {};
