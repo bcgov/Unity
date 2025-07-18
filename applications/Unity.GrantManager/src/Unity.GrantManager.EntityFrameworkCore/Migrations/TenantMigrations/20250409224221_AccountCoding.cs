@@ -65,7 +65,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 }
             );
 
-
             migrationBuilder.AddColumn<string>(
                     name: "DefaultAccountCodingId",
                     table: "PaymentConfigurations",
@@ -80,14 +79,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 table: "PaymentConfigurations",
                 column: "DefaultAccountCodingId");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_PaymentConfiguration_AccountCodings_Id",
-                schema: "Payments",
-                table: "PaymentConfigurations",
-                column: "DefaultAccountCodingId",
-                principalSchema: "Payments",
-                principalTable: "AccountCodings",
-                principalColumn: "Id");
 
             migrationBuilder.AddColumn<string>(
                     name: "PaymentApprovalThreshold",
@@ -109,44 +100,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     type: "uuid",
                     nullable: true,
                     defaultValue: null);
+            
 
             migrationBuilder.CreateIndex(
                 name: "IX_ApplicationForms_AccountCodingId",
                 table: "ApplicationForms",
-                column: "AccountCodingId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ApplicationForms_AccountCodings_Id",
-                table: "ApplicationForms",
-                column: "AccountCodingId",
-                principalSchema: "Payments",
-                principalTable: "AccountCodings",
-                principalColumn: "Id");
-        
-            migrationBuilder.DropColumn(
-                name: "MinistryClient",
-                table: "PaymentConfigurations",
-                schema: "Payments");
-
-            migrationBuilder.DropColumn(
-                name: "Responsibility",
-                table: "PaymentConfigurations",
-                schema: "Payments");
-
-            migrationBuilder.DropColumn(
-                name: "ServiceLine",
-                table: "PaymentConfigurations",
-                schema: "Payments");
-
-            migrationBuilder.DropColumn(
-                name: "Stob",
-                table: "PaymentConfigurations",
-                schema: "Payments");
-
-            migrationBuilder.DropColumn(
-                name: "ProjectNumber",
-                table: "PaymentConfigurations",
-                schema: "Payments");
+                column: "AccountCodingId");            
 
         }
 
@@ -156,6 +115,17 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             migrationBuilder.DropForeignKey(
                 name: "FK_ApplicationForms_AccountCodings_Id",
                 table: "ApplicationForms");
+
+            migrationBuilder.AddColumn<decimal>(
+                name: "PaymentThreshold",
+                schema: "Payments",
+                table: "PaymentConfigurations",
+                type: "numeric");
+
+             migrationBuilder.DropColumn(
+                     name: "PaymentThreshold",
+                     table: "PaymentConfigurations",
+                     schema: "Payments");
 
             migrationBuilder.DropColumn(
                     name: "PreventPayment",

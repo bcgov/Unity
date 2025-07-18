@@ -31,11 +31,14 @@ CrudAppService<
     private readonly IFormsApiService _formsApiService;
     private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
     private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
+    private readonly IGrantApplicationAppService _applicationService;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
+
     public ApplicationFormAppService(IRepository<ApplicationForm, Guid> repository,
         IStringEncryptionService stringEncryptionService,
         IApplicationFormVersionAppService applicationFormVersionAppService,
         IApplicationFormVersionRepository applicationFormVersionRepository,
+        IGrantApplicationAppService applicationService,
         IFormsApiService formsApiService)
         : base(repository)
     {
@@ -44,6 +47,7 @@ CrudAppService<
         _formsApiService = formsApiService;
         _applicationFormVersionRepository = applicationFormVersionRepository;
         _applicationFormRepository = repository;
+        _applicationService = applicationService;
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
@@ -164,5 +168,14 @@ CrudAppService<
         appForm.PreventPayment = dto.PreventPayment;
         appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
         await _applicationFormRepository.UpdateAsync(appForm);
-    }    
+    }
+    
+    public async Task<decimal?> GetFormPaymentApprovalThresholdByApplicationIdAsync(Guid applicationId)
+    {
+        // Get the payment threshold for the application
+        GrantApplicationDto application = await _applicationService.GetAsync(applicationId);
+        Guid formId = application.ApplicationForm.Id;
+        ApplicationForm appForm = await _applicationFormRepository.GetAsync(formId);     
+        return appForm.PaymentApprovalThreshold;
+    }
 }

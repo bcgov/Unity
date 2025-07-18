@@ -17,5 +17,6 @@ namespace Unity.Payments.PaymentRequests
         Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId);
         Task<List<PaymentDetailsDto>> GetListByApplicationIdsAsync(List<Guid> applicationIds);
         Task<string> GetNextBatchInfoAsync();
+        Task<Guid?> GetDefaultAccountCodingId();
     }
 }

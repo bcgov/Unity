@@ -32,34 +32,29 @@ namespace Unity.Payments.PaymentRequests
             IPaymentsManager paymentsManager,
             IPaymentRequestRepository paymentRequestsRepository,
             IPermissionChecker permissionChecker) : PaymentsAppService, IPaymentRequestAppService
-    {
 
-        protected virtual async Task<(PaymentConfiguration? Config, decimal Threshold)> GetPaymentConfigurationWithThresholdAsync()
+    {    
+        public async Task<Guid?> GetDefaultAccountCodingId()
         {
-            var paymentConfigs = await paymentConfigurationRepository.GetListAsync();
-            var paymentConfig = paymentConfigs.FirstOrDefault();
-
-            if (paymentConfig == null)
+            Guid? accountCodingId = null;
+            // If no account coding is found look up the payment configuration
+            PaymentConfiguration? paymentConfiguration = await GetPaymentConfigurationAsync();
+            if (paymentConfiguration != null && paymentConfiguration.DefaultAccountCodingId.HasValue)
             {
-                return (null, PaymentSharedConsts.DefaultThresholdAmount);
+                accountCodingId = paymentConfiguration.DefaultAccountCodingId;
             }
-
-            return (paymentConfig, paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount);
+            return accountCodingId;
         }
 
         [Authorize(PaymentsPermissions.Payments.RequestPayment)]
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
         {
             List<PaymentRequestDto> createdPayments = [];
-            var (paymentConfig, paymentThreshold) = await GetPaymentConfigurationWithThresholdAsync();
+            var paymentConfig = await GetPaymentConfigurationAsync();
             var paymentIdPrefix = string.Empty;
 
             if (paymentConfig != null)
             {
-                if (paymentConfig.PaymentThreshold != null)
-                {
-                    paymentThreshold = (decimal)paymentConfig.PaymentThreshold;
-                }
                 if (!paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
                 {
                     paymentIdPrefix = paymentConfig.PaymentIdPrefix;
@@ -80,14 +75,13 @@ namespace Unity.Payments.PaymentRequests
                     string referenceNumberPrefix = GenerateReferenceNumberPrefixAsync(paymentIdPrefix);
                     string sequenceNumber = GenerateSequenceNumberAsync(nextSequenceNumber, paymentRequestItem.i);
                     string referenceNumber = GenerateReferenceNumberAsync(referenceNumberPrefix, sequenceNumber);
-                    string invoiceNumber = GenerateInvoiceNumberAsync(referenceNumberPrefix, paymentRequestDto.InvoiceNumber, sequenceNumber);
+                    string invoiceNumber = GenerateInvoiceNumberAsync(referenceNumberPrefix, paymentRequestDto.InvoiceNumber, sequenceNumber);                
 
                     paymentRequestDto.InvoiceNumber = invoiceNumber;
                     paymentRequestDto.ReferenceNumber = referenceNumber;
                     paymentRequestDto.BatchName = batchName;
                     paymentRequestDto.BatchNumber = batchNumber;
-                    paymentRequestDto.PaymentThreshold = paymentThreshold;
-
+       
                     var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
                     var result = await paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
@@ -118,7 +112,7 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<string> GetNextBatchInfoAsync()
         {
-            var (paymentConfig, _) = await GetPaymentConfigurationWithThresholdAsync();
+            var paymentConfig = await GetPaymentConfigurationAsync();
             var paymentIdPrefix = string.Empty;
 
             if (paymentConfig != null && !paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
@@ -186,7 +180,7 @@ namespace Unity.Payments.PaymentRequests
 
             // Check approval batches
             var approvalRequests = paymentRequests.Where(r => r.IsApprove).Select(x => x.PaymentRequestId).ToList();
-            var approvalList = await _paymentRequestsRepository.GetListAsync(x => approvalRequests.Contains(x.Id), includeDetails: true);
+            var approvalList = await paymentRequestsRepository.GetListAsync(x => approvalRequests.Contains(x.Id), includeDetails: true);
 
             // Rule AB#26693: Reject Payment Request update batch if violates L1 and L2 separation of duties
             if (approvalList.Any(
@@ -258,7 +252,7 @@ namespace Unity.Payments.PaymentRequests
         private async Task<bool> CanPerformLevel2ActionAsync(PaymentRequest payment, bool IsApprove)
         {
             List<PaymentRequestStatus> level2Approvals = new() { PaymentRequestStatus.L2Pending, PaymentRequestStatus.L2Declined };
-            
+
             // Rule AB#26693: Reject Payment Request update if violates L1 and L2 separation of duties
             var IsSameApprover = CurrentUser.Id == payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId;
             if (IsSameApprover && IsApprove)
@@ -300,7 +294,7 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdsAsync(List<Guid> applicationIds)
         {
-            var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+            var paymentsQueryable = await paymentRequestsRepository.GetQueryableAsync();
             var payments = await paymentsQueryable.Include(pr => pr.Site).ToListAsync();
             var filteredPayments = payments.Where(pr => applicationIds.Contains(pr.CorrelationId)).ToList();
 
@@ -312,15 +306,18 @@ namespace Unity.Payments.PaymentRequests
             var totalCount = await paymentRequestsRepository.GetCountAsync();
             using (dataFilter.Disable<ISoftDelete>())
             {
-                await _paymentRequestsRepository
+                await paymentRequestsRepository
                     .GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, includeDetails: true);
 
                 // Include PaymentTags in the query  
-                var paymentsQueryable = await _paymentRequestsRepository.GetQueryableAsync();
+                var paymentsQueryable = await paymentRequestsRepository.GetQueryableAsync();
+                // Changing this breaks the code so suppressing the warning
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
                 var paymentsWithTags = await paymentsQueryable
                     .Include(pr => pr.PaymentTags)
                         .ThenInclude(pt => pt.Tag)
                     .ToListAsync();
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
                 var mappedPayments = await MapToDtoAndLoadDetailsAsync(paymentsWithTags);
 
@@ -449,7 +446,9 @@ namespace Unity.Payments.PaymentRequests
             if (paymentConfigs.Count > 0)
             {
                 var paymentConfig = paymentConfigs[0];
-                return paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
+
+                // TODO: FIX To current user threshold throw exception if the user does not have a threshold?
+                return PaymentSharedConsts.DefaultThresholdAmount;
             }
 
             return PaymentSharedConsts.DefaultThresholdAmount;
