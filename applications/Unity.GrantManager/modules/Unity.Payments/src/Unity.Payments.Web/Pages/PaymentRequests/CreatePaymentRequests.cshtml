@@ -49,6 +49,7 @@
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SupplierNumber" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].RemainingAmount" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].AccountCodingId" />
                             
                             <abp-row class="m-0 p-3">
                                 <abp-column size="_2" class="px-1">
@@ -90,6 +91,7 @@
                         <abp-row class="m-0 p-1 ">
                             <abp-column size="_12">
                                 <span><b>Note: </b>
+                                A default
                                 <a href="~/PaymentConfigurations" style="text-decoration: none;color: var(--bc-colors-blue-primary);font-weight: 700;text-transform: uppercase;">
                                 Account Coding
                                 </a> is required for payments.</span>

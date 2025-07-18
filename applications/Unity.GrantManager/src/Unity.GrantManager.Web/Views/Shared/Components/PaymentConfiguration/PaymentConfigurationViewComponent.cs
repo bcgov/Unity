@@ -35,6 +35,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
             PaymentConfigurationViewModel model = new();
             model.HasEditFormPaymentConfiguration = await HasEditPaymentConfiguration();
             model.Payable = applicationForm?.Payable ?? false;
+            model.PaymentApprovalThreshold = applicationForm?.PaymentApprovalThreshold;
             model.PreventAutomaticPaymentToCAS = applicationForm?.PreventPayment ?? false;
             model.AccountCode = applicationForm?.AccountCodingId;
             model.AccountCodeList = new();

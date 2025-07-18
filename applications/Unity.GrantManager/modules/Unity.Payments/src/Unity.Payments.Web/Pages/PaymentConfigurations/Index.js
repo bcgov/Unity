@@ -1,35 +1,44 @@
+let accountCodingDataTable;
+let paymentSettingsDataTable;
+
 $(function () {
     let createModal = new abp.ModalManager(abp.appPath + 'AccountCoding/CreateModal');
     let updateModal = new abp.ModalManager(abp.appPath + 'AccountCoding/UpdateModal');
     let updateThresholdModal = new abp.ModalManager(abp.appPath + 'PaymentThresholds/UpdateModal');
+    const formatter = createNumberFormatter();
     
     const l = abp.localization.getResource('GrantManager');
     toastr.options.positionClass = 'toast-top-center';
-    let dataTable;
-    let paymentSettingsDataTable;
+
 
     const UIElements = {
-        accountCodingDataTable: $('#AccountCodesDataTable'),
-        paymentSettingsDataTable: $('#PaymentSettingsDataTable'),
+        accountCodingDT: $('#AccountCodesDataTable'),
+        paymentSettingsDT: $('#PaymentSettingsDataTable'),
         accountCodingId: $('#AccountCodingId'),
         accountCodingMenu: $('#account-coding-menu-item'),
         paymentSettingMenu: $('#payment-setting-menu-item'),
         accountCodesDiv: $('#account-codes-div'),
         paymentSettingsDiv: $('#payment-settings-div'),
+        paymentPrefixSaveButton: $('#PaymentPrefixSaveButton'),
+        paymentPrefixDiscardButton: $('#PaymentPrefixDiscardButton'),
+        paymentPrefixInput: $('#payment-id-prefix'),
+        originalPaymentPrefix: $('#payment-id-prefix-original')
     };
 
     init();
 
     function init() {        
-        dataTable = initializeAccountCodesDataTable();
+        accountCodingDataTable = initializeAccountCodesDataTable();
         paymentSettingsDataTable = initializePaymentSettingsDataTable();
         bindUIElements();
     }
 
     function bindUIElements() {
         UIElements.accountCodingMenu.on('click', menuItemClick);
-        UIElements.paymentSettingMenu.on('click', menuItemClick);        
-    }
+        UIElements.paymentSettingMenu.on('click', menuItemClick);    
+        UIElements.paymentPrefixSaveButton.on('click', updatePaymentPrefix);    
+        UIElements.paymentPrefixDiscardButton.on('click', discardPaymentPrefix);    
+        UIElements.paymentPrefixInput.on('keyup', checkEnableDiscard);    }
 
     function removeActiveClassFromMenuItems() {
         UIElements.accountCodingMenu.removeClass('active');
@@ -42,7 +51,8 @@ $(function () {
         UIElements.accountCodesDiv.toggleClass('hide');      
         UIElements.paymentSettingsDiv.toggleClass('hide');      
         paymentSettingsDataTable.columns.adjust().draw();
-        dataTable.columns.adjust().draw();
+        accountCodingDataTable.columns.adjust().draw();
+        clearFilter();
     }
     
     function bindModalElements() {
@@ -84,7 +94,6 @@ $(function () {
             }
         }
 
-        
         function setAccountCodingDisplay() {
             let currentAccount = $(UIElements.inputMinistryClient).val() + "." +
                 $(UIElements.inputResponsibility).val() + "." +
@@ -116,7 +125,7 @@ $(function () {
             };
         };
        
-        let dt = UIElements.paymentSettingsDataTable;
+        let dt = UIElements.paymentSettingsDT;
         return initializeDataTable({
             dt,
             defaultVisibleColumns,
@@ -133,6 +142,7 @@ $(function () {
             dataTableName: 'PaymentSettingsDataTable',
             dynamicButtonContainerId: 'dynamicButtonContainerId',
             useNullPlaceholder: true,
+            disableColumnSelect: true,
             externalSearchId: 'search-data-table'
         });
 
@@ -166,7 +176,11 @@ $(function () {
                     className: 'dt-body-right', 
                     data: "threshold",
                     visible: true,
-                    index: index++
+                    index: index++,
+                    render: function (data, type, row) {
+                        if (data == null || data === '') return '';
+                        return formatter.format(data);
+                    }                    
                 },
                 {
                     title: 'Description',
@@ -207,8 +221,7 @@ $(function () {
                 id: 'CreateButton',
                 className: 'btn-light rounded-1',
                 action: (e, dt, node, config) => createAccountCodingBtn(e)
-            },
-            ...commonTableActionButtons(l('Intake'))
+            }
         ];
     
         const listColumns = getAccountCodingColumns();
@@ -231,7 +244,7 @@ $(function () {
             };
         };
        
-        let dt = UIElements.accountCodingDataTable;
+        let dt = UIElements.accountCodingDT;
         return initializeDataTable({
             dt,
             defaultVisibleColumns,
@@ -248,6 +261,7 @@ $(function () {
             dataTableName: 'AccountCodesDataTable',
             dynamicButtonContainerId: 'dynamicButtonContainerId',
             useNullPlaceholder: true,
+            disableColumnSelect: true,
             externalSearchId: 'search-data-table'
         });
     }
@@ -300,7 +314,7 @@ $(function () {
                 data: 'id',
                 render: function (data, type, full, meta) {
                     let checked = UIElements.accountCodingId.val() == data ? 'checked' : '';
-                    return `<input type="radio" name="default-account-code" ${checked}  onclick="handleDefaultAccountCodeRadioClick('${data}')"/>`;
+                    return `<input type="radio" id="radio-${data}" name="default-account-code" ${checked}  onclick="handleDefaultAccountCodeRadioClick('${data}')"/>`;
                 }
             },
             {
@@ -360,14 +374,61 @@ $(function () {
         });
     };
 
+    function updatePaymentPrefix() {
+        unity.payments.paymentConfigurations.paymentConfiguration.updatePaymentPrefix(UIElements.paymentPrefixInput.val())
+        .done(function () {
+            toastr.success('Payment prefix updated successfully.');
+            $('#payment-id-prefix-original').val(UIElements.paymentPrefixInput.val());
+            checkEnableDiscard();
+        })
+        .fail(function () {
+            toastr.error('Failed to update payment prefix.');
+        });
+    };
 
+    function checkEnableDiscard() {
+        const originalPrefix = UIElements.originalPaymentPrefix.val();
+        const currentPrefix = UIElements.paymentPrefixInput.val();
+        if (currentPrefix !== originalPrefix) {
+            UIElements.paymentPrefixDiscardButton.prop('disabled', false);
+        } else {
+            UIElements.paymentPrefixDiscardButton.prop('disabled', true);
+        }
+    }
+
+    function discardPaymentPrefix() {
+        UIElements.paymentPrefixInput.val(UIElements.originalPaymentPrefix.val());
+        toastr.info('Payment prefix changes discarded.');
+        checkEnableDiscard();
+    };
 
 });
 
+function clearFilter() {
+    // Clear the search input (assuming external search input has id 'search-data-table')
+    $('#search-data-table').val('');
+    $('#search-data-table').trigger("keyup"); // Trigger keyup to clear DataTable's internal search
+}
+
 function handleDefaultAccountCodeRadioClick(id) {
-    unity.grantManager.payments.paymentConfiguration.setDefaultAccountCode(id).done(function () {
-        toastr.success('Successfully set default account code.');
+    $('#AccountCodingId').val(id); // Update the hidden input with the selected account code ID
+    unity.payments.paymentConfigurations.paymentConfiguration.setDefaultAccountCode(id).done(function () {
+        toastr.success('Successfully set default account code. Reloading account codes.');
+        clearAccountCodesSearchAndReload();    
     }).fail(function () {
         toastr.error('Failed to set default account code.');
     });
 };
+
+function clearAccountCodesSearchAndReload() {
+    clearFilter();
+    // Clear DataTable's internal search and redraw
+    accountCodingDataTable.search('').draw();
+
+    // Clear the localStorage key for PaymentSettingsDataTable
+    localStorage.removeItem('DataTables_AccountCodesDataTable_/PaymentConfigurations');
+    localStorage.removeItem('DataTables_PaymentSettingsDataTable_/PaymentConfigurations');
+
+    // Reload the page
+    accountCodingDataTable.ajax.reload();
+}

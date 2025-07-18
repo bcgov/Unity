@@ -261,6 +261,5 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
 
         await _amazonS3Client.PutObjectAsync(putRequest);
     }
-
     
 }

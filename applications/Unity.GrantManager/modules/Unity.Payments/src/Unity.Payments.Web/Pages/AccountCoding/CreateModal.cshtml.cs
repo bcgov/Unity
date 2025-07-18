@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Unity.GrantManager.Payments;
+using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
-namespace Unity.GrantManager.Web.Pages.AccountCoding;
+namespace Unity.Payments.Web.Pages.AccountCoding;
 
 public class CreateModalModel(IAccountCodingAppService accountCodingAppService) : AbpPageModel
 {
@@ -12,9 +14,14 @@ public class CreateModalModel(IAccountCodingAppService accountCodingAppService) 
 
     public async Task<IActionResult> OnPostAsync()
     {
-        await accountCodingAppService.CreateAsync(AccountCoding!);
-        return NoContent();
+        try
+        {
+            await accountCodingAppService.CreateAsync(AccountCoding!);
+            return NoContent();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("duplicate key") == true)
+        {
+            throw new UserFriendlyException("This Account Coding already exists");
+        }
     }
 }
-
-

@@ -67,7 +67,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(false)]
     public async Task<Applicant> RelateSupplierToApplicant(ApplicantSupplierEto applicantSupplierEto)
     {
-        ArgumentNullException.ThrowIfNull(applicantSupplierEto.ApplicantId);
+        // Removed unnecessary null check for non-nullable ApplicantId
         Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
         ArgumentNullException.ThrowIfNull(applicant);
         applicant.SupplierId = applicantSupplierEto.SupplierId;

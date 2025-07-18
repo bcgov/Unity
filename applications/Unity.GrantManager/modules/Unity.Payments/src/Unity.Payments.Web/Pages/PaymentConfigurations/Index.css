@@ -118,6 +118,15 @@ input.form-control:focus, input.form-control:active, textarea.form-control:focus
 	text-align: right;
 }
 
+label.display-input-label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
 @media only screen and (max-width: 850px) {
 	.field-validation-error {
 		float: none;

@@ -59,15 +59,30 @@
         </abp-row>
         <abp-row>
             <abp-column size="_12" class="p-3">
-                <span class="form-label">Payment id Prefix</span>
-                <input id="payment-id-prefix" type="text" value="@Model.PaymentIdPrefix" class="valid form-control">
+                <span class="form-label">Payment ID Prefix</span>
+                <input id="payment-id-prefix-original" type="hidden" value="@Model.PaymentIdPrefix">
+                <input id="payment-id-prefix" maxlength="5" type="text" value="@Model.PaymentIdPrefix" class="valid form-control">
             </abp-column>
         </abp-row>
+        <div class="d-flex p-2">
+            <abp-button id="PaymentPrefixSaveButton"
+                        text="Save Changes"
+                        button-type="Primary" class="me-2"
+                        type="submit" />
+
+            <abp-button id="PaymentPrefixDiscardButton"
+                        text="Discard Changes"
+                        button-type="Light" class="me-2"
+                        disabled="true" />
+        </div>
         <hr/>
         <abp-row>
             <abp-column size="_12" class="p-3">
-                <h4>Approval Threshold</h4>
-            </abp-column>
+                <h4>Level 2 Approval Threshold</h4>
+                <label class="display-input-label" for="paymentSettingsDynamicButtonContainerId">
+                    Please Note the following table is generated from Users created with the Role of l2_approver
+                </label>                
+            </abp-column>       
         </abp-row>
         <div class="btn-group" id="app_custom_buttons">
             <div id="paymentSettingsDynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Payments;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
-namespace Unity.GrantManager.Web.Pages.AccountCoding;
+namespace Unity.Payments.Web.Pages.AccountCoding;
 
 public class UpdateModalModel(IAccountCodingAppService accountCodingAppService) : AbpPageModel
 {

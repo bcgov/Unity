@@ -154,15 +154,15 @@ CrudAppService<
         form.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
 
         await _applicationFormRepository.UpdateAsync(form);
-
-        public async Task SavePaymentConfiguration(FormPaymentConfigurationDto dto)
-        {
-            ApplicationForm appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);
-            appForm.AccountCodingId = dto.AccountCodingId;
-            appForm.Payable = dto.Payable;
-            appForm.PreventPayment = dto.PreventPayment;
-            appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
-            await _applicationFormRepository.UpdateAsync(appForm);
-        }
     }
+
+    public async Task SavePaymentConfiguration(FormPaymentConfigurationDto dto)
+    {
+        ApplicationForm appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);
+        appForm.AccountCodingId = dto.AccountCodingId;
+        appForm.Payable = dto.Payable;
+        appForm.PreventPayment = dto.PreventPayment;
+        appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
+        await _applicationFormRepository.UpdateAsync(appForm);
+    }    
 }

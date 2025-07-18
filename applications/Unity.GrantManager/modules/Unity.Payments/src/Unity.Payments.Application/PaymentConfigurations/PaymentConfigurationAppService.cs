@@ -1,8 +1,9 @@
+using System;
 using System.Threading.Tasks;
-using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.Domain.PaymentConfigurations;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.PaymentConfigurations
@@ -10,8 +11,6 @@ namespace Unity.Payments.PaymentConfigurations
     [RequiresFeature("Unity.Payments")]
     public class PaymentConfigurationAppService(IPaymentConfigurationRepository paymentConfigurationRepository) : PaymentsAppService, IPaymentConfigurationAppService
     {
-
-
         public virtual async Task<PaymentConfigurationDto?> GetAsync()
         {
             PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync();
@@ -41,19 +40,13 @@ namespace Unity.Payments.PaymentConfigurations
 
         public virtual async Task<PaymentConfigurationDto> CreateAsync(CreatePaymentConfigurationDto createUpdatePaymentConfigurationDto)
         {
-            PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync();
-
-            if (paymentConfiguration != null)
+            PaymentConfiguration? paymentConfiguration = new PaymentConfiguration
             {
-                throw new ConfigurationExistsException(L[ErrorConsts.ConfigurationExists]);
-            }
+                DefaultAccountCodingId = createUpdatePaymentConfigurationDto.DefaultAcountCodingId,
+                PaymentIdPrefix = createUpdatePaymentConfigurationDto.PaymentIdPrefix
+            };
 
-            var newPaymentConfiguration = await paymentConfigurationRepository.InsertAsync(new PaymentConfiguration
-            (
-                createUpdatePaymentConfigurationDto.PaymentThreshold,
-                createUpdatePaymentConfigurationDto.PaymentIdPrefix
-            ));
-
+            var newPaymentConfiguration = await paymentConfigurationRepository.InsertAsync(paymentConfiguration); 
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(newPaymentConfiguration);
         }
 
@@ -62,14 +55,44 @@ namespace Unity.Payments.PaymentConfigurations
             PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync() ??
                 throw new ConfigurationExistsException(L[ErrorConsts.ConfigurationDoesNotExist]);
 
-            paymentConfiguration.PaymentThreshold = updatePaymentConfigurationDto.PaymentThreshold;
             paymentConfiguration.PaymentIdPrefix = updatePaymentConfigurationDto.PaymentIdPrefix;
-
             var updatedConfiguration = await paymentConfigurationRepository.UpdateAsync(paymentConfiguration);
 
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(updatedConfiguration);
         }
+
+        public async Task UpdatePaymentPrefixAsync(string paymentPrefix)
+        {
+            PaymentConfiguration? paymentConfiguration = await paymentConfigurationRepository.FirstOrDefaultAsync();
+            if (paymentConfiguration == null)
+            {
+                CreatePaymentConfigurationDto paymentConfigurationDto = new CreatePaymentConfigurationDto();
+                paymentConfigurationDto.PaymentIdPrefix = paymentPrefix;
+                await CreateAsync(paymentConfigurationDto);
+            }
+            else
+            {
+                paymentConfiguration.PaymentIdPrefix = paymentPrefix;
+                await paymentConfigurationRepository.UpdateAsync(paymentConfiguration);
+            }
+        }
         
+        public async Task SetDefaultAccountCodeAsync(Guid accountCodingId)
+        {
+            PaymentConfiguration? paymentConfiguration = await paymentConfigurationRepository.FirstOrDefaultAsync();
+
+            if (paymentConfiguration == null)
+            {
+                CreatePaymentConfigurationDto paymentConfigurationDto = new CreatePaymentConfigurationDto();
+                paymentConfigurationDto.DefaultAcountCodingId = accountCodingId;
+                await CreateAsync(paymentConfigurationDto);
+            }
+            else
+            {
+                paymentConfiguration.DefaultAccountCodingId = accountCodingId;
+                await paymentConfigurationRepository.UpdateAsync(paymentConfiguration);
+            }
+        }
 
         protected virtual async Task<PaymentConfiguration?> FindPaymentConfigurationAsync()
         {

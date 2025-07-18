@@ -11,6 +11,7 @@ using Unity.Payment.Shared;
 using System.Text.Json;
 using Unity.Payments.Domain.Suppliers;
 using System.Linq;
+using Unity.GrantManager.Payments;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -22,8 +23,10 @@ namespace Unity.Payments.Web.Pages.Payments
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
         private readonly ISupplierAppService _iSupplierAppService;
         private readonly ISiteRepository _siteRepository;
+        private readonly IPaymentSettingsAppService _paymentSettingsAppService;
 
         public CreatePaymentRequestsModel(
+           IPaymentSettingsAppService paymentSettingsAppService,
            ISiteRepository siteRepository,
            IGrantApplicationAppService applicationService,
            ISupplierAppService iSupplierAppService,
@@ -36,6 +39,7 @@ namespace Unity.Payments.Web.Pages.Payments
             _paymentRequestService = paymentRequestService;
             _paymentConfigurationAppService = paymentConfigurationAppService;
             _iSupplierAppService = iSupplierAppService;
+            _paymentSettingsAppService = paymentSettingsAppService;
         }
 
         [BindProperty]
@@ -64,10 +68,11 @@ namespace Unity.Payments.Web.Pages.Payments
 
         public async Task OnGetAsync(string applicationIds)
         {
+            // TODO: FIX PAY THRESHOLD
             var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
             if (paymentConfiguration != null)
             {
-                PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
+                PaymentThreshold = PaymentSharedConsts.DefaultThresholdAmount;
                 HasPaymentConfiguration = true;
             }
             else
@@ -83,6 +88,10 @@ namespace Unity.Payments.Web.Pages.Payments
             {
                 decimal remainingAmount = await GetRemainingAmountAllowedByApplicationAsync(application);
 
+                // Grabs the Account Coding ID from the Application Form and if there is none then the Payment Configuration
+                // If neither exist then an error on the payment request will be shown 
+                Guid? accountCodingId = await _paymentSettingsAppService.GetAccountCodingIdByApplicationIdAsync(application.Id);
+
                 PaymentsModel request = new()
                 {
                     CorrelationId = application.Id,
@@ -92,7 +101,8 @@ namespace Unity.Payments.Web.Pages.Payments
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
                     ContractNumber = application.ContractNumber,
-                    RemainingAmount = remainingAmount
+                    RemainingAmount = remainingAmount,
+                    AccountCodingId = accountCodingId
                 };
 
                 var supplier = await GetSupplierByApplicationAync(application);
@@ -110,7 +120,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 request.SupplierName = supplier?.Name;
                 request.SupplierNumber = supplierNumber;
 
-                request.ErrorList = GetErrorlist(supplier, site, application, remainingAmount);
+                request.ErrorList = GetErrorlist(supplier, site, application, remainingAmount, accountCodingId);
 
                 if (request.ErrorList != null && request.ErrorList.Count > 0)
                 {
@@ -125,7 +135,7 @@ namespace Unity.Payments.Web.Pages.Payments
             TotalAmount = ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
         }
 
-        private static List<string> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, decimal remainingAmount)
+        private static List<string> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, decimal remainingAmount, Guid? accountCodingId)
         {
             bool missingFields = false;
 
@@ -153,6 +163,11 @@ namespace Unity.Payments.Web.Pages.Payments
             if (!application.ApplicationForm.Payable)
             {
                 errorList.Add("The selected application is not Payable. To continue please remove the item from the list.");
+            }
+
+            if(accountCodingId == null || accountCodingId == Guid.Empty)
+            {
+                errorList.Add("The selected application form does not have an Account Coding or no default Account Coding is set.");
             }
 
             return errorList;
@@ -228,7 +243,8 @@ namespace Unity.Payments.Web.Pages.Payments
                     SupplierNumber = payment.SupplierNumber ?? string.Empty,
                     PayeeName = payment.ApplicantName ?? string.Empty,
                     SubmissionConfirmationCode = payment.SubmissionConfirmationCode ?? string.Empty,
-                    CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicationCorrelationProvider,
+                    CorrelationProvider = PaymentConsts.ApplicationCorrelationProvider,
+                    AccountCodingId = payment.AccountCodingId,
                 });
             }
 
