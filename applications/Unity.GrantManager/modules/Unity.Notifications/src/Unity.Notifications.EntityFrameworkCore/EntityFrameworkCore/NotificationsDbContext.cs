@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Templates;
+using Unity.Notifications.EmailGroups;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,6 +13,8 @@ public class NotificationsDbContext : AbpDbContext<NotificationsDbContext>, INot
     public DbSet<EmailLog> EmailLogs { get; set; }
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
     public DbSet<TemplateVariable> TemplateVariables { get; set; }
+    public DbSet<EmailGroup> EmailGroups { get; set; }
+    public DbSet<EmailGroupUser> EmailGroupUsers { get; set; }
 
     // Add DbSet for each Aggregate Root here.
     public NotificationsDbContext(DbContextOptions<NotificationsDbContext> options)
