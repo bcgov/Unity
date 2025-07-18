@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Payments;
 using Unity.Payments.PaymentThresholds;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Volo.Abp.Identity;
-using Volo.Abp.Identity.Integration;
 
 namespace Unity.GrantManager.Web.Pages.PaymentThresholds;
 

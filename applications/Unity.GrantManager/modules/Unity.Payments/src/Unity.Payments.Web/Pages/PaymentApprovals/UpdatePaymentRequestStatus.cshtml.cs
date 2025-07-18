@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.Payment.Shared;
+using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.PaymentThresholds;
 using Unity.Payments.Domain.Shared;
 using Unity.Payments.Enums;
@@ -26,7 +27,8 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
     }
 
     public class UpdatePaymentRequestStatus(
-                        IPaymentRequestAppService paymentRequestService,
+                        IPaymentRequestRepository paymentRepository,
+                        IPaymentRequestAppService paymentRequestAppService,
                         IPaymentConfigurationAppService paymentConfigurationAppService,
                         IApplicationFormAppService applicationFormAppService,
                         IPaymentThresholdRepository paymentThresholdRepository,
@@ -45,7 +47,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         public async Task OnGetAsync(string paymentIds, bool isApprove)
         {
             await InitializeStateAsync(paymentIds, isApprove);
-            var payments = await paymentRequestService.GetListByPaymentIdsAsync(SelectedPaymentIds);
+            var payments = await paymentRequestAppService.GetListByPaymentIdsAsync(SelectedPaymentIds);
             var paymentApprovals = await BuildPaymentApprovalsAsync(payments);
 
             PaymentGroupings = paymentApprovals
@@ -58,7 +60,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 })
                 .ToList();
 
-            DisableSubmit = !paymentApprovals.Any() || !ModelState.IsValid;
+            DisableSubmit = paymentApprovals.Count == 0 || !ModelState.IsValid;
         }
 
         private async Task InitializeStateAsync(string paymentIds, bool isApprove)
@@ -85,20 +87,23 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 var formThreshold = await applicationFormAppService.GetFormPaymentApprovalThresholdByApplicationIdAsync(payment.CorrelationId);
                 PaymentThreshold = formThreshold.HasValue && formThreshold.Value < PaymentThreshold ? formThreshold.Value : PaymentThreshold;
 
-                var request = CreateApprovalModel(payment);
-                ValidateApprovalModel(request);
+                var approvalModel = await CreateApprovalModel(payment);
+                ValidateApprovalModel(approvalModel);
 
-                if (await VerifyPermissionsAsync(payment.Status, request))
+                if (await VerifyPermissionsAsync(payment.Status, approvalModel))
                 {
-                    paymentApprovals.Add(request);
+                    paymentApprovals.Add(approvalModel);
                 }
             }
 
             return paymentApprovals;
         }
 
-        private PaymentsApprovalModel CreateApprovalModel(PaymentDetailsDto payment)
+        private async Task<PaymentsApprovalModel> CreateApprovalModel(PaymentDetailsDto payment)
         {
+            bool isL3ApprovalRequired = payment.Amount > PaymentThreshold;
+            await UpdateExpenseApprovalsAsync(payment, isL3ApprovalRequired);
+
             return new PaymentsApprovalModel
             {
                 Id = payment.Id,
@@ -109,18 +114,42 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 Description = payment.Description,
                 InvoiceNumber = payment.InvoiceNumber,
                 Status = payment.Status,
-                IsL3ApprovalRequired = payment.Amount > PaymentThreshold,
+                IsL3ApprovalRequired = isL3ApprovalRequired,
                 ToStatus = payment.Status,
                 IsApproval = IsApproval,
                 PreviousL1Approver = payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId
             };
         }
 
+        private async Task UpdateExpenseApprovalsAsync(PaymentDetailsDto payment, bool isL3ApprovalRequired)
+        {
+            if (payment.Status == PaymentRequestStatus.L2Pending)
+            {
+
+                var l3Approval = payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level3);
+                PaymentRequest paymentEntity = await paymentRepository.GetAsync(payment.Id);
+                if (isL3ApprovalRequired && l3Approval == null)
+                {
+                    paymentEntity.ExpenseApprovals.Add(new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level3));
+
+                }
+                else if (!isL3ApprovalRequired && l3Approval != null)
+                {
+                    var l3ApprovalEntity = paymentEntity.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level3);
+                    if (l3ApprovalEntity != null)
+                    {
+                        paymentEntity.ExpenseApprovals.Remove(l3ApprovalEntity);
+                    }
+                }
+
+                await paymentRepository.UpdateAsync(paymentEntity);
+            }
+        }
+
         private void ValidateApprovalModel(PaymentsApprovalModel request)
         {
-            var validationContext = new ValidationContext(request, LazyServiceProvider, null);
             var validationResults = new List<ValidationResult>();
-            request.IsValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
+            request.IsValid = Validator.TryValidateObject(request, new ValidationContext(request, LazyServiceProvider, null), validationResults, true);
 
             foreach (var validationResult in validationResults)
             {
@@ -133,15 +162,20 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         private async Task<bool> VerifyPermissionsAsync(PaymentRequestStatus status, PaymentsApprovalModel request)
         {
-            request.ToStatus = status switch
+            if (status == PaymentRequestStatus.L2Pending && IsApproval)
             {
-                PaymentRequestStatus.L1Pending => IsApproval ? PaymentRequestStatus.L2Pending : PaymentRequestStatus.L1Declined,
-                PaymentRequestStatus.L2Pending => IsApproval
-                    ? (request.IsL3ApprovalRequired ? PaymentRequestStatus.L3Pending : PaymentRequestStatus.Submitted)
-                    : PaymentRequestStatus.L2Declined,
-                PaymentRequestStatus.L3Pending => IsApproval ? PaymentRequestStatus.Submitted : PaymentRequestStatus.L3Declined,
-                _ => request.ToStatus
-            };
+                request.ToStatus = request.IsL3ApprovalRequired ? PaymentRequestStatus.L3Pending : PaymentRequestStatus.Submitted;
+            }
+            else
+            {
+                request.ToStatus = status switch
+                {
+                    PaymentRequestStatus.L1Pending => IsApproval ? PaymentRequestStatus.L2Pending : PaymentRequestStatus.L1Declined,
+                    PaymentRequestStatus.L2Pending => PaymentRequestStatus.L2Declined,
+                    PaymentRequestStatus.L3Pending => IsApproval ? PaymentRequestStatus.Submitted : PaymentRequestStatus.L3Declined,
+                    _ => request.ToStatus
+                };
+            }
 
             var permission = status switch
             {
@@ -156,17 +190,17 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (PaymentGroupings == null || !PaymentGroupings.Any() || !ModelState.IsValid) return NoContent();
+            if (PaymentGroupings == null || PaymentGroupings.Count == 0 || !ModelState.IsValid) return NoContent();
 
             var payments = PaymentGroupings.SelectMany(group => group.Items)
-                .Select(payment => new UpdatePaymentStatusRequestDto
-                {
-                    PaymentRequestId = payment.Id,
-                    IsApprove = IsApproval
-                })
-                .ToList();
+            .Select(payment => new UpdatePaymentStatusRequestDto
+            {
+                PaymentRequestId = payment.Id,
+                IsApprove = IsApproval
+            })
+            .ToList();
 
-            await paymentRequestService.UpdateStatusAsync(payments);
+            await paymentRequestAppService.UpdateStatusAsync(payments);
             return NoContent();
         }
 
@@ -208,7 +242,6 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 _ => "L1 Pending",
             };
         }
-
         public static string GetStatusTextColor(PaymentRequestStatus status) => status switch
         {
             PaymentRequestStatus.L1Declined or PaymentRequestStatus.L2Declined or PaymentRequestStatus.L3Declined => "#CE3E39",

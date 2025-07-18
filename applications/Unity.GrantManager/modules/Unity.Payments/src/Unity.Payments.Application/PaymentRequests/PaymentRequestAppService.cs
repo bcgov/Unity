@@ -15,9 +15,9 @@ using Unity.Payments.Enums;
 using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.Features;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Users;
 
 namespace Unity.Payments.PaymentRequests
@@ -400,7 +400,7 @@ namespace Unity.Payments.PaymentRequests
                 var payments = await paymentsQueryable.Include(pr => pr.Site).ToListAsync();
                 var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
 
-                return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
+                return ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments);
             }
         }
 
