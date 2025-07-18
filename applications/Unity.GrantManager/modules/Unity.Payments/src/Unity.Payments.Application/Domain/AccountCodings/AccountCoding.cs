@@ -2,6 +2,7 @@
 using Volo.Abp;
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
+using System.Linq;
 
 namespace Unity.Payments.Domain.AccountCodings
 {
@@ -35,15 +36,22 @@ namespace Unity.Payments.Domain.AccountCodings
         {
             ValidateField(ministryClient, 3, nameof(MinistryClient), false);  
             ValidateField(responsibility, 5, nameof(Responsibility), false);
-            ValidateField(serviceLine, 5, nameof(serviceLine));
-            ValidateField(stob, 4, nameof(stob));
-            ValidateField(projectNumber, 7, nameof(projectNumber));
+            ValidateField(serviceLine, 5, nameof(serviceLine), true);
+            ValidateField(stob, 4, nameof(stob), true);
+            ValidateField(projectNumber, 7, nameof(projectNumber), true);
 
             return new AccountCoding(ministryClient, responsibility, serviceLine, stob, projectNumber);
         }
 
-        private static void ValidateField(string field, uint length, string fieldName, bool validAlphanumeric = true)
+        private static void ValidateField(string field, uint length, string fieldName, bool validateAlphanumeric)
         {
+
+            bool validAlphanumeric = true;
+
+            if (validateAlphanumeric)
+            {
+                validAlphanumeric = field.All(char.IsLetterOrDigit);
+            }
 
             if (field.Length != length || !validAlphanumeric)
             {
