@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 
 
 namespace Unity.Notifications.EmailGroups
@@ -25,11 +22,11 @@ namespace Unity.Notifications.EmailGroups
         }
         public async Task<EmailGroupUsersDto> InsertAsync(EmailGroupUsersDto dto)
         {
-           var newUser =  await _emailGroupUsersRepository.InsertAsync(new EmailGroupUser
-           {
+            var newUser =  await _emailGroupUsersRepository.InsertAsync(new EmailGroupUser
+            {
                 GroupId = dto.GroupId,
                 UserId = dto.UserId,
-                
+
             });
             return new EmailGroupUsersDto
             {
@@ -39,7 +36,7 @@ namespace Unity.Notifications.EmailGroups
             };
         }
 
-       
+
 
         public async Task<bool> DeleteUserAsync(Guid id)
         {
@@ -48,9 +45,9 @@ namespace Unity.Notifications.EmailGroups
                 await _emailGroupUsersRepository.DeleteAsync(id);
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new Exception($"Error deleting email group with ID {id}: {ex.Message}");
+                throw new InvalidOperationException($"Error deleting email group with ID {id}: {ex.Message}");
             }
         }
         public async Task<bool> DeleteUsersByUserIdAsync(Guid id)
@@ -62,7 +59,7 @@ namespace Unity.Notifications.EmailGroups
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error deleting email group with ID {id}: {ex.Message}");
+                throw new InvalidOperationException($"Error deleting email group with ID {id}: {ex.Message}");
             }
         }
         public async Task<bool> DeleteUsersByGroupIdAsync(Guid id)
@@ -74,7 +71,7 @@ namespace Unity.Notifications.EmailGroups
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error deleting email group with ID {id}: {ex.Message}");
+                throw new InvalidOperationException($"Error deleting email group with ID {id}: {ex.Message}");
             }
         }
 
@@ -82,7 +79,7 @@ namespace Unity.Notifications.EmailGroups
         {
             var users = await _emailGroupUsersRepository.GetListAsync(u => u.GroupId == id);
 
-            return  ObjectMapper.Map<List<EmailGroupUser>, List<EmailGroupUsersDto>>(users);
+            return ObjectMapper.Map<List<EmailGroupUser>, List<EmailGroupUsersDto>>(users);
         }
     }
 }
