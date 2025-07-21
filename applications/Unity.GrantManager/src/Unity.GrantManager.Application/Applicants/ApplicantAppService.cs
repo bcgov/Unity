@@ -67,7 +67,11 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(false)]
     public async Task<Applicant> RelateSupplierToApplicant(ApplicantSupplierEto applicantSupplierEto)
     {
-        // Removed unnecessary null check for non-nullable ApplicantId
+        // Validate ApplicantId to ensure it is not Guid.Empty
+        if (applicantSupplierEto.ApplicantId == Guid.Empty)
+        {
+            throw new ArgumentException("ApplicantId cannot be Guid.Empty.", nameof(applicantSupplierEto.ApplicantId));
+        }
         Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
         ArgumentNullException.ThrowIfNull(applicant);
         applicant.SupplierId = applicantSupplierEto.SupplierId;
