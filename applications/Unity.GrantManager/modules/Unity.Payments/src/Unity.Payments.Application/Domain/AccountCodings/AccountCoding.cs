@@ -14,6 +14,14 @@ namespace Unity.Payments.Domain.AccountCodings
         public string Stob { get; private set; }
         public string ProjectNumber { get; private set; }
 
+        public AccountCoding()
+        {
+            MinistryClient = string.Empty;
+            Responsibility = string.Empty;
+            ServiceLine = string.Empty;
+            Stob = string.Empty;
+            ProjectNumber = string.Empty;
+        }
         private AccountCoding(string ministryClient,
             string responsibility,
             string serviceLine,
