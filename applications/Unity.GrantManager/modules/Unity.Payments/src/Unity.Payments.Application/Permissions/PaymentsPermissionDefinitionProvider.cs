@@ -20,6 +20,13 @@ public class PaymentsPermissionDefinitionProvider : PermissionDefinitionProvider
 
         //-- PAYMENT INFO PERMISSIONS
         grantApplicationPermissionsGroup.Add_PaymentInfo_Permissions();
+
+        var tagsPermissionsGroup = context.GetGroupOrNull("Tags");
+        if (tagsPermissionsGroup != null)
+        {
+            tagsPermissionsGroup.AddPermission(UnitySelector.Payment.Tags.Create, L(UnitySelector.Payment.Tags.Create));
+            tagsPermissionsGroup.AddPermission(UnitySelector.Payment.Tags.Delete, L(UnitySelector.Payment.Tags.Delete));
+        }
     }
 
     private static LocalizableString L(string name)
