@@ -1,7 +1,6 @@
 ﻿using Unity.Modules.Shared;
 using Unity.Payments.Localization;
 using Volo.Abp.Authorization.Permissions;
-using Volo.Abp.Features;
 using Volo.Abp.Localization;
 
 namespace Unity.Payments.Permissions;
@@ -36,8 +35,7 @@ public static class PaymentPermissionGroupDefinitionExtensions
     {
         #region PAYMENT INFO GRANULAR PERMISSIONS
         var upx_Payment                                     = grantApplicationPermissionsGroup
-                                                                                    .AddPermission(UnitySelector.Payment.Default, LocalizableString.Create<PaymentsResource>(UnitySelector.Payment.Default))
-                                                                                    .RequireFeatures("Unity.Payments");
+                                                                                    .AddPermission(UnitySelector.Payment.Default, LocalizableString.Create<PaymentsResource>(UnitySelector.Payment.Default));
 
         var upx_Payment_Summary                             = upx_Payment.AddPaymentChild(UnitySelector.Payment.Summary.Default);
 
@@ -48,10 +46,10 @@ public static class PaymentPermissionGroupDefinitionExtensions
         #endregion
     }
 
-    
+
 
     public static PermissionDefinition AddPaymentChild(this PermissionDefinition parent, string name)
     {
-        return parent.AddChild(name, LocalizableString.Create<PaymentsResource>(name)).RequireFeatures("Unity.Payments");
+        return parent.AddChild(name, LocalizableString.Create<PaymentsResource>(name));
     }
 }
