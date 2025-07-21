@@ -6,6 +6,6 @@ namespace Unity.Payments.PaymentConfigurations
     public class UpsertPaymentConfigurationDtoBase
     {
         public string PaymentIdPrefix { get; set; } = string.Empty;
-        public Guid DefaultAcountCodingId { get; set; }
+        public Guid DefaultAccountCodingId { get; set; }
     }
 }

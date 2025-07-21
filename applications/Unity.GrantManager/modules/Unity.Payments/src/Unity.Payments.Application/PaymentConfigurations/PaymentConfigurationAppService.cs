@@ -42,7 +42,7 @@ namespace Unity.Payments.PaymentConfigurations
         {
             PaymentConfiguration? paymentConfiguration = new PaymentConfiguration
             {
-                DefaultAccountCodingId = createUpdatePaymentConfigurationDto.DefaultAcountCodingId,
+                DefaultAccountCodingId = createUpdatePaymentConfigurationDto.DefaultAccountCodingId,
                 PaymentIdPrefix = createUpdatePaymentConfigurationDto.PaymentIdPrefix
             };
 
@@ -84,7 +84,7 @@ namespace Unity.Payments.PaymentConfigurations
             if (paymentConfiguration == null)
             {
                 CreatePaymentConfigurationDto paymentConfigurationDto = new CreatePaymentConfigurationDto();
-                paymentConfigurationDto.DefaultAcountCodingId = accountCodingId;
+                paymentConfigurationDto.DefaultAccountCodingId = accountCodingId;
                 await CreateAsync(paymentConfigurationDto);
             }
             else
