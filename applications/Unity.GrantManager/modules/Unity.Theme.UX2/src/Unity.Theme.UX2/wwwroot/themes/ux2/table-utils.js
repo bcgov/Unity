@@ -619,11 +619,12 @@ function updateFilter(dt, dtName, filterData) {
     let newRow = $("<tr class='tr-toggle-filter' id='tr-filter'>");
 
     dt.columns().every(function () {
-        let column = this;
-        if (column.visible()) {
-            let title = column.header().textContent;
-            if (title && title !== 'Actions') {
-                let filterValue = filterData[title] ? filterData[title] : '';
+            let column = this;
+            if (column.visible()) {
+                let title = column.header().textContent;
+                if (title && title !== 'Actions' && title !== 'Action' && title !== 'Default') {
+
+                    let filterValue = filterData[title] ? filterData[title] : '';
 
                 let input = $('<input>', {
                     type: 'text',

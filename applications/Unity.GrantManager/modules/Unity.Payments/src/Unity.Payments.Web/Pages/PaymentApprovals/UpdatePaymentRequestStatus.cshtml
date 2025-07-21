@@ -19,7 +19,7 @@
 {
     public static string GetContainerValidationState(bool isValid)
     {
-        return isValid ? "single-payment" : "single-payment bg-danger-subtle border-danger-subtle";
+        return isValid ? "single-payment payment-item" : "single-payment bg-danger-subtle border-danger-subtle";
     }
 }
 
@@ -36,9 +36,28 @@
         }
 
         <abp-modal-body>
+            <abp-card class="pb-0">
+                <abp-card-body class="pb-0 mb-0">
+                    <abp-row class="m-0 p-1">
+                        <abp-column size="_4">
+                            <label for="@Model.PaymentGroupings?.Count" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
+                            <input type="text" class="form-control" id="ApplicationCount" value="@(Model.PaymentGroupings?.Sum(g => g.Items.Count) ?? 0)" disabled />
+                        </abp-column>
+                        <abp-column size="_4">
+                            <label for="@Model.TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
+                            <input type="text" class="form-control totalAmount unity-currency-input" id="ApplicationCount" value="@Model.TotalAmount" disabled />
+                        </abp-column>
+                        <abp-column size="_4">
+                            <label for="Note" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:BatchNote"]</label>
+                            <input type="text" class="form-control" asp-for="Note" />
+                        </abp-column>
+                    </abp-row>
+                </abp-card-body>
+            </abp-card>
             <abp-card>
                 <abp-card-body class="payment-card">
                     <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
+                    <abp-input id="UserPaymentThreshold" type="hidden" asp-for="UserPaymentThreshold" />
                     <abp-input id="ApplicationCount" type="hidden" asp-for="PaymentGroupings.Count" />
 
                     @if (Model.PaymentGroupings.Count > 0)

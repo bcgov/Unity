@@ -195,7 +195,11 @@
         <div class="tab-pane fade" id="nav-ui-configuration" role="tabpanel" aria-labelledby="nav-ui-configuration-tab"></div>
 
         <!--Tab Content: Payment Configuration-->
-        <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab"></div>
+        <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
+            <div id="paymentConfigurationWidget">
+                @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model?.ApplicationFormDto?.Id})
+            </div>
+        </div>
 
         <!--Tab Content: Other Configuration-->
         <div class="tab-pane fade" id="nav-other-configuration" role="tabpanel" aria-labelledby="nav-other-configuration-tab">

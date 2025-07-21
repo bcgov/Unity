@@ -1,0 +1,96 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration;
+@model PaymentConfigurationViewModel
+
+@section styles {
+    <abp-style src="/PaymentConfiguration/Default.css" />
+}
+
+@{
+    Layout = null;
+}
+
+<abp-input asp-for="@Model.HasEditFormPaymentConfiguration" type="hidden" />
+
+<div class="px-3 pt-4 pb-2">
+    <div>
+        <h6 class="fw-bold">Configuration</h6>
+    </div>
+    <div>
+        <abp-row class="m-0 payment-configuration-form">
+            <abp-column size="_12" class="px-0">
+                <abp-row class="m-0">
+                    <abp-column size="_6" class="px-1">
+                        <abp-select asp-for="@Model.AccountCode" asp-items="@Model.AccountCodeList">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                    <abp-column size="_6" class="px-1">
+                        <form id="PaymentThresholdform">
+                        <div class="form-label currency-label" style="margin-bottom: 9px;">Approval Payment Threshold</div>
+                        <div class="currencyinput" style="width: 250px;">
+                            $
+                            <input 
+                                type="number" 
+                                maxlength="32"
+                                pattern="^\d*\.?\d*$"
+                                data-val="true"
+                                data-val-range="The field Payment Threshold Amount must be 0 or greater."
+                                data-val-range-max="1.7976931348623157E+308"
+                                data-val-range-min="0" 
+                                placeholder="0.00" 
+                                id="PaymentApprovalThreshold" name="PaymentApprovalThreshold"
+                                value="@Model.PaymentApprovalThreshold" class="form-control currency">
+
+                        </div>
+                        </form>
+                    </abp-column>
+                </abp-row>
+                <abp-row class="m-0">
+                    <abp-column size="_12">
+                        <p>
+                            <strong>Note:</strong> The selected Account Code for this form will only apply to payments 
+                            made within this specific intake form. It will not impact the global Account Code settings.
+                        </p>
+                        <p>
+                            <strong>Note:</strong> Set the Approval Payment Threshold here only if this intake form requires a unique threshold. 
+                            The individual Approval Thresholds assigned to each l2_approver will still take precedence if they are lower 
+                            than the threshold specified in this form. This form's threshold will not override the l2_approver's existing thresholds.
+                        </p>
+                    </abp-column>
+                </abp-row>
+            </abp-column>
+            <hr />
+            <div>
+                <h6 class="fw-bold">Settings</h6>
+            </div>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <div class="form-switch">
+                        <abp-input asp-for="@Model.Payable" abp-id-name="Payable"
+                            check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"                            
+                            label="Form is Payable" class="fw-bold" />
+                    </div>
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <div class="form-switch">
+                        <abp-input asp-for="@Model.PreventAutomaticPaymentToCAS"
+                            abp-id-name="PreventAutomaticPaymentToCAS"
+                            check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
+                            label="Prevent Automatic Payment to CAS" class="fw-bold" />
+                    </div>
+                </abp-column>
+            </abp-row>
+        </abp-row>
+    </div>
+    <br/>
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-center">
+                <abp-button id="btn-save-payment-configuration" button-type="Primary" text="Save" icon-type="Other" icon="fl fl-save"
+                    class="btn unt-btn-primary btn-primary"></abp-button>
+                <abp-button id="btn-back-payment-configuration" class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                    abp-tooltip="Navigate back to the Forms">Back</abp-button>
+            </div>
+        </div>
+    </div>
+</div>

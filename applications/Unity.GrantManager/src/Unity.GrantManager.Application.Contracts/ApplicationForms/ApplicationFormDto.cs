@@ -21,6 +21,8 @@ namespace Unity.GrantManager.ApplicationForms
         public string? ConnectionHttpStatus { get; set; }
         public DateTime? AttemptedConnectionDate { get; set; }
         public bool Payable { get; set; }
+        public bool PreventPayment { get; set; }
+        public Guid AccountCodingId { get; set; }
         public bool RenderFormIoToHtml { get; set; }
         public Guid? ScoresheetId { get; set; }
         public Guid? TenantId { get; set; }

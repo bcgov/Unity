@@ -5,6 +5,8 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentConfigurations;
+using Unity.Payments.Domain.AccountCodings;
+using Unity.Payments.Domain.PaymentThresholds;
 using Unity.Payments.Domain.PaymentTags;
 using Unity.GrantManager;
 using Unity.GrantManager.GlobalTag;
@@ -66,9 +68,25 @@ public static class PaymentsDbContextModelCreatingExtensions
             b.ConfigureByConvention();
         });
 
+        modelBuilder.Entity<AccountCoding>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "AccountCodings",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
         modelBuilder.Entity<PaymentConfiguration>(b =>
         {
             b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentConfigurations",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<PaymentThreshold>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentThresholds",
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();

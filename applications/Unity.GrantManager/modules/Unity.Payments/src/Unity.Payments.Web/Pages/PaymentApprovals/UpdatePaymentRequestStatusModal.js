@@ -1,5 +1,8 @@
 
 function removeApplicationPaymentApproval(applicationId, groupId) {
+    let $container = $('#' + applicationId);
+    $container.remove();
+
     $('#' + applicationId).remove();
     let applicationCount = $('#ApplicationCount').val();
     let groupCount = $(`#${groupId}_count`).val();
@@ -35,6 +38,8 @@ function removeApplicationPaymentApproval(applicationId, groupId) {
     if (groupCount - 1 == 0) {
         $(`#${groupId}_container .payment-status-transition`).css("display", "none");
     }
+
+    calculateTotalAmount();
 }
 
 function closePaymentModal() {
@@ -100,6 +105,16 @@ function getStatusText(data) {
             return "Created";
     }
 }
+
+function calculateTotalAmount() {
+    let total = 0;
+    $('.amount').each(function () {
+        let value = parseFloat($(this).val().replace(/,/g, '')) || 0;
+        total += value;
+    });
+    $('.totalAmount').val(total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+}
+
 
 
 
