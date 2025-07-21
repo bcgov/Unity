@@ -3129,6 +3129,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")

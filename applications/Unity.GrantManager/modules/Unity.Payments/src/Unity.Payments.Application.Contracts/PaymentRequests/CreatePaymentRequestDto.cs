@@ -25,13 +25,14 @@ namespace Unity.Payments.PaymentRequests
         public string? PaymentNumber { get;  set; }
         public string? PaymentDate { get; set; }
         public decimal? PaymentThreshold { get; set; } = 500000m;
+        public string? Note { get; set; }
     }
 
     public class UpdatePaymentStatusRequestDto
     {
         public Guid PaymentRequestId { get; set; }
-      
         public bool IsApprove { get; set; }
+        public string Note { get; set; }
     }
 #pragma warning restore CS8618
 }
