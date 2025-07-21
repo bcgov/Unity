@@ -27,6 +27,8 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
     public class UpdatePaymentRequestStatus(
                         IPaymentRequestAppService paymentRequestAppService,
+                        IApplicationFormAppService applicationFormAppService,
+                        IPaymentRequestRepository paymentRepository,
                         IPaymentConfigurationAppService paymentConfigurationAppService,
                         IPermissionCheckerService permissionCheckerService) : AbpPageModel
     {
