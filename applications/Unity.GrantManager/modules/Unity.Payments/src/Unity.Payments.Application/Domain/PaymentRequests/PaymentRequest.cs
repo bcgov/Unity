@@ -61,6 +61,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual string? CasResponse { get; private set; } = string.Empty;
         public virtual Guid? AccountCodingId { get; private set; }
 
+        public virtual string? Note { get; private set; } = null;
         protected PaymentRequest()
         {
             ExpenseApprovals = [];
@@ -97,8 +98,15 @@ namespace Unity.Payments.Domain.PaymentRequests
             BatchNumber = createPaymentRequestDto.BatchNumber;
             AccountCodingId = createPaymentRequestDto.AccountCodingId;
             PaymentTags = null;            
+            Note = createPaymentRequestDto.Note;
             ExpenseApprovals = GenerateExpenseApprovals();
             ValidatePaymentRequest();
+        }
+
+        public PaymentRequest SetNote(string note)
+        {
+            Note = note;
+            return this;
         }
 
         public PaymentRequest SetAmount(decimal amount)

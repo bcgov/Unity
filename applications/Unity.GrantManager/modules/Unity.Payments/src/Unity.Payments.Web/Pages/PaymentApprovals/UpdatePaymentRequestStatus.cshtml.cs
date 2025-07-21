@@ -26,10 +26,8 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
     }
 
     public class UpdatePaymentRequestStatus(
-                        IPaymentRequestRepository paymentRepository,
                         IPaymentRequestAppService paymentRequestAppService,
                         IPaymentConfigurationAppService paymentConfigurationAppService,
-                        IApplicationFormAppService applicationFormAppService,
                         IPermissionCheckerService permissionCheckerService) : AbpPageModel
     {
         [BindProperty] public List<PaymentGrouping> PaymentGroupings { get; set; } = new();
@@ -39,6 +37,11 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         [BindProperty] public bool HasPaymentConfiguration { get; set; }
         [BindProperty] public bool IsApproval { get; set; }
         [BindProperty] public bool IsErrors { get; set; }
+        [BindProperty]
+        public decimal TotalAmount { get; set; }
+
+        [BindProperty]
+        public string Note { get; set; } = string.Empty;
         public List<Guid> SelectedPaymentIds { get; set; } = new();
         public string FromStatusText { get; set; } = string.Empty;
 

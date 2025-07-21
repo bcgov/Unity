@@ -557,10 +557,11 @@
         return {
             title: 'Total Paid Amount $',
             name: 'totalPaidAmount',
-            data: 'totalPaidAmount',
+            data: 'paymentInfo',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return '';
+                let totalPaid = data?.totalPaid ?? '';
+                return formatter.format(totalPaid);
             },
             index: columnIndex
         }

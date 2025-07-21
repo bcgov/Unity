@@ -288,7 +288,8 @@ $(function () {
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
             getCASResponseColumn(columnIndex++),
-            getTagsColumn(columnIndex++)
+            getTagsColumn(columnIndex++),
+            getNoteColumn(columnIndex++)
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -621,6 +622,17 @@ $(function () {
         }
     }
 
+    function getNoteColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:Note'),
+            name: 'note',
+            data: 'note',
+            className: 'data-table-header',
+            index: columnIndex
+
+        };
+    }
+
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
     }
@@ -687,7 +699,7 @@ $(function () {
         }
     }
 
-    $('.select-all-payments').click(function () {
+    $('.select-all-payments').on('click', function () {
         if ($(this).is(':checked')) {
             dataTable.rows({ 'page': 'current' }).select();
         }
@@ -717,5 +729,3 @@ function openCasResponseModal(casResponse) {
         casResponse: casResponse
     });
 }
-
-
