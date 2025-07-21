@@ -78,7 +78,7 @@ namespace Unity.Notifications.EmailGroups
             }
         }
 
-        public async Task<List<EmailGroupUsersDto>> GetEmailGroupUsersByGroupIdsync(Guid id)
+        public async Task<List<EmailGroupUsersDto>> GetEmailGroupUsersByGroupIdAsync(Guid id)
         {
             var users = await _emailGroupUsersRepository.GetListAsync(u => u.GroupId == id);
 
