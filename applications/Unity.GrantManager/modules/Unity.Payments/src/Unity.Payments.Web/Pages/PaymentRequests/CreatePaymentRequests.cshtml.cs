@@ -44,8 +44,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
         [BindProperty]
         public List<PaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
-        [BindProperty]
-        public decimal PaymentThreshold { get; set; }
+
         [BindProperty]
         public bool DisableSubmit { get; set; }
         [BindProperty]
@@ -68,11 +67,9 @@ namespace Unity.Payments.Web.Pages.Payments
 
         public async Task OnGetAsync(string applicationIds)
         {
-            // TODO: FIX PAY THRESHOLD
             var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
             if (paymentConfiguration != null)
             {
-                PaymentThreshold = PaymentSharedConsts.DefaultThresholdAmount;
                 HasPaymentConfiguration = true;
             }
             else

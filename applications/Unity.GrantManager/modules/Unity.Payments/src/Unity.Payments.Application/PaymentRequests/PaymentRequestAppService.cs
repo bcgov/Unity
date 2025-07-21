@@ -174,9 +174,7 @@ namespace Unity.Payments.PaymentRequests
 
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
         {
-            List<PaymentRequestDto> updatedPayments = [];
-
-            var paymentThreshold = await GetPaymentThresholdAsync();
+            List<PaymentRequestDto> updatedPayments = [];           
 
             // Check approval batches
             var approvalRequests = paymentRequests.Where(r => r.IsApprove).Select(x => x.PaymentRequestId).ToList();
@@ -197,7 +195,7 @@ namespace Unity.Payments.PaymentRequests
                 try
                 {
                     var payment = await paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
-                    var triggerAction = await DetermineTriggerActionAsync(dto, payment, paymentThreshold);
+                    var triggerAction = await DetermineTriggerActionAsync(dto, payment);
 
                     if (triggerAction != PaymentApprovalAction.None)
                     {
@@ -216,8 +214,7 @@ namespace Unity.Payments.PaymentRequests
 
         private async Task<PaymentApprovalAction> DetermineTriggerActionAsync(
             UpdatePaymentStatusRequestDto dto,
-            PaymentRequest payment,
-            decimal paymentThreshold)
+            PaymentRequest payment)
         {
             if (await CanPerformLevel1ActionAsync(payment.Status))
             {
@@ -228,9 +225,7 @@ namespace Unity.Payments.PaymentRequests
             {
                 if (dto.IsApprove)
                 {
-                    return payment.Amount > paymentThreshold
-                        ? PaymentApprovalAction.L2Approve
-                        : PaymentApprovalAction.Submit;
+                    return PaymentApprovalAction.Submit;
                 }
                 return PaymentApprovalAction.L2Decline;
             }
@@ -437,21 +432,6 @@ namespace Unity.Payments.PaymentRequests
             }
 
             return null;
-        }
-
-        protected virtual async Task<decimal> GetPaymentThresholdAsync()
-        {
-            var paymentConfigs = await paymentConfigurationRepository.GetListAsync();
-
-            if (paymentConfigs.Count > 0)
-            {
-                var paymentConfig = paymentConfigs[0];
-
-                // TODO: FIX To current user threshold throw exception if the user does not have a threshold?
-                return PaymentSharedConsts.DefaultThresholdAmount;
-            }
-
-            return PaymentSharedConsts.DefaultThresholdAmount;
         }
 
         private async Task<int> GetNextSequenceNumberAsync(int currentYear)
