@@ -70,7 +70,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         // Validate ApplicantId to ensure it is not Guid.Empty
         if (applicantSupplierEto.ApplicantId == Guid.Empty)
         {
-            throw new ArgumentException("ApplicantId cannot be Guid.Empty.", nameof(applicantSupplierEto.ApplicantId));
+            throw new ArgumentException("ApplicantId cannot be Guid.Empty.", "applicantSupplierEto.ApplicantId");
         }
         Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
         ArgumentNullException.ThrowIfNull(applicant);
