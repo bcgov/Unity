@@ -15,7 +15,6 @@ using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.PaymentRequests;
 using Unity.Payments.Permissions;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Volo.Abp.Users;
 
 namespace Unity.Payments.Web.Pages.PaymentApprovals
 {
@@ -31,11 +30,10 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                         IPaymentRequestAppService paymentRequestAppService,
                         IPaymentConfigurationAppService paymentConfigurationAppService,
                         IApplicationFormAppService applicationFormAppService,
-                        IPaymentThresholdRepository paymentThresholdRepository,
-                        ICurrentUser currentUser,
                         IPermissionCheckerService permissionCheckerService) : AbpPageModel
     {
         [BindProperty] public List<PaymentGrouping> PaymentGroupings { get; set; } = new();
+        [BindProperty] public decimal? UserPaymentThreshold { get; set; }
         [BindProperty] public decimal PaymentThreshold { get; set; }
         [BindProperty] public bool DisableSubmit { get; set; }
         [BindProperty] public bool HasPaymentConfiguration { get; set; }
@@ -68,15 +66,11 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             await GetFromStateForUserAsync();
             IsApproval = isApprove;
             SelectedPaymentIds = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? new();
-            PaymentThreshold = await GetUserPaymentThresholdAsync();
+            UserPaymentThreshold = await paymentRequestAppService.GetUserPaymentThresholdAsync();
             HasPaymentConfiguration = await paymentConfigurationAppService.GetAsync() != null;
         }
 
-        private async Task<decimal> GetUserPaymentThresholdAsync()
-        {
-            var userThreshold = await paymentThresholdRepository.GetAsync(x => x.UserId == currentUser.Id);
-            return userThreshold?.Threshold ?? PaymentSharedConsts.DefaultThresholdAmount;
-        }
+
 
         private async Task<List<PaymentsApprovalModel>> BuildPaymentApprovalsAsync(List<PaymentDetailsDto> payments)
         {
@@ -85,7 +79,22 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             foreach (var payment in payments)
             {
                 var formThreshold = await applicationFormAppService.GetFormPaymentApprovalThresholdByApplicationIdAsync(payment.CorrelationId);
-                PaymentThreshold = formThreshold.HasValue && formThreshold.Value < PaymentThreshold ? formThreshold.Value : PaymentThreshold;
+                if (formThreshold.HasValue && UserPaymentThreshold.HasValue)
+                {
+                    PaymentThreshold = formThreshold.Value < UserPaymentThreshold.Value ? formThreshold.Value : UserPaymentThreshold.Value;
+                }
+                else if (formThreshold.HasValue)
+                {
+                    PaymentThreshold = formThreshold.Value;
+                }
+                else if (UserPaymentThreshold.HasValue)
+                {
+                    PaymentThreshold = UserPaymentThreshold.Value;
+                }
+                else
+                {
+                    PaymentThreshold = 0m;
+                }
 
                 var approvalModel = await CreateApprovalModel(payment);
                 ValidateApprovalModel(approvalModel);

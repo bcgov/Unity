@@ -39,6 +39,7 @@
             <abp-card>
                 <abp-card-body class="payment-card">
                     <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
+                    <abp-input id="UserPaymentThreshold" type="hidden" asp-for="UserPaymentThreshold" />
                     <abp-input id="ApplicationCount" type="hidden" asp-for="PaymentGroupings.Count" />
 
                     @if (Model.PaymentGroupings.Count > 0)

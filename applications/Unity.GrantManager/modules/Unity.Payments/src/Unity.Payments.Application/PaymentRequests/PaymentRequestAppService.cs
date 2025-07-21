@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Payment.Shared;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
@@ -19,6 +18,8 @@ using Volo.Abp.Data;
 using Volo.Abp.Features;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Users;
+using Unity.Payments.Domain.PaymentThresholds;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -31,6 +32,7 @@ namespace Unity.Payments.PaymentRequests
             IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentsManager paymentsManager,
             IPaymentRequestRepository paymentRequestsRepository,
+            IPaymentThresholdRepository paymentThresholdRepository,
             IPermissionChecker permissionChecker) : PaymentsAppService, IPaymentRequestAppService
 
     {    
@@ -414,6 +416,12 @@ namespace Unity.Payments.PaymentRequests
         public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
         {
             return await paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);
+        }
+
+        public async Task<decimal?> GetUserPaymentThresholdAsync()
+        {
+            var userThreshold = await paymentThresholdRepository.FirstOrDefaultAsync(x => x.UserId == currentUser.Id);
+            return userThreshold?.Threshold;
         }
 
         protected virtual string GetCurrentRequesterName()
