@@ -2,10 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
 
 
 namespace Unity.Notifications.EmailGroups
@@ -24,7 +22,7 @@ namespace Unity.Notifications.EmailGroups
         }
         public async Task<EmailGroupDto> CreateAsync(EmailGroupDto dto)
         {
-           var newGroup =  await _emailGroupsRepository.InsertAsync(new EmailGroup
+            var newGroup =  await _emailGroupsRepository.InsertAsync(new EmailGroup
             {
                 Name = dto.Name,
                 Description = dto.Description,
@@ -45,7 +43,7 @@ namespace Unity.Notifications.EmailGroups
             emailGroup.Name = dto.Name;
             emailGroup.Description = dto.Description;
             emailGroup.Type = dto.Type;
-           await _emailGroupsRepository.UpdateAsync(emailGroup,autoSave:true);
+            await _emailGroupsRepository.UpdateAsync(emailGroup, autoSave: true);
             return new EmailGroupDto
             {
                 Id = emailGroup.Id,
@@ -62,22 +60,22 @@ namespace Unity.Notifications.EmailGroups
                 await _emailGroupsRepository.DeleteAsync(id);
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new Exception($"Error deleting email group with ID {id}: {ex.Message}");
+                throw new InvalidOperationException($"Error deleting email group with ID {id}: {ex.Message}");
             }
         }
 
         public async Task<List<EmailGroupDto>> GetListAsync()
         {
             var groups =  await _emailGroupsRepository.GetListAsync();
-          return  ObjectMapper.Map<List<EmailGroup>, List<EmailGroupDto>>(groups);
+            return ObjectMapper.Map<List<EmailGroup>, List<EmailGroupDto>>(groups);
         }
 
         public async Task<EmailGroupDto> GetEmailGroupByIdAsync(Guid id)
         {
             var group = await _emailGroupsRepository.GetAsync(id);
-            return ObjectMapper.Map<EmailGroup,EmailGroupDto>(group);
+            return ObjectMapper.Map<EmailGroup, EmailGroupDto>(group);
         }
 
     }
