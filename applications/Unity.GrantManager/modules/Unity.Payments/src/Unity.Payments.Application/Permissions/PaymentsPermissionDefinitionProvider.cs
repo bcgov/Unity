@@ -1,4 +1,4 @@
-﻿using Unity.Modules.Shared;
+using Unity.Modules.Shared;
 using Unity.Payments.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
@@ -20,6 +20,8 @@ public class PaymentsPermissionDefinitionProvider : PermissionDefinitionProvider
 
         //-- PAYMENT INFO PERMISSIONS
         grantApplicationPermissionsGroup.Add_PaymentInfo_Permissions();
+        paymentsPermissions.AddChild(PaymentsPermissions.Payments.EditSupplierInfo, L("Permission:Payments.EditSupplierInfo"));
+        paymentsPermissions.AddChild(PaymentsPermissions.Payments.EditFormPaymentConfiguration, L("Permission:Payments.EditFormPaymentConfiguration"));        
     }
 
     private static LocalizableString L(string name)

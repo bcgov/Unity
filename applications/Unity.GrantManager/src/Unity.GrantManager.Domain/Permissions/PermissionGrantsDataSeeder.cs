@@ -215,8 +215,7 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
-
-
+                    NotificationsPermissions.Settings,                                    
                     .. SettingManagement_Tags_CommonPermissions,
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
@@ -226,7 +225,7 @@ namespace Unity.GrantManager.Permissions
                     .. Notifications_CommonPermissions,
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
-
+                    UnitySettingManagementPermissions.ConfigurePayments,    
                     UnitySettingManagementPermissions.BackgroundJobSettings,
                 ], context.TenantId);
 
