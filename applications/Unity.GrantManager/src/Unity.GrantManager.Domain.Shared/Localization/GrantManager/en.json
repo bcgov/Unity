@@ -229,8 +229,8 @@
     "Unity.GrantManager.SettingManagement.Tags.Delete": "Delete Tag",
 
     "Permission:Tags": "Tags",
-    "Unity.GrantManager.ApplicationManagement.Application.Tags.Create": "Assign Tag to Applications",
-    "Unity.GrantManager.ApplicationManagement.Application.Tags.Delete": "Remove Tag from Applications",
+    "Unity.Applications.Tags.Create": "Assign Tag to Applications",
+    "Unity.Applications.Tags.Delete": "Remove Tag from Applications",
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",

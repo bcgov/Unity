@@ -73,8 +73,8 @@ public static partial class UnitySelector
 
         public static partial class Tags
         {
-            public const string Create  = "Unity.GrantManager.ApplicationManagement.Application.Tags.Create";
-            public const string Delete  = "Unity.GrantManager.ApplicationManagement.Application.Tags.Delete";
+            public const string Create  = "Unity.Applications.Tags.Create";
+            public const string Delete  = "Unity.Applications.Tags.Delete";
         }
     }
 
