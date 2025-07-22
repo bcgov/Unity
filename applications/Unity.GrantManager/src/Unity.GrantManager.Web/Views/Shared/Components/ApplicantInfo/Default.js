@@ -25,8 +25,9 @@
             registerElectoralDistrictControls(this.zoneForm.form);
             registerApplicantInfoSummaryDropdowns(this.zoneForm.form);
         },
-        refresh: function () {
-            widgetManager.refresh($wrapper);
+        refresh: function () {            
+            const currentFilters = this.getFilters();
+            widgetManager.refresh($wrapper, currentFilters);
         },
         setupEventHandlers: function () {
             const self = this;
@@ -340,9 +341,6 @@ $(function () {
                 }
             }
 
-            // Triggers a refresh of the ApplicantInfo widget on merge
-            PubSub.publish('applicant_info_merged');
-
             $('#mergeApplicantsSpinner').hide();
             $('#mergeDuplicateApplicantsModal').modal('hide');
         });
@@ -610,6 +608,7 @@ function updateApplicantInfo(appId, appInfoObj) {
             $('#saveApplicantInfoBtn').prop('disabled', true);
             PubSub.publish("refresh_detail_panel_summary");
             PubSub.publish('applicant_info_updated', appInfoObj);
+            PubSub.publish('applicant_info_merged');
         });
 }
 
