@@ -1,64 +1,94 @@
 ﻿@page
-@model Unity.Payments.Web.Pages.PaymentConfigurations.CreatePaymentConfigurationModel
+@model Unity.Payments.Web.Pages.PaymentConfifurations.PaymentConfigurationModel;
+
 @{
-    ViewBag.PageTitle = "Payment Configuration";
+    ViewBag.PageTitle = "Account Codes";
 }
 @section styles {
     <abp-style-bundle>
         <abp-style src="/Pages/PaymentConfigurations/Index.css" />
     </abp-style-bundle>
 }
+
 @section scripts {
     <abp-script-bundle>
         <abp-script src="/Pages/PaymentConfigurations/Index.js" />
     </abp-script-bundle>
 }
 
-<input id="status-message" type="hidden" asp-for="StatusMessage" />
+<div id="PaymentConfigurationSideMenu" class="side-menu">
+    <ul>
+        <li id="account-coding-menu-item" class="nav-item btn btn-nav active">            
+            Account Coding           
+        </li>
+        <li id="payment-setting-menu-item" class="nav-item btn btn-nav">            
+            Payment Settings            
+        </li>
+    </ul>
+</div>
 
-<div class="input-area card mb-3 payment-config">
+<abp-input asp-for="AccountCodingId"/>
 
-    <abp-dynamic-form abp-model="PaymentConfiguration" id="paymentConfigForm" class="payment-form" asp-page="/PaymentConfigurations/Index">
-        <h4>Account Coding</h4>
-        <abp-form-content />
+
+<div id="account-codes-div" class="input-area card mb-3 payment-config">
+    <div class="container-fluid px-0">
+        <div class="action-bar p-2 filter-search-action-bar">
+            <div class="unity-page-titlebar">
+                <h4>Account Codes</h4>
+            </div>
+            <div class="filter-search-action-bar_search-wrapper">
+                <input type="search" id="search-data-table" placeholder="Search" class="tbl-search">
+            </div>
+
+            <div class="btn-group" id="app_custom_buttons"></div>
+
+            <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+        </div>
+        <div class="p-3 pt-0">
+            <abp-table id="AccountCodesDataTable"></abp-table>
+        </div>
+    </div>
+</div>
+
+<div id="payment-settings-div" class="input-area card mb-3 payment-config hide">
+    <div class="container-fluid px-0">                       
         <abp-row>
             <abp-column size="_12" class="p-3">
-                <label class="form-label">Account Coding</label>
-                <input id="account-coding" type="text" value="" readonly="" class="valid form-control readonly" aria-invalid="false">
-            </abp-column>
-
-            <h4 class="pt-2 p-3">Payment Settings</h4>
-            <label class="form-label note"><b>NOTE:</b> All payments above the approval payment threshold will require an additional level of approval before they can be submitted to CAS.</label>
-
-            <abp-column size="_6" class="mb-3 p-3 dm-approval">
-                <label class="form-label" for="PaymentThreshold">Approval Payment Threshold</label><span> * </span><br />
-                <span class="currencyinput">
-                    $
-                    <input type="number" data-val="true" data-val-range="The field Payment Threshold Amount must be 0 or greater."
-                           data-val-range-max="1.7976931348623157E+308"
-                           data-val-range-min="0" data-val-required="The Payment Threshold Amount field is required."
-                           id="PaymentThreshold" name="PaymentThreshold"
-                           value="@Model.PaymentThreshold" class="form-control currency">
-                    <span class="text-danger field-validation-valid" data-valmsg-for="PaymentThreshold" data-valmsg-replace="true">
-                    </span>
-                </span>
-            </abp-column>
-
-            <abp-column size="_6" class="mb-3 p-3 dm-approval">
-                <label class="form-label" for="PaymentIdPrefix">Payment Id Prefix</label><span> * </span>
-
-                <input type="text" data-val="true" data-val-required="The Payment Id Prefix field is required."
-                       maxlength="4"                       
-                       id="PaymentIdPrefix" name="PaymentIdPrefix"
-                       value="@Model.PaymentIdPrefix" class="form-control payment-prefix">
-                <span class="text-danger field-validation-valid" data-valmsg-for="PaymentIdPrefix" data-valmsg-replace="true">
-            </abp-column>
-
-            <abp-column size="_12" class="p-3 submit-section">
-                <abp-button class="btn-primary" text="SAVE CHANGES" type="submit"></abp-button>
-                <abp-button id="resetButton" class="btn-secondary pl-1" text="DISCARD CHANGES"></abp-button>
+                <h4>Payment Settings</h4>
             </abp-column>
         </abp-row>
+        <abp-row>
+            <abp-column size="_12" class="p-3">
+                <span class="form-label">Payment ID Prefix</span>
+                <input id="payment-id-prefix-original" type="hidden" value="@Model.PaymentIdPrefix">
+                <input id="payment-id-prefix" maxlength="5" type="text" value="@Model.PaymentIdPrefix" class="valid form-control">
+            </abp-column>
+        </abp-row>
+        <div class="d-flex p-2">
+            <abp-button id="PaymentPrefixSaveButton"
+                        text="Save Changes"
+                        button-type="Primary" class="me-2"
+                        type="submit" />
 
-    </abp-dynamic-form>
+            <abp-button id="PaymentPrefixDiscardButton"
+                        text="Discard Changes"
+                        button-type="Light" class="me-2"
+                        disabled="true" />
+        </div>
+        <hr/>
+        <abp-row>
+            <abp-column size="_12" class="p-3">
+                <h4>Level 2 Approval Threshold</h4>
+                <label class="display-input-label" for="paymentSettingsDynamicButtonContainerId">
+                    Please Note the following table is generated from Users created with the Role of l2_approver
+                </label>                
+            </abp-column>       
+        </abp-row>
+        <div class="btn-group" id="app_custom_buttons">
+            <div id="paymentSettingsDynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+        </div>
+        <div class="p-3 pt-0">
+            <abp-table id="PaymentSettingsDataTable"/>
+        </div>
+    </div>
 </div>

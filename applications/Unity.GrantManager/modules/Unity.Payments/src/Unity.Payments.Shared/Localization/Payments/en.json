@@ -118,7 +118,7 @@
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
     "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
     "Permission:Payments.RequestPayment": "Request Payment",
-
+    "Permission:Payments.EditFormPaymentConfiguration": "Edit Form Payment Configuration",
     "Enum:PaymentRequestStatus.L1Pending": "L1 Pending",
     "Enum:PaymentRequestStatus.L1Approved": "L1 Approved",
     "Enum:PaymentRequestStatus.L1Declined": "L1 Declined",

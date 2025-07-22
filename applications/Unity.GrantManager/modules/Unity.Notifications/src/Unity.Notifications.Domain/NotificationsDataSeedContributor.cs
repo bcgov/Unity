@@ -72,7 +72,7 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
         }
         catch (Exception ex)
         {
-           
+            throw new InvalidOperationException($"Error seeding Notifications Data for Templates: {ex.Message}");
         }
 
         var emailGroups = new List<EmailGroupDto>
@@ -98,7 +98,7 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
         }
         catch (Exception ex)
         {
-            
+            throw new InvalidOperationException($"Error seeding Notifications Data for Email Groups: {ex.Message}");
         }
     }
 

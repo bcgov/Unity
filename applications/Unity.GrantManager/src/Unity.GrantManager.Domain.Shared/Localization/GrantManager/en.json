@@ -287,6 +287,8 @@
 
     "Permission:UnitySettingManagementPermissions.BackgroundJobs": "Background Jobs",
     "Permission:UnitySettingManagementPermissions.UserInterface": "Application Tabs",
+    "Permission:UnitySettingManagementPermissions.ConfigurePayments": "Configure Payments",
+
     "Setting:GrantManager.UI.PageTitle": "Application Tabs Configuration",
     "Setting:GrantManager.UI.Tabs.Applicant.Description": "Toggle visibility of the Applicant Info tab for the tenant",
     "Setting:GrantManager.UI.Tabs.Applicant.DisplayName": "Applicant Info",
