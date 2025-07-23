@@ -95,7 +95,10 @@
                         })
                         dt.colReorder.order(orderedIndexes);
 
-                        dt.order([4, 'desc']).search('').draw();
+                        $('#search, .custom-filter-input').val('');
+                        dt.columns().search('');
+                        dt.search('');
+                        dt.order([4, 'desc']).draw();
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
