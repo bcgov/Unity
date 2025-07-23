@@ -152,6 +152,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .WithMany(s => s.ApplicantAddresses)
                     .HasForeignKey(s => s.ApplicantId)
                     .IsRequired();
+
+                b.HasOne(x => x.Application)
+                    .WithMany(a => a.ApplicantAddresses)
+                    .HasForeignKey(s => s.ApplicationId)
+                    .IsRequired(false);
             });
 
             modelBuilder.Entity<ApplicantAgent>(b =>
