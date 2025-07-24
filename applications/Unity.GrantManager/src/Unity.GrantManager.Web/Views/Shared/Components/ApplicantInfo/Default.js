@@ -213,7 +213,7 @@ $(function () {
             OrganizationType: getVal('ApplicantSummary_OrganizationType'),
             OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
             OrgStatus: getVal('ApplicantSummary_OrgStatus'),
-            IndigenousOrgInd: $('#indigenousOrgInd').is(':checked') ? 'Yes' : 'No',
+            IndigenousOrgInd: $('#ApplicantSummary_IndigenousOrgInd').is(':checked') ? 'Yes' : 'No',
             Sector: getVal('ApplicantSummary_Sector'),
             SubSector: getVal('ApplicantSummary_SubSector'),
             SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
