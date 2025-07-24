@@ -35,7 +35,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
-    public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
+    public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap, Guid applicationId)
     {
         ArgumentNullException.ThrowIfNull(intakeMap);
 
@@ -60,7 +60,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicant.FiscalMonth = intakeMap.FiscalMonth ?? applicant.FiscalMonth;
         }
 
-        await CreateApplicantAddressesAsync(intakeMap, applicant);
+        await CreateApplicantAddressesAsync(intakeMap, applicant, applicationId);
         return applicant;
     }
 
@@ -301,7 +301,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         return await applicantRepository.InsertAsync(applicant);
     }
 
-    private async Task CreateApplicantAddressesAsync(IntakeMapping intakeMap, Applicant applicant)
+    private async Task CreateApplicantAddressesAsync(IntakeMapping intakeMap, Applicant applicant, Guid applicationId)
     {
         ArgumentNullException.ThrowIfNull(intakeMap);
 
@@ -318,7 +318,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 Street = intakeMap.PhysicalStreet,
                 Street2 = intakeMap.PhysicalStreet2,
                 Unit = intakeMap.PhysicalUnit,
-                AddressType = AddressType.PhysicalAddress
+                AddressType = AddressType.PhysicalAddress,
+                ApplicationId = applicationId
             });
         }
 
@@ -335,7 +336,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 Street = intakeMap.MailingStreet,
                 Street2 = intakeMap.MailingStreet2,
                 Unit = intakeMap.MailingUnit,
-                AddressType = AddressType.MailingAddress
+                AddressType = AddressType.MailingAddress,
+                ApplicationId = applicationId
             });
         }
     }
@@ -378,13 +380,13 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
 
         application.ApplicantId = dto.ApplicantId;
-        await applicationRepository.UpdateAsync(application);
+        //await applicationRepository.UpdateAsync(application);
 
         //Update ApplicationFormSubmissions
-        await UpdateApplicationFormSubmissionsAsync(dto.ApplicationId, dto.ApplicantId);
+        //await UpdateApplicationFormSubmissionsAsync(dto.ApplicationId, dto.ApplicantId);
 
         //Update ApplicantAgent records
-        await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
+        //await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
     }
 
     [RemoteService(true)]
@@ -395,7 +397,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (principal != null && principal.IsDuplicated != false)
         {
             principal.IsDuplicated = false;
-            await applicantRepository.UpdateAsync(principal);
+            //await applicantRepository.UpdateAsync(principal);
         }
 
         // Set non-principal as duplicated
@@ -403,7 +405,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (nonPrincipal != null && nonPrincipal.IsDuplicated != true)
         {
             nonPrincipal.IsDuplicated = true;
-            await applicantRepository.UpdateAsync(nonPrincipal);
+            //await applicantRepository.UpdateAsync(nonPrincipal);
         }
     }
 
@@ -435,24 +437,13 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             var agentQueryable = await applicantAgentRepository.GetQueryableAsync();
 
-            // Detach old agent from application
-            var oldAgent = await agentQueryable
+            var agent = await agentQueryable
                 .FirstOrDefaultAsync(a => a.ApplicantId == oldApplicantId && a.ApplicationId == applicationId);
 
-            if (oldAgent != null)
+            if (agent != null)
             {
-                oldAgent.ApplicationId = null;
-                await applicantAgentRepository.UpdateAsync(oldAgent);
-            }
-
-            // Attach new agent to application
-            var newAgent = await agentQueryable
-                .FirstOrDefaultAsync(a => a.ApplicantId == newApplicantId);
-
-            if (newAgent != null)
-            {
-                newAgent.ApplicationId = applicationId;
-                await applicantAgentRepository.UpdateAsync(newAgent);
+                agent.ApplicantId = newApplicantId;
+                await applicantAgentRepository.UpdateAsync(agent);
             }
         }
         catch (Exception ex)
