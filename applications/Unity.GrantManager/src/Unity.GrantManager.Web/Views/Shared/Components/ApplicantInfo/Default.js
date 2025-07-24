@@ -545,13 +545,28 @@ function getMergedApplicantInfo(existing, newData) {
 }
 
 async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj) {
+    
     await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
 
     if (principalApplicantId === newData.ApplicantId) {
-        updatePrincipalApplicant(applicationId, principalApplicantId);
+        await updatePrincipalApplicant(applicationId, principalApplicantId);
     }
+    
+    await updateMergedApplicant(applicationId, ApplicantInfoObj);
+}
 
-    updateApplicantInfo(applicationId, ApplicantInfoObj);
+function updateMergedApplicant(applicationId, appInfoObj) {
+    return unity.grantManager.grantApplications.grantApplication
+        .updateMergedApplicant(applicationId, appInfoObj)
+        .done(function () {
+            abp.notify.success(
+                'The Applicant info has been updated.'
+            );
+            $('#saveApplicantInfoBtn').prop('disabled', true);
+            PubSub.publish("refresh_detail_panel_summary");
+            PubSub.publish('applicant_info_updated', appInfoObj);
+            PubSub.publish('applicant_info_merged');
+        });
 }
 
 async function generateUnityApplicantIdBtn() {
@@ -608,7 +623,6 @@ function updateApplicantInfo(appId, appInfoObj) {
             $('#saveApplicantInfoBtn').prop('disabled', true);
             PubSub.publish("refresh_detail_panel_summary");
             PubSub.publish('applicant_info_updated', appInfoObj);
-            PubSub.publish('applicant_info_merged');
         });
 }
 
@@ -625,21 +639,19 @@ function setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplican
 }
 
 function updatePrincipalApplicant(applicationId, principalApplicantId) {
-    return setTimeout(function () {
-        $.ajax({
+    return $.ajax({
             url: '/api/app/applicant/applicant-id',
             type: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify({
                 applicationId: applicationId,
                 applicantId: principalApplicantId
-            }),
-            success: function () {
-                abp.notify.success('Principal Applicant updated successfully.');
-            },
-            error: function (xhr, status) {
-                abp.notify.error('Failed to update Principal Applicant.');
-            }
-        });
-    }, 1000);
+            })
+        })
+        .done(function () {
+            abp.notify.success('Principal Applicant updated successfully.');
+        })
+        .fail(function (xhr, status) {
+            abp.notify.error('Failed to update Principal Applicant.');
+         });
 }
