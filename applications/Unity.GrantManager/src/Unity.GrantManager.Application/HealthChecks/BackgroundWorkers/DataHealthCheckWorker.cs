@@ -33,66 +33,70 @@ namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
             _emailNotificationService = emailNotificationService;
             _paymentRequestsRepository = paymentRequestsRepository;
 
-            string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-            if (string.Equals(envInfo, "Production", StringComparison.OrdinalIgnoreCase))
-            {
-                string cronExpression = SettingDefinitions.GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.DataHealthCheckMonitor_Expression);
+            string cronExpression = SettingDefinitions.GetSettingsValue(settingManager, SettingsConstants.BackgroundJobs.DataHealthCheckMonitor_Expression);
 
-                JobDetail = JobBuilder
-                    .Create<DataHealthCheckWorker>()
-                    .WithIdentity(nameof(DataHealthCheckWorker))
-                    .Build();
+            JobDetail = JobBuilder
+                .Create<DataHealthCheckWorker>()
+                .WithIdentity(nameof(DataHealthCheckWorker))
+                .Build();
 
-                Trigger = TriggerBuilder
-                    .Create()
-                    .WithIdentity(nameof(DataHealthCheckWorker))
-                    .WithSchedule(CronScheduleBuilder.CronSchedule(cronExpression)
-                    .WithMisfireHandlingInstructionIgnoreMisfires())
-                    .Build();
-            }
+            Trigger = TriggerBuilder
+                .Create()
+                .WithIdentity(nameof(DataHealthCheckWorker))
+                .WithSchedule(CronScheduleBuilder.CronSchedule(cronExpression)
+                .WithMisfireHandlingInstructionIgnoreMisfires())
+                .Build();
         }
 
         public override async Task Execute(IJobExecutionContext context)
         {
             Logger.LogInformation("Executing DataHealthCheckWorker...");
-            var tenants = await _tenantRepository.GetListAsync();
-            bool sendEmail = false;
-            var emailBodyBuilder = new System.Text.StringBuilder();
-            
-            foreach (var tenant in tenants)
+
+
+            string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+            if (string.Equals(envInfo, "Production", StringComparison.OrdinalIgnoreCase))
             {
-                using (_currentTenant.Change(tenant.Id, tenant.Name))
+
+                var tenants = await _tenantRepository.GetListAsync();
+                bool sendEmail = false;
+                var emailBodyBuilder = new System.Text.StringBuilder();
+
+                foreach (var tenant in tenants)
                 {
-                    // Lookup the missing emails
-                    var missingEmailsCount = await _emailNotificationService.GetEmailsChesWithNoResponseCountAsync();
-                    if (missingEmailsCount > 0)
+                    using (_currentTenant.Change(tenant.Id, tenant.Name))
                     {
-                        Logger.LogWarning("Tenant {TenantName} has {MissingEmailsCount} missing email(s) with a status of Initialized or Sent but no CHES Response.", tenant.Name, missingEmailsCount);
-                        string missingEmailBody = $"Unity tenant {tenant.Name} has {missingEmailsCount} email(s) that were sent but have no CHES Response.";
-                        sendEmail = true;
-                        emailBodyBuilder.AppendLine($"{missingEmailBody}<br />");
-                    }
-                    // Lookup the missing payments
-                    var missingPayments = await GetPaymentsSentWithoutResponseCountAsync();
-                    if (missingPayments > 0)
-                    {
-                        Logger.LogWarning("Tenant {TenantName} has {MissingPaymentsCount} payments sent without a response.", tenant.Name, missingPayments);
-                        string missingPaymentBody = $"Unity tenant {tenant.Name} has {missingPayments} payment(s) that are in Submitted status but have no CAS Response.";
-                        sendEmail = true;
-                        emailBodyBuilder.AppendLine($"{missingPaymentBody}<br />");
+                        // Lookup the missing emails
+                        var missingEmailsCount = await _emailNotificationService.GetEmailsChesWithNoResponseCountAsync();
+                        if (missingEmailsCount > 0)
+                        {
+                            Logger.LogWarning("Tenant {TenantName} has {MissingEmailsCount} missing email(s) with a status of Initialized or Sent but no CHES Response.", tenant.Name, missingEmailsCount);
+                            string missingEmailBody = $"Unity tenant {tenant.Name} has {missingEmailsCount} email(s) that were sent but have no CHES Response.";
+                            sendEmail = true;
+                            emailBodyBuilder.AppendLine($"{missingEmailBody}<br />");
+                        }
+                        // Lookup the missing payments
+                        var missingPayments = await GetPaymentsSentWithoutResponseCountAsync();
+                        if (missingPayments > 0)
+                        {
+                            Logger.LogWarning("Tenant {TenantName} has {MissingPaymentsCount} payments sent without a response.", tenant.Name, missingPayments);
+                            string missingPaymentBody = $"Unity tenant {tenant.Name} has {missingPayments} payment(s) that are in Submitted status but have no CAS Response.";
+                            sendEmail = true;
+                            emailBodyBuilder.AppendLine($"{missingPaymentBody}<br />");
+                        }
                     }
                 }
-            }
 
-            if (sendEmail)
-            {
-                string emailBody = emailBodyBuilder.ToString();
-                await SendEmailAlert(emailBody, "Data Health Check Alert - Emails/Payments Missing Responses");
-            }
+                if (sendEmail)
+                {
+                    string emailBody = emailBodyBuilder.ToString();
+                    await SendEmailAlert(emailBody, "Data Health Check Alert - Emails/Payments Missing Responses");
+                }
 
-            Logger.LogInformation("DataHealthCheckWorker Executed...");
-            await Task.CompletedTask;
+                Logger.LogInformation("DataHealthCheckWorker Executed...");
+                await Task.CompletedTask;
+            }
         }
 
         private async Task<int> GetPaymentsSentWithoutResponseCountAsync()
@@ -118,7 +122,7 @@ namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
                 htmlBody,
                 subject,
                 "NoReply@gov.bc.ca", "html",
-                ""); 
+                "");
 
             Logger.LogInformation("Missing Alerts Sent...");
 
