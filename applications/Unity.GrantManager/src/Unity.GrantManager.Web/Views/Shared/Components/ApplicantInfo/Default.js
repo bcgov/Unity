@@ -325,11 +325,7 @@ $(function () {
                 ApplicantInfoObj['ApplicantSummary.OrgNumber'] = orgNumber;
                 const orgStatus = $('#ApplicantSummary_OrgStatus').val();
                 ApplicantInfoObj['ApplicantSummary.OrgStatus'] = orgStatus;
-                const organizationType = $('#ApplicantSummary_OrganizationType').val();
-                ApplicantInfoObj['OrganizationType'] = organizationType;
 
-                const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
-                ApplicantInfoObj['IndigenousOrgInd'] = indigenousOrgInd ? "Yes" : "No";
                 ApplicantInfoObj['correlationId'] = formVersionId;
                 ApplicantInfoObj['worksheetId'] = worksheetId;
                 ApplicantInfoObj.ApplicantId = principalApplicantId;
