@@ -41,7 +41,6 @@
     --bc-layout-margin-large: 24px;
 }
 
-
 .unity-app-container {
     background: var(--bc-colors-white-background);
     height: 100%; /* confirm this */
@@ -619,6 +618,16 @@ div.dataTables_filter > label > input {
 .checkbox-select:checked {
     outline: 1px solid var(--bc-colors-blue-primary);
     outline-style: auto;
+    accent-color: var(--bc-colors-blue-primary) !important;
+}
+
+input[type="radio"] {
+    accent-color: var(--bc-colors-blue-primary) !important;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+    color: var(--bs-nav-pills-link-active-color) !important;
+    background-color: var(--bs-nav-pills-link-active-bg) !important;
 }
 
 div.dataTables_wrapper div.dataTables_filter {
