@@ -1,10 +1,11 @@
+const upatePaymentNumberFormatter = createNumberFormatter();
 
 function removeApplicationPaymentApproval(applicationId, groupId) {
     let $container = $('#' + applicationId);
     $container.remove();
 
     $('#' + applicationId).remove();
-    let applicationCount = $('#ApplicationCount').val();
+    let applicationCount =  $('#ApplicationCount').val();
     let groupCount = $(`#${groupId}_count`).val();
     $(`#${groupId}_count`).val(groupCount - 1);
     $('#ApplicationCount').val(applicationCount - 1);
@@ -39,7 +40,7 @@ function removeApplicationPaymentApproval(applicationId, groupId) {
         $(`#${groupId}_container .payment-status-transition`).css("display", "none");
     }
 
-    calculateTotalAmount();
+    calculateUpdateTotalAmount();
 }
 
 function closePaymentModal() {
@@ -106,16 +107,15 @@ function getStatusText(data) {
     }
 }
 
-function calculateTotalAmount() {
+function calculateUpdateTotalAmount() {
     let total = 0;
     $('.amount').each(function () {
-        let value = parseFloat($(this).val().replace(/,/g, '')) || 0;
+        // Remove commas and $ symbols before parsing
+        let rawValue = $(this).val().replace(/[$,]/g, '');
+        let value = parseFloat(rawValue) || 0;
         total += value;
+        this.value = upatePaymentNumberFormatter.format(value);
     });
-    $('.totalAmount').val(total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    let totalFormatted = upatePaymentNumberFormatter.format(total);
+    $('#UpdateTotalAmount').val(totalFormatted);
 }
-
-
-
-
-
