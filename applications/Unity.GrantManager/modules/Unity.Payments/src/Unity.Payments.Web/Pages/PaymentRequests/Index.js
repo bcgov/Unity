@@ -32,6 +32,10 @@ $(function () {
         viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
     });
 
+    paymentRequestStatusModal.onOpen(function () {
+        calculateUpdateTotalAmount();
+    });
+
     let selectedPaymentIds = [];
 
     let actionButtons = [
@@ -718,7 +722,6 @@ $(function () {
     );
 
 });
-
 
 let casPaymentResponseModal = new abp.ModalManager({
     viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
