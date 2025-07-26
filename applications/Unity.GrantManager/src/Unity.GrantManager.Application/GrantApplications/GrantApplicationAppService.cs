@@ -692,7 +692,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         applicant.NonRegOrgName = input.NonRegOrgName ?? "";
         applicant.ApplicantName = input.ApplicantName ?? "";
 
-        //_ = await _applicantRepository.UpdateAsync(applicant);
+        _ = await _applicantRepository.UpdateAsync(applicant);
     }
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,

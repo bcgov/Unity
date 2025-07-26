@@ -380,14 +380,44 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
 
         application.ApplicantId = dto.ApplicantId;
-        //await applicationRepository.UpdateAsync(application);
+        await applicationRepository.UpdateAsync(application);
 
         //Update ApplicationFormSubmissions
-        //await UpdateApplicationFormSubmissionsAsync(dto.ApplicationId, dto.ApplicantId);
+        await UpdateApplicationFormSubmissionsAsync(dto.ApplicationId, dto.ApplicantId);
 
         //Update ApplicantAgent records
-        //await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
+        await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
+
+        //Update ApplicantAddresses records
+        await UpdateApplicantAddressRecords(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
     }
+
+    private async Task UpdateApplicantAddressRecords(Guid oldApplicantId, Guid newApplicantId, Guid applicationId)
+    {
+        try
+        {
+            List<ApplicantAddress> applicantAddresses = await addressRepository.FindByApplicantIdAndApplicationIdAsync(oldApplicantId, applicationId);
+            await UpdateAddress(applicantAddresses, AddressType.MailingAddress, newApplicantId, applicationId);
+            await UpdateAddress(applicantAddresses, AddressType.PhysicalAddress, newApplicantId, applicationId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating ApplicantAddress records for ApplicationId: {ApplicationId}", applicationId);
+            throw new UserFriendlyException("An error occurred while updating applicant address records.");
+        }
+    }
+
+    private async Task UpdateAddress(List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid newApplicantId, Guid applicationId)
+    {
+        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType && address.ApplicationId == applicationId);
+
+        if (dbAddress != null)
+        {
+            dbAddress.ApplicantId = newApplicantId;
+            await addressRepository.UpdateAsync(dbAddress);
+        }
+    }
+
 
     [RemoteService(true)]
     public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
@@ -397,7 +427,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (principal != null && principal.IsDuplicated != false)
         {
             principal.IsDuplicated = false;
-            //await applicantRepository.UpdateAsync(principal);
+            await applicantRepository.UpdateAsync(principal);
         }
 
         // Set non-principal as duplicated
@@ -405,7 +435,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (nonPrincipal != null && nonPrincipal.IsDuplicated != true)
         {
             nonPrincipal.IsDuplicated = true;
-            //await applicantRepository.UpdateAsync(nonPrincipal);
+            await applicantRepository.UpdateAsync(nonPrincipal);
         }
     }
 
