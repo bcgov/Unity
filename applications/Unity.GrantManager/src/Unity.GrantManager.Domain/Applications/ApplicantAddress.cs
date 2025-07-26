@@ -10,7 +10,7 @@ namespace Unity.GrantManager.Applications;
 public class ApplicantAddress : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? ApplicantId { get; set; }
-
+    
     [JsonIgnore]
     public virtual Applicant Applicant
     {
@@ -19,6 +19,17 @@ public class ApplicantAddress : AuditedAggregateRoot<Guid>, IMultiTenant
                ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Applicant));
     }
     private Applicant? _applicant;
+
+    public Guid? ApplicationId { get; set; }
+
+    [JsonIgnore]
+    public virtual Application Application
+    {
+        set => _application = value;
+        get => _application
+               ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Application));
+    }
+    private Application? _application;
 
     public string? City { get; set; } = string.Empty;
     public string? Country { get; set; } = string.Empty;

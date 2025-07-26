@@ -131,6 +131,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string? ContractNumber { get; set; }
     public DateTime? ContractExecutionDate { get; set; }
     public string? RiskRanking { get; set; }
+    public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
 
     public bool IsInFinalDecisionState()
     {

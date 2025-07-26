@@ -180,14 +180,14 @@ public class ApplicationApplicantAppService(
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
         {
             input.Data.PhysicalAddress.AddressType = AddressType.PhysicalAddress;
-            await CreateOrUpdateApplicantAddress(application.ApplicantId, input.Data.PhysicalAddress);
+            await CreateOrUpdateApplicantAddress(applicationId, application.ApplicantId, input.Data.PhysicalAddress);
         }
 
         if (input.Data.MailingAddress != null
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
         {
             input.Data.MailingAddress.AddressType = AddressType.MailingAddress;
-            await CreateOrUpdateApplicantAddress(application.ApplicantId, input.Data.MailingAddress);
+            await CreateOrUpdateApplicantAddress(applicationId, application.ApplicantId, input.Data.MailingAddress);
         }
 
         //-- APPLICANT INFO CUSTOM FIELDS
@@ -279,15 +279,16 @@ public class ApplicationApplicantAppService(
     /// <param name="modifiedFields"></param>
     /// <returns></returns>
     [Authorize(UnitySelector.Applicant.Location.Update)]
-    protected internal async Task CreateOrUpdateApplicantAddress(Guid applicantId, UpdateApplicantAddressDto updatedAddress)
+    protected internal async Task CreateOrUpdateApplicantAddress(Guid applicationId, Guid applicantId, UpdateApplicantAddressDto updatedAddress)
     {
-        var applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
+        var applicantAddresses = await applicantAddressRepository.FindByApplicantIdAndApplicationIdAsync(applicantId, applicationId);
 
         ApplicantAddress? dbAddress = applicantAddresses.FirstOrDefault(a => a.AddressType == updatedAddress.AddressType)
         ?? new ApplicantAddress
         {
             ApplicantId = applicantId,
             AddressType = updatedAddress.AddressType,
+            ApplicationId = applicationId,
         };
 
         ObjectMapper.Map<UpdateApplicantAddressDto, ApplicantAddress>(updatedAddress, dbAddress);
