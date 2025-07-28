@@ -41,7 +41,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         public decimal TotalAmount { get; set; }
 
         [BindProperty]
-        public string Note { get; set; } = string.Empty;
+        public string? Note { get; set; } = string.Empty;
         public List<Guid> SelectedPaymentIds { get; set; } = new();
         public string FromStatusText { get; set; } = string.Empty;
 
