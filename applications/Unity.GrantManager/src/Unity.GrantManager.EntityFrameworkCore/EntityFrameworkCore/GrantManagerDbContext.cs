@@ -38,7 +38,6 @@ public class GrantManagerDbContext :
     public DbSet<RegionalDistrict> RegionalDistricts { get; set; }
     public DbSet<TenantToken> TenantTokens { get; set; }
     public DbSet<Community> Communities { get; set; }
-    public DbSet<ChefsMissedSubmission> ChefsMissedSubmissions { get; set; }
 
 
     #region Entities from the modules
@@ -143,14 +142,6 @@ public class GrantManagerDbContext :
         modelBuilder.Entity<TenantToken>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "TenantTokens",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-        });
-
-        modelBuilder.Entity<ChefsMissedSubmission>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ChefsMissedSubmissions",
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();

@@ -1,7 +1,8 @@
 ﻿@using Volo.Abp.Features
-@using Volo.Abp.Authorization.Permissions;
-@using Unity.Payments.Web.Views.Shared.Components.PaymentInfo;
-@using Unity.Payments.Localization;
+@using Volo.Abp.Authorization.Permissions
+@using Unity.Payments.Web.Views.Shared.Components.PaymentInfo
+@using Unity.Payments.Localization
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
 @using Unity.GrantManager.Flex
 @using Microsoft.AspNetCore.Mvc.Localization
@@ -30,6 +31,8 @@
 
     <form id="paymentInfoForm" autocomplete="off">
         @* Zone Section : Payment.Summary *@
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Summary.Default))
+        {
         <abp-row class="m-0 p-0 payment-info-summary">
             <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 px-0">
                 <div id="PaymentInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
@@ -65,9 +68,13 @@
                 </div>
             </abp-column>
         </abp-row>
-    
+        }
+
         @* Zone Section : Payment.Supplier *@
-        @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Supplier.Default))
+        {
+            @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
+        }
 
         @* Zone Section : Payment.Worksheet *@
         @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
@@ -84,6 +91,8 @@
         }
 
         @* Zone Section : Payment.PaymentList *@
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default))
+        {
         <abp-row class="m-0 p-0">
             <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
                 <div id="PaymentInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
@@ -91,10 +100,14 @@
                 </div>
             </abp-column>
         </abp-row>
-        <abp-row class="m-0 p-0">
+        }
+        <abp-row class="m-0 p-0 @(await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default) ? string.Empty : "d-none")">
+            @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default))
+            {
             <abp-column size="_12" class="px-1">
                 @await Component.InvokeAsync("PaymentActionBar")
             </abp-column>
+            }
             <abp-column size="_12" class="px-1">
                 <abp-table id="ApplicationPaymentRequestListTable"></abp-table>
             </abp-column>

@@ -1,8 +1,13 @@
+let createPaymentNumberFormatter = createNumberFormatter();
 
-function removeApplicationPayment(applicationId) {
+function removeApplicationPaymentRequest(applicationId) {
+    let $container = $('#' + applicationId);
+    $container.remove();
+
     $('#' + applicationId).remove();
     let applicationCount = $('#ApplicationCount').val();
     $('#ApplicationCount').val(applicationCount - 1);
+
     if ((applicationCount - 1) == 1) {
         $('.max-error').css("display", "none");
         $('.payment-divider').css("display", "none");
@@ -10,17 +15,20 @@ function removeApplicationPayment(applicationId) {
     if (!$('div.single-payment').length) {
         $('#no-payment-msg').css("display", "block");
         $("#payment-modal").find('#btnSubmitPayment').prop("disabled", true);
-    }
+    } 
     else {
         $('#no-payment-msg').css("display", "none");
     }
+
+    // Always recalculate the total after removal
+    calculateTotalAmount();
 }
 
 function closePaymentModal() {
     $('#payment-modal').modal('hide');
 }
 
-function checkMaxValue(applicationId, input, amountRemaining) {
+function checkMaxValueRequest(applicationId, input, amountRemaining) {
     let enteredValue = parseFloat(input.value.replace(/,/g, ""));
     let remainingErrorId = "#column_" + applicationId + "_remaining_error";
     if (amountRemaining < enteredValue) {
@@ -28,6 +36,9 @@ function checkMaxValue(applicationId, input, amountRemaining) {
     } else {
         $(remainingErrorId).css("display", "none");
     }
+
+    // Update the total amount after checking the value
+    calculateTotalAmount();
 }
 
 function submitPayments() {
@@ -45,4 +56,13 @@ function submitPayments() {
     }
 };
 
-
+function calculateTotalAmount() {
+    let total = 0;
+    $('.amount').each(function () {
+        let value = parseFloat($(this).val().replace(/,/g, '')) || 0;
+        total += value;
+    });
+ 
+    let totalFormatted = createPaymentNumberFormatter.format(total);
+   $('#TotalAmount').val(totalFormatted);
+}

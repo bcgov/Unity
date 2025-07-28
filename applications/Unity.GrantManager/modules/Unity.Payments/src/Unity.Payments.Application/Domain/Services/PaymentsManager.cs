@@ -7,7 +7,6 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Shared;
 using Unity.Payments.Domain.Workflow;
 using Unity.Payments.Enums;
-using Unity.Payments.Integrations.Cas;
 using Unity.Payments.PaymentRequests;
 using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
@@ -28,7 +27,6 @@ namespace Unity.Payments.Domain.Services
 
         public PaymentsManager(
             CasPaymentRequestCoordinator casPaymentRequestCoordinator,
-            IInvoiceService invoiceService,
             IPaymentRequestRepository paymentRequestRepository,
             IUnitOfWorkManager unitOfWorkManager,
             IPermissionChecker permissionChecker,

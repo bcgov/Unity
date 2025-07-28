@@ -8,5 +8,4 @@ namespace Unity.GrantManager.Applications;
 public interface IApplicationTagsRepository : IRepository<ApplicationTags, Guid>
 {
     Task<List<TagSummaryCount>> GetTagSummary();
-    Task<int> GetMaxRenameLengthAsync(string originalTag);
 }

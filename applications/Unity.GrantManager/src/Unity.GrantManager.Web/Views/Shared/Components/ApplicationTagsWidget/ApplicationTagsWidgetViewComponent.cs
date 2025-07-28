@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.GrantApplications;
+using System.Linq;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationTagsWidget
 {
@@ -27,12 +28,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationTagsWidget
         {
             var applicationTags = await _applicationTagsService.GetApplicationTagsAsync(applicationId);
             string applicationText = "";
-            if(applicationTags != null)
+            if (applicationTags != null && applicationTags.Any())
             {
-                applicationText = applicationTags.Text;
+                var tagNames = applicationTags
+                    .Where(x => x?.Tag?.Name != null)
+                    .Select(x => x.Tag?.Name);
+
+                applicationText = string.Join(", ", tagNames);
             }
-        
-            return View(new ApplicationTagsWidgetViewModel() { ApplicationTags = applicationText.Replace(",", ", ")});
+
+            return View(new ApplicationTagsWidgetViewModel
+            {
+                ApplicationTags = applicationText
+            });
         }
     }
 

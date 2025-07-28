@@ -213,9 +213,8 @@
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Funding Agreement",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement.Update": "Edit Funding Agreement",
 
-    "Unity.GrantManager.ApplicationManagement.Payment": "Payment",
+    "Unity.GrantManager.ApplicationManagement.Payment": "Payment Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
-    "Unity.GrantManager.ApplicationManagement.Payment.Summary.Update": "Edit Payment Summary",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
@@ -284,6 +283,8 @@
 
     "Permission:UnitySettingManagementPermissions.BackgroundJobs": "Background Jobs",
     "Permission:UnitySettingManagementPermissions.UserInterface": "Application Tabs",
+    "Permission:UnitySettingManagementPermissions.ConfigurePayments": "Configure Payments",
+
     "Setting:GrantManager.UI.PageTitle": "Application Tabs Configuration",
     "Setting:GrantManager.UI.Tabs.Applicant.Description": "Toggle visibility of the Applicant Info tab for the tenant",
     "Setting:GrantManager.UI.Tabs.Applicant.DisplayName": "Applicant Info",
@@ -449,6 +450,6 @@
     "ApplicationBatchApprovalRequest:InvalidPermissions": "Invalid permissions",
     "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
     "ApplicationBatchApprovalRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer",
-    "ApplicationBatchApprovalRequest:InvalidRecommendedAmount":  "Invalid Recommended Amount, it must be greater than 0.00"
+    "ApplicationBatchApprovalRequest:InvalidRecommendedAmount": "Invalid Recommended Amount, it must be greater than 0.00"
   }
 }

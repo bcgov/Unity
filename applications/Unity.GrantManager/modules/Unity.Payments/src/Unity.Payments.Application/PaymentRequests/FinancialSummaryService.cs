@@ -13,6 +13,7 @@ using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using System.Text;
 using Volo.Abp.EventBus.Local;
+using Unity.GrantManager.Identity;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -23,7 +24,6 @@ namespace Unity.Payments.PaymentRequests
         private readonly ICurrentTenant _currentTenant;
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
         private readonly ILocalEventBus _localEventBus;
-        public const string FinancialAnalyst = "financial_analyst";
 
         public FinancialSummaryService (
             IIdentityUserIntegrationService identityUserIntegrationService,
@@ -108,7 +108,7 @@ namespace Unity.Payments.PaymentRequests
                 foreach (var user in users.Items)
                 {
                     var roles = await _identityUserLookupAppService.GetRoleNamesAsync(user.Id);
-                    if(roles != null && roles.Contains(FinancialAnalyst) )
+                    if(roles != null && roles.Contains(UnityRoles.FinancialAnalyst) )
                     {
                         financialAnalystEmails.Add(user.Email);
                     }
