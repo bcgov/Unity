@@ -2,12 +2,11 @@ $(function () {
 
     let suggestionsArray = [];
 
-    
     let TagsInput = function (opts) {
         this.options = Object.assign(TagsInput.defaults, opts);
         this.init();
     }
-    
+
     TagsInput.prototype.init = function (opts) {
         this.options = opts ? Object.assign(this.options, opts) : this.options;
 
@@ -24,24 +23,28 @@ $(function () {
 
         this.wrapper = document.createElement('div');
         this.input = document.createElement('input');
+        this.input.Id = "tags-input-control";
         init(this);
         initEvents(this);
+
+        // Disable the input if user doesn't have create permission
+        if (!abp.auth.isGranted('Unity.Applications.Tags.Create')) {
+            this.input.disabled = true;
+            this.input.type = "hidden";
+            this.wrapper.classList.add('tags-input-disabled');
+        }
 
         this.initialized = true;
         return this;
     }
 
-
-    
     TagsInput.prototype.addTag = function (tagData) {
         let defaultClass = 'tags-common';
-        let id,tagText, tagClass;
+        let id, tagText, tagClass;
 
-            id = tagData.id;
-            tagText = tagData.name || '';
-            tagClass = tagData.class || defaultClass;
-
-        
+        id = tagData.id;
+        tagText = tagData.name || '';
+        tagClass = tagData.class || defaultClass;
 
         if (this.anyErrors(tagText))
             return;
@@ -54,38 +57,41 @@ $(function () {
         tag.className = this.options.tagClass + ' ' + tagClass;
         tag.innerText = tagText;
 
-        let closeIcon = document.createElement('a');
-        closeIcon.innerHTML = '&times;';
+        if (abp.auth.isGranted('Unity.Applications.Tags.Delete')) {
+            let closeIcon = document.createElement('a');
+            closeIcon.innerHTML = '&times;';
 
-        
-        closeIcon.addEventListener('click', function (e) {
-            e.preventDefault();
-            let tag = this.parentNode;
+            closeIcon.addEventListener('click', function (e) {
+                e.preventDefault();
+                console.log("Delete Tag");
+                let tag = this.parentNode;
 
-            for (let i = 0; i < tagInput.wrapper.childNodes.length; i++) {
-                if (tagInput.wrapper.childNodes[i] == tag)
-                    tagInput.deleteTag(tag, i);
-            }
-        })
+                let tagIndex = Array.from(tagInput.wrapper.childNodes).indexOf(tag);
+                if (tagIndex !== -1) {
+                    tagInput.deleteTag(tag, tagIndex);
+                }
+            })
 
-        tag.appendChild(closeIcon);
+            tag.appendChild(closeIcon);
+        }
+
         this.wrapper.insertBefore(tag, this.input);
         this.orignal_input.value = JSON.stringify(this.arr);
         updateSelectedTagsInput(this.arr)
         return this;
     }
 
-    
     TagsInput.prototype.deleteTag = function (tag, i) {
         let self = this;
 
-        if (this.arr[i].name === 'Uncommon Tags') {
+        if (this.arr[i] && this.arr[i].Name === 'Uncommon Tags') {
             abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
                 .then(function (confirmed) {
                     if (confirmed) {
                         tag.remove();
                         self.arr.splice(i, 1);
                         self.orignal_input.value = JSON.stringify(self.arr);
+                        updateSelectedTagsInput(self.arr);
                         return self;
                     }
                 });
@@ -93,11 +99,11 @@ $(function () {
             tag.remove();
             this.arr.splice(i, 1);
             this.orignal_input.value = JSON.stringify(this.arr);
+            updateSelectedTagsInput(this.arr);
             return this;
         }
     }
 
-    
     TagsInput.prototype.anyErrors = function (string) {
         if (this.options.max != null && this.arr.length >= this.options.max) {
             console.log('max tags limit reached');
@@ -115,7 +121,6 @@ $(function () {
         return false;
     }
 
-    
     TagsInput.prototype.addData = function (array) {
         let plugin = this;
 
@@ -125,16 +130,14 @@ $(function () {
         return this;
     }
 
-    
     TagsInput.prototype.getInputString = function () {
         return this.arr.join(',');
     }
+
     TagsInput.prototype.setSuggestions = function (sugArray) {
         suggestionsArray = sugArray;
     }
 
-
-    
     TagsInput.prototype.destroy = function () {
         this.orignal_input.removeAttribute('hidden');
 
@@ -152,7 +155,6 @@ $(function () {
         this.initialized = false;
     }
 
-    
     function init(tags) {
         tags.wrapper.append(tags.input);
         tags.wrapper.classList.add(tags.options.wrapperClass);
@@ -161,45 +163,35 @@ $(function () {
         tags.input.addEventListener('input', function () {
             const inputValue = tags.input.value.trim().toLowerCase();
 
-            
             if (inputValue.length > 1) {
                 const suggestions = suggestionsArray.filter(tag =>
                     (tag.name.toLowerCase()).includes(inputValue));
 
-                
                 if (suggestions.length) {
                     displaySuggestions(tags, suggestions);
                 } else {
                     removeSuggestions(tags);
                 }
-
             } else {
-                
                 removeSuggestions(tags);
             }
         });
     }
 
-    
     function displaySuggestions(tags, suggestions) {
-        
+
         removeSuggestions(tags);
 
-        
         const suggestionContainer = document.createElement('div');
         suggestionContainer.classList.add('tags-suggestion-container');
         const suggestionTitleElement = document.createElement('div');
         suggestionTitleElement.className = 'tags-suggestion-title';
         suggestionTitleElement.innerText = 'ALL TAGS';
         suggestionContainer.appendChild(suggestionTitleElement);
-
-        
         suggestions.forEach(suggestion => {
             const suggestionElement = document.createElement('div');
             suggestionElement.className = 'tags-suggestion-element';
             suggestionElement.innerText = typeof suggestion === 'string' ? suggestion : suggestion.name;
-
-            
             suggestionElement.addEventListener('click', function () {
                 tags.addTag(suggestion);
                 removeSuggestions(tags);
@@ -209,11 +201,9 @@ $(function () {
             suggestionContainer.appendChild(suggestionElement);
         });
 
-        
         tags.wrapper.appendChild(suggestionContainer);
     }
 
-    
     function removeSuggestions(tags) {
         const suggestionContainer = tags.wrapper.querySelector('.tags-suggestion-container');
         if (suggestionContainer) {
@@ -221,33 +211,27 @@ $(function () {
         }
     }
 
-    
     function initEvents(tags) {
         tags.wrapper.addEventListener('click', function () {
             tags.input.focus();
         });
 
-        
         tags.input.addEventListener('focusout', function () {
             $('#assignTagsModelSaveBtn').click(function () {
                 trimAndAddTag(tags);
             })
         });
 
-
         tags.input.addEventListener('keydown', function (e) {
-
             if (~[9, 13, 188, 32].indexOf(e.keyCode)) {
                 e.preventDefault();
                 trimAndAddTag(tags);
                 removeSuggestions(tags);
 
             }
-
         });
     }
 
-    
     function trimAndAddTag(tags) {
         let str = tags.input.value.trim();
         if (!str) {
@@ -255,10 +239,8 @@ $(function () {
             return;
         }
 
-        
         const matched = suggestionsArray.find(s =>
-       
-                 s.name.toLowerCase() === str.toLowerCase()
+            s.name.toLowerCase() === str.toLowerCase()
         );
 
         if (matched) {
@@ -271,17 +253,14 @@ $(function () {
     }
 
     function updateSelectedTagsInput(tagsArray) {
-        
         let jsonValue = JSON.stringify(tagsArray);
         $('#SelectedTagsJson').val(jsonValue);
-       
     }
 
     TagsInput.prototype.getTags = function () {
-        return this.arr.slice(); 
+        return this.arr.slice();
     }
 
-    
     TagsInput.defaults = {
         selector: '',
         wrapperClass: 'tags-input-wrapper',
@@ -291,5 +270,4 @@ $(function () {
     }
 
     window.TagsInput = TagsInput;
-
 });
