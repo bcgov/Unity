@@ -61,7 +61,6 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public List<ApplicationTagsDto>? ApplicationTag { get; set; }
     public Guid? OwnerId { get; set; }
     public string? OrganizationName { get; set; }
-    public string? NonRegisteredBusinessName { get; set; }
     public string? NonRegOrgName { get; set; }
     public string? OrganizationType { get; set; }
     public GrantApplicationAssigneeDto Owner { get; set; } = new();
