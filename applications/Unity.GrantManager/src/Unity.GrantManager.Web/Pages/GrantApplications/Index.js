@@ -268,7 +268,8 @@
             getFyeDayColumn(columnIndex++),
             getFyeMonthColumn(columnIndex++),
             getApplicantIdColumn(columnIndex++),
-            getPayoutColumn(columnIndex++)
+            getPayoutColumn(columnIndex++),
+            getNonRegisteredOrganizationNameColumn(columnIndex++),
         ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
             .sort((a, b) => a.index - b.index);
         return sortedColumns;
@@ -856,6 +857,19 @@
             title: l('Summary:Application.OrganizationName'),
             name: 'organizationName',
             data: 'organizationName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getNonRegisteredOrganizationNameColumn(columnIndex) {
+        return {
+            title: l('Summary:Application.NonRegOrgName'),
+            name: 'nonRegOrgName',
+            data: 'nonRegOrgName',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';

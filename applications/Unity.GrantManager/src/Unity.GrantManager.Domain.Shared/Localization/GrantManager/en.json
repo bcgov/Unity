@@ -321,6 +321,7 @@
     "Summary:Application.SubmissionDate": "Submission Date",
     "Summary:Application.OrganizationName": "Registered Organization Name",
     "Summary:Application.OrganizationNumber": "Registered Organization Number",
+    "Summary:Application.NonRegOrgName": "Non-Registered Organization Name",
     "Summary:Application.City": "City",
     "Summary:Application.Community": "Community",
     "Summary:Application.RequestedAmount": "Requested Amount",
