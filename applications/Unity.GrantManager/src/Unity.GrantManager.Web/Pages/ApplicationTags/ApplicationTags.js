@@ -23,7 +23,7 @@ $(function () {
 
         this.wrapper = document.createElement('div');
         this.input = document.createElement('input');
-        this.input.Id = "tags-input-control";
+        this.input.id = "tags-input-control";
         init(this);
         initEvents(this);
 
@@ -63,7 +63,6 @@ $(function () {
 
             closeIcon.addEventListener('click', function (e) {
                 e.preventDefault();
-                console.log("Delete Tag");
                 let tag = this.parentNode;
 
                 let tagIndex = Array.from(tagInput.wrapper.childNodes).indexOf(tag);
