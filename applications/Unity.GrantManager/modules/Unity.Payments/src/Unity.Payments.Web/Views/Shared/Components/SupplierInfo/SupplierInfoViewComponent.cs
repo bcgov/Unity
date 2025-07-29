@@ -1,17 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.AspNetCore.Mvc;
-using System.Threading.Tasks;
 using System;
-using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
-using Unity.Payments.Suppliers;
-using Unity.Modules.Shared.Correlation;
-using Volo.Abp.Features;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applicants;
-using Volo.Abp.Authorization.Permissions;
-using Unity.Payments.Permissions;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared;
+using Unity.Modules.Shared.Correlation;
+using Unity.Payments.Suppliers;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Features;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
@@ -60,7 +60,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 
         private async Task<bool> HasEditSupplier()
         {
-            return await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.EditSupplierInfo);
+            return await permissionChecker.IsGrantedAsync(UnitySelector.Payment.Supplier.Update);
         }
     }
 

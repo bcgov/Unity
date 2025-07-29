@@ -67,18 +67,20 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormId = applicationForm.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
                 ApplicationId = application.Id,
-                Submission = dataNode?.ToString() ?? string.Empty
+                Submission = dataNode?.ToString() ?? string.Empty                
             };
 
             _ = await _applicationFormSubmissionRepository.InsertAsync(newSubmission);
 
             ApplicationFormVersion? localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
+
             await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id,
                 localFormVersion?.Id ?? Guid.Empty,
                 formSubmission,
             formVersionSubmissionHeaderMapping);
 
             newSubmission.ApplicationFormVersionId = localFormVersion?.Id;
+            newSubmission.FormVersionId = string.IsNullOrWhiteSpace(localFormVersion?.ChefsFormVersionGuid) ? null : Guid.Parse(localFormVersion.ChefsFormVersionGuid);
 
             // Extend any further processing of the application here through local event bus and handlers
             await localEventBus.PublishAsync(new ApplicationProcessEvent
@@ -96,14 +98,12 @@ namespace Unity.GrantManager.Intakes
 
         private async Task<Application> CreateNewApplicationAsync(IntakeMapping intakeMap,
             ApplicationForm applicationForm)
-        {
-            var applicant = await applicantService.CreateOrRetrieveApplicantAsync(intakeMap);
+        {            
             var submittedStatus = await _applicationStatusRepository.FirstAsync(s => s.StatusCode.Equals(GrantApplicationState.SUBMITTED));
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
-                    ApplicantId = applicant.Id,
+                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),                    
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,                    
                     ReferenceNo = intakeMap.ConfirmationId ?? string.Empty,
@@ -131,6 +131,13 @@ namespace Unity.GrantManager.Intakes
                     ProjectSummary = intakeMap.ProjectSummary,
                 }
             );
+
+            var applicant = await applicantService.CreateOrRetrieveApplicantAsync(intakeMap, application.Id);
+            if (applicant != null)
+            {
+                application.ApplicantId = applicant.Id;
+                application = await _applicationRepository.UpdateAsync(application);
+            }            
 
             ApplicantAgentDto applicantAgentDto = new()
             {

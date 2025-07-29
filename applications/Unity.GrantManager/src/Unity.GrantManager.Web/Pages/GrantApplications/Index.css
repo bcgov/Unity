@@ -25,6 +25,11 @@ table.dataTable tbody tr {
     border-color: var(--bs-border-color);
 }
 
+.payment-item {
+    background-color: var(--bc-colors-ligh-gray-background);
+}
+
+
 /**CSS for dataTable stateRestore - Save View**/
 .container-grant-application .dtsr-background {
     background: rgba(0, 0, 0, 0.5) !important;

@@ -1,4 +1,5 @@
-﻿using Unity.Payments.Localization;
+using Unity.Modules.Shared;
+using Unity.Payments.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 
@@ -16,11 +17,40 @@ public class PaymentsPermissionDefinitionProvider : PermissionDefinitionProvider
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.L2ApproveOrDecline, L("Permission:Payments.L2ApproveOrDecline"));
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.L3ApproveOrDecline, L("Permission:Payments.L3ApproveOrDecline"));
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.RequestPayment, L("Permission:Payments.RequestPayment"));
-        paymentsPermissions.AddChild(PaymentsPermissions.Payments.EditSupplierInfo, L("Permission:Payments.EditSupplierInfo"));
+
+        //-- PAYMENT INFO PERMISSIONS
+        grantApplicationPermissionsGroup.Add_PaymentInfo_Permissions();
+        paymentsPermissions.AddChild(PaymentsPermissions.Payments.EditFormPaymentConfiguration, L("Permission:Payments.EditFormPaymentConfiguration"));        
     }
 
     private static LocalizableString L(string name)
     {
         return LocalizableString.Create<PaymentsResource>(name);
+    }
+}
+
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Configuration Code")]
+public static class PaymentPermissionGroupDefinitionExtensions
+{
+    public static void Add_PaymentInfo_Permissions(this PermissionGroupDefinition grantApplicationPermissionsGroup)
+    {
+        #region PAYMENT INFO GRANULAR PERMISSIONS
+        var upx_Payment                                     = grantApplicationPermissionsGroup
+                                                                                    .AddPermission(UnitySelector.Payment.Default, LocalizableString.Create<PaymentsResource>(UnitySelector.Payment.Default));
+
+        var upx_Payment_Summary                             = upx_Payment.AddPaymentChild(UnitySelector.Payment.Summary.Default);
+
+        var upx_Payment_Supplier                            = upx_Payment.AddPaymentChild(UnitySelector.Payment.Supplier.Default);
+        var upx_Payment_Supplier_Update                     = upx_Payment_Supplier.AddPaymentChild(UnitySelector.Payment.Supplier.Update);
+
+        var upx_PaymentList_Authority                       = upx_Payment.AddPaymentChild(UnitySelector.Payment.PaymentList.Default);
+        #endregion
+    }
+
+
+
+    public static PermissionDefinition AddPaymentChild(this PermissionDefinition parent, string name)
+    {
+        return parent.AddChild(name, LocalizableString.Create<PaymentsResource>(name));
     }
 }

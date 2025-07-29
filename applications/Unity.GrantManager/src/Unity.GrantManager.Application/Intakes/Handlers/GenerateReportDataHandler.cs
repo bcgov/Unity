@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                     eventData.ApplicationFormSubmission.ReportData = reportingDataGenerator
                         .Generate(eventData.RawSubmission,
                                     eventData.FormVersion?.ReportKeys,
-                                    eventData.ApplicationFormSubmission.Id);
+                                    eventData.ApplicationFormSubmission.Id) ?? "{}";
                 }
             }
         }

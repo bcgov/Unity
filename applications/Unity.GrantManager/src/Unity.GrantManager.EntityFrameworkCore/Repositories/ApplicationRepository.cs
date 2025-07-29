@@ -52,6 +52,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
             .Include(s => s.ApplicationStatus)
             .Include(s => s.ApplicationForm)
             .Include(s => s.ApplicationTags)
+                .ThenInclude(x => x.Tag)
             .Include(s => s.Owner)
             .Include(s => s.ApplicationAssignments!)
                 .ThenInclude(t => t.Assignee)
@@ -148,7 +149,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         return await (await GetQueryableAsync())
           .AsNoTracking()
           .Include(s => s.Applicant)
-            .ThenInclude(s => s.ApplicantAddresses)
+            .ThenInclude(s => s.ApplicantAddresses!.Where(addr => addr.ApplicationId == id))
           .Include(s => s.ApplicantAgent)
           .Include(s => s.ApplicationStatus)
           .FirstAsync(s => s.Id == id);

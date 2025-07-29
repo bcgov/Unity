@@ -42,9 +42,15 @@ namespace Unity.GrantManager.GrantApplications
                     using var uowFields = unitofWorkManager.Begin(requiresNew: true);
                     application = await applicationRepository.GetAsync(applicationToUpdateAndApprove.ApplicationId);
 
-                    application.ValidateAndChangeFinalDecisionDate(applicationToUpdateAndApprove.FinalDecisionDate);
-                    application.ValidateMinAndChangeApprovedAmount(applicationToUpdateAndApprove.ApprovedAmount);
-                    application.ApprovedAmount = applicationToUpdateAndApprove.ApprovedAmount;
+                    // Manually map fixed fields directly from Application
+                    applicationToUpdateAndApprove.RequestedAmount = application.RequestedAmount;
+                    applicationToUpdateAndApprove.RecommendedAmount = application.RecommendedAmount;
+                    applicationToUpdateAndApprove.IsDirectApproval = application.ApplicationForm?.IsDirectApproval ?? false;
+
+                    application.ValidateDirectApprovalRecommendedAmount(applicationToUpdateAndApprove.RecommendedAmount, applicationToUpdateAndApprove.IsDirectApproval);
+
+                    application.ValidateAndSetFinalDecisionDate(applicationToUpdateAndApprove.FinalDecisionDate);
+                    application.ValidateAndSetApprovedAmount(applicationToUpdateAndApprove.ApprovedAmount);                                        
 
                     if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(GrantApplicationAction.Approve)))
                     {
@@ -103,24 +109,37 @@ namespace Unity.GrantManager.GrantApplications
 
             foreach (var application in applications)
             {
-                List<(bool, string)> validationMessages = await RunValidations(application);
-
-                applicationsForApproval.Add(new BulkApprovalDto()
-                {
-                    ApplicationId = application.Id,
-                    ApprovedAmount = application.ApprovedAmount,
-                    RequestedAmount = application.RequestedAmount,
-                    FinalDecisionDate = application.FinalDecisionDate,
-                    ReferenceNo = application.ReferenceNo,
-                    ValidationMessages = validationMessages.Select(s => s.Item2).ToList(),
-                    ApplicantName = application.Applicant.ApplicantName ?? string.Empty,
-                    ApplicationStatus = application.ApplicationStatus.InternalStatus,
-                    FormName = application.ApplicationForm?.ApplicationFormName ?? string.Empty,
-                    IsValid = !validationMessages.Exists(s => s.Item1)
-                });
+                applicationsForApproval
+                    .Add(MapBulkApproval(application, await RunValidations(application)));
             }
 
             return applicationsForApproval;
+        }
+
+
+        /// <summary>
+        /// Map the application to a BulkApprovalDto with validation messages
+        /// </summary>
+        /// <param name="application"></param>
+        /// <param name="validationMessages"></param>
+        /// <returns></returns>
+        private static BulkApprovalDto MapBulkApproval(Application application, List<(bool, string)> validationMessages)
+        {
+            return new BulkApprovalDto()
+            {
+                ApplicationId = application.Id,
+                ApprovedAmount = application.ApprovedAmount,
+                RequestedAmount = application.RequestedAmount,
+                FinalDecisionDate = application.FinalDecisionDate,
+                ReferenceNo = application.ReferenceNo,
+                ValidationMessages = validationMessages.Select(s => s.Item2).ToList(),
+                ApplicantName = application.Applicant.ApplicantName ?? string.Empty,
+                ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                FormName = application.ApplicationForm?.ApplicationFormName ?? string.Empty,
+                IsValid = !validationMessages.Exists(s => s.Item1),
+                IsDirectApproval = application.ApplicationForm?.IsDirectApproval,
+                RecommendedAmount = application.RecommendedAmount
+            };
         }
 
         /// <summary>
@@ -139,6 +158,29 @@ namespace Unity.GrantManager.GrantApplications
             if (!authorized)
                 validationMessages.Add(new(true, "INVALID_PERMISSIONS"));
 
+            // If this application belongs to a direct approval form, we default to RequestedAmount if the ApprovedAmount is 0.00
+            if (application.ApplicationForm?.IsDirectApproval == true)
+            {
+                application.ApprovedAmount = application.ApprovedAmount == 0m ? application.RequestedAmount : application.ApprovedAmount;
+            }
+            else
+            {
+                // If this application does not belong to a direct approval form, ensure that RecommendedAmount is not 0.00.                                    
+                if (application.RecommendedAmount == 0m)
+                {
+                    validationMessages.Add(new(false, "INVALID_RECOMMENDED_AMOUNT"));
+                }
+
+                // If ApprovedAmount is 0.00, we default it to RecommendedAmount
+                application.ApprovedAmount = application.ApprovedAmount == 0m ? application.RecommendedAmount : application.ApprovedAmount;
+            }
+
+            // If approved amount is still 0.00 after default sets then it is an error
+            if (application.ApprovedAmount == 0m)
+            {
+                validationMessages.Add(new(false, "INVALID_APPROVED_AMOUNT"));
+            }
+
             return validationMessages;
         }
 
@@ -154,8 +196,15 @@ namespace Unity.GrantManager.GrantApplications
             {
                 return false;
             }
-            if(application.ApplicationForm.IsDirectApproval)
+
+            // Specific ruleset for the Is Direct Approval flow
+            if (application.ApplicationForm.IsDirectApproval)
             {
+                if (application.ApplicationStatus.StatusCode == GrantApplicationState.GRANT_APPROVED)
+                {
+                    return false;
+                }
+
                 return true;
             }
 

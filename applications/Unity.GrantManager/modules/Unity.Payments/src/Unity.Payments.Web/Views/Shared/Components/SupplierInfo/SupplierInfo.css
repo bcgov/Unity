@@ -23,3 +23,12 @@
 .hidden {
     display: none;
 }
+
+input[readonly] {
+    color: var(--bc-colors-grey-text-200);
+    pointer-events: none;
+    background-color: var(--bc-colors-grey-hover) !important;
+    opacity: var(--bs-btn-disabled-opacity);
+    background-blend-mode: difference;
+    border: none !important;
+}

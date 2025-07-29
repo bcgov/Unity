@@ -125,7 +125,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
             appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = firstApplication.ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
+            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? new List<ApplicationTags>());
             appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
             appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
             appDto.OrganizationType = firstApplication.Applicant?.OrganizationType ?? string.Empty;
@@ -154,9 +154,16 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
             return appDto;
         }).ToList();
-
-        var totalCount = await _applicationRepository.GetCountAsync();
-
+        
+        long totalCount = 0;
+        try
+        {
+            totalCount = await _applicationRepository.GetCountAsync();
+        } catch(Exception ex)
+        {
+            Logger.LogError(ex, "An exception occurred GetCountAsync: {ExceptionMessage}", ex.Message);
+        }
+       
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
 
@@ -310,7 +317,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         await SanitizeApprovalZoneInputs(input, application);
         await SanitizeAssessmentResultsZoneInputs(input, application);
 
-        application.ValidateAndChangeDueDate(input.DueDate);
+        application.ValidateAndSetDueDate(input.DueDate);
         application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate, input.RiskRanking);
 
         if (application.IsInFinalDecisionState())
@@ -329,7 +336,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             if (await CurrentUserCanUpdateAssessmentFieldsAsync())
             {
-                application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
+                application.ValidateAndSetFinalDecisionDate(input.FinalDecisionDate);
                 application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
                 application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
@@ -540,7 +547,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     /// <summary>
     /// Update the supplier number for the applicant associated with the application.
     /// </summary>
-    [Authorize(PaymentsPermissions.Payments.EditSupplierInfo)]
+    [Authorize(UnitySelector.Payment.Supplier.Update)]
     public async Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber)
     {
         // Could be moved to payments module but dependency on ApplicationId
@@ -558,7 +565,38 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    [Authorize(GrantApplicationPermissions.ApplicantInfo.Update)]
+    protected internal async Task<ApplicantAgent?> CreateOrUpdateApplicantAgentAsync(Application application, ContactInfoDto? input)
+    {
+        if (input == null
+            || !await AuthorizationService.IsGrantedAnyAsync(UnitySelector.Applicant.Contact.Create, UnitySelector.Applicant.Contact.Update))
+        {
+            return null;
+        }
+
+        var applicantAgent = await _applicantAgentRepository
+            .FirstOrDefaultAsync(a => a.ApplicantId == application.ApplicantId)
+            ?? new ApplicantAgent
+            {
+                ApplicantId   = application.ApplicantId,
+                ApplicationId = application.Id
+            };
+
+        applicantAgent.Name = input?.Name ?? string.Empty;
+        applicantAgent.Phone = input?.Phone ?? string.Empty;
+        applicantAgent.Phone2 = input?.Phone2 ?? string.Empty;
+        applicantAgent.Email = input?.Email ?? string.Empty;
+        applicantAgent.Title = input?.Title ?? string.Empty;
+
+        if (applicantAgent.Id == Guid.Empty)
+        {
+            return await _applicantAgentRepository.InsertAsync(applicantAgent);
+        }
+
+        return await _applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    [Obsolete("Use ApplicationApplicantAppService.UpdatePartialApplicantInfoAsync instead.")]
+    [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -607,7 +645,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
         }
 
-        await UpdateApplicantAddresses(input);
+        await UpdateApplicantAddresses(application.Id, input);
 
         application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
         application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
@@ -628,6 +666,32 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         appDto.ContactCellPhone = applicantAgent.Phone2;
 
         return appDto;
+    }
+
+    [Authorize(UnitySelector.Applicant.UpdatePolicy)]
+    public async Task UpdateMergedApplicantAsync(Guid applicationId, CreateUpdateApplicantInfoDto input)
+    {
+        var application = await _applicationRepository.GetAsync(applicationId);
+
+        var applicant = await _applicantRepository
+            .FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+
+        applicant.OrganizationType = input.OrganizationType ?? "";
+        applicant.OrgName = input.OrgName ?? "";
+        applicant.OrgNumber = input.OrgNumber ?? "";
+        applicant.OrgStatus = input.OrgStatus ?? "";
+        applicant.OrganizationSize = input.OrganizationSize ?? "";
+        applicant.Sector = input.Sector ?? "";
+        applicant.SubSector = input.SubSector ?? "";
+        applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
+        applicant.IndigenousOrgInd = input.IndigenousOrgInd ?? "";
+        applicant.UnityApplicantId = input.UnityApplicantId ?? "";
+        applicant.FiscalDay = input.FiscalDay;
+        applicant.FiscalMonth = input.FiscalMonth ?? "";
+        applicant.NonRegOrgName = input.NonRegOrgName ?? "";
+        applicant.ApplicantName = input.ApplicantName ?? "";
+
+        _ = await _applicantRepository.UpdateAsync(applicant);
     }
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
@@ -656,19 +720,19 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
+    protected virtual async Task UpdateApplicantAddresses(Guid applicationId, CreateUpdateApplicantInfoDto input)
     {
-        List<ApplicantAddress> applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
+        List<ApplicantAddress> applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAndApplicationIdAsync(input.ApplicantId, applicationId);
         if (applicantAddresses != null)
         {
-            await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
-            await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+            await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId, applicationId);
+            await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId, applicationId);
         }
     }
 
-    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId)
+    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId, Guid applicationId)
     {
-        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType);
+        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType && address.ApplicationId == applicationId);
 
         if (dbAddress != null)
         {
@@ -677,7 +741,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
         else
         {
-            var newAddress = new ApplicantAddress() { AddressType = applicantAddressType, ApplicantId = applicantId };
+            var newAddress = new ApplicantAddress() { AddressType = applicantAddressType, ApplicantId = applicantId, ApplicationId = applicationId };
             MapApplicantAddress(input, applicantAddressType, newAddress);
             await _applicantAddressRepository.InsertAsync(newAddress);
         }
@@ -964,6 +1028,17 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     {
         var application = await _applicationRepository.GetAsync(id, true);
         return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
+    }
+
+    public async Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId)
+    {
+        ApplicationForm? form = await _applicationFormRepository.GetAsync(formId, true);
+        if (form == null)
+        {
+            return null;
+        }
+    
+        return form.AccountCodingId;
     }
 
     #region APPLICATION WORKFLOW

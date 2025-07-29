@@ -1,16 +1,16 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 ENV ASPNETCORE_URLS="http://+:8080"
 EXPOSE 8080 443
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # set up node
-ARG NODE_VERSION=18.17.1
-ARG YARN_VERSION=1.22.19
+ARG NODE_VERSION=22.17.0
+ARG YARN_VERSION=1.22.22
 ARG NODE_DOWNLOAD_URL=https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz
-ARG NODE_DOWNLOAD_SHA=2cb75f2bc04b0a3498733fbee779b2f76fe3f655188b4ac69ef2887b6721da2d
+ARG NODE_DOWNLOAD_SHA=0fa01328a0f3d10800623f7107fbcd654a60ec178fab1ef5b9779e94e0419e1a
 
 RUN curl -SL --compressed "${NODE_DOWNLOAD_URL}" --output nodejs.tar.gz \
     && echo "${NODE_DOWNLOAD_SHA} nodejs.tar.gz" | sha256sum -c - \
@@ -38,7 +38,7 @@ RUN dotnet restore "src/Unity.GrantManager.Web/Unity.GrantManager.Web.csproj"
 COPY . .
 WORKDIR "/src/src/Unity.GrantManager.Web"
 
-RUN dotnet tool install -g Volo.Abp.Cli --version 8.1.4
+RUN dotnet tool install -g Volo.Abp.Cli --version 9.1.3
 ENV PATH="${PATH}:/root/.dotnet/tools"
 RUN dotnet dev-certs https --trust
 RUN abp install-libs
@@ -59,6 +59,8 @@ COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotne
 # CAS Dev/Test Certs changed
 COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
 COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/sslcomroot.crt", "/usr/local/share/ca-certificates/sslcomroot.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/ssoroot.crt", "/usr/local/share/ca-certificates/ssoroot.crt"]
 
 RUN mkdir -p /.aspnet && \
     mkdir -p /.dotnet && \
@@ -68,6 +70,8 @@ RUN mkdir -p /.aspnet && \
     chmod 755 /app/logs && \
     chmod 644 /usr/local/share/ca-certificates/cas.crt && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
+    chmod 644 /usr/local/share/ca-certificates/sslcomroot.crt && \
+    chmod 644 /usr/local/share/ca-certificates/ssoroot.crt && \
     update-ca-certificates
 
 COPY --from=publish /app/publish .

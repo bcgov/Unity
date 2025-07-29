@@ -14,6 +14,7 @@ using Unity.Payments.EntityFrameworkCore;
 using Unity.Flex.EntityFrameworkCore;
 using Unity.Notifications.EntityFrameworkCore;
 using Unity.Reporting.EntityFrameworkCore;
+using Unity.GrantManager.GlobalTag;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -41,6 +42,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }
         public DbSet<ApplicationContact> ApplicationContacts { get; set; }
         public DbSet<ApplicationLink> ApplicationLinks { get; set; }
+        public DbSet<Tag> Tags { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -150,6 +152,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .WithMany(s => s.ApplicantAddresses)
                     .HasForeignKey(s => s.ApplicantId)
                     .IsRequired();
+
+                b.HasOne(x => x.Application)
+                    .WithMany(a => a.ApplicantAddresses)
+                    .HasForeignKey(s => s.ApplicationId)
+                    .IsRequired(false);
             });
 
             modelBuilder.Entity<ApplicantAgent>(b =>
@@ -250,11 +257,14 @@ namespace Unity.GrantManager.EntityFrameworkCore
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationTags",
                     GrantManagerConsts.DbSchema);
-
                 b.ConfigureByConvention();
-                b.Property(x => x.Text)
-                    .IsRequired()
-                    .HasMaxLength(250);
+                b.HasOne(x => x.Tag)
+                 .WithMany() 
+                 .HasForeignKey(x => x.TagId)
+                 .IsRequired()
+                 .OnDelete(DeleteBehavior.NoAction);
+
+
             });
 
             modelBuilder.Entity<ApplicationContact>(b =>
@@ -275,6 +285,15 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ConfigureByConvention();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
 
+            });
+
+            modelBuilder.Entity<Tag>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Tags", GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+
+               
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();

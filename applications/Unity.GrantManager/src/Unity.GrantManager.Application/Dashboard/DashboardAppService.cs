@@ -102,13 +102,16 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
         var applicationTagsDto = await ExecuteWithDisabledTracking(async () =>
         {
+            var tagQueryable = (await _applicationTagsRepository.GetQueryableAsync())
+                    .Include(t => t.Tag);
 
             var query = from baseQuery in await GetBaseQueryAsync(parameters)
-                        join tag in await _applicationTagsRepository.GetQueryableAsync() on baseQuery.Application.Id equals tag.ApplicationId
+                        join tag in tagQueryable on baseQuery.Application.Id equals tag.ApplicationId
                         select tag;
+           
 
             var applicationTags = await query.Distinct().ToListAsync();
-            List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList();
+            List<string> concatenatedTags = applicationTags.Select(tags => tags.Tag.Name).ToList();
             List<string> tags = [];
             concatenatedTags.ForEach(txt => tags.AddRange([.. txt.Split(',')]));
             tags = tags.Where(s => !string.IsNullOrWhiteSpace(s) && parameters.Tags.Contains(s)).ToList();
@@ -212,11 +215,11 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     private async Task<List<Guid>> GetFilteredApplicationTags(IQueryable<Application> applications, DashboardParameters parameters)
     {
-        var tags = await _applicationTagsRepository.GetQueryableAsync();
+        var tags = await _applicationTagsRepository.WithDetailsAsync();
         var tagsResult = tags.Join(applications, tag => tag.ApplicationId, app => app.Id, (tag, app) => tag);
 
         var applicationIdsWithTags = tagsResult.AsEnumerable()
-            .SelectMany(tag => tag.Text.Split(','), (tagResult, tag) => new { tagResult.ApplicationId, Tag = tag })
+            .SelectMany(tag => tag.Tag.Name.Split(','), (tagResult, tag) => new { tagResult.ApplicationId, Tag = tag })
             .Where(tag => parameters.Tags.Contains(tag.Tag))
             .Select(tag => tag.ApplicationId)
             .ToHashSet();

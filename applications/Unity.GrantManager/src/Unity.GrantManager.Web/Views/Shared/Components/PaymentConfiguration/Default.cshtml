@@ -1,0 +1,92 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration;
+@model PaymentConfigurationViewModel
+
+@section styles {
+    <abp-style src="/PaymentConfiguration/Default.css" />
+}
+
+@{
+    Layout = null;
+}
+
+<abp-input asp-for="@Model.HasEditFormPaymentConfiguration" type="hidden" />
+
+<form id="PaymentThresholdForm" class="px-3 pb-2">
+    <fieldset name="Unity_GrantManager_ApplicationForms_Mapping_PaymentConfiguration" 
+        class="unity-zone" @(Model.HasEditFormPaymentConfiguration ? string.Empty : "disabled")>
+        <legend class="h6 ps-1 pb-2 pt-2 mt-3 fw-bold">Payment Configuration</legend>
+    <div>
+        <abp-row class="m-0 payment-configuration-form">
+            <abp-column size="_12" class="px-0">
+                <abp-row class="m-0">
+                    <abp-column size-lg="_6" size-sm="_12" class="px-1">
+                        <abp-select asp-for="@Model.AccountCode" asp-items="@Model.AccountCodeList">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                    <abp-column size-lg="_3" size-sm="_12" class="px-1">
+                        <label class="form-label text-nowrap" for="PaymentApprovalThreshold">Approval Payment Threshold</label>
+                        <div class="input-group flex-nowrap">
+                            <span class="input-group-text">$</span>
+                            <input type="number"
+                                    maxlength="32"
+                                    pattern="^\d*\.?\d*$"
+                                    data-val="true"
+                                    data-val-range="The field Payment Threshold Amount must be 0 or greater."
+                                    data-val-range-max="1.7976931348623157E+308"
+                                    data-val-range-min="0"
+                                    placeholder="0.00"
+                                    id="PaymentApprovalThreshold" name="PaymentApprovalThreshold"
+                                    value="@Model.PaymentApprovalThreshold" class="form-control-currency text-end rounded-end">
+                        </div>
+                    </abp-column>
+                </abp-row>
+                <abp-row class="m-0 mt-3 mt-lg-0">
+                    <abp-column size="_12" size-lg="_9">
+                        <p class="alert alert-light border-0 border-4 border-start rounded-0 text-body">
+                            <strong>Note:</strong> The selected Account Code for this form will only apply to payments 
+                            made within this specific intake form. It will not impact the global Account Code settings.
+                        </p>
+                        <p class="alert alert-light border-0 border-4 border-start rounded-0 text-body">
+                            <strong>Note:</strong> Set the Approval Payment Threshold here only if this intake form requires a unique threshold. 
+                            The individual Approval Thresholds assigned to each l2_approver will still take precedence if they are lower 
+                            than the threshold specified in this form. This form's threshold will not override the l2_approver's existing thresholds.
+                        </p>
+                    </abp-column>
+                </abp-row>
+            </abp-column>
+            <hr />
+            <div>
+                <h6 class="fw-bold">Settings</h6>
+            </div>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <div class="form-switch">
+                        <abp-input asp-for="@Model.Payable" abp-id-name="Payable"
+                            check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"                            
+                            label="Form is Payable" class="fw-bold" />
+                    </div>
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <div class="form-switch">
+                        <abp-input asp-for="@Model.PreventAutomaticPaymentToCAS"
+                            abp-id-name="PreventAutomaticPaymentToCAS"
+                            check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
+                            label="Prevent Automatic Payment to CAS" class="fw-bold" />
+                    </div>
+                </abp-column>
+            </abp-row>
+        </abp-row>
+    </div>
+    </fieldset>
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-end">
+                <abp-button id="btn-save-payment-configuration" button-type="Primary" text="Save" icon-type="Other" icon="fl fl-save"
+                    class="btn unt-btn-primary btn-primary"></abp-button>
+                <abp-button id="btn-back-payment-configuration" class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                    abp-tooltip="Navigate back to the Forms">Back</abp-button>
+            </div>
+        </div>
+    </div>
+</form>

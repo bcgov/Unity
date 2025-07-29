@@ -131,6 +131,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string? ContractNumber { get; set; }
     public DateTime? ContractExecutionDate { get; set; }
     public string? RiskRanking { get; set; }
+    public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
 
     public bool IsInFinalDecisionState()
     {
@@ -181,7 +182,12 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         DeclineRational = declineRational;
     }
 
-    public void ValidateAndChangeDueDate(DateTime? dueDate)
+    /// <summary>
+    /// Validates and sets the DueDate property.
+    /// </summary>
+    /// <param name="dueDate"></param>
+    /// <exception cref="BusinessException"></exception>
+    public void ValidateAndSetDueDate(DateTime? dueDate)
     {
         if ((DueDate != dueDate) && dueDate != null && dueDate.Value < DateTime.Now.AddDays(-1))
         {
@@ -193,7 +199,12 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         }
     }
 
-    public void ValidateAndChangeFinalDecisionDate(DateTime? finalDecisionDate)
+    /// <summary>
+    /// Validates and sets the FinalDecisionDate property.
+    /// </summary>
+    /// <param name="finalDecisionDate"></param>
+    /// <exception cref="BusinessException"></exception>
+    public void ValidateAndSetFinalDecisionDate(DateTime? finalDecisionDate)
     {
         if ((FinalDecisionDate != finalDecisionDate) && finalDecisionDate != null && finalDecisionDate.Value > DateTime.Now)
         {
@@ -205,12 +216,35 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         }
     }
 
-    public void ValidateMinAndChangeApprovedAmount(decimal approvedAmount)
+    /// <summary>
+    /// Validates and sets the ApprovedAmount property.
+    /// </summary>
+    /// <param name="approvedAmount"></param>
+    /// <exception cref="BusinessException"></exception>
+    public void ValidateAndSetApprovedAmount(decimal approvedAmount)
     {
         if ((ApprovedAmount != approvedAmount) && approvedAmount <= 0m)
         {
             throw new BusinessException("Approved amount cannot be 0.");
         }
+        else
+        {
+            ApprovedAmount = approvedAmount;
+        }
+    }
+
+    /// <summary>
+    /// Validates the recommended amount for direct approval.
+    /// </summary>
+    /// <param name="recommendedAmount"></param>
+    /// <param name="isDirectApproval"></param>
+    /// <exception cref="BusinessException"></exception>
+    public void ValidateDirectApprovalRecommendedAmount(decimal recommendedAmount, bool? isDirectApproval)
+    {
+        if (isDirectApproval != true && (RecommendedAmount != recommendedAmount) && recommendedAmount <= 0m)
+        {
+            throw new BusinessException("Recommended amount cannot be 0.");
+        }        
     }
 
     /// <summary>
