@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
-using Unity.GrantManager.Intakes;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
