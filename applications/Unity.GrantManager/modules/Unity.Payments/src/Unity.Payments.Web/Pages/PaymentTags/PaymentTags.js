@@ -83,7 +83,7 @@ $(function () {
     TagsInput.prototype.deleteTag = function (tag, i) {
         let self = this;
 
-        if (this.arr[i] && this.arr[i].Name === 'Uncommon Tags') {
+        if (this.arr[i] && this.arr[i].name === 'Uncommon Tags') {
             abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
                 .then(function (confirmed) {
                     if (confirmed) {

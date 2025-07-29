@@ -237,7 +237,7 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
-                    UnitySettingManagementPermissions.ConfigurePayments,    
+                    UnitySettingManagementPermissions.ConfigurePayments,
                     UnitySettingManagementPermissions.BackgroundJobSettings,
                 ], context.TenantId);
 
