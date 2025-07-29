@@ -59,7 +59,9 @@ namespace Unity.Payments.Domain.PaymentRequests
         // Corperate Accounting System
         public virtual int? CasHttpStatusCode { get; private set; } = null;
         public virtual string? CasResponse { get; private set; } = string.Empty;
+        public virtual Guid? AccountCodingId { get; private set; }
 
+        public virtual string? Note { get; private set; } = null;
         protected PaymentRequest()
         {
             ExpenseApprovals = [];
@@ -67,18 +69,13 @@ namespace Unity.Payments.Domain.PaymentRequests
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        private static Collection<ExpenseApproval> GenerateExpenseApprovals(decimal amount, decimal? paymentThreshold = 500000m)
+        private static Collection<ExpenseApproval> GenerateExpenseApprovals()
         {
             var expenseApprovals = new Collection<ExpenseApproval>()
             {
                 new(Guid.NewGuid(), ExpenseApprovalType.Level1),
                 new(Guid.NewGuid(), ExpenseApprovalType.Level2)
             };
-
-            if (amount >= paymentThreshold)
-            {
-                expenseApprovals.Add(new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level3));
-            }
 
             return expenseApprovals;
         }
@@ -99,9 +96,17 @@ namespace Unity.Payments.Domain.PaymentRequests
             SubmissionConfirmationCode = createPaymentRequestDto.SubmissionConfirmationCode;
             BatchName = createPaymentRequestDto.BatchName;
             BatchNumber = createPaymentRequestDto.BatchNumber;
-            PaymentTags = null;
-            ExpenseApprovals = GenerateExpenseApprovals(createPaymentRequestDto.Amount, createPaymentRequestDto.PaymentThreshold);
+            AccountCodingId = createPaymentRequestDto.AccountCodingId;
+            PaymentTags = null;            
+            Note = createPaymentRequestDto.Note;
+            ExpenseApprovals = GenerateExpenseApprovals();
             ValidatePaymentRequest();
+        }
+
+        public PaymentRequest SetNote(string note)
+        {
+            Note = note;
+            return this;
         }
 
         public PaymentRequest SetAmount(decimal amount)

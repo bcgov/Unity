@@ -95,7 +95,10 @@
                         })
                         dt.colReorder.order(orderedIndexes);
 
-                        dt.order([4, 'desc']).search('').draw();
+                        $('#search, .custom-filter-input').val('');
+                        dt.columns().search('');
+                        dt.search('');
+                        dt.order([4, 'desc']).draw();
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
@@ -559,10 +562,11 @@
         return {
             title: 'Total Paid Amount $',
             name: 'totalPaidAmount',
-            data: 'totalPaidAmount',
+            data: 'paymentInfo',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return '';
+                let totalPaid = data?.totalPaid ?? '';
+                return formatter.format(totalPaid);
             },
             index: columnIndex
         }

@@ -14,8 +14,8 @@ namespace Unity.Payments.PaymentConfigurations
             // Arrange
             // Act
             var accountCoding = AccountCoding.Create(
-                ministryClient: "0TW",
-                responsibility: "51OCG",
+                ministryClient: "126",
+                responsibility: "51545",
                 serviceLine: "00000",
                 stob: "5717",
                 projectNumber: "5100000"

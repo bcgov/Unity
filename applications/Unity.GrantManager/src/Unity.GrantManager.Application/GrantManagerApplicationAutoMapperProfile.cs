@@ -12,7 +12,9 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Locality;
+using Unity.GrantManager.Payments;
 using Unity.GrantManager.Zones;
+using Unity.Payments.Domain.AccountCodings;
 
 namespace Unity.GrantManager;
 
@@ -74,6 +76,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationLinksDto, ApplicationLink>();
         CreateMap<Application, GrantApplicationLiteDto>();
         CreateMap<ApplicantAddress, ApplicantAddressDto>();
+        CreateMap<AccountCoding, AccountCodingDto>();
         CreateMap<ZoneGroupDefinition, ZoneGroupDefinitionDto>().ReverseMap();
         CreateMap<ZoneTabDefinition, ZoneTabDefinitionDto>().ReverseMap();
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();

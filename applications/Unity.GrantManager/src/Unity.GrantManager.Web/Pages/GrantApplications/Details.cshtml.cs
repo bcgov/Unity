@@ -112,15 +112,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
             ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
+            
+            var formVersion = applicationFormSubmission.ApplicationFormVersionId.HasValue
+                ? await _applicationFormVersionAppService.GetAsync(applicationFormSubmission.ApplicationFormVersionId.Value)
+                : null;
+            ApplicationFormSchema = formVersion?.FormSchema ?? string.Empty;
+            ApplicationFormVersionId = formVersion?.Id ?? Guid.Empty;
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                // Need to look at finding another way to extract / store this info on intake
-                var formVersion = applicationFormSubmission.ApplicationFormVersionId.HasValue
-                    ? await _applicationFormVersionAppService.GetAsync(applicationFormSubmission.ApplicationFormVersionId.Value)
-                    : null;
-                ApplicationFormSchema = formVersion?.FormSchema ?? string.Empty;
-                ApplicationFormVersionId = formVersion?.Id ?? Guid.Empty;
                 var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(ApplicationFormVersionId, CorrelationConsts.FormVersion);
                 var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor, order = s.Order }).ToList();
 

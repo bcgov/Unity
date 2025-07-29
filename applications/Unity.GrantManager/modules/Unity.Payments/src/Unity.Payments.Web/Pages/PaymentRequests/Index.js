@@ -5,6 +5,7 @@ $(function () {
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
+    toastr.options.positionClass = 'toast-top-center';
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'referenceNumber',
@@ -31,6 +32,10 @@ $(function () {
         viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
     });
 
+    paymentRequestStatusModal.onOpen(function () {
+        calculateUpdateTotalAmount();
+    });
+
     let selectedPaymentIds = [];
 
     let actionButtons = [
@@ -38,6 +43,14 @@ $(function () {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
+                // Check if user payment threshold is defined and greater than 0
+                if (parseFloat($("#UserPaymentThreshold").val() || 0) <= 0) {
+                    abp.notify.error(
+                        'Your User has not been configured with an Approved Payment Threshold. Please contact your system administrator.',
+                        'Payment Requests'
+                    );
+                    return;
+                }
                 paymentRequestStatusModal.open({
                     paymentIds: JSON.stringify(selectedPaymentIds),
                     isApprove: true
@@ -279,7 +292,8 @@ $(function () {
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
             getCASResponseColumn(columnIndex++),
-            getTagsColumn(columnIndex++)
+            getTagsColumn(columnIndex++),
+            getNoteColumn(columnIndex++)
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -612,6 +626,17 @@ $(function () {
         }
     }
 
+    function getNoteColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:Note'),
+            name: 'note',
+            data: 'note',
+            className: 'data-table-header',
+            index: columnIndex
+
+        };
+    }
+
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
     }
@@ -678,7 +703,7 @@ $(function () {
         }
     }
 
-    $('.select-all-payments').click(function () {
+    $('.select-all-payments').on('click', function () {
         if ($(this).is(':checked')) {
             dataTable.rows({ 'page': 'current' }).select();
         }
@@ -698,7 +723,6 @@ $(function () {
 
 });
 
-
 let casPaymentResponseModal = new abp.ModalManager({
     viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
 });
@@ -708,5 +732,3 @@ function openCasResponseModal(casResponse) {
         casResponse: casResponse
     });
 }
-
-
