@@ -9,6 +9,7 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Integration.Chefs;
 using Unity.GrantManager.Permissions;
+using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -160,6 +161,7 @@ CrudAppService<
         await _applicationFormRepository.UpdateAsync(form);
     }
 
+    [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
     public async Task SavePaymentConfiguration(FormPaymentConfigurationDto dto)
     {
         ApplicationForm appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);

@@ -6,10 +6,12 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
 @using Volo.Abp.Authorization.Permissions;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicationFormConfigWidget;
+@using Volo.Abp.Features
 
 @model MappingModel
 @inject IPageLayout PageLayout
 @inject IPermissionChecker PermissionChecker
+@inject IFeatureChecker FeatureChecker
 @{
     PageLayout.Content.MenuItemName = "GrantManager.ApplicationForms";
     PageLayout.Content.Title = "Application Mapping";
@@ -50,7 +52,10 @@
             {
                 <button class="nav-link" id="nav-ui-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-ui-configuration" type="button" role="tab">UI Configuration</button>
             }
-            <button class="nav-link" id="nav-payment-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-configuration" type="button" role="tab">Payment Configuration</button>
+            @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+            {
+                <button class="nav-link" id="nav-payment-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-configuration" type="button" role="tab">Payment Configuration</button>
+            }
             <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
         </div>
     </nav>
@@ -194,12 +199,15 @@
         <!--Tab Content: UI Configuration loaded by initializeUIConfiguration-->
         <div class="tab-pane fade" id="nav-ui-configuration" role="tabpanel" aria-labelledby="nav-ui-configuration-tab"></div>
 
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+        {
         <!--Tab Content: Payment Configuration-->
         <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
             <div id="paymentConfigurationWidget">
                 @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model?.ApplicationFormDto?.Id})
             </div>
         </div>
+        }
 
         <!--Tab Content: Other Configuration-->
         <div class="tab-pane fade" id="nav-other-configuration" role="tabpanel" aria-labelledby="nav-other-configuration-tab">
