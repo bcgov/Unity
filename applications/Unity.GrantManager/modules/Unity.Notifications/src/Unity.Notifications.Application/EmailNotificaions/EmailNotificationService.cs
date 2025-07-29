@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Linq.Expressions;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Unity.Notifications.Integrations.Ches;
@@ -60,51 +61,35 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         _httpContextAccessor = httpContextAccessor;
     }
 
-    private const string approvalBody =
-        @"Hello,<br>
-        <br>
-        Thank you for your grant application. We are pleased to inform you that your project has been approved for funding.<br>
-        A representative from our Program Area will be reaching out to you shortly with more information on next steps.<br>
-        <br>
-        Kind regards.<br>
-        <br>
-        *ATTENTION - Please do not reply to this email as it is an automated notification which is unable to receive replies.<br>";
-
-    private const string declineBody =
-        @"Hello,<br>
-        <br>
-        Thank you for your application. We would like to advise you that after careful consideration, your project was not selected to receive funding from our Program.<br>
-        <br>
-        We know that a lot of effort goes into developing a proposed project and we appreciate the time you took to prepare your application.<br>
-        <br>
-        If you have any questions or concerns, please reach out to program team members who will provide further details regarding the funding decision.<br>
-        <br>
-        Thank you again for your application.<br>
-        <br>
-        *ATTENTION - Please do not reply to this email as it is an automated notification which is unable to receive replies.<br>";
-
-    public string GetApprovalBody()
-    {
-        return approvalBody;
-    }
-
-    public string GetDeclineBody()
-    {
-        return declineBody;
-    }
-
     public async Task DeleteEmail(Guid id)
     {
         await _emailLogsRepository.DeleteAsync(id);
     }
 
-    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status,string? emailTemplateName)
+    public async Task<int> GetEmailsChesWithNoResponseCountAsync()
+    {
+        var dbNow = DateTime.UtcNow;
+
+        // Create the expression to filter the email logs
+        Expression<Func<EmailLog, bool>> filter = x =>
+            (x.Status == EmailStatus.Sent && x.ChesResponse == null) ||
+            (x.Status == EmailStatus.Initialized && x.CreationTime.AddMinutes(10) < dbNow);
+
+        // Fetch all email logs and apply the filter using LINQ
+        var allEmailLogs = await _emailLogsRepository.GetListAsync();
+        var emailLogs = allEmailLogs.Where(filter.Compile()).ToList();
+
+        // Ensure we're returning 0 if no logs are found
+        return emailLogs?.Count ?? 0;
+    }
+
+    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName)
     {
         if (string.IsNullOrEmpty(emailTo))
         {
             return null;
         }
-        
+
         var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName);
         EmailLog emailLog = await _emailLogsRepository.GetAsync(emailId);
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
@@ -170,7 +155,6 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
                 var pathBase = "/GrantApplications/Details?ApplicationId=";
                 var baseUrl = $"{scheme}://{host}{pathBase}";
                 var commentLink = $"{baseUrl}{input.ApplicationId}";
-
                 var subject = $"Unity-Comment: {input.Subject}";
                 var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
                 string htmlBody = $@"

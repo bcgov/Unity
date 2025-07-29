@@ -21,7 +21,6 @@ public class PaymentsPermissionDefinitionProvider : PermissionDefinitionProvider
 
         //-- PAYMENT INFO PERMISSIONS
         grantApplicationPermissionsGroup.Add_PaymentInfo_Permissions();
-        paymentsPermissions.AddChild(PaymentsPermissions.Payments.EditSupplierInfo, L("Permission:Payments.EditSupplierInfo"));
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.EditFormPaymentConfiguration, L("Permission:Payments.EditFormPaymentConfiguration"));        
 
         var tagsPermissionsGroup = context.GetGroupOrNull("Tags");

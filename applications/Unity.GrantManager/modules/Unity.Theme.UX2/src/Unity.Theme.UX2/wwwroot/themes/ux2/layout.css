@@ -476,7 +476,15 @@ input.form-control, textarea.form-control, .form-select {
     text-overflow: ellipsis;
 }
 
-    input.form-control:hover, textarea.form-control:hover, .form-select:hover {
+input.form-control-currency {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+    padding-right: 0.75em;
+}
+
+    input.form-control:hover, textarea.form-control:hover, .form-select:hover, input.form-control-currency:hover {
         box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
     }
 
@@ -487,13 +495,22 @@ input.form-control, textarea.form-control, .form-select {
         font-weight: 700;
     }
 
-    input.form-control:disabled, textarea.form-control:disabled, .form-select:disabled {
+    input.form-control:disabled, textarea.form-control:disabled, .form-select:disabled, input.form-control-currency:disabled {
         color: var(--bc-colors-grey-text-200);
         pointer-events: none;
         background-color: var(--bc-colors-grey-hover) !important;
         opacity: var(--bs-btn-disabled-opacity);
         background-blend-mode: difference;
         border: none !important;
+    }
+
+    input.form-control-currency:disabled {
+        color: var(--bc-colors-grey-text-200);
+        pointer-events: none;
+        background-color: var(--bc-colors-grey-hover) !important;
+        opacity: var(--bs-btn-disabled-opacity);
+        background-blend-mode: difference;
+        border: var(--bs-border-width) solid var(--bs-border-color) !important;
     }
 
     textarea.form-control:disabled {
