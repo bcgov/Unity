@@ -1258,6 +1258,25 @@
             dataTable.rows({ 'page': 'current' }).deselect();
         }
     });
+
+
+    /* Fix when selecting option 'Other Sector/Sub/Industry Description' in the dropdown column list */
+    $(document).on('click', '.dt-button-collection .buttons-columnVisibilitynull span', function () {
+        if ($(this).text().trim() === 'Other Sector/Sub/Industry Description') {
+            // Add a custom class to the open dropdown
+            $('.dt-button-collection').addClass('shift-left');
+        } else {
+            // Optionally remove the class if another button is clicked
+            $('.dt-button-collection').removeClass('shift-left');
+        }
+    });
+
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.dt-button-collection').length) {
+            $('.dt-button-collection').removeClass('shift-left');
+        }
+    });
+
 });
 function payoutDefinition(approvedAmount, totalPaid) {
     if ((approvedAmount > 0 && totalPaid > 0) && (approvedAmount  === totalPaid)) {
