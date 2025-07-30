@@ -24,7 +24,7 @@
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
-                    <abp-column size-lg="_3" size-sm="_12" class="px-1">
+                    <abp-column size="_6" class="px-1">
                         <label class="form-label text-nowrap" for="PaymentApprovalThreshold">Approval Payment Threshold</label>
                         <div class="input-group flex-nowrap">
                             <span class="input-group-text">$</span>
@@ -35,24 +35,25 @@
                                     data-val-range="The field Payment Threshold Amount must be 0 or greater."
                                     data-val-range-max="1.7976931348623157E+308"
                                     data-val-range-min="0"
-                                    placeholder="0.00"
                                     id="PaymentApprovalThreshold" name="PaymentApprovalThreshold"
                                     value="@Model.PaymentApprovalThreshold" class="form-control-currency text-end rounded-end">
                         </div>
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0 mt-3 mt-lg-0">
-                    <abp-column size="_12" size-lg="_9">
+                    <abp-column size="_6">
                         <p class="alert alert-light border-0 border-4 border-start rounded-0 text-body">
                             <strong>Note:</strong> The selected Account Code for this form will only apply to payments 
                             made within this specific intake form. It will not impact the global Account Code settings.
                         </p>
-                        <p class="alert alert-light border-0 border-4 border-start rounded-0 text-body">
-                            <strong>Note:</strong> Set the Approval Payment Threshold here only if this intake form requires a unique threshold. 
-                            The individual Approval Thresholds assigned to each l2_approver will still take precedence if they are lower 
-                            than the threshold specified in this form. This form's threshold will not override the l2_approver's existing thresholds.
-                        </p>
                     </abp-column>
+                    <abp-column size="_6">
+                        <p class="alert alert-light border-0 border-4 border-start rounded-0 text-body">
+                            <strong>Note:</strong> Set the Approval Payment Threshold here only if this intake form requires a unique threshold.<br/> 
+                            The individual Approval Thresholds assigned to each l2_approver will still take precedence if they are lower 
+                            than the threshold specified in this form.
+                        </p>
+                    </abp-column>                    
                 </abp-row>
             </abp-column>
             <hr />

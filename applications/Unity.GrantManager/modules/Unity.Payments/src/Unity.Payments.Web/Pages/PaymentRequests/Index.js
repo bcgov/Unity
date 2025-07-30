@@ -25,7 +25,8 @@ $(function () {
         'l1ApprovalDate',
         'l2ApprovalDate',
         'l3ApprovalDate',
-        'CASResponse'
+        'CASResponse',
+        'accountCodingDisplay'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -293,7 +294,8 @@ $(function () {
             getPaymentStatusColumn(columnIndex++),
             getCASResponseColumn(columnIndex++),
             getTagsColumn(columnIndex++),
-            getNoteColumn(columnIndex++)
+            getNoteColumn(columnIndex++),
+            getAccountDistributionColumn(columnIndex++),
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -531,7 +533,7 @@ $(function () {
     }
 
     function formatName(userData) {
-        return userData !== null ? `${userData?.name} ${userData?.surname}` : null;
+        return typeof userData !== 'undefined' && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
     }
 
     function getApprovalDateColumn(columnIndex, level) {
@@ -631,6 +633,17 @@ $(function () {
             title: l('ApplicationPaymentListTable:Note'),
             name: 'note',
             data: 'note',
+            className: 'data-table-header',
+            index: columnIndex
+
+        };
+    }
+
+    function getAccountDistributionColumn(columnIndex) {
+        return {
+            title: 'Account Code',
+            name: 'accountCodingDisplay',
+            data: 'accountCodingDisplay',
             className: 'data-table-header',
             index: columnIndex
 

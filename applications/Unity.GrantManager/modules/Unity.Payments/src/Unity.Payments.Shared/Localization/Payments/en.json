@@ -129,6 +129,7 @@
     "Enum:PaymentRequestStatus.L3Approved": "L3 Approved",
     "Enum:PaymentRequestStatus.L3Declined": "L3 Declined",
     "Enum:PaymentRequestStatus.Submitted": "Submitted to CAS",
+    "Enum:PaymentRequestStatus.FSB": "Sent to Accounts Payable",
     "Enum:PaymentRequestStatus.Validated": "Validated",
     "Enum:PaymentRequestStatus.NotValidated": "Not Validated",
     "Enum:PaymentRequestStatus.Paid": "Paid",
@@ -139,6 +140,9 @@
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
-    "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List"
+    "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
+
+    "Unity.Payments.Tags.Create": "Assign Tag to Payments",
+    "Unity.Payments.Tags.Delete": "Remove Tag from Payments"
   }
 }
