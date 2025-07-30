@@ -162,6 +162,15 @@ CrudAppService<
     }
 
     [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
+    public async Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId)
+    {
+        // Get the payment threshold for the application
+        GrantApplicationDto grantApplicationDto = await _applicationService.GetAsync(applicationId);
+        Guid formId = grantApplicationDto.ApplicationForm.Id;
+        ApplicationForm appForm = await _applicationFormRepository.GetAsync(formId);     
+        return appForm.PreventPayment;
+    }
+
     public async Task SavePaymentConfiguration(FormPaymentConfigurationDto dto)
     {
         ApplicationForm appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);

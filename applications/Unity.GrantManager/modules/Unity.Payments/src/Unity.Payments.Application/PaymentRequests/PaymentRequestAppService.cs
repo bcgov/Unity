@@ -25,17 +25,19 @@ namespace Unity.Payments.PaymentRequests
 {
     [RequiresFeature("Unity.Payments")]
     [Authorize]
-    public class PaymentRequestAppService(
-            ICurrentUser currentUser,
-            IDataFilter dataFilter,
-            IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
-            IPaymentConfigurationRepository paymentConfigurationRepository,
-            IPaymentsManager paymentsManager,
-            IPaymentRequestRepository paymentRequestsRepository,
-            IPaymentThresholdRepository paymentThresholdRepository,
-            IPermissionChecker permissionChecker) : PaymentsAppService, IPaymentRequestAppService
+    #pragma warning disable S107 // Suppress "Constructor has too many parameters"
+        public class PaymentRequestAppService(
+                ICurrentUser currentUser,
+                IDataFilter dataFilter,
+                IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
+                IPaymentConfigurationRepository paymentConfigurationRepository,
+                IPaymentsManager paymentsManager,
+                IPaymentRequestRepository paymentRequestsRepository,
+                IPaymentThresholdRepository paymentThresholdRepository,
+                IPermissionChecker permissionChecker) : PaymentsAppService, IPaymentRequestAppService
+    #pragma warning restore S107
 
-    {    
+    {
         public async Task<Guid?> GetDefaultAccountCodingId()
         {
             Guid? accountCodingId = null;
@@ -55,12 +57,9 @@ namespace Unity.Payments.PaymentRequests
             var paymentConfig = await GetPaymentConfigurationAsync();
             var paymentIdPrefix = string.Empty;
 
-            if (paymentConfig != null)
+            if (paymentConfig != null && !paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
             {
-                if (!paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
-                {
-                    paymentIdPrefix = paymentConfig.PaymentIdPrefix;
-                }
+                paymentIdPrefix = paymentConfig.PaymentIdPrefix;
             }
 
             var batchNumber = await GetMaxBatchNumberAsync();
@@ -313,13 +312,14 @@ namespace Unity.Payments.PaymentRequests
                 var paymentsQueryable = await paymentRequestsRepository.GetQueryableAsync();
                 // Changing this breaks the code so suppressing the warning
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-                var paymentsWithTags = await paymentsQueryable
+                var paymentWithIncludes = await paymentsQueryable
+                    .Include(pr => pr.AccountCoding)
                     .Include(pr => pr.PaymentTags)
                         .ThenInclude(pt => pt.Tag)
                     .ToListAsync();
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
-                var mappedPayments = await MapToDtoAndLoadDetailsAsync(paymentsWithTags);
+                var mappedPayments = await MapToDtoAndLoadDetailsAsync(paymentWithIncludes);
 
                 ApplyErrorSummary(mappedPayments);
 
@@ -366,6 +366,7 @@ namespace Unity.Payments.PaymentRequests
                 {
                     paymentRequestDto.CreatorUser = paymentRequestUserDto;
                 }
+                paymentRequestDto.AccountCodingDisplay = GetAccountDistributionCode(paymentRequestDto.AccountCoding).Result;
 
                 foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
                 {
@@ -378,6 +379,26 @@ namespace Unity.Payments.PaymentRequests
             }
 
             return paymentDtos;
+        }
+
+        public virtual Task<string> GetAccountDistributionCode(AccountCodingDto? accountCoding)
+        {
+            string accountDistributionCode = "";
+            if (accountCoding == null) return Task.FromResult(accountDistributionCode);
+
+            if (accountCoding != null
+                && accountCoding.Responsibility != null
+                && accountCoding.ServiceLine != null
+                && accountCoding.Stob != null
+                && accountCoding.MinistryClient != null
+                && accountCoding.ProjectNumber != null)
+            {
+                string accountDistributionPostFix = "000000.0000";
+                accountDistributionCode =
+                 $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{accountDistributionPostFix}";
+            }
+
+            return Task.FromResult(accountDistributionCode);
         }
 
         private static void ApplyErrorSummary(List<PaymentRequestDto> mappedPayments)

@@ -10,6 +10,7 @@ using Volo.Abp;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.PaymentRequests;
 using Unity.Payments.Domain.PaymentTags;
+using Unity.Payments.Domain.AccountCodings;
 
 namespace Unity.Payments.Domain.PaymentRequests
 {
@@ -60,7 +61,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual int? CasHttpStatusCode { get; private set; } = null;
         public virtual string? CasResponse { get; private set; } = string.Empty;
         public virtual Guid? AccountCodingId { get; private set; }
-
+        public virtual AccountCoding? AccountCoding { get; set; } = null;
         public virtual string? Note { get; private set; } = null;
         protected PaymentRequest()
         {
