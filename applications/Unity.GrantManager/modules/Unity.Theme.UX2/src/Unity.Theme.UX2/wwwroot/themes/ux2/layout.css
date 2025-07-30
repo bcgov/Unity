@@ -588,7 +588,8 @@ abp-date-picker .btn {
     background: transparent;
     padding: 10px;
     border-radius: 4px;
-    border: 1px solid #ccc
+    border: 1px solid #ccc;
+    min-height: 3em;
 }
 
     .tags-input-wrapper input {
@@ -607,6 +608,12 @@ abp-date-picker .btn {
         margin-right: 5px;
         margin-bottom: 5px;
     }
+
+.tags-input-disabled {
+    background-color: var(--bc-colors-grey-hover) !important;
+    opacity: var(--bs-btn-disabled-opacity);
+    background-blend-mode: difference;
+}
 
 .tags-uncommon {
     background-color: #013366;
