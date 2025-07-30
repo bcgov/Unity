@@ -344,7 +344,7 @@
                         : `The ${escapeHtml(fieldName)} field is required.`;
                 } else {
                     // Handle invalid email format
-                    errorMessage = `Please enter a valid email in ${escapeHtml(fieldName)}: ${emailStr}`;
+                    errorMessage = `Please enter a valid email in ${escapeHtml(fieldName)}: ${escapeHtml(emailStr)}`;
                 }
 
                 // Display the error message
