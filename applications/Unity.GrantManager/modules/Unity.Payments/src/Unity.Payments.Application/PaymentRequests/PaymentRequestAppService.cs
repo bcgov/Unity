@@ -366,7 +366,7 @@ namespace Unity.Payments.PaymentRequests
                 {
                     paymentRequestDto.CreatorUser = paymentRequestUserDto;
                 }
-                paymentRequestDto.AccountCodingDisplay = GetAccountDistributionCode(paymentRequestDto.AccountCoding).Result;
+                paymentRequestDto.AccountCodingDisplay = await GetAccountDistributionCode(paymentRequestDto.AccountCoding);
 
                 foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
                 {
