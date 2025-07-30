@@ -31,21 +31,32 @@ namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
         {
-            if (definition != null)
+            NumericDefinitionViewModel viewModel = new();
+
+            if (!string.IsNullOrWhiteSpace(definition))
             {
-                NumericDefinition? numericDefinition = JsonSerializer.Deserialize<NumericDefinition>(definition);
-                if (numericDefinition != null)
+                try
                 {
-                    return View(await Task.FromResult(new NumericDefinitionViewModel()
+                    var options = new JsonSerializerOptions
                     {
-                        Min = numericDefinition.Min,
-                        Max = numericDefinition.Max,
-                        Required = numericDefinition.Required
-                    }));
+                        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+                    };
+                    var numericDefinition = JsonSerializer.Deserialize<NumericDefinition>(definition, options);
+
+                    if (numericDefinition != null)
+                    {
+                        viewModel.Min = numericDefinition.Min;
+                        viewModel.Max = numericDefinition.Max;
+                        viewModel.Required = numericDefinition.Required;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Optionally log the error                    
                 }
             }
 
-            return View(await Task.FromResult(new NumericDefinitionViewModel()));
+            return View(await Task.FromResult(viewModel));
         }
     }
 
