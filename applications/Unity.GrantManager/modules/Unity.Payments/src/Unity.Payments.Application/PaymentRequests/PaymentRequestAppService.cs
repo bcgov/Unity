@@ -392,9 +392,9 @@ namespace Unity.Payments.PaymentRequests
                 && accountCoding.MinistryClient != null
                 && accountCoding.ProjectNumber != null)
             {
-                string accountDistributionPostFix = "000000.0000";
+                const string DefaultAccountDistributionPostfix = "000000.0000";
                 accountDistributionCode =
-                 $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{accountDistributionPostFix}";
+                 $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{DefaultAccountDistributionPostfix}";
             }
 
             return Task.FromResult(accountDistributionCode);
