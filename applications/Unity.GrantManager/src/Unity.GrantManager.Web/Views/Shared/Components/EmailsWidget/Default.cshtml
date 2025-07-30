@@ -65,7 +65,7 @@
     </div>
 
 
-    <form id="EmailForm" class="email-form">
+    <form id="EmailForm" class="email-form" autocomplete="off">
         <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
         <fieldset @emailFieldsetState>
             <legend class="d-none">Email Form</legend>
@@ -78,7 +78,7 @@
             <input type="hidden" id="OriginalDraftEmailBody" />
 
             <abp-row class="m-0 p-0">
-                <abp-column id="templateListContainer" size="_10" class="px-1">
+                <abp-column id="templateListContainer" size="_10" class="px-2">
                     <abp-select asp-for="@Model.EmailTemplate" asp-items="@Model.TemplatesList" id="template">
                         <option value="">Please select</option>
                     </abp-select>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.Notifications.Emails;
@@ -10,6 +11,8 @@ public class EmailHistoryDto : ExtensibleAuditedEntityDto<Guid>
     public string Status { get; set; } = string.Empty;
     public string FromAddress { get; set; } = string.Empty;
     public string ToAddress { get; set; } = string.Empty;
+    public string Cc { get; set; } = string.Empty;
+    public string Bcc { get; set; } = string.Empty;
     public DateTime? SentDateTime { get; set; }
     public string Body { get; set; } = string.Empty;
     public EmailHistoryUserDto? SentBy { get; set; }
