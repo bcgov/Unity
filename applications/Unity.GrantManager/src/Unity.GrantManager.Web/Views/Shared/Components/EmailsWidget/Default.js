@@ -52,9 +52,6 @@
         UIElements.inputEmailBCC.on('change', handleKeyUpTrim);
         UIElements.inputEmailBody.on('change', handleKeyUpTrim);
         UIElements.inputEmailTo.on('change', validateEmailTo);
-
-        // Update validation bindings
-        UIElements.inputEmailTo.on('change', validateEmailTo);
         UIElements.inputEmailCC.on('change', validateEmailCC);
         UIElements.inputEmailBCC.on('change', validateEmailBCC);
 
@@ -344,10 +341,10 @@
                 if (emailStr === '') {
                     errorMessage = emailValue.length > 0
                         ? `An email is required after each comma or semicolon.`
-                        : `The ${fieldName} field is required.`;
+                        : `The ${escapeHtml(fieldName)} field is required.`;
                 } else {
                     // Handle invalid email format
-                    errorMessage = `Please enter a valid email in ${fieldName}: ${emailStr}`;
+                    errorMessage = `Please enter a valid email in ${escapeHtml(fieldName)}: ${emailStr}`;
                 }
 
                 // Display the error message
@@ -566,6 +563,14 @@
         return path.split('.').reduce((acc, key) => acc?.[key], obj);
     }
 
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
 
     PubSub.subscribe('email_selected', (msg, data) => {
         resetValidationErrors();
