@@ -164,7 +164,7 @@ public class ApplicationApplicantAppService(
         if (input.Data.ContactInfo != null
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
         {
-            await CreateOrUpdateContactInfoAsync(application.ApplicantId, input.Data.ContactInfo);
+            await CreateOrUpdateContactInfoAsync(applicationId, application.ApplicantId, input.Data.ContactInfo);
         }
 
         //-- APPLICANT INFO - SIGNING AUTHORITY (APPLICATION)
@@ -250,13 +250,13 @@ public class ApplicationApplicantAppService(
     /// <param name="contactInfo"></param>
     /// <returns></returns>
     [Authorize(UnitySelector.Applicant.Contact.Update)]
-    protected internal async Task<ApplicantAgent?> CreateOrUpdateContactInfoAsync(Guid applicantId, ContactInfoDto contactInfo)
+    protected internal async Task<ApplicantAgent?> CreateOrUpdateContactInfoAsync(Guid applicationId, Guid applicantId, ContactInfoDto contactInfo)
     {
-        var applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicantId == applicantId)
+        var applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicantId == applicantId && a.ApplicationId == applicationId)
         ?? new ApplicantAgent
         {
             ApplicantId   = applicantId,
-            ApplicationId = contactInfo.ApplicationId,
+            ApplicationId = applicationId,
         };
 
         ObjectMapper.Map<ContactInfoDto, ApplicantAgent>(contactInfo, applicantAgent);
