@@ -20,6 +20,7 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Users;
 using Unity.Payments.Domain.PaymentThresholds;
 using Volo.Abp.Domain.Repositories;
+using Unity.GrantManager.Applications;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -30,6 +31,8 @@ namespace Unity.Payments.PaymentRequests
                 ICurrentUser currentUser,
                 IDataFilter dataFilter,
                 IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
+                IApplicationRepository applicationRepository,
+                IApplicationFormRepository applicationFormRepository,
                 IPaymentConfigurationRepository paymentConfigurationRepository,
                 IPaymentsManager paymentsManager,
                 IPaymentRequestRepository paymentRequestsRepository,
@@ -219,28 +222,78 @@ namespace Unity.Payments.PaymentRequests
             UpdatePaymentStatusRequestDto dto,
             PaymentRequest payment)
         {
-            if (await CanPerformLevel1ActionAsync(payment.Status))
+            if (payment == null)
             {
-                return dto.IsApprove ? PaymentApprovalAction.L1Approve : PaymentApprovalAction.L1Decline;
+                Logger.LogWarning("Payment is null in DetermineTriggerActionAsync.");
+                return PaymentApprovalAction.None;
             }
 
-            if (await CanPerformLevel2ActionAsync(payment, dto.IsApprove))
+            try
             {
-                if (dto.IsApprove)
-                {
-                    return PaymentApprovalAction.Submit;
-                }
-                return PaymentApprovalAction.L2Decline;
-            }
+                if (await CanPerformLevel1ActionAsync(payment.Status))
+                    return dto.IsApprove ? PaymentApprovalAction.L1Approve : PaymentApprovalAction.L1Decline;
 
-            if (await CanPerformLevel3ActionAsync(payment.Status))
+                if (await CanPerformLevel2ActionAsync(payment, dto.IsApprove))
+                    return await GetLevel2ApprovalActionAsync(dto, payment);
+
+                if (await CanPerformLevel3ActionAsync(payment.Status))
+                    return dto.IsApprove ? PaymentApprovalAction.Submit : PaymentApprovalAction.L3Decline;
+            }
+            catch (Exception ex)
             {
-                return dto.IsApprove ? PaymentApprovalAction.Submit : PaymentApprovalAction.L3Decline;
+                Logger.LogException(ex);
             }
 
             return PaymentApprovalAction.None;
         }
 
+        private async Task<PaymentApprovalAction> GetLevel2ApprovalActionAsync(UpdatePaymentStatusRequestDto dto, PaymentRequest payment)
+        {
+            if (!dto.IsApprove)
+                return PaymentApprovalAction.L2Decline;
+            
+            decimal? threshold = null;
+            try
+            {
+                decimal? userPaymentThreshold = await GetUserPaymentThresholdAsync();
+                threshold = await GetPaymentRequestThresholdByApplicationIdAsync(payment.CorrelationId, userPaymentThreshold);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to get payment threshold for applicationId: {CorrelationId}", payment.CorrelationId);
+            }
+
+            if (threshold.HasValue && payment.Amount > threshold.Value)
+                return PaymentApprovalAction.L2Approve;
+
+            return PaymentApprovalAction.Submit;
+        }
+        public async Task<decimal?> GetPaymentRequestThresholdByApplicationIdAsync(Guid applicationId, decimal? userPaymentThreshold = null)
+        {
+            var application = await (await applicationRepository.GetQueryableAsync())
+            .Include(a => a.ApplicationForm)
+            .FirstOrDefaultAsync(a => a.Id == applicationId);
+
+            if (application == null)
+            {
+                throw new BusinessException($"Application with Id {applicationId} not found.");
+            }
+
+            var appForm = application.ApplicationForm ?? 
+            (application.ApplicationFormId != Guid.Empty 
+                ? await applicationFormRepository.GetAsync(application.ApplicationFormId) 
+                : null);
+
+            var formThreshold = appForm?.PaymentApprovalThreshold;
+
+            if (formThreshold.HasValue && userPaymentThreshold.HasValue)
+            {
+                return Math.Min(formThreshold.Value, userPaymentThreshold.Value);
+            }
+
+            return formThreshold ?? userPaymentThreshold ?? 0m;
+        }
+    
         private async Task<bool> CanPerformLevel1ActionAsync(PaymentRequestStatus status)
         {
             List<PaymentRequestStatus> level1Approvals = new() { PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined };
