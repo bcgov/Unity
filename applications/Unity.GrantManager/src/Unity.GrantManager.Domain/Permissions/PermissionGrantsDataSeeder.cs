@@ -88,6 +88,13 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.SettingManagement.Tags.Delete
         ];
 
+        public readonly List<string> Tags_CommonPermissions = [
+            UnitySelector.Application.Tags.Create,
+            UnitySelector.Application.Tags.Delete,
+            UnitySelector.Payment.Tags.Create,
+            UnitySelector.Payment.Tags.Delete,
+        ];
+
         public async Task SeedAsync(DataSeedContext context)
         {
             // Default permission grants based on role
@@ -123,7 +130,8 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
-                    .. Dashboard_CommonPermissions
+                    .. Dashboard_CommonPermissions,
+                    .. Tags_CommonPermissions
             ], context.TenantId);
 
             // - Reviewer
@@ -157,7 +165,8 @@ namespace Unity.GrantManager.Permissions
                     .. ProjectInfo_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
-                    .. Dashboard_CommonPermissions
+                    .. Dashboard_CommonPermissions,
+                    .. Tags_CommonPermissions
                 ], context.TenantId);
 
             // - TeamLead
@@ -183,6 +192,7 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions,
+                    .. Tags_CommonPermissions,
 
                     // Role Specific Permissions
                     UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
@@ -215,7 +225,8 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
-                    NotificationsPermissions.Settings,                                    
+
+
                     .. SettingManagement_Tags_CommonPermissions,
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
@@ -225,7 +236,8 @@ namespace Unity.GrantManager.Permissions
                     .. Notifications_CommonPermissions,
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
-                    UnitySettingManagementPermissions.ConfigurePayments,    
+                    .. Tags_CommonPermissions,
+                    UnitySettingManagementPermissions.ConfigurePayments,
                     UnitySettingManagementPermissions.BackgroundJobSettings,
                 ], context.TenantId);
 
@@ -310,7 +322,7 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Payment.Supplier.Default,
                     UnitySelector.Payment.PaymentList.Default,
 
-                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Default
                 ], context.TenantId);
 
         }

@@ -228,6 +228,10 @@
     "Unity.GrantManager.SettingManagement.Tags.Update": "Edit Tag",
     "Unity.GrantManager.SettingManagement.Tags.Delete": "Delete Tag",
 
+    "Permission:Tags": "Tags",
+    "Unity.Applications.Tags.Create": "Assign Tag to Applications",
+    "Unity.Applications.Tags.Delete": "Remove Tag from Applications",
+
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
 
@@ -321,6 +325,7 @@
     "Summary:Application.SubmissionDate": "Submission Date",
     "Summary:Application.OrganizationName": "Registered Organization Name",
     "Summary:Application.OrganizationNumber": "Registered Organization Number",
+    "Summary:Application.NonRegOrgName": "Non-Registered Organization Name",
     "Summary:Application.City": "City",
     "Summary:Application.Community": "Community",
     "Summary:Application.RequestedAmount": "Requested Amount",

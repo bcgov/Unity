@@ -12,9 +12,9 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Locality;
-using Unity.GrantManager.Payments;
 using Unity.GrantManager.Zones;
 using Unity.Payments.Domain.AccountCodings;
+using Unity.Payments.PaymentRequests;
 
 namespace Unity.GrantManager;
 

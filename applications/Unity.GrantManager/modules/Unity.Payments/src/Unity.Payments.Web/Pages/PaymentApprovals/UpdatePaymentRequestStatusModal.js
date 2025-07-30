@@ -94,13 +94,15 @@ function getStatusText(data) {
 
         case "Submitted":
             return "Submitted";
+            
+        case "FSB":
+            return "Sent to Accounts Payable";
 
         case "Paid":
             return "Paid";
 
         case "PaymentFailed":
             return "Payment Failed"
-
 
         default:
             return "Created";

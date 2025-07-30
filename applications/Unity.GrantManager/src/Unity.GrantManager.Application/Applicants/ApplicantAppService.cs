@@ -46,7 +46,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         } else {
             applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
             applicant.ElectoralDistrict = intakeMap.ElectoralDistrict ?? applicant.ElectoralDistrict;
-            applicant.NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegisteredBusinessName;
+            // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
+            applicant.NonRegOrgName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegOrgName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
             applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
             applicant.OrganizationType = intakeMap.OrganizationType ?? applicant.OrganizationType;
@@ -283,7 +284,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
             ElectoralDistrict = intakeMap.ElectoralDistrict,
-            NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
+            // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
+            NonRegOrgName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
             OrgNumber = intakeMap.OrgNumber,
             OrganizationType = intakeMap.OrganizationType,
