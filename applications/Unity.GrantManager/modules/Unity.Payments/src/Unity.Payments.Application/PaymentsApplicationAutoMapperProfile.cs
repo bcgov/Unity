@@ -23,7 +23,9 @@ public class PaymentsApplicationAutoMapperProfile : Profile
     public PaymentsApplicationAutoMapperProfile()
     {
         CreateMap<PaymentRequest, PaymentRequestDto>()
-            .ForMember(dest => dest.ErrorSummary, options => options.Ignore())
+            .ForMember(dest => dest.ErrorSummary, opt => opt.Ignore())
+            .ForMember(dest => dest.AccountCoding, opt => opt.MapFrom(src => src.AccountCoding))
+            .ForMember(dest => dest.AccountCodingDisplay, opt => opt.Ignore())
             .ForMember(dest => dest.Site, opt => opt.MapFrom(src => src.Site))
             .ForMember(dest => dest.CreatorUser, opt => opt.Ignore())
             .ForMember(dest => dest.PaymentTags, opt => opt.MapFrom(src => src.PaymentTags));

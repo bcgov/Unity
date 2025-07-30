@@ -129,6 +129,7 @@
     "Enum:PaymentRequestStatus.L3Approved": "L3 Approved",
     "Enum:PaymentRequestStatus.L3Declined": "L3 Declined",
     "Enum:PaymentRequestStatus.Submitted": "Submitted to CAS",
+    "Enum:PaymentRequestStatus.FSB": "Sent to Accounts Payable",
     "Enum:PaymentRequestStatus.Validated": "Validated",
     "Enum:PaymentRequestStatus.NotValidated": "Not Validated",
     "Enum:PaymentRequestStatus.Paid": "Paid",
