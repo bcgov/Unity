@@ -386,8 +386,7 @@ namespace Unity.Payments.PaymentRequests
             string accountDistributionCode = "";
             if (accountCoding == null) return Task.FromResult(accountDistributionCode);
 
-            if (accountCoding != null
-                && accountCoding.Responsibility != null
+            if (accountCoding.Responsibility != null
                 && accountCoding.ServiceLine != null
                 && accountCoding.Stob != null
                 && accountCoding.MinistryClient != null
