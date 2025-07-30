@@ -98,14 +98,12 @@ namespace Unity.GrantManager.Intakes
 
         private async Task<Application> CreateNewApplicationAsync(IntakeMapping intakeMap,
             ApplicationForm applicationForm)
-        {
-            var applicant = await applicantService.CreateOrRetrieveApplicantAsync(intakeMap);
+        {            
             var submittedStatus = await _applicationStatusRepository.FirstAsync(s => s.StatusCode.Equals(GrantApplicationState.SUBMITTED));
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
-                    ApplicantId = applicant.Id,
+                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),                    
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,                    
                     ReferenceNo = intakeMap.ConfirmationId ?? string.Empty,
@@ -133,6 +131,13 @@ namespace Unity.GrantManager.Intakes
                     ProjectSummary = intakeMap.ProjectSummary,
                 }
             );
+
+            var applicant = await applicantService.CreateOrRetrieveApplicantAsync(intakeMap, application.Id);
+            if (applicant != null)
+            {
+                application.ApplicantId = applicant.Id;
+                application = await _applicationRepository.UpdateAsync(application);
+            }            
 
             ApplicantAgentDto applicantAgentDto = new()
             {

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250723161207_FixSnapshotAgain")]
+    partial class FixSnapshotAgain
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -917,9 +920,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("ApplicantId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ApplicationId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("City")
                         .HasColumnType("text");
 
@@ -976,8 +976,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicantId");
-
-                    b.HasIndex("ApplicationId");
 
                     b.ToTable("ApplicantAddresses", (string)null);
                 });
@@ -3811,13 +3809,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithMany("ApplicantAddresses")
-                        .HasForeignKey("ApplicationId");
-
                     b.Navigation("Applicant");
-
-                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantAgent", b =>
@@ -4184,8 +4176,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
                 {
-                    b.Navigation("ApplicantAddresses");
-
                     b.Navigation("ApplicantAgent");
 
                     b.Navigation("ApplicationAssignments");

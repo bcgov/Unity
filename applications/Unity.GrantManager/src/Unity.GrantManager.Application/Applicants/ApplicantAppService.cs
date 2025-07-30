@@ -35,7 +35,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
-    public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
+    public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap, Guid applicationId)
     {
         ArgumentNullException.ThrowIfNull(intakeMap);
 
@@ -46,7 +46,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         } else {
             applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
             applicant.ElectoralDistrict = intakeMap.ElectoralDistrict ?? applicant.ElectoralDistrict;
-            applicant.NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegisteredBusinessName;
+            // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
+            applicant.NonRegOrgName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegOrgName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
             applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
             applicant.OrganizationType = intakeMap.OrganizationType ?? applicant.OrganizationType;
@@ -60,7 +61,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicant.FiscalMonth = intakeMap.FiscalMonth ?? applicant.FiscalMonth;
         }
 
-        await CreateApplicantAddressesAsync(intakeMap, applicant);
+        await CreateApplicantAddressesAsync(intakeMap, applicant, applicationId);
         return applicant;
     }
 
@@ -283,7 +284,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
             ElectoralDistrict = intakeMap.ElectoralDistrict,
-            NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
+            // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
+            NonRegOrgName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
             OrgNumber = intakeMap.OrgNumber,
             OrganizationType = intakeMap.OrganizationType,
@@ -301,7 +303,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         return await applicantRepository.InsertAsync(applicant);
     }
 
-    private async Task CreateApplicantAddressesAsync(IntakeMapping intakeMap, Applicant applicant)
+    private async Task CreateApplicantAddressesAsync(IntakeMapping intakeMap, Applicant applicant, Guid applicationId)
     {
         ArgumentNullException.ThrowIfNull(intakeMap);
 
@@ -318,7 +320,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 Street = intakeMap.PhysicalStreet,
                 Street2 = intakeMap.PhysicalStreet2,
                 Unit = intakeMap.PhysicalUnit,
-                AddressType = AddressType.PhysicalAddress
+                AddressType = AddressType.PhysicalAddress,
+                ApplicationId = applicationId
             });
         }
 
@@ -335,7 +338,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 Street = intakeMap.MailingStreet,
                 Street2 = intakeMap.MailingStreet2,
                 Unit = intakeMap.MailingUnit,
-                AddressType = AddressType.MailingAddress
+                AddressType = AddressType.MailingAddress,
+                ApplicationId = applicationId
             });
         }
     }
@@ -385,7 +389,37 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         //Update ApplicantAgent records
         await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
+
+        //Update ApplicantAddresses records
+        await UpdateApplicantAddressRecords(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
     }
+
+    private async Task UpdateApplicantAddressRecords(Guid oldApplicantId, Guid newApplicantId, Guid applicationId)
+    {
+        try
+        {
+            List<ApplicantAddress> applicantAddresses = await addressRepository.FindByApplicantIdAndApplicationIdAsync(oldApplicantId, applicationId);
+            await UpdateAddress(applicantAddresses, AddressType.MailingAddress, newApplicantId, applicationId);
+            await UpdateAddress(applicantAddresses, AddressType.PhysicalAddress, newApplicantId, applicationId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating ApplicantAddress records for ApplicationId: {ApplicationId}", applicationId);
+            throw new UserFriendlyException("An error occurred while updating applicant address records.");
+        }
+    }
+
+    private async Task UpdateAddress(List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid newApplicantId, Guid applicationId)
+    {
+        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType && address.ApplicationId == applicationId);
+
+        if (dbAddress != null)
+        {
+            dbAddress.ApplicantId = newApplicantId;
+            await addressRepository.UpdateAsync(dbAddress);
+        }
+    }
+
 
     [RemoteService(true)]
     public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
@@ -435,24 +469,13 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             var agentQueryable = await applicantAgentRepository.GetQueryableAsync();
 
-            // Detach old agent from application
-            var oldAgent = await agentQueryable
+            var agent = await agentQueryable
                 .FirstOrDefaultAsync(a => a.ApplicantId == oldApplicantId && a.ApplicationId == applicationId);
 
-            if (oldAgent != null)
+            if (agent != null)
             {
-                oldAgent.ApplicationId = null;
-                await applicantAgentRepository.UpdateAsync(oldAgent);
-            }
-
-            // Attach new agent to application
-            var newAgent = await agentQueryable
-                .FirstOrDefaultAsync(a => a.ApplicantId == newApplicantId);
-
-            if (newAgent != null)
-            {
-                newAgent.ApplicationId = applicationId;
-                await applicantAgentRepository.UpdateAsync(newAgent);
+                agent.ApplicantId = newApplicantId;
+                await applicantAgentRepository.UpdateAsync(agent);
             }
         }
         catch (Exception ex)

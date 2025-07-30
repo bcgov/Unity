@@ -8,7 +8,7 @@
         payable: $('#Payable'),
         hasEditPermission: $('#HasEditFormPaymentConfiguration'),
         paymentApprovalThreshold: $('#PaymentApprovalThreshold'),
-        paymentThresholdForm: $('#PaymentThresholdform')
+        paymentThresholdForm: $('#PaymentThresholdForm')
     };
 
     function bindUIEvents() {
