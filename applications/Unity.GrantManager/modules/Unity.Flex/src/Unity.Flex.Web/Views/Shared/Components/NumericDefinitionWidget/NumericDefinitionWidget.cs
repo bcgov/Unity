@@ -29,6 +29,12 @@ namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
             .ApplyRequired(form);
         }
 
+        // Cache JsonSerializerOptions instance
+        private static readonly JsonSerializerOptions CachedJsonOptions = new JsonSerializerOptions
+        {
+            NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+        };
+
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
         {
             NumericDefinitionViewModel viewModel = new();
@@ -37,11 +43,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
             {
                 try
                 {
-                    var options = new JsonSerializerOptions
-                    {
-                        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
-                    };
-                    var numericDefinition = JsonSerializer.Deserialize<NumericDefinition>(definition, options);
+                    var numericDefinition = JsonSerializer.Deserialize<NumericDefinition>(definition, CachedJsonOptions);
 
                     if (numericDefinition != null)
                     {
