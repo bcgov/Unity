@@ -67,10 +67,7 @@ namespace Unity.Flex
                 return type switch
                 {
                     QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
-                    QuestionType.Number =>
-                    long.TryParse(definition, out var parsedValue)
-                        ? new NumericDefinition { Value = parsedValue } // Assuming NumericDefinition has a 'Value' property
-                        : JsonSerializer.Deserialize<NumericDefinition>(definition),
+                    QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
                     QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),
                     QuestionType.SelectList => JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition),
                     QuestionType.TextArea => JsonSerializer.Deserialize<TextAreaDefinition>(definition),
