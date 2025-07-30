@@ -159,11 +159,10 @@ dataRestore:
   repo:
     name: repo2
     path: "/habackup"
-    s3:
-      bucket: "bucketName"
-      endpoint: "https://sector.objectstore.gov.bc.ca"
-      region: "not-used"
-      uriStyle: "path"
+    bucket: "bucketName"
+    endpoint: "https://sector.objectstore.gov.bc.ca"
+    region: "not-used"
+    uriStyle: "path"
   stanza: db
   # S3 credentials for data restore (only used if createS3Secret: true)
   s3:

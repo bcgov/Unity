@@ -12,9 +12,8 @@ dataSource:
   secretName: new-s3-pgbackrest
   repo:
     path: "/habackup-new"
-    s3:
-      bucket: "sector-project-new"
-      endpoint: "https://sector.objectstore.gov.bc.ca"
+    bucket: "sector-project-new"
+    endpoint: "https://sector.objectstore.gov.bc.ca"
 
 pgBackRest:
   repos:
@@ -49,19 +48,16 @@ pgBackRest:
 #   enabled: true
 #   schedule: "0 2 * * *"  # Daily at 2 AM
 #   image: "artifacts.developer.gov.bc.ca/bcgov-docker-local/crunchy-pgbackrest:ubi8-2.47-1"
-#   # Reuse existing S3 secret (same as dataSource or pgBackRest.s3)
 #   secretName: "new-s3-pgbackrest"
 #   repo:
 #     name: repo2
 #     path: "/habackup-source"
-#     s3:
-#       bucket: "source-database-backups"
-#       endpoint: "https://sector.objectstore.gov.bc.ca"
-#       region: "not-used"
-#       uriStyle: "path"
+#     bucket: "source-database-backups"
+#     endpoint: "https://sector.objectstore.gov.bc.ca"
+#     region: "not-used"
+#     uriStyle: "path"
 #   stanza: db
 #   target:
-#     # Leave empty to use current cluster name
 #     clusterName: ""
 #     database: "myapp"
 #   resources:
