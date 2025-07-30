@@ -1,4 +1,4 @@
-.env
+*.env
 venv
 embedded_schema
-__pycache__
+*__pycache__
