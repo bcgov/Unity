@@ -16,7 +16,9 @@ namespace Unity.Notifications.Events
         public string Subject { get; set; } = string.Empty;
         public string? EmailFrom { get; set; } = string.Empty;
         public string EmailAddress { get; set; } = string.Empty;
-        public List<string> EmailAddressList { get; set; } = new List<string>();
+        public List<string> EmailAddressList { get; set; } = [];
+        public IEnumerable<string> Cc { get; set; } = [];
+        public IEnumerable<string> Bcc { get; set; } = [];
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public EmailAction Action { get; set; }
