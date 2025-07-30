@@ -11,6 +11,7 @@ using Volo.Abp.Users;
 using Unity.Payments.Security;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using Unity.GrantManager.Applications;
 
 namespace Unity.Payments;
 
@@ -68,6 +69,10 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
         var featureMock = Substitute.For<IFeatureChecker>();
         featureMock.IsEnabledAsync(Arg.Any<string>()).Returns(true);
         services.AddSingleton(featureMock);
+
+        // Mock the repositories to avoid database access
+        services.AddSingleton(Substitute.For<IApplicationRepository>());
+        services.AddSingleton(Substitute.For<IApplicationFormRepository>());
 
         var externalUserLookupMock = Substitute.For<FakeExternalUserLookupServiceProvider>();
         services.AddSingleton<IExternalUserLookupServiceProvider>(externalUserLookupMock);

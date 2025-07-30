@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Volo.Abp.Application.Services;
@@ -33,15 +32,11 @@ namespace Unity.GrantManager.Emails
 
         private static EmailNotificationEvent GetEmailNotificationEvent(CreateEmailDto dto)
         {
-            List<string> toList = [];
-            string[] emails = dto.EmailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
+            var toList = dto.EmailTo.ParseEmailList() ?? [];
+            var ccList = dto.EmailCC.ParseEmailList() ?? [];
+            var bccList = dto.EmailBCC.ParseEmailList() ?? [];
 
-            foreach (string email in emails)
-            {
-                toList.Add(email.Trim());
-            }
-            return
-            new EmailNotificationEvent
+            return new EmailNotificationEvent
             {
                 Id = dto.EmailId,
                 ApplicationId = dto.ApplicationId,
@@ -49,6 +44,8 @@ namespace Unity.GrantManager.Emails
                 EmailAddress = dto.EmailTo,
                 EmailAddressList = toList,
                 EmailFrom = dto.EmailFrom,
+                Cc = ccList,
+                Bcc = bccList,
                 Subject = dto.EmailSubject,
                 Body = dto.EmailBody,
                 EmailTemplateName = dto.EmailTemplateName

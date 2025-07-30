@@ -19,6 +19,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         [DataType(DataType.EmailAddress)]
         [DisplayName("Email From")]
         public string EmailFrom { get; set; } = string.Empty;
+
+        [Placeholder("CC")]
+        [DisplayName("Email CC")]
+        public string? EmailCC { get; set; }
+
+        [Placeholder("BCC")]
+        [DisplayName("Email BCC")]
+        public string? EmailBCC { get; set; }
         
         [Required]
         [Placeholder("Subject")]
