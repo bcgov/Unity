@@ -53,6 +53,11 @@
         UIElements.inputEmailBody.on('change', handleKeyUpTrim);
         UIElements.inputEmailTo.on('change', validateEmailTo);
 
+        // Update validation bindings
+        UIElements.inputEmailTo.on('change', validateEmailTo);
+        UIElements.inputEmailCC.on('change', validateEmailCC);
+        UIElements.inputEmailBCC.on('change', validateEmailBCC);
+
         UIElements.inputEmailTo.on('input', handleDraftChange);
         UIElements.inputEmailCC.on('input', handleDraftChange);
         UIElements.inputEmailBCC.on('input', handleDraftChange);
@@ -201,48 +206,15 @@
     }
 
     function validateEmailTo() {
-        let emailValue = UIElements.inputEmailToField.value.trim(); // Trim leading/trailing whitespace
-        // Remove trailing commas, semicolons, or spaces (safe regex)
-        emailValue = emailValue.replace(/[;,\s]+$/, ''); // Remove only trailing semicolons, commas, or spaces
+        return validateEmailField(UIElements.inputEmailToField, true); // EmailTo is required
+    }
 
-        let emails = emailValue.split(/[,;]/g).map(email => email.trim()); // Split by comma or semicolon, and trim each email
-        let emailToErrorSpan = $("span[data-valmsg-for*='EmailTo']")[0];
+    function validateEmailCC() {
+        return validateEmailField(UIElements.inputEmailCC[0], false); // CC is optional
+    }
 
-        // Initialize as valid
-        let isValid = true;
-        let emailToError = '';  // Initialize error message variable
-
-        // Iterate through the list of emails using for...of loop
-        for (let emailStr of emails) {
-            // Check if the email is empty or invalid
-            if (emailStr === '' || !validateEmail(emailStr)) {
-                // Handle empty email input
-                if (emailStr === '') {
-                    emailToError = emailValue.length > 0
-                        ? 'An email is required after each comma or semicolon.'
-                        : 'The Email To field is required.';
-                } else {
-                    // Handle invalid email format
-                    emailToError = `Please enter a valid Email To: ${emailStr}`;
-                }
-
-                // Display the error message
-                $(emailToErrorSpan).addClass('field-validation-error').removeClass('field-validation-valid');
-                $(emailToErrorSpan).html(emailToError);
-
-                // Mark the validation as invalid and exit the loop
-                isValid = false;
-                break; // No need to continue checking further emails
-            }
-        }
-
-        // Clear error message if all emails are valid
-        if (isValid) {
-            $(emailToErrorSpan).addClass('field-validation-valid').removeClass('field-validation-error');
-            $(emailToErrorSpan).html('');  // Clear any existing error message
-        }
-
-        return isValid;
+    function validateEmailBCC() {
+        return validateEmailField(UIElements.inputEmailBCC[0], false); // BCC is optional
     }
 
 
@@ -338,21 +310,84 @@
         }
     }
 
+    function validateEmailField(fieldElement, isRequired = false) {
+        // Get the field's value and trim whitespace
+        let emailValue = fieldElement.value.trim();
+
+        // Remove trailing commas, semicolons, or spaces
+        emailValue = emailValue.replace(/[;,\s]+$/, '');
+
+        // If the field is empty and not required, it's valid
+        if (!isRequired && emailValue === '') {
+            return true;
+        }
+
+        // Split by comma or semicolon, and trim each email
+        let emails = emailValue.split(/[,;]/g).map(email => email.trim());
+        let fieldName = fieldElement.name;
+        let errorSpan = $(`span[data-valmsg-for*='${fieldName}']`)[0];
+
+        // Initialize as valid
+        let isValid = true;
+        let errorMessage = '';
+
+        // Check each email
+        for (let emailStr of emails) {
+            // Skip empty emails in optional fields
+            if (emailStr === '' && !isRequired) {
+                continue;
+            }
+
+            // Check if the email is empty or invalid
+            if (emailStr === '' || !validateEmail(emailStr)) {
+                // Handle empty email input
+                if (emailStr === '') {
+                    errorMessage = emailValue.length > 0
+                        ? `An email is required after each comma or semicolon.`
+                        : `The ${fieldName} field is required.`;
+                } else {
+                    // Handle invalid email format
+                    errorMessage = `Please enter a valid email in ${fieldName}: ${emailStr}`;
+                }
+
+                // Display the error message
+                $(errorSpan).addClass('field-validation-error').removeClass('field-validation-valid');
+                $(errorSpan).html(errorMessage);
+
+                // Mark the validation as invalid and exit the loop
+                isValid = false;
+                break;
+            }
+        }
+
+        // Clear error message if all emails are valid
+        if (isValid) {
+            $(errorSpan).addClass('field-validation-valid').removeClass('field-validation-error');
+            $(errorSpan).html('');
+        }
+
+        return isValid;
+    }
+
     function validateEmailForm(e) {
         // Prevent form submission and stop propagation
         e.stopPropagation();
         e.preventDefault();
+
+        // Validate all email fields
+        let isToValid = validateEmailTo();
+        let isCCValid = validateEmailCC();
+        let isBCCValid = validateEmailBCC();
+
+        // If any email field is invalid, return false
+        if (!isToValid || !isCCValid || !isBCCValid) {
+            return false;
+        }
+
         let isValid = UIElements.emailForm.valid();
         let validator = UIElements.emailForm.validate();
-
-        // Validate the "Email To" field
-        if (!validateEmailTo()) {
-            return false; // If validation fails, stop further processing
-        }
         let fieldName = 'EmailBody';
-       
         let errorList = validator.errorList;
-
         let tinymceContent = tinymce.get(fieldName).getContent({ format: 'text' }).trim();
 
         let onlyErrorIsTinyMCE = (
@@ -360,22 +395,19 @@
             errorList[0].element.name === fieldName &&
             tinymceContent.length > 0
         );
+
         if (!isValid && onlyErrorIsTinyMCE) {
             let fieldElement = $('textarea[name="' + fieldName + '"]');
-
-            // Remove error message (if inserted by validator)
-            fieldElement.removeClass('input-validation-error'); // if ABP uses this
-            fieldElement.siblings('.field-validation-error').remove(); // for inline messages
+            fieldElement.removeClass('input-validation-error');
+            fieldElement.siblings('.field-validation-error').remove();
             return true;
-            // Proceed with your form logic here
-            // ...
         } else if (isValid) {
             return true;
         } else {
             return false;
         }
-        
     }
+
     function handleSendEmail(e) {
         // Check if the form is valid
         if (validateEmailForm(e)) {
@@ -544,8 +576,8 @@
         $('#templateText').prop('disabled', true);
         UIElements.inputEmailId.val(data.id);
         UIElements.inputOriginalEmailTo.val(data.toAddress);
-        UIElements.inputOriginalEmailCC.val(data.cc || '');
-        UIElements.inputOriginalEmailBCC.val(data.bcc || '');
+        UIElements.inputOriginalEmailCC.val(data.cc ? data.cc.replace(/,/g, '; ') : '');
+        UIElements.inputOriginalEmailBCC.val(data.bcc ? data.bcc.replace(/,/g, '; ') : '');
         UIElements.inputOriginalEmailFrom.val(data.fromAddress);
         UIElements.inputOriginalEmailSubject.val(data.subject);
          resetEmailBody(); 
@@ -571,8 +603,8 @@
             }
         });
         UIElements.inputEmailTo.val(data.toAddress);
-        UIElements.inputEmailCC.val(data.cc || '');
-        UIElements.inputEmailBCC.val(data.bcc || '');
+        UIElements.inputEmailCC.val(data.cc ? data.cc.replace(/,/g, '; ') : '');
+        UIElements.inputEmailBCC.val(data.bcc ? data.bcc.replace(/,/g, '; ') : '');
         UIElements.inputEmailFrom.val(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
         UIElements.inputEmailBody.val(data.body);
