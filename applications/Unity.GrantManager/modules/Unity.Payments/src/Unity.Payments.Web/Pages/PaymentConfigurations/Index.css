@@ -11,12 +11,6 @@
 	overflow: scroll;
 }
 
-.field-validation-error {
-	float: inline-start;
-    display: block;
-    max-width: 332px;
-    width: 332px;
-}
 
 .readonly {
 	color: var(--bc-colors-grey-text-500);
@@ -73,6 +67,64 @@
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.field-validation-error {
+	float: inline-start;
+    display: block;
+    max-width: 100%;
+    width: 100%;
+}
+
+.modal-dialog {
+    max-width: 850px !important;
+    min-width: 850px !important;
+}
+
+input.form-control:focus, input.form-control:active, textarea.form-control:focus, textarea.form-control:active, .form-select:focus, .form-select:active {
+	font-weight: inherit !important;
+}
+
+.hide {
+	display: none;
+}
+
+#PaymentConfigurationSideMenu.side-menu{
+	float: left;
+    position: absolute;
+    left: 0px;
+	top: 150px;
+}
+
+#PaymentConfigurationSideMenu ul {
+	padding-left: 0;
+}
+
+#PaymentConfigurationSideMenu li {
+	height: 40px;
+	padding: 10px;
+    border-radius: 0 100em 100em 0;
+}
+
+#PaymentConfigurationSideMenu .nav-item {
+	justify-content: left;
+}
+
+#payment-settings-div {
+	width: 750px;
+}
+
+#PaymentThreshold_Threshold {
+	text-align: right;
+}
+
+label.display-input-label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
 }
 
 @media only screen and (max-width: 850px) {

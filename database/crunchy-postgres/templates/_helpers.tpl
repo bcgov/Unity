@@ -40,7 +40,9 @@ helm.sh/chart: {{ include "crunchy-postgres.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/part-of: {{ index .Values.labels "app.kubernetes.io/part-of" | default "crunchydb" }}
+{{- range $key, $value := .Values.labels }}
+{{ $key }}: {{ $value | quote }}
+{{- end }}
 app.kubernetes.io/component: "database"
 {{- end }}
 
