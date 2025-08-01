@@ -165,9 +165,13 @@
                         @if (ModelState.ContainsKey(nameof(PaymentsApprovalModel.PreviousL1Approver))
                             && ModelState[nameof(PaymentsApprovalModel.PreviousL1Approver)]?.ValidationState == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)
                         {
-                            foreach (var error in ModelState[nameof(PaymentsApprovalModel.PreviousL1Approver)].Errors)
+                            var previousL1ApproverState = ModelState[nameof(PaymentsApprovalModel.PreviousL1Approver)];
+                            if (previousL1ApproverState != null)
                             {
-                                <span>@error.ErrorMessage</span>
+                                foreach (var error in previousL1ApproverState.Errors)
+                                {
+                                    <span>@error.ErrorMessage</span>
+                                }
                             }
                         }
                     </abp-column>
