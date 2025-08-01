@@ -2,12 +2,14 @@
     let lastDroppedLocation = {};
     let lastDragFromLocation = {};
     let customTabIds = [];
+    let assessmentInfoIds = [];
 
     PubSub.subscribe(
         'refresh_configure_worksheets',
         () => {
             lastDroppedLocation = {};
             customTabIds = [];
+            assessmentInfoIds = [];
         }
     );
 
@@ -54,6 +56,12 @@
         if (dragOver.classList.contains('multi-target')
             && event.target.classList.contains('custom-tabs-list')) {
             dropToCustomTabs(event, null, 'published-form');
+            return;
+        }
+
+        if (dragOver.classList.contains('multi-target')
+            && event.target.classList.contains('assessment-info-list')) {
+            dropToAssessmentInfo(event, null, 'published-form');
         }
     });
 
@@ -73,14 +81,12 @@
             clearSlotId();
             updateSlotId(draggedEl);
             storeCustomTabsIdChange();
+            storeAssessmentInfoIdChange();
         }
     }
 
     function clearSlotId() {
         switch (lastDragFromLocation?.dataset?.target) {
-            case 'assessmentInfo':
-                $('#AssessmentInfoSlotId').val(null);
-                break;
             case 'projectInfo':
                 $('#ProjectInfoSlotId').val(null);
                 break;
@@ -98,9 +104,6 @@
 
     function updateSlotId(draggedEl) {
         switch (lastDroppedLocation?.dataset?.target) {
-            case 'assessmentInfo':
-                $('#AssessmentInfoSlotId').val(draggedEl.dataset.worksheetId);
-                break;
             case 'projectInfo':
                 $('#ProjectInfoSlotId').val(draggedEl.dataset.worksheetId);
                 break;
@@ -131,6 +134,20 @@
         storeCustomTabsIdChange();
     }
 
+    function dropToAssessmentInfo(event, addClass, removeClass) {
+        event.preventDefault();
+
+        let dragOver = event.target;
+        let beingDragged = document.querySelector('.dragging');
+
+        // handle reordering in the ui
+
+        updateDraggedClasses(beingDragged, addClass, removeClass);
+        dragOver.appendChild(beingDragged);
+        lastDroppedLocation = dragOver;
+        storeAssessmentInfoIdChange();
+    }
+
     function storeCustomTabsIdChange() {
         customTabIds= [];
         let items = Array.from($('.custom-tabs-list').children());
@@ -138,6 +155,15 @@
             customTabIds.push(item.dataset.worksheetId);
         });
         $('#CustomTabsSlotIds').val(customTabIds.join(';'));
+    }
+
+    function storeAssessmentInfoIdChange() {
+        assessmentInfoIds = [];
+        let items = Array.from($('.assessment-info-list').children());
+        items.forEach((item) => {
+            assessmentInfoIds.push(item.dataset.worksheetId);
+        });
+        $('#AssessmentInfoSlotIds').val(assessmentInfoIds.join(';'));
     }
 
     function dropToAvailableWorksheets(event, addClass, removeClass) {
