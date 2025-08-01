@@ -38,6 +38,12 @@ namespace Unity.GrantManager
                     displayName: LocalizableString
                                     .Create<GrantManagerResource>("Reporting"),
                 valueType: new ToggleStringValueType());
+
+            myGroup.AddFeature("Unity.AIReporting",
+                defaultValue: defaultValue,
+                    displayName: LocalizableString
+                                    .Create<GrantManagerResource>("AIReporting"),
+                valueType: new ToggleStringValueType());
         }
     }
 }
