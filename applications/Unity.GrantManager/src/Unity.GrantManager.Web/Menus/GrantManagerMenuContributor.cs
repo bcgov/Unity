@@ -103,6 +103,27 @@ public class GrantManagerMenuContributor : IMenuContributor
           )
         );
 
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.Recapllm,
+                l["Menu:Recapllm"],
+                "~/Recapllm",
+                icon: "fl fl-view-dashboard",
+                order: 9
+                //requiredPermissionName: GrantApplicationPermissions.Recapllm.Default
+            )
+        );
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.RecapReporting,
+                l["Menu:RecapReporting"],
+                "~/RecapReporting",
+                icon: "fl fl-view-dashboard",
+                order: 9
+            //requiredPermissionName: GrantApplicationPermissions.Recapllm.Default
+            )
+        );
+
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue */
         //var administration = context.Menu.GetAdministration();

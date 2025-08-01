@@ -2,6 +2,8 @@
   "culture": "en",
   "texts": {
     "Menu:Home": "Home",
+    "Menu:Recapllm": "Recap LLM",
+    "Menu:RecapReporting": "Reports LLM",
     "Menu:Dashboard": "Dashboard",
     "Menu:GrantPrograms": "Grant Programs",
     "Menu:GrantTracker": "Grant Tracker",

@@ -1,0 +1,24 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.RecapReporting.IndexModel
+@using Unity.GrantManager.Web.Pages.RecapReporting
+
+@section styles {
+    <abp-style src="/Pages/RecapReporting/Index.css" />
+    <abp-style src="/libs/bootstrap/css/bootstrap.css" />
+}
+@section scripts
+{
+    <abp-script src="/Pages/RecapReporting/Index.js" />
+    <abp-script src="/libs/jquery/jquery.js" />
+    <abp-script src="/libs/bootstrap-4/dist/js/bootstrap.min.js"></abp-script>
+}
+<style>
+    #container {
+        height: calc(100vh - 6.75rem);
+    }
+    .unity-app-main-container {
+        padding: 0px;
+    }
+</style>
+
+<div id="container"></div>
