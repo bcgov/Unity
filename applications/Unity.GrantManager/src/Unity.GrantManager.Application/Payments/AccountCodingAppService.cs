@@ -7,17 +7,14 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Payments
 {    
-    public class AccountCodingAppService :
-            CrudAppService<
+    public class AccountCodingAppService(
+        IRepository<AccountCoding, Guid> repository
+    ) : CrudAppService<
             AccountCoding,
             AccountCodingDto,
             Guid,
             PagedAndSortedResultRequestDto,
-            CreateUpdateAccountCodingDto>, IAccountCodingAppService
+            CreateUpdateAccountCodingDto>(repository), IAccountCodingAppService
     {
-        public AccountCodingAppService(IRepository<AccountCoding, Guid> repository)
-            : base(repository)
-        {
-        }
     }
 }
