@@ -419,8 +419,12 @@ namespace Unity.Payments.PaymentRequests
                 {
                     paymentRequestDto.CreatorUser = paymentRequestUserDto;
                 }
-                paymentRequestDto.AccountCodingDisplay = await GetAccountDistributionCode(paymentRequestDto.AccountCoding);
 
+                if(paymentRequestDto != null && paymentRequestDto.AccountCoding != null)
+                {
+                    paymentRequestDto.AccountCodingDisplay = await GetAccountDistributionCode(paymentRequestDto.AccountCoding);
+                }
+                
                 foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
                 {
                     if (expenseApproval.DecisionUserId.HasValue
