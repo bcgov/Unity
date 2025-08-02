@@ -5,6 +5,7 @@
     let assessmentInfoIds = [];
     let projectInfoIds = [];
     let applicantInfoIds = [];
+    let paymentInfoIds = [];
 
     PubSub.subscribe(
         'refresh_configure_worksheets',
@@ -14,6 +15,7 @@
             assessmentInfoIds = [];
             projectInfoIds = [];
             applicantInfoIds = [];
+            paymentInfoIds = [];
         }
     );
 
@@ -78,6 +80,12 @@
         if (dragOver.classList.contains('multi-target')
             && event.target.classList.contains('applicant-info-list')) {
             dropToApplicantInfo(event, null, 'published-form');
+            return;
+        }
+
+        if (dragOver.classList.contains('multi-target')
+            && event.target.classList.contains('payment-info-list')) {
+            dropToPaymentInfo(event, null, 'published-form');
         }
     });
 
@@ -100,14 +108,12 @@
             storeAssessmentInfoIdChange();
             storeProjectInfoIdChange();
             storeApplicantInfoIdChange();
+            storePaymentInfoIdChange();
         }
     }
 
     function clearSlotId() {
         switch (lastDragFromLocation?.dataset?.target) {
-            case 'paymentInfo':
-                $('#PaymentInfoSlotId').val(null);
-                break;
             case 'fundingAgreementInfo':
                 $('#FundingAgreementInfoSlotId').val(null);
                 break;
@@ -116,9 +122,6 @@
 
     function updateSlotId(draggedEl) {
         switch (lastDroppedLocation?.dataset?.target) {
-            case 'paymentInfo':
-                $('#PaymentInfoSlotId').val(draggedEl.dataset.worksheetId);
-                break;
             case 'fundingAgreementInfo':
                 $('#FundingAgreementInfoSlotId').val(draggedEl.dataset.worksheetId);
                 break;
@@ -209,6 +212,20 @@
         $('#ProjectInfoSlotIds').val(projectInfoIds.join(';'));
     }
 
+    function dropToPaymentInfo(event, addClass, removeClass) {
+        event.preventDefault();
+
+        let dragOver = event.target;
+        let beingDragged = document.querySelector('.dragging');
+
+        // handle reordering in the ui
+
+        updateDraggedClasses(beingDragged, addClass, removeClass);
+        dragOver.appendChild(beingDragged);
+        lastDroppedLocation = dragOver;
+        storePaymentInfoIdChange();
+    }
+
     function storeApplicantInfoIdChange() {
         applicantInfoIds = [];
         let items = Array.from($('.applicant-info-list').children());
@@ -216,6 +233,15 @@
             applicantInfoIds.push(item.dataset.worksheetId);
         });
         $('#ApplicantInfoSlotIds').val(applicantInfoIds.join(';'));
+    }
+
+    function storePaymentInfoIdChange() {
+        paymentInfoIds = [];
+        let items = Array.from($('.payment-info-list').children());
+        items.forEach((item) => {
+            paymentInfoIds.push(item.dataset.worksheetId);
+        });
+        $('#PaymentInfoSlotIds').val(paymentInfoIds.join(';'));
     }
 
     function dropToAvailableWorksheets(event, addClass, removeClass) {

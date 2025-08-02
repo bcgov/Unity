@@ -15,7 +15,7 @@
     <abp-input type="hidden" id="AssessmentInfoSlotIds" asp-for="@Model.AssessmentInfoSlotIds" />
     <abp-input type="hidden" id="ApplicantInfoSlotIds" asp-for="@Model.ApplicantInfoSlotIds" />
     <abp-input type="hidden" id="ProjectInfoSlotIds" asp-for="@Model.ProjectInfoSlotIds" />
-    <abp-input type="hidden" id="PaymentInfoSlotId" asp-for="@Model.PaymentInfoSlotId" />
+    <abp-input type="hidden" id="PaymentInfoSlotIds" asp-for="@Model.PaymentInfoSlotIds" />
     <abp-input type="hidden" id="FundingAgreementInfoSlotId" asp-for="@Model.FundingAgreementInfoSlotId" />
     <abp-input type="hidden" id="CustomTabsSlotIds" asp-for="@Model.CustomTabsSlotIds" />
     <abp-modal size="ExtraLarge" id="worksheet-info-modal">
@@ -79,14 +79,17 @@
                         }
                     </div>
                     <div class="slot-title">Payment Info:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="paymentInfo">
-                        @if (Model.PaymentInfoLink != null)
+                    <div class="multi-slot drag-target multi-target payment-info-list" draggable="false" data-target="payment-info">
+                        @if (Model.PaymentInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.PaymentInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.PaymentInfoLink.Worksheet.Title (@Model.PaymentInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var paymentInfo in Model.PaymentInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@paymentInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @paymentInfo.Worksheet.Title (@paymentInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Funding Agreement:</div>
