@@ -13,7 +13,7 @@
 <form method="post" asp-page-handler="OnPostAsync" id="formInfo">
     <abp-input type="hidden" id="ChefsFormVersionId" asp-for="@Model.ChefsFormVersionId" />
     <abp-input type="hidden" id="AssessmentInfoSlotIds" asp-for="@Model.AssessmentInfoSlotIds" />
-    <abp-input type="hidden" id="ApplicantInfoSlotId" asp-for="@Model.ApplicantInfoSlotId" />
+    <abp-input type="hidden" id="ApplicantInfoSlotIds" asp-for="@Model.ApplicantInfoSlotIds" />
     <abp-input type="hidden" id="ProjectInfoSlotIds" asp-for="@Model.ProjectInfoSlotIds" />
     <abp-input type="hidden" id="PaymentInfoSlotId" asp-for="@Model.PaymentInfoSlotId" />
     <abp-input type="hidden" id="FundingAgreementInfoSlotId" asp-for="@Model.FundingAgreementInfoSlotId" />
@@ -65,14 +65,17 @@
                         }
                     </div>
                     <div class="slot-title">Applicant Info:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="applicantInfo">
-                        @if (Model.ApplicantInfoLink != null)
+                    <div class="multi-slot drag-target multi-target applicant-info-list" draggable="false" data-target="applicant-info">
+                        @if (Model.ApplicantInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.ApplicantInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.ApplicantInfoLink.Worksheet.Title (@Model.ApplicantInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var applicantInfo in Model.ApplicantInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@applicantInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @applicantInfo.Worksheet.Title (@applicantInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Payment Info:</div>
