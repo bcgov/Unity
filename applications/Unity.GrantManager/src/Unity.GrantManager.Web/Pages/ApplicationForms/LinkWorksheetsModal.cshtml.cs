@@ -76,35 +76,12 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
             .OrderBy(s => s.Title)];
 
 
-        CustomTabLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.CustomTab).ToList();
-        CustomTabsSlotIds = string.Join(";", CustomTabLinks
-            .OrderBy(s => s.Order)
-            .Select(s => s.WorksheetId));
-
-        AssessmentInfoLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.AssessmentInfoUiAnchor).ToList();
-        AssessmentInfoSlotIds = string.Join(";", AssessmentInfoLinks
-            .OrderBy(s => s.Order)
-            .Select(s => s.WorksheetId));
-
-        ProjectInfoLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.ProjectInfoUiAnchor).ToList();
-        ProjectInfoSlotIds = string.Join(";", ProjectInfoLinks
-            .OrderBy(s => s.Order)
-            .Select(s => s.WorksheetId));
-
-        ApplicantInfoLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.ApplicantInfoUiAnchor).ToList();
-        ApplicantInfoSlotIds = string.Join(";", ApplicantInfoLinks
-            .OrderBy(s => s.Order)
-            .Select(s => s.WorksheetId));
-
-        PaymentInfoLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.PaymentInfoUiAnchor).ToList();
-        PaymentInfoSlotIds = string.Join(";", PaymentInfoLinks
-            .OrderBy(s => s.Order)
-            .Select(s => s.WorksheetId));
-
-        FundingAgreementInfoLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.FundingAgreementInfoUiAnchor).ToList();
-        FundingAgreementInfoSlotIds = string.Join(";", FundingAgreementInfoLinks
-            .OrderBy(s => s.Order)
-            .Select(s => s.WorksheetId));
+        (CustomTabLinks, CustomTabsSlotIds) = ProcessWorksheetLinks(WorksheetLinks, FlexConsts.CustomTab);
+        (AssessmentInfoLinks, AssessmentInfoSlotIds) = ProcessWorksheetLinks(WorksheetLinks, FlexConsts.AssessmentInfoUiAnchor);
+        (ProjectInfoLinks, ProjectInfoSlotIds) = ProcessWorksheetLinks(WorksheetLinks, FlexConsts.ProjectInfoUiAnchor);
+        (ApplicantInfoLinks, ApplicantInfoSlotIds) = ProcessWorksheetLinks(WorksheetLinks, FlexConsts.ApplicantInfoUiAnchor);
+        (PaymentInfoLinks, PaymentInfoSlotIds) = ProcessWorksheetLinks(WorksheetLinks, FlexConsts.PaymentInfoUiAnchor);
+        (FundingAgreementInfoLinks, FundingAgreementInfoSlotIds) = ProcessWorksheetLinks(WorksheetLinks, FlexConsts.FundingAgreementInfoUiAnchor);
     }
 
 
@@ -113,77 +90,12 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
         var tabLinks = new List<(Guid worksheetId, string anchor, uint order)>();
 
 
-        if (CustomTabsSlotIds != null && CustomTabsSlotIds != Guid.Empty.ToString())
-        {
-            var customTabs = CustomTabsSlotIds.Split(';');
-            uint order = 1;
-
-            foreach (var customTabId in customTabs) //this comes in sequenced as we want for custom tabs
-            {
-                tabLinks.Add(new(Guid.Parse(customTabId), FlexConsts.CustomTab, order));
-                order++;
-            }
-        }
-
-        if (AssessmentInfoSlotIds != null && AssessmentInfoSlotIds != Guid.Empty.ToString())
-        {
-            var assessmentInfoTabs = AssessmentInfoSlotIds.Split(';');
-            uint order = 1;
-
-            foreach (var assessmentInfoTabId in assessmentInfoTabs) //this comes in sequenced as we want for assessment info tabs
-            {
-                tabLinks.Add(new(Guid.Parse(assessmentInfoTabId), FlexConsts.AssessmentInfoUiAnchor, order));
-                order++;
-            }
-        }
-
-        if (ProjectInfoSlotIds != null && ProjectInfoSlotIds != Guid.Empty.ToString())
-        {
-            var projectInfoTabs = ProjectInfoSlotIds.Split(';');
-            uint order = 1;
-
-            foreach (var projectInfoTabId in projectInfoTabs) //this comes in sequenced as we want for project info tabs
-            {
-                tabLinks.Add(new(Guid.Parse(projectInfoTabId), FlexConsts.ProjectInfoUiAnchor, order));
-                order++;
-            }
-        }
-
-        if (ApplicantInfoSlotIds != null && ApplicantInfoSlotIds != Guid.Empty.ToString())
-        {
-            var applicantInfoTabs = ApplicantInfoSlotIds.Split(';');
-            uint order = 1;
-
-            foreach (var applicantInfoTabId in applicantInfoTabs) //this comes in sequenced as we want for applicant info tabs
-            {
-                tabLinks.Add(new(Guid.Parse(applicantInfoTabId), FlexConsts.ApplicantInfoUiAnchor, order));
-                order++;
-            }
-        }
-
-        if (PaymentInfoSlotIds != null && PaymentInfoSlotIds != Guid.Empty.ToString())
-        {
-            var paymentInfoTabs = PaymentInfoSlotIds.Split(';');
-            uint order = 1;
-
-            foreach (var paymentInfoTabId in paymentInfoTabs) //this comes in sequenced as we want for payment info tabs
-            {
-                tabLinks.Add(new(Guid.Parse(paymentInfoTabId), FlexConsts.PaymentInfoUiAnchor, order));
-                order++;
-            }
-        }
-
-        if (FundingAgreementInfoSlotIds != null && FundingAgreementInfoSlotIds != Guid.Empty.ToString())
-        {
-            var fundingAgreementInfoTabs = FundingAgreementInfoSlotIds.Split(';');
-            uint order = 1;
-
-            foreach (var fundingAgreementInfoTabId in fundingAgreementInfoTabs) //this comes in sequenced as we want for funding agreement info tabs
-            {
-                tabLinks.Add(new(Guid.Parse(fundingAgreementInfoTabId), FlexConsts.FundingAgreementInfoUiAnchor, order));
-                order++;
-            }
-        }
+        ProcessSlotIds(CustomTabsSlotIds, FlexConsts.CustomTab, tabLinks);
+        ProcessSlotIds(AssessmentInfoSlotIds, FlexConsts.AssessmentInfoUiAnchor, tabLinks);
+        ProcessSlotIds(ProjectInfoSlotIds, FlexConsts.ProjectInfoUiAnchor, tabLinks);
+        ProcessSlotIds(ApplicantInfoSlotIds, FlexConsts.ApplicantInfoUiAnchor, tabLinks);
+        ProcessSlotIds(PaymentInfoSlotIds, FlexConsts.PaymentInfoUiAnchor, tabLinks);
+        ProcessSlotIds(FundingAgreementInfoSlotIds, FlexConsts.FundingAgreementInfoUiAnchor, tabLinks);
 
         var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionId);
         _ = await worksheetLinkAppService
@@ -197,5 +109,25 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
         return new OkObjectResult(new { ChefsFormVersionId });
     }
 
+    private (List<WorksheetLinkDto> links, string slotIds) ProcessWorksheetLinks(List<WorksheetLinkDto> worksheetLinks, string uiAnchor)
+    {
+        var links = worksheetLinks.Where(s => s.UiAnchor == uiAnchor).ToList();
+        var slotIds = string.Join(";", links.OrderBy(s => s.Order).Select(s => s.WorksheetId));
+        return (links, slotIds);
+    }
+
+    private void ProcessSlotIds(string? slotIds, string uiAnchor, List<(Guid worksheetId, string anchor, uint order)> tabLinks)
+    {
+        if (!string.IsNullOrWhiteSpace(slotIds) && slotIds != Guid.Empty.ToString())
+        {
+            var tabs = slotIds.Split(';');
+            uint order = 1;
+            foreach (var tabId in tabs)
+            {
+                tabLinks.Add(new(Guid.Parse(tabId), uiAnchor, order));
+                order++;
+            }
+        }
+    }
 }
 

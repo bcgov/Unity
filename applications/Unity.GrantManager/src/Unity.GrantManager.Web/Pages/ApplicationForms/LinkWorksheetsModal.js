@@ -119,144 +119,76 @@
         }
     }
 
+    function getMultiTargetIds(cssSelector) {
+        let ids = [];
+        let items = Array.from($(cssSelector).children());
+        items.forEach((item) => {
+            ids.push(item.dataset.worksheetId);
+        });
+        return ids;
+    }
 
-
-
-    function dropToCustomTabs(event, addClass, removeClass) {
+    function dropToMultiTarget(event, addClass, removeClass, storeFunction) {
         event.preventDefault();
-
         let dragOver = event.target;
         let beingDragged = document.querySelector('.dragging');
-
-        // handle reordering in the ui
-
         updateDraggedClasses(beingDragged, addClass, removeClass);
         dragOver.appendChild(beingDragged);
         lastDroppedLocation = dragOver;
-        storeCustomTabsIdChange();
+        storeFunction();
+    }
+
+    function dropToCustomTabs(event, addClass, removeClass) {
+        dropToMultiTarget(event, addClass, removeClass, storeCustomTabsIdChange);
     }
 
     function dropToAssessmentInfo(event, addClass, removeClass) {
-        event.preventDefault();
-
-        let dragOver = event.target;
-        let beingDragged = document.querySelector('.dragging');
-
-        // handle reordering in the ui
-
-        updateDraggedClasses(beingDragged, addClass, removeClass);
-        dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
-        storeAssessmentInfoIdChange();
+        dropToMultiTarget(event, addClass, removeClass, storeAssessmentInfoIdChange);
     }
 
     function storeCustomTabsIdChange() {
-        customTabIds= [];
-        let items = Array.from($('.custom-tabs-list').children());
-        items.forEach((item) => {
-            customTabIds.push(item.dataset.worksheetId);
-        });
+        customTabIds = getMultiTargetIds('.custom-tabs-list');
         $('#CustomTabsSlotIds').val(customTabIds.join(';'));
     }
 
     function dropToProjectInfo(event, addClass, removeClass) {
-        event.preventDefault();
-
-        let dragOver = event.target;
-        let beingDragged = document.querySelector('.dragging');
-
-        // handle reordering in the ui
-
-        updateDraggedClasses(beingDragged, addClass, removeClass);
-        dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
-        storeProjectInfoIdChange();
+        dropToMultiTarget(event, addClass, removeClass, storeProjectInfoIdChange);
     }
 
     function storeAssessmentInfoIdChange() {
-        assessmentInfoIds = [];
-        let items = Array.from($('.assessment-info-list').children());
-        items.forEach((item) => {
-            assessmentInfoIds.push(item.dataset.worksheetId);
-        });
+        assessmentInfoIds = getMultiTargetIds('.assessment-info-list');
         $('#AssessmentInfoSlotIds').val(assessmentInfoIds.join(';'));
     }
 
     function dropToApplicantInfo(event, addClass, removeClass) {
-        event.preventDefault();
-
-        let dragOver = event.target;
-        let beingDragged = document.querySelector('.dragging');
-
-        // handle reordering in the ui
-
-        updateDraggedClasses(beingDragged, addClass, removeClass);
-        dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
-        storeApplicantInfoIdChange();
+        dropToMultiTarget(event, addClass, removeClass, storeApplicantInfoIdChange);
     }
 
     function storeProjectInfoIdChange() {
-        projectInfoIds = [];
-        let items = Array.from($('.project-info-list').children());
-        items.forEach((item) => {
-            projectInfoIds.push(item.dataset.worksheetId);
-        });
+        projectInfoIds = getMultiTargetIds('.project-info-list');
         $('#ProjectInfoSlotIds').val(projectInfoIds.join(';'));
     }
 
     function dropToPaymentInfo(event, addClass, removeClass) {
-        event.preventDefault();
-
-        let dragOver = event.target;
-        let beingDragged = document.querySelector('.dragging');
-
-        // handle reordering in the ui
-
-        updateDraggedClasses(beingDragged, addClass, removeClass);
-        dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
-        storePaymentInfoIdChange();
+        dropToMultiTarget(event, addClass, removeClass, storePaymentInfoIdChange);
     }
 
     function storeApplicantInfoIdChange() {
-        applicantInfoIds = [];
-        let items = Array.from($('.applicant-info-list').children());
-        items.forEach((item) => {
-            applicantInfoIds.push(item.dataset.worksheetId);
-        });
+        applicantInfoIds = getMultiTargetIds('.applicant-info-list');
         $('#ApplicantInfoSlotIds').val(applicantInfoIds.join(';'));
     }
 
     function dropToFundingAgreementInfo(event, addClass, removeClass) {
-        event.preventDefault();
-
-        let dragOver = event.target;
-        let beingDragged = document.querySelector('.dragging');
-
-        // handle reordering in the ui
-
-        updateDraggedClasses(beingDragged, addClass, removeClass);
-        dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
-        storeFundingAgreementInfoIdChange();
+        dropToMultiTarget(event, addClass, removeClass, storeFundingAgreementInfoIdChange);
     }
 
     function storePaymentInfoIdChange() {
-        paymentInfoIds = [];
-        let items = Array.from($('.payment-info-list').children());
-        items.forEach((item) => {
-            paymentInfoIds.push(item.dataset.worksheetId);
-        });
+        paymentInfoIds = getMultiTargetIds('.payment-info-list');
         $('#PaymentInfoSlotIds').val(paymentInfoIds.join(';'));
     }
 
     function storeFundingAgreementInfoIdChange() {
-        fundingAgreementInfoIds = [];
-        let items = Array.from($('.funding-agreement-info-list').children());
-        items.forEach((item) => {
-            fundingAgreementInfoIds.push(item.dataset.worksheetId);
-        });
+        fundingAgreementInfoIds = getMultiTargetIds('.funding-agreement-info-list');
         $('#FundingAgreementInfoSlotIds').val(fundingAgreementInfoIds.join(';'));
     }
 
