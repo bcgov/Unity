@@ -25,7 +25,7 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     public string? AssessmentInfoSlotIds { get; set; }
 
     [BindProperty]
-    public string? ProjectInfoSlotId { get; set; }
+    public string? ProjectInfoSlotIds { get; set; }
 
     [BindProperty]
     public string? ApplicantInfoSlotId { get; set; }
@@ -52,7 +52,7 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     public WorksheetLinkDto? ApplicantInfoLink { get; set; }
 
     [BindProperty]
-    public WorksheetLinkDto? ProjectInfoLink { get; set; }
+    public List<WorksheetLinkDto>? ProjectInfoLinks { get; set; }
 
     [BindProperty]
     public WorksheetLinkDto? PaymentInfoLink { get; set; }
@@ -86,13 +86,15 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
         AssessmentInfoSlotIds = string.Join(";", AssessmentInfoLinks
             .OrderBy(s => s.Order)
             .Select(s => s.WorksheetId));
+
+        ProjectInfoLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.ProjectInfoUiAnchor).ToList();
+        ProjectInfoSlotIds = string.Join(";", ProjectInfoLinks
+            .OrderBy(s => s.Order)
+            .Select(s => s.WorksheetId));
     }
 
     private void GetSlotIdAnchors(List<WorksheetLinkDto> worksheetLinks)
     {
-        ProjectInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.ProjectInfoUiAnchor);
-        ProjectInfoSlotId = ProjectInfoLink?.WorksheetId.ToString();
-
         ApplicantInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.ApplicantInfoUiAnchor);
         ApplicantInfoSlotId = ApplicantInfoLink?.WorksheetId.ToString();
 
@@ -133,6 +135,18 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
             }
         }
 
+        if (ProjectInfoSlotIds != null && ProjectInfoSlotIds != Guid.Empty.ToString())
+        {
+            var projectInfoTabs = ProjectInfoSlotIds.Split(';');
+            uint order = 1;
+
+            foreach (var projectInfoTabId in projectInfoTabs) //this comes in sequenced as we want for project info tabs
+            {
+                tabLinks.Add(new(Guid.Parse(projectInfoTabId), FlexConsts.ProjectInfoUiAnchor, order));
+                order++;
+            }
+        }
+
         var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionId);
         _ = await worksheetLinkAppService
             .UpdateWorksheetLinksAsync(new UpdateWorksheetLinksDto()
@@ -148,11 +162,6 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     private void AddSlotIdAnchors(List<(Guid worksheetId, string anchor, uint order)> tabLinks)
     {
         // We leave the order for the predefined tabs as 0 as they slot into a fixed position
-        if (ProjectInfoSlotId != null && ProjectInfoSlotId != Guid.Empty.ToString())
-        {
-            tabLinks.Add(new(Guid.Parse(ProjectInfoSlotId), FlexConsts.ProjectInfoUiAnchor, 0));
-        }
-
         if (ApplicantInfoSlotId != null && ApplicantInfoSlotId != Guid.Empty.ToString())
         {
             tabLinks.Add(new(Guid.Parse(ApplicantInfoSlotId), FlexConsts.ApplicantInfoUiAnchor, 0));

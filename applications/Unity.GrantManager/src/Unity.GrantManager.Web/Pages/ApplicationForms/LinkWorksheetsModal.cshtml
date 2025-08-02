@@ -14,7 +14,7 @@
     <abp-input type="hidden" id="ChefsFormVersionId" asp-for="@Model.ChefsFormVersionId" />
     <abp-input type="hidden" id="AssessmentInfoSlotIds" asp-for="@Model.AssessmentInfoSlotIds" />
     <abp-input type="hidden" id="ApplicantInfoSlotId" asp-for="@Model.ApplicantInfoSlotId" />
-    <abp-input type="hidden" id="ProjectInfoSlotId" asp-for="@Model.ProjectInfoSlotId" />
+    <abp-input type="hidden" id="ProjectInfoSlotIds" asp-for="@Model.ProjectInfoSlotIds" />
     <abp-input type="hidden" id="PaymentInfoSlotId" asp-for="@Model.PaymentInfoSlotId" />
     <abp-input type="hidden" id="FundingAgreementInfoSlotId" asp-for="@Model.FundingAgreementInfoSlotId" />
     <abp-input type="hidden" id="CustomTabsSlotIds" asp-for="@Model.CustomTabsSlotIds" />
@@ -51,14 +51,17 @@
                         }
                     </div>
                     <div class="slot-title">Project Info:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="projectInfo">
-                        @if (Model.ProjectInfoLink != null)
+                    <div class="multi-slot drag-target multi-target project-info-list" draggable="false" data-target="project-info">
+                        @if (Model.ProjectInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.ProjectInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.ProjectInfoLink.Worksheet.Title (@Model.ProjectInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var projectInfo in Model.ProjectInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@projectInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @projectInfo.Worksheet.Title (@projectInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Applicant Info:</div>
