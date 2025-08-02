@@ -6,6 +6,7 @@
     let projectInfoIds = [];
     let applicantInfoIds = [];
     let paymentInfoIds = [];
+    let fundingAgreementInfoIds = [];
 
     PubSub.subscribe(
         'refresh_configure_worksheets',
@@ -16,6 +17,7 @@
             projectInfoIds = [];
             applicantInfoIds = [];
             paymentInfoIds = [];
+            fundingAgreementInfoIds = [];
         }
     );
 
@@ -86,6 +88,12 @@
         if (dragOver.classList.contains('multi-target')
             && event.target.classList.contains('payment-info-list')) {
             dropToPaymentInfo(event, null, 'published-form');
+            return;
+        }
+
+        if (dragOver.classList.contains('multi-target')
+            && event.target.classList.contains('funding-agreement-info-list')) {
+            dropToFundingAgreementInfo(event, null, 'published-form');
         }
     });
 
@@ -102,31 +110,16 @@
         if (draggedEl.classList + "" != "undefined") {
             draggedEl.classList.remove('dragging');
 
-            clearSlotId();
-            updateSlotId(draggedEl);
             storeCustomTabsIdChange();
             storeAssessmentInfoIdChange();
             storeProjectInfoIdChange();
             storeApplicantInfoIdChange();
             storePaymentInfoIdChange();
+            storeFundingAgreementInfoIdChange();
         }
     }
 
-    function clearSlotId() {
-        switch (lastDragFromLocation?.dataset?.target) {
-            case 'fundingAgreementInfo':
-                $('#FundingAgreementInfoSlotId').val(null);
-                break;
-        }
-    }
 
-    function updateSlotId(draggedEl) {
-        switch (lastDroppedLocation?.dataset?.target) {
-            case 'fundingAgreementInfo':
-                $('#FundingAgreementInfoSlotId').val(draggedEl.dataset.worksheetId);
-                break;
-        }
-    }
 
 
     function dropToCustomTabs(event, addClass, removeClass) {
@@ -235,6 +228,20 @@
         $('#ApplicantInfoSlotIds').val(applicantInfoIds.join(';'));
     }
 
+    function dropToFundingAgreementInfo(event, addClass, removeClass) {
+        event.preventDefault();
+
+        let dragOver = event.target;
+        let beingDragged = document.querySelector('.dragging');
+
+        // handle reordering in the ui
+
+        updateDraggedClasses(beingDragged, addClass, removeClass);
+        dragOver.appendChild(beingDragged);
+        lastDroppedLocation = dragOver;
+        storeFundingAgreementInfoIdChange();
+    }
+
     function storePaymentInfoIdChange() {
         paymentInfoIds = [];
         let items = Array.from($('.payment-info-list').children());
@@ -242,6 +249,15 @@
             paymentInfoIds.push(item.dataset.worksheetId);
         });
         $('#PaymentInfoSlotIds').val(paymentInfoIds.join(';'));
+    }
+
+    function storeFundingAgreementInfoIdChange() {
+        fundingAgreementInfoIds = [];
+        let items = Array.from($('.funding-agreement-info-list').children());
+        items.forEach((item) => {
+            fundingAgreementInfoIds.push(item.dataset.worksheetId);
+        });
+        $('#FundingAgreementInfoSlotIds').val(fundingAgreementInfoIds.join(';'));
     }
 
     function dropToAvailableWorksheets(event, addClass, removeClass) {

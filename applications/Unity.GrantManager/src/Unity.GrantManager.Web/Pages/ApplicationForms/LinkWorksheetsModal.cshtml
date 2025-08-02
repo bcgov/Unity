@@ -16,7 +16,7 @@
     <abp-input type="hidden" id="ApplicantInfoSlotIds" asp-for="@Model.ApplicantInfoSlotIds" />
     <abp-input type="hidden" id="ProjectInfoSlotIds" asp-for="@Model.ProjectInfoSlotIds" />
     <abp-input type="hidden" id="PaymentInfoSlotIds" asp-for="@Model.PaymentInfoSlotIds" />
-    <abp-input type="hidden" id="FundingAgreementInfoSlotId" asp-for="@Model.FundingAgreementInfoSlotId" />
+    <abp-input type="hidden" id="FundingAgreementInfoSlotIds" asp-for="@Model.FundingAgreementInfoSlotIds" />
     <abp-input type="hidden" id="CustomTabsSlotIds" asp-for="@Model.CustomTabsSlotIds" />
     <abp-modal size="ExtraLarge" id="worksheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="Link Worksheets"></abp-modal-header>
@@ -93,14 +93,17 @@
                         }
                     </div>
                     <div class="slot-title">Funding Agreement:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="fundingAgreementInfo">
-                        @if (Model.FundingAgreementInfoLink != null)
+                    <div class="multi-slot drag-target multi-target funding-agreement-info-list" draggable="false" data-target="funding-agreement-info">
+                        @if (Model.FundingAgreementInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.FundingAgreementInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.FundingAgreementInfoLink.Worksheet.Title (@Model.FundingAgreementInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var fundingAgreementInfo in Model.FundingAgreementInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@fundingAgreementInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @fundingAgreementInfo.Worksheet.Title (@fundingAgreementInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Additional Tabs:</div>
