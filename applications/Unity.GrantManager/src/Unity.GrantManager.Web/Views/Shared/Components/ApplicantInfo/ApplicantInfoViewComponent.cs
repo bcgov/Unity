@@ -76,12 +76,10 @@ public class ApplicantInfoViewComponent(
     private static ApplicantAddressDto? FindMostRecentAddress(List<ApplicantAddressDto> applicantAddresses, AddressType addressType)
     {
         return applicantAddresses
-            .Where(address => address.AddressType == addressType)
-            .OrderByDescending(address =>
-                    address.CreationTime < address.LastModificationTime.GetValueOrDefault(DateTime.MinValue)
-                        ? address.CreationTime
-                        : address.LastModificationTime.GetValueOrDefault(DateTime.MinValue))
-            .FirstOrDefault();
+                    .Where(address => address.AddressType == addressType)
+                    .OrderByDescending(address =>
+                            address.LastModificationTime.GetValueOrDefault(address.CreationTime))
+                    .FirstOrDefault();
     }
 
     private async Task PopulateElectoralDistrictsAsync(ApplicantInfoViewModel model)
