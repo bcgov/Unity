@@ -36,9 +36,17 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                 // Check if the electoral district is already mapped for the form submission, if so then no work to be done
                 if (eventData.FormVersion.HasSubmissionHeaderMapping("ApplicantElectoralDistrict"))
+                {
+                    logger.LogInformation("Electoral district already determined for application {ApplicationId}. No further action required.",
+                        eventData.Application.Id);
                     return;
+                }
 
                 var electoralDistrictAddressType = eventData.Application.ApplicationForm.ElectoralDistrictAddressType;
+                
+                electoralDistrictAddressType ??= GrantApplications.AddressType.PhysicalAddress; // default to PhysicalAddress if not set
+                logger.LogInformation("Using electoral district address type: {AddressType} for electoral determination", electoralDistrictAddressType);
+
                 var applicantAddresses = eventData.Application.Applicant.ApplicantAddresses;
 
                 if (applicantAddresses == null || applicantAddresses.Count == 0)
