@@ -16,21 +16,27 @@ using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Uow;
 using Unity.Modules.Shared.Http;
+using Unity.Payments.PaymentConfigurations;
+using Unity.Payments.Domain.AccountCodings;
 
 namespace Unity.Payments.Integrations.Cas
 {
+
     [IntegrationService]
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
-    public class InvoiceService(ICasTokenService iTokenService,
-                IPaymentRequestRepository paymentRequestRepository,
-                IResilientHttpRequest resilientHttpRequest,
-                IOptions<CasClientOptions> casClientOptions,
-                ISupplierRepository iSupplierRepository,
-                ISiteRepository iSiteRepository,
-                IUnitOfWorkManager unitOfWorkManager) : ApplicationService, IInvoiceService
+#pragma warning disable S107 // Methods should not have too many parameters        
+    public class InvoiceService(
+                    ICasTokenService iTokenService,
+                    IAccountCodingRepository accountCodingRepository,
+                    PaymentConfigurationAppService paymentConfigurationAppService,
+                    IPaymentRequestRepository paymentRequestRepository,
+                    IResilientHttpRequest resilientHttpRequest,
+                    IOptions<CasClientOptions> casClientOptions,
+                    ISupplierRepository iSupplierRepository,
+                    ISiteRepository iSiteRepository,
+                    IUnitOfWorkManager unitOfWorkManager) : ApplicationService, IInvoiceService
+#pragma warning restore S107 // Methods should not have too many parameters
     {
-
-
         private const string CFS_APINVOICE = "cfs/apinvoice";
 
         private readonly Dictionary<int, string> CASPaymentGroup = new()
@@ -38,7 +44,6 @@ namespace Unity.Payments.Integrations.Cas
             [(int)PaymentGroup.EFT] = "GEN EFT",
             [(int)PaymentGroup.Cheque] = "GEN CHQ"
         };
-
 
         protected virtual async Task<Invoice?> InitializeCASInvoice(PaymentRequest paymentRequest,
                                                                   string? accountDistributionCode)
@@ -101,12 +106,13 @@ namespace Unity.Payments.Integrations.Cas
                     throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Payment Request not found");
                 }
 
-                // Based on the payment request application id in the correlation id
-                // lookup the form id
-                // on the form is there an acount distribution code?
-                // If no account distribution code then we can use the default account distribution code from payment configuration default account distribution code id
-                
-                string? accountDistributionCode = "";// this will be on the payment request
+                if (!paymentRequest.AccountCodingId.HasValue)
+                {
+                    throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Account Coding - Payment Request - not found");
+                }
+
+                AccountCoding accountCoding = await accountCodingRepository.GetAsync(paymentRequest.AccountCodingId.Value);
+                string accountDistributionCode = await paymentConfigurationAppService.GetAccountDistributionCode(accountCoding);// this will be on the payment request
 
                 if (!string.IsNullOrEmpty(accountDistributionCode))
                 {
