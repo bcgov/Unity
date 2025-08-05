@@ -2,11 +2,33 @@ apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
   name: {{ template "crunchy-postgres.fullname" . }}
-  labels: {{ include "crunchy-postgres.labels" . | nindent 4 }}
+  labels: 
+    helm.sh/chart: {{ include "crunchy-postgres.chart" . }}
+    app.kubernetes.io/name: {{ include "crunchy-postgres.name" . }}
+    app.kubernetes.io/instance: {{ include "crunchy-postgres.fullname" . }}
+    {{- if .Chart.AppVersion }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    {{- end }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- range $key, $value := .Values.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    app.kubernetes.io/component: "database"
 spec:
   openshift: {{ .Values.openshift | default false }}
   metadata:
-    labels: {{ include "crunchy-postgres.labels" . | nindent 6 }}
+    labels: 
+      helm.sh/chart: {{ include "crunchy-postgres.chart" . }}
+      app.kubernetes.io/name: {{ include "crunchy-postgres.name" . }}
+      app.kubernetes.io/instance: {{ include "crunchy-postgres.fullname" . }}
+      {{- if .Chart.AppVersion }}
+      app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+      {{- end }}
+      app.kubernetes.io/managed-by: {{ .Release.Service }}
+      {{- range $key, $value := .Values.labels }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+      app.kubernetes.io/component: "database"
   {{ if .Values.crunchyImage }}
   image: {{ .Values.crunchyImage }}
   {{ end }}
@@ -87,6 +109,7 @@ spec:
         - secret:
             name: {{ .Values.dataSource.secretName }}
       global:
+        repo2-s3-uri-style: {{ .Values.dataSource.repo.s3.uriStyle | quote }}
         repo2-path: {{ .Values.dataSource.repo.path }}
       repo:
         name: {{ .Values.dataSource.repo.name }}

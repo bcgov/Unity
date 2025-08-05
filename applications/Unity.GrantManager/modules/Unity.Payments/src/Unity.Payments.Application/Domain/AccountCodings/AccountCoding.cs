@@ -1,37 +1,32 @@
-﻿using System;
-using System.Linq;
-using Unity.Payments.Domain.Exceptions;
+﻿using Unity.Payments.Domain.Exceptions;
 using Volo.Abp;
-
+using System;
+using Volo.Abp.Domain.Entities.Auditing;
+using System.Linq;
 
 namespace Unity.Payments.Domain.AccountCodings
 {
-    public record AccountCoding
+    public class AccountCoding : AuditedAggregateRoot<Guid>
     {
-        public Guid? TenantId { get; set; }
+        public string MinistryClient { get; private set; }
+        public string Responsibility { get; private set; }
+        public string ServiceLine { get; private set; }
+        public string Stob { get; private set; }
+        public string ProjectNumber { get; private set; }
 
-        public string MinistryClient { get; set; } = string.Empty;
-
-        public string Responsibility { get; set; } = string.Empty;
-
-        public string ServiceLine { get; set; } = string.Empty;
-
-        public string Stob { get; set; } = string.Empty;
-
-        public string ProjectNumber { get; set; } = string.Empty;
-
-        // Constructor for ORM
-        protected AccountCoding()
+        public AccountCoding()
         {
-
+            MinistryClient = string.Empty;
+            Responsibility = string.Empty;
+            ServiceLine = string.Empty;
+            Stob = string.Empty;
+            ProjectNumber = string.Empty;
         }
-
-        public AccountCoding(
-            string ministryClient,
+        private AccountCoding(string ministryClient,
             string responsibility,
             string serviceLine,
             string stob,
-            string projectNumber)
+            string projectNumber)            
         {
             MinistryClient = ministryClient;
             Responsibility = responsibility;
@@ -47,8 +42,8 @@ namespace Unity.Payments.Domain.AccountCodings
         string stob,
         string projectNumber)
         {
-            ValidateField(ministryClient, 3, nameof(MinistryClient), true);
-            ValidateField(responsibility, 5, nameof(Responsibility), true);
+            ValidateField(ministryClient, 3, nameof(MinistryClient), false);  
+            ValidateField(responsibility, 5, nameof(Responsibility), false);
             ValidateField(serviceLine, 5, nameof(serviceLine), true);
             ValidateField(stob, 4, nameof(stob), true);
             ValidateField(projectNumber, 7, nameof(projectNumber), true);
@@ -56,8 +51,9 @@ namespace Unity.Payments.Domain.AccountCodings
             return new AccountCoding(ministryClient, responsibility, serviceLine, stob, projectNumber);
         }
 
-        private static void ValidateField(string field, uint length, string fieldName, bool validateAlphanumeric = true)
+        private static void ValidateField(string field, uint length, string fieldName, bool validateAlphanumeric)
         {
+
             bool validAlphanumeric = true;
 
             if (validateAlphanumeric)
@@ -73,4 +69,5 @@ namespace Unity.Payments.Domain.AccountCodings
             }
         }
     }
+
 }

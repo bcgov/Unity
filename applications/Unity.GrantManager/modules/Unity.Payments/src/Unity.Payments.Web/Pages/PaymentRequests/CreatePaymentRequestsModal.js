@@ -1,3 +1,4 @@
+let createPaymentNumberFormatter = createNumberFormatter();
 
 function removeApplicationPaymentRequest(applicationId) {
     let $container = $('#' + applicationId);
@@ -61,5 +62,7 @@ function calculateTotalAmount() {
         let value = parseFloat($(this).val().replace(/,/g, '')) || 0;
         total += value;
     });
-    $('.totalAmount').val(total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+ 
+    let totalFormatted = createPaymentNumberFormatter.format(total);
+   $('#TotalAmount').val(totalFormatted);
 }

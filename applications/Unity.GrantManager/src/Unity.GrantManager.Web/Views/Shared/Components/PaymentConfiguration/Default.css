@@ -1,0 +1,14 @@
+﻿﻿.currencyinput {
+	float: left;
+    width: 300px;
+}
+
+.currency {
+	text-align: right; 
+	width: 100%;
+	margin-top: -31px;
+}
+
+.currency-label {
+    margin-bottom: 9px;
+}

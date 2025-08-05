@@ -332,21 +332,18 @@ $(function () {
             data: 'id',
             name: 'rowActions',
             className: 'data-table-header',
-            orderable: false,            
-            sortable: false,            
+            orderable: false,
+            sortable: false,
             index: columnIndex,
             rowAction: {
-                items:
-                    [
-                        {
-                            text: 'Edit',
-                            action: (data) => updateModal.open(
-                                { id: data.record.id },
-                                
- 
-                            )
-                        }
-                    ]
+                items: [
+                    {
+                        text: 'Edit',
+                        action: (data) => updateModal.open({ id: data.record.id }),
+                        visible: () => true,
+                        enabled: () => UIElements.hasEditSupplier.val() === 'True'
+                    }
+                ]
             }
         }
     }
