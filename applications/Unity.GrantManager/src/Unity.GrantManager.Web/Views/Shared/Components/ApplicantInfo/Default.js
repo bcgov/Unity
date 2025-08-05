@@ -25,9 +25,8 @@
             registerElectoralDistrictControls(this.zoneForm.form);
             registerApplicantInfoSummaryDropdowns(this.zoneForm.form);
         },
-        refresh: function () {            
-            const currentFilters = this.getFilters();
-            widgetManager.refresh($wrapper, currentFilters);
+        refresh: function () {
+            widgetManager.refresh($wrapper);
         },
         setupEventHandlers: function () {
             const self = this;
@@ -213,7 +212,7 @@ $(function () {
             OrganizationType: getVal('ApplicantSummary_OrganizationType'),
             OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
             OrgStatus: getVal('ApplicantSummary_OrgStatus'),
-            IndigenousOrgInd: $('#ApplicantSummary_IndigenousOrgInd').is(':checked') ? 'Yes' : 'No',
+            IndigenousOrgInd: $('#indigenousOrgInd').is(':checked') ? 'Yes' : 'No',
             Sector: getVal('ApplicantSummary_Sector'),
             SubSector: getVal('ApplicantSummary_SubSector'),
             SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
@@ -279,7 +278,7 @@ $(function () {
             let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
             let principalApplicantId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
             let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
-            let applicationId = $('#ApplicantInfo_ApplicationId').val();
+            let applicationId = $('#ApplicantInfoViewApplicationId').val();
 
             // Merge and update applicant info
             let mergedApplicantInfo = {};
@@ -325,7 +324,11 @@ $(function () {
                 ApplicantInfoObj['ApplicantSummary.OrgNumber'] = orgNumber;
                 const orgStatus = $('#ApplicantSummary_OrgStatus').val();
                 ApplicantInfoObj['ApplicantSummary.OrgStatus'] = orgStatus;
+                const organizationType = $('#ApplicantSummary_OrganizationType').val();
+                ApplicantInfoObj['OrganizationType'] = organizationType;
 
+                const indigenousOrgInd = $('#indigenousOrgInd').is(":checked");
+                ApplicantInfoObj['IndigenousOrgInd'] = indigenousOrgInd ? "Yes" : "No";
                 ApplicantInfoObj['correlationId'] = formVersionId;
                 ApplicantInfoObj['worksheetId'] = worksheetId;
                 ApplicantInfoObj.ApplicantId = principalApplicantId;
@@ -336,6 +339,9 @@ $(function () {
                     console.error(err);
                 }
             }
+
+            // Triggers a refresh of the ApplicantInfo widget on merge
+            PubSub.publish('applicant_info_merged');
 
             $('#mergeApplicantsSpinner').hide();
             $('#mergeDuplicateApplicantsModal').modal('hide');
@@ -541,28 +547,13 @@ function getMergedApplicantInfo(existing, newData) {
 }
 
 async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj) {
-    
     await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
 
     if (principalApplicantId === newData.ApplicantId) {
-        await updatePrincipalApplicant(applicationId, principalApplicantId);
+        updatePrincipalApplicant(applicationId, principalApplicantId);
     }
-    
-    await updateMergedApplicant(applicationId, ApplicantInfoObj);
-}
 
-function updateMergedApplicant(applicationId, appInfoObj) {
-    return unity.grantManager.grantApplications.grantApplication
-        .updateMergedApplicant(applicationId, appInfoObj)
-        .done(function () {
-            abp.notify.success(
-                'The Applicant info has been updated.'
-            );
-            $('#saveApplicantInfoBtn').prop('disabled', true);
-            PubSub.publish("refresh_detail_panel_summary");
-            PubSub.publish('applicant_info_updated', appInfoObj);
-            PubSub.publish('applicant_info_merged');
-        });
+    updateApplicantInfo(applicationId, ApplicantInfoObj);
 }
 
 async function generateUnityApplicantIdBtn() {
@@ -635,19 +626,21 @@ function setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplican
 }
 
 function updatePrincipalApplicant(applicationId, principalApplicantId) {
-    return $.ajax({
+    return setTimeout(function () {
+        $.ajax({
             url: '/api/app/applicant/applicant-id',
             type: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify({
                 applicationId: applicationId,
                 applicantId: principalApplicantId
-            })
-        })
-        .done(function () {
-            abp.notify.success('Principal Applicant updated successfully.');
-        })
-        .fail(function (xhr, status) {
-            abp.notify.error('Failed to update Principal Applicant.');
-         });
+            }),
+            success: function () {
+                abp.notify.success('Principal Applicant updated successfully.');
+            },
+            error: function (xhr, status) {
+                abp.notify.error('Failed to update Principal Applicant.');
+            }
+        });
+    }, 1000);
 }

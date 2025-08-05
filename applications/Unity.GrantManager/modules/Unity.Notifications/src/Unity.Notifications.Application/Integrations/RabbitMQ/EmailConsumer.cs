@@ -64,9 +64,7 @@ public class EmailConsumer(
                                                                                     emailLog.Body,
                                                                                     emailLog.Subject,
                                                                                     emailLog.FromAddress, "html",
-                                                                                    emailLog.TemplateName,
-                                                                                    emailLog.CC,
-                                                                                    emailLog.BCC);
+                                                                                    emailLog.TemplateName);
                 // Update the response
                 emailLog.ChesResponse = JsonConvert.SerializeObject(response);
                 emailLog.ChesStatus = response.StatusCode.ToString();

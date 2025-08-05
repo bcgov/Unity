@@ -3,9 +3,8 @@
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Permissions;
 @using Unity.GrantManager.Payments;
-@using Unity.Modules.Shared;
-@using Unity.Payments.Permissions;
-@using Volo.Abp.Authorization.Permissions;
+@using Unity.Payments.Permissions
+@using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features;
 
 @inject IStringLocalizer<GrantManagerResource> L
@@ -21,43 +20,40 @@
     <div class="btn-group" id="app_custom_buttons">
 
         <abp-button id="externalLink"
-            text="@L["ApplicationList:OpenButton"].Value"
-            data-selector="applications-table-actions"
-            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-            button-type="Secondary" />
+        text="@L["ApplicationList:OpenButton"].Value"
+        data-selector="applications-table-actions"
+        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+        button-type="Secondary" />
 
         <abp-button id="assignApplication"
-            data-selector="applications-table-actions"
-            button-type="Secondary"
-            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-            text="@L["ApplicationList:AssignButton"].Value" />
+        data-selector="applications-table-actions"
+        button-type="Secondary"
+        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+        text="@L["ApplicationList:AssignButton"].Value" />
 
         @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Approvals.BulkApplicationApproval))
         { 
         <abp-button id="approveApplications"
-            data-selector="applications-table-actions"
-            button-type="Secondary"
-            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-            text="@L["ApplicationList:ApproveButton"].Value" />
+        data-selector="applications-table-actions"
+        button-type="Secondary"
+        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+        text="@L["ApplicationList:ApproveButton"].Value" />
         }
 
-        @if(await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create) || await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
-        {
         <abp-button id="tagApplication"
-            data-selector="applications-table-actions"
-            text="@L["ApplicationList:TagButton"].Value"
-            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-            button-type="Secondary" />
-        }
+        data-selector="applications-table-actions"
+        text="@L["ApplicationList:TagButton"].Value"
+        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+        button-type="Secondary" />
 
         @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
             && await PermissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.RequestPayment))
         {
-        <abp-button id="applicationPaymentRequest"
-                    data-selector="applications-table-actions"
-                    text="Payment"
-                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-                    button-type="Secondary" />
+            <abp-button id="applicationPaymentRequest"
+                        data-selector="applications-table-actions"
+                        text="Payment"
+                        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                        button-type="Secondary" />
 
         }
 

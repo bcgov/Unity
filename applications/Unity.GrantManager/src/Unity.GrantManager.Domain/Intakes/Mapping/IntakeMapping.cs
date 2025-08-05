@@ -141,7 +141,7 @@ namespace Unity.GrantManager.Intakes
         [Browsable(true)]
         public string? MailingUnit { get; set; }
 
-        [DisplayName("Non-Registered Organization Name")]
+        [DisplayName("Non-Registered Business Name")]
         [MapFieldType("String")]
         [Browsable(true)]
         public string? NonRegisteredBusinessName { get; set; }

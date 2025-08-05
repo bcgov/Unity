@@ -18,11 +18,6 @@ namespace Unity.GrantManager.Emails
         
         [Required]
         public string EmailBody { get; set; } = string.Empty;
-        
-        public string? EmailCC { get; set; }
-        
-        public string? EmailBCC { get; set; }
-        
         public Guid ApplicationId { get; set; }
         public Guid OwnerId { get; set; }
         public Guid EmailId { get; set; } = Guid.Empty;

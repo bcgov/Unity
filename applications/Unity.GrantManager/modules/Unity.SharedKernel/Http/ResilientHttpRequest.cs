@@ -89,7 +89,8 @@ namespace Unity.Modules.Shared.Http
             string? body,
             string? authToken)
         {
-            // HttpClient uses the system default TLS settings; no need to set ServicePointManager.SecurityProtocol.
+            //specify to use TLS 1.2 as default connection if 1.3 is not available
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
             HttpRequestMessage requestMessage = new HttpRequestMessage(httpVerb, resource) { Version = new Version(3, 0) };
             using HttpClient httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Accept.Clear();

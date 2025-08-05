@@ -48,7 +48,6 @@ dataSource:
       bucket: "bucketName"
       endpoint: "https://sector.objectstore.gov.bc.ca"
       region: "not-used"
-      uriStyle: "path"
     stanza: db
 
 pgBackRest:
@@ -148,49 +147,3 @@ pgmonitor:
     limits:
       cpu: 50m
       memory: 128Mi
-
-# Data restore cronjob configuration - reuses dataSource and pgBackRest.s3 patterns
-dataRestore:
-  enabled: false
-  createS3Secret: true
-  schedule: "0 2 * * *" # Run every day at 2 AM
-  image: "artifacts.developer.gov.bc.ca/bcgov-docker-local/crunchy-pgbackrest:ubi8-2.53.1-0"
-  secretName: s3-pgbackrest
-  repo:
-    name: repo2
-    path: "/habackup"
-    bucket: "bucketName"
-    endpoint: "https://sector.objectstore.gov.bc.ca"
-    region: "not-used"
-    uriStyle: "path"
-  stanza: db
-  # S3 credentials for data restore (only used if createS3Secret: true)
-  s3:
-    # key is the S3 key. This is stored in a Secret.
-    # Please DO NOT push this value to GitHub
-    key: "s3keyValue"
-    # keySecret is the S3 key secret. This is stored in a Secret.
-    # Please DO NOT push this value to GitHub
-    keySecret: "s3SecretValue"
-  # Target database configuration
-  target:
-    # The PostgreSQL cluster name to restore into (defaults to current cluster if empty)
-    clusterName: ""
-    # Database name to restore
-    database: "postgres"
-  # Resource limits for the cronjob
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-  # Job settings
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 1
-  restartPolicy: OnFailure
-  # Additional pgbackrest arguments
-  additionalArgs: []
-    # - "--log-level-console=debug"
-    # - "--process-max=2"

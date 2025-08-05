@@ -124,9 +124,4 @@ table.dataTable tbody tr {
     border-radius:inherit;
 }
 
-.dt-button-collection.shift-left {
-    left: unset !important; 
-    right: 0px !important;
-}
-
 /**end**/

@@ -85,7 +85,7 @@ public class GrantManagerApplicationModule : AbpModule
                             t.CheckinMisfireThreshold = TimeSpan.FromSeconds(20);
                             t.CheckinInterval = TimeSpan.FromSeconds(10);
                         });
-                        storeOptions.UseNewtonsoftJsonSerializer();
+                        storeOptions.UseJsonSerializer();
                         storeOptions.SetProperty("quartz.jobStore.tablePrefix", "qrtz_");
                         storeOptions.SetProperty("quartz.scheduler.instanceName", "UnityQuartz");
                         storeOptions.SetProperty("quartz.scheduler.instanceId", "AUTO");

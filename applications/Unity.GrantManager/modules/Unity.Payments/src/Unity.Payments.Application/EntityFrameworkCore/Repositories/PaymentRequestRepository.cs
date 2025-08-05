@@ -52,10 +52,7 @@ namespace Unity.Payments.Repositories
             var dbSet = await GetDbSetAsync();
             decimal applicationPaymentRequestsTotal = dbSet
               .Where(p => p.CorrelationId.Equals(correlationId))
-              .Where(p => p.Status != PaymentRequestStatus.L1Declined
-                        && p.Status != PaymentRequestStatus.L2Declined
-                        && p.Status != PaymentRequestStatus.L3Declined
-                        && p.InvoiceStatus != CasPaymentRequestStatus.ErrorFromCas)
+              .Where(p => p.Status != PaymentRequestStatus.L1Declined && p.Status != PaymentRequestStatus.L2Declined && p.Status != PaymentRequestStatus.L3Declined)
               .GroupBy(p => p.CorrelationId)
               .Select(p => p.Sum(q => q.Amount))
               .FirstOrDefault();

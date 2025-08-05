@@ -1,4 +1,4 @@
-using Unity.Modules.Shared;
+﻿using Unity.Modules.Shared;
 using Unity.Payments.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
@@ -21,14 +21,6 @@ public class PaymentsPermissionDefinitionProvider : PermissionDefinitionProvider
 
         //-- PAYMENT INFO PERMISSIONS
         grantApplicationPermissionsGroup.Add_PaymentInfo_Permissions();
-        paymentsPermissions.AddChild(PaymentsPermissions.Payments.EditFormPaymentConfiguration, L("Permission:Payments.EditFormPaymentConfiguration"));        
-
-        var tagsPermissionsGroup = context.GetGroupOrNull("Tags");
-        if (tagsPermissionsGroup != null)
-        {
-            tagsPermissionsGroup.AddPermission(UnitySelector.Payment.Tags.Create, L(UnitySelector.Payment.Tags.Create)).RequireFeatures("Unity.Payments");
-            tagsPermissionsGroup.AddPermission(UnitySelector.Payment.Tags.Delete, L(UnitySelector.Payment.Tags.Delete)).RequireFeatures("Unity.Payments");
-        }
     }
 
     private static LocalizableString L(string name)
@@ -44,8 +36,7 @@ public static class PaymentPermissionGroupDefinitionExtensions
     {
         #region PAYMENT INFO GRANULAR PERMISSIONS
         var upx_Payment                                     = grantApplicationPermissionsGroup
-                                                                                    .AddPermission(UnitySelector.Payment.Default, LocalizableString.Create<PaymentsResource>(UnitySelector.Payment.Default))
-                                                                                    .RequireFeatures("Unity.Payments");
+                                                                                    .AddPermission(UnitySelector.Payment.Default, LocalizableString.Create<PaymentsResource>(UnitySelector.Payment.Default));
 
         var upx_Payment_Summary                             = upx_Payment.AddPaymentChild(UnitySelector.Payment.Summary.Default);
 
@@ -56,10 +47,10 @@ public static class PaymentPermissionGroupDefinitionExtensions
         #endregion
     }
 
-
+    
 
     public static PermissionDefinition AddPaymentChild(this PermissionDefinition parent, string name)
     {
-        return parent.AddChild(name, LocalizableString.Create<PaymentsResource>(name)).RequireFeatures("Unity.Payments");
+        return parent.AddChild(name, LocalizableString.Create<PaymentsResource>(name));
     }
 }

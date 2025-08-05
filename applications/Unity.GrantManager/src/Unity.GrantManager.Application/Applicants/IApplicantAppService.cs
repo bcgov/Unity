@@ -11,7 +11,7 @@ namespace Unity.GrantManager.Applicants;
 
 public interface IApplicantAppService : IApplicationService
 {
-    Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap, Guid applicationId);
+    Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap);
     Task<ApplicantAgent> CreateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto);
     Task<Applicant> RelateSupplierToApplicant(ApplicantSupplierEto applicantSupplierEto);
     Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto);
