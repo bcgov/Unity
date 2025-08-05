@@ -31,7 +31,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
             {
                 ApplicationId = applicationId,
                 CurrentUserId = currentUserId,
-                EmailTo = application?.ApplicantAgent?.Email ?? string.Empty,
+                EmailTo = application?.ApplicantAgent?.Email ?? "",
                 EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
             };
             await PopulateTemplates(model);

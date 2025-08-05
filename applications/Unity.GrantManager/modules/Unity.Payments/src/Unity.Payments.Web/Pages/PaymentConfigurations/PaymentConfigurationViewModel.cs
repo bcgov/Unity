@@ -1,9 +1,9 @@
 ﻿﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace Unity.GrantManager.Payments
+namespace Unity.Payments.Web.Pages.PaymentConfigurations
 {
-    public class CreateUpdateAccountCodingDto
+    public class PaymentConfigurationViewModel
     {        
         [DisplayName("Ministry Client")]
         [Required]

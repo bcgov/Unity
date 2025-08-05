@@ -15,12 +15,6 @@ namespace Unity.GrantManager.Repositories
     [ExposeServices(typeof(IApplicantAddressRepository))]
     public class AddressRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : EfCoreRepository<GrantTenantDbContext, ApplicantAddress, Guid>(dbContextProvider), IApplicantAddressRepository
     {
-        public async Task<List<ApplicantAddress>> FindByApplicantIdAndApplicationIdAsync(Guid applicantId, Guid applicationId)
-        {
-            var dbSet = await GetDbSetAsync();
-            return await dbSet.AsNoTracking().Where(a => a.ApplicantId == applicantId && a.ApplicationId == applicationId).ToListAsync();
-        }
-
         public async Task<List<ApplicantAddress>> FindByApplicantIdAsync(Guid applicantId)
         {
             var dbSet = await GetDbSetAsync();

@@ -1,16 +1,10 @@
 ﻿@page
-@using Newtonsoft.Json
-@using Unity.Modules.Shared
-@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
-@using Volo.Abp.Authorization.Permissions
-
 @model Unity.GrantManager.Web.Pages.ApplicationTags.ApplicationTagsModalModel
-
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @{
     Layout = null;
 }
-
-@inject IPermissionChecker PermissionChecker
+@using Newtonsoft.Json
 
 <form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="applicationTagForm">
 
@@ -19,16 +13,6 @@
     <abp-modal-body>
         <div>
                 <input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
-                @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create))
-                {
-                    <div class="form-text"><strong>Note: </strong>The current user does not have permission to assign application tags.</div>
-                }
-
-                @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
-                {
-                    <div class="form-text"><strong>Note: </strong>The current user does not have permission to remove application tags.</div>
-                }
-
                 <input type="hidden" id="SelectedTagsJson" name="SelectedTagsJson" />
                 <abp-input type="hidden" id="SelectedApplicationIds" asp-for="@Model.SelectedApplicationIds" />
                 <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />

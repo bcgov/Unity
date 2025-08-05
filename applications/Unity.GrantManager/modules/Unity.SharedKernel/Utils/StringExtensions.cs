@@ -34,32 +34,5 @@ namespace Unity.Modules.Shared.Utils
             double percentage = union == 0 ? 0.0 : 2.0 * intersection * 100 / union;
             return Math.Round(Math.Min(percentage, 100.0), 2); // Ensure it does not exceed 100% and round to 2 decimals
         }
-
-        public static List<string>? ParseEmailList(this string? emailAddresses)
-        {
-            if (string.IsNullOrWhiteSpace(emailAddresses))
-                return null;
-
-            var emailAddressList = emailAddresses.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
-                         .Select(e => e.Trim())
-                         .Where(e => !string.IsNullOrWhiteSpace(e))
-                         .Distinct()
-                         .ToList();
-
-            return emailAddressList.Count > 0 ? emailAddressList : null;
-        }
-
-        public static HashSet<string>? ParseEmailSet(this string? emailAddresses)
-        {
-            if (string.IsNullOrWhiteSpace(emailAddresses))
-                return null;
-
-            var emailAddressList = emailAddresses.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
-                         .Select(e => e.Trim())
-                         .Where(e => !string.IsNullOrWhiteSpace(e))
-                         .ToHashSet();
-
-            return emailAddressList.Count > 0 ? emailAddressList : null;
-        }
     }
 }

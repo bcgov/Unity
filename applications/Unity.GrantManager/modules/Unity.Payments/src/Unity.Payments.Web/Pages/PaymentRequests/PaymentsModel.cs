@@ -34,6 +34,5 @@ namespace Unity.Payments.Web.Pages.Payments
         public string? SupplierNumber { get; set; }
         public string? SupplierName { get; set; }
         public decimal RemainingAmount { get; set; }
-        public Guid? AccountCodingId { get; set; }
     }
 }

@@ -65,20 +65,18 @@
     </div>
 
 
-    <form id="EmailForm" class="email-form" autocomplete="off">
+    <form id="EmailForm" class="email-form">
         <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
         <fieldset @emailFieldsetState>
             <legend class="d-none">Email Form</legend>
             <input type="hidden" id="EmailId" name="EmailId" />
             <input type="hidden" id="OriginalDraftEmailTo" value="@Model.EmailTo" />
-            <input type="hidden" id="OriginalDraftEmailCC" value="@Model.EmailCC" />
-            <input type="hidden" id="OriginalDraftEmailBCC" value="@Model.EmailBCC" />
             <input type="hidden" id="OriginalDraftEmailFrom" value="@Model.EmailFrom" />
             <input type="hidden" id="OriginalDraftEmailSubject" />
             <input type="hidden" id="OriginalDraftEmailBody" />
 
             <abp-row class="m-0 p-0">
-                <abp-column id="templateListContainer" size="_10" class="px-2">
+                <abp-column id="templateListContainer" size="_10" class="px-1">
                     <abp-select asp-for="@Model.EmailTemplate" asp-items="@Model.TemplatesList" id="template">
                         <option value="">Please select</option>
                     </abp-select>
@@ -90,16 +88,6 @@
             <abp-row class="m-0 p-0">
                 <abp-column size="_10" class="px-1">
                     <abp-input asp-for="@Model.EmailTo" class="email-input" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_10" class="px-1">
-                    <abp-input asp-for="@Model.EmailCC" class="email-input" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_10" class="px-1">
-                    <abp-input asp-for="@Model.EmailBCC" class="email-input" />
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">

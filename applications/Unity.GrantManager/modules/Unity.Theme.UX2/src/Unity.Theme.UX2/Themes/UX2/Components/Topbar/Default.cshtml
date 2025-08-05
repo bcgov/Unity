@@ -32,8 +32,6 @@
         bool isAuthorizedForTenantSwitch = false;
         if (CurrentUser.IsAuthenticated && CurrentUser.FindClaims("tenant").Length > 1)
             isAuthorizedForTenantSwitch = true;
-
-        bool isAuthorizedForPaymentConfiguration = await PermissionChecker.IsGrantedAsync("SettingManagement.ConfigurePayments");
     }
     <abp-dropdown id="user-dropdown">
         <abp-dropdown-button class="btn-dropdown" text="@CurrentTenant.Name" />
@@ -42,10 +40,11 @@
             {
                 <abp-dropdown-item href="/GrantPrograms">Switch Grant Programs</abp-dropdown-item>
             }
-            @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && isAuthorizedForPaymentConfiguration)
+            @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
             {
-                <abp-dropdown-item href="/PaymentConfigurations">Payments Configuration</abp-dropdown-item>
-            }            
+                /* To be moved to a settings */
+                <abp-dropdown-item href="/PaymentConfigurations">Payments Configuration</abp-dropdown-item>                
+            }
             @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
             {
                 <abp-dropdown-item href="/ScoresheetConfiguration">Scoresheets Configuration</abp-dropdown-item>

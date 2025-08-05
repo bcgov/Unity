@@ -38,6 +38,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
         public string? ActionType { get; set; } = string.Empty;
 
         private readonly IApplicationTagsService _applicationTagsService;
+        private readonly ITagsService _tagsService;
 
         [BindProperty]
         [DisplayName("Common Tags")]
@@ -52,14 +53,15 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
         public List<NewTagItem> Tags { get; set; } = new();
 
         [BindProperty]
-        public string? SelectedTagsJson { get; set; }
+        public string? SelectedTagsJson { get; set; } 
 
         [BindProperty]
         public string? TagsJson { get; set; }
 
-        public ApplicationTagsModalModel(IApplicationTagsService applicationTagsService)
+        public ApplicationTagsModalModel(IApplicationTagsService applicationTagsService, ITagsService tagsService)
         {
             _applicationTagsService = applicationTagsService ?? throw new ArgumentNullException(nameof(applicationTagsService));
+            _tagsService = tagsService ?? throw new ArgumentNullException(nameof(tagsService));
         }
 
         public Task OnGetAsync(string applicationIds, string actionType)
@@ -82,9 +84,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                 if (SelectedTags != null && applicationIds != null && applicationIds.Count > 0)
                 {
                     var selectedTagList = DeserializeJson<List<TagDto>>(SelectedTags) ?? [];
-                    var tagItems = string.IsNullOrWhiteSpace(TagsJson) ? null : DeserializeJson<List<NewTagItem>>(TagsJson);
+                    var tagItems = string.IsNullOrWhiteSpace(TagsJson)? null : DeserializeJson<List<NewTagItem>>(TagsJson);
                     await ProcessTagsAsync(uncommonTags, selectedTagList, applicationIds.ToArray(), tagItems);
-
+                 
                 }
             }
             catch (Exception ex)
@@ -125,6 +127,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
 
                 try
                 {
+
                     await _applicationTagsService.AssignTagsAsync(new AssignApplicationTagsDto
                     {
                         ApplicationId = item,
@@ -134,9 +137,12 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error processing ApplicationId {item}: {ex.Message}");
-
+                   
                 }
             }
+
+
+
         }
         private static T? DeserializeJson<T>(string jsonString) where T : class
         {

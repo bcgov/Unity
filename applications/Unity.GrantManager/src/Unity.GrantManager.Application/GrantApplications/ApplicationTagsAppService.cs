@@ -13,6 +13,8 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
+using Volo.Abp.ObjectMapping;
+using static Unity.GrantManager.Permissions.GrantApplicationPermissions;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -43,7 +45,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
         var tags = await queryable
             .Where(x => ids.Contains(x.ApplicationId))
-            .Include(x => x.Tag)
+            .Include(x => x.Tag) 
             .ToListAsync();
 
         return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Id).ToList());
@@ -52,7 +54,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     public async Task<List<ApplicationTagsDto>> GetApplicationTagsAsync(Guid id)
     {
         var tags = await (await _applicationTagsRepository
-                 .WithDetailsAsync(x => x.Tag))
+                 .WithDetailsAsync(x => x.Tag)) 
              .Where(e => e.ApplicationId == id)
              .ToListAsync();
 
@@ -64,7 +66,6 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         var existingApplicationTags = await _applicationTagsRepository.GetListAsync(e => e.ApplicationId == input.ApplicationId);
         var existingTagIds = existingApplicationTags.Select(t => t.TagId).ToHashSet();
         var inputTagIds = input.Tags?.Select(t => t.Id).ToHashSet() ?? new HashSet<Guid>();
-
         var newTagsToAdd = input.Tags?
             .Where(tag => !existingTagIds.Contains(tag.Id))
             .Select(tag => new ApplicationTags
@@ -73,17 +74,16 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
                 TagId = tag.Id
             })
             .ToList();
-
         var tagsToRemove = existingApplicationTags
-           .Where(et => !inputTagIds.Contains(et.TagId))
-           .ToList();
+       .Where(et => !inputTagIds.Contains(et.TagId))
+       .ToList();
 
-        if (tagsToRemove.Count > 0 && await AuthorizationService.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
+
+        if (tagsToRemove.Count > 0)
         {
             await _applicationTagsRepository.DeleteManyAsync(tagsToRemove, autoSave: true);
         }
-
-        if (newTagsToAdd?.Count > 0 && await AuthorizationService.IsGrantedAsync(UnitySelector.Application.Tags.Create))
+        if (newTagsToAdd?.Count > 0)
         {
             await _applicationTagsRepository.InsertManyAsync(newTagsToAdd, autoSave: true);
 
@@ -98,7 +98,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         }
         else
         {
-            return [];
+            return new List<ApplicationTagsDto>();
         }
     }
 
@@ -204,9 +204,9 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         var existingApplicationTags = await _applicationTagsRepository.GetListAsync(e => e.Tag.Id == id);
         var idsToDelete = existingApplicationTags.Select(x => x.Id).ToList();
         await _applicationTagsRepository.DeleteManyAsync(idsToDelete, autoSave: true);
+        
 
-
-
+      
     }
 
     [Authorize(UnitySelector.SettingManagement.Tags.Delete)]

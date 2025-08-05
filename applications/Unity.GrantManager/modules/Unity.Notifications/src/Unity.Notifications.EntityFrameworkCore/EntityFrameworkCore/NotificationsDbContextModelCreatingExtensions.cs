@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-
 using Unity.Notifications.Emails;
 using Unity.Notifications.Templates;
-using Unity.Notifications.EmailGroups;
 using Volo.Abp;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 
@@ -97,22 +95,6 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
-        });
-        modelBuilder.Entity<EmailGroup>(b =>
-        {
-            b.ToTable(NotificationsDbProperties.DbTablePrefix + "EmailGroups", NotificationsDbProperties.DbSchema);
-
-            b.ConfigureByConvention();
-        });
-
-        modelBuilder.Entity<EmailGroupUser>(b =>
-        {
-            b.ToTable(NotificationsDbProperties.DbTablePrefix + "EmailGroupUsers", NotificationsDbProperties.DbSchema);
-
-            b.ConfigureByConvention();
-            b.HasOne<EmailGroup>()
-              .WithMany()
-              .HasForeignKey(x => x.GroupId);
         });
     }
 }

@@ -62,7 +62,6 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Application.Scoresheet.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Application.Scoresheet.Delete";
         }
-
         public static partial class Summary
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Application.Summary";
@@ -70,14 +69,7 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Application.Summary.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Application.Summary.Delete";
         }
-
-        public static partial class Tags
-        {
-            public const string Create  = "Unity.Applications.Tags.Create";
-            public const string Delete  = "Unity.Applications.Tags.Delete";
-        }
     }
-
     public static partial class Review
     {
         public const string Default     = "Unity.GrantManager.ApplicationManagement.Review";
@@ -214,12 +206,6 @@ public static partial class UnitySelector
             public const string Create  = "Unity.GrantManager.ApplicationManagement.Payment.PaymentList.Create";
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Payment.PaymentList.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Payment.PaymentList.Delete";
-        }
-
-        public static partial class Tags
-        {
-            public const string Create  = "Unity.Payments.Tags.Create";
-            public const string Delete  = "Unity.Payments.Tags.Delete";
         }
     }
 

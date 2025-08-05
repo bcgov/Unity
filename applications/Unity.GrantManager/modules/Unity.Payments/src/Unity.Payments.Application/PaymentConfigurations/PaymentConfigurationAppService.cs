@@ -1,16 +1,21 @@
-using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.Domain.PaymentConfigurations;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.PaymentConfigurations
 {
     [RequiresFeature("Unity.Payments")]
-    public class PaymentConfigurationAppService(IPaymentConfigurationRepository paymentConfigurationRepository) : PaymentsAppService, IPaymentConfigurationAppService
+    public class PaymentConfigurationAppService : PaymentsAppService, IPaymentConfigurationAppService
     {
+        private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
+
+        public PaymentConfigurationAppService(IPaymentConfigurationRepository paymentConfigurationRepository)
+        {
+            _paymentConfigurationRepository = paymentConfigurationRepository;
+        }
+
         public virtual async Task<PaymentConfigurationDto?> GetAsync()
         {
             PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync();
@@ -20,33 +25,47 @@ namespace Unity.Payments.PaymentConfigurations
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(paymentConfiguration);
         }
 
-        public virtual Task<string> GetAccountDistributionCode(AccountCoding accountCoding)
+        public virtual async Task<string?> GetAccountDistributionCodeAsync()
         {
+            PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync();
             string accountDistributionCode = "";
-            if (accountCoding != null
-				&& accountCoding.Responsibility != null
-				&& accountCoding.ServiceLine != null
-				&& accountCoding.Stob != null
-				&& accountCoding.MinistryClient != null
-				&& accountCoding.ProjectNumber != null)
+            if (paymentConfiguration != null
+				&& paymentConfiguration.Responsibility != null
+				&& paymentConfiguration.ServiceLine != null
+				&& paymentConfiguration.Stob != null
+				&& paymentConfiguration.MinistryClient != null
+				&& paymentConfiguration.ProjectNumber != null)
             {
                 string accountDistributionPostFix = "000000.0000";
                 accountDistributionCode = 
-                 $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{accountDistributionPostFix}"; 
+                 $"{paymentConfiguration.MinistryClient}.{paymentConfiguration.Responsibility}.{paymentConfiguration.ServiceLine}.{paymentConfiguration.Stob}.{paymentConfiguration.ProjectNumber}.{accountDistributionPostFix}"; 
             }
 
-            return Task.FromResult(accountDistributionCode);
+            return accountDistributionCode;
         }
 
-        public virtual async Task<PaymentConfigurationDto> CreateAsync(CreatePaymentConfigurationDto createUpdatePaymentConfigurationDto)
+        public virtual async Task<PaymentConfigurationDto> CreateAsync(CreatePaymentConfigurationDto createPaymentConfigurationDto)
         {
-            PaymentConfiguration? paymentConfiguration = new PaymentConfiguration
-            {
-                DefaultAccountCodingId = createUpdatePaymentConfigurationDto.DefaultAccountCodingId,
-                PaymentIdPrefix = createUpdatePaymentConfigurationDto.PaymentIdPrefix
-            };
+            PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync();
 
-            var newPaymentConfiguration = await paymentConfigurationRepository.InsertAsync(paymentConfiguration); 
+            if (paymentConfiguration != null)
+            {
+                throw new ConfigurationExistsException(L[ErrorConsts.ConfigurationExists]);
+            }
+
+            var newPaymentConfiguration = await _paymentConfigurationRepository.InsertAsync(new PaymentConfiguration
+            (
+                createPaymentConfigurationDto.PaymentThreshold,
+                createPaymentConfigurationDto.PaymentIdPrefix,
+                AccountCoding.Create(
+                    createPaymentConfigurationDto.MinistryClient,
+                    createPaymentConfigurationDto.Responsibility,
+                    createPaymentConfigurationDto.ServiceLine,
+                    createPaymentConfigurationDto.Stob,
+                    createPaymentConfigurationDto.ProjectNumber
+                )
+            ));
+
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(newPaymentConfiguration);
         }
 
@@ -55,48 +74,24 @@ namespace Unity.Payments.PaymentConfigurations
             PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync() ??
                 throw new ConfigurationExistsException(L[ErrorConsts.ConfigurationDoesNotExist]);
 
+            paymentConfiguration.PaymentThreshold = updatePaymentConfigurationDto.PaymentThreshold;
             paymentConfiguration.PaymentIdPrefix = updatePaymentConfigurationDto.PaymentIdPrefix;
-            var updatedConfiguration = await paymentConfigurationRepository.UpdateAsync(paymentConfiguration);
+
+            paymentConfiguration.SetAccountCoding(AccountCoding.Create(updatePaymentConfigurationDto.MinistryClient,
+                updatePaymentConfigurationDto.Responsibility,
+                updatePaymentConfigurationDto.ServiceLine,
+                updatePaymentConfigurationDto.Stob,
+                updatePaymentConfigurationDto.ProjectNumber));
+
+            var updatedConfiguration = await _paymentConfigurationRepository.UpdateAsync(paymentConfiguration);
 
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(updatedConfiguration);
         }
-
-        public async Task UpdatePaymentPrefixAsync(string paymentPrefix)
-        {
-            PaymentConfiguration? paymentConfiguration = await paymentConfigurationRepository.FirstOrDefaultAsync();
-            if (paymentConfiguration == null)
-            {
-                CreatePaymentConfigurationDto paymentConfigurationDto = new CreatePaymentConfigurationDto();
-                paymentConfigurationDto.PaymentIdPrefix = paymentPrefix;
-                await CreateAsync(paymentConfigurationDto);
-            }
-            else
-            {
-                paymentConfiguration.PaymentIdPrefix = paymentPrefix;
-                await paymentConfigurationRepository.UpdateAsync(paymentConfiguration);
-            }
-        }
         
-        public async Task SetDefaultAccountCodeAsync(Guid accountCodingId)
-        {
-            PaymentConfiguration? paymentConfiguration = await paymentConfigurationRepository.FirstOrDefaultAsync();
-
-            if (paymentConfiguration == null)
-            {
-                CreatePaymentConfigurationDto paymentConfigurationDto = new CreatePaymentConfigurationDto();
-                paymentConfigurationDto.DefaultAccountCodingId = accountCodingId;
-                await CreateAsync(paymentConfigurationDto);
-            }
-            else
-            {
-                paymentConfiguration.DefaultAccountCodingId = accountCodingId;
-                await paymentConfigurationRepository.UpdateAsync(paymentConfiguration);
-            }
-        }
 
         protected virtual async Task<PaymentConfiguration?> FindPaymentConfigurationAsync()
         {
-            var paymentConfigurations = await paymentConfigurationRepository.GetListAsync();
+            var paymentConfigurations = await _paymentConfigurationRepository.GetListAsync();
             var paymentConfiguration = paymentConfigurations.Count > 0 ? paymentConfigurations[0] : null;
             return paymentConfiguration;
         }

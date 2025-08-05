@@ -1,24 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Notifications.EmailGroups;
 using Unity.Notifications.Templates;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
-
 
 namespace Unity.Notifications;
 
 public class NotificationsDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
     private readonly ITemplateVariablesRepository _templateVariablesRepository;
-    private readonly IEmailGroupsRepository _emailGroupsRepository;
 
-    public NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository, IEmailGroupsRepository emailGroupsRepository)
+    public NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository)
     {
         _templateVariablesRepository = templateVariablesRepository;
-        _emailGroupsRepository = emailGroupsRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
@@ -51,67 +45,28 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
             new EmailTempateVariableDto { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" }
         };
 
-        try
+        foreach (var template in emailTemplateVariableDtos)
         {
-            foreach (var template in emailTemplateVariableDtos)
+            var existingVariable = await _templateVariablesRepository.FindAsync(tv => tv.Token == template.Token);
+            if (existingVariable == null)
             {
-                var existingVariable = await _templateVariablesRepository.FindAsync(tv => tv.Token == template.Token);
-                if (existingVariable == null)
-                {
-                    await _templateVariablesRepository.InsertAsync(
-                        new TemplateVariable { Name = template.Name, Token = template.Token, MapTo = template.MapTo },
-                        autoSave: true
-                    );
-                }
-                else if (existingVariable.Token == "category" && existingVariable.MapTo == "category")
-                {
-                    existingVariable.MapTo = "applicationForm.category";
-                    await _templateVariablesRepository.UpdateAsync(existingVariable, autoSave: true);
-                }
+                await _templateVariablesRepository.InsertAsync(
+                    new TemplateVariable { Name = template.Name, Token = template.Token, MapTo = template.MapTo },
+                    autoSave: true
+                );
+            }
+            else if (existingVariable.Token == "category" && existingVariable.MapTo == "category")
+            {
+                existingVariable.MapTo = "applicationForm.category";
+                await _templateVariablesRepository.UpdateAsync(existingVariable, autoSave: true);
             }
         }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Error seeding Notifications Data for Templates: {ex.Message}");
-        }
-
-        var emailGroups = new List<EmailGroupDto>
-        {
-            new EmailGroupDto  {Name = "FSB-AP", Description = "This group manages the recipients for PO-related payments, which will be sent to FSB-AP to update contracts and initiate payment creation.",Type = "static"},
-            new EmailGroupDto  {Name = "Payments", Description = "This group manages the recipients for payment notifications, such as failures or errors",Type = "dynamic"}
-        };
-        try
-        {
-            var allGroups = await _emailGroupsRepository.GetListAsync();
-            foreach (var emailGroup in emailGroups)
-            {
-                var existingGroup = allGroups.FirstOrDefault(g => g.Name == emailGroup.Name);
-                if (existingGroup == null)
-                {
-                    await _emailGroupsRepository.InsertAsync(
-                        new EmailGroup { Name = emailGroup.Name, Description = emailGroup.Description, Type = emailGroup.Type },
-                        autoSave: true
-                    );
-                }
-            }
-
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Error seeding Notifications Data for Email Groups: {ex.Message}");
-        }
     }
+}
 
-    internal class EmailGroupDto
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
-    }
-    internal class EmailTempateVariableDto
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Token { get; set; } = string.Empty;
-        public string MapTo { get; set; } = string.Empty;
-    }
+internal class EmailTempateVariableDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Token { get; set; } = string.Empty;
+    public string MapTo { get; set; } = string.Empty;
 }

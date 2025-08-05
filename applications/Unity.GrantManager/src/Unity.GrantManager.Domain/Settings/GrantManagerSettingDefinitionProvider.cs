@@ -58,14 +58,12 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
         var backGroundSchedules = new Dictionary<string, string>
         {
             { SettingsConstants.BackgroundJobs.IntakeResync_NumDaysToCheck, "-4" },
-             // 23 = 11 pm   So 23 + 8 UTC = 7 also at 19 = 11 am
+            // 23 = 11 pm   So 23 + 8 UTC = 7 also at 19 = 11 am
             { SettingsConstants.BackgroundJobs.IntakeResync_Expression, "0 0 7,19 1/1 * ? *" },
             // 24 = 12 am   So 24 + 8 UTC = 8
             { PaymentSettingsConstants.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression, "0 0 8 1/1 * ? *" },
             // 24 = 1 am   So 24 + 8 UTC = 9
-            { PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression, "0 0 9 1/1 * ? *" },
-            // Run hourly
-            { SettingsConstants.BackgroundJobs.DataHealthCheckMonitor_Expression, "0 0 * 1/1 * ? *" }
+            { PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression, "0 0 9 1/1 * ? *" }
         };
 
         foreach (var setting in backGroundSchedules)

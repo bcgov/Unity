@@ -57,27 +57,15 @@ namespace Unity.Flex
 
         public static CustomFieldDefinition? ConvertDefinition(this string definition, QuestionType type)
         {
-            if (string.IsNullOrWhiteSpace(definition))
+            return type switch
             {
-                return null;
-            }
-
-            try
-            {
-                return type switch
-                {
-                    QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
-                    QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
-                    QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),
-                    QuestionType.SelectList => JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition),
-                    QuestionType.TextArea => JsonSerializer.Deserialize<TextAreaDefinition>(definition),
-                    _ => null,
-                };
-            }
-            catch (JsonException)
-            {
-                return null;
-            }
+                QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
+                QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
+                QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),
+                QuestionType.SelectList => JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition),
+                QuestionType.TextArea => JsonSerializer.Deserialize<TextAreaDefinition>(definition),
+                _ => null,
+            };
         }
 
         public static string[] GetCheckedOptions(this string value)

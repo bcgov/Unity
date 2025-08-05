@@ -329,11 +329,7 @@ $(function () {
             'The application/s payment request has been successfully submitted.',
             'Payment'
         );
-        PubSub.publish("refresh_application_list");        
+        PubSub.publish("refresh_application_list");
     });
-
-    applicationPaymentRequestModal.onOpen(function () {
-        calculateTotalAmount();     
-    });    
 });
 

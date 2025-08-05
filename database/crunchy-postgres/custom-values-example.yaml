@@ -12,8 +12,9 @@ dataSource:
   secretName: new-s3-pgbackrest
   repo:
     path: "/habackup-new"
-    bucket: "sector-project-new"
-    endpoint: "https://sector.objectstore.gov.bc.ca"
+    s3:
+      bucket: "sector-project-new"
+      endpoint: "https://sector.objectstore.gov.bc.ca"
 
 pgBackRest:
   repos:
@@ -40,33 +41,3 @@ pgBackRest:
     # set the default schedule to avoid conflicts
     fullSchedule: 30 11 * * *
     incrementalSchedule: 30 3,15,19,23 * * *
-
-# Data restore cronjob configuration example
-# Uncomment and configure to enable daily restore from source database
-# Reuses the same structure as dataSource for consistency
-# dataRestore:
-#   enabled: true
-#   schedule: "0 2 * * *"  # Daily at 2 AM
-#   image: "artifacts.developer.gov.bc.ca/bcgov-docker-local/crunchy-pgbackrest:ubi8-2.47-1"
-#   secretName: "new-s3-pgbackrest"
-#   repo:
-#     name: repo2
-#     path: "/habackup-source"
-#     bucket: "source-database-backups"
-#     endpoint: "https://sector.objectstore.gov.bc.ca"
-#     region: "not-used"
-#     uriStyle: "path"
-#   stanza: db
-#   target:
-#     clusterName: ""
-#     database: "myapp"
-#   resources:
-#     requests:
-#       cpu: 200m
-#       memory: 512Mi
-#     limits:
-#       cpu: 1000m
-#       memory: 1Gi
-#   additionalArgs:
-#     - "--log-level-console=debug"
-#     - "--process-max=2"

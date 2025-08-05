@@ -49,7 +49,7 @@ public class ExpenseApproval : FullAuditedEntity<Guid>, IMultiTenant
     }
     private PaymentRequest? _paymentRequest;
 
-    public ExpenseApproval()
+    protected ExpenseApproval()
     {
         /* This constructor is for ORMs to be used while getting the entity from the database. */
     }

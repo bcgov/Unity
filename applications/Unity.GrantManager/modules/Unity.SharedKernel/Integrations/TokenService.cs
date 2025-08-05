@@ -65,6 +65,8 @@ namespace Unity.Modules.Shared.Integrations
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
             requestMessage.Content = content;
 
+            //specify to use TLS 1.2 as default connection if TLS 1.3 does not exist
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
             HttpClient client = httpClientFactory.CreateClient();
             client.BaseAddress = new Uri(clientOptions.Url);
             client.DefaultRequestHeaders.Accept.Clear();

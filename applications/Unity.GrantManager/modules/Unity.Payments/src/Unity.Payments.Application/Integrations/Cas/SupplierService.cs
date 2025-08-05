@@ -82,7 +82,7 @@ namespace Unity.Payments.Integrations.Cas
                 supplierEto.CorrelationId = applicantId;
                 supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
                 await localEventBus.PublishAsync(supplierEto);
-            } catch (Exception ex)
+            }catch(Exception ex)
             {
                 Logger.LogError(ex, "An exception occurred updating the supplier: {ExceptionMessage}", ex.Message);
                 throw new UserFriendlyException("An exception occurred updating the supplier.");

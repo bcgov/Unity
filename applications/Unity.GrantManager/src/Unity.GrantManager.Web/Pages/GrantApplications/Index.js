@@ -95,10 +95,7 @@
                         })
                         dt.colReorder.order(orderedIndexes);
 
-                        $('#search, .custom-filter-input').val('');
-                        dt.columns().search('');
-                        dt.search('');
-                        dt.order([4, 'desc']).draw();
+                        dt.order([4, 'desc']).search('').draw();
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
@@ -268,8 +265,7 @@
             getFyeDayColumn(columnIndex++),
             getFyeMonthColumn(columnIndex++),
             getApplicantIdColumn(columnIndex++),
-            getPayoutColumn(columnIndex++),
-            getNonRegisteredOrganizationNameColumn(columnIndex++),
+            getPayoutColumn(columnIndex++)
         ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
             .sort((a, b) => a.index - b.index);
         return sortedColumns;
@@ -864,19 +860,6 @@
             index: columnIndex
         }
     }
-
-    function getNonRegisteredOrganizationNameColumn(columnIndex) {
-        return {
-            title: l('Summary:Application.NonRegOrgName'),
-            name: 'nonRegOrgName',
-            data: 'nonRegOrgName',
-            className: 'data-table-header',
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
     function getDueDiligenceStatusColumn(columnIndex) {
         return {
             title: 'Due Diligence Status',
@@ -1258,25 +1241,6 @@
             dataTable.rows({ 'page': 'current' }).deselect();
         }
     });
-
-
-    /* Fix when selecting option 'Other Sector/Sub/Industry Description' in the dropdown column list */
-    $(document).on('click', '.dt-button-collection .buttons-columnVisibilitynull span', function () {
-        if ($(this).text().trim() === 'Other Sector/Sub/Industry Description') {
-            // Add a custom class to the open dropdown
-            $('.dt-button-collection').addClass('shift-left');
-        } else {
-            // Optionally remove the class if another button is clicked
-            $('.dt-button-collection').removeClass('shift-left');
-        }
-    });
-
-    $(document).on('click', function (e) {
-        if (!$(e.target).closest('.dt-button-collection').length) {
-            $('.dt-button-collection').removeClass('shift-left');
-        }
-    });
-
 });
 function payoutDefinition(approvedAmount, totalPaid) {
     if ((approvedAmount > 0 && totalPaid > 0) && (approvedAmount  === totalPaid)) {

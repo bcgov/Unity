@@ -9,7 +9,6 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Integration.Chefs;
 using Unity.GrantManager.Permissions;
-using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -32,14 +31,11 @@ CrudAppService<
     private readonly IFormsApiService _formsApiService;
     private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
     private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
-    private readonly IGrantApplicationAppService _applicationService;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
-
     public ApplicationFormAppService(IRepository<ApplicationForm, Guid> repository,
         IStringEncryptionService stringEncryptionService,
         IApplicationFormVersionAppService applicationFormVersionAppService,
         IApplicationFormVersionRepository applicationFormVersionRepository,
-        IGrantApplicationAppService applicationService,
         IFormsApiService formsApiService)
         : base(repository)
     {
@@ -48,7 +44,6 @@ CrudAppService<
         _formsApiService = formsApiService;
         _applicationFormVersionRepository = applicationFormVersionRepository;
         _applicationFormRepository = repository;
-        _applicationService = applicationService;
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
@@ -159,34 +154,5 @@ CrudAppService<
         form.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
 
         await _applicationFormRepository.UpdateAsync(form);
-    }
-
-    [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
-    public async Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId)
-    {
-        // Get the payment threshold for the application
-        GrantApplicationDto grantApplicationDto = await _applicationService.GetAsync(applicationId);
-        Guid formId = grantApplicationDto.ApplicationForm.Id;
-        ApplicationForm appForm = await _applicationFormRepository.GetAsync(formId);     
-        return appForm.PreventPayment;
-    }
-
-    public async Task SavePaymentConfiguration(FormPaymentConfigurationDto dto)
-    {
-        ApplicationForm appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);
-        appForm.AccountCodingId = dto.AccountCodingId;
-        appForm.Payable = dto.Payable;
-        appForm.PreventPayment = dto.PreventPayment;
-        appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
-        await _applicationFormRepository.UpdateAsync(appForm);
-    }
-    
-    public async Task<decimal?> GetFormPaymentApprovalThresholdByApplicationIdAsync(Guid applicationId)
-    {
-        // Get the payment threshold for the application
-        GrantApplicationDto application = await _applicationService.GetAsync(applicationId);
-        Guid formId = application.ApplicationForm.Id;
-        ApplicationForm appForm = await _applicationFormRepository.GetAsync(formId);     
-        return appForm.PaymentApprovalThreshold;
     }
 }
