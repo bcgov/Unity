@@ -151,6 +151,7 @@ public class ApplicationApplicantAppService(
         }
 
         // Only update the fields we need to update based on the modified
+        // Automapper mapping ignores the ElectoralDistrict as this is different from the application level electoral district
         ObjectMapper.Map<UpdateApplicantInfoDto, Applications.Application>(input.Data, application);
 
         //-- APPLICANT INFO - SUMMARY
@@ -188,6 +189,14 @@ public class ApplicationApplicantAppService(
         {
             input.Data.MailingAddress.AddressType = AddressType.MailingAddress;
             await CreateOrUpdateApplicantAddress(application.ApplicantId, input.Data.MailingAddress);
+        }
+
+        //-- APPLICANT ELECTORAL DISTRICT
+        if (input.Data.ElectoralDistrict != null
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        {
+            // Update the electoral district at the applicant level
+            application.Applicant.ElectoralDistrict = input.Data.ElectoralDistrict;
         }
 
         //-- APPLICANT INFO CUSTOM FIELDS
