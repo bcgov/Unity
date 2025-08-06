@@ -103,7 +103,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<UpdateApplicantInfoDto, Applicant>()
             .IgnoreNullAndDefaultValues();
         CreateMap<UpdateApplicantInfoDto, Application>()
-            .IgnoreNullAndDefaultValues();
+            .IgnoreNullAndDefaultValues()
+            .ForMember(dest => dest.ElectoralDistrict, opt => opt.Ignore()); // Electoral district is handled separately
         CreateMap<SigningAuthorityDto, Application>()
             .IgnoreNullAndDefaultValues();
         CreateMap<UpdateApplicantSummaryDto, Applicant>()
