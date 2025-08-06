@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Distributed;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Distributed;
+using Unity.GrantManager.Locality.BackgroundJobs;
 using Unity.GrantManager.Settings;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
@@ -17,7 +20,8 @@ namespace Unity.GrantManager.Locality
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(ElectoralDistrictAppService), typeof(IElectoralDistrictService))]
     public class ElectoralDistrictAppService(IElectoralDistrictRepository electoralDistrictRepository,
-        IDistributedCache<ElectoralDistrictsCache, string> cache) : ApplicationService, IElectoralDistrictService
+        IDistributedCache<ElectoralDistrictsCache, string> cache,
+        IBackgroundJobManager backgroundJobManager) : ApplicationService, IElectoralDistrictService
     {
         public virtual async Task<IList<ElectoralDistrictDto>> GetListAsync()
         {
@@ -31,6 +35,12 @@ namespace Unity.GrantManager.Locality
             );
 
             return electoralDistrictsCache?.ElectoralDistricts ?? [];
+        }
+        
+        [Authorize(IdentityConsts.ITAdminPolicyName)]
+        public virtual async Task RetroFillElectoralDistricts(Guid tenantId)
+        {
+            await backgroundJobManager.EnqueueAsync(new RetrofillElectoralDistrictsBackgroundJobArgs() { TenantId = tenantId });
         }
 
         protected virtual async Task<ElectoralDistrictsCache> GetElectoralDistrictsAsync()
