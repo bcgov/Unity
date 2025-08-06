@@ -222,7 +222,8 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             .Select(payment => new UpdatePaymentStatusRequestDto
             {
                 PaymentRequestId = payment.Id,
-                IsApprove = IsApproval
+                IsApprove = IsApproval,
+                Note = Note ?? String.Empty
             })
             .ToList();
 

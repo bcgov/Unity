@@ -199,7 +199,17 @@ namespace Unity.Payments.PaymentRequests
                 try
                 {
                     var payment = await paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
-                    payment.SetNote(dto.Note);
+                    if (payment == null)
+                        continue;
+
+                    if (!string.IsNullOrWhiteSpace(payment.Note) && !string.IsNullOrWhiteSpace(dto.Note))
+                    {
+                        payment.SetNote($"{payment.Note}; {dto.Note}");
+                    }
+                    else
+                    {
+                        payment.SetNote(dto.Note);
+                    }
 
                     var triggerAction = await DetermineTriggerActionAsync(dto, payment);
 

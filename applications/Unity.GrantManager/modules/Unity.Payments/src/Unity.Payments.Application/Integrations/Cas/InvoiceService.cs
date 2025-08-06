@@ -54,7 +54,8 @@ namespace Unity.Payments.Integrations.Cas
             if (site != null && site.Supplier != null && site.Supplier.Number != null && accountDistributionCode != null)
             {
                 // This can not be UTC Now it is sent to cas and can not be in the future - this is not being stored in Unity as a date
-                var localDateTime = DateTime.UtcNow.ToLocalTime();
+                var vancouverTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+                var localDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vancouverTimeZone);
                 var currentMonth = localDateTime.ToString("MMM").Trim('.');
                 var currentDay = localDateTime.ToString("dd");
                 var currentYear = localDateTime.ToString("yyyy");
