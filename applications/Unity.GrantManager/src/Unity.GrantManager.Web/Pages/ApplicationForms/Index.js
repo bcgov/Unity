@@ -29,7 +29,7 @@
                             }
                         },
                         {
-                            text: l('ApplicationForms:Mapping'),
+                            text: "Configuration",
                             action: function (data) {
                                 location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id
                             }

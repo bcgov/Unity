@@ -1,11 +1,11 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Unity.GrantManager.GlobalTag;
 using Unity.Payments.PaymentTags;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -38,8 +38,6 @@ namespace Unity.Payments.Web.Pages.PaymentTags
         public string? ActionType { get; set; } = string.Empty;
 
         private readonly IPaymentTagAppService _paymentTagsService;
-        private readonly ITagsService _tagsService;
-
 
         [BindProperty]
         [DisplayName("Common Tags")]
@@ -54,28 +52,22 @@ namespace Unity.Payments.Web.Pages.PaymentTags
         public List<NewTagItem> Tags { get; set; } = new();
 
         [BindProperty]
-        public string? SelectedTagsJson { get; set; } 
+        public string? SelectedTagsJson { get; set; }
 
         [BindProperty]
         public string? TagsJson { get; set; }
 
-
-        public PaymentTagsSelectionModalModel(IPaymentTagAppService paymentTagAppService, ITagsService tagsService)
+        public PaymentTagsSelectionModalModel(IPaymentTagAppService paymentTagAppService)
         {
             _paymentTagsService = paymentTagAppService ?? throw new ArgumentNullException(nameof(paymentTagAppService));
-            _tagsService = tagsService ?? throw new ArgumentNullException(nameof(tagsService));
-
         }
 
-        public  Task OnGetAsync(string paymentRequestIds, string actionType)
+        public Task OnGetAsync(string paymentRequestIds, string actionType)
         {
-           
             SelectedPaymentRequestIds = paymentRequestIds;
             ActionType = actionType;
 
-
             return Task.CompletedTask;
-
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -88,7 +80,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
                 var paymentRequestIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedPaymentRequestIds);
                 if (SelectedTags != null)
                 {
-               
+
                     var selectedTagList = DeserializeJson<List<TagDto>>(SelectedTags) ?? [];
                     if (null != paymentRequestIds)
                     {
@@ -118,8 +110,8 @@ namespace Unity.Payments.Web.Pages.PaymentTags
             for (int i = 0; i < selectedPaymentRequestIds.Length; i++)
             {
                 var item = selectedPaymentRequestIds[i];
-               
-                 var tagList = new List<GlobalTagDto>();
+
+                var tagList = new List<GlobalTagDto>();
                 if (tags != null
                     && tags.Count > 0
                     && selectedTags != null
@@ -130,7 +122,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
 
                     if (paymentTag?.UncommonTags != null)
                     {
-                        
+
                         tagList.AddRange(paymentTag.UncommonTags);
                     }
                 }
@@ -158,7 +150,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
             }
         }
 
-         
+
 
         private static T? DeserializeJson<T>(string jsonString) where T : class
         {
