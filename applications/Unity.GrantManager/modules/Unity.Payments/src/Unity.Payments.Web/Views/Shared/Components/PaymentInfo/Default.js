@@ -20,7 +20,8 @@
         let formData = $("#paymentInfoForm").serializeArray();
         let paymentInfoObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();
-        let worksheetId = $("#PaymentInfo_WorksheetId").val();
+        // Check for both multiple and single worksheet ID formats for compatibility
+        let worksheetIds = $("#PaymentInfo_WorksheetIds").val() || $("#PaymentInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -42,7 +43,16 @@
         }
 
         paymentInfoObj['correlationId'] = formVersionId;
-        paymentInfoObj['worksheetId'] = worksheetId;
+        if (worksheetIds) {
+            // Handle both single and multiple worksheet IDs - always send as array
+            if (worksheetIds.includes(',')) {
+                // Multiple IDs - split and clean
+                paymentInfoObj['worksheetIds'] = worksheetIds.split(',').map(id => id.trim());
+            } else {
+                // Single ID - convert to array for backend compatibility
+                paymentInfoObj['worksheetIds'] = [worksheetIds.trim()];
+            }
+        }
         updatePaymentInfo(applicationId, paymentInfoObj);
     });
 

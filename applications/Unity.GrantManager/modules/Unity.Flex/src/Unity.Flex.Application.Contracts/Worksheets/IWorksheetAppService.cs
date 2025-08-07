@@ -10,7 +10,7 @@ namespace Unity.Flex.Worksheets
         Task<WorksheetDto> GetAsync(Guid id);
         Task<List<WorksheetDto>> GetListAsync();
         Task<List<WorksheetDto>> GetListByCorrelationAsync(Guid correlationId, string correlationProvider);
-        Task<WorksheetDto?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor);
+        Task<List<WorksheetDto>> GetListByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor);
         Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto);
         Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto);
         Task<WorksheetDto> EditAsync(Guid id, EditWorksheetDto dto);

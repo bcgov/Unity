@@ -191,9 +191,31 @@ public class ApplicationApplicantAppService(
         }
 
         //-- APPLICANT INFO CUSTOM FIELDS
-        if (input.Data.CustomFields?.ValueKind != JsonValueKind.Null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        if (input.Data.CustomFields?.ValueKind != JsonValueKind.Null && input.Data.CorrelationId != Guid.Empty)
         {
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input.Data);
+            // Handle multiple worksheets
+            if (input.Data.WorksheetIds?.Count > 0)
+            {
+                foreach (var worksheetId in input.Data.WorksheetIds)
+                {
+                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.Data.CustomFields, worksheetId);
+                    if (worksheetCustomFields.Count > 0)
+                    {
+                        var worksheetData = new CustomDataFieldDto
+                        {
+                            WorksheetId = worksheetId,
+                            CustomFields = worksheetCustomFields,
+                            CorrelationId = input.Data.CorrelationId
+                        };
+                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, worksheetData);
+                    }
+                }
+            }
+            // Fallback for single worksheet (backward compatibility)
+            else if (input.Data.WorksheetId != Guid.Empty)
+            {
+                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input.Data);
+            }
         }
 
         var updatedApplication = await applicationRepository.UpdateAsync(application);
@@ -350,5 +372,23 @@ public class ApplicationApplicantAppService(
 
         return string.Equals(normalizedSupplierName, organizationName, StringComparison.OrdinalIgnoreCase)
         || string.Equals(normalizedSupplierName, nonRegisteredOrganizationName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(JsonElement customFields, Guid worksheetId)
+    {
+        var result = new Dictionary<string, object>();
+        var worksheetSuffix = $".{worksheetId}";
+        
+        foreach (var property in customFields.EnumerateObject())
+        {
+            if (property.Name.EndsWith(worksheetSuffix))
+            {
+                // Remove worksheet ID suffix to get original field name
+                var originalFieldName = property.Name.Substring(0, property.Name.Length - worksheetSuffix.Length);
+                result[originalFieldName] = property.Value.GetRawText();
+            }
+        }
+        
+        return result;
     }
 }

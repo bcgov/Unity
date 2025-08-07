@@ -52,31 +52,59 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
     {
         WorksheetViewModel? viewModel = null;
 
-        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId,
-            instanceCorrelationProvider,
-            worksheetId,
-            uiAnchor);
-
-        WorksheetDto? worksheet;
         if (uiAnchor == FlexConsts.CustomTab)
         {
+            // Single worksheet scenario (CustomTabWidget)
             if (worksheetId == null) return View(viewModel);
-            worksheet = await worksheetAppService.GetAsync(worksheetId.Value);
+            
+            var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId,
+                instanceCorrelationProvider,
+                worksheetId.Value,
+                uiAnchor);
+            
+            var worksheet = await worksheetAppService.GetAsync(worksheetId.Value);
+            
+            if (worksheet == null) return View(new WorksheetViewModel());
+
+            if (worksheetInstance == null)
+            {
+                viewModel = MapWorksheet(worksheet, uiAnchor);
+            }
+            else
+            {
+                viewModel = MapWorksheetInstance(worksheet, uiAnchor, worksheetInstance);
+            }
         }
         else
         {
-            worksheet = await worksheetAppService.GetByCorrelationAnchorAsync(sheetCorrelationId, sheetCorrelationProvider, uiAnchor);
-        }
+            // Multiple worksheet scenario (correlation-based)
+            var worksheets = await worksheetAppService.GetListByCorrelationAnchorAsync(sheetCorrelationId, sheetCorrelationProvider, uiAnchor);
+            
+            if (worksheets.Count == 0) return View(new WorksheetViewModel());
 
-        if (worksheet == null) return View(new WorksheetViewModel());
+            if (worksheets.Count == 1)
+            {
+                // Single worksheet found
+                var worksheet = worksheets[0];
+                var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId,
+                    instanceCorrelationProvider,
+                    worksheet.Id,
+                    uiAnchor);
 
-        if (worksheetInstance == null)
-        {
-            viewModel = MapWorksheet(worksheet, uiAnchor);
-        }
-        else
-        {
-            viewModel = MapWorksheetInstance(worksheet, uiAnchor, worksheetInstance);
+                if (worksheetInstance == null)
+                {
+                    viewModel = MapWorksheet(worksheet, uiAnchor);
+                }
+                else
+                {
+                    viewModel = MapWorksheetInstance(worksheet, uiAnchor, worksheetInstance);
+                }
+            }
+            else
+            {
+                // Multiple worksheets found
+                viewModel = await MapMultipleWorksheetsAsync(worksheets, instanceCorrelationId, instanceCorrelationProvider, uiAnchor);
+            }
         }
 
         return View(viewModel);
@@ -147,6 +175,39 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
 
         worksheetViewModel.WorksheetInstanceId = worksheetInstance.Id;
         return worksheetViewModel;
+    }
+
+    private async Task<WorksheetViewModel> MapMultipleWorksheetsAsync(List<WorksheetDto> worksheets, Guid instanceCorrelationId, string instanceCorrelationProvider, string uiAnchor)
+    {
+        var containerViewModel = new WorksheetViewModel
+        {
+            Name = "Multiple Worksheets",
+            UiAnchor = uiAnchor,
+            IsConfigured = true,
+            WorksheetIds = worksheets.Select(w => w.Id).ToList()
+        };
+
+        foreach (var worksheet in worksheets)
+        {
+            var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId,
+                instanceCorrelationProvider,
+                worksheet.Id,
+                uiAnchor);
+
+            WorksheetViewModel worksheetViewModel;
+            if (worksheetInstance == null)
+            {
+                worksheetViewModel = MapWorksheet(worksheet, uiAnchor);
+            }
+            else
+            {
+                worksheetViewModel = MapWorksheetInstance(worksheet, uiAnchor, worksheetInstance);
+            }
+
+            containerViewModel.Worksheets.Add(worksheetViewModel);
+        }
+
+        return containerViewModel;
     }
 }
 

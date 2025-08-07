@@ -4,7 +4,8 @@
         let formVersionId = $("#FundingAgreementInfoView_FormVersionId").val();
         let formData = $("#fundingAgreementInfoForm").serializeArray();
         let fundingAgreementInfoObj = {};
-        let worksheetId = $("#FundingAgreementInfo_WorksheetId").val();
+        // Check for both multiple and single worksheet ID formats for compatibility
+        let worksheetIds = $("#FundingAgreementInfo_WorksheetIds").val() || $("#FundingAgreementInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -25,7 +26,16 @@
         }
 
         fundingAgreementInfoObj['correlationId'] = formVersionId;
-        fundingAgreementInfoObj['worksheetId'] = worksheetId;
+        if (worksheetIds) {
+            // Handle both single and multiple worksheet IDs - always send as array
+            if (worksheetIds.includes(',')) {
+                // Multiple IDs - split and clean
+                fundingAgreementInfoObj['worksheetIds'] = worksheetIds.split(',').map(id => id.trim());
+            } else {
+                // Single ID - convert to array for backend compatibility
+                fundingAgreementInfoObj['worksheetIds'] = [worksheetIds.trim()];
+            }
+        }
 
         updateFundingAgreementInfo(applicationId, fundingAgreementInfoObj);
     });

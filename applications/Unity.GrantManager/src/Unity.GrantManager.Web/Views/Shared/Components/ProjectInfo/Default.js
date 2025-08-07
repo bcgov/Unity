@@ -41,7 +41,18 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                 if (typeof Flex === 'function' && Object.keys(projectInfoObj.CustomFields || {}).length > 0) {
                     // Add Worksheet Metadata and filter conditions
                     projectInfoObj.CorrelationId = $("#ProjectInfo_ApplicationFormVersionId").val();
-                    projectInfoObj.WorksheetId = $("#ProjectInfo_WorksheetId").val();
+                    // Check for both multiple and single worksheet ID formats for compatibility
+                    let worksheetIds = $("#ProjectInfo_WorksheetIds").val() || $("#ProjectInfo_WorksheetId").val();
+                    if (worksheetIds) {
+                        // Handle both single and multiple worksheet IDs - always send as array
+                        if (worksheetIds.includes(',')) {
+                            // Multiple IDs - split and clean
+                            projectInfoObj.WorksheetIds = worksheetIds.split(',').map(id => id.trim());
+                        } else {
+                            // Single ID - convert to array for backend compatibility
+                            projectInfoObj.WorksheetIds = [worksheetIds.trim()];
+                        }
+                    }
 
                     // Normalize checkboxes to string for custom worksheets
                     $(`#Unity_GrantManager_ApplicationManagement_Project_Worksheet input:checkbox`).each(function () {
@@ -51,7 +62,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                     customIncludes
                         .add('CustomFields')
                         .add('CorrelationId')
-                        .add('WorksheetId');
+                        .add('WorksheetIds');
                 }
                 
                 // Create filtered object in one functional operation

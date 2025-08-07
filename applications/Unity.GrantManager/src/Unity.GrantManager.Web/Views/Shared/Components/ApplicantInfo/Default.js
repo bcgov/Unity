@@ -70,7 +70,18 @@
             if (typeof Flex === 'function' && Object.keys(submissionPayload.CustomFields || {}).length > 0) {
                 // Add Worksheet Metadata and filter conditions
                 submissionPayload.CorrelationId = $("#ApplicantInfo_ApplicationFormVersionId").val();
-                submissionPayload.WorksheetId = $("#ApplicantInfo_WorksheetId").val();
+                // Check for both multiple and single worksheet ID formats for compatibility
+                let worksheetIds = $("#ApplicantInfo_WorksheetIds").val() || $("#ApplicantInfo_WorksheetId").val();
+                if (worksheetIds) {
+                    // Handle both single and multiple worksheet IDs - always send as array
+                    if (worksheetIds.includes(',')) {
+                        // Multiple IDs - split and clean
+                        submissionPayload.WorksheetIds = worksheetIds.split(',').map(id => id.trim());
+                    } else {
+                        // Single ID - convert to array for backend compatibility
+                        submissionPayload.WorksheetIds = [worksheetIds.trim()];
+                    }
+                }
 
                 // Normalize checkboxes to string for custom worksheets
                 $(`#Unity_GrantManager_ApplicationManagement_Applicant_Worksheet input:checkbox`).each(function () {
@@ -80,7 +91,7 @@
                 customIncludes
                     .add('CustomFields')
                     .add('CorrelationId')
-                    .add('WorksheetId');
+                    .add('WorksheetIds');
             }
 
             customIncludes.add('ApplicantId');

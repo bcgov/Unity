@@ -11,13 +11,14 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class WorksheetRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Worksheet, Guid>(dbContextProvider), IWorksheetRepository
     {
-        public async Task<Worksheet?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false)
+        public async Task<List<Worksheet>> GetListByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
 
             return await dbSet
                     .IncludeDetails(includeDetails)
-                    .FirstOrDefaultAsync(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider && s.UiAnchor == uiAnchor));
+                    .Where(s => s.Links.Any(l => l.CorrelationId == correlationId && l.CorrelationProvider == correlationProvider && l.UiAnchor == uiAnchor))
+                    .ToListAsync();
         }
 
         public async Task<Worksheet?> GetByCorrelationByNameAsync(Guid correlationId, string correlationProvider, string name, bool includeDetails = false)

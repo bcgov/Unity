@@ -348,7 +348,33 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
 
-        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, input);
+        // Handle custom fields for assessment info
+        if (input.CustomFields != null && input.CorrelationId != Guid.Empty)
+        {
+            // Handle multiple worksheets
+            if (input.WorksheetIds?.Count > 0)
+            {
+                foreach (var worksheetId in input.WorksheetIds)
+                {
+                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
+                    if (worksheetCustomFields.Count > 0)
+                    {
+                        var worksheetData = new CustomDataFieldDto
+                        {
+                            WorksheetId = worksheetId,
+                            CustomFields = worksheetCustomFields,
+                            CorrelationId = input.CorrelationId
+                        };
+                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, worksheetData);
+                    }
+                }
+            }
+            // Fallback for single worksheet (backward compatibility)
+            else if (input.WorksheetId != Guid.Empty)
+            {
+                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, input);
+            }
+        }
 
         await _applicationRepository.UpdateAsync(application);
 
@@ -462,7 +488,33 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.RegionalDistrict = input.RegionalDistrict;
             application.Place = input.Place;
 
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
+            // Handle custom fields for project info
+            if (input.CustomFields != null && input.CorrelationId != Guid.Empty)
+            {
+                // Handle multiple worksheets
+                if (input.WorksheetIds?.Count > 0)
+                {
+                    foreach (var worksheetId in input.WorksheetIds)
+                    {
+                        var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
+                        if (worksheetCustomFields.Count > 0)
+                        {
+                            var worksheetData = new CustomDataFieldDto
+                            {
+                                WorksheetId = worksheetId,
+                                CustomFields = worksheetCustomFields,
+                                CorrelationId = input.CorrelationId
+                            };
+                            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, worksheetData);
+                        }
+                    }
+                }
+                // Fallback for single worksheet (backward compatibility)
+                else if (input.WorksheetId != Guid.Empty)
+                {
+                    await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
+                }
+            }
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -515,9 +567,31 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         application.UpdatePercentageTotalProjectBudget();
 
         // Add custom worksheet data
-        if (input.Data.CustomFields is not null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        if (input.Data.CustomFields is not null && input.Data.CorrelationId != Guid.Empty)
         {
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
+            // Handle multiple worksheets
+            if (input.Data.WorksheetIds?.Count > 0)
+            {
+                foreach (var worksheetId in input.Data.WorksheetIds)
+                {
+                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.Data.CustomFields, worksheetId);
+                    if (worksheetCustomFields.Count > 0)
+                    {
+                        var worksheetData = new CustomDataFieldDto
+                        {
+                            WorksheetId = worksheetId,
+                            CustomFields = worksheetCustomFields,
+                            CorrelationId = input.Data.CorrelationId
+                        };
+                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, worksheetData);
+                    }
+                }
+            }
+            // Fallback for single worksheet (backward compatibility)
+            else if (input.Data.WorksheetId != Guid.Empty)
+            {
+                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
+            }
         }
 
         await _applicationRepository.UpdateAsync(application);
@@ -533,7 +607,33 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
 
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, input);
+            // Handle custom fields for funding agreement info
+            if (input.CustomFields != null && input.CorrelationId != Guid.Empty)
+            {
+                // Handle multiple worksheets
+                if (input.WorksheetIds?.Count > 0)
+                {
+                    foreach (var worksheetId in input.WorksheetIds)
+                    {
+                        var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
+                        if (worksheetCustomFields.Count > 0)
+                        {
+                            var worksheetData = new CustomDataFieldDto
+                            {
+                                WorksheetId = worksheetId,
+                                CustomFields = worksheetCustomFields,
+                                CorrelationId = input.CorrelationId
+                            };
+                            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, worksheetData);
+                        }
+                    }
+                }
+                // Fallback for single worksheet (backward compatibility)
+                else if (input.WorksheetId != Guid.Empty)
+                {
+                    await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, input);
+                }
+            }
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -1116,5 +1216,26 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                     };
 
         return await query.ToListAsync();
+    }
+
+    private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(dynamic customFields, Guid worksheetId)
+    {
+        var result = new Dictionary<string, object>();
+        var worksheetSuffix = $".{worksheetId}";
+        
+        if (customFields is JsonElement jsonElement)
+        {
+            foreach (var property in jsonElement.EnumerateObject())
+            {
+                if (property.Name.EndsWith(worksheetSuffix))
+                {
+                    // Remove worksheet ID suffix to get original field name
+                    var originalFieldName = property.Name.Substring(0, property.Name.Length - worksheetSuffix.Length);
+                    result[originalFieldName] = property.Value.GetRawText();
+                }
+            }
+        }
+        
+        return result;
     }
 }

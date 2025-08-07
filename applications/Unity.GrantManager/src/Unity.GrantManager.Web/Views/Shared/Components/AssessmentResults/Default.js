@@ -6,7 +6,8 @@
         let combinedData = formData.concat(assessmentResultsCustomForm);
         let assessmentResultObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();     
-        let worksheetId = $("#AssessmentInfo_WorksheetId").val();       
+        // Check for both multiple and single worksheet ID formats for compatibility
+        let worksheetIds = $("#AssessmentInfo_WorksheetIds").val() || $("#AssessmentInfo_WorksheetId").val();       
 
         $.each(combinedData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -48,7 +49,16 @@
 
         try {
             assessmentResultObj['correlationId'] = formVersionId;
-            assessmentResultObj['worksheetId'] = worksheetId;
+            if (worksheetIds) {
+                // Handle both single and multiple worksheet IDs - always send as array
+                if (worksheetIds.includes(',')) {
+                    // Multiple IDs - split and clean
+                    assessmentResultObj['worksheetIds'] = worksheetIds.split(',').map(id => id.trim());
+                } else {
+                    // Single ID - convert to array for backend compatibility
+                    assessmentResultObj['worksheetIds'] = [worksheetIds.trim()];
+                }
+            }
             unity.grantManager.grantApplications.grantApplication
                 .updateAssessmentResults(applicationId, assessmentResultObj)
                 .done(function () {
