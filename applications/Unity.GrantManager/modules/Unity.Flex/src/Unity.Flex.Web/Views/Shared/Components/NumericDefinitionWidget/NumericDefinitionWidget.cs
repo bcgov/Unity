@@ -29,23 +29,36 @@ namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
             .ApplyRequired(form);
         }
 
+        // Cache JsonSerializerOptions instance
+        private static readonly JsonSerializerOptions CachedJsonOptions = new JsonSerializerOptions
+        {
+            NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+        };
+
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
         {
-            if (definition != null)
+            NumericDefinitionViewModel viewModel = new();
+
+            if (!string.IsNullOrWhiteSpace(definition))
             {
-                NumericDefinition? numericDefinition = JsonSerializer.Deserialize<NumericDefinition>(definition);
-                if (numericDefinition != null)
+                try
                 {
-                    return View(await Task.FromResult(new NumericDefinitionViewModel()
+                    var numericDefinition = JsonSerializer.Deserialize<NumericDefinition>(definition, CachedJsonOptions);
+
+                    if (numericDefinition != null)
                     {
-                        Min = numericDefinition.Min,
-                        Max = numericDefinition.Max,
-                        Required = numericDefinition.Required
-                    }));
+                        viewModel.Min = numericDefinition.Min;
+                        viewModel.Max = numericDefinition.Max;
+                        viewModel.Required = numericDefinition.Required;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Optionally log the error                    
                 }
             }
 
-            return View(await Task.FromResult(new NumericDefinitionViewModel()));
+            return View(await Task.FromResult(viewModel));
         }
     }
 

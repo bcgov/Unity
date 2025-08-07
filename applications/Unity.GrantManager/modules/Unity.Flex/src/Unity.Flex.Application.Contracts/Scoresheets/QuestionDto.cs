@@ -22,22 +22,74 @@ namespace Unity.Flex.Scoresheets
 
         public string? GetMin()
         {
-            return JsonSerializer.Deserialize<NumericDefinition>(Definition ?? "{}")?.Min.ToString();
+            try
+            {
+                var def = JsonSerializer.Deserialize<NumericDefinition>(Definition ?? "{}");
+                if (def?.Min == null)
+                    return null;
+                // Only allow Int64 values
+                if (long.TryParse(def.Min.ToString(), out var minValue))
+                    return minValue.ToString();
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public string? GetMax()
         {
-            return JsonSerializer.Deserialize<NumericDefinition>(Definition ?? "{}")?.Max.ToString();
+            try
+            {
+                var def = JsonSerializer.Deserialize<NumericDefinition>(Definition ?? "{}");
+                if (def?.Max == null)
+                    return null;
+                // Only allow Int64 values
+                if (long.TryParse(def.Max.ToString(), out var maxValue))
+                    return maxValue.ToString();
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public string? GetMinLength()
         {
-            return JsonSerializer.Deserialize<TextDefinition>(Definition ?? "{}")?.MinLength.ToString();
+            try
+            {
+                var def = JsonSerializer.Deserialize<TextDefinition>(Definition ?? "{}");
+                if (def?.MinLength == null)
+                    return null;
+                // Only allow Int64 values
+                if (long.TryParse(def.MinLength.ToString(), out var minLength))
+                    return minLength.ToString();
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public string? GetMaxLength()
         {
-            return JsonSerializer.Deserialize<TextDefinition>(Definition ?? "{}")?.MaxLength.ToString();
+            try
+            {
+                var def = JsonSerializer.Deserialize<TextDefinition>(Definition ?? "{}");
+                if (def?.MaxLength == null)
+                    return null;
+                // Only allow Int64 values
+                if (long.TryParse(def.MaxLength.ToString(), out var maxLength))
+                    return maxLength.ToString();
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public string? GetYesValue()

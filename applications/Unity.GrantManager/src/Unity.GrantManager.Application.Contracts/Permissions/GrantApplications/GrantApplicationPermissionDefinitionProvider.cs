@@ -78,12 +78,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
-
-            // Settings - Tag Management
-            var tagManagement = settingManagement.AddPermission(UnitySelector.SettingManagement.Tags.Default, L(UnitySelector.SettingManagement.Tags.Default));
-            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Create, L(UnitySelector.SettingManagement.Tags.Create));
-            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Update, L(UnitySelector.SettingManagement.Tags.Update));
-            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Delete, L(UnitySelector.SettingManagement.Tags.Delete));
+            settingManagement.AddPermission(UnitySettingManagementPermissions.ConfigurePayments, L("Permission:UnitySettingManagementPermissions.ConfigurePayments"));
 
             var emailingPermission = context.GetPermissionOrNull(SettingManagementPermissions.Emailing);
             if (emailingPermission != null)
@@ -102,6 +97,17 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             {
                 timezonePermission.IsEnabled = false;
             }
+
+            //-- TAG MANAGEMENT
+            var tagManagement = settingManagement.AddPermission(UnitySelector.SettingManagement.Tags.Default, L(UnitySelector.SettingManagement.Tags.Default));
+            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Create, L(UnitySelector.SettingManagement.Tags.Create));
+            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Update, L(UnitySelector.SettingManagement.Tags.Update));
+            tagManagement.AddChild(UnitySelector.SettingManagement.Tags.Delete, L(UnitySelector.SettingManagement.Tags.Delete));
+
+            //-- TAG ASSIGNMENT
+            var tagsPermissionsGroup = context.AddGroup("Tags", L("Permission:Tags"));
+            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Create, L(UnitySelector.Application.Tags.Create));
+            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));
         }
 
         private static LocalizableString L(string name)
