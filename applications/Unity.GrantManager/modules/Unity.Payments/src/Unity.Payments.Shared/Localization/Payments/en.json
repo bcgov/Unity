@@ -24,6 +24,7 @@
     "ApplicationPaymentRequest:BatchNumberName": "Batch #",
     "ApplicationPaymentRequest:NumberPayment": "Number of Payments",
     "ApplicationPaymentRequest:TotalAmount": "Total Amount",
+    "ApplicationPaymentRequest:BatchNote": "Note",
 
     "ApplicationPaymentRequest:Validations:RemainingAmountExceeded": "Cannot add a payment that exceeds the remaining amount of ",
     "ApplicationPaymentRequest:Validations:L2ApproverRestriction": "You cannot approve this payment as you have already approved it as an L1 Approver.",
@@ -59,6 +60,7 @@
     "ApplicationPaymentListTable:CASResponse": "CAS Response",
     "ApplicationPaymentListTable:InvoiceStatus": "Invoice Status",
     "ApplicationPaymentListTable:PaymentStatus": "CAS Payment Status",
+    "ApplicationPaymentListTable:Note": "Note",
 
     "ApplicantInfoView:SupplierInfoTitle": "Supplier Info",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
@@ -116,7 +118,7 @@
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
     "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
     "Permission:Payments.RequestPayment": "Request Payment",
-
+    "Permission:Payments.EditFormPaymentConfiguration": "Edit Form Payment Configuration",
     "Enum:PaymentRequestStatus.L1Pending": "L1 Pending",
     "Enum:PaymentRequestStatus.L1Approved": "L1 Approved",
     "Enum:PaymentRequestStatus.L1Declined": "L1 Declined",
@@ -127,6 +129,7 @@
     "Enum:PaymentRequestStatus.L3Approved": "L3 Approved",
     "Enum:PaymentRequestStatus.L3Declined": "L3 Declined",
     "Enum:PaymentRequestStatus.Submitted": "Submitted to CAS",
+    "Enum:PaymentRequestStatus.FSB": "Sent to Accounts Payable",
     "Enum:PaymentRequestStatus.Validated": "Validated",
     "Enum:PaymentRequestStatus.NotValidated": "Not Validated",
     "Enum:PaymentRequestStatus.Paid": "Paid",
@@ -137,6 +140,9 @@
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
-    "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List"
+    "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
+
+    "Unity.Payments.Tags.Create": "Assign Tag to Payments",
+    "Unity.Payments.Tags.Delete": "Remove Tag from Payments"
   }
 }

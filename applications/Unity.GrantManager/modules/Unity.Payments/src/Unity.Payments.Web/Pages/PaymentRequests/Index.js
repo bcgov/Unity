@@ -5,6 +5,7 @@ $(function () {
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
+    toastr.options.positionClass = 'toast-top-center';
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'referenceNumber',
@@ -24,11 +25,16 @@ $(function () {
         'l1ApprovalDate',
         'l2ApprovalDate',
         'l3ApprovalDate',
-        'CASResponse'
+        'CASResponse',
+        'accountCodingDisplay'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
         viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
+    });
+
+    paymentRequestStatusModal.onOpen(function () {
+        calculateUpdateTotalAmount();
     });
 
     let selectedPaymentIds = [];
@@ -279,7 +285,9 @@ $(function () {
             getInvoiceStatusColumn(columnIndex++),
             getPaymentStatusColumn(columnIndex++),
             getCASResponseColumn(columnIndex++),
-            getTagsColumn(columnIndex++)
+            getTagsColumn(columnIndex++),
+            getNoteColumn(columnIndex++),
+            getAccountDistributionColumn(columnIndex++),
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -517,7 +525,7 @@ $(function () {
     }
 
     function formatName(userData) {
-        return userData !== null ? `${userData?.name} ${userData?.surname}` : null;
+        return typeof userData !== 'undefined' && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
     }
 
     function getApprovalDateColumn(columnIndex, level) {
@@ -612,6 +620,34 @@ $(function () {
         }
     }
 
+    function getNoteColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:Note'),
+            name: 'note',
+            data: 'note',
+            className: 'data-table-header',
+            index: columnIndex
+
+        };
+    }
+
+    function getAccountDistributionColumn(columnIndex) {
+        return {
+            title: 'Account Code',
+            name: 'accountCodingDisplay',
+            data: 'accountCodingDisplay',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
     }
@@ -678,7 +714,7 @@ $(function () {
         }
     }
 
-    $('.select-all-payments').click(function () {
+    $('.select-all-payments').on('click', function () {
         if ($(this).is(':checked')) {
             dataTable.rows({ 'page': 'current' }).select();
         }
@@ -698,7 +734,6 @@ $(function () {
 
 });
 
-
 let casPaymentResponseModal = new abp.ModalManager({
     viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
 });
@@ -708,5 +743,3 @@ function openCasResponseModal(casResponse) {
         casResponse: casResponse
     });
 }
-
-

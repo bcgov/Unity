@@ -45,6 +45,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         public string ToStatusText { get; set; } = string.Empty;
 
         public Guid? PreviousL1Approver { get; set; }
+        public bool HasUserPaymentThreshold { get; set; }
 
         public bool IsApproval { get; set; }
         public bool IsValid { get; set; } = false;
@@ -64,7 +65,14 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                     errorMessage: localizer["ApplicationPaymentRequest:Validations:L2ApproverRestriction"],
                     memberNames: [nameof(PreviousL1Approver)]
                 );
-            }
+            } else if (IsApproval
+                && Status == PaymentRequestStatus.L2Pending && !HasUserPaymentThreshold)
+            {
+                yield return new ValidationResult(
+                    errorMessage: "Your User has not been configured with an Approved Payment Threshold. Please contact your system administrator.",
+                    memberNames: [nameof(PreviousL1Approver)]
+                );
+            }   
         }
     }
 }

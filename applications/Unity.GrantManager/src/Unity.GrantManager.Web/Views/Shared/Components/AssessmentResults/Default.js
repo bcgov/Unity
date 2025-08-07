@@ -49,6 +49,9 @@
         try {
             assessmentResultObj['correlationId'] = formVersionId;
             assessmentResultObj['worksheetId'] = worksheetId;
+            if(assessmentResultObj['ApprovedAmount'] == '') {
+                assessmentResultObj['ApprovedAmount'] = null;
+            }
             unity.grantManager.grantApplications.grantApplication
                 .updateAssessmentResults(applicationId, assessmentResultObj)
                 .done(function () {
