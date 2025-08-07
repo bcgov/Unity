@@ -16,6 +16,5 @@ public class UpdateApplicantSummaryDto
     public bool? IndigenousOrgInd { get; set; }
     public string? UnityApplicantId { get; set; }
     public string? FiscalDay { get; set; }
-    public string? FiscalMonth { get; set; }
-    public string? ElectoralDistrict { get; set; }
+    public string? FiscalMonth { get; set; }    
 }
