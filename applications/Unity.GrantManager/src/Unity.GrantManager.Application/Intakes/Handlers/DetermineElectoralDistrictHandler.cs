@@ -14,7 +14,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
     {
         /// <summary>
-        /// Determines the Electoral Distrct based on the Address.
+        /// Determines the Electoral District based on the Address.
         /// </summary>
         /// <param name="eventData"></param>
         /// <returns></returns>
@@ -30,31 +30,39 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                 if (eventData.FormVersion == null)
                 {
-                    logger.LogWarning("Application data is null in DetermineElectoralDistrictHandler.");
+                    logger.LogWarning("Form version data is null in DetermineElectoralDistrictHandler.");
                     return;
                 }
 
                 // Check if the electoral district is already mapped for the form submission, if so then no work to be done
                 if (eventData.FormVersion.HasSubmissionHeaderMapping("ApplicantElectoralDistrict"))
+                {
+                    logger.LogInformation("Electoral district already determined for application {ApplicationId}. No further action required.",
+                        eventData.Application.Id);
                     return;
+                }
 
-                var electoralDistrictAddressType = eventData.Application.ApplicationForm.ElectoralDistrictAddressType;
+                // Use local variable to avoid modifying the entity property
+                var addressType = eventData.Application.ApplicationForm.ElectoralDistrictAddressType ?? GrantApplications.AddressType.PhysicalAddress;
+                logger.LogInformation("Using electoral district address type: {AddressType} for electoral determination", addressType);
+
                 var applicantAddresses = eventData.Application.Applicant.ApplicantAddresses;
 
                 if (applicantAddresses == null || applicantAddresses.Count == 0)
                 {
-                    logger.LogWarning("Application data is null in DetermineElectoralDistrictHandler.");
+                    logger.LogWarning("Applicant addresses are null or empty in DetermineElectoralDistrictHandler for application {ApplicationId}.", 
+                        eventData.Application.Id);
                     return;
                 }
 
                 // Find the related address type
                 var matchedAddressType = applicantAddresses
-                    .FirstOrDefault(a => a.AddressType == electoralDistrictAddressType);
+                    .FirstOrDefault(a => a.AddressType == addressType);
 
                 if (matchedAddressType == null)
                 {
                     logger.LogWarning("No address of type {AddressType} found for application {ApplicationId}.",
-                        electoralDistrictAddressType, eventData.Application.Id);
+                        addressType, eventData.Application.Id);
                     return;
                 }
 

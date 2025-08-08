@@ -59,6 +59,10 @@
                 // Single worksheet scenario - send as WorksheetId
                 assessmentResultObj['worksheetId'] = singleWorksheetId.trim();
             }
+            
+            if(assessmentResultObj['ApprovedAmount'] == '') {
+                assessmentResultObj['ApprovedAmount'] = null;
+            }
             unity.grantManager.grantApplications.grantApplication
                 .updateAssessmentResults(applicationId, assessmentResultObj)
                 .done(function () {

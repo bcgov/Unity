@@ -129,6 +129,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 IsL3ApprovalRequired = isL3ApprovalRequired,
                 ToStatus = payment.Status,
                 IsApproval = IsApproval,
+                HasUserPaymentThreshold = UserPaymentThreshold.HasValue,
                 PreviousL1Approver = payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId
             };
         }
@@ -221,7 +222,8 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             .Select(payment => new UpdatePaymentStatusRequestDto
             {
                 PaymentRequestId = payment.Id,
-                IsApprove = IsApproval
+                IsApprove = IsApproval,
+                Note = Note ?? String.Empty
             })
             .ToList();
 
