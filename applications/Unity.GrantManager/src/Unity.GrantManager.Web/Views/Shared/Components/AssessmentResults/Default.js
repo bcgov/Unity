@@ -6,8 +6,9 @@
         let combinedData = formData.concat(assessmentResultsCustomForm);
         let assessmentResultObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();     
-        // Check for both multiple and single worksheet ID formats for compatibility
-        let worksheetIds = $("#AssessmentInfo_WorksheetIds").val() || $("#AssessmentInfo_WorksheetId").val();       
+        // Check for worksheet scenario - multiple vs single
+        let multipleWorksheetsIds = $("#AssessmentInfo_WorksheetIds").val();
+        let singleWorksheetId = $("#AssessmentInfo_WorksheetId").val();       
 
         $.each(combinedData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -49,15 +50,14 @@
 
         try {
             assessmentResultObj['correlationId'] = formVersionId;
-            if (worksheetIds) {
-                // Handle both single and multiple worksheet IDs - always send as array
-                if (worksheetIds.includes(',')) {
-                    // Multiple IDs - split and clean
-                    assessmentResultObj['worksheetIds'] = worksheetIds.split(',').map(id => id.trim());
-                } else {
-                    // Single ID - convert to array for backend compatibility
-                    assessmentResultObj['worksheetIds'] = [worksheetIds.trim()];
-                }
+            
+            // Set correct payload property based on worksheet scenario
+            if (multipleWorksheetsIds) {
+                // Multiple worksheets scenario - send as WorksheetIds array
+                assessmentResultObj['worksheetIds'] = multipleWorksheetsIds.split(',').map(id => id.trim());
+            } else if (singleWorksheetId) {
+                // Single worksheet scenario - send as WorksheetId
+                assessmentResultObj['worksheetId'] = singleWorksheetId.trim();
             }
             unity.grantManager.grantApplications.grantApplication
                 .updateAssessmentResults(applicationId, assessmentResultObj)

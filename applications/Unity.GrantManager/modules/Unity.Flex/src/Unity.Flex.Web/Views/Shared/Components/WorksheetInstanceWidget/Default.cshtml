@@ -26,7 +26,6 @@
         @foreach (var worksheet in Model.Worksheets)
         {
             <div class="@($"worksheet worksheet_{Model.UiAnchor}")">
-                <h4 class="worksheet-title">@worksheet.Name</h4>
                 @foreach (var worksheetSection in worksheet.Sections)
                 {
                     <div class="@($"worksheet_section worksheet_section_{Model.UiAnchor}")">

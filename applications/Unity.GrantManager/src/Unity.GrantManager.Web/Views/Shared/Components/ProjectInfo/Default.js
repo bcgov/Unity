@@ -41,17 +41,17 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                 if (typeof Flex === 'function' && Object.keys(projectInfoObj.CustomFields || {}).length > 0) {
                     // Add Worksheet Metadata and filter conditions
                     projectInfoObj.CorrelationId = $("#ProjectInfo_ApplicationFormVersionId").val();
-                    // Check for both multiple and single worksheet ID formats for compatibility
-                    let worksheetIds = $("#ProjectInfo_WorksheetIds").val() || $("#ProjectInfo_WorksheetId").val();
-                    if (worksheetIds) {
-                        // Handle both single and multiple worksheet IDs - always send as array
-                        if (worksheetIds.includes(',')) {
-                            // Multiple IDs - split and clean
-                            projectInfoObj.WorksheetIds = worksheetIds.split(',').map(id => id.trim());
-                        } else {
-                            // Single ID - convert to array for backend compatibility
-                            projectInfoObj.WorksheetIds = [worksheetIds.trim()];
-                        }
+                    // Check for worksheet scenario - multiple vs single
+                    let multipleWorksheetsIds = $("#ProjectInfo_WorksheetIds").val();
+                    let singleWorksheetId = $("#ProjectInfo_WorksheetId").val();
+                    
+                    // Set correct payload property based on worksheet scenario
+                    if (multipleWorksheetsIds) {
+                        // Multiple worksheets scenario - send as WorksheetIds array
+                        projectInfoObj.WorksheetIds = multipleWorksheetsIds.split(',').map(id => id.trim());
+                    } else if (singleWorksheetId) {
+                        // Single worksheet scenario - send as WorksheetId
+                        projectInfoObj.WorksheetId = singleWorksheetId.trim();
                     }
 
                     // Normalize checkboxes to string for custom worksheets

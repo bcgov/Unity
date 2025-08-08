@@ -6,11 +6,11 @@
 
 @if (Model.Field != null)
 {
-    @{
-        var fieldId = Model.WorksheetId.HasValue
-            ? $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}.{Model.WorksheetId}"
-            : $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}";
-    }
+    
+    var fieldId = Model.WorksheetId.HasValue
+        ? $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}.{Model.WorksheetId}"
+        : $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}";
+    
     <select class="@Model.Field.Type.ApplyCssClass()"
             id="@fieldId"
             name="@fieldId"

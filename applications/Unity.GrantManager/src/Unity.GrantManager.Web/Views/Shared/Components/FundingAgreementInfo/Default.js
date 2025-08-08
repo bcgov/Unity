@@ -4,8 +4,9 @@
         let formVersionId = $("#FundingAgreementInfoView_FormVersionId").val();
         let formData = $("#fundingAgreementInfoForm").serializeArray();
         let fundingAgreementInfoObj = {};
-        // Check for both multiple and single worksheet ID formats for compatibility
-        let worksheetIds = $("#FundingAgreementInfo_WorksheetIds").val() || $("#FundingAgreementInfo_WorksheetId").val();
+        // Check for worksheet scenario - multiple vs single
+        let multipleWorksheetsIds = $("#FundingAgreementInfo_WorksheetIds").val();
+        let singleWorksheetId = $("#FundingAgreementInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -26,15 +27,14 @@
         }
 
         fundingAgreementInfoObj['correlationId'] = formVersionId;
-        if (worksheetIds) {
-            // Handle both single and multiple worksheet IDs - always send as array
-            if (worksheetIds.includes(',')) {
-                // Multiple IDs - split and clean
-                fundingAgreementInfoObj['worksheetIds'] = worksheetIds.split(',').map(id => id.trim());
-            } else {
-                // Single ID - convert to array for backend compatibility
-                fundingAgreementInfoObj['worksheetIds'] = [worksheetIds.trim()];
-            }
+        
+        // Set correct payload property based on worksheet scenario
+        if (multipleWorksheetsIds) {
+            // Multiple worksheets scenario - send as worksheetIds array
+            fundingAgreementInfoObj['worksheetIds'] = multipleWorksheetsIds.split(',').map(id => id.trim());
+        } else if (singleWorksheetId) {
+            // Single worksheet scenario - send as worksheetId
+            fundingAgreementInfoObj['worksheetId'] = singleWorksheetId.trim();
         }
 
         updateFundingAgreementInfo(applicationId, fundingAgreementInfoObj);

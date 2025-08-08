@@ -70,17 +70,17 @@
             if (typeof Flex === 'function' && Object.keys(submissionPayload.CustomFields || {}).length > 0) {
                 // Add Worksheet Metadata and filter conditions
                 submissionPayload.CorrelationId = $("#ApplicantInfo_ApplicationFormVersionId").val();
-                // Check for both multiple and single worksheet ID formats for compatibility
-                let worksheetIds = $("#ApplicantInfo_WorksheetIds").val() || $("#ApplicantInfo_WorksheetId").val();
-                if (worksheetIds) {
-                    // Handle both single and multiple worksheet IDs - always send as array
-                    if (worksheetIds.includes(',')) {
-                        // Multiple IDs - split and clean
-                        submissionPayload.WorksheetIds = worksheetIds.split(',').map(id => id.trim());
-                    } else {
-                        // Single ID - convert to array for backend compatibility
-                        submissionPayload.WorksheetIds = [worksheetIds.trim()];
-                    }
+                // Check for worksheet scenario - multiple vs single
+                let multipleWorksheetsIds = $("#ApplicantInfo_WorksheetIds").val();
+                let singleWorksheetId = $("#ApplicantInfo_WorksheetId").val();
+                
+                // Set correct payload property based on worksheet scenario
+                if (multipleWorksheetsIds) {
+                    // Multiple worksheets scenario - send as WorksheetIds array
+                    submissionPayload.WorksheetIds = multipleWorksheetsIds.split(',').map(id => id.trim());
+                } else if (singleWorksheetId) {
+                    // Single worksheet scenario - send as WorksheetId
+                    submissionPayload.WorksheetId = singleWorksheetId.trim();
                 }
 
                 // Normalize checkboxes to string for custom worksheets
