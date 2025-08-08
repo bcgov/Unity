@@ -11,4 +11,7 @@ public class WorksheetViewModel
     public Guid WorksheetId { get; set; }
     public Guid WorksheetInstanceId { get; set; }
     public List<WorksheetInstanceSectionViewModel> Sections { get; set; } = [];
+    public List<Guid> WorksheetIds { get; set; } = [];
+    public List<WorksheetViewModel> Worksheets { get; set; } = [];
+    public bool HasMultipleWorksheets => Worksheets.Count > 1;
 }

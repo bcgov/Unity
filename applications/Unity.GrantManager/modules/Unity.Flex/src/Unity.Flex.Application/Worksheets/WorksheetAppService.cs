@@ -33,13 +33,11 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<List<Worksheet>, List<WorksheetDto>>(worksheets);
         }
 
-        public virtual async Task<WorksheetDto?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor)
+        public virtual async Task<List<WorksheetDto>> GetListByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor)
         {
-            var worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(correlationId, correlationProvider, uiAnchor, true);
+            var worksheets = await worksheetRepository.GetListByCorrelationAnchorAsync(correlationId, correlationProvider, uiAnchor, true);
 
-            if (worksheet == null) return null;
-
-            return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
+            return ObjectMapper.Map<List<Worksheet>, List<WorksheetDto>>(worksheets);
         }
 
         public virtual async Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto)

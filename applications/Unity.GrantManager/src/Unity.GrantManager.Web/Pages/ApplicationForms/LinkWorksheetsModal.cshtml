@@ -12,11 +12,11 @@
 
 <form method="post" asp-page-handler="OnPostAsync" id="formInfo">
     <abp-input type="hidden" id="ChefsFormVersionId" asp-for="@Model.ChefsFormVersionId" />
-    <abp-input type="hidden" id="AssessmentInfoSlotId" asp-for="@Model.AssessmentInfoSlotId" />
-    <abp-input type="hidden" id="ApplicantInfoSlotId" asp-for="@Model.ApplicantInfoSlotId" />
-    <abp-input type="hidden" id="ProjectInfoSlotId" asp-for="@Model.ProjectInfoSlotId" />
-    <abp-input type="hidden" id="PaymentInfoSlotId" asp-for="@Model.PaymentInfoSlotId" />
-    <abp-input type="hidden" id="FundingAgreementInfoSlotId" asp-for="@Model.FundingAgreementInfoSlotId" />
+    <abp-input type="hidden" id="AssessmentInfoSlotIds" asp-for="@Model.AssessmentInfoSlotIds" />
+    <abp-input type="hidden" id="ApplicantInfoSlotIds" asp-for="@Model.ApplicantInfoSlotIds" />
+    <abp-input type="hidden" id="ProjectInfoSlotIds" asp-for="@Model.ProjectInfoSlotIds" />
+    <abp-input type="hidden" id="PaymentInfoSlotIds" asp-for="@Model.PaymentInfoSlotIds" />
+    <abp-input type="hidden" id="FundingAgreementInfoSlotIds" asp-for="@Model.FundingAgreementInfoSlotIds" />
     <abp-input type="hidden" id="CustomTabsSlotIds" asp-for="@Model.CustomTabsSlotIds" />
     <abp-modal size="ExtraLarge" id="worksheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="Link Worksheets"></abp-modal-header>
@@ -37,58 +37,73 @@
                 </div>
                 <div class="slots-col">
                     <div class="slot-title">Assessment Info:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="assessmentInfo">
-                        @if (Model.AssessmentInfoLink != null)
+                    <div class="multi-slot drag-target multi-target assessment-info-list" draggable="false" data-target="assessment-info">
+                        @if (Model.AssessmentInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.AssessmentInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.AssessmentInfoLink.Worksheet.Title (@Model.AssessmentInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var assessmentInfo in Model.AssessmentInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@assessmentInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @assessmentInfo.Worksheet.Title (@assessmentInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Project Info:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="projectInfo">
-                        @if (Model.ProjectInfoLink != null)
+                    <div class="multi-slot drag-target multi-target project-info-list" draggable="false" data-target="project-info">
+                        @if (Model.ProjectInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.ProjectInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.ProjectInfoLink.Worksheet.Title (@Model.ProjectInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var projectInfo in Model.ProjectInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@projectInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @projectInfo.Worksheet.Title (@projectInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Applicant Info:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="applicantInfo">
-                        @if (Model.ApplicantInfoLink != null)
+                    <div class="multi-slot drag-target multi-target applicant-info-list" draggable="false" data-target="applicant-info">
+                        @if (Model.ApplicantInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.ApplicantInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.ApplicantInfoLink.Worksheet.Title (@Model.ApplicantInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var applicantInfo in Model.ApplicantInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@applicantInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @applicantInfo.Worksheet.Title (@applicantInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Payment Info:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="paymentInfo">
-                        @if (Model.PaymentInfoLink != null)
+                    <div class="multi-slot drag-target multi-target payment-info-list" draggable="false" data-target="payment-info">
+                        @if (Model.PaymentInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.PaymentInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.PaymentInfoLink.Worksheet.Title (@Model.PaymentInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var paymentInfo in Model.PaymentInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@paymentInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @paymentInfo.Worksheet.Title (@paymentInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Funding Agreement:</div>
-                    <div class="single-slot drag-target single-target" draggable="false" data-target="fundingAgreementInfo">
-                        @if (Model.FundingAgreementInfoLink != null)
+                    <div class="multi-slot drag-target multi-target funding-agreement-info-list" draggable="false" data-target="funding-agreement-info">
+                        @if (Model.FundingAgreementInfoLinks != null)
                         {
-                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.FundingAgreementInfoLink.WorksheetId">
-                                <span class="published-form-title">
-                                    @Model.FundingAgreementInfoLink.Worksheet.Title (@Model.FundingAgreementInfoLink.Worksheet.Name)
-                                </span>
-                            </div>
+                            @foreach (var fundingAgreementInfo in Model.FundingAgreementInfoLinks.OrderBy(s => s.Order))
+                            {
+                                <div class="draggable-card" draggable="true" data-worksheet-id="@fundingAgreementInfo.WorksheetId">
+                                    <span class="published-form-title">
+                                        @fundingAgreementInfo.Worksheet.Title (@fundingAgreementInfo.Worksheet.Name)
+                                    </span>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="slot-title">Additional Tabs:</div>

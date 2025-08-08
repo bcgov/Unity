@@ -26,6 +26,8 @@
     flex: 0.5;
     padding: 5px;
     border-radius: 5px;
+    height: 100%;
+    overflow-y: auto;
 }
 
 .single-slot {

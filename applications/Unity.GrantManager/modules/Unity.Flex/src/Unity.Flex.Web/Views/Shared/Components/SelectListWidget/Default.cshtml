@@ -7,9 +7,14 @@
 
 @if (Model.Field != null)
 {
+    
+    var fieldId = Model.WorksheetId.HasValue
+        ? $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}.{Model.WorksheetId}"
+        : $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}";
+    
     <select class="@Model.Field.Type.ApplyCssClass()"
-            id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
-            name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+            id="@fieldId"
+            name="@fieldId"
             onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")">
 
         @foreach (var item in ((SelectListDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Options ?? [])

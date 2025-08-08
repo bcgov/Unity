@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Volo.Abp.AspNetCore.Mvc;
 
@@ -10,11 +11,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextAreaWidget
     {
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult Refresh(WorksheetFieldViewModel? fieldModel, string modelName)
+        public IActionResult Refresh(WorksheetFieldViewModel? fieldModel, string modelName, Guid? worksheetId = null)
         {
             if (ModelState.IsValid)
             {
-                return ViewComponent(typeof(TextAreaWidget), new { fieldModel, modelName });
+                return ViewComponent(typeof(TextAreaWidget), new { fieldModel, modelName, worksheetId });
             }
             else
                 return ViewComponent(typeof(TextAreaWidget));

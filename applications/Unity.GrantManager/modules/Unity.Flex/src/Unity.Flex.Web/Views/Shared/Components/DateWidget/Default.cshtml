@@ -6,14 +6,19 @@
 
 @if (Model.Field != null)
 {
+    
+    var fieldId = Model.WorksheetId.HasValue
+        ? $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}.{Model.WorksheetId}"
+        : $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}";
+    
     <div class="custom-input-group">
         <span class="custom-input-append"><i class="fl fl-datetime"></i></span>
         <input type="@Model.Field.Type.ConvertInputType()"
                class="@Model.Field.Type.ApplyCssClass()"
                value="@Model.Field.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type)"
                label="@Model.Field.Label"
-               id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
-               name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+               id="@fieldId"
+               name="@fieldId"
                onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")" />
     </div>
 }

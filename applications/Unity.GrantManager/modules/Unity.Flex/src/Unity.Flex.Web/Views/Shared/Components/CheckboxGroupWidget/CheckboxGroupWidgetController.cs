@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Volo.Abp.AspNetCore.Mvc;
 
@@ -10,12 +11,12 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupWidget
     {
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult Refresh(WorksheetFieldViewModel? fieldModel, string modelName)
+        public IActionResult Refresh(WorksheetFieldViewModel? fieldModel, string modelName, Guid? worksheetId = null)
         {
             
             if (ModelState.IsValid)
             {
-                return ViewComponent(typeof(CheckboxGroupWidget), new { fieldModel, modelName });
+                return ViewComponent(typeof(CheckboxGroupWidget), new { fieldModel, modelName, worksheetId });
 
             }
             else

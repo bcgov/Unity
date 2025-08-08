@@ -42,7 +42,7 @@ namespace Unity.Flex.Domain.Services
             Worksheet? worksheet;
             if (string.IsNullOrEmpty(eventData.FormDataName))
             {
-                worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(eventData.SheetCorrelationId, eventData.SheetCorrelationProvider, eventData.UiAnchor, true);
+                worksheet = await worksheetRepository.GetAsync(eventData.WorksheetId, true);
             }
             else
             {
