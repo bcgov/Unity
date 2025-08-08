@@ -23,14 +23,12 @@ using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
-using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Zones;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
-using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
@@ -350,7 +348,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
 
         // Handle custom fields for assessment info
-        if (input.CustomFields != null && input.CorrelationId != Guid.Empty)
+        if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
         {
             // Handle multiple worksheets
             if (input.WorksheetIds?.Count > 0)
@@ -490,7 +488,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.Place = input.Place;
 
             // Handle custom fields for project info
-            if (input.CustomFields != null && input.CorrelationId != Guid.Empty)
+            if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             {
                 // Handle multiple worksheets
                 if (input.WorksheetIds?.Count > 0)
@@ -568,7 +566,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         application.UpdatePercentageTotalProjectBudget();
 
         // Add custom worksheet data
-        if (input.Data.CustomFields is not null && input.Data.CorrelationId != Guid.Empty)
+        if (HasValue(input.Data.CustomFields) && input.Data.CorrelationId != Guid.Empty)
         {
             // Handle multiple worksheets
             if (input.Data.WorksheetIds?.Count > 0)
@@ -609,7 +607,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
 
             // Handle custom fields for funding agreement info
-            if (input.CustomFields != null && input.CorrelationId != Guid.Empty)
+            if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             {
                 // Handle multiple worksheets
                 if (input.WorksheetIds?.Count > 0)
@@ -644,6 +642,11 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             throw new EntityNotFoundException();
         }
+    }
+
+    private static bool HasValue(JsonElement element)
+    {
+        return element.ValueKind != JsonValueKind.Null && element.ValueKind != JsonValueKind.Undefined;
     }
 
     /// <summary>
@@ -1223,20 +1226,17 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     {
         var result = new Dictionary<string, object>();
         var worksheetSuffix = $".{worksheetId}";
-        
+
         if (customFields is JsonElement jsonElement)
         {
-            foreach (var property in jsonElement.EnumerateObject())
-            {
-                if (property.Name.EndsWith(worksheetSuffix))
-                {
-                    // Remove worksheet ID suffix to get original field name
-                    var originalFieldName = property.Name.Substring(0, property.Name.Length - worksheetSuffix.Length);
-                    result[originalFieldName] = property.Value.GetRawText();
-                }
-            }
+            result = jsonElement.EnumerateObject()
+                .Where(property => property.Name.EndsWith(worksheetSuffix))
+                .ToDictionary(
+                    property => property.Name[..^worksheetSuffix.Length],
+                    property => property.Value.ValueKind == JsonValueKind.String ? (object)property.Value.GetString()! : string.Empty
+                );
         }
-        
+
         return result;
     }
 }

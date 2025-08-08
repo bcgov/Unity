@@ -84,7 +84,7 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
 
             if (worksheets.Count == 1)
             {
-                // Single worksheet found
+                // Single worksheet found - thus single worksheet scenario
                 var worksheet = worksheets[0];
                 var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId,
                     instanceCorrelationProvider,

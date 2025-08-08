@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
@@ -20,7 +21,7 @@ namespace Unity.Payments.PaymentInfo
         public async Task<PaymentInfoDto> UpdateAsync(Guid id, CreateUpdatePaymentInfoDto input)
         {
             // Handle custom fields for payment info
-            if (input.CustomFields != null && input.CorrelationId != Guid.Empty)
+            if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             {
                 // Handle multiple worksheets
                 if (input.WorksheetIds?.Count > 0)
@@ -50,6 +51,11 @@ namespace Unity.Payments.PaymentInfo
             return new PaymentInfoDto();
         }
 
+        private static bool HasValue(JsonElement element)
+        {
+            return element.ValueKind != JsonValueKind.Null && element.ValueKind != JsonValueKind.Undefined;
+        }
+
         protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
             string uiAnchor,
             CustomDataFieldDto input)
@@ -74,26 +80,23 @@ namespace Unity.Payments.PaymentInfo
                     Logger.LogError("Unable to resolve for version");
                 }
             }
-        }
+        }        
 
         private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(dynamic customFields, Guid worksheetId)
         {
             var result = new Dictionary<string, object>();
             var worksheetSuffix = $".{worksheetId}";
-            
+
             if (customFields is JsonElement jsonElement)
             {
-                foreach (var property in jsonElement.EnumerateObject())
-                {
-                    if (property.Name.EndsWith(worksheetSuffix))
-                    {
-                        // Remove worksheet ID suffix to get original field name
-                        var originalFieldName = property.Name.Substring(0, property.Name.Length - worksheetSuffix.Length);
-                        result[originalFieldName] = property.Value.GetRawText();
-                    }
-                }
+                result = jsonElement.EnumerateObject()
+                    .Where(property => property.Name.EndsWith(worksheetSuffix))
+                    .ToDictionary(
+                        property => property.Name[..^worksheetSuffix.Length],
+                        property => property.Value.ValueKind == JsonValueKind.String ? (object)property.Value.GetString()! : string.Empty
+                    );
             }
-            
+
             return result;
         }
     }

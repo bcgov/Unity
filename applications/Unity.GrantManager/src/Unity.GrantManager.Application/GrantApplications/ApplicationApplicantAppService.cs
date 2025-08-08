@@ -200,7 +200,7 @@ public class ApplicationApplicantAppService(
         }
 
         //-- APPLICANT INFO CUSTOM FIELDS
-        if (input.Data.CustomFields?.ValueKind != JsonValueKind.Null && input.Data.CorrelationId != Guid.Empty)
+        if (HasValue(input.Data.CustomFields) && input.Data.CorrelationId != Guid.Empty)
         {
             // Handle multiple worksheets
             if (input.Data.WorksheetIds?.Count > 0)
@@ -229,6 +229,11 @@ public class ApplicationApplicantAppService(
 
         var updatedApplication = await applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Applications.Application, GrantApplicationDto>(updatedApplication);
+    }
+
+    private static bool HasValue(JsonElement? element)
+    {
+        return element?.ValueKind != JsonValueKind.Null && element?.ValueKind != JsonValueKind.Undefined;
     }
 
     /// <summary>
@@ -385,19 +390,13 @@ public class ApplicationApplicantAppService(
 
     private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(JsonElement customFields, Guid worksheetId)
     {
-        var result = new Dictionary<string, object>();
         var worksheetSuffix = $".{worksheetId}";
         
-        foreach (var property in customFields.EnumerateObject())
-        {
-            if (property.Name.EndsWith(worksheetSuffix))
-            {
-                // Remove worksheet ID suffix to get original field name
-                var originalFieldName = property.Name.Substring(0, property.Name.Length - worksheetSuffix.Length);
-                result[originalFieldName] = property.Value.GetRawText();
-            }
-        }
-        
-        return result;
-    }
+        return customFields.EnumerateObject()
+                .Where(property => property.Name.EndsWith(worksheetSuffix))
+                .ToDictionary(
+                    property => property.Name[..^worksheetSuffix.Length],
+                    property => property.Value.ValueKind == JsonValueKind.String ? (object)property.Value.GetString()! : string.Empty
+                );
+    }    
 }
