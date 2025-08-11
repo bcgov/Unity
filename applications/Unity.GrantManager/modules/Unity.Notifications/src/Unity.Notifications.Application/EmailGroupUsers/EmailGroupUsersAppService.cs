@@ -81,5 +81,12 @@ namespace Unity.Notifications.EmailGroups
 
             return ObjectMapper.Map<List<EmailGroupUser>, List<EmailGroupUsersDto>>(users);
         }
+
+        public async Task<List<EmailGroupUsersDto>> GetListAsync()
+        {
+            var users = await _emailGroupUsersRepository.GetListAsync();
+
+            return ObjectMapper.Map<List<EmailGroupUser>, List<EmailGroupUsersDto>>(users);
+        }
     }
 }
