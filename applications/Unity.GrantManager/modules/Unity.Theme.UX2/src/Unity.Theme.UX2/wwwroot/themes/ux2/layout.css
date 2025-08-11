@@ -501,7 +501,7 @@ input.form-control-currency {
         background-color: var(--bc-colors-grey-hover) !important;
         opacity: var(--bs-btn-disabled-opacity);
         background-blend-mode: difference;
-        border: none !important;
+        border: var(--bs-border-width) solid var(--bs-border-color);
     }
 
     input.form-control-currency:disabled {
@@ -510,7 +510,7 @@ input.form-control-currency {
         background-color: var(--bc-colors-grey-hover) !important;
         opacity: var(--bs-btn-disabled-opacity);
         background-blend-mode: difference;
-        border: var(--bs-border-width) solid var(--bs-border-color) !important;
+        border: var(--bs-border-width) solid var(--bs-border-color);
     }
 
     textarea.form-control:disabled {
@@ -798,7 +798,7 @@ input.form-control.disabled:read-only, textarea.form-control.disabled:read-only,
     background-color: var(--bc-colors-grey-hover) !important;
     opacity: var(--bs-btn-disabled-opacity);
     background-blend-mode: difference;
-    border: none !important;
+    border: var(--bs-border-width) solid var(--bs-border-color);
 }
 
 
