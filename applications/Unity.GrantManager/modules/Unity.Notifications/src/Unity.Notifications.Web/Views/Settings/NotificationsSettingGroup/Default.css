@@ -1,4 +1,8 @@
-﻿.v-scroll {
+﻿body {
+    overflow-y:auto!important;
+}
+
+.v-scroll {
     max-height: 600px;
     overflow-y: auto;
     padding-right: 10px;
@@ -10,4 +14,58 @@
 
 .note-text{
     font-size:12px;
+}
+
+/* Group Users Table - Push remove button to far right */
+#groupUsersTable td:last-child,
+#createGroupUsersTable td:last-child {
+    text-align: right !important;
+    /* padding-right: 5px !important; */
+}
+
+#groupUsersTable th:last-child,
+#createGroupUsersTable th:last-child {
+    width: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+}
+
+/* Fix DataTable empty message positioning */
+#groupUsersTable td.dataTables_empty,
+#createGroupUsersTable td.dataTables_empty {
+    text-align: center !important;
+}
+
+/* Ensure table maintains proper width */
+#createGroupUsersTable {
+    width: 100% !important;
+}
+
+/* Add User Button Styling */
+.btn-add-user {
+    background-color: white !important;
+    border: 2px solid #007bff !important;
+    color: #007bff !important;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+    transition: all 0.15s ease-in-out;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.btn-add-user:hover:not(:disabled) {
+    background-color: #007bff !important;
+    color: white !important;
+}
+
+.btn-add-user:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #6c757d !important;
+    color: #6c757d !important;
+}
+
+.btn-add-user i {
+    font-size: 0.8rem;
 }
