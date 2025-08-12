@@ -117,6 +117,7 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
+
         if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
         {
             context.Menu.AddItem(
@@ -130,6 +131,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 )
             );
         }
+
 
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue */

@@ -1,4 +1,4 @@
-﻿
+
 function getActiveExampleName() {
     const $activePanel = $('.left-card-body.active');
     if ($activePanel.length === 0) return null;          // no active panel
@@ -89,8 +89,15 @@ Strategic Thinking and Influence
         }
     });
 });
+
+//Test function
 function handleSubmit(event) {
-    event.preventDefault();
+    event.preventDefault(); 
+
+    const resultText = document.getElementById("resultText").value;
+
+    alert("Submitted text:\n" + resultText);
+
 
     // Just in case you also need to send it to a server endpoint using fetch:
     /*
@@ -103,6 +110,7 @@ function handleSubmit(event) {
     }).then(response => response.json())
       .then(data => console.log(data));
     */
+
     /* -----------------------------------------------------------
     CONFIG — replace with an environment-injected variable or
     proxy the call through your own server.
@@ -344,4 +352,5 @@ Additional Notes
         document.getElementById("finalResult").innerHTML = collated.replace(/\n/g, "<br>");
     }
     main(document.getElementById("resultText"));
+
 }

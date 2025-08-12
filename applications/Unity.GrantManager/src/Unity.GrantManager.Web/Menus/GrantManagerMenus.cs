@@ -19,4 +19,5 @@ public static class GrantManagerMenus
 
     public const string Recapllm = Prefix + ".Recapllm";
     public const string RecapReporting = Prefix + ".RecapReporting";
+
 }
