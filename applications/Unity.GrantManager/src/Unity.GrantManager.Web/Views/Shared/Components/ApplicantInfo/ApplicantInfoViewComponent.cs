@@ -45,6 +45,8 @@ public class ApplicantInfoViewComponent(
             ContactInfo              = ObjectMapper.Map<ContactInfoDto, ContactInfoViewModel>(applicantInfoDto.ContactInfo ?? new ContactInfoDto()),
             SigningAuthority         = ObjectMapper.Map<SigningAuthorityDto, SigningAuthorityViewModel>(applicantInfoDto.SigningAuthority ?? new SigningAuthorityDto()),
             ApplicantElectoralAddressType = electoralDistrictAddressType,
+            // This is fixed at the applicant level, we need solution this wrt the recent address logic added below
+            ElectoralDistrict = applicantInfoDto.ElectoralDistrict 
         };
 
         viewModel.ApplicantSummary.ApplicantId = applicantInfoDto.ApplicantId;
