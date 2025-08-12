@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 return;
             }
 
-            if (eventData.OnlyLocationRetrofill == true)
+            if (eventData.OnlyLocationRetrofill)
             {
                 logger.LogInformation("Skip report data generator handler.");
                 return;
