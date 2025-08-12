@@ -39,6 +39,7 @@ public class PaymentsApplicationAutoMapperProfile : Profile
         CreateMap<Supplier, SupplierDto>();
 
         CreateMap<CreateUpdateAccountCodingDto, AccountCoding>()
+           .ForMember(dest => dest.TenantId, opt => opt.Ignore())
            .ForMember(dest => dest.LastModificationTime, opt => opt.Ignore())
            .ForMember(dest => dest.LastModifierId, opt => opt.Ignore())
            .ForMember(dest => dest.CreationTime, opt => opt.Ignore())
@@ -50,6 +51,7 @@ public class PaymentsApplicationAutoMapperProfile : Profile
         CreateMap<AccountCoding, AccountCodingDto>();
         CreateMap<AccountCodingDto, CreateUpdateAccountCodingDto>();
         CreateMap<CreateUpdateAccountCodingDto, AccountCoding>()
+            .ForMember(dest => dest.TenantId, opt => opt.Ignore())
             .ForMember(dest => dest.LastModificationTime, opt => opt.Ignore())
             .ForMember(dest => dest.LastModifierId, opt => opt.Ignore())
             .ForMember(dest => dest.CreationTime, opt => opt.Ignore())
