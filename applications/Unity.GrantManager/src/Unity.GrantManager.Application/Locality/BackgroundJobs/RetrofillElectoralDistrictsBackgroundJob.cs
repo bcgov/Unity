@@ -74,7 +74,7 @@ namespace Unity.GrantManager.Locality.BackgroundJobs
 
                             await unitOfWork.CompleteAsync();
 
-                            // To avoid and rate limiting issues with any external services, we add a small delay
+                            // To avoid any rate limiting issues with any external services, we add a small delay
                             await Task.Delay(500);
                         }
                         catch (Exception ex)
@@ -85,19 +85,19 @@ namespace Unity.GrantManager.Locality.BackgroundJobs
                 }
                 catch (Exception ex)
                 {
-                    LogPrefixedError(ex, "Error executing electoral district retrofill for tenantId: {args.TenantId}");
+                    LogPrefixedError(ex, $"Error executing electoral district retrofill for tenantId: {args.TenantId}");
                 }
             }
         }
 
         private void LogPrefixedInfo(string message)
         {
-            logger.LogInformation("{Prefix} {message}", LogPrefix, message);
+            logger.LogInformation("{Prefix} {Message}", LogPrefix, message);
         }
 
         private void LogPrefixedError(Exception ex, string message)
         {
-            logger.LogError(ex, "{Prefix} {message}", LogPrefix, message);
+            logger.LogError(ex, "{Prefix} {Message}", LogPrefix, message);
         }
     }
 }

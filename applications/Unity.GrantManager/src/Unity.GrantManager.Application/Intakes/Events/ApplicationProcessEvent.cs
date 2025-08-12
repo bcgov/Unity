@@ -10,6 +10,6 @@ namespace Unity.GrantManager.Intakes.Events
         public dynamic? RawSubmission { get; internal set; }
 
         // As this expands, turn this into a flags enum for control over which event handlers to run
-        public bool? OnlyLocationRetrofill { get; set; } = false;
+        public bool OnlyLocationRetrofill { get; set; }
     }
 }

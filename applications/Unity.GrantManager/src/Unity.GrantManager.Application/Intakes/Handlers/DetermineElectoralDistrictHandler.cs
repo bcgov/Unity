@@ -28,6 +28,13 @@ namespace Unity.GrantManager.Intakes.Handlers
                     return;
                 }
 
+                if (!string.IsNullOrEmpty(eventData.Application.Applicant.ElectoralDistrict))
+                {
+                    logger.LogInformation("Electoral district already set to '{ExistingElectoralDistrict}' for application {ApplicationId}.",
+                        eventData.Application.Applicant.ElectoralDistrict, eventData.Application.Id);
+                    return;
+                }
+
                 if (eventData.FormVersion == null)
                 {
                     logger.LogWarning("Form version data is null in DetermineElectoralDistrictHandler.");
@@ -39,13 +46,6 @@ namespace Unity.GrantManager.Intakes.Handlers
                 {
                     logger.LogInformation("Electoral district already determined for application {ApplicationId}. No further action required.",
                         eventData.Application.Id);
-                    return;
-                }
-
-                if (!string.IsNullOrEmpty(eventData.Application.Applicant.ElectoralDistrict))
-                {
-                    logger.LogInformation("Electoral district already set to '{ExistingElectoralDistrict}' for application {ApplicationId}.",
-                        eventData.Application.Applicant.ElectoralDistrict, eventData.Application.Id);
                     return;
                 }
 
