@@ -1,9 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
 using Unity.Identity.Web.Navigation;
 using Unity.TenantManagement;
 using Unity.TenantManagement.Web.Navigation;
+using Volo.Abp.Features;
 using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
 
@@ -22,9 +24,10 @@ public class GrantManagerMenuContributor : IMenuContributor
         }
     }
 
-    private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
+    private async static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         var l = context.GetLocalizer<GrantManagerResource>();
+        var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
@@ -114,6 +117,22 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
+
+        if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
+        {
+            context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.RecapReporting,
+                l["Menu:RecapReporting"],
+                "~/RecapReporting",
+                icon: "fl fl-view-dashboard",
+                order: 9
+                //requiredPermissionName: GrantApplicationPermissions.Recapllm.Default
+                )
+            );
+        }
+
+
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue */
         //var administration = context.Menu.GetAdministration();
@@ -134,7 +153,6 @@ public class GrantManagerMenuContributor : IMenuContributor
         //}
         //*/
 
-        return Task.CompletedTask;
 #pragma warning restore S125 // Sections of code should not be commented out
     }
 }

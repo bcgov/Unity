@@ -1,12 +1,12 @@
 $(function () {
+
     let suggestionsArray = [];
 
-    // Plugin Constructor
     let TagsInput = function (opts) {
         this.options = Object.assign(TagsInput.defaults, opts);
         this.init();
     }
-    // Initialize the plugin
+
     TagsInput.prototype.init = function (opts) {
         this.options = opts ? Object.assign(this.options, opts) : this.options;
 
@@ -23,33 +23,33 @@ $(function () {
 
         this.wrapper = document.createElement('div');
         this.input = document.createElement('input');
+        this.input.id = "tags-input-control";
         init(this);
         initEvents(this);
+
+        // Disable the input if user doesn't have create permission
+        if (!abp.auth.isGranted('Unity.Payments.Tags.Create')) {
+            this.input.disabled = true;
+            this.input.type = "hidden";
+            this.wrapper.classList.add('tags-input-disabled');
+        }
 
         this.initialized = true;
         return this;
     }
 
-
-    // Add Tags
     TagsInput.prototype.addTag = function (tagData) {
         let defaultClass = 'tags-common';
-        let tagText, tagClass;
+        let id, tagText, tagClass;
 
-        if (typeof tagData === 'string') {
-            tagText = tagData;
-            tagClass = defaultClass;
-
-        } else {
-            tagText = tagData.text || '';
-            tagClass = tagData.class || defaultClass;
-
-        }
+        id = tagData.id;
+        tagText = tagData.name || '';
+        tagClass = tagData.class || defaultClass;
 
         if (this.anyErrors(tagText))
             return;
 
-        this.arr.push(tagText);
+        this.arr.push({ Id: id, Name: tagText });
 
         let tagInput = this;
 
@@ -57,67 +57,69 @@ $(function () {
         tag.className = this.options.tagClass + ' ' + tagClass;
         tag.innerText = tagText;
 
-        let closeIcon = document.createElement('a');
-        closeIcon.innerHTML = '&times;';
+        if (abp.auth.isGranted('Unity.Payments.Tags.Delete')) {
+            let closeIcon = document.createElement('a');
+            closeIcon.innerHTML = '&times;';
 
-        // delete the tag when icon is clicked
-        closeIcon.addEventListener('click', function (e) {
-            e.preventDefault();
-            let tag = this.parentNode;
+            closeIcon.addEventListener('click', function (e) {
+                e.preventDefault();
+                let tag = this.parentNode;
 
-            for (let i = 0; i < tagInput.wrapper.childNodes.length; i++) {
-                if (tagInput.wrapper.childNodes[i] == tag)
-                    tagInput.deleteTag(tag, i);
-            }
-        })
+                let tagIndex = Array.from(tagInput.wrapper.childNodes).indexOf(tag);
+                if (tagIndex !== -1) {
+                    tagInput.deleteTag(tag, tagIndex);
+                }
+            })
 
-        tag.appendChild(closeIcon);
+            tag.appendChild(closeIcon);
+        }
+
         this.wrapper.insertBefore(tag, this.input);
         this.orignal_input.value = JSON.stringify(this.arr);
-
+        updateSelectedTagsInput(this.arr)
         return this;
     }
 
-    // Delete Tags
     TagsInput.prototype.deleteTag = function (tag, i) {
         let self = this;
-        if (this.arr[i] == 'Uncommon Tags') {
-            abp.message.confirm('Are you sure to delete all the uncommon tags?')
+
+        if (this.arr[i] && this.arr[i].name === 'Uncommon Tags') {
+            abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
                 .then(function (confirmed) {
                     if (confirmed) {
                         tag.remove();
                         self.arr.splice(i, 1);
                         self.orignal_input.value = JSON.stringify(self.arr);
+                        updateSelectedTagsInput(self.arr);
                         return self;
                     }
-
                 });
-        }
-        else {
+        } else {
             tag.remove();
             this.arr.splice(i, 1);
             this.orignal_input.value = JSON.stringify(this.arr);
+            updateSelectedTagsInput(this.arr);
             return this;
         }
-
     }
 
-    // Make sure input string have no error with the plugin
     TagsInput.prototype.anyErrors = function (string) {
         if (this.options.max != null && this.arr.length >= this.options.max) {
             console.log('max tags limit reached');
             return true;
         }
 
-        if (!this.options.duplicate && this.arr.indexOf(string) != -1) {
-            console.log('duplicate found " ' + string + ' " ')
+        if (
+            !this.options.duplicate &&
+            this.arr.some(tag => tag.name === string)
+        ) {
+            console.log('duplicate found "' + string + '"');
             return true;
         }
 
         return false;
     }
 
-    // Add tags programmatically 
     TagsInput.prototype.addData = function (array) {
         let plugin = this;
 
@@ -127,16 +129,14 @@ $(function () {
         return this;
     }
 
-    // Get the Input String
     TagsInput.prototype.getInputString = function () {
         return this.arr.join(',');
     }
+
     TagsInput.prototype.setSuggestions = function (sugArray) {
         suggestionsArray = sugArray;
     }
 
-
-    // destroy the plugin
     TagsInput.prototype.destroy = function () {
         this.orignal_input.removeAttribute('hidden');
 
@@ -154,7 +154,6 @@ $(function () {
         this.initialized = false;
     }
 
-    // Private function to initialize the tag input plugin
     function init(tags) {
         tags.wrapper.append(tags.input);
         tags.wrapper.classList.add(tags.options.wrapperClass);
@@ -163,44 +162,35 @@ $(function () {
         tags.input.addEventListener('input', function () {
             const inputValue = tags.input.value.trim().toLowerCase();
 
-            // Show suggestions only after the first character entry
             if (inputValue.length > 1) {
-                const suggestions = suggestionsArray.filter(tag => tag.toLowerCase().includes(inputValue));
+                const suggestions = suggestionsArray.filter(tag =>
+                    (tag.name.toLowerCase()).includes(inputValue));
 
-                // Display suggestions below the input element
                 if (suggestions.length) {
                     displaySuggestions(tags, suggestions);
                 } else {
                     removeSuggestions(tags);
                 }
-
             } else {
-                // Remove suggestions if input is empty
                 removeSuggestions(tags);
             }
         });
     }
 
-    // Function to display auto-completion suggestions
     function displaySuggestions(tags, suggestions) {
-        // Remove previous suggestions
+
         removeSuggestions(tags);
 
-        // Create suggestion container
         const suggestionContainer = document.createElement('div');
         suggestionContainer.classList.add('tags-suggestion-container');
         const suggestionTitleElement = document.createElement('div');
         suggestionTitleElement.className = 'tags-suggestion-title';
         suggestionTitleElement.innerText = 'ALL TAGS';
         suggestionContainer.appendChild(suggestionTitleElement);
-
-        // Add suggestions to the container
         suggestions.forEach(suggestion => {
             const suggestionElement = document.createElement('div');
             suggestionElement.className = 'tags-suggestion-element';
-            suggestionElement.innerText = suggestion;
-
-            // Add click event to add suggestion as a new tag
+            suggestionElement.innerText = typeof suggestion === 'string' ? suggestion : suggestion.name;
             suggestionElement.addEventListener('click', function () {
                 tags.addTag(suggestion);
                 removeSuggestions(tags);
@@ -210,11 +200,9 @@ $(function () {
             suggestionContainer.appendChild(suggestionElement);
         });
 
-        // Append the suggestion container below the input
         tags.wrapper.appendChild(suggestionContainer);
     }
 
-    // Function to remove auto-completion suggestions
     function removeSuggestions(tags) {
         const suggestionContainer = tags.wrapper.querySelector('.tags-suggestion-container');
         if (suggestionContainer) {
@@ -222,45 +210,56 @@ $(function () {
         }
     }
 
-    // initialize the Events
     function initEvents(tags) {
         tags.wrapper.addEventListener('click', function () {
             tags.input.focus();
         });
 
-        // for saving tags that are typed, but not added as a chip/pill
         tags.input.addEventListener('focusout', function () {
-            $('#paymentTagsModelSaveBtn').click(function () {
+            $('#assignTagsModelSaveBtn').click(function () {
                 trimAndAddTag(tags);
             })
         });
 
-
         tags.input.addEventListener('keydown', function (e) {
-
             if (~[9, 13, 188, 32].indexOf(e.keyCode)) {
                 e.preventDefault();
                 trimAndAddTag(tags);
                 removeSuggestions(tags);
 
             }
-
         });
     }
 
     function trimAndAddTag(tags) {
         let str = tags.input.value.trim();
-        if (str != "") {
-            tags.addTag(str);
+        if (!str) {
+            tags.input.value = "";
+            return;
         }
+
+        const matched = suggestionsArray.find(s =>
+            s.name.toLowerCase() === str.toLowerCase()
+        );
+
+        if (matched) {
+            tags.addTag(typeof matched === 'string' ? { name: matched } : matched);
+        } else {
+            abp.message.warn('Please select a tag from the suggestions.');
+        }
+
         tags.input.value = "";
+    }
+
+    function updateSelectedTagsInput(tagsArray) {
+        let jsonValue = JSON.stringify(tagsArray);
+        $('#SelectedTagsJson').val(jsonValue);
     }
 
     TagsInput.prototype.getTags = function () {
         return this.arr.slice(); // Return a copy of the array to prevent external modification
     }
 
-    // Set All the Default Values
     TagsInput.defaults = {
         selector: '',
         wrapperClass: 'tags-input-wrapper',
@@ -270,7 +269,4 @@ $(function () {
     }
 
     window.TagsInput = TagsInput;
-
 });
-
-

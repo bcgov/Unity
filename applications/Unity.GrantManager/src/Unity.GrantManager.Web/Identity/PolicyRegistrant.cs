@@ -151,6 +151,8 @@ internal static class PolicyRegistrant
         ));
 
         //-- PAYMENT INFO
+        authorizationBuilder.AddPolicy(UnitySelector.Payment.Default,
+           policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Payment.Summary.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Payment.Supplier.Default,
@@ -177,6 +179,8 @@ internal static class PolicyRegistrant
         // Setting Management - Tag Management
         authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Create,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Create));
         authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Update,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.SettingManagement.Tags.Update));
         authorizationBuilder.AddPolicy(UnitySelector.SettingManagement.Tags.Delete,
@@ -218,13 +222,6 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Project.Location.Update.UpdateFinalStateFields,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.UpdateFinalStateFields));
-
-        // Project Info - Worksheet Policies
-        authorizationBuilder.AddPolicy(UnitySelector.Project.Worksheet.Default,
-            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Worksheet.Default));  // NOTE: Will be replaced when Worksheets normalized
-
-        authorizationBuilder.AddPolicy(UnitySelector.Project.Worksheet.Update,
-            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Worksheet.Update));  // NOTE: Will be replaced when Worksheets normalized
     }
 }
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,46 +37,68 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Id).ToList());
     }
 
-    public async Task<IList<ApplicationTagsDto>> GetListWithApplicationIdsAsync(List<Guid> ids)
+    public async Task<List<ApplicationTagsDto>> GetListWithApplicationIdsAsync(List<Guid> ids)
     {
-        var tags = await _applicationTagsRepository.GetListAsync(e => ids.Contains(e.ApplicationId));
+        var queryable = await _applicationTagsRepository.GetQueryableAsync();
+
+        var tags = await queryable
+            .Where(x => ids.Contains(x.ApplicationId))
+            .Include(x => x.Tag)
+            .ToListAsync();
 
         return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Id).ToList());
     }
 
-    public async Task<ApplicationTagsDto?> GetApplicationTagsAsync(Guid id)
+    public async Task<List<ApplicationTagsDto>> GetApplicationTagsAsync(Guid id)
     {
-        var applicationTags = await _applicationTagsRepository.FirstOrDefaultAsync(s => s.ApplicationId == id);
+        var tags = await (await _applicationTagsRepository
+                 .WithDetailsAsync(x => x.Tag))
+             .Where(e => e.ApplicationId == id)
+             .ToListAsync();
 
-        if (applicationTags == null) return null;
-
-        return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(applicationTags);
+        return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags);
     }
 
-    public async Task<ApplicationTagsDto> CreateorUpdateTagsAsync(Guid id, ApplicationTagsDto input)
+    public async Task<List<ApplicationTagsDto>> AssignTagsAsync(AssignApplicationTagsDto input)
     {
-        var applicationTag = await _applicationTagsRepository.FirstOrDefaultAsync(e => e.ApplicationId == id);
+        var existingApplicationTags = await _applicationTagsRepository.GetListAsync(e => e.ApplicationId == input.ApplicationId);
+        var existingTagIds = existingApplicationTags.Select(t => t.TagId).ToHashSet();
+        var inputTagIds = input.Tags?.Select(t => t.Id).ToHashSet() ?? new HashSet<Guid>();
 
-        // Sanitize input tag text string
-        var tagInput = input.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
-        input.Text = string.Join(',', tagInput.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
-
-        if (applicationTag == null)
-        {
-            var newTag = await _applicationTagsRepository.InsertAsync(new ApplicationTags
+        var newTagsToAdd = input.Tags?
+            .Where(tag => !existingTagIds.Contains(tag.Id))
+            .Select(tag => new ApplicationTags
             {
                 ApplicationId = input.ApplicationId,
-                Text = input.Text
+                TagId = tag.Id
+            })
+            .ToList();
 
-            }, autoSave: true);
+        var tagsToRemove = existingApplicationTags
+           .Where(et => !inputTagIds.Contains(et.TagId))
+           .ToList();
 
-            return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(newTag);
+        if (tagsToRemove.Count > 0 && await AuthorizationService.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
+        {
+            await _applicationTagsRepository.DeleteManyAsync(tagsToRemove, autoSave: true);
+        }
+
+        if (newTagsToAdd?.Count > 0 && await AuthorizationService.IsGrantedAsync(UnitySelector.Application.Tags.Create))
+        {
+            await _applicationTagsRepository.InsertManyAsync(newTagsToAdd, autoSave: true);
+
+            var tagIds = newTagsToAdd.Select(x => x.TagId).ToList();
+
+            var insertedTagsWithNavProps = await (await _applicationTagsRepository.GetQueryableAsync())
+                .Where(x => x.ApplicationId == input.ApplicationId && tagIds.Contains(x.TagId))
+                .Include(x => x.Tag)
+                .ToListAsync();
+
+            return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(insertedTagsWithNavProps);
         }
         else
         {
-            applicationTag.Text = input.Text;
-            await _applicationTagsRepository.UpdateAsync(applicationTag, autoSave: true);
-            return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(applicationTag);
+            return [];
         }
     }
 
@@ -89,18 +112,6 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
             tagSummary.Count,
             tagSummary
         );
-    }
-
-    /// <summary>
-    /// For a given Tag, finds the maximum length available for renaming.
-    /// </summary>
-    /// <param name="originalTag">The tag to be replaced.</param>
-    /// <returns>The maximum length available for renaming</returns>
-    [Authorize(UnitySelector.SettingManagement.Tags.Update)]
-    public async Task<int> GetMaxRenameLengthAsync(string originalTag)
-    {
-        Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
-        return await _applicationTagsRepository.GetMaxRenameLengthAsync(originalTag);
     }
 
     /// <summary>
@@ -128,19 +139,10 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         }
 
         var applicationTags = await _applicationTagsRepository
-            .GetListAsync(e => e.Text.Contains(originalTag));
+            .GetListAsync(e => e.Tag.Name.Contains(originalTag));
 
         if (applicationTags.Count == 0)
             return [];
-
-        int maxRemainingLength = await GetMaxRenameLengthAsync(originalTag);
-        if (replacementTag.Length > maxRemainingLength)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(replacementTag),
-                $"String length exceeds maximum allowed length of {maxRemainingLength}. Actual length: {replacementTag.Length}"
-            );
-        }
 
         var updatedTags = new List<ApplicationTags>(applicationTags.Count);
 
@@ -148,14 +150,14 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         {
             // Split and trim tags, use case-insensitive HashSet for matching
             var tagSet = new HashSet<string>(
-                item.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                item.Tag.Name.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
                     StringComparer.InvariantCultureIgnoreCase);
 
             // Only replace if the original tag exists (case-insensitive)
             if (tagSet.Remove(originalTag))
             {
                 tagSet.Add(replacementTag); // No effect if replacement already exists
-                item.Text = string.Join(',', tagSet.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
+                item.Tag.Name = string.Join(',', tagSet.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
                 updatedTags.Add(item);
             }
         }
@@ -196,61 +198,22 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     /// </summary>
     /// <param name="deleteTag">String of tag to be deleted.</param>
     [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
-    public async Task DeleteTagAsync(string deleteTag)
+    public async Task DeleteTagWithTagIdAsync(Guid id)
     {
-        Check.NotNullOrWhiteSpace(deleteTag, nameof(deleteTag));
 
-        // Remove commas from the originalTag and replacementTag
-        deleteTag = deleteTag.Replace(",", string.Empty).Trim();
+        var existingApplicationTags = await _applicationTagsRepository.GetListAsync(e => e.Tag.Id == id);
+        var idsToDelete = existingApplicationTags.Select(x => x.Id).ToList();
+        await _applicationTagsRepository.DeleteManyAsync(idsToDelete, autoSave: true);
 
-        var applicationTags = await _applicationTagsRepository
-            .GetListAsync(e => e.Text.Contains(deleteTag));
 
-        var updatedTags = new List<ApplicationTags>();
-        var deletedTags = new List<ApplicationTags>();
 
-        foreach (var item in applicationTags)
-        {
-            var tagSet = new HashSet<string>(
-                item.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-                    StringComparer.InvariantCultureIgnoreCase);
-
-            // Only replace whole word tags - skip substring matches
-            if (tagSet.Remove(deleteTag))
-            {
-                if (tagSet.Count > 0)
-                {
-                    item.Text = string.Join(',', tagSet.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
-                    updatedTags.Add(item);
-                }
-                else
-                {
-                    deletedTags.Add(item);
-                }
-            }
-        }
-
-        if (deletedTags.Count > 0)
-        {
-            await _applicationTagsRepository.DeleteManyAsync(deletedTags, autoSave: true);
-        }
-
-        if (updatedTags.Count > 0)
-        {
-            await _applicationTagsRepository.UpdateManyAsync(updatedTags, autoSave: true);
-        }
     }
 
-    /// <summary>
-    /// Deletes a tag from all applications and payment requests.
-    /// </summary>
-    /// <param name="deleteTag">String of tag to be deleted.</param>
     [Authorize(UnitySelector.SettingManagement.Tags.Delete)]
-    public virtual async Task DeleteTagGlobalAsync(string deleteTag)
+    public async Task DeleteTagAsync(Guid id)
     {
-        Check.NotNullOrWhiteSpace(deleteTag, nameof(deleteTag));
 
-        await DeleteTagAsync(deleteTag);
-        await _localEventBus.PublishAsync(new DeleteTagEto { TagName = deleteTag });
+        await _applicationTagsRepository.DeleteAsync(id);
     }
+
 }

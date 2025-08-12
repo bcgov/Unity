@@ -92,7 +92,7 @@ public class ApplicationApplicantAppService(
     }
 
     [Obsolete("Use GetApplicantInfoTabAsync instead.")]
-    [Authorize(UnitySelector.Applicant.Default)]
+    [Authorize]
     public async Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId)
     {
         var applicantInfo = await applicationRepository.WithBasicDetailsAsync(applicationId);
@@ -151,6 +151,7 @@ public class ApplicationApplicantAppService(
         }
 
         // Only update the fields we need to update based on the modified
+        // Automapper mapping ignores the ElectoralDistrict as this is different from the application level electoral district
         ObjectMapper.Map<UpdateApplicantInfoDto, Applications.Application>(input.Data, application);
 
         //-- APPLICANT INFO - SUMMARY
@@ -164,7 +165,7 @@ public class ApplicationApplicantAppService(
         if (input.Data.ContactInfo != null
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
         {
-            await CreateOrUpdateContactInfoAsync(application.ApplicantId, input.Data.ContactInfo);
+            await CreateOrUpdateContactInfoAsync(applicationId, application.ApplicantId, input.Data.ContactInfo);
         }
 
         //-- APPLICANT INFO - SIGNING AUTHORITY (APPLICATION)
@@ -180,14 +181,22 @@ public class ApplicationApplicantAppService(
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
         {
             input.Data.PhysicalAddress.AddressType = AddressType.PhysicalAddress;
-            await CreateOrUpdateApplicantAddress(application.ApplicantId, input.Data.PhysicalAddress);
+            await CreateOrUpdateApplicantAddress(applicationId, application.ApplicantId, input.Data.PhysicalAddress);
         }
 
         if (input.Data.MailingAddress != null
             && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
         {
             input.Data.MailingAddress.AddressType = AddressType.MailingAddress;
-            await CreateOrUpdateApplicantAddress(application.ApplicantId, input.Data.MailingAddress);
+            await CreateOrUpdateApplicantAddress(applicationId, application.ApplicantId, input.Data.MailingAddress);
+        }
+
+        //-- APPLICANT ELECTORAL DISTRICT
+        if (input.Data.ElectoralDistrict != null
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        {
+            // Update the electoral district at the applicant level
+            application.Applicant.ElectoralDistrict = input.Data.ElectoralDistrict;
         }
 
         //-- APPLICANT INFO CUSTOM FIELDS
@@ -250,13 +259,13 @@ public class ApplicationApplicantAppService(
     /// <param name="contactInfo"></param>
     /// <returns></returns>
     [Authorize(UnitySelector.Applicant.Contact.Update)]
-    protected internal async Task<ApplicantAgent?> CreateOrUpdateContactInfoAsync(Guid applicantId, ContactInfoDto contactInfo)
+    protected internal async Task<ApplicantAgent?> CreateOrUpdateContactInfoAsync(Guid applicationId, Guid applicantId, ContactInfoDto contactInfo)
     {
-        var applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicantId == applicantId)
+        var applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicantId == applicantId && a.ApplicationId == applicationId)
         ?? new ApplicantAgent
         {
             ApplicantId   = applicantId,
-            ApplicationId = contactInfo.ApplicationId,
+            ApplicationId = applicationId,
         };
 
         ObjectMapper.Map<ContactInfoDto, ApplicantAgent>(contactInfo, applicantAgent);
@@ -279,15 +288,16 @@ public class ApplicationApplicantAppService(
     /// <param name="modifiedFields"></param>
     /// <returns></returns>
     [Authorize(UnitySelector.Applicant.Location.Update)]
-    protected internal async Task CreateOrUpdateApplicantAddress(Guid applicantId, UpdateApplicantAddressDto updatedAddress)
+    protected internal async Task CreateOrUpdateApplicantAddress(Guid applicationId, Guid applicantId, UpdateApplicantAddressDto updatedAddress)
     {
-        var applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
+        var applicantAddresses = await applicantAddressRepository.FindByApplicantIdAndApplicationIdAsync(applicantId, applicationId);
 
         ApplicantAddress? dbAddress = applicantAddresses.FirstOrDefault(a => a.AddressType == updatedAddress.AddressType)
         ?? new ApplicantAddress
         {
             ApplicantId = applicantId,
             AddressType = updatedAddress.AddressType,
+            ApplicationId = applicationId,
         };
 
         ObjectMapper.Map<UpdateApplicantAddressDto, ApplicantAddress>(updatedAddress, dbAddress);
@@ -324,5 +334,30 @@ public class ApplicationApplicantAppService(
                 Logger.LogError("Unable to resolve for version");
             }
         }
+    }
+
+    public async Task<bool> GetSupplierNameMatchesCheck(Guid applicantId, string? supplierName)
+    {
+        if (string.IsNullOrWhiteSpace(supplierName))
+        {
+            return true; // If supplierName is null or empty, there is nothing to warn about
+        }
+
+        var applicant = await applicantRepository.GetAsync(applicantId) ?? throw new EntityNotFoundException();
+
+        var normalizedSupplierName = supplierName?.Trim();
+        var organizationName = applicant.OrgName?.Trim();
+        var nonRegisteredOrganizationName = applicant.NonRegOrgName?.Trim();
+
+        // Match if either orgName or nonRegisteredOrgName matches supplierName
+        // - If both orgName and nonRegisteredOrgName are null or empty, return true
+        // - Otherwise, return true if supplierName matches either orgName or nonRegisteredOrgName (case-insensitive)
+        if (string.IsNullOrEmpty(organizationName) && string.IsNullOrEmpty(nonRegisteredOrganizationName))
+        {
+            return true;
+        }
+
+        return string.Equals(normalizedSupplierName, organizationName, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(normalizedSupplierName, nonRegisteredOrganizationName, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -206,6 +206,7 @@ public class SubmissionAppService(
                 logger.LogInformation("In tenant: {tenant} | allSubmissions: {allSubmissions} | Total CHEFS: {Chefs}  | Total Unity: {Unity}",
                                       tenant.Name, allSubmissions, chefsSubmissions.Count, unityRefNos.Count);
 
+
             }
         }
 
@@ -225,6 +226,7 @@ public class SubmissionAppService(
         chefsSubmissions.RemoveAll(r => r.Deleted);
         logger.LogInformation("Final before return: allSubmissions: {allSubmissions} | Total CHEFS: {Chefs}  | Total Unity: {Unity}",
                               allSubmissions, chefsSubmissions.Count, chefsSubmissions.Where(r => r.inUnity).Count());
+
 
         return new PagedResultDto<FormSubmissionSummaryDto>(chefsSubmissions.Count, chefsSubmissions);
     }

@@ -61,18 +61,33 @@
                 <abp-row class="m-0 p-0" abp-if="@IsLookupEnabled">
                     <abp-column size="_12" class="px-1 mb-4">
                         <label class="form-label">@L["ApplicantInfoView:ApplicantInfo.OrgBookSearch"].Value</label>
-                        <select id="orgBookSelect" asp-for="@Model.SelectedOrgBookId"
-                                class="auto-complete-select"
-                                data-autocomplete-minimum-input-length="3"
-                                data-autocomplete-api-url="/api/app/org-book/org-book-autocomplete-query"
-                                data-autocomplete-display-property="value"
-                                data-autocomplete-value-property="topic_source_id"
-                                data-autocomplete-items-property="results"
-                                data-autocomplete-filter-param-name="orgBookQuery"
-                                data-autocomplete-placeholder="@L["ApplicantInfoView:ApplicantInfo.OrgBookSearchPlaceholder"].Value"
-                                data-autocomplete-allow-clear="true">
-                        </select>
+                        <abp-row>
+                            <abp-column size="_11">
+                                <select id="orgBookSelect" asp-for="@Model.SelectedOrgBookId"
+                                        class="auto-complete-select"
+                                        data-autocomplete-minimum-input-length="3"
+                                        data-autocomplete-api-url="/api/app/org-book/org-book-autocomplete-query"
+                                        data-autocomplete-display-property="value"
+                                        data-autocomplete-value-property="topic_source_id"
+                                        data-autocomplete-items-property="results"
+                                        data-autocomplete-filter-param-name="orgBookQuery"
+                                        data-autocomplete-placeholder="@L["ApplicantInfoView:ApplicantInfo.OrgBookSearchPlaceholder"].Value">
+                                </select>
+                            </abp-column>
+                            <abp-column size="_1">
+                                <abp-button button-type="Default"
+                                            id="btnClearOrgbook"
+                                            title="Remove registered organisation"
+                                            style="margin: -3px; margin-left: -5px;"
+                                            type="button"
+                                            icon="xmark"
+                                            class="p-0">
+                                    <i class="fa fa-xmark"></i>
+                                </abp-button>
+                            </abp-column>
+                        </abp-row>
                     </abp-column>
+                    
                 </abp-row>
                 <abp-row class="m-0 p-0">
                     <abp-column size="_4" class="px-1">
@@ -136,6 +151,19 @@
                         </div>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
+                        <abp-input asp-for="@Model.ApplicantSummary.ApplicantName" />
+                    </abp-column>
+                    <abp-column size="_4" class="px-1">
+                        <div class="switch-container">
+                            <div class="px-3 form-check unt-form-switch form-switch">
+                                <abp-input type="checkbox" asp-for="@Model.ApplicantSummary.RedStop" disabled />
+                            </div>
+                        </div>
+                    </abp-column>
+                </abp-row>
+
+                <abp-row class="m-0 p-0">
+                    <abp-column size="_4" class="px-1">
                         <abp-select asp-for="@Model.ApplicantSummary.FiscalDay" asp-items="@Model.FiscalDayList">
                             <option value="">Please choose...</option>
                         </abp-select>
@@ -158,17 +186,8 @@
                         </abp-select>
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <div class="switch-container">
-                            <div class="px-3 form-check unt-form-switch form-switch">
-                                <abp-input type="checkbox" asp-for="@Model.ApplicantSummary.RedStop" disabled />
-                            </div>
-                        </div>
+                        <abp-input asp-for="@Model.ApplicantSummary.SectorSubSectorIndustryDesc" />
                     </abp-column>
-                    <abp-row class="m-0 p-0">
-                        <abp-column size="_12" class="px-1">
-                            <abp-input asp-for="@Model.ApplicantSummary.SectorSubSectorIndustryDesc" />
-                        </abp-column>
-                    </abp-row>
                 </abp-row>
             </abp-row>
         </zone-fieldset>
@@ -628,7 +647,6 @@
                         </table>
                     </div>
                     <div class="text-center">
-                        <span class="fw-bold">Note:</span> If a different principal is selected, the existing contact information and address will be passed over to the chosen principal.
                     </div>
                     <div class="d-flex justify-content-end m-3">
                         <button type="button" class="btn btn-primary" id="mergeApplicantsNextBtn">Next</button>
@@ -642,6 +660,7 @@
                             The principal record will be updated with your chosen values and assigned to this application.<br />
                             The other record will not be deleted; instead, it will be flagged as a duplicated and can be removed from the Applicant list in a separate process.
                         </p>
+                        <p style="color: rgb(13,110,253);">Note: The address and contact information for any affected applications will be preserved and remain untouched.</p>
                         <p class="fw-bold">Are you sure?</p>
 
                         <div id="mergeApplicantsSpinner" class="text-center my-3" style="display:none;">

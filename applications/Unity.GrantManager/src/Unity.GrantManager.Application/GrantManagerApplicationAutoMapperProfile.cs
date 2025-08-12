@@ -7,11 +7,14 @@ using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Forms;
+using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Zones;
+using Unity.Payments.Domain.AccountCodings;
+using Unity.Payments.PaymentRequests;
 
 namespace Unity.GrantManager;
 
@@ -49,6 +52,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();
+        CreateMap<ApplicationFormDto, ApplicationForm>();
         CreateMap<ApplicationFormVersion, ApplicationFormVersionDto>();
         CreateMap<ApplicationFormVersionDto, ApplicationFormVersion>();
         CreateMap<CreateUpdateApplicationFormVersionDto, ApplicationFormVersion>();
@@ -72,11 +76,16 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationLinksDto, ApplicationLink>();
         CreateMap<Application, GrantApplicationLiteDto>();
         CreateMap<ApplicantAddress, ApplicantAddressDto>();
+        CreateMap<AccountCoding, AccountCodingDto>();
         CreateMap<ZoneGroupDefinition, ZoneGroupDefinitionDto>().ReverseMap();
         CreateMap<ZoneTabDefinition, ZoneTabDefinitionDto>().ReverseMap();
         CreateMap<ZoneDefinition, ZoneDefinitionDto>().ReverseMap();
-
+        CreateMap<Tag, TagDto>();
         CreateMap<TagSummaryCount, TagSummaryCountDto>();
+        CreateMap<TagUsageSummary, TagUsageSummaryDto>();
+        CreateMap<ApplicationTags, ApplicationTagsDto>();
+        CreateMap<ApplicationTags, ApplicationTagsDto>()
+        .ForMember(dest => dest.Tag, opt => opt.MapFrom(src => src.Tag));
 
         //-- PROJECT INFO
         CreateMap<UpdateProjectInfoDto, Application>()
@@ -97,7 +106,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<UpdateApplicantInfoDto, Applicant>()
             .IgnoreNullAndDefaultValues();
         CreateMap<UpdateApplicantInfoDto, Application>()
-            .IgnoreNullAndDefaultValues();
+            .IgnoreNullAndDefaultValues()
+            .ForMember(dest => dest.ElectoralDistrict, opt => opt.Ignore()); // Electoral district is handled separately
         CreateMap<SigningAuthorityDto, Application>()
             .IgnoreNullAndDefaultValues();
         CreateMap<UpdateApplicantSummaryDto, Applicant>()

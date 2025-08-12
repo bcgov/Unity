@@ -10,7 +10,7 @@ using Unity.GrantManager.Reporting.DataGenerators;
 namespace Unity.GrantManager.Intakes.Handlers
 {
     public class GenerateReportDataHandler(IReportingDataGenerator reportingDataGenerator,
-         ILogger<DetermineElectoralDistrictHandler> logger,
+         ILogger<GenerateReportDataHandler> logger,
          IFeatureChecker featureChecker) : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
     {
         /// <summary>
@@ -23,6 +23,12 @@ namespace Unity.GrantManager.Intakes.Handlers
             if (eventData == null)
             {
                 logger.LogWarning("Event data is null in GenerateReportDataHandler.");
+                return;
+            }
+
+            if (eventData.OnlyLocationRetrofill)
+            {
+                logger.LogInformation("Skip report data generator handler.");
                 return;
             }
 
@@ -41,7 +47,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                     eventData.ApplicationFormSubmission.ReportData = reportingDataGenerator
                         .Generate(eventData.RawSubmission,
                                     eventData.FormVersion?.ReportKeys,
-                                    eventData.ApplicationFormSubmission.Id);
+                                    eventData.ApplicationFormSubmission.Id) ?? "{}";
                 }
             }
         }

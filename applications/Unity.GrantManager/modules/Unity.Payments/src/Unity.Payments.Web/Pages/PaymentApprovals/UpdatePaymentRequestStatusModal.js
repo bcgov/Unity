@@ -1,7 +1,11 @@
+const upatePaymentNumberFormatter = createNumberFormatter();
 
-function removeApplicationPayment(applicationId, groupId) {
+function removeApplicationPaymentApproval(applicationId, groupId) {
+    let $container = $('#' + applicationId);
+    $container.remove();
+
     $('#' + applicationId).remove();
-    let applicationCount = $('#ApplicationCount').val();
+    let applicationCount =  $('#ApplicationCount').val();
     let groupCount = $(`#${groupId}_count`).val();
     $(`#${groupId}_count`).val(groupCount - 1);
     $('#ApplicationCount').val(applicationCount - 1);
@@ -35,6 +39,8 @@ function removeApplicationPayment(applicationId, groupId) {
     if (groupCount - 1 == 0) {
         $(`#${groupId}_container .payment-status-transition`).css("display", "none");
     }
+
+    calculateUpdateTotalAmount();
 }
 
 function closePaymentModal() {
@@ -88,6 +94,9 @@ function getStatusText(data) {
 
         case "Submitted":
             return "Submitted";
+            
+        case "FSB":
+            return "Sent to Accounts Payable";
 
         case "Paid":
             return "Paid";
@@ -95,12 +104,20 @@ function getStatusText(data) {
         case "PaymentFailed":
             return "Payment Failed"
 
-
         default:
             return "Created";
     }
 }
 
-
-
-
+function calculateUpdateTotalAmount() {
+    let total = 0;
+    $('.amount').each(function () {
+        // Remove commas and $ symbols before parsing
+        let rawValue = $(this).val().replace(/[$,]/g, '');
+        let value = parseFloat(rawValue) || 0;
+        total += value;
+        this.value = upatePaymentNumberFormatter.format(value);
+    });
+    let totalFormatted = upatePaymentNumberFormatter.format(total);
+    $('#UpdateTotalAmount').val(totalFormatted);
+}

@@ -3,6 +3,7 @@
   "texts": {
     "Menu:Home": "Home",
     "Menu:Recapllm": "Recap LLM",
+    "Menu:RecapReporting": "AI Reporting",
     "Menu:Dashboard": "Dashboard",
     "Menu:GrantPrograms": "Grant Programs",
     "Menu:GrantTracker": "Grant Tracker",
@@ -214,9 +215,8 @@
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Funding Agreement",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement.Update": "Edit Funding Agreement",
 
-    "Unity.GrantManager.ApplicationManagement.Payment": "Payment",
+    "Unity.GrantManager.ApplicationManagement.Payment": "Payment Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
-    "Unity.GrantManager.ApplicationManagement.Payment.Summary.Update": "Edit Payment Summary",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
@@ -229,6 +229,10 @@
     "Unity.GrantManager.SettingManagement.Tags.Create": "Create Tag",
     "Unity.GrantManager.SettingManagement.Tags.Update": "Edit Tag",
     "Unity.GrantManager.SettingManagement.Tags.Delete": "Delete Tag",
+
+    "Permission:Tags": "Tags",
+    "Unity.Applications.Tags.Create": "Assign Tag to Applications",
+    "Unity.Applications.Tags.Delete": "Remove Tag from Applications",
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
@@ -285,6 +289,8 @@
 
     "Permission:UnitySettingManagementPermissions.BackgroundJobs": "Background Jobs",
     "Permission:UnitySettingManagementPermissions.UserInterface": "Application Tabs",
+    "Permission:UnitySettingManagementPermissions.ConfigurePayments": "Configure Payments",
+
     "Setting:GrantManager.UI.PageTitle": "Application Tabs Configuration",
     "Setting:GrantManager.UI.Tabs.Applicant.Description": "Toggle visibility of the Applicant Info tab for the tenant",
     "Setting:GrantManager.UI.Tabs.Applicant.DisplayName": "Applicant Info",
@@ -321,6 +327,7 @@
     "Summary:Application.SubmissionDate": "Submission Date",
     "Summary:Application.OrganizationName": "Registered Organization Name",
     "Summary:Application.OrganizationNumber": "Registered Organization Number",
+    "Summary:Application.NonRegOrgName": "Non-Registered Organization Name",
     "Summary:Application.City": "City",
     "Summary:Application.Community": "Community",
     "Summary:Application.RequestedAmount": "Requested Amount",
@@ -449,6 +456,7 @@
     "ApplicationBatchApprovalRequest:InvalidStatus": "The assessment for the selected item is not in the Assessment Completed state",
     "ApplicationBatchApprovalRequest:InvalidPermissions": "Invalid permissions",
     "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
-    "ApplicationBatchApprovalRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer"
+    "ApplicationBatchApprovalRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer",
+    "ApplicationBatchApprovalRequest:InvalidRecommendedAmount": "Invalid Recommended Amount, it must be greater than 0.00"
   }
 }

@@ -24,7 +24,7 @@
     background-blend-mode: difference;
     border: none !important;
     padding: 0.4rem;
-    border-radius: 2px;
+    border-radius: var(--bc-layout-margin-small) !important;
     min-height: 2rem;
 }
 

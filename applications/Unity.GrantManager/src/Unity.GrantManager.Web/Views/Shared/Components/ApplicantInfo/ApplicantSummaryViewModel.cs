@@ -58,5 +58,8 @@ public class ApplicantSummaryViewModel
     public string? SectorSubSectorIndustryDesc { get; set; }
 
     public bool RedStop { get; set; }
+
+    [Display(Name = "ApplicantInfoView:ApplicantInfo.ApplicantName")]
+    public string? ApplicantName { get; set; }
 }
 

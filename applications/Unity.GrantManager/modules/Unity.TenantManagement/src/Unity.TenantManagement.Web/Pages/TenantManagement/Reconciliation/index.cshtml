@@ -19,28 +19,7 @@
         <abp-style src="/Pages/TenantManagement/Tenants/Index.css" />
     </abp-style-bundle>
     <abp-style src="/Pages/GrantApplications/Index.css" />
-    <style>
-        .dataTables_wrapper .dataTables_scrollHead {
-            background-color: transparent;
-        }
-
-        .submissionSummaryFilterContainer {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            grid-template-rows: auto;
-        }
-
-        label {
-            font-size: 0.8rem;
-            margin: 0px !important;
-        }
-
-        .form-control {
-            font-size: 0.8rem;
-            border: 2px solid rgb(46, 93, 215);
-        }
-
-    </style>
+    <abp-style src="/Pages/TenantManagement/Reconciliation/Index.css" />
 }
 @section scripts {
     <abp-script-bundle name="@typeof(IndexModel).FullName">
@@ -67,7 +46,7 @@
         <div>
             <label for="ReconciliationCategoryFilter">Category:</label>
             <select name="category" class="form-control input-sm custom-filter-input" id="ReconciliationCategoryFilter" onchange="onSubmissionSummaryFilterChanged()">
-                <option value="" selected disabled hidden>Category</option>
+                <option value="all" selected>All</option>
             </select>
         </div>
     </div>
@@ -89,7 +68,7 @@
     <hr class="my-4"/>
     <b>Missing Submissions Browser</b>
     @await Component.InvokeAsync("ActionBar")
-    <div class="application-scrollable-content">
+    <div class="application-scrollable-content pb-3">
         <abp-table id="ReconciliationTable"></abp-table>
     </div>
 </div>

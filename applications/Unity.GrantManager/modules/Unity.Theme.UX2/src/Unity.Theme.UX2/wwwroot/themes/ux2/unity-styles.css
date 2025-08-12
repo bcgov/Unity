@@ -9,6 +9,7 @@
     --bc-colors-grey-text-100: #9F9D9C;
     --bc-colors-blue-text-links: #1A5A96;
     --bc-colors-blue-background: #013366;
+    --bc-colors-ligh-gray-background: #FAF9F8;
     --bc-colors-white-background: #F2F2F2;
     --bc-colors-blue-primary-500: #003366;
     --bc-colors-white-primary-500: #FFF;
@@ -39,7 +40,6 @@
     --bc-layout-margin-small: 8px;
     --bc-layout-margin-large: 24px;
 }
-
 
 .unity-app-container {
     background: var(--bc-colors-white-background);
@@ -618,6 +618,16 @@ div.dataTables_filter > label > input {
 .checkbox-select:checked {
     outline: 1px solid var(--bc-colors-blue-primary);
     outline-style: auto;
+    accent-color: var(--bc-colors-blue-primary) !important;
+}
+
+input[type="radio"] {
+    accent-color: var(--bc-colors-blue-primary) !important;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+    color: var(--bs-nav-pills-link-active-color) !important;
+    background-color: var(--bs-nav-pills-link-active-bg) !important;
 }
 
 div.dataTables_wrapper div.dataTables_filter {
@@ -862,6 +872,12 @@ div.dataTables_wrapper div.dataTables_filter {
 
 .unt-form-switch label {
     opacity: 0.8 !important;
+}
+
+.unt-form-label-primary {
+    color: var(--bc-colors-blue-primary);
+    -webkit-font-smoothing: antialiased;
+    font-weight: bold;
 }
 
 .filter-search-action-bar {

@@ -15,5 +15,6 @@ namespace Unity.Payments.Suppliers
         Task DeleteBySupplierIdAsync(Guid supplierId);
         Task<List<Site>> GetSitesBySupplierIdAsync(Guid supplierId);
         Task<Guid> MarkDeletedInUseAsync(Guid id);
+        Task<Guid> UpdatePaygroupAsync(Enums.PaymentGroup paymentGroup, Guid siteId);
     }
 }

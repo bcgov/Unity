@@ -1,9 +1,16 @@
 ﻿@page
-@model Unity.Payments.Web.Pages.PaymentTags.PaymentTagsSelectionModalModel
+@using Newtonsoft.Json
+@using Unity.Modules.Shared
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Volo.Abp.Authorization.Permissions
+
+@model Unity.Payments.Web.Pages.PaymentTags.PaymentTagsSelectionModalModel
+
 @{
     Layout = null;
 }
+
+@inject IPermissionChecker PermissionChecker
 
 <form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="paymentTagForm">
     <abp-modal id="tagPaymentsModal">
@@ -11,12 +18,21 @@
         <abp-modal-body>
             <div>
                 <abp-input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
+                @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Tags.Create))
+                {
+                    <div class="form-text"><strong>Note: </strong>The current user does not have permission to assign payment tags.</div>
+                }
+
+                @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Tags.Delete))
+                {
+                    <div class="form-text"><strong>Note: </strong>The current user does not have permission to remove payment tags.</div>
+                }
+
+                <input type="hidden" id="SelectedTagsJson" name="SelectedTagsJson" />
                 <abp-input type="hidden" id="SelectedPaymentRequestIds" asp-for="@Model.SelectedPaymentRequestIds" />
                 <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
-                <abp-input type="hidden" id="CommonTags" asp-for="@Model.CommonTags" />
-                <abp-input type="hidden" id="UncommonTags" asp-for="@Model.UncommonTags" />
-                <abp-input type="hidden" id="AllTags" asp-for="@Model.AllTags" />
-                <abp-input type="hidden" id="Tags" asp-for="@Model.Tags" />
+                <input type="hidden" id="Tags" name="Tags" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
+                <input type="hidden" id="TagsJson" name="TagsJson" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
 
             </div>
         </abp-modal-body>

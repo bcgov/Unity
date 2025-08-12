@@ -7,52 +7,52 @@ using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Unity.Payments.PaymentConfigurations;
 using Unity.GrantManager.GrantApplications;
-using Unity.Payment.Shared;
 using System.Text.Json;
 using Unity.Payments.Domain.Suppliers;
+using System.Linq;
+using Unity.GrantManager.Payments;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
-    public class CreatePaymentRequestsModel : AbpPageModel
+    public class CreatePaymentRequestsModel(
+        IGrantApplicationAppService applicationService,
+        IPaymentRequestAppService paymentRequestAppService,
+        IPaymentConfigurationAppService paymentConfigurationAppService,
+        ISupplierAppService iSupplierAppService,
+        ISiteRepository siteRepository,
+        IPaymentSettingsAppService paymentSettingsAppService
+    ) : AbpPageModel
     {
-        public List<Guid> SelectedApplicationIds { get; set; }
-        private readonly IGrantApplicationAppService _applicationService;
-        private readonly IPaymentRequestAppService _paymentRequestService;
-        private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
-        private readonly ISupplierAppService _iSupplierAppService;
-        private readonly ISiteRepository _siteRepository;
 
-        public CreatePaymentRequestsModel(
-           ISiteRepository siteRepository,
-           IGrantApplicationAppService applicationService,
-           ISupplierAppService iSupplierAppService,
-           IPaymentRequestAppService paymentRequestService,
-           IPaymentConfigurationAppService paymentConfigurationAppService)
-        {
-            SelectedApplicationIds = [];
-            _siteRepository = siteRepository;
-            _applicationService = applicationService;
-            _paymentRequestService = paymentRequestService;
-            _paymentConfigurationAppService = paymentConfigurationAppService;
-            _iSupplierAppService = iSupplierAppService;
-        }
+        public List<Guid> SelectedApplicationIds { get; set; } = [];
 
         [BindProperty]
         public List<PaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
-        [BindProperty]
-        public decimal PaymentThreshold { get; set; }
+
         [BindProperty]
         public bool DisableSubmit { get; set; }
         [BindProperty]
         public bool HasPaymentConfiguration { get; set; }
 
+        [BindProperty]
+        public string BatchNumberDisplay { get; set; } = string.Empty;
+
+        [BindProperty]
+        public decimal TotalAmount { get; set; }
+
+        public decimal ApplicationPaymentRequestFormTotalAmount
+        {
+            get
+            {
+                return ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
+            }
+        }
 
         public async Task OnGetAsync(string applicationIds)
         {
-            var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
+            var paymentConfiguration = await paymentConfigurationAppService.GetAsync();
             if (paymentConfiguration != null)
             {
-                PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
                 HasPaymentConfiguration = true;
             }
             else
@@ -62,11 +62,15 @@ namespace Unity.Payments.Web.Pages.Payments
             }
 
             SelectedApplicationIds = JsonSerializer.Deserialize<List<Guid>>(applicationIds) ?? [];
-            var applications = await _applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
+            var applications = await applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
 
             foreach (var application in applications)
             {
                 decimal remainingAmount = await GetRemainingAmountAllowedByApplicationAsync(application);
+
+                // Grabs the Account Coding ID from the Application Form and if there is none then the Payment Configuration
+                // If neither exist then an error on the payment request will be shown 
+                Guid? accountCodingId = await paymentSettingsAppService.GetAccountCodingIdByApplicationIdAsync(application.Id);
 
                 PaymentsModel request = new()
                 {
@@ -77,7 +81,8 @@ namespace Unity.Payments.Web.Pages.Payments
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
                     ContractNumber = application.ContractNumber,
-                    RemainingAmount = remainingAmount
+                    RemainingAmount = remainingAmount,
+                    AccountCodingId = accountCodingId
                 };
 
                 var supplier = await GetSupplierByApplicationAync(application);
@@ -86,7 +91,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 Guid siteId = application.Applicant.SiteId;
                 Site? site = null;
                 if(siteId != Guid.Empty) {
-                    site = await _siteRepository.GetAsync(siteId);
+                    site = await siteRepository.GetAsync(siteId);
                     var siteName = $"{site.Number} ({supplierNumber}, {site.City})";
                     request.SiteName = siteName;
                     request.SiteId = siteId;
@@ -95,7 +100,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 request.SupplierName = supplier?.Name;
                 request.SupplierNumber = supplierNumber;
 
-                request.ErrorList = GetErrorlist(supplier, site, application, remainingAmount);
+                request.ErrorList = GetErrorlist(supplier, site, application, remainingAmount, accountCodingId);
 
                 if (request.ErrorList != null && request.ErrorList.Count > 0)
                 {
@@ -105,9 +110,12 @@ namespace Unity.Payments.Web.Pages.Payments
                 ApplicationPaymentRequestForm!.Add(request);
             }
 
+            var batchName = await paymentRequestAppService.GetNextBatchInfoAsync();
+            BatchNumberDisplay = batchName;
+            TotalAmount = ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
         }
 
-        private static List<string> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, decimal remainingAmount)
+        private static List<string> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, decimal remainingAmount, Guid? accountCodingId)
         {
             bool missingFields = false;
 
@@ -137,6 +145,11 @@ namespace Unity.Payments.Web.Pages.Payments
                 errorList.Add("The selected application is not Payable. To continue please remove the item from the list.");
             }
 
+            if(accountCodingId == null || accountCodingId == Guid.Empty)
+            {
+                errorList.Add("The selected application form does not have an Account Coding or no default Account Coding is set.");
+            }
+
             return errorList;
         }
 
@@ -150,7 +163,7 @@ namespace Unity.Payments.Web.Pages.Payments
             if (application.ApprovedAmount > 0)
             {
                 decimal approvedAmmount = application.ApprovedAmount;
-                decimal totalFutureRequested = await _paymentRequestService.GetTotalPaymentRequestAmountByCorrelationIdAsync(application.Id);
+                decimal totalFutureRequested = await paymentRequestAppService.GetTotalPaymentRequestAmountByCorrelationIdAsync(application.Id);
                 if (approvedAmmount > totalFutureRequested)
                 {
                     remainingAmount = approvedAmmount - totalFutureRequested;
@@ -164,14 +177,14 @@ namespace Unity.Payments.Web.Pages.Payments
         {
             if(application.Applicant.SupplierId != Guid.Empty)
             {
-                SupplierDto? supplierDto =  await _iSupplierAppService.GetAsync(application.Applicant.SupplierId);
+                SupplierDto? supplierDto =  await iSupplierAppService.GetAsync(application.Applicant.SupplierId);
                 if (supplierDto != null)
                 {
                     return supplierDto;
                 }
             }
 
-            return await _iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+            return await iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
             {
                 CorrelationId = application.Applicant.Id,
                 CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicantCorrelationProvider,
@@ -185,7 +198,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
             var payments = MapPaymentRequests();
 
-            await _paymentRequestService.CreateAsync(payments);
+            await paymentRequestAppService.CreateAsync(payments);
 
             return NoContent();
         }
@@ -210,7 +223,8 @@ namespace Unity.Payments.Web.Pages.Payments
                     SupplierNumber = payment.SupplierNumber ?? string.Empty,
                     PayeeName = payment.ApplicantName ?? string.Empty,
                     SubmissionConfirmationCode = payment.SubmissionConfirmationCode ?? string.Empty,
-                    CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicationCorrelationProvider,
+                    CorrelationProvider = PaymentConsts.ApplicationCorrelationProvider,
+                    AccountCodingId = payment.AccountCodingId,
                 });
             }
 

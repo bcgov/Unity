@@ -1,17 +1,50 @@
 $(function () {
     let dataTable;
     const l = abp.localization.getResource('Payments');
+    let updateModal = new abp.ModalManager(abp.appPath + 'Sites/UpdateModal');
+
+    updateModal.onResult(function (data) {
+        dataTable.ajax.reload();
+        abp.notify.success(
+            'Site Updated successfully.',
+            'Site Updated'
+        );
+    });
+
+    updateModal.onOpen(function () {
+        const UIElements = {
+            payGroup: $('#Site_PaymentGroup'),
+            bankAccount: $('#Site_BankAccount'),
+            bankAccountWarningDiv: $('#bank-account-warning-div')
+        };
+        
+        bindUIEvents();
+        validateBankeAccount();
+
+        function bindUIEvents() {
+            UIElements.payGroup.on('change', validateBankeAccount);
+        }
+
+        function validateBankeAccount() {
+            if (UIElements.payGroup.val() == 1 && UIElements.bankAccount.val() == '') { // EFT
+                UIElements.bankAccountWarningDiv.removeClass('hidden');
+            } else {
+                UIElements.bankAccountWarningDiv.addClass('hidden');                
+            }
+        }
+    });
 
     const UIElements = {
         navOrgInfoTab: $('#nav-organization-info-tab'),
         siteId: $("#SiteId"),
+        paymentApplicantId: $("#PaymentInfo_ApplicantId"),
         originalSupplierNumber: $("#OriginalSupplierNumber"),
         supplierNumber: $("#SupplierNumber"),
         supplierName: $("#SupplierName"),
         hasEditSupplier: $("#HasEditSupplierInfo"),
         refreshSitesBtn: $("#btn-refresh-sites"),
-        orgName: $("#ApplicantInfo_OrgName"), // Note: Dependent on Applicant Info Tab
-        nonRegisteredOrgName: $("#ApplicantInfo_NonRegOrgName"), // Note: Dependent on Applicant Info Tab
+        orgName: $("#ApplicantSummary_OrgName"), // Note: Dependent on Applicant Info Tab
+        nonRegisteredOrgName: $("#ApplicantSummary_NonRegOrgName"), // Note: Dependent on Applicant Info Tab
         supplierOrgInfoErrorDiv: $("#supplier-error-div")
     };
 
@@ -26,23 +59,49 @@ $(function () {
     init();
 
     function validateMatchingSupplierToOrgInfo() {
-        const supplierName = (UIElements.supplierName.val() || '').toLowerCase().trim();
-        
+        if (UIElements.paymentApplicantId.length === 0) {
+            console.warn('Payment Applicant ID element not found. Skipping validation.');
+            UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
+            return
+        }
+
+        const applicantId = UIElements.paymentApplicantId.val();
+        let supplierName = ($("#SupplierName").val() || '').toLowerCase().trim();
+
         if (!supplierName) {
             UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', true);
             return;
         }
-        let isMatch = true;
-        const orgName = (UIElements.orgName.val() || '').toLowerCase().trim();
-        const nonRegisteredOrgName = (UIElements.nonRegisteredOrgName.val() || '').toLowerCase().trim();
 
-        if(orgName != '') {
-            isMatch = !supplierName || !orgName || supplierName === orgName;
-        } else if(nonRegisteredOrgName != '') {
-            isMatch = !supplierName || !nonRegisteredOrgName || supplierName === nonRegisteredOrgName;
+        const orgNameElem = UIElements.orgName;
+        const nonRegOrgNameElem = UIElements.nonRegisteredOrgName;
+        const orgNameExists = orgNameElem.length > 0;
+        const nonRegOrgNameExists = nonRegOrgNameElem.length > 0;
+
+        // If neither element exists, fallback on API check
+        if (!orgNameExists && !nonRegOrgNameExists) {
+            // NOTE: External module dependency on Unity.GrantManager.GrantApplication.ApplicationApplicantAppService
+            unity.grantManager.grantApplications
+                .applicationApplicant
+                .getSupplierNameMatchesCheck(applicantId, supplierName)
+                .then((isMatch) => {
+                    $("#supplier-error-div").toggleClass('hidden', isMatch);
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        } else {
+            // Only fetch values if elements exist
+            const orgName = orgNameExists ? (orgNameElem.val() || '').toLowerCase().trim() : '';
+            const nonRegisteredOrgName = nonRegOrgNameExists ? (nonRegOrgNameElem.val() || '').toLowerCase().trim() : '';
+
+            // Hides warning if there is a match
+            let isMatch =
+                (!orgName && !nonRegisteredOrgName) ||
+                supplierName === orgName ||
+                supplierName === nonRegisteredOrgName;
+            $("#supplier-error-div").toggleClass('hidden', isMatch);
         }
-        
-        UIElements.supplierOrgInfoErrorDiv.toggleClass('hidden', isMatch);
     }
 
     function bindUIEvents() {
@@ -131,7 +190,7 @@ $(function () {
         };
         
         const listColumns = getColumns();
-        const defaultVisibleColumns = ['number','paymentGroup','addressLine1','bankAccount','status','id'];
+        const defaultVisibleColumns = ['number','paymentGroup','addressLine1','bankAccount','status','id', 'rowActions'];
 
         let actionButtons = [
             {
@@ -159,6 +218,7 @@ $(function () {
             serverSideEnabled: false,
             pagingEnabled: false,
             reorderEnabled: false,
+            useNullPlaceholder: true,
             languageSetValues: {},
             dataTableName: 'SiteInfoTable',
             externalSearchInputId: 'SiteInfoSearch',
@@ -174,7 +234,8 @@ $(function () {
                 getMailingAddress(columnIndex++),
                 getBankAccount(columnIndex++),
                 getStatus(columnIndex++),
-                getSiteDefaultRadio(columnIndex++)
+                getSiteDefaultRadio(columnIndex++),
+                getEditButtonColumn(columnIndex++)
             ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
         }    
     }
@@ -254,9 +315,36 @@ $(function () {
                 if(full.markDeletedInUse) {
                     return 'Deleted-In Use';
                 }
-                return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+
+                if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update')) {
+                    return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+                }
+
+                return `<input type="radio" class="site-radio" name="default-site" ${checked} ${disabled}/>`;
             },
             index: columnIndex
+        }
+    }
+    
+    function getEditButtonColumn(columnIndex) {
+        return {
+            title: 'Actions',
+            data: 'id',
+            name: 'rowActions',
+            className: 'data-table-header',
+            orderable: false,
+            sortable: false,
+            index: columnIndex,
+            rowAction: {
+                items: [
+                    {
+                        text: 'Edit',
+                        action: (data) => updateModal.open({ id: data.record.id }),
+                        visible: () => true,
+                        enabled: () => UIElements.hasEditSupplier.val() === 'True'
+                    }
+                ]
+            }
         }
     }
 
@@ -276,6 +364,7 @@ $(function () {
         (msg, data) => {
             UIElements.siteId.val(data);
             loadSiteInfoTable();
+            validateMatchingSupplierToOrgInfo();
         }
     );
 
@@ -291,10 +380,10 @@ function saveSiteDefault(siteId) {
         type: "POST",
         data: JSON.stringify({ ApplicantId: applicantId, SiteId: siteId }),
     })
-        .then(response => {
-            abp.notify.success('Default site has been successfully saved.', 'Default Site Saved');
-        })
-        .catch(error => {
-            console.error('There was a problem with the post operation:', error);
-        });
+    .then(response => {
+        abp.notify.success('Default site has been successfully saved.', 'Default Site Saved');
+    })
+    .catch(error => {
+        console.error('There was a problem with the post operation:', error);
+    });
 }

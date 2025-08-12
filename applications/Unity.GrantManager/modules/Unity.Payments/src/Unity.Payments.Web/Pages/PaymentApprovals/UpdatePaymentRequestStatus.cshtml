@@ -19,7 +19,7 @@
 {
     public static string GetContainerValidationState(bool isValid)
     {
-        return isValid ? "single-payment" : "single-payment bg-danger-subtle border-danger-subtle";
+        return isValid ? "single-payment payment-item" : "single-payment bg-danger-subtle border-danger-subtle";
     }
 }
 
@@ -36,9 +36,28 @@
         }
 
         <abp-modal-body>
+            <abp-card class="pb-0">
+                <abp-card-body class="pb-0 mb-0">
+                    <abp-row class="m-0 p-1">
+                        <abp-column size="_4">
+                            <label for="@Model.PaymentGroupings?.Count" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
+                            <input type="text" class="form-control" id="ApplicationCount" value="@(Model.PaymentGroupings?.Sum(g => g.Items.Count) ?? 0)" disabled />
+                        </abp-column>
+                        <abp-column size="_4">
+                            <label for="@Model.TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
+                            <input type="text" class="form-control totalAmount unity-currency-input" id="UpdateTotalAmount" value="@Model.TotalAmount" disabled />
+                        </abp-column>
+                        <abp-column size="_4">
+                            <label for="Note" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:BatchNote"]</label>
+                            <input type="text" class="form-control" asp-for="Note" />
+                        </abp-column>
+                    </abp-row>
+                </abp-card-body>
+            </abp-card>
             <abp-card>
                 <abp-card-body class="payment-card">
                     <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
+                    <abp-input id="UserPaymentThreshold" type="hidden" asp-for="UserPaymentThreshold" />
                     <abp-input id="ApplicationCount" type="hidden" asp-for="PaymentGroupings.Count" />
 
                     @if (Model.PaymentGroupings.Count > 0)
@@ -68,6 +87,7 @@
                                         <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].ToStatus" />
                                         <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].PreviousL1Approver" />
                                         <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].IsValid" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].HasUserPaymentThreshold" />
                                         <abp-row id=@($"{@Model.PaymentGroupings[k].Items[i].Id}_header") class=" m-0 p-2">
                                             <abp-column size="_12" class="px-1 d-flex align-items-center">
                                                 <div class="w-100">
@@ -76,7 +96,7 @@
                                                     </h6>
                                                 </div>
                                                 <div class="flex-shrink-1">
-                                                    <abp-button onclick='removeApplicationPayment("@Model.PaymentGroupings[k].Items[i].Id" + "_container", @Model.PaymentGroupings[k].GroupId)'
+                                                    <abp-button onclick='removeApplicationPaymentApproval("@Model.PaymentGroupings[k].Items[i].Id" + "_container", @Model.PaymentGroupings[k].GroupId)'
                                                                 size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times"
                                                                 data-parameter="@Model.PaymentGroupings[k].Items[i].CorrelationId" />
                                                 </div>
@@ -142,10 +162,17 @@
                         </abp-row>
                     }
                     <abp-column size="_12" class=" m-0 p-3 payment-error-column text-danger" abp-if="@(!ModelState.IsValid)">
-                        @if(ModelState.ContainsKey(nameof(PaymentsApprovalModel.PreviousL1Approver))
+                        @if (ModelState.ContainsKey(nameof(PaymentsApprovalModel.PreviousL1Approver))
                             && ModelState[nameof(PaymentsApprovalModel.PreviousL1Approver)]?.ValidationState == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)
                         {
-                            <span>@L["ApplicationPaymentRequest:Validations:L2ApproverRestrictionBatch"]</span>
+                            var previousL1ApproverState = ModelState[nameof(PaymentsApprovalModel.PreviousL1Approver)];
+                            if (previousL1ApproverState != null)
+                            {
+                                foreach (var error in previousL1ApproverState.Errors)
+                                {
+                                    <span>@error.ErrorMessage</span>
+                                }
+                            }
                         }
                     </abp-column>
                     <abp-row class="m-0 p-2 no-payment-msg text-center" id="no-payment-msg" style="display: none;">
