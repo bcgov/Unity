@@ -66,19 +66,15 @@
         <div class="tab-pane fade" id="nav-internal-email-group" role="tabpanel" aria-labelledby="nav-internal-email-group-tab">
             <div class="row">
                 <div class="container mt-3">
-                    <div class="filter-search-action-bar">
-                        <div class="unity-page-titlebar">
-                            <b class="m-0">Internal Email Groups</b>
-                        </div>
-                        <div class="filter-search-action-bar_search-wrapper">
-                        </div>
-                        <button id="CreateNewEmailGroup" class="btn flex-none btn-light rounded-1" type="button" title="Create">
-                            <span><i class="fl fl-add-to align-middle"></i> <span>Create New Group</span></span>
-                        </button>
-                    </div>
                     <div class="unity-setting-body p-3">
                         <div class="row">
                             <div class="container">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="m-0"><b>Email Groups</b></h5>
+                                    <button id="CreateNewEmailGroup" class="btn btn-primary" type="button" title="Create">
+                                        <span>+ ADD Email Group</span>
+                                    </button>
+                                </div>
                                 <abp-table id="EmailGroupsTable" data-resize-aware="true"></abp-table>
                             </div>
                         </div>

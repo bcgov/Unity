@@ -69,3 +69,7 @@
 .btn-add-user i {
     font-size: 0.8rem;
 }
+
+.modal-footer {
+    margin-top: 10px;
+}
