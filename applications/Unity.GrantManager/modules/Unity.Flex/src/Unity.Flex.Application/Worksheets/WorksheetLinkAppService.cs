@@ -50,13 +50,13 @@ namespace Unity.Flex.Worksheets
             List<WorksheetLinkDto> refreshedLinks)
         {
             // Add new
-            foreach (var (worksheetId, anchor, _) in dto.WorksheetAnchors)
+            foreach (var (worksheetId, anchor, order) in dto.WorksheetAnchors)
             {
                 if (worksheetLinks.Find(s => s.CorrelationId == dto.CorrelationId
                     && s.CorrelationProvider == dto.CorrelationProvider
                         && s.WorksheetId == worksheetId) == null)
                 {
-                    var newLink = new WorksheetLink(Guid.NewGuid(), worksheetId, dto.CorrelationId, dto.CorrelationProvider, anchor);
+                    var newLink = new WorksheetLink(Guid.NewGuid(), worksheetId, dto.CorrelationId, dto.CorrelationProvider, anchor, order);
 
                     var worksheetInstances = await worksheetInstanceRepository
                         .GetByWorksheetCorrelationAsync(worksheetId, ORPHANED, dto.CorrelationId, dto.CorrelationProvider);
