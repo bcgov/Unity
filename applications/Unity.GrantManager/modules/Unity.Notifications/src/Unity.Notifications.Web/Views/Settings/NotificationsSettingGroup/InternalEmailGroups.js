@@ -6,6 +6,206 @@
             groups: [],
             initialized: false,
 
+            // Shared utility functions
+            utils: {
+                // Standard user table column definitions
+                getUserTableColumnDefs: function() {
+                    return [
+                        {
+                            title: "First Name",
+                            name: 'firstName',
+                            data: 'firstName',
+                            defaultContent: ''
+                        },
+                        {
+                            title: "Last Name",
+                            name: 'lastName',
+                            data: 'lastName',
+                            defaultContent: ''
+                        },
+                        {
+                            title: "Display Name",
+                            name: 'userName',
+                            data: 'userName'
+                        },
+                        {
+                            title: "",
+                            name: 'actions',
+                            data: null,
+                            orderable: false,
+                            className: "text-center",
+                            render: function (data, type, row) {
+                                const title = 'Remove user';
+                                const buttonClass = row.isNew ? 'remove-selected-user' : 'remove-user-btn';
+                                const dataAttr = row.isNew ? `data-user-id="${row.userId}"` : `data-group-user-id="${row.id}"`;
+                                return `<button class="btn btn-sm btn-link text-primary p-0 ${buttonClass}" style="text-decoration: none;" ${dataAttr} title="${title}">
+                                    <i class="fa fa-times"></i>
+                                </button>`;
+                            }
+                        }
+                    ];
+                },
+
+                // Standard DataTable configuration
+                getStandardDataTableConfig: function(data = []) {
+                    return {
+                        processing: false,
+                        serverSide: false,
+                        paging: true,
+                        pageLength: 10,
+                        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+                        searching: true,
+                        info: true,
+                        ordering: true,
+                        scrollCollapse: false,
+                        scrollX: false,
+                        autoWidth: false,
+                        data: data,
+                        columnDefs: this.getUserTableColumnDefs()
+                    };
+                },
+
+                // Generate dropdown item HTML for users
+                generateUserDropdownItem: function(user) {
+                    const firstName = user.name ? user.name.split(' ')[0] : '';
+                    const lastName = user.surname || '';
+                    return `
+                        <li>
+                            <a class="dropdown-item dropdown-user-item" href="#" 
+                               data-user-id="${user.id}" 
+                               data-user-name="${user.userName || user.name || 'Unknown'}"
+                               data-user-email="${user.email || ''}"
+                               data-first-name="${firstName}"
+                               data-last-name="${lastName}">
+                                <div>
+                                    <strong>${user.userName || user.name || 'Unknown'}</strong>
+                                    <small class="text-muted d-block">${user.email || ''}</small>
+                                </div>
+                            </a>
+                        </li>
+                    `;
+                },
+
+                // Filter users by search term
+                filterUsersBySearchTerm: function(allUsers, searchTerm) {
+                    return allUsers.filter(user => {
+                        const userName = (user.userName || user.name || '').toLowerCase();
+                        const email = (user.email || '').toLowerCase();
+                        return userName.includes(searchTerm) || email.includes(searchTerm);
+                    });
+                },
+
+                // Setup user search dropdown functionality
+                setupUserSearchDropdown: function(searchInputId, dropdownId, addButtonId, onUserSelected) {
+                    const self = this;
+                    let searchTimeout;
+                    let allUsers = [];
+                    let selectedUser = null;
+
+                    // Load all users initially
+                    emailGroupsManager.loadAllUsers(function (users) {
+                        allUsers = users;
+                    });
+
+                    // Filter users as user types
+                    $(`#${searchInputId}`).on('input', function () {
+                        clearTimeout(searchTimeout);
+                        const searchTerm = $(this).val().toLowerCase();
+
+                        // Show dropdown if not already shown
+                        if (!$(`#${dropdownId}`).hasClass('show')) {
+                            $(`#${dropdownId}`).addClass('show');
+                            $(this).attr('aria-expanded', 'true');
+                        }
+
+                        searchTimeout = setTimeout(() => {
+                            if (searchTerm.length > 0) {
+                                const filteredUsers = self.filterUsersBySearchTerm(allUsers, searchTerm);
+                                self.displayFilteredUsers(dropdownId, filteredUsers);
+                            } else {
+                                $(`#${dropdownId}`).html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
+                            }
+                        }, 300);
+                    });
+
+                    // Handle selecting user from dropdown
+                    $(document).on('click', `#${dropdownId} .dropdown-user-item`, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const userId = $(this).data('user-id');
+                        const userName = $(this).data('user-name');
+                        const userEmail = $(this).data('user-email');
+
+                        // Store selected user with all details
+                        selectedUser = {
+                            userId,
+                            userName,
+                            userEmail,
+                            firstName: $(this).data('first-name') || '',
+                            lastName: $(this).data('last-name') || ''
+                        };
+
+                        // Update search input with selected user
+                        $(`#${searchInputId}`).val(userName);
+
+                        // Enable the Add User button
+                        $(`#${addButtonId}`).prop('disabled', false);
+
+                        // Hide dropdown
+                        $(`#${dropdownId}`).removeClass('show');
+                        $(`#${searchInputId}`).attr('aria-expanded', 'false');
+                    });
+
+                    // Handle Add User button click
+                    $(`#${addButtonId}`).on('click', function () {
+                        if (selectedUser && onUserSelected) {
+                            onUserSelected(selectedUser);
+
+                            // Reset state
+                            selectedUser = null;
+                            $(`#${searchInputId}`).val('');
+                            $(`#${addButtonId}`).prop('disabled', true);
+                            $(`#${dropdownId}`).html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
+                        }
+                    });
+
+                    // Clear selection when search input changes
+                    $(`#${searchInputId}`).on('input', function () {
+                        const inputVal = $(this).val();
+                        if (!inputVal || (selectedUser && inputVal !== selectedUser.userName)) {
+                            selectedUser = null;
+                            $(`#${addButtonId}`).prop('disabled', true);
+                        }
+                    });
+
+                    return {
+                        getSelectedUser: () => selectedUser,
+                        clearSelection: () => {
+                            selectedUser = null;
+                            $(`#${searchInputId}`).val('');
+                            $(`#${addButtonId}`).prop('disabled', true);
+                            $(`#${dropdownId}`).html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
+                        }
+                    };
+                },
+
+                // Display filtered users in dropdown
+                displayFilteredUsers: function(dropdownId, filteredUsers, excludeUserIds = []) {
+                    const availableUsers = filteredUsers.filter(user => !excludeUserIds.includes(user.id));
+                    
+                    if (availableUsers.length === 0) {
+                        $(`#${dropdownId}`).html('<li class="px-3 py-2 text-muted">No matching users found</li>');
+                        return;
+                    }
+
+                    const itemsHtml = availableUsers.slice(0, 20).map(user => 
+                        this.generateUserDropdownItem(user)
+                    ).join('');
+
+                    $(`#${dropdownId}`).html(itemsHtml);
+                }
+            },
+
             init: function () {
                 if (this.initialized) {
                     if (emailGroupsTable) {
@@ -42,8 +242,6 @@
                     self.showManageUsersModal(rowData);
                 });
 
-                // Edit button click handler removed - functionality moved to manage users button
-
                 emailGroupsTable.on('click', 'td button.delete-group-btn', function (event) {
                     event.stopPropagation();
                     const rowData = emailGroupsTable.row(event.target.closest('tr')).data();
@@ -56,7 +254,6 @@
             },
 
             defineColumnDefs: function () {
-                const self = this;
                 return [
                     {
                         title: "Group Name",
@@ -99,17 +296,19 @@
                                     'title': 'Edit Group'
                                 }).append($('<i>').addClass('fl fl-edit'));
 
-                            // Delete button (only for Dynamic groups)
-                            const $deleteButton = $('<button>')
-                                .addClass('btn btn-sm delete-group-btn px-0 float-end')
-                                .attr({
-                                    'aria-label': 'Delete',
-                                    'title': 'Delete',
-                                    'disabled': isStatic
-                                }).append($('<i>').addClass('fl fl-delete'));
-
                             $buttonWrapper.append($manageUsersButton);
-                            $buttonWrapper.append($deleteButton);
+                            
+                            // Delete button (only shown for Dynamic groups)
+                            if (!isStatic) {
+                                const $deleteButton = $('<button>')
+                                    .addClass('btn btn-sm delete-group-btn px-0 float-end')
+                                    .attr({
+                                        'aria-label': 'Delete',
+                                        'title': 'Delete'
+                                    }).append($('<i>').addClass('fl fl-delete'));
+                                
+                                $buttonWrapper.append($deleteButton);
+                            }
 
                             return $buttonWrapper.prop('outerHTML');
                         }
@@ -132,12 +331,6 @@
                 const self = this;
 
                 unity.notifications.emailGroups.emailGroups.getList().then(function (result) {
-                    console.log('Email groups loaded:', result);
-                    // Debug: Log the first group to see the actual structure
-                    if (result && result.length > 0) {
-                        console.log('First group structure:', result[0]);
-                        console.log('Type value:', result[0].type);
-                    }
                     self.groups = result;
                     callback({
                         recordsTotal: result.length,
@@ -145,8 +338,6 @@
                         data: result
                     });
                 }).catch(function (error) {
-                    console.error('Failed to load email groups:', error);
-                    abp.notify.error('Failed to load email groups');
                     callback({
                         recordsTotal: 0,
                         recordsFiltered: 0,
@@ -203,7 +394,7 @@
                                                         <tr>
                                                             <th>First Name</th>
                                                             <th>Last Name</th>
-                                                            <th>Display Name (Username)</th>
+                                                            <th>Display Name</th>
                                                             <th></th>
                                                         </tr>
                                                     </thead>
@@ -234,51 +425,9 @@
 
                 // Wait for modal to be fully shown before initializing DataTable
                 $('#createGroupModal').on('shown.bs.modal', function () {
-                    createGroupUsersTable = $('#createGroupUsersTable').DataTable(abp.libs.datatables.normalizeConfiguration({
-                        processing: false,
-                        serverSide: false,
-                        paging: true,
-                        pageLength: 10,
-                        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
-                        searching: true,
-                        info: true,
-                        ordering: true,
-                        scrollCollapse: false,
-                        scrollX: false,
-                        autoWidth: false,
-                        data: [],
-                        columnDefs: [
-                            {
-                                title: "First Name",
-                                name: 'firstName',
-                                data: 'firstName',
-                                defaultContent: ''
-                            },
-                            {
-                                title: "Last Name",
-                                name: 'lastName',
-                                data: 'lastName',
-                                defaultContent: ''
-                            },
-                            {
-                                title: "Display Name (Username)",
-                                name: 'userName',
-                                data: 'userName'
-                            },
-                            {
-                                title: "",
-                                name: 'actions',
-                                data: null,
-                                orderable: false,
-                                className: "text-center",
-                                render: function (data, type, row) {
-                                    return `<button class="btn btn-sm btn-link text-primary p-0 remove-selected-user" style="text-decoration: none;" data-user-id="${row.userId}" title="Remove user">
-                                        <i class="fa fa-times"></i>
-                                    </button>`;
-                                }
-                            }
-                        ]
-                    }));
+                    createGroupUsersTable = $('#createGroupUsersTable').DataTable(abp.libs.datatables.normalizeConfiguration(
+                        self.utils.getStandardDataTableConfig([])
+                    ));
 
                     // Force columns to adjust
                     createGroupUsersTable.columns.adjust().draw();
@@ -286,75 +435,21 @@
 
                 modal.show();
 
-                // Initialize user search for create modal
-                let searchTimeout;
-                let allUsers = [];
-                let selectedCreateUser = null;
-
-                // Load all users for the dropdown
-                self.loadAllUsers(function (users) {
-                    allUsers = users;
-                });
-
-                // Filter users as user types
-                $('#createGroupUserSearch').on('input', function () {
-                    clearTimeout(searchTimeout);
-                    const searchTerm = $(this).val().toLowerCase();
-
-                    // Show dropdown if not already shown
-                    if (!$('#createGroupUserDropdown').hasClass('show')) {
-                        $('#createGroupUserDropdown').addClass('show');
-                        $(this).attr('aria-expanded', 'true');
-                    }
-
-                    searchTimeout = setTimeout(() => {
-                        if (searchTerm.length > 0) {
-                            self.filterUsersForCreateModal(allUsers, searchTerm, selectedUsers);
-                        } else {
-                            $('#createGroupUserDropdown').html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
-                        }
-                    }, 300);
-                });
-
-                // Handle selecting user from dropdown
-                $(document).on('click', '#createGroupUserDropdown .dropdown-user-item', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const userId = $(this).data('user-id');
-                    const userName = $(this).data('user-name');
-                    const userEmail = $(this).data('user-email');
-
-                    // Store selected user with all details
-                    selectedCreateUser = {
-                        userId,
-                        userName,
-                        userEmail,
-                        firstName: $(this).data('first-name') || '',
-                        lastName: $(this).data('last-name') || ''
-                    };
-
-                    // Update search input with selected user
-                    $('#createGroupUserSearch').val(userName);
-
-                    // Enable the Add User button
-                    $('#createAddUserBtn').prop('disabled', false);
-
-                    // Hide dropdown
-                    $('#createGroupUserDropdown').removeClass('show');
-                    $('#createGroupUserSearch').attr('aria-expanded', 'false');
-                });
-
-                // Handle Add User button click
-                $('#createAddUserBtn').on('click', function () {
-                    if (selectedCreateUser) {
+                // Initialize user search with shared utility
+                self.utils.setupUserSearchDropdown(
+                    'createGroupUserSearch',
+                    'createGroupUserDropdown',
+                    'createAddUserBtn',
+                    function(selectedUser) {
                         // Add to selected users if not already there
-                        if (!selectedUsers.find(u => u.userId === selectedCreateUser.userId)) {
+                        if (!selectedUsers.find(u => u.userId === selectedUser.userId)) {
                             const newUser = {
-                                userId: selectedCreateUser.userId,
-                                userName: selectedCreateUser.userName,
-                                userEmail: selectedCreateUser.userEmail,
-                                firstName: selectedCreateUser.firstName || '',
-                                lastName: selectedCreateUser.lastName || ''
+                                userId: selectedUser.userId,
+                                userName: selectedUser.userName,
+                                userEmail: selectedUser.userEmail,
+                                firstName: selectedUser.firstName || '',
+                                lastName: selectedUser.lastName || '',
+                                isNew: true
                             };
                             selectedUsers.push(newUser);
 
@@ -363,23 +458,18 @@
                                 createGroupUsersTable.row.add(newUser).draw();
                             }
                         }
-
-                        // Reset state
-                        selectedCreateUser = null;
-                        $('#createGroupUserSearch').val('');
-                        $('#createAddUserBtn').prop('disabled', true);
-                        $('#createGroupUserDropdown').html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
                     }
-                });
+                );
 
-                // Clear selection when search input changes
-                $('#createGroupUserSearch').on('input', function () {
-                    const inputVal = $(this).val();
-                    if (!inputVal || (selectedCreateUser && inputVal !== selectedCreateUser.userName)) {
-                        selectedCreateUser = null;
-                        $('#createAddUserBtn').prop('disabled', true);
+                // Override the default displayFilteredUsers for create modal to exclude selected users
+                const originalDisplayFilteredUsers = self.utils.displayFilteredUsers.bind(self.utils);
+                self.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
+                    if (dropdownId === 'createGroupUserDropdown') {
+                        const selectedUserIds = selectedUsers.map(u => u.userId);
+                        excludeUserIds = [...excludeUserIds, ...selectedUserIds];
                     }
-                });
+                    return originalDisplayFilteredUsers(dropdownId, filteredUsers, excludeUserIds);
+                };
 
                 // Handle removing user from selected list
                 $(document).on('click', '#createGroupUsersTable .remove-selected-user', function (e) {
@@ -447,6 +537,9 @@
                 });
 
                 $('#createGroupModal').on('hidden.bs.modal', function () {
+                    // Restore original displayFilteredUsers function
+                    self.utils.displayFilteredUsers = originalDisplayFilteredUsers;
+                    
                     // Clean up DataTable
                     if (createGroupUsersTable) {
                         createGroupUsersTable.destroy();
@@ -458,10 +551,7 @@
                 });
             },
 
-            // Edit group modal removed - functionality integrated into manage users modal
-
             deleteGroup: function (groupId) {
-                const self = this;
                 abp.message.confirm(
                     'Are you sure you want to delete this email group? This action cannot be undone.',
                     'Delete Email Group',
@@ -488,7 +578,6 @@
                 // Track changes locally
                 let pendingUserAdditions = [];
                 let pendingUserRemovals = [];
-                let originalUsers = [];
 
                 const modalHtml = `
                     <div class="modal fade" id="manageUsersModal" tabindex="-1">
@@ -532,7 +621,7 @@
                                                     <tr>
                                                         <th>First Name</th>
                                                         <th>Last Name</th>
-                                                        <th>Display Name (Username)</th>
+                                                        <th>Display Name</th>
                                                         <th style="width: 10px;"></th>
                                                     </tr>
                                                 </thead>
@@ -574,11 +663,8 @@
                     const removalIndex = pendingUserRemovals.findIndex(u => u.userId === userInfo.userId);
                     if (removalIndex > -1) {
                         pendingUserRemovals.splice(removalIndex, 1);
-                    } else {
-                        // Add to pending additions if not already there
-                        if (!pendingUserAdditions.some(u => u.userId === userInfo.userId)) {
-                            pendingUserAdditions.push(userInfo);
-                        }
+                    } else if (!pendingUserAdditions.some(u => u.userId === userInfo.userId)) {
+                        pendingUserAdditions.push(userInfo);
                     }
 
                     // Add to DataTable for visual feedback
@@ -616,54 +702,9 @@
                 };
 
                 setTimeout(() => {
-                    groupUsersTable = $('#groupUsersTable').DataTable(abp.libs.datatables.normalizeConfiguration({
-                        processing: false,
-                        serverSide: false,
-                        paging: true,
-                        pageLength: 10,
-                        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
-                        searching: true,
-                        info: true,
-                        ordering: true,
-                        scrollCollapse: false,
-                        scrollX: false,
-                        autoWidth: false,
-                        data: [],
-                        columnDefs: [
-                            {
-                                title: "First Name",
-                                name: 'firstName',
-                                data: 'firstName',
-                                defaultContent: ''
-                            },
-                            {
-                                title: "Last Name",
-                                name: 'lastName',
-                                data: 'lastName',
-                                defaultContent: ''
-                            },
-                            {
-                                title: "Display Name (Username)",
-                                name: 'userName',
-                                data: 'userName'
-                            },
-                            {
-                                title: "",
-                                name: 'actions',
-                                data: null,
-                                orderable: false,
-                                className: "text-center",
-                                render: function (data, type, row) {
-                                    // Add visual indicator for newly added users
-                                    const iconClass = row.isNew ? 'fa fa-times text-success' : 'fa fa-times';
-                                    const title = row.isNew ? 'Remove user (pending addition)' : 'Remove user';
-                                    return `<button class="btn btn-sm btn-link text-primary p-0 remove-user-btn" style="text-decoration: none;" data-group-user-id="${row.id}" title="${title}">
-                                        <i class="${iconClass}"></i>
-                                    </button>`;
-                                }
-                            }
-                        ]
-                    }));
+                    groupUsersTable = $('#groupUsersTable').DataTable(abp.libs.datatables.normalizeConfiguration(
+                        self.utils.getStandardDataTableConfig([])
+                    ));
 
                     // Load users after DataTable is initialized
                     self.loadGroupUsersForTable(group.id, groupUsersTable, function (users) {
@@ -672,35 +713,28 @@
                     });
                 }, 100);
 
-                // Initialize user search dropdown
-                let searchTimeout;
-                let allUsers = [];
-                let selectedUser = null;
-
-                // Load all users initially
-                self.loadAllUsers(function (users) {
-                    allUsers = users;
-                });
-
-                // Filter users as user types
-                $('#userSearchInput').on('input', function () {
-                    clearTimeout(searchTimeout);
-                    const searchTerm = $(this).val().toLowerCase();
-
-                    // Show dropdown if not already shown
-                    if (!$('#userDropdownMenu').hasClass('show')) {
-                        $('#userDropdownMenu').addClass('show');
-                        $(this).attr('aria-expanded', 'true');
+                // Initialize user search with shared utility and custom filtering for existing group users
+                const manageUserSearchHandler = self.utils.setupUserSearchDropdown(
+                    'userSearchInput',
+                    'userDropdownMenu',
+                    'manageAddUserBtn',
+                    function(selectedUser) {
+                        console.log('Adding user locally:', selectedUser);
+                        addUserLocally(selectedUser);
                     }
+                );
 
-                    searchTimeout = setTimeout(() => {
-                        if (searchTerm.length > 0) {
-                            self.filterAndDisplayUsers(allUsers, searchTerm, group.id);
-                        } else {
-                            $('#userDropdownMenu').html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
-                        }
-                    }, 300);
-                });
+                // Override the default displayFilteredUsers for manage modal to exclude current group users
+                const originalDisplayFilteredUsers = self.utils.displayFilteredUsers.bind(self.utils);
+                self.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
+                    if (dropdownId === 'userDropdownMenu') {
+                        // Get current group users from DataTable and exclude them
+                        const currentUsers = groupUsersTable ? groupUsersTable.rows().data().toArray() : [];
+                        const currentUserIds = currentUsers.map(u => u.userId);
+                        excludeUserIds = [...excludeUserIds, ...currentUserIds];
+                    }
+                    return originalDisplayFilteredUsers(dropdownId, filteredUsers, excludeUserIds);
+                };
 
                 // Also show dropdown on focus
                 $('#userSearchInput').on('focus', function () {
@@ -710,58 +744,7 @@
                     }
                 });
 
-                // Handle selecting user from dropdown
-                $(document).on('click', '#userDropdownMenu .dropdown-user-item', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const userId = $(this).data('user-id');
-                    const userName = $(this).data('user-name');
-                    const userEmail = $(this).data('user-email');
-
-                    // Store selected user with all details
-                    selectedUser = {
-                        userId,
-                        userName,
-                        userEmail,
-                        firstName: $(this).data('first-name') || '',
-                        lastName: $(this).data('last-name') || ''
-                    };
-
-                    // Update search input with selected user
-                    $('#userSearchInput').val(userName);
-
-                    // Enable the Add User button
-                    $('#manageAddUserBtn').prop('disabled', false);
-
-                    // Hide dropdown
-                    $('#userDropdownMenu').removeClass('show');
-                    $('#userSearchInput').attr('aria-expanded', 'false');
-                });
-
-                // Handle Add User button click - now adds locally only
-                $('#manageAddUserBtn').on('click', function () {
-                    if (selectedUser) {
-                        console.log('Adding user locally:', selectedUser);
-                        addUserLocally(selectedUser);
-
-                        // Reset state
-                        selectedUser = null;
-                        $('#userSearchInput').val('');
-                        $('#manageAddUserBtn').prop('disabled', true);
-                        $('#userDropdownMenu').html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
-                    }
-                });
-
-                // Clear selection when search input changes
-                $('#userSearchInput').on('input', function () {
-                    const inputVal = $(this).val();
-                    if (!inputVal || (selectedUser && inputVal !== selectedUser.userName)) {
-                        selectedUser = null;
-                        $('#manageAddUserBtn').prop('disabled', true);
-                    }
-                });
-
-                // Handle remove user button click - now removes locally only
+                // Handle remove user button click - removes locally only
                 $('#manageUsersModal').on('click', '.remove-user-btn', function () {
                     const rowElement = $(this).closest('tr');
                     const rowData = groupUsersTable.row(rowElement).data();
@@ -864,6 +847,9 @@
                         console.log('Modal closed with unsaved changes - changes discarded');
                     }
 
+                    // Restore original displayFilteredUsers function
+                    self.utils.displayFilteredUsers = originalDisplayFilteredUsers;
+
                     if (groupUsersTable) {
                         groupUsersTable.destroy();
                     }
@@ -873,48 +859,6 @@
                 });
             },
 
-            filterUsersForCreateModal: function (allUsers, searchTerm, selectedUsers) {
-                const dropdownMenu = $('#createGroupUserDropdown');
-
-                // Filter users by search term
-                const filteredUsers = allUsers.filter(user => {
-                    const userName = (user.userName || user.name || '').toLowerCase();
-                    const email = (user.email || '').toLowerCase();
-                    return userName.includes(searchTerm) || email.includes(searchTerm);
-                });
-
-                // Exclude already selected users
-                const selectedUserIds = selectedUsers.map(u => u.userId);
-                const availableUsers = filteredUsers.filter(user => !selectedUserIds.includes(user.id));
-
-                if (availableUsers.length === 0) {
-                    dropdownMenu.html('<li class="px-3 py-2 text-muted">No matching users found</li>');
-                    return;
-                }
-
-                // Create dropdown items
-                const itemsHtml = availableUsers.slice(0, 20).map(user => {
-                    const firstName = user.name ? user.name.split(' ')[0] : '';
-                    const lastName = user.surname || '';
-                    return `
-                        <li>
-                            <a class="dropdown-item dropdown-user-item" href="#" 
-                               data-user-id="${user.id}" 
-                               data-user-name="${user.userName || user.name || 'Unknown'}"
-                               data-user-email="${user.email || ''}"
-                               data-first-name="${firstName}"
-                               data-last-name="${lastName}">
-                                <div>
-                                    <strong>${user.userName || user.name || 'Unknown'}</strong>
-                                    <small class="text-muted d-block">${user.email || ''}</small>
-                                </div>
-                            </a>
-                        </li>
-                    `;
-                }).join('');
-
-                dropdownMenu.html(itemsHtml);
-            },
 
             loadAllUsers: function (callback) {
                 // Load all users for the dropdown
@@ -939,88 +883,11 @@
                 });
             },
 
-            filterAndDisplayUsers: function (allUsers, searchTerm, groupId) {
-                const self = this;
-                const dropdownMenu = $('#userDropdownMenu');
-
-                // Filter users by search term
-                const filteredUsers = allUsers.filter(user => {
-                    const userName = (user.userName || user.name || '').toLowerCase();
-                    const email = (user.email || '').toLowerCase();
-                    return userName.includes(searchTerm) || email.includes(searchTerm);
-                });
-
-                // Get current group users to exclude them
-                unity.notifications.emailGroups.emailGroupUsers.getEmailGroupUsersByGroupId(groupId).then(function (groupUsers) {
-                    const groupUserIds = (groupUsers || []).map(gu => gu.userId);
-                    const availableUsers = filteredUsers.filter(user => !groupUserIds.includes(user.id));
-
-                    if (availableUsers.length === 0) {
-                        dropdownMenu.html('<li class="px-3 py-2 text-muted">No matching users found</li>');
-                        return;
-                    }
-
-                    // Create dropdown items
-                    const itemsHtml = availableUsers.slice(0, 20).map(user => {
-                        const firstName = user.name ? user.name.split(' ')[0] : '';
-                        const lastName = user.surname || '';
-                        return `
-                            <li>
-                                <a class="dropdown-item dropdown-user-item" href="#" 
-                                   data-user-id="${user.id}" 
-                                   data-user-name="${user.userName || user.name || 'Unknown'}"
-                                   data-user-email="${user.email || ''}"
-                                   data-first-name="${firstName}"
-                                   data-last-name="${lastName}">
-                                    <div>
-                                        <strong>${user.userName || user.name || 'Unknown'}</strong>
-                                        <small class="text-muted d-block">${user.email || ''}</small>
-                                    </div>
-                                </a>
-                            </li>
-                        `;
-                    }).join('');
-
-                    dropdownMenu.html(itemsHtml);
-                }).catch(function () {
-                    // If we can't get group users, show all filtered users
-                    if (filteredUsers.length === 0) {
-                        dropdownMenu.html('<li class="px-3 py-2 text-muted">No matching users found</li>');
-                        return;
-                    }
-
-                    const itemsHtml = filteredUsers.slice(0, 20).map(user => {
-                        const firstName = user.name ? user.name.split(' ')[0] : '';
-                        const lastName = user.surname || '';
-                        return `
-                            <li>
-                                <a class="dropdown-item dropdown-user-item" href="#" 
-                                   data-user-id="${user.id}" 
-                                   data-user-name="${user.userName || user.name || 'Unknown'}"
-                                   data-user-email="${user.email || ''}"
-                                   data-first-name="${firstName}"
-                                   data-last-name="${lastName}">
-                                    <div>
-                                        <strong>${user.userName || user.name || 'Unknown'}</strong>
-                                        <small class="text-muted d-block">${user.email || ''}</small>
-                                    </div>
-                                </a>
-                            </li>
-                        `;
-                    }).join('');
-
-                    dropdownMenu.html(itemsHtml);
-                });
-            },
 
             loadGroupUsersForTable: function (groupId, dataTable, callback) {
-                const self = this;
-
-                console.log('Loading users for group:', groupId);
 
                 // Always fetch fresh data from backend - no caching
                 unity.notifications.emailGroups.emailGroupUsers.getEmailGroupUsersByGroupId(groupId).then(function (groupUsers) {
-                    console.log('Fresh group users loaded from backend:', groupUsers);
 
                     if (!groupUsers || groupUsers.length === 0) {
                         dataTable.clear().draw();
