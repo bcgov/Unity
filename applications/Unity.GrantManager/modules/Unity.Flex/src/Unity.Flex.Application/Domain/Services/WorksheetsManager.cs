@@ -42,6 +42,11 @@ namespace Unity.Flex.Domain.Services
             Worksheet? worksheet;
             if (string.IsNullOrEmpty(eventData.FormDataName))
             {
+                if (eventData.WorksheetId == Guid.Empty)
+                {
+                    // WorksheetId is not set; cannot proceed.
+                    return;
+                }
                 worksheet = await worksheetRepository.GetAsync(eventData.WorksheetId, true);
             }
             else
