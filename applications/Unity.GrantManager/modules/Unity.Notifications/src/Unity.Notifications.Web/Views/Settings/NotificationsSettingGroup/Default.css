@@ -20,7 +20,6 @@
 #groupUsersTable td:last-child,
 #createGroupUsersTable td:last-child {
     text-align: right !important;
-    /* padding-right: 5px !important; */
 }
 
 #groupUsersTable th:last-child,
