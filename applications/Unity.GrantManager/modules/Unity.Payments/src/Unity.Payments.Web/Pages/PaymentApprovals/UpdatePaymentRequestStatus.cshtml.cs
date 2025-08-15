@@ -194,11 +194,20 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 return PaymentRequestStatus.Submitted;
             }
 
+            if (status == PaymentRequestStatus.L3Pending && isApproval)
+            {
+                if (preventPayment)
+                {
+                    return PaymentRequestStatus.FSB;
+                }
+                return PaymentRequestStatus.Submitted;
+            }
+
             return status switch
             {
                 PaymentRequestStatus.L1Pending => isApproval ? PaymentRequestStatus.L2Pending : PaymentRequestStatus.L1Declined,
                 PaymentRequestStatus.L2Pending => PaymentRequestStatus.L2Declined,
-                PaymentRequestStatus.L3Pending => isApproval ? PaymentRequestStatus.Submitted : PaymentRequestStatus.L3Declined,
+                PaymentRequestStatus.L3Pending => PaymentRequestStatus.L3Declined,
                 _ => request.ToStatus
             };
         }
