@@ -90,8 +90,14 @@
 
                 customIncludes
                     .add('CustomFields')
-                    .add('CorrelationId')
-                    .add('WorksheetIds');
+                    .add('CorrelationId');
+                    
+                    // Add appropriate worksheet ID field based on scenario
+                    if(multipleWorksheetsIds) {
+                        customIncludes.add('WorksheetIds');
+                    } else if(singleWorksheetId) {
+                        customIncludes.add('WorksheetId');
+                    }
             }
 
             customIncludes.add('ApplicantId');
