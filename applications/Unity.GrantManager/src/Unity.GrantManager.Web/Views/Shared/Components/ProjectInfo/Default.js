@@ -41,7 +41,18 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                 if (typeof Flex === 'function' && Object.keys(projectInfoObj.CustomFields || {}).length > 0) {
                     // Add Worksheet Metadata and filter conditions
                     projectInfoObj.CorrelationId = $("#ProjectInfo_ApplicationFormVersionId").val();
-                    projectInfoObj.WorksheetId = $("#ProjectInfo_WorksheetId").val();
+                    // Check for worksheet scenario - multiple vs single
+                    let multipleWorksheetsIds = $("#ProjectInfo_WorksheetIds").val();
+                    let singleWorksheetId = $("#ProjectInfo_WorksheetId").val();
+                    
+                    // Set correct payload property based on worksheet scenario
+                    if (multipleWorksheetsIds) {
+                        // Multiple worksheets scenario - send as WorksheetIds array
+                        projectInfoObj.WorksheetIds = multipleWorksheetsIds.split(',').map(id => id.trim());
+                    } else if (singleWorksheetId) {
+                        // Single worksheet scenario - send as WorksheetId
+                        projectInfoObj.WorksheetId = singleWorksheetId.trim();
+                    }
 
                     // Normalize checkboxes to string for custom worksheets
                     $(`#Unity_GrantManager_ApplicationManagement_Project_Worksheet input:checkbox`).each(function () {
@@ -50,8 +61,14 @@ abp.widgets.ProjectInfo = function ($wrapper) {
 
                     customIncludes
                         .add('CustomFields')
-                        .add('CorrelationId')
-                        .add('WorksheetId');
+                        .add('CorrelationId');
+                    
+                    // Add appropriate worksheet ID field based on scenario
+                    if (multipleWorksheetsIds) {
+                        customIncludes.add('WorksheetIds');
+                    } else if (singleWorksheetId) {
+                        customIncludes.add('WorksheetId');
+                    }
                 }
                 
                 // Create filtered object in one functional operation

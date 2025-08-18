@@ -12,7 +12,8 @@ namespace Unity.Flex.EntityFrameworkCore
         {
             return !include ? queryable : queryable
                 .Include(s => s.Sections.OrderBy(s => s.Order))
-                    .ThenInclude(s => s.Fields.OrderBy(s => s.Order));
+                    .ThenInclude(s => s.Fields.OrderBy(s => s.Order))
+                .Include(s => s.Links);
         }
 
         public static IQueryable<WorksheetInstance> IncludeDetails(this IQueryable<WorksheetInstance> queryable, bool include = true)

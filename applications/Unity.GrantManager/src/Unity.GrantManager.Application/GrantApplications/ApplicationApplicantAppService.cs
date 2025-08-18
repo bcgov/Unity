@@ -200,13 +200,40 @@ public class ApplicationApplicantAppService(
         }
 
         //-- APPLICANT INFO CUSTOM FIELDS
-        if (input.Data.CustomFields?.ValueKind != JsonValueKind.Null && input.Data.WorksheetId != Guid.Empty && input.Data.CorrelationId != Guid.Empty)
+        if (HasValue(input.Data.CustomFields) && input.Data.CorrelationId != Guid.Empty)
         {
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input.Data);
+            // Handle multiple worksheets
+            if (input.Data.WorksheetIds?.Count > 0)
+            {
+                foreach (var worksheetId in input.Data.WorksheetIds)
+                {
+                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.Data.CustomFields, worksheetId);
+                    if (worksheetCustomFields.Count > 0)
+                    {
+                        var worksheetData = new CustomDataFieldDto
+                        {
+                            WorksheetId = worksheetId,
+                            CustomFields = worksheetCustomFields,
+                            CorrelationId = input.Data.CorrelationId
+                        };
+                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, worksheetData);
+                    }
+                }
+            }
+            // Fallback for single worksheet (backward compatibility)
+            else if (input.Data.WorksheetId != Guid.Empty)
+            {
+                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input.Data);
+            }
         }
 
         var updatedApplication = await applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Applications.Application, GrantApplicationDto>(updatedApplication);
+    }
+
+    private static bool HasValue(JsonElement? element)
+    {
+        return element?.ValueKind != JsonValueKind.Null && element?.ValueKind != JsonValueKind.Undefined;
     }
 
     /// <summary>
@@ -360,4 +387,16 @@ public class ApplicationApplicantAppService(
         return string.Equals(normalizedSupplierName, organizationName, StringComparison.OrdinalIgnoreCase)
         || string.Equals(normalizedSupplierName, nonRegisteredOrganizationName, StringComparison.OrdinalIgnoreCase);
     }
+
+    private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(JsonElement customFields, Guid worksheetId)
+    {
+        var worksheetSuffix = $".{worksheetId}";
+        
+        return customFields.EnumerateObject()
+                .Where(property => property.Name.EndsWith(worksheetSuffix))
+                .ToDictionary(
+                    property => property.Name[..^worksheetSuffix.Length],
+                    property => property.Value.ValueKind == JsonValueKind.String ? (object)property.Value.GetString()! : string.Empty
+                );
+    }    
 }

@@ -9,7 +9,7 @@ namespace Unity.Flex.Domain.Worksheets
     {
         Task<Worksheet> GetAsync(Guid id, bool includeDetails = true);
         Task<List<Worksheet>> GetListAsync(bool includeDetails = false);
-        Task<Worksheet?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false);
+        Task<List<Worksheet>> GetListByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false);
         Task<Worksheet?> GetByCorrelationByNameAsync(Guid correlationId, string correlationProvider, string name, bool includeDetails = false);
         Task<Worksheet?> GetByNameAsync(string name, bool includeDetails = false);
         Task<Worksheet?> GetBySectionAsync(Guid id, bool includeDetails = false);
