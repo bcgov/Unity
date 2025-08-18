@@ -11,13 +11,28 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class WorksheetRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Worksheet, Guid>(dbContextProvider), IWorksheetRepository
     {
-        public async Task<Worksheet?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false)
+        public async Task<List<Worksheet>> GetListByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
 
-            return await dbSet
-                    .IncludeDetails(includeDetails)
-                    .FirstOrDefaultAsync(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider && s.UiAnchor == uiAnchor));
+            // First, get the worksheet IDs with their order from Links
+            var worksheetIdsWithOrder = await dbSet
+                .SelectMany(w => w.Links)
+                .Where(l => l.CorrelationId == correlationId && l.CorrelationProvider == correlationProvider && l.UiAnchor == uiAnchor)
+                .Select(l => new { l.WorksheetId, l.Order })
+                .ToListAsync();
+
+            var worksheetIds = worksheetIdsWithOrder.Select(w => w.WorksheetId).ToList();
+
+            // Then get the full worksheets
+            var worksheets = await dbSet
+                .IncludeDetails(includeDetails)
+                .Where(w => worksheetIds.Contains(w.Id))
+                .ToListAsync();
+
+            // Finally, order them in memory using the order we retrieved
+            var orderLookup = worksheetIdsWithOrder.ToDictionary(w => w.WorksheetId, w => w.Order ?? 0);
+            return worksheets.OrderBy(w => orderLookup[w.Id]).ToList();
         }
 
         public async Task<Worksheet?> GetByCorrelationByNameAsync(Guid correlationId, string correlationProvider, string name, bool includeDetails = false)
