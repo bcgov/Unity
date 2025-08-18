@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Intakes.Events;
-using Unity.GrantManager.Integration.Geocoder;
+using Unity.GrantManager.Integrations.Geocoder;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 

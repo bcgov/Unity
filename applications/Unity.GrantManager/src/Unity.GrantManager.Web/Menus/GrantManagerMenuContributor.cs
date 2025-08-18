@@ -2,6 +2,7 @@
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
 using Unity.Identity.Web.Navigation;
+using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement;
 using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Identity;
@@ -92,6 +93,9 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
+
+        // ********************
+        // Admin - Tenant Management 
         context.Menu.AddItem(
           new ApplicationMenuItem(
               TenantManagementMenuNames.Tenants,
@@ -103,6 +107,15 @@ public class GrantManagerMenuContributor : IMenuContributor
           )
         );
 
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.EndpointManagement,
+                displayName: "Endpoints",
+                "~/EndpointManagement/Endpoints",
+                requiredPermissionName: IdentityConsts.ITAdminPermissionName
+            )
+        );
+        // End Admin ********************
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue */
         //var administration = context.Menu.GetAdministration();

@@ -79,7 +79,7 @@ namespace Unity.Payments.Integrations.Cas
                     InvoiceLineAmount = paymentRequest.Amount,
                     DefaultDistributionAccount = accountDistributionCode // This will be at the tenant level
                 };
-                casInvoice.InvoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };
+                casInvoice.InvoiceLineDetails = [invoiceLineDetail];
             }
 
             return casInvoice;
@@ -101,16 +101,11 @@ namespace Unity.Payments.Integrations.Cas
             InvoiceResponse invoiceResponse = new();
             try
             {
-                PaymentRequest? paymentRequest = await paymentRequestRepository.GetPaymentRequestByInvoiceNumber(invoiceNumber);
-                if (paymentRequest is null)
-                {
-                    throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Payment Request not found");
-                }
+                var paymentRequest = await paymentRequestRepository.GetPaymentRequestByInvoiceNumber(invoiceNumber)
+                    ?? throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Payment Request not found");
 
                 if (!paymentRequest.AccountCodingId.HasValue)
-                {
                     throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Account Coding - Payment Request - not found");
-                }
 
                 AccountCoding accountCoding = await accountCodingRepository.GetAsync(paymentRequest.AccountCodingId.Value);
                 string accountDistributionCode = await paymentConfigurationAppService.GetAccountDistributionCode(accountCoding);// this will be on the payment request
@@ -177,7 +172,7 @@ namespace Unity.Payments.Integrations.Cas
             {
                 if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                 {
-                    var contentString = ResilientHttpRequest.ContentToString(response.Content);
+                    var contentString = await ResilientHttpRequest.ContentToStringAsync(response.Content);
                     var result = JsonSerializer.Deserialize<InvoiceResponse>(contentString)
                         ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
                     result.CASHttpStatusCode = response.StatusCode;
@@ -208,7 +203,7 @@ namespace Unity.Payments.Integrations.Cas
                 && response.Content != null
                 && response.IsSuccessStatusCode)
             {
-                string contentString = ResilientHttpRequest.ContentToString(response.Content);
+                string contentString = await ResilientHttpRequest.ContentToStringAsync(response.Content);
                 var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(contentString);
                 return result ?? new CasPaymentSearchResult();
             }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Reporting.FieldGenerators;
 using Unity.Modules.Shared.Features;
 using Volo.Abp.Application.Dtos;
@@ -144,6 +144,12 @@ namespace Unity.GrantManager.ApplicationForms
                 };
 
                 var formVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
+                if (formVersion == null) // Ensure formVersion is not null
+                {
+                    Logger.LogWarning("Form version data is null for formId: {FormId}, formVersionId: {FormVersionId}", formId, formVersionId);
+                    return null;
+                }
+
                 applicationFormVersion.AvailableChefsFields = _formSubmissionMapper.InitializeAvailableFormFields(formVersion);
 
                 if (formVersion is JObject formVersionObject)

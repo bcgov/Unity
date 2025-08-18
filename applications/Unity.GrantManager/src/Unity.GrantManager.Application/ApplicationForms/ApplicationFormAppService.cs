@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Permissions;
 using Unity.Payments.Permissions;
 using Volo.Abp;
