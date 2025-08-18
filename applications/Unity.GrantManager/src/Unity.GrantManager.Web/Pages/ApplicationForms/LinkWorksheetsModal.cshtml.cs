@@ -109,14 +109,14 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
         return new OkObjectResult(new { ChefsFormVersionId });
     }
 
-    private (List<WorksheetLinkDto> links, string slotIds) ProcessWorksheetLinks(List<WorksheetLinkDto> worksheetLinks, string uiAnchor)
+    private static (List<WorksheetLinkDto> links, string slotIds) ProcessWorksheetLinks(List<WorksheetLinkDto> worksheetLinks, string uiAnchor)
     {
         var links = worksheetLinks.Where(s => s.UiAnchor == uiAnchor).ToList();
         var slotIds = string.Join(";", links.OrderBy(s => s.Order).Select(s => s.WorksheetId));
         return (links, slotIds);
     }
 
-    private void ProcessSlotIds(string? slotIds, string uiAnchor, List<(Guid worksheetId, string anchor, uint order)> tabLinks)
+    private static void ProcessSlotIds(string? slotIds, string uiAnchor, List<(Guid worksheetId, string anchor, uint order)> tabLinks)
     {
         if (!string.IsNullOrWhiteSpace(slotIds) && slotIds != Guid.Empty.ToString())
         {
