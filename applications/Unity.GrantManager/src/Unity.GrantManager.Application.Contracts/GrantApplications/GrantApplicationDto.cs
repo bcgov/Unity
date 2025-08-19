@@ -5,6 +5,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications;
 
+// NOTE: Removing properties from this class will impact Email Notification Templates
 public class GrantApplicationDto : AuditedEntityDto<Guid>
 {
     public int RowCount { get; set; } = 0;
