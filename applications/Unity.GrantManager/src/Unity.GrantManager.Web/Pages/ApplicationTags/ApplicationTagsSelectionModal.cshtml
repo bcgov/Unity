@@ -18,7 +18,9 @@
     <abp-modal-header title="Tags"></abp-modal-header>
     <abp-modal-body>
         <div>
-                <input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
+                <div class="flex-grow-1">
+                    <input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
+                </div>
                 @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create))
                 {
                     <div class="form-text"><strong>Note: </strong>The current user does not have permission to assign application tags.</div>

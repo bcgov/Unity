@@ -1,0 +1,120 @@
+.tags-suggestion-show-all {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #f8f9fa;
+    color: #0d6efd;
+}
+
+.tags-suggestion-show-all:hover {
+    background-color: #e9ecef;
+}
+
+.tags-suggestion-no-match {
+    padding: 12px;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+}
+
+.tags-suggestion-separator {
+    margin: 0;
+    border-top: 1px solid #dee2e6;
+}
+
+.tags-suggestion-title {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    color: #6c757d;
+    font-weight: bold;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.tags-suggestion-title:last-child {
+    cursor: pointer;
+}
+
+.tags-suggestion-title:last-child:hover {
+    background-color: #e9ecef;
+}
+
+.tags-suggestion-element {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.tags-suggestion-element:hover {
+    background-color: #e9ecef;
+}
+
+.tags-suggestion-container {
+    position: absolute;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background-color: white;
+    z-index: 1000;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-top: 2px;
+}
+
+.tag-add-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-left: 5px;
+    padding: 0;
+    font-size: 12px;
+}
+
+.tag-add-button:hover {
+    background-color: #0b5ed7;
+}
+
+.tags-input-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 8px;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background-color: #fff;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    margin: 4px 4px 4px 0;
+    padding: 4px 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.tag a {
+    margin-left: 6px;
+    color: #495057;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+#tags-input-control {
+    flex-grow: 1;
+    min-width: 60px;
+    border: none;
+    outline: none;
+    padding: 8px 0;
+    margin: 4px 0;
+}
