@@ -83,6 +83,7 @@ public class TemplateService : ApplicationService, ITemplateService
     public async Task<List<TemplateVariable>> GetTemplateVariables()
     {
         var templateVaraibles =  await _templateVariablesRepository.GetQueryableAsync();
-        return templateVaraibles.OrderBy(x => x.Name).ToList();
+        var templateVariables =  await _templateVariablesRepository.GetQueryableAsync();
+        return templateVariables.OrderBy(x => x.Name).ToList();
     }
 }
