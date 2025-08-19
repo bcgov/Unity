@@ -35,7 +35,7 @@ namespace Unity.GrantManager.Repositories
                 .Where(s => s.ApplicationId == applicationId)
                 .Join(
                     dbContext.ApplicationFormVersions,
-                    submission => submission.FormVersionId,
+                    submission => submission.ApplicationFormVersionId,
                     version => version.Id,
                     (submission, version) => new { submission, version }
                 )

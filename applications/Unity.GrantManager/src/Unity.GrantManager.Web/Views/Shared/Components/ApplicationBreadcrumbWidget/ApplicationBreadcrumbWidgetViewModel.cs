@@ -13,5 +13,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
         public string ApplicationFormCategory { get; set; } = string.Empty;
         public Guid ApplicationFormVersionId { get; set; } = Guid.Empty;
         public int ApplicationFormVersion { get; set; } = 0;
+        public string SubmissionFormDescription = string.Empty;
     }
 }

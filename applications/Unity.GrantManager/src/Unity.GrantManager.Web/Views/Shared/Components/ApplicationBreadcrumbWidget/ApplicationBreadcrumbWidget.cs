@@ -32,9 +32,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
         {
             var applicationApplicant = await _applicationApplicantAppService.GetByApplicationIdAsync(applicationId);
             var formDetails = await _applicationFormAppService.GetFormDetailsByApplicationIdAsync(applicationId);
-            
-            return View(new ApplicationBreadcrumbWidgetViewModel() 
-            { 
+
+            return View(new ApplicationBreadcrumbWidgetViewModel()
+            {
                 ApplicantName = applicationApplicant.ApplicantName,
                 ApplicationStatus = applicationApplicant.ApplicationStatus,
                 ReferenceNo = applicationApplicant.ApplicationReferenceNo,
@@ -42,8 +42,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
                 ApplicationFormName = formDetails.ApplicationFormName,
                 ApplicationFormCategory = formDetails.ApplicationFormCategory,
                 ApplicationFormVersionId = formDetails.ApplicationFormVersionId,
-                ApplicationFormVersion = formDetails.ApplicationFormVersion
+                ApplicationFormVersion = formDetails.ApplicationFormVersion,
+                SubmissionFormDescription = CreateSubmissionFormDescription(formDetails)
             });
+        }
+
+        private static string CreateSubmissionFormDescription(ApplicationFormDetailsDto formDetails)
+        {
+            if (!string.IsNullOrWhiteSpace(formDetails.ApplicationFormCategory))
+            {
+                return $"{formDetails.ApplicationFormCategory} V{formDetails.ApplicationFormVersion})";
+            }
+
+            return $"Form V{formDetails.ApplicationFormVersion})";
         }
     }
 
