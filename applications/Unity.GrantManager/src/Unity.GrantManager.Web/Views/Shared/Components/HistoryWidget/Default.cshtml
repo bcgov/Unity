@@ -1,8 +1,10 @@
+@using System.Globalization
 @using Unity.GrantManager.History
 @using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
+@using Unity.Modules.Shared.Utils
 
 @model HistoryWidgetViewModel
 
@@ -50,7 +52,9 @@
                                 <span class="status-change">@historyDto?.NewValue</span>
                             </div>
                         </div>
-                        <div class="history-time mt-3 fw-bold">@historyDto?.ChangeTime.ToString("yyyy-MM-dd h:mm tt")</div>
+                        <time datetime="@DateTimeExtensions.FormatTimestamp(historyDto?.ChangeTime)" class="history-time mt-3 fw-bold">
+                            @DateTimeExtensions.FormatPacificTime(historyDto?.ChangeTime)
+                        </time>
                     </div>
                 </div>
             }
