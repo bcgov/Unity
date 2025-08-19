@@ -20,5 +20,6 @@ namespace Unity.GrantManager.ApplicationForms
         Task PatchOtherConfig(Guid id, OtherConfigDto config);
         Task<decimal?> GetFormPaymentApprovalThresholdByApplicationIdAsync(Guid applicationId);
         Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId);
+        Task<ApplicationFormDetailsDto> GetFormDetailsByApplicationIdAsync(Guid applicationId);
     }
 }

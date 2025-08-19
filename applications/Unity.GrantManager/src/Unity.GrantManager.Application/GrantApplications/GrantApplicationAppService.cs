@@ -222,6 +222,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<GrantApplicationDto> GetAsync(Guid id)
     {
+        // NOTE: Changes to this method can impact Email Notification Templates
         var application = await _applicationRepository.GetWithFullDetailsByIdAsync(id);
 
         if (application == null) return new GrantApplicationDto();
