@@ -259,6 +259,9 @@
                     <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
                 </li>
                 <li class="nav-item">
+                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><i class="fl fl-search" aria-hidden="true"></i>(5)</button>
+                </li>
+                <li class="nav-item">
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
                 <li class="nav-item">
@@ -386,6 +389,79 @@
                     @await Component.InvokeAsync("ChefsAttachments")
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
+
+                @*-------- AI Analysis Tab Section ---------*@
+                <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">AI Application Analysis</h6>
+                    <div class="ai-analysis-container">
+                        @* Summary section *@
+                        <div class="ai-analysis-summary">
+                            <div class="ai-analysis-summary-item warnings">
+                                <i class="fl fl-warning"></i>
+                                <span class="ai-analysis-summary-count">3</span>
+                                <span>Warnings</span>
+                            </div>
+                            <div class="ai-analysis-summary-item errors">
+                                <i class="fl fl-times-circle"></i>
+                                <span class="ai-analysis-summary-count">2</span>
+                                <span>Errors</span>
+                            </div>
+                        </div>
+
+                        @* Issues list *@
+                        <ul class="ai-analysis-list">
+                            @* Error examples *@
+                            <li class="ai-analysis-item error">
+                                <i class="ai-analysis-icon fl fl-times-circle"></i>
+                                <div class="ai-analysis-content">
+                                    <div class="ai-analysis-title">Missing Required Documentation</div>
+                                    <div class="ai-analysis-description">
+                                        The application is missing the required financial statements for the last fiscal year. This is a mandatory requirement for grant eligibility.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="ai-analysis-item error">
+                                <i class="ai-analysis-icon fl fl-times-circle"></i>
+                                <div class="ai-analysis-content">
+                                    <div class="ai-analysis-title">Budget Calculation Error</div>
+                                    <div class="ai-analysis-description">
+                                        The total project budget does not match the sum of individual line items. There is a discrepancy of $15,000 that needs to be resolved.
+                                    </div>
+                                </div>
+                            </li>
+
+                            @* Warning examples *@
+                            <li class="ai-analysis-item warning">
+                                <i class="ai-analysis-icon fl fl-exclamation-triangle"></i>
+                                <div class="ai-analysis-content">
+                                    <div class="ai-analysis-title">Incomplete Project Timeline</div>
+                                    <div class="ai-analysis-description">
+                                        The project timeline section is missing specific milestone dates. While not mandatory, providing detailed timelines strengthens the application.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="ai-analysis-item warning">
+                                <i class="ai-analysis-icon fl fl-exclamation-triangle"></i>
+                                <div class="ai-analysis-content">
+                                    <div class="ai-analysis-title">Limited Partnership Details</div>
+                                    <div class="ai-analysis-description">
+                                        Partnership letters are provided but lack specific commitment amounts or resource contributions from partners.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="ai-analysis-item warning">
+                                <i class="ai-analysis-icon fl fl-exclamation-triangle"></i>
+                                <div class="ai-analysis-content">
+                                    <div class="ai-analysis-title">Vague Impact Metrics</div>
+                                    <div class="ai-analysis-description">
+                                        The expected outcomes section lacks specific, measurable impact metrics. Consider adding quantifiable targets and KPIs.
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                @*-------- AI Analysis Tab Section END ---------*@
 
                 @*-------- Links Tab Section ---------*@
                 <div class="tab-pane fade" id="links" role="tabpanel" aria-labelledby="links-tab">

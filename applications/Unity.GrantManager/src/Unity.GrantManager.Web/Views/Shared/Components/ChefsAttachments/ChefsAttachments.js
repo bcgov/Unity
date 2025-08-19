@@ -13,21 +13,23 @@ $(function () {
     }
 
     let responseCallback = function (result) {
-        if (result.length <= 0) {
+        const formattedData = formatItems(result);
+        
+        if (formattedData.length <= 0) {
             $('.dataTables_paginate').hide();
         }
 
-        if (result) {
+        if (formattedData) {
             setTimeout(function () {
-                PubSub.publish('update_application_attachment_count', { chefs: result.length });
+                PubSub.publish('update_application_attachment_count', { chefs: formattedData.length });
             }, 10);
 
-            if (result.length === 0 || selectedAtttachments.length === 0) {
+            if (formattedData.length === 0 || selectedAtttachments.length === 0) {
                 $(downloadAll).prop("disabled", true);
             }
         }
         return {
-            data: formatItems(result)
+            data: formattedData
         };
     };
 
@@ -37,6 +39,7 @@ $(function () {
             getChefsFileNameColumn(),
             getChefsLabelColumn(),
             getChefsFileDownloadColumn(),
+            getChefsExpandColumn(),
         ]
     }
 
@@ -94,10 +97,74 @@ $(function () {
         };
     }
 
+    function getChefsExpandColumn() {
+        return {
+            title: '',
+            name: 'chefsExpand',
+            data: null,
+            render: function (data, type, full, meta) {
+                if (full.aiSummary) {
+                    return '<button class="btn btn-sm ai-toggle-btn" data-row="' + meta.row + '" style="border: none; background: transparent; padding: 4px 8px;"><i class="fl fl-chevron-down" style="transition: transform 0.3s;"></i></button>';
+                }
+                return '';
+            },
+            orderable: false,
+            width: '50px',
+            className: 'text-center'
+        };
+    }
+
     let formatItems = function (items) {
+        const hardcodedData = {
+            'Document.pdf': {
+                chefsFileId: 'CHF-2025-001234',
+                chefsSumbissionId: 'SUB-2025-001234',
+                createdDate: '2025-01-10T09:30:00',
+                fileSize: 2048576,
+                displayName: '',
+                aiSummary: 'This document contains detailed project specifications including budget breakdowns, timeline milestones, and stakeholder agreements for the proposed community development initiative.'
+            },
+            'Final_v3.docx': {
+                chefsFileId: 'CHF-2025-001235',
+                chefsSumbissionId: 'SUB-2025-001235',
+                createdDate: '2025-01-11T14:15:00',
+                fileSize: 1536000,
+                displayName: '',
+                aiSummary: 'Program narrative (5 pages) describing objectives, outputs, and evaluation plan; includes a logic model but no budget or timeline.'
+            },
+            'IMG_2025-01-12_143322.jpg': {
+                chefsFileId: 'CHF-2025-001236',
+                chefsSumbissionId: 'SUB-2025-001236',
+                createdDate: '2025-01-12T14:33:22',
+                fileSize: 4194304,
+                displayName: '',
+                aiSummary: 'Photograph showing construction progress at the northwest corner of the facility, demonstrating completed foundation work and initial framing structure.'
+            },
+            'Notes.docx': {
+                chefsFileId: 'CHF-2025-001237',
+                chefsSumbissionId: 'SUB-2025-001237',
+                createdDate: '2025-01-13T10:45:00',
+                fileSize: 512000,
+                displayName: '',
+                aiSummary: 'Internal meeting notes (2 pages) summarizing roles, risks, and next steps; not an official endorsement, but useful context.'
+            }
+        };
+
+        // If no items, return hardcoded data as array
+        if (!items || items.length === 0) {
+            const hardcodedArray = Object.keys(hardcodedData).map((fileName, index) => ({
+                fileName: fileName,
+                ...hardcodedData[fileName],
+                rowCount: index
+            }));
+            return hardcodedArray;
+        }
+
         const newData = items.map((item, index) => {
+            const hardcoded = hardcodedData[item.fileName] || {};
             return {
                 ...item,
+                ...hardcoded,
                 rowCount: index
             };
         });
@@ -118,14 +185,23 @@ $(function () {
             autoWidth: true,
             select: {
                 style: 'multiple',
-                selector: 'td:not(:nth-child(8))',
+                selector: 'td:not(:nth-child(5)):not(:last-child)',
             },
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments,
                 inputAction,
                 responseCallback
             ),
-            columnDefs: getColumns()
+            columnDefs: getColumns(),
+            createdRow: function(row, data, dataIndex) {
+                if (data.aiSummary) {
+                    var summaryRow = $('<tr class="ai-summary-row" data-parent-row="' + dataIndex + '" style="background-color: #f8f9fa; display: none;">')
+                        .append($('<td>'))
+                        .append($('<td colspan="4" style="font-size: 1em; color: #6c757d; font-style: italic;">')
+                            .html('<i class="fl fl-sparkle" style="margin-right: 5px;"></i>' + data.aiSummary));
+                    $(row).after(summaryRow);
+                }
+            }
         })
     );
 
@@ -151,6 +227,39 @@ $(function () {
                 }
                 selectAttachment(type, index, 'select_chefs_file');
             });
+        }
+    });
+
+    // Hide/show AI summary rows during DataTable operations
+    chefsDataTable.on('draw', function() {
+        $('.ai-summary-row').remove();
+        chefsDataTable.rows().every(function(rowIdx) {
+            var data = this.data();
+            var row = this.node();
+            if (data && data.aiSummary) {
+                var summaryRow = $('<tr class="ai-summary-row" data-parent-row="' + rowIdx + '" style="background-color: #f8f9fa; display: none;">')
+                    .append($('<td>'))
+                    .append($('<td colspan="4" font-size: 1em; color: #6c757d; font-style: italic;">')
+                        .html(data.aiSummary));
+                $(row).after(summaryRow);
+            }
+        });
+    });
+
+    // Toggle AI summary on chevron click
+    $(document).on('click', '.ai-toggle-btn', function(e) {
+        e.stopPropagation();
+        var $btn = $(this);
+        var $icon = $btn.find('i');
+        var rowIdx = $btn.data('row');
+        var $summaryRow = $('.ai-summary-row[data-parent-row="' + rowIdx + '"]');
+        
+        if ($summaryRow.is(':visible')) {
+            $summaryRow.hide();
+            $icon.css('transform', 'rotate(0deg)');
+        } else {
+            $summaryRow.show();
+            $icon.css('transform', 'rotate(180deg)');
         }
     });
 
