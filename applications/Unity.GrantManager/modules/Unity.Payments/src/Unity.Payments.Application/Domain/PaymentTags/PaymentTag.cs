@@ -9,8 +9,6 @@ namespace Unity.Payments.Domain.PaymentTags
     {
         public Guid? TenantId { get; set; }
         public Guid PaymentRequestId { get; set; }
-        public string Text { get; set; } = string.Empty;
-
         public Guid TagId { get; set; }
 
         public virtual Tag Tag
