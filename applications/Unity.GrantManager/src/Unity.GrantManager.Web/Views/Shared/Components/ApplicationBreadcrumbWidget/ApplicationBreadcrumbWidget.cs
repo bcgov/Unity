@@ -51,10 +51,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
         {
             if (!string.IsNullOrWhiteSpace(formDetails.ApplicationFormCategory))
             {
-                return $"{formDetails.ApplicationFormCategory} V{formDetails.ApplicationFormVersion})";
+                return $"({formDetails.ApplicationFormCategory} V{formDetails.ApplicationFormVersion})";
             }
 
-            return $"Form V{formDetails.ApplicationFormVersion})";
+            return $"(Form V{formDetails.ApplicationFormVersion})";
         }
     }
 
