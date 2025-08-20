@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Unity.Modules.Shared;
 using Unity.Payments.Domain.PaymentTags;
 using Unity.Payments.Events;
-using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;

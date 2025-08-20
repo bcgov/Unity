@@ -6,13 +6,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
-using Unity.Payments.Events;
-using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -22,12 +19,10 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationTagsAppService : ApplicationService, IApplicationTagsService
 {
     private readonly IApplicationTagsRepository _applicationTagsRepository;
-    private readonly ILocalEventBus _localEventBus;
 
-    public ApplicationTagsAppService(IApplicationTagsRepository repository, ILocalEventBus localEventBus)
+    public ApplicationTagsAppService(IApplicationTagsRepository repository)
     {
         _applicationTagsRepository = repository;
-        _localEventBus = localEventBus;
     }
 
     public async Task<IList<ApplicationTagsDto>> GetListAsync()
