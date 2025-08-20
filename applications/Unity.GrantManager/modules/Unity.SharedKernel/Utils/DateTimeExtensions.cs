@@ -82,9 +82,13 @@ public static class DateTimeExtensions
             tz = TimeZoneInfo.FindSystemTimeZoneById(id);
             return true;
         }
-        catch (TimeZoneNotFoundException) { }
-        catch (InvalidTimeZoneException) { }
-        tz = null!;
-        return false;
+        catch (TimeZoneNotFoundException) {
+            tz = null!;
+            return false;
+        }
+        catch (InvalidTimeZoneException) {
+            tz = null!;
+            return false;
+        }
     }
 }
