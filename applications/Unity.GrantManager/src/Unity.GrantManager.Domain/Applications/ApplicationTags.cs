@@ -15,8 +15,6 @@ public class ApplicationTags : AuditedAggregateRoot<Guid>, IMultiTenant
                ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Application));
     }
     private Application? _application;
-
-    public string Text { get; set; } = string.Empty;
     public Guid TagId { get; set; }
 
     public virtual Tag Tag

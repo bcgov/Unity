@@ -34,13 +34,15 @@ CrudAppService<
     private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
     private readonly IGrantApplicationAppService _applicationService;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
+    private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
 
     public ApplicationFormAppService(IRepository<ApplicationForm, Guid> repository,
         IStringEncryptionService stringEncryptionService,
         IApplicationFormVersionAppService applicationFormVersionAppService,
         IApplicationFormVersionRepository applicationFormVersionRepository,
         IGrantApplicationAppService applicationService,
-        IFormsApiService formsApiService)
+        IFormsApiService formsApiService,
+        IApplicationFormSubmissionRepository applicationFormSubmissionRepository)
         : base(repository)
     {
         _stringEncryptionService = stringEncryptionService;
@@ -49,6 +51,7 @@ CrudAppService<
         _applicationFormVersionRepository = applicationFormVersionRepository;
         _applicationFormRepository = repository;
         _applicationService = applicationService;
+        _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
@@ -188,5 +191,21 @@ CrudAppService<
         Guid formId = application.ApplicationForm.Id;
         ApplicationForm appForm = await _applicationFormRepository.GetAsync(formId);     
         return appForm.PaymentApprovalThreshold;
+    }
+
+    public async Task<ApplicationFormDetailsDto> GetFormDetailsByApplicationIdAsync(Guid applicationId)
+    {
+        var formDetails = await _applicationFormSubmissionRepository.GetFormDetailsByApplicationIdAsync(applicationId);
+        
+        return new ApplicationFormDetailsDto
+        {
+            ApplicationId = formDetails.ApplicationId,
+            ApplicationFormId = formDetails.ApplicationFormId,
+            ApplicationFormName = formDetails.ApplicationFormName,
+            ApplicationFormDescription = formDetails.ApplicationFormDescription,
+            ApplicationFormCategory = formDetails.ApplicationFormCategory,
+            ApplicationFormVersionId = formDetails.ApplicationFormVersionId,
+            ApplicationFormVersion = formDetails.ApplicationFormVersion
+        };
     }
 }

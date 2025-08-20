@@ -107,53 +107,6 @@ namespace Unity.Payments.PaymentTags
             );
         }
 
-        [Authorize(UnitySelector.SettingManagement.Tags.Update)]
-        public async Task<List<Guid>> RenameTagAsync(string originalTag, string replacementTag)
-        {
-            Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
-            Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
-
-            // Remove commas and trim whitespace from tags
-            originalTag = originalTag.Replace(",", string.Empty).Trim();
-            replacementTag = replacementTag.Replace(",", string.Empty).Trim();
-
-            if (string.Equals(originalTag, replacementTag, StringComparison.InvariantCultureIgnoreCase))
-            {
-                throw new BusinessException("Cannot update a tag to itself.");
-            }
-
-            var paymentRequestTags = await _paymentTagRepository
-                .GetListAsync(e => e.Text.Contains(originalTag));
-
-            if (paymentRequestTags.Count == 0)
-                return [];
-
-            var updatedTags = new List<PaymentTag>(paymentRequestTags.Count);
-
-            foreach (var item in paymentRequestTags)
-            {
-                // Split and trim tags, use case-insensitive HashSet for matching
-                var tagSet = new HashSet<string>(
-                item.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-                    StringComparer.InvariantCultureIgnoreCase);
-
-                // Only replace if the original tag exists (case-insensitive)
-                if (tagSet.Remove(originalTag))
-                {
-                    tagSet.Add(replacementTag); // No effect if replacement already exists
-                    item.Text = string.Join(',', tagSet.OrderBy(t => t, StringComparer.InvariantCultureIgnoreCase));
-                    updatedTags.Add(item);
-                }
-            }
-
-            if (updatedTags.Count > 0)
-            {
-                await _paymentTagRepository.UpdateManyAsync(updatedTags, autoSave: true);
-            }
-
-            return [.. updatedTags.Select(x => x.Id)];
-        }
-
         /// <summary>
         /// Deletes a tag from all application tags. Only whole-word tags are removed; substring matches are ignored.
         /// </summary>
