@@ -44,7 +44,8 @@ public class ApplicationLinksAppService : CrudAppService<
                                 ApplicationStatus = application.ApplicationStatus.InternalStatus,
                                 ReferenceNumber = application.ReferenceNo,
                                 Category = appForm.Category ?? "Unknown", // Handle potential nulls
-                                ProjectName = application.ProjectName
+                                ProjectName = application.ProjectName,
+                                LinkType = applicationLinks.LinkType
                             };
 
         return await combinedQuery.ToListAsync();
@@ -69,7 +70,8 @@ public class ApplicationLinksAppService : CrudAppService<
                                 ApplicationStatus = application.ApplicationStatus.InternalStatus,
                                 ReferenceNumber = application.ReferenceNo,
                                 Category = appForm.Category ?? "Unknown", // Handle potential nulls
-                                ProjectName = application.ProjectName
+                                ProjectName = application.ProjectName,
+                                LinkType = applicationLinks.LinkType
                             };
 
         return await combinedQuery.SingleAsync();
