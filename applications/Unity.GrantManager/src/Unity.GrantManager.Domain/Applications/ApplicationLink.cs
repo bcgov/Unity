@@ -9,4 +9,5 @@ public class ApplicationLink : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid ApplicationId { get; set; }
     public Guid LinkedApplicationId { get; set; }
     public Guid? TenantId { get; set; }
+    public ApplicationLinkType LinkType { get; set; } = ApplicationLinkType.Related;
 }
