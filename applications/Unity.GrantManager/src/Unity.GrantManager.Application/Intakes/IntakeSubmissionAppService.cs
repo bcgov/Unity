@@ -58,7 +58,7 @@ namespace Unity.GrantManager.Intakes
             if (tokenDraft != null && tokenDraft.ToString() == "True") {
                 string factName = "A draft submission was submitted and should not have been";
                 string factValue = $"FormId: {eventSubscriptionDto.FormId} SubmissionID: {eventSubscriptionDto.SubmissionId}";
-                await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue);
+                await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, true);
                 return false;
             }
 
@@ -66,7 +66,7 @@ namespace Unity.GrantManager.Intakes
             if (tokenDeleted != null && tokenDeleted.ToString() == "True") {
                 string factName = "A deleted submission was submitted - user navigated back and got a success message from chefs";
                 string factValue = $"FormId: {eventSubscriptionDto.FormId} SubmissionID: {eventSubscriptionDto.SubmissionId}";
-                await  notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue);
+                await  notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, false);
             }
 
             // If there are no mappings initialize the available
@@ -81,7 +81,7 @@ namespace Unity.GrantManager.Intakes
                 {
                     string factName = "Application Form Version Not Registered - Unknown Version";
                     string factValue = $"FormId: {eventSubscriptionDto.FormId} FormVersion: {eventSubscriptionDto.FormVersion}";
-                    await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue);
+                    await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, true);
                     return false;
                 } else //if(!intakeClientOptions.Value.AllowUnregisteredVersions)
                 {
@@ -89,7 +89,7 @@ namespace Unity.GrantManager.Intakes
                     var published = ((JObject)formVersion!).SelectToken("published");
                     string factName = "Application Form Version Not Registered - Unknown Version";
                     string factValue = $"Application Form Version Not Registerd - Version: {version} Published: {published}";
-                    await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue);
+                    await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, true);
                     return false;
                 }
             }

@@ -129,6 +129,7 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddTransient<IConfigureOptions<IntakeClientOptions>, ConfigureIntakeClientOptions>();
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
         context.Services.AddTransient<IFormsApiService, FormsApiService>();
+        
         context.Services.Configure<CasClientOptions>(configuration.GetSection("Payments"));
         context.Services.Configure<CssApiOptions>(configuration.GetSection("CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection("Notifications"));

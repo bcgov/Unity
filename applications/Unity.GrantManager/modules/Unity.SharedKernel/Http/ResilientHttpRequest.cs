@@ -4,8 +4,11 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Newtonsoft.Json;
 
 namespace Unity.Modules.Shared.Http
 {
@@ -22,6 +25,15 @@ namespace Unity.Modules.Shared.Http
 
         private string? _baseUrl;
         private readonly HttpClient _httpClient = httpClient;
+
+        private static readonly HttpStatusCode[] RetryableStatusCodes =
+        [
+            HttpStatusCode.TooManyRequests,
+            HttpStatusCode.InternalServerError,
+            HttpStatusCode.BadGateway,
+            HttpStatusCode.ServiceUnavailable,
+            HttpStatusCode.GatewayTimeout
+        ];
 
         public static void SetPipelineOptions(
             int maxRetryAttempts,
@@ -62,41 +74,19 @@ namespace Unity.Modules.Shared.Http
             _baseUrl = baseUrl.TrimEnd('/');
         }
 
-        private static bool ShouldRetry(HttpStatusCode statusCode)
-        {
-            var retryableStatusCodes = new[]
-            {
-                HttpStatusCode.TooManyRequests,
-                HttpStatusCode.InternalServerError,
-                HttpStatusCode.BadGateway,
-                HttpStatusCode.ServiceUnavailable,
-                HttpStatusCode.GatewayTimeout
-            };
+        private static bool ShouldRetry(HttpStatusCode statusCode) =>
+            RetryableStatusCodes.Contains(statusCode);
 
-            return retryableStatusCodes.Contains(statusCode);
-        }
-
-        public async Task<HttpResponseMessage> HttpAsync(HttpMethod httpVerb, string resource, string? authToken = null)
-        {
-            return await ExecuteRequestAsync(httpVerb, resource, null, authToken);
-        }
-
-        public async Task<HttpResponseMessage> HttpAsyncWithBody(HttpMethod httpVerb, string resource, string? body = null, string? authToken = null)
-        {
-            return await ExecuteRequestAsync(httpVerb, resource, body, authToken);
-        }
-
-        public static async Task<string> ContentToStringAsync(HttpContent httpContent)
-        {
-            return await httpContent.ReadAsStringAsync();
-        }
-
-        public async Task<HttpResponseMessage> ExecuteRequestAsync(
-           HttpMethod httpVerb,
-           string resource,
-           string? body,
-           string? authToken,
-           (string username, string password)? basicAuth = null)
+        /// <summary>
+        /// Send an HTTP request with resilience policies applied.
+        /// </summary>
+        public async Task<HttpResponseMessage> HttpAsync(
+            HttpMethod httpVerb,
+            string resource,
+            object? body = null,
+            string? authToken = null,
+            (string username, string password)? basicAuth = null,
+            CancellationToken cancellationToken = default)
         {
             // Determine final URL
             if (!Uri.TryCreate(resource, UriKind.Absolute, out Uri? fullUrl))
@@ -113,7 +103,7 @@ namespace Unity.Modules.Shared.Http
             {
                 using var requestMessage = new HttpRequestMessage(httpVerb, fullUrl)
                 {
-                    Version = new Version(3, 0)
+                    Version = HttpVersion.Version20 // safer default, negotiates automatically
                 };
 
                 // Headers are per-request, not global
@@ -128,19 +118,33 @@ namespace Unity.Modules.Shared.Http
                 else if (basicAuth.HasValue)
                 {
                     var credentials = Convert.ToBase64String(
-                        System.Text.Encoding.ASCII.GetBytes($"{basicAuth.Value.username}:{basicAuth.Value.password}")
+                        Encoding.ASCII.GetBytes($"{basicAuth.Value.username}:{basicAuth.Value.password}")
                     );
                     requestMessage.Headers.Remove(AuthorizationHeader);
                     requestMessage.Headers.Add(AuthorizationHeader, $"Basic {credentials}");
                 }
 
-                if (!string.IsNullOrWhiteSpace(body))
+                // Handle body if present
+                if (body != null)
                 {
-                    requestMessage.Content = new StringContent(body);
+                    string bodyString = body is string s
+                        ? s
+                        : JsonConvert.SerializeObject(body); // allow passing objects directly
+
+                    requestMessage.Content = new StringContent(
+                        bodyString,
+                        Encoding.UTF8,
+                        "application/json"
+                    );
                 }
 
                 return await _httpClient.SendAsync(requestMessage, ct);
-            });
+            }, cancellationToken);
+        }
+
+        public static async Task<string> ContentToStringAsync(HttpContent httpContent)
+        {
+            return await httpContent.ReadAsStringAsync();
         }
     }
 }

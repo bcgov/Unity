@@ -1,28 +1,26 @@
 
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Unity.GrantManager.Intake;
+using Unity.GrantManager.Integrations;
 
 namespace Unity.GrantManager;
 
-public class ConfigureIntakeClientOptions : IConfigureOptions<IntakeClientOptions>
-{
-    private readonly IConfiguration _configuration;
-    const string PROTOCOL = "https://";
-    const string DefaultBaseUri = $"{PROTOCOL}submit.digital.gov.bc.ca/app/api/v1";
-
-
-    public ConfigureIntakeClientOptions(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
-    
+public class ConfigureIntakeClientOptions(
+                                        IConfiguration configuration,
+                                        IEndpointManagementAppService endpointManagementAppService) : IConfigureOptions<IntakeClientOptions>
+{   
     public void Configure(IntakeClientOptions options)
     {
-        options.BaseUri = DefaultBaseUri;
-        options.BearerTokenPlaceholder = _configuration["Intake:BearerTokenPlaceholder"] ?? "";
-        options.UseBearerToken = _configuration.GetValue<bool>("Intake:UseBearerToken");
-        options.AllowUnregisteredVersions = _configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
+        // Note: GetUrlByKeyNameAsync is async, but IConfigureOptions.Configure must be sync.
+        // If possible, use a sync alternative or ensure the value is available synchronously.
+        // Here, we block on the async call (not ideal, but sometimes necessary in options pattern).
+        var intakeBaseUri = endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.INTAKE_API_BASE).GetAwaiter().GetResult();
+        options.BaseUri = intakeBaseUri;
+        options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
+        options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
+        options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
     }
 }
 

@@ -20,22 +20,14 @@ namespace Unity.GrantManager.Integrations.Sso
 {
     [IntegrationService]
     [ExposeServices(typeof(CssApiService), typeof(ICssUsersApiService))]
-    public class CssApiService : ApplicationService, ICssUsersApiService
+    public class CssApiService(
+        IEndpointManagementAppService endpointManagementAppService,
+        IResilientHttpRequest resilientHttpRequest,
+        IDistributedCache<TokenValidationResponse, string> accessTokenCache,
+        IOptions<CssApiOptions> cssApiOptions) : ApplicationService, ICssUsersApiService
     {
-        private readonly IResilientHttpRequest _resilientHttpRequest;
-        private readonly IDistributedCache<TokenValidationResponse, string> _accessTokenCache;
-        private readonly CssApiOptions _cssApiOptions;
+        private readonly CssApiOptions _cssApiOptions = cssApiOptions.Value;
         private const string CSS_API_KEY = "CssApiKey";
-
-        public CssApiService(
-            IResilientHttpRequest resilientHttpRequest,
-            IDistributedCache<TokenValidationResponse, string> accessTokenCache,
-            IOptions<CssApiOptions> cssApiOptions)
-        {
-            _resilientHttpRequest = resilientHttpRequest;
-            _accessTokenCache = accessTokenCache;
-            _cssApiOptions = cssApiOptions.Value;
-        }
 
         public async Task<UserSearchResult> FindUserAsync(string directory, string guid)
         {
@@ -58,11 +50,12 @@ namespace Unity.GrantManager.Integrations.Sso
 
         private async Task<UserSearchResult> SearchSsoAsync(string directory, Dictionary<string, string> parameters)
         {
+            var cssApiUrl = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_API_BASE);
             var tokenResponse = await GetAccessTokenAsync();
-            var baseUrl = $"{_cssApiOptions.Url}/{_cssApiOptions.Env}/{directory}/users";
+            var baseUrl = $"{cssApiUrl}/{_cssApiOptions.Env}/{directory}/users";
             var url = BuildUrlWithQuery(baseUrl, parameters);
-            var response = await _resilientHttpRequest.ExecuteRequestAsync(HttpMethod.Get, url, null, tokenResponse.AccessToken);
 
+            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, url, null, tokenResponse.AccessToken);
             if (response != null && response.IsSuccessStatusCode && response.Content != null)
             {
                 var json = await response.Content.ReadAsStringAsync();
@@ -75,7 +68,7 @@ namespace Unity.GrantManager.Integrations.Sso
             {
                 Success = false,
                 Error = "Failed to search users",
-                Data = Array.Empty<CssUser>()
+                Data = []
             };
         }
 
@@ -87,12 +80,13 @@ namespace Unity.GrantManager.Integrations.Sso
 
         private async Task<TokenValidationResponse> GetAccessTokenAsync()
         {
-            var cachedToken = await _accessTokenCache.GetAsync(CSS_API_KEY);
+            var cachedToken = await accessTokenCache.GetAsync(CSS_API_KEY);
             if (cachedToken != null)
                 return cachedToken;
 
             var client = new HttpClient();
-            var request = new HttpRequestMessage(HttpMethod.Post, _cssApiOptions.TokenUrl);
+            var cssTokenApiUrl = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_TOKEN_API_BASE);
+            var request = new HttpRequestMessage(HttpMethod.Post, cssTokenApiUrl);
 
             var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_cssApiOptions.ClientId}:{_cssApiOptions.ClientSecret}"));
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
@@ -110,7 +104,7 @@ namespace Unity.GrantManager.Integrations.Sso
             var content = await response.Content.ReadAsStringAsync();
             var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(content) ?? throw new UserFriendlyException("Could not parse token response.");
 
-            await _accessTokenCache.SetAsync(CSS_API_KEY, tokenResponse, new DistributedCacheEntryOptions
+            await accessTokenCache.SetAsync(CSS_API_KEY, tokenResponse, new DistributedCacheEntryOptions
             {
                 AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
             });

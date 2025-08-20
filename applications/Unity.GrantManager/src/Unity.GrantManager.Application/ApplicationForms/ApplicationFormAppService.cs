@@ -19,42 +19,24 @@ using Volo.Abp.Security.Encryption;
 namespace Unity.GrantManager.ApplicationForms;
 
 [Authorize]
-public class ApplicationFormAppService :
+public class ApplicationFormAppService(IRepository<ApplicationForm, Guid> repository,
+    IStringEncryptionService stringEncryptionService,
+    IApplicationFormVersionAppService applicationFormVersionAppService,
+    IApplicationFormVersionRepository applicationFormVersionRepository,
+    IGrantApplicationAppService applicationService,
+    IFormsApiService formsApiService) :
 CrudAppService<
     ApplicationForm,
     ApplicationFormDto,
     Guid,
     PagedAndSortedResultRequestDto,
-    CreateUpdateApplicationFormDto>,
+    CreateUpdateApplicationFormDto>(repository),
     IApplicationFormAppService
 {
-    private readonly IStringEncryptionService _stringEncryptionService;
-    private readonly IFormsApiService _formsApiService;
-    private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
-    private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
-    private readonly IGrantApplicationAppService _applicationService;
-    private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
-
-    public ApplicationFormAppService(IRepository<ApplicationForm, Guid> repository,
-        IStringEncryptionService stringEncryptionService,
-        IApplicationFormVersionAppService applicationFormVersionAppService,
-        IApplicationFormVersionRepository applicationFormVersionRepository,
-        IGrantApplicationAppService applicationService,
-        IFormsApiService formsApiService)
-        : base(repository)
-    {
-        _stringEncryptionService = stringEncryptionService;
-        _applicationFormVersionAppService = applicationFormVersionAppService;
-        _formsApiService = formsApiService;
-        _applicationFormVersionRepository = applicationFormVersionRepository;
-        _applicationFormRepository = repository;
-        _applicationService = applicationService;
-    }
-
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public override async Task<ApplicationFormDto> CreateAsync(CreateUpdateApplicationFormDto input)
     {
-        input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);
+        input.ApiKey = stringEncryptionService.Encrypt(input.ApiKey);
         ApplicationFormDto applicationFormDto = await base.CreateAsync(input);
         return await InitializeFormVersion(applicationFormDto.Id, input);
     }
@@ -63,7 +45,7 @@ CrudAppService<
     public override async Task<ApplicationFormDto> UpdateAsync(Guid id, CreateUpdateApplicationFormDto input)
     {
         var existingForm = await Repository.GetAsync(id);
-        input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);
+        input.ApiKey = stringEncryptionService.Encrypt(input.ApiKey);
 
         bool hasFormGuidChanged = existingForm.ChefsApplicationFormGuid != input.ChefsApplicationFormGuid;
         bool hasFormApiKeyChanged = existingForm.ApiKey != input.ApiKey;
@@ -87,7 +69,7 @@ CrudAppService<
         {
             if (input.ChefsApplicationFormGuid != null && input.ApiKey != null)
             {
-                dynamic form = await _formsApiService.GetForm(Guid.Parse(input.ChefsApplicationFormGuid), input.ChefsApplicationFormGuid.ToString(), input.ApiKey);
+                dynamic form = await formsApiService.GetForm(Guid.Parse(input.ChefsApplicationFormGuid), input.ChefsApplicationFormGuid.ToString(), input.ApiKey);
                 if (form != null)
                 {
                     JObject formObject = JObject.Parse(form.ToString());
@@ -98,7 +80,7 @@ CrudAppService<
                         applicationFormDto = await base.UpdateAsync(id, input);
                     }
                     bool initializePublishedOnly = false;
-                    await _applicationFormVersionAppService.InitializePublishedFormVersion(form, id, initializePublishedOnly);
+                    await applicationFormVersionAppService.InitializePublishedFormVersion(form, id, initializePublishedOnly);
                 }
             }
             return applicationFormDto;
@@ -114,8 +96,8 @@ CrudAppService<
     public override async Task<ApplicationFormDto> GetAsync(Guid id)
     {
         var dto = await base.GetAsync(id);
-        dto.ApiKey = _stringEncryptionService.Decrypt(dto.ApiKey);
-        dto.ApiToken = _stringEncryptionService.Decrypt(dto.ApiToken);
+        dto.ApiKey = stringEncryptionService.Decrypt(dto.ApiKey);
+        dto.ApiToken = stringEncryptionService.Decrypt(dto.ApiToken);
         return dto;
     }
 
@@ -129,64 +111,64 @@ CrudAppService<
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public async Task<IList<ApplicationFormVersionDto>> GetPublishedVersionsAsync(Guid id)
     {
-        IQueryable<ApplicationFormVersion> queryableFormVersions = _applicationFormVersionRepository.GetQueryableAsync().Result;
+        IQueryable<ApplicationFormVersion> queryableFormVersions = applicationFormVersionRepository.GetQueryableAsync().Result;
         var formVersions = queryableFormVersions.Where(c => c.ApplicationFormId.Equals(id) && c.Published.Equals(true)).ToList();
-        return await Task.FromResult<IList<ApplicationFormVersionDto>>(ObjectMapper.Map<List<ApplicationFormVersion>, List<ApplicationFormVersionDto>>(formVersions.OrderByDescending(s => s.Version).ToList()));
+        return await Task.FromResult<IList<ApplicationFormVersionDto>>(ObjectMapper.Map<List<ApplicationFormVersion>, List<ApplicationFormVersionDto>>([.. formVersions.OrderByDescending(s => s.Version)]));
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public async Task<IList<ApplicationFormVersionDto>> GetVersionsAsync(Guid id)
     {
-        IQueryable<ApplicationFormVersion> queryableFormVersions = _applicationFormVersionRepository.GetQueryableAsync().Result;
+        IQueryable<ApplicationFormVersion> queryableFormVersions = applicationFormVersionRepository.GetQueryableAsync().Result;
         var formVersions = queryableFormVersions.Where(c => c.ApplicationFormId.Equals(id)).ToList();
-        return await Task.FromResult<IList<ApplicationFormVersionDto>>(ObjectMapper.Map<List<ApplicationFormVersion>, List<ApplicationFormVersionDto>>(formVersions.OrderByDescending(s => s.Version).ToList()));
+        return await Task.FromResult<IList<ApplicationFormVersionDto>>(ObjectMapper.Map<List<ApplicationFormVersion>, List<ApplicationFormVersionDto>>([.. formVersions.OrderByDescending(s => s.Version)]));
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public async Task SaveApplicationFormScoresheet(FormScoresheetDto dto)
     {
-        var appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);
+        var appForm = await repository.GetAsync(dto.ApplicationFormId);
         appForm.ScoresheetId = dto.ScoresheetId;
-        await _applicationFormRepository.UpdateAsync(appForm);
+        await repository.UpdateAsync(appForm);
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public async Task PatchOtherConfig(Guid id, OtherConfigDto config)
     {
-        var form = await _applicationFormRepository.GetAsync(id);
+        var form = await repository.GetAsync(id);
 
         form.IsDirectApproval = config.IsDirectApproval;
         form.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
 
-        await _applicationFormRepository.UpdateAsync(form);
+        await repository.UpdateAsync(form);
     }
 
     [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
     public async Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId)
     {
         // Get the payment threshold for the application
-        GrantApplicationDto grantApplicationDto = await _applicationService.GetAsync(applicationId);
+        GrantApplicationDto grantApplicationDto = await applicationService.GetAsync(applicationId);
         Guid formId = grantApplicationDto.ApplicationForm.Id;
-        ApplicationForm appForm = await _applicationFormRepository.GetAsync(formId);     
+        ApplicationForm appForm = await repository.GetAsync(formId);     
         return appForm.PreventPayment;
     }
 
     public async Task SavePaymentConfiguration(FormPaymentConfigurationDto dto)
     {
-        ApplicationForm appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);
+        ApplicationForm appForm = await repository.GetAsync(dto.ApplicationFormId);
         appForm.AccountCodingId = dto.AccountCodingId;
         appForm.Payable = dto.Payable;
         appForm.PreventPayment = dto.PreventPayment;
         appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
-        await _applicationFormRepository.UpdateAsync(appForm);
+        await repository.UpdateAsync(appForm);
     }
     
     public async Task<decimal?> GetFormPaymentApprovalThresholdByApplicationIdAsync(Guid applicationId)
     {
         // Get the payment threshold for the application
-        GrantApplicationDto application = await _applicationService.GetAsync(applicationId);
+        GrantApplicationDto application = await applicationService.GetAsync(applicationId);
         Guid formId = application.ApplicationForm.Id;
-        ApplicationForm appForm = await _applicationFormRepository.GetAsync(formId);     
+        ApplicationForm appForm = await repository.GetAsync(formId);     
         return appForm.PaymentApprovalThreshold;
     }
 }

@@ -35,9 +35,9 @@ namespace Unity.GrantManager.Notifications
         }
 
         [RemoteService(false)]
-        public async Task NotifyChefsEventToTeamsAsync(string factName, string factValue)
+        public async Task NotifyChefsEventToTeamsAsync(string factName, string factValue, bool alert = false)
         {
-            string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
+            string teamsChannel = await InitializeTeamsChannelAsync(alert ? TeamsNotificationService.TEAMS_ALERT : TeamsNotificationService.TEAMS_NOTIFICATION);
             if (teamsChannel.IsNullOrEmpty())
             {
                 return;
@@ -76,7 +76,7 @@ namespace Unity.GrantManager.Notifications
 
         public async Task PostChefsEventToTeamsAsync(string subscriptionEvent, dynamic form, dynamic chefsFormVersion)
         {
-            string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION_1);
+            string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
             if (teamsChannel.IsNullOrEmpty())
             {
                 return;

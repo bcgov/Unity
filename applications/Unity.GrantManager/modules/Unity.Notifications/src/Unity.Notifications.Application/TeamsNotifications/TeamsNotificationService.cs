@@ -15,12 +15,12 @@ namespace Unity.Notifications.TeamsNotifications
         public TeamsNotificationService() : base() { }
 
         public const string DIRECT_MESSAGE_KEY_PREFIX = "DIRECT_MESSAGE_";
-        public const string TEAMS_NOTIFICATION = $"{DIRECT_MESSAGE_KEY_PREFIX}0";
-        public const string TEAMS_NOTIFICATION_1 = $"{DIRECT_MESSAGE_KEY_PREFIX}1";
+        public const string TEAMS_ALERT = $"{DIRECT_MESSAGE_KEY_PREFIX}0";
+        public const string TEAMS_NOTIFICATION = $"{DIRECT_MESSAGE_KEY_PREFIX}1";
 
         public static string TeamsChannel { get; set; } = string.Empty;
 
-        private readonly List<Fact> _facts = new List<Fact>();
+        private readonly List<Fact> _facts = [];
 
         public async Task PostFactsToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle)
         {
@@ -118,39 +118,16 @@ namespace Unity.Notifications.TeamsNotifications
 
             string activitySubtitle = "Form Name: " + formName?.ToString();
 
-            List<Fact> facts = new()
-            {
-                new Fact
-                {
-                    Name = "Form Version: ",
-                    Value = version?.ToString() ?? string.Empty
-                },
-                new Fact
-                {
-                    Name = "Published: ",
-                    Value = published?.ToString() ?? string.Empty
-                },
-                new Fact
-                {
-                    Name = "Updated By: ",
-                    Value = updatedBy?.ToString() ?? string.Empty
-                },
-                new Fact
-                {
-                    Name = "Updated At: ",
-                    Value = updatedAt?.ToString() + " UTC"
-                },
-                new Fact
-                {
-                    Name = "Created By: ",
-                    Value = createdBy?.ToString() ?? string.Empty
-                },
-                new Fact
-                {
-                    Name = "Created At: ",
-                    Value = createdAt?.ToString() + " UTC"
-                },
-            };
+            // Fix for IDE0028: Simplify collection initialization
+            List<Fact> facts =
+            [
+                new Fact { Name = "Form Version: ", Value = version?.ToString() ?? string.Empty },
+                new Fact { Name = "Published: ", Value = published?.ToString() ?? string.Empty },
+                new Fact { Name = "Updated By: ", Value = updatedBy?.ToString() ?? string.Empty },
+                new Fact { Name = "Updated At: ", Value = updatedAt?.ToString() + " UTC" },
+                new Fact { Name = "Created By: ", Value = createdBy?.ToString() ?? string.Empty },
+                new Fact { Name = "Created At: ", Value = createdAt?.ToString() + " UTC" }
+            ];
 
             await PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
         }

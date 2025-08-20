@@ -12,7 +12,7 @@ namespace Unity.GrantManager.Web.Identity
     [ExposeServices(typeof(ICurrentUser))]
     public class CurrentUser : ICurrentUser, ITransientDependency
     {
-        private static readonly Claim[] EmptyClaimsArray = Array.Empty<Claim>();
+        private static readonly Claim[] EmptyClaimsArray = [];
 
         public virtual bool IsAuthenticated => Id.HasValue;
 

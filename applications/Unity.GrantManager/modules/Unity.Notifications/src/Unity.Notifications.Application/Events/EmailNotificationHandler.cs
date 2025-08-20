@@ -15,7 +15,6 @@ namespace Unity.GrantManager.Events
             IEmailNotificationService emailNotificationService,
             IFeatureChecker featureChecker) : ILocalEventHandler<EmailNotificationEvent>, ITransientDependency
     {
-        private const string GRANT_APPLICATION_UPDATE_SUBJECT = "Grant Application Update";
         private const string FAILED_PAYMENTS_SUBJECT = "CAS Payment Failure Notification";
 
         public async Task HandleEventAsync(EmailNotificationEvent eventData)
