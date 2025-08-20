@@ -18,25 +18,43 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
     public class ApplicationBreadcrumbWidgetViewComponent : AbpViewComponent
     {
         private readonly IApplicationApplicantAppService _applicationApplicantAppService;
-        private readonly IApplicationFormVersionAppService _formVersionAppService;
+        private readonly IApplicationFormAppService _applicationFormAppService;
 
-        public ApplicationBreadcrumbWidgetViewComponent(IApplicationApplicantAppService applicationApplicantAppService, IApplicationFormVersionAppService formVersionAppService)
+        public ApplicationBreadcrumbWidgetViewComponent(
+            IApplicationApplicantAppService applicationApplicantAppService,
+            IApplicationFormAppService applicationFormAppService)
         {
             _applicationApplicantAppService = applicationApplicantAppService;
-            _formVersionAppService = formVersionAppService;
+            _applicationFormAppService = applicationFormAppService;
         }
         
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
             var applicationApplicant = await _applicationApplicantAppService.GetByApplicationIdAsync(applicationId);
-            int formVersion = await _formVersionAppService.GetFormVersionByApplicationIdAsync(applicationId);
-            return View(new ApplicationBreadcrumbWidgetViewModel() 
-            { 
+            var formDetails = await _applicationFormAppService.GetFormDetailsByApplicationIdAsync(applicationId);
+
+            return View(new ApplicationBreadcrumbWidgetViewModel()
+            {
                 ApplicantName = applicationApplicant.ApplicantName,
                 ApplicationStatus = applicationApplicant.ApplicationStatus,
                 ReferenceNo = applicationApplicant.ApplicationReferenceNo,
-                ApplicationFormVersion = formVersion
+                ApplicationFormId = formDetails.ApplicationFormId,
+                ApplicationFormName = formDetails.ApplicationFormName,
+                ApplicationFormCategory = formDetails.ApplicationFormCategory,
+                ApplicationFormVersionId = formDetails.ApplicationFormVersionId,
+                ApplicationFormVersion = formDetails.ApplicationFormVersion,
+                SubmissionFormDescription = CreateSubmissionFormDescription(formDetails)
             });
+        }
+
+        private static string CreateSubmissionFormDescription(ApplicationFormDetailsDto formDetails)
+        {
+            if (!string.IsNullOrWhiteSpace(formDetails.ApplicationFormCategory))
+            {
+                return $"({formDetails.ApplicationFormCategory} V{formDetails.ApplicationFormVersion})";
+            }
+
+            return $"(Form V{formDetails.ApplicationFormVersion})";
         }
     }
 

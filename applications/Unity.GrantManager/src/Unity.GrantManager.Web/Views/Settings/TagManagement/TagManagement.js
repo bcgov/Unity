@@ -251,7 +251,7 @@ $(function () {
 
     function handleDeleteTag(id,tagText) {
         console.log("handleDeleteTag")
-        abp.message.confirm(`Are you sure you want to delete the "${tagText}" tag?`, "Delete Tag?")
+        abp.message.confirm(`Are you sure you want to delete this tag? Deleting it will remove the tag from all assigned records.`, "Delete Tag?")
             .then(function (confirmed) {
                 if (confirmed) {
                     try {

@@ -12,5 +12,6 @@ namespace Unity.Notifications.EmailGroups
         Task<bool> DeleteUsersByGroupIdAsync (Guid id);
         Task<bool> DeleteUsersByUserIdAsync(Guid id);
         Task<List<EmailGroupUsersDto>> GetEmailGroupUsersByGroupIdAsync(Guid id);
+        Task<List<EmailGroupUsersDto>> GetListAsync();
     }
 }

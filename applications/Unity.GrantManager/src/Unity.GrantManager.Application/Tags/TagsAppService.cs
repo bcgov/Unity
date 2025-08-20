@@ -133,18 +133,7 @@ public class TagsAppService : ApplicationService, ITagsService
     {
         Check.NotNullOrWhiteSpace(originalTag, nameof(originalTag));
         Check.NotNullOrWhiteSpace(replacementTag, nameof(replacementTag));
-
-        // NOTE: Unable to get the MIN of the MaxRenameLength for both Application and Payments. Must get on front-end by 2 API calls.
-        // May result in one EntityType tag renaming with the other failing in rare cases.
-
         await RenameTagAsync(id, originalTag, replacementTag);
-        await _localEventBus.PublishAsync(
-            new RenameTagEto
-            {
-                originalTagName = originalTag,
-                replacementTagName = replacementTag
-            }
-        );
     }
 
     /// <summary>

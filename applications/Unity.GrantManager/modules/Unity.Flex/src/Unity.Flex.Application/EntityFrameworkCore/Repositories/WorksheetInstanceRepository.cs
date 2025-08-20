@@ -26,19 +26,6 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                         && s.UiAnchor == uiAnchor);
         }
 
-        public async Task<WorksheetInstance?> GetByCorrelationAnchorAsync(Guid correlationId,
-           string correlationProvider,
-           string uiAnchor,
-           bool includeDetails)
-        {
-            var dbSet = await GetDbSetAsync();
-
-            return await dbSet.IncludeDetails(includeDetails)
-                .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
-                        && s.CorrelationProvider == correlationProvider
-                        && s.UiAnchor == uiAnchor);
-        }
-
         public async Task<List<WorksheetInstance>> GetByWorksheetCorrelationAsync(Guid worksheetId,
             string uiAnchor,
             Guid worksheetCorrelationId,

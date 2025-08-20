@@ -22,9 +22,9 @@
     background-color: var(--bc-colors-grey-hover) !important;
     opacity: var(--bs-btn-disabled-opacity);
     background-blend-mode: difference;
-    border: none !important;
+    border: var(--bs-border-width) solid var(--bs-border-color);
     padding: 0.4rem;
-    border-radius: 2px;
+    border-radius: var(--bc-layout-margin-small) !important;
     min-height: 2rem;
 }
 
