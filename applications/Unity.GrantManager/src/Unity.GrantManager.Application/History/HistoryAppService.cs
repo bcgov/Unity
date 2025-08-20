@@ -59,7 +59,7 @@ public class HistoryAppService(
                     {
                         OriginalValue = GetLookupValue(origninalValue, lookupDictionary),
                         NewValue = GetLookupValue(newValue, lookupDictionary),
-                        ChangeTime = utcDateTime.ToLocalTime(),
+                        ChangeTime = utcDateTime,
                         UserName = await LookupUserName(entityChange.AuditLogId)
                     };
                     historyList.Add(historyDto);
