@@ -17,11 +17,20 @@
             // Update the data-count attribute
             $('.links-container').attr('data-count', filteredResult.length);
             
+            // Update the tab count directly
+            setTimeout(() => {
+                const tag = $('.links-container').data('linkscounttag');
+                const count = $('.links-container').attr('data-count');
+                $('#' + tag).html(count);
+            }, 50);
+            
             return {
                 data: filteredResult
             };
         }
 
+        $('.links-container').attr('data-count', 0);
+        $('#application_links_count').html(0);
         return {
             data: []
         };
@@ -39,14 +48,6 @@
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.grantApplications.applicationLinks.getListByApplication, inputAction, responseCallback
             ),
-            initComplete: function(settings, json) {
-                // Update the tab count after data loads
-                setTimeout(() => {
-                    $('.links-container').map(function () {
-                        $('#' + $(this).data('linkscounttag')).html($(this).data('count'));
-                    }).get();
-                }, 100);
-            },
             columnDefs: [
                 {
                     title: l('ApplicationLinks:Category'),
