@@ -48,11 +48,14 @@
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.grantApplications.applicationLinks.getListByApplication, inputAction, responseCallback
             ),
+            drawCallback: function() {
+                this.api().columns.adjust();
+            },
             columnDefs: [
                 {
                     title: l('ApplicationLinks:Category'),
                     data: 'category',
-                    width: '25%'
+                    width: '30%'
                 },
                 {
                     title: l('ApplicationLinks:ID'),
@@ -81,10 +84,10 @@
                 {
                     title: '',
                     data: 'id',
-                    width: '10%',
+                    width: '5%',
                     className: 'text-center',
                     render: function (data, type, full, meta) {
-                        return '<button class="btn btn-link p-0 delete-link-btn" data-link-id="' + data + '" title="Delete Link"><i class="fl fl-times text-danger"></i></button>';
+                        return '<button class="btn btn-link p-0 delete-link-btn" data-link-id="' + data + '" title="Delete Link" style="color: #0066cc; text-decoration: none;"><i class="fa fa-times"></i></button>';
                     },
                     orderable: false
                 }
