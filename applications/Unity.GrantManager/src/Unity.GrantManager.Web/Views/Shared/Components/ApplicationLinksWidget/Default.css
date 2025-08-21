@@ -1,58 +1,60 @@
-﻿/* DataTables wrapper styling */
+﻿/* Fix for DataTables alignment with scrollX enabled */
+#ApplicationLinksTable_wrapper {
+    width: 100%;
+}
+
+#ApplicationLinksTable_wrapper .dataTables_scroll {
+    overflow: visible;
+}
+
+#ApplicationLinksTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner,
+#ApplicationLinksTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner table {
+    width: 100% !important;
+}
+
 #ApplicationLinksTable_wrapper .dataTables_scrollBody {
     overflow: visible !important;
 }
 
-/* Standard DataTables header styling */
-table.links-table thead th {
-    background: var(--bc-colors-grey-pressed);
-    font-weight: bold;
-    font-size: var(--bc-font-size-sm);
-    padding: 0.75rem;
+#ApplicationLinksTable_wrapper .dataTables_scrollBody table {
+    width: 100% !important;
+}
+
+/* Ensure table uses full width */
+#ApplicationLinksTable {
+    width: 100% !important;
+}
+
+/* Column alignment */
+.links-table th,
+.links-table td {
+    text-align: left;
     vertical-align: middle;
 }
 
-/* Table body styling */
-.links-table tbody td {
-    padding: 0.75rem;
-    font-size: var(--bc-font-size-sm);
-    border-bottom: 1px solid var(--bc-colors-grey-dividers);
-    vertical-align: middle;
-}
-
-.links-table tbody tr:hover {
-    background-color: var(--bc-colors-grey-hover);
-}
-
-/* Button styling */
-.links-table .btn-link {
-    border: none;
-    background: none;
-    color: inherit;
-    cursor: pointer;
-}
-
-.links-table .btn-link:hover {
-    text-decoration: none;
-}
-
-/* Link styling - already handled by Bootstrap classes */
-.links-table a {
-    cursor: pointer;
-}
-
-/* Ensure delete column is visible */
+/* Delete button column */
 .links-table th:last-child,
 .links-table td:last-child {
-    min-width: 50px;
+    text-align: center;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
 }
 
-/* Fix for DataTables alignment */
-table.dataTable {
-    width: 100% !important;
+/* Delete button styling */
+.links-table .delete-link-btn {
+    font-size: 1.2rem;
+    padding: 0.25rem 0.5rem;
+    text-decoration: none !important;
 }
 
-.dataTables_scrollHeadInner,
-.dataTables_scrollHeadInner table {
-    width: 100% !important;
+.links-table .delete-link-btn:hover {
+    opacity: 0.7;
+    text-decoration: none !important;
+}
+
+/* Ensure proper text wrapping in category column */
+.links-table td:first-child {
+    white-space: normal;
+    word-wrap: break-word;
 }
