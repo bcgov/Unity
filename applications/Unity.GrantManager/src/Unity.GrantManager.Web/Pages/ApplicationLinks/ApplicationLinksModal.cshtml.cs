@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
@@ -107,14 +108,16 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                             //For CurrentApplication
                             await _applicationLinksService.CreateAsync(new ApplicationLinksDto{
                                 ApplicationId = CurrentApplicationId ?? Guid.Empty,
-                                LinkedApplicationId = linkedApplicationId
+                                LinkedApplicationId = linkedApplicationId,
+                                LinkType = ApplicationLinkType.Related
                             });
 
                             //For LinkedApplication
                             await _applicationLinksService.CreateAsync(new ApplicationLinksDto
                             {
                                 ApplicationId = linkedApplicationId,
-                                LinkedApplicationId = CurrentApplicationId ?? Guid.Empty
+                                LinkedApplicationId = CurrentApplicationId ?? Guid.Empty,
+                                LinkType = ApplicationLinkType.Related
                             });
                         }
                     }

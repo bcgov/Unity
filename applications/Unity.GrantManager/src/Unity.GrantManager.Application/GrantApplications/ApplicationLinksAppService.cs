@@ -76,4 +76,24 @@ public class ApplicationLinksAppService : CrudAppService<
 
         return await combinedQuery.SingleAsync();
     }
+
+    public async Task DeleteWithPairAsync(Guid applicationLinkId)
+    {
+        // Get the link to find the paired record
+        var link = await Repository.GetAsync(applicationLinkId);
+        
+        // Find the paired link (reverse direction)
+        var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();
+        var pairedLink = await applicationLinksQuery
+            .Where(x => x.ApplicationId == link.LinkedApplicationId && x.LinkedApplicationId == link.ApplicationId)
+            .FirstOrDefaultAsync();
+        
+        // Delete both links
+        await Repository.DeleteAsync(applicationLinkId);
+        
+        if (pairedLink != null)
+        {
+            await Repository.DeleteAsync(pairedLink.Id);
+        }
+    }
 }

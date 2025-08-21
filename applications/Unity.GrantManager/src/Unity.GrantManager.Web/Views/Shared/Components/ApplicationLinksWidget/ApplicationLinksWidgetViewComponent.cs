@@ -26,10 +26,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            var applicationList = await _applicationLinksService.GetListByApplicationAsync(applicationId);
-            List<ApplicationLinksInfoDto> applicationLinks = applicationList.Where(item => item.ApplicationId != applicationId).ToList();
+            // DataTables will load the data via AJAX, so we don't need to pre-load it here
             ApplicationLinksWidgetViewModel model = new() {
-                ApplicationLinks = applicationLinks,
+                ApplicationLinks = new List<ApplicationLinksInfoDto>(), // Empty list since DataTables will load the data
                 ApplicationId = applicationId
             };
 
