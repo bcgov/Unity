@@ -1,15 +1,58 @@
-﻿
-.links-table-row {
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    font-size: var(--bc-font-size-sm);
+﻿/* DataTables wrapper styling */
+#ApplicationLinksTable_wrapper .dataTables_scrollBody {
+    overflow: visible !important;
 }
 
-.links-table-row.header {
+/* Standard DataTables header styling */
+table.links-table thead th {
     background: var(--bc-colors-grey-pressed);
     font-weight: bold;
+    font-size: var(--bc-font-size-sm);
+    padding: 0.75rem;
+    vertical-align: middle;
 }
 
-.links-table-record {
+/* Table body styling */
+.links-table tbody td {
+    padding: 0.75rem;
+    font-size: var(--bc-font-size-sm);
     border-bottom: 1px solid var(--bc-colors-grey-dividers);
+    vertical-align: middle;
+}
+
+.links-table tbody tr:hover {
+    background-color: var(--bc-colors-grey-hover);
+}
+
+/* Button styling */
+.links-table .btn-link {
+    border: none;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.links-table .btn-link:hover {
+    text-decoration: none;
+}
+
+/* Link styling - already handled by Bootstrap classes */
+.links-table a {
+    cursor: pointer;
+}
+
+/* Ensure delete column is visible */
+.links-table th:last-child,
+.links-table td:last-child {
+    min-width: 50px;
+}
+
+/* Fix for DataTables alignment */
+table.dataTable {
+    width: 100% !important;
+}
+
+.dataTables_scrollHeadInner,
+.dataTables_scrollHeadInner table {
+    width: 100% !important;
 }

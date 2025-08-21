@@ -24,6 +24,10 @@ $(function () {
         initCommentsWidget();
         initEmailsWidget();
         updateLinksCounters();
+        // Update links counter again after a delay to catch AJAX-loaded data
+        setTimeout(() => {
+            updateLinksCounters();
+        }, 1000);
         renderSubmission();
     }
 
