@@ -154,6 +154,6 @@
             'Application Links'
         );
         dataTable.ajax.reload();
-        PubSub.publish("ApplicationLinks_refresh");
+       
     });
 });
