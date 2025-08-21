@@ -24,10 +24,6 @@ $(function () {
         initCommentsWidget();
         initEmailsWidget();
         updateLinksCounters();
-        // Update links counter again after a delay to catch AJAX-loaded data
-        setTimeout(() => {
-            updateLinksCounters();
-        }, 1000);
         renderSubmission();
     }
 
@@ -917,7 +913,9 @@ function updateCommentsCounters() {
 function updateLinksCounters() {
     setTimeout(() => {
         $('.links-container').map(function () {
-            $('#' + $(this).data('linkscounttag')).html($(this).data('count'));
+            const tag = $(this).data('linkscounttag');
+            const count = $(this).attr('data-count');
+            $('#' + tag).html(count);
         }).get();
     }, 100);
 }
