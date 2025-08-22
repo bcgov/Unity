@@ -28,17 +28,14 @@ namespace Unity.Payments.Integrations.Cas
         private readonly Task<string> casBaseApiTask;
         private readonly ILocalEventBus localEventBus;
         private readonly IResilientHttpRequest resilientHttpRequest;
-        private readonly IOptions<CasClientOptions> casClientOptions;
         private readonly ICasTokenService iTokenService;
         public SupplierService  (ILocalEventBus localEventBus,
                                 IEndpointManagementAppService endpointManagementAppService,
                                 IResilientHttpRequest resilientHttpRequest,
-                                IOptions<CasClientOptions> casClientOptions,
                                 ICasTokenService iTokenService)
         {
                 this.localEventBus = localEventBus;
                 this.resilientHttpRequest = resilientHttpRequest;
-                this.casClientOptions = casClientOptions;
                 this.iTokenService = iTokenService;
 
                 // Initialize the base API URL once during construction
@@ -46,7 +43,7 @@ namespace Unity.Payments.Integrations.Cas
         }
         private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
         {
-            var url = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
+            var url = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             return url ?? throw new UserFriendlyException("Payment API base URL is not configured.");
         }
 
@@ -238,34 +235,32 @@ namespace Unity.Payments.Integrations.Cas
                 var authToken = await iTokenService.GetAuthTokenAsync();
                 try
                 {
-                    using (var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken))
+                    using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
+                    if (response != null)
                     {
-                        if (response != null)
+                        if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                         {
-                            if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
-                            {
-                                var contentString = await response.Content.ReadAsStringAsync();
-                                var result = JsonSerializer.Deserialize<dynamic>(contentString)
-                                    ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
-                                return result;
-                            }
-                            else if (response.StatusCode == HttpStatusCode.NotFound)
-                            {
-                                throw new UserFriendlyException("Supplier not Found.");
-                            }
-                            else if (response.StatusCode != HttpStatusCode.OK)
-                            {
-                                throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);
-                            }
-                            else
-                            {
-                                throw new UserFriendlyException("The CAS Supplier Number was not found.");
-                            }
+                            var contentString = await response.Content.ReadAsStringAsync();
+                            var result = JsonSerializer.Deserialize<dynamic>(contentString)
+                                ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
+                            return result;
+                        }
+                        else if (response.StatusCode == HttpStatusCode.NotFound)
+                        {
+                            throw new UserFriendlyException("Supplier not Found.");
+                        }
+                        else if (response.StatusCode != HttpStatusCode.OK)
+                        {
+                            throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);
                         }
                         else
                         {
-                            throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: Null response");
+                            throw new UserFriendlyException("The CAS Supplier Number was not found.");
                         }
+                    }
+                    else
+                    {
+                        throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: Null response");
                     }
                 }
                 catch (Exception ex)

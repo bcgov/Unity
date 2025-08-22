@@ -50,7 +50,7 @@ namespace Unity.GrantManager.Integrations.Sso
 
         private async Task<UserSearchResult> SearchSsoAsync(string directory, Dictionary<string, string> parameters)
         {
-            var cssApiUrl = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_API_BASE);
+            var cssApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_API_BASE);
             var tokenResponse = await GetAccessTokenAsync();
             var baseUrl = $"{cssApiUrl}/{_cssApiOptions.Env}/{directory}/users";
             var url = BuildUrlWithQuery(baseUrl, parameters);
@@ -85,7 +85,7 @@ namespace Unity.GrantManager.Integrations.Sso
                 return cachedToken;
 
             var client = new HttpClient();
-            var cssTokenApiUrl = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_TOKEN_API_BASE);
+            var cssTokenApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_TOKEN_API_BASE);
             var request = new HttpRequestMessage(HttpMethod.Post, cssTokenApiUrl);
 
             var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_cssApiOptions.ClientId}:{_cssApiOptions.ClientSecret}"));

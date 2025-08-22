@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Web.Identity
 
         private string[] FindRoleClaims()
         {
-            return FindClaims(UnityClaimsTypes.Role).Select(c => c.Value).Distinct().ToArray();
+            return [.. FindClaims(UnityClaimsTypes.Role).Select(c => c.Value).Distinct()];
         }
 
         private readonly ICurrentPrincipalAccessor _principalAccessor;

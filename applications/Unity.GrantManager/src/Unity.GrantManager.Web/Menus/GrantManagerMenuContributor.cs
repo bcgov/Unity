@@ -92,6 +92,15 @@ public class GrantManagerMenuContributor : IMenuContributor
                 requiredPermissionName: GrantApplicationPermissions.Dashboard.Default
             )
         );
+        // Displayed in the Grant Manager - Used at Tenant Level if the user in the IT Operations role
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.EndpointManagement,
+                displayName: "Endpoints",
+                "~/EndpointManagement/Endpoints",
+                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+            )
+        );        
 
 
         // ********************
@@ -107,14 +116,16 @@ public class GrantManagerMenuContributor : IMenuContributor
           )
         );
 
+        // Displayed on the Tenant Managment area if the user has the ITAdministrator Role
         context.Menu.AddItem(
             new ApplicationMenuItem(
                 GrantManagerMenus.EndpointManagement,
                 displayName: "Endpoints",
                 "~/EndpointManagement/Endpoints",
-                requiredPermissionName: IdentityConsts.ITAdminPermissionName
+                requiredPermissionName: TenantManagementPermissions.Tenants.Default
             )
         );
+    
         // End Admin ********************
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue */

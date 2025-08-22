@@ -75,6 +75,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Web.Views.Settings;
 using Unity.Notifications.Web.Bundling;
+using Unity.Reporting.Web;
 using Unity.GrantManager.Web.Views.Settings;
 
 namespace Unity.GrantManager.Web;
@@ -98,7 +99,8 @@ namespace Unity.GrantManager.Web;
     typeof(PaymentsWebModule),
     typeof(AbpBlobStoringModule),
     typeof(NotificationsWebModule),
-    typeof(FlexWebModule)
+    typeof(FlexWebModule),
+    typeof(ReportingWebModule)
 )]
 
 public class GrantManagerWebModule : AbpModule

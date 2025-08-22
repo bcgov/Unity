@@ -24,7 +24,7 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<string> GetAuthTokenAsync()
         {
-            string caseBaseUrl = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
+            string caseBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             ClientOptions clientOptions = new ClientOptions
             {
                 Url = $"{caseBaseUrl}/{OAUTH_PATH}",

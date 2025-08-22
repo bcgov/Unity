@@ -23,6 +23,7 @@ public class UpdateModalModel(IEndpointManagementAppService endpointManagementAp
     public async Task<IActionResult> OnPostAsync()
     {
         await endpointManagementAppService.UpdateAsync(Id, Endpoint!);
+        endpointManagementAppService.ClearCache();
         return NoContent();
     }
 }

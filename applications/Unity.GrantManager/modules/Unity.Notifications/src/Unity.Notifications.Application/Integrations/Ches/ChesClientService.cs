@@ -25,7 +25,7 @@ namespace Unity.Notifications.Integrations.Ches
         public async Task<HttpResponseMessage?> SendAsync(object emailRequest)
         {
             string authToken = await GetAuthTokenAsync();
-            string notificationsApiUrl = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.NOTFICATION_API_BASE);
+            string notificationsApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTFICATION_API_BASE);
             var resource = $"{notificationsApiUrl}/email";
 
             // Pass the object directly; ResilientHttpRequest will serialize it to JSON
@@ -41,7 +41,7 @@ namespace Unity.Notifications.Integrations.Ches
 
         private async Task<string> GetAuthTokenAsync()
         {
-            string notificationsAuthUrl = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.NOTFICATION_AUTH);
+            string notificationsAuthUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTFICATION_AUTH);
 
             ClientOptions clientOptions = new()
             {

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Web.Exceptions;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Identity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Claims;
@@ -19,8 +20,15 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
 {
     internal class IdentityProfileLoginUserHandler : IdentityProfileLoginBase
     {
-        internal readonly ImmutableArray<string> _userPermissions = ImmutableArray
-            .Create(GrantManagerPermissions.Default, IdentityPermissions.UserLookup.Default);
+        internal readonly ImmutableArray<string> _userPermissions = [
+            GrantManagerPermissions.Default,
+            IdentityPermissions.UserLookup.Default
+        ];
+
+        internal readonly ImmutableArray<string> _itOperationsPermissions = [
+            GrantManagerPermissions.Endpoints.ManageEndpoints,
+            IdentityConsts.ITOperationsPermissionName
+        ];
 
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
           IList<UserTenantAccountDto>? userTenantAccounts,
@@ -47,6 +55,11 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
                 {
                     throw new NoGrantProgramsLinkedException("User is not linked to any grant programs");
                 }
+            }
+            
+            if (validatedTokenContext.Principal != null && validatedTokenContext.Principal.IsInRole(IdentityConsts.ITOperationsRoleName))
+            { 
+                AssignITOperationsPermissions(validatedTokenContext.Principal);
             }
 
             UserTenantAccountDto? userTenantAccount = null;
@@ -76,12 +89,11 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
 
                 var userPermissions = (await PermissionManager.GetAllForUserAsync(userTenantAccount.Id)).Where(s => s.IsGranted);
 
-                foreach (var permissionName in userPermissions.Select(s => s.Name))
+                foreach (var permissionName in userPermissions
+                    .Select(s => s.Name)
+                    .Where(permissionName => !principal.HasClaim(UnityClaimsTypes.Permission, permissionName)))
                 {
-                    if (!principal.HasClaim(UnityClaimsTypes.Permission, permissionName))
-                    {
-                        principal.AddClaim(UnityClaimsTypes.Permission, permissionName);
-                    }
+                    principal.AddClaim(UnityClaimsTypes.Permission, permissionName);
                 }
             }
 
@@ -91,6 +103,11 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             validatedTokenContext.Principal!.AddClaim(AbpClaimTypes.TenantId, userTenantAccount.TenantId?.ToString() ?? Guid.Empty.ToString());
 
             return userTenantAccount;
+        }
+
+        private void AssignITOperationsPermissions(ClaimsPrincipal claimsPrincipal)
+        {
+            claimsPrincipal.AddPermissions(_itOperationsPermissions);
         }
 
         private async Task<IList<UserTenantAccountDto>> AutoRegisterUserWithDefaultAsync(string userIdentifier,

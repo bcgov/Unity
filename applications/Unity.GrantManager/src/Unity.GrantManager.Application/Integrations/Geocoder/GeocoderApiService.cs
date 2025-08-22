@@ -20,7 +20,7 @@ namespace Unity.GrantManager.Integrations.Geocoder
 
         public async Task<ElectoralDistrictDto> GetElectoralDistrictAsync(LocationCoordinates locationCoordinates)
         {
-            var geoCoderBaseUri = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.GEOCODER_API_BASE);
+            var geoCoderBaseUri = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.GEOCODER_API_BASE);
             var resource = $"{geoCoderBaseUri}" +
                 $"{configuration["Geocoder:ElectoralDistrict:feature"]}" +
                 $"&srsname=EPSG:4326" +

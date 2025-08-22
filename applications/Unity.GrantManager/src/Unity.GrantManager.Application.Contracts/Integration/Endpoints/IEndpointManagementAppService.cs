@@ -4,7 +4,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Integrations;
-   
+
 
 public interface IEndpointManagementAppService : ICrudAppService<
             DynamicUrlDto,
@@ -15,4 +15,6 @@ public interface IEndpointManagementAppService : ICrudAppService<
 {
     Task<string> GetChefsApiBaseUrlAsync();
     Task<string> GetUrlByKeyNameAsync(string keyName);
+    Task<string> GetUgmUrlByKeyNameAsync(string keyName);
+    void ClearCache();
 }

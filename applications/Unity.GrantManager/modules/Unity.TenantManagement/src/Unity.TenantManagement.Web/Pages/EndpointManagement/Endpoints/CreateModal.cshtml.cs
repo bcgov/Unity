@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Unity.GrantManager.Integrations;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.EndpointManagement;
 
+[Authorize(IdentityConsts.ITOperationsPolicyName)]
 public class CreateModalModel(IEndpointManagementAppService endpointManagementAppService) : AbpPageModel
 {
     [BindProperty]

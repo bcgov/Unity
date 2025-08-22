@@ -1,5 +1,3 @@
-
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Unity.GrantManager.Intake;
@@ -13,10 +11,10 @@ public class ConfigureIntakeClientOptions(
 {   
     public void Configure(IntakeClientOptions options)
     {
-        // Note: GetUrlByKeyNameAsync is async, but IConfigureOptions.Configure must be sync.
+        // Note: GetUgmUrlByKeyNameAsync is async, but IConfigureOptions.Configure must be sync.
         // If possible, use a sync alternative or ensure the value is available synchronously.
         // Here, we block on the async call (not ideal, but sometimes necessary in options pattern).
-        var intakeBaseUri = endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.INTAKE_API_BASE).GetAwaiter().GetResult();
+        var intakeBaseUri = endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.INTAKE_API_BASE).GetAwaiter().GetResult();
         options.BaseUri = intakeBaseUri;
         options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
         options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");

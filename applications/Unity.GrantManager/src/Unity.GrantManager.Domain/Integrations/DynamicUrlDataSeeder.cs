@@ -4,12 +4,13 @@ using Unity.GrantManager.Applications;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Integrations
 {
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(DynamicUrlDataSeeder), typeof(IDataSeedContributor))]
-    public class DynamicUrlDataSeeder(IDynamicUrlRepository DynamicUrlRepository) : IDataSeedContributor, ITransientDependency
+    public class DynamicUrlDataSeeder(IDynamicUrlRepository DynamicUrlRepository, ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
     {
 
         public async Task SeedAsync(DataSeedContext context)
@@ -33,33 +34,36 @@ namespace Unity.GrantManager.Integrations
 
         private async Task SeedDynamicUrlAsync()
         {
-            int messageIndex = 0;
-            int webhookIndex = 0;
-            var dynamicUrls = new List<DynamicUrl>
+            if (currentTenant == null || currentTenant.Id == null)
             {
-                new() { KeyName = DynamicUrlKeyNames.GEOCODER_API_BASE, Url = DynamicUrls.GEOCODER_BASE_URL, Description = "Geocoder API Base" },
-                new() { KeyName = DynamicUrlKeyNames.GEOCODER_LOCATION_API_BASE, Url = DynamicUrls.GEOCODER_LOCATION_BASE_URL, Description = "Geocoder Location API Base" },
-                new() { KeyName = DynamicUrlKeyNames.CSS_API_BASE, Url = DynamicUrls.CSS_API_BASE_URL, Description = "Common Single Sign-on Services API" },
-                new() { KeyName = DynamicUrlKeyNames.CSS_TOKEN_API_BASE, Url = DynamicUrls.CSS_TOKEN_API_BASE_URL, Description = "Common Single Sign-on Token API" },
-                new() { KeyName = DynamicUrlKeyNames.PAYMENT_API_BASE, Url = DynamicUrls.CAS_PROD_URL, Description = "BC Corporate Accounting Services API" },
-                new() { KeyName = DynamicUrlKeyNames.ORGBOOK_API_BASE, Url = DynamicUrls.ORGBOOK_PROD_URL, Description = "OrgBook Services API" },
-                new() { KeyName = DynamicUrlKeyNames.INTAKE_API_BASE, Url = DynamicUrls.CHEFS_PROD_URL, Description = "Common Hosted Forms Service API" },
-                new() { KeyName = DynamicUrlKeyNames.NOTFICATION_API_BASE, Url = DynamicUrls.CHES_PROD_URL, Description = "Common Hosted Email Service API" },
-                new() { KeyName = DynamicUrlKeyNames.NOTFICATION_AUTH, Url = DynamicUrls.CHES_PROD_AUTH, Description = "Common Hosted Email Service OAUTH" },
-                new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
-                new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
-                new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
-                new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
-                new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
-                new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
-            };
-
-            foreach (var dynamicUrl in dynamicUrls)
-            {
-                var existing = await DynamicUrlRepository.FirstOrDefaultAsync(s => s.KeyName == dynamicUrl.KeyName);
-                if (existing == null)
+                int messageIndex = 0;
+                int webhookIndex = 0;
+                var dynamicUrls = new List<DynamicUrl>
                 {
-                    await DynamicUrlRepository.InsertAsync(dynamicUrl);
+                    new() { KeyName = DynamicUrlKeyNames.GEOCODER_API_BASE, Url = DynamicUrls.GEOCODER_BASE_URL, Description = "Geocoder API Base" },
+                    new() { KeyName = DynamicUrlKeyNames.GEOCODER_LOCATION_API_BASE, Url = DynamicUrls.GEOCODER_LOCATION_BASE_URL, Description = "Geocoder Location API Base" },
+                    new() { KeyName = DynamicUrlKeyNames.CSS_API_BASE, Url = DynamicUrls.CSS_API_BASE_URL, Description = "Common Single Sign-on Services API" },
+                    new() { KeyName = DynamicUrlKeyNames.CSS_TOKEN_API_BASE, Url = DynamicUrls.CSS_TOKEN_API_BASE_URL, Description = "Common Single Sign-on Token API" },
+                    new() { KeyName = DynamicUrlKeyNames.PAYMENT_API_BASE, Url = DynamicUrls.CAS_PROD_URL, Description = "BC Corporate Accounting Services API" },
+                    new() { KeyName = DynamicUrlKeyNames.ORGBOOK_API_BASE, Url = DynamicUrls.ORGBOOK_PROD_URL, Description = "OrgBook Services API" },
+                    new() { KeyName = DynamicUrlKeyNames.INTAKE_API_BASE, Url = DynamicUrls.CHEFS_PROD_URL, Description = "Common Hosted Forms Service API" },
+                    new() { KeyName = DynamicUrlKeyNames.NOTFICATION_API_BASE, Url = DynamicUrls.CHES_PROD_URL, Description = "Common Hosted Email Service API" },
+                    new() { KeyName = DynamicUrlKeyNames.NOTFICATION_AUTH, Url = DynamicUrls.CHES_PROD_AUTH, Description = "Common Hosted Email Service OAUTH" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
+                };
+
+                foreach (var dynamicUrl in dynamicUrls)
+                {
+                    var existing = await DynamicUrlRepository.FirstOrDefaultAsync(s => s.KeyName == dynamicUrl.KeyName);
+                    if (existing == null)
+                    {
+                        await DynamicUrlRepository.InsertAsync(dynamicUrl);
+                    }
                 }
             }
         }

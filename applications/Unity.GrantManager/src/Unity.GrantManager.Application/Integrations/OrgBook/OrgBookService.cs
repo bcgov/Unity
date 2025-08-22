@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Integrations.Orgbook
 
         private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
         {
-            var url = await endpointManagementAppService.GetUrlByKeyNameAsync(DynamicUrlKeyNames.ORGBOOK_API_BASE);
+            var url = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.ORGBOOK_API_BASE);
             return url ?? throw new IntegrationServiceException("OrgBook API base URL is not configured.");
         }
 
