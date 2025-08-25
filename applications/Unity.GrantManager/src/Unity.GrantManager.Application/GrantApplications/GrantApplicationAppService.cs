@@ -349,7 +349,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
 
         // Handle custom fields for assessment info
-        if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+        if (input.CustomFields != null && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
         {
             // Handle multiple worksheets
             if (input.WorksheetIds?.Count > 0)
@@ -489,7 +489,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.Place = input.Place;
 
             // Handle custom fields for project info
-            if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+            if (input.CustomFields != null && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             {
                 // Handle multiple worksheets
                 if (input.WorksheetIds?.Count > 0)
@@ -567,7 +567,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         application.UpdatePercentageTotalProjectBudget();
 
         // Add custom worksheet data
-        if (HasValue(input.Data.CustomFields) && input.Data.CorrelationId != Guid.Empty)
+        if (input.Data.CustomFields != null && HasValue(input.Data.CustomFields) && input.Data.CorrelationId != Guid.Empty)
         {
             // Handle multiple worksheets
             if (input.Data.WorksheetIds?.Count > 0)
@@ -608,7 +608,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
 
             // Handle custom fields for funding agreement info
-            if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+            if (input.CustomFields != null && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             {
                 // Handle multiple worksheets
                 if (input.WorksheetIds?.Count > 0)
