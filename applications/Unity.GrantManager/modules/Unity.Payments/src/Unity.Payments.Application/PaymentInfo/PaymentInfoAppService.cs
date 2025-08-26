@@ -21,7 +21,6 @@ namespace Unity.Payments.PaymentInfo
         public async Task<PaymentInfoDto> UpdateAsync(Guid id, CreateUpdatePaymentInfoDto input)
         {
             // Handle custom fields for payment info
-            if (input.CustomFields != null && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             if (input.CustomFields is JsonElement element && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             {
                 // Handle multiple worksheets
