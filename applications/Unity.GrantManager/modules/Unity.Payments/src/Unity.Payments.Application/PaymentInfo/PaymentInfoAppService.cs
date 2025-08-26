@@ -22,6 +22,7 @@ namespace Unity.Payments.PaymentInfo
         {
             // Handle custom fields for payment info
             if (input.CustomFields != null && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+            if (input.CustomFields is JsonElement element && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             {
                 // Handle multiple worksheets
                 if (input.WorksheetIds?.Count > 0)
@@ -53,7 +54,16 @@ namespace Unity.Payments.PaymentInfo
 
         private static bool HasValue(JsonElement element)
         {
-            return element.ValueKind != JsonValueKind.Null && element.ValueKind != JsonValueKind.Undefined;
+            return element.ValueKind switch
+            {
+                JsonValueKind.Object => element.EnumerateObject().Any(),
+                JsonValueKind.Array => element.EnumerateArray().Any(),
+                JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
+                JsonValueKind.Number => true,
+                JsonValueKind.True => true,
+                JsonValueKind.False => true,
+                _ => false
+            };
         }
 
         protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
