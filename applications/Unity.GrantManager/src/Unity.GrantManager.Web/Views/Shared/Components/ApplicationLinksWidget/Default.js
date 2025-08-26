@@ -148,39 +148,50 @@
         let linkedApplicationsList = JSON.parse($('#LinkedApplicationsList').val() || '[]');
         let grantApplicationsList = JSON.parse($('#GrantApplicationsList').val() || '[]');
         let currentLinks = [];
-
-
-        if (allApplications) {
-            suggestionsArray = allApplications.split(',');
-        }
-
+        let deletedLinks = [];  // Track deleted existing links
+        
+        // Generate unique IDs for existing links once
+        const timestamp = Date.now();
+        
         // Initialize current links from existing data
-        linkedApplicationsList.forEach(function(linkedApp) {
+        linkedApplicationsList.forEach(function(linkedApp, idx) {
             // LinkType conversion: 0 = Related, 1 = Parent, 2 = Child
             const linkTypeMap = { 0: 'Related', 1: 'Parent', 2: 'Child' };
+            const uniqueId = 'existing_' + idx + '_' + timestamp;
             
             // Prioritize PascalCase properties (as seen in logs) with fallback to camelCase
             currentLinks.push({
+                id: uniqueId, // Add unique ID to existing links
                 referenceNumber: linkedApp.ReferenceNumber || linkedApp.referenceNumber || 'Unknown',
                 projectName: linkedApp.ProjectName || linkedApp.projectName || 'Unknown',
                 applicantName: linkedApp.ApplicantName || linkedApp.applicantName || 'Unknown',
                 category: linkedApp.Category || linkedApp.category || 'Unknown',
                 applicationStatus: linkedApp.ApplicationStatus || linkedApp.applicationStatus || 'Unknown',
-                linkType: linkTypeMap[linkedApp.LinkType] || linkTypeMap[linkedApp.linkType] || linkedApp.LinkType || linkedApp.linkType || 'Related'
+                linkType: linkTypeMap[linkedApp.LinkType] || linkTypeMap[linkedApp.linkType] || linkedApp.LinkType || linkedApp.linkType || 'Related',
+                isExisting: true,  // Mark as existing link
+                isNew: false       // Not a new link
             });
         });
+        
+        // Store original existing links (immutable reference for comparison)
+        const originalExistingLinks = currentLinks.map(link => ({...link}));
 
+        // Populate suggestions array from all applications
+        if (allApplications) {
+            suggestionsArray = allApplications.split(',');
+        }
+        
         // Display existing links
-        updateLinksDisplay(currentLinks);
+        updateLinksDisplay(currentLinks, deletedLinks);
 
-        // Setup auto-suggest for search input
-        setupAutoSuggest(suggestionsArray, grantApplicationsList, linkedApplicationsList, currentLinks);
+        // Setup auto-suggest for search input with access to originalExistingLinks and deletedLinks
+        setupAutoSuggest(suggestionsArray, grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks);
 
-        // Setup form submission
-        setupFormSubmission(currentLinks);
+        // Setup form submission with access to deletedLinks
+        setupFormSubmission(currentLinks, originalExistingLinks, deletedLinks);
     }
 
-    function setupAutoSuggest(suggestionsArray, grantApplicationsList, linkedApplicationsList, currentLinks) {
+    function setupAutoSuggest(suggestionsArray, grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks) {
         const searchInput = $('#submissionSearch');
         const searchContainer = $('.search-input-container');
         let currentSuggestions = [];
@@ -197,7 +208,7 @@
                 if (suggestions.length > 0) {
                     currentSuggestions = suggestions;
                     activeSuggestionIndex = -1;
-                    displayAutoSuggest(searchContainer, suggestions, grantApplicationsList, linkedApplicationsList, currentLinks);
+                    displayAutoSuggest(searchContainer, suggestions, grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks);
                 } else {
                     currentSuggestions = [];
                     activeSuggestionIndex = -1;
@@ -228,7 +239,7 @@
                 case 'Enter':
                     e.preventDefault();
                     if (activeSuggestionIndex >= 0 && activeSuggestionIndex < currentSuggestions.length) {
-                        selectSuggestion(currentSuggestions[activeSuggestionIndex], grantApplicationsList, linkedApplicationsList, currentLinks);
+                        selectSuggestion(currentSuggestions[activeSuggestionIndex], grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks);
                     }
                     break;
                 case 'Escape':
@@ -262,7 +273,7 @@
     }
 
     // Helper function to select a suggestion - moved outside setupAutoSuggest for proper scope
-    function selectSuggestion(suggestion, grantApplicationsList, linkedApplicationsList, currentLinks) {
+    function selectSuggestion(suggestion, grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks) {
         const parts = suggestion.split(' - ');
         const referenceNumber = parts[0].trim();
         
@@ -280,66 +291,104 @@
             return;
         }
         
-        const linkType = $('#linkTypeSelect').val() || 'Related';
+        // Check if this was an originally existing link
+        const originalLink = originalExistingLinks.find(
+            original => original.referenceNumber === referenceNumber
+        );
         
-        // Create link with unique ID for safe updates
-        const uniqueId = Date.now() + '_' + Math.random();
-        const newLink = {
-            id: uniqueId,
-            referenceNumber: referenceNumber,
-            projectName: fullApp.ProjectName || 'Unknown',
-            applicantName: 'Loading...',
-            category: 'Loading...',
-            applicationStatus: 'Loading...',
-            linkType: linkType,
-            isLoading: true,
-            isNew: true
-        };
+        // Check if it's in deleted list
+        const deletedIndex = deletedLinks.findIndex(
+            deleted => deleted.referenceNumber === referenceNumber
+        );
         
-        // Add to beginning of array so it appears at top
-        currentLinks.unshift(newLink);
-        updateLinksDisplay(currentLinks);
-        
-        // Clear search input
-        $('#submissionSearch').val('');
-        removeAutoSuggest($('.search-input-container'));
-        
-        // Fetch complete details via AJAX
-        $.ajax({
-            url: '/ApplicationLinks/ApplicationLinksModal?handler=ApplicationDetailsByReference',
-            type: 'GET',
-            data: { referenceNumber: referenceNumber },
-            success: function(response) {
-                // Find the link by unique ID
-                const linkToUpdate = currentLinks.find(link => link.id === uniqueId);
-                
-                // Validate link still exists AND reference number matches
-                if (linkToUpdate && linkToUpdate.referenceNumber === response.referenceNumber) {
-                    linkToUpdate.applicantName = response.applicantName || 'Unknown';
-                    linkToUpdate.category = response.category || 'Unknown';
-                    linkToUpdate.applicationStatus = response.applicationStatus || 'Unknown';
-                    linkToUpdate.isLoading = false;
-                    updateLinksDisplay(currentLinks);
-                }
-                // If not found or mismatch, ignore (link was deleted)
-            },
-            error: function(xhr, status, error) {
-                console.error('Error fetching application details:', error);
-                const linkToUpdate = currentLinks.find(link => link.id === uniqueId);
-                if (linkToUpdate) {
-                    linkToUpdate.applicantName = 'Failed to load';
-                    linkToUpdate.category = 'Failed to load';
-                    linkToUpdate.applicationStatus = 'Unknown';
-                    linkToUpdate.isLoading = false;
-                    linkToUpdate.hasError = true;
-                    updateLinksDisplay(currentLinks);
-                }
-            },
-            timeout: 5000 // 5 second timeout
-        });
+        if (originalLink && deletedIndex !== -1) {
+            // RESTORE CASE: This is a deleted existing link being re-added
+            const deletedLink = deletedLinks[deletedIndex];
+            
+            // Remove from deleted list
+            deletedLinks.splice(deletedIndex, 1);
+            
+            // Restore the original link data
+            const linkType = $('#linkTypeSelect').val() || originalLink.linkType;
+            currentLinks.unshift({
+                ...deletedLink.originalData,
+                linkType: linkType, // Allow link type to be changed on restore
+                isExisting: true,
+                isNew: false,
+                isRestored: true  // Optional flag for UI indication
+            });
+            
+            updateLinksDisplay(currentLinks, deletedLinks);
+            $('#submissionSearch').val('');
+            removeAutoSuggest($('.search-input-container'));
+            
+            // Show restore notification
+            abp.notify.info(`Link to "${referenceNumber}" has been restored.`);
+            
+        } else {
+            // NEW LINK CASE: Continue with existing logic
+            const linkType = $('#linkTypeSelect').val() || 'Related';
+            
+            // Create link with unique ID for safe updates
+            const uniqueId = Date.now() + '_' + Math.random();
+            const newLink = {
+                id: uniqueId,
+                referenceNumber: referenceNumber,
+                projectName: fullApp.ProjectName || 'Unknown',
+                applicantName: 'Loading...',
+                category: 'Loading...',
+                applicationStatus: 'Loading...',
+                linkType: linkType,
+                isLoading: true,
+                isNew: !originalLink,  // Only new if it wasn't originally existing
+                isExisting: !!originalLink
+            };
+            
+            // Add to beginning of array so it appears at top
+            currentLinks.unshift(newLink);
+            updateLinksDisplay(currentLinks, deletedLinks);
+            
+            // Clear search input
+            $('#submissionSearch').val('');
+            removeAutoSuggest($('.search-input-container'));
+            
+            // Fetch complete details via AJAX
+            $.ajax({
+                url: '/ApplicationLinks/ApplicationLinksModal?handler=ApplicationDetailsByReference',
+                type: 'GET',
+                data: { referenceNumber: referenceNumber },
+                success: function(response) {
+                    // Find the link by unique ID
+                    const linkToUpdate = currentLinks.find(link => link.id === uniqueId);
+                    
+                    // Validate link still exists AND reference number matches
+                    if (linkToUpdate && linkToUpdate.referenceNumber === response.referenceNumber) {
+                        linkToUpdate.applicantName = response.applicantName || 'Unknown';
+                        linkToUpdate.category = response.category || 'Unknown';
+                        linkToUpdate.applicationStatus = response.applicationStatus || 'Unknown';
+                        linkToUpdate.isLoading = false;
+                        updateLinksDisplay(currentLinks, deletedLinks);
+                    }
+                    // If not found or mismatch, ignore (link was deleted)
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching application details:', error);
+                    const linkToUpdate = currentLinks.find(link => link.id === uniqueId);
+                    if (linkToUpdate) {
+                        linkToUpdate.applicantName = 'Failed to load';
+                        linkToUpdate.category = 'Failed to load';
+                        linkToUpdate.applicationStatus = 'Unknown';
+                        linkToUpdate.isLoading = false;
+                        linkToUpdate.hasError = true;
+                        updateLinksDisplay(currentLinks, deletedLinks);
+                    }
+                },
+                timeout: 5000 // 5 second timeout
+            });
+        }
     }
 
-    function displayAutoSuggest(container, suggestions, grantApplicationsList, linkedApplicationsList, currentLinks) {
+    function displayAutoSuggest(container, suggestions, grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks) {
         removeAutoSuggest(container);
 
         const suggestionContainer = $('<div class="links-suggestion-container"></div>');
@@ -350,7 +399,7 @@
             const suggestionElement = $('<div class="links-suggestion-element"></div>').text(suggestion);
             
             suggestionElement.on('click', function() {
-                selectSuggestion(suggestion, grantApplicationsList, linkedApplicationsList, currentLinks);
+                selectSuggestion(suggestion, grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks);
             });
 
             suggestionContainer.append(suggestionElement);
@@ -363,7 +412,7 @@
         container.find('.links-suggestion-container').remove();
     }
 
-    function updateLinksDisplay(currentLinks) {
+    function updateLinksDisplay(currentLinks, deletedLinks) {
         const linksContainer = $('#linksContainer');
         const noLinksMessage = $('#noLinksMessage');
 
@@ -377,12 +426,12 @@
         linksContainer.find('.link-item').remove();
 
         currentLinks.forEach(function(link, index) {
-            const linkElement = createLinkElement(link, index, currentLinks);
+            const linkElement = createLinkElement(link, index, currentLinks, deletedLinks);
             linksContainer.append(linkElement);
         });
     }
 
-    function createLinkElement(link, index, currentLinks) {
+    function createLinkElement(link, index, currentLinks, deletedLinks) {
         const linkTypeClass = (link.linkType || 'related').toLowerCase();
         
         // Ensure we have valid values, not undefined
@@ -430,18 +479,48 @@
 
         // Handle delete button - use link ID for safer deletion
         linkElement.find('.link-delete-btn').on('click', function() {
-            if (link.id) {
-                // Remove by ID for safer deletion
-                const linkIndex = currentLinks.findIndex(l => l.id === link.id);
-                if (linkIndex !== -1) {
-                    currentLinks.splice(linkIndex, 1);
-                    updateLinksDisplay(currentLinks);
-                }
+            // Capture the button element and index BEFORE showing dialog
+            const deleteButton = $(this);
+            const capturedIndex = index;
+            
+            // Check if this is an existing link (not new)
+            if (link.isExisting && !link.isNew) {
+                // Show confirmation dialog for existing links
+                abp.message.confirm(
+                    `Are you sure you want to remove the link to "${link.referenceNumber}"? This change will only take effect when you click "Save Changes".`,
+                    'Remove Existing Link?',
+                    function (isConfirmed) {
+                        if (isConfirmed) {
+                            // Track the deletion
+                            deletedLinks.push({
+                                referenceNumber: link.referenceNumber,
+                                originalData: link
+                            });
+                            
+                            // Remove from display
+                            removeLink();
+                        }
+                    }
+                );
             } else {
-                // Fallback to index-based deletion for existing links
-                const indexToRemove = $(this).data('index');
-                currentLinks.splice(indexToRemove, 1);
-                updateLinksDisplay(currentLinks);
+                // New link - delete without confirmation
+                removeLink();
+            }
+            
+            function removeLink() {
+                if (link.id) {
+                    // Remove by ID for safer deletion
+                    const linkIndex = currentLinks.findIndex(l => l.id === link.id);
+                    if (linkIndex !== -1) {
+                        currentLinks.splice(linkIndex, 1);
+                        updateLinksDisplay(currentLinks, deletedLinks);
+                    }
+                } else {
+                    // Use the captured index instead of trying to get it from 'this'
+                    const indexToRemove = capturedIndex;
+                    currentLinks.splice(indexToRemove, 1);
+                    updateLinksDisplay(currentLinks, deletedLinks);
+                }
             }
         });
 
@@ -451,7 +530,7 @@
                 // Retry fetching details
                 link.isLoading = true;
                 link.hasError = false;
-                updateLinksDisplay(currentLinks);
+                updateLinksDisplay(currentLinks, deletedLinks);
                 
                 $.ajax({
                     url: '/ApplicationLinks/ApplicationLinksModal?handler=ApplicationDetailsByReference',
@@ -463,7 +542,7 @@
                             link.category = response.category || 'Unknown';
                             link.applicationStatus = response.applicationStatus || 'Unknown';
                             link.isLoading = false;
-                            updateLinksDisplay(currentLinks);
+                            updateLinksDisplay(currentLinks, deletedLinks);
                         }
                     },
                     error: function() {
@@ -472,7 +551,7 @@
                         link.applicationStatus = 'Unknown';
                         link.isLoading = false;
                         link.hasError = true;
-                        updateLinksDisplay(currentLinks);
+                        updateLinksDisplay(currentLinks, deletedLinks);
                     }
                 });
             }
@@ -481,12 +560,21 @@
         return linkElement;
     }
 
-    function setupFormSubmission(currentLinks) {
+    function setupFormSubmission(currentLinks, originalExistingLinks, deletedLinks) {
         $('#applicationLinksForm').off('submit').on('submit', function(e) {
             e.preventDefault(); // Prevent traditional form submission
             
+            // Get final state of links (excluding those marked as deleted)
+            const finalLinks = currentLinks.filter(link => !link.isDeleted);
+            
+            // Determine which original links were actually deleted (not restored)
+            const actuallyDeletedLinks = originalExistingLinks.filter(original => 
+                !finalLinks.some(current => current.referenceNumber === original.referenceNumber) &&
+                deletedLinks.some(deleted => deleted.referenceNumber === original.referenceNumber)
+            );
+            
             // Update the hidden field with current links data
-            const linksWithTypes = currentLinks.map(link => ({
+            const linksWithTypes = finalLinks.map(link => ({
                 ReferenceNumber: link.referenceNumber,
                 ProjectName: link.projectName,
                 LinkType: link.linkType
