@@ -599,19 +599,28 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
-    private static bool HasValue(JsonElement element)
+  private static bool HasValue(JsonElement element)
+{
+    return element.ValueKind switch
     {
-        return element.ValueKind switch
-        {
-            JsonValueKind.Object => element.EnumerateObject().Any(),
-            JsonValueKind.Array => element.EnumerateArray().Any(),
-            JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
-            JsonValueKind.Number => true,
-            JsonValueKind.True => true,
-            JsonValueKind.False => true,
-            _ => false
-        };
+        JsonValueKind.Object => element.EnumerateObject().Any(),
+        JsonValueKind.Array => element.EnumerateArray().Any(),
+        JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
+        JsonValueKind.Number => true,
+        JsonValueKind.True => true,
+        JsonValueKind.False => true,
+        JsonValueKind.Undefined => false,
+        JsonValueKind.Null => false,
+        _ => false
+    };
+}
+
+    // Overload for object/dynamic input
+    private static bool HasValue(object? element)
+    {
+        return element is JsonElement el && HasValue(el);
     }
+
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -640,13 +649,22 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                             CustomFields = worksheetCustomFields,
                             CorrelationId = input.CorrelationId
                         };
-                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, worksheetData);
+
+                        await PublishCustomFieldUpdatesAsync(
+                            application.Id,
+                            FlexConsts.FundingAgreementInfoUiAnchor,
+                            worksheetData
+                        );
                     }
                 }
             }
             else if (input.WorksheetId != Guid.Empty) // backward compatibility
             {
-                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, input);
+                await PublishCustomFieldUpdatesAsync(
+                    application.Id,
+                    FlexConsts.FundingAgreementInfoUiAnchor,
+                    input
+                );
             }
         }
 
