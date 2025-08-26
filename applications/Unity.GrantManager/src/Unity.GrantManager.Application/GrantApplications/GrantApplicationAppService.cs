@@ -154,16 +154,17 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
             return appDto;
         }).ToList();
-        
+
         long totalCount = 0;
         try
         {
             totalCount = await _applicationRepository.GetCountAsync();
-        } catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             Logger.LogError(ex, "An exception occurred GetCountAsync: {ExceptionMessage}", ex.Message);
         }
-       
+
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
 
@@ -251,7 +252,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Sector = application.Applicant.Sector;
             appDto.OrganizationType = application.Applicant.OrganizationType;
             appDto.SubSector = application.Applicant.SubSector;
-            appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;            
+            appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
 
         return appDto;
@@ -598,56 +599,59 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
+    private static bool HasValue(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Object => element.EnumerateObject().Any(),
+            JsonValueKind.Array => element.EnumerateArray().Any(),
+            JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
+            JsonValueKind.Number => true,
+            JsonValueKind.True => true,
+            JsonValueKind.False => true,
+            _ => false
+        };
+    }
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
 
-        if (application != null)
+        // Update simple fields
+        if (application.ContractNumber != input.ContractNumber ||
+            application.ContractExecutionDate != input.ContractExecutionDate)
         {
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
+        }
 
-            // Handle custom fields for funding agreement info
-            if (input.CustomFields != null && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+        // Handle custom fields
+        if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+        {
+            if (input.WorksheetIds?.Count > 0)
             {
-                // Handle multiple worksheets
-                if (input.WorksheetIds?.Count > 0)
+                foreach (var worksheetId in input.WorksheetIds)
                 {
-                    foreach (var worksheetId in input.WorksheetIds)
+                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
+                    if (worksheetCustomFields.Count > 0)
                     {
-                        var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
-                        if (worksheetCustomFields.Count > 0)
+                        var worksheetData = new CustomDataFieldDto
                         {
-                            var worksheetData = new CustomDataFieldDto
-                            {
-                                WorksheetId = worksheetId,
-                                CustomFields = worksheetCustomFields,
-                                CorrelationId = input.CorrelationId
-                            };
-                            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, worksheetData);
-                        }
+                            WorksheetId = worksheetId,
+                            CustomFields = worksheetCustomFields,
+                            CorrelationId = input.CorrelationId
+                        };
+                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, worksheetData);
                     }
                 }
-                // Fallback for single worksheet (backward compatibility)
-                else if (input.WorksheetId != Guid.Empty)
-                {
-                    await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, input);
-                }
             }
-
-            await _applicationRepository.UpdateAsync(application);
-
-            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+            else if (input.WorksheetId != Guid.Empty) // backward compatibility
+            {
+                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, input);
+            }
         }
-        else
-        {
-            throw new EntityNotFoundException();
-        }
-    }
 
-    private static bool HasValue(JsonElement element)
-    {
-        return element.ValueKind != JsonValueKind.Null && element.ValueKind != JsonValueKind.Undefined;
+        await _applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
     /// <summary>
@@ -683,7 +687,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             .FirstOrDefaultAsync(a => a.ApplicantId == application.ApplicantId)
             ?? new ApplicantAgent
             {
-                ApplicantId   = application.ApplicantId,
+                ApplicantId = application.ApplicantId,
                 ApplicationId = application.Id
             };
 
@@ -706,10 +710,10 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
-        
+
         var applicant = await _applicantRepository
             .FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
-        
+
         applicant.OrganizationType = input.OrganizationType ?? "";
         applicant.OrgName = input.OrgName ?? "";
         applicant.OrgNumber = input.OrgNumber ?? "";
@@ -1143,7 +1147,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             return null;
         }
-    
+
         return form.AccountCodingId;
     }
 
