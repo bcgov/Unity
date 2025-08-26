@@ -1,26 +1,84 @@
 ﻿@page
 @model Unity.GrantManager.Web.Pages.ApplicationLinks.ApplicationLinksModalModel
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Unity.GrantManager.Applications
 @{
     Layout = null;
 }
 
+<abp-style-bundle>
+    <abp-style src="/Pages/ApplicationLinks/ApplicationLinksModal.css" />
+</abp-style-bundle>
+
 <form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="applicationLinksForm" asp-page="/ApplicationLinks/ApplicationLinksModal">
 <abp-modal id="applicationLinksModal">
-    <abp-modal-header title="Linked Records"></abp-modal-header>
+    <abp-modal-header title="Add Link"></abp-modal-header>
     <abp-modal-body>
-        <div>
-                <abp-input type="text" id="SelectedApplications" asp-for="@Model.SelectedApplications" />
-                <abp-input type="hidden" id="AllApplications" asp-for="@Model.AllApplications" />
-                <abp-input type="hidden" id="GrantApplicationsList" asp-for="@Model.GrantApplicationsList" />
-                <abp-input type="hidden" id="LinkedApplicationsList" asp-for="@Model.LinkedApplicationsList" />
-                <abp-input type="hidden" id="CurrentApplicationId" asp-for="@Model.CurrentApplicationId" />
-              
-        </div>       
+        <!-- Current application info -->
+        <div class="mb-3">
+            <p class="mb-2">You are adding a link from:</p>
+            <div class="current-app-info link-item">
+                <div class="link-info">
+                    <span class="link-reference">@(Model.CurrentApplication?.ReferenceNumber ?? "Unknown")</span>
+                    <span class="link-applicant">@(Model.CurrentApplication?.ApplicantName ?? "Unknown")</span>
+                    @if (!string.IsNullOrEmpty(Model.CurrentApplication?.Category))
+                    {
+                        <span class="link-category">(@Model.CurrentApplication.Category)</span>
+                    }
+                    else
+                    {
+                        <span class="link-category">(Unknown Category)</span>
+                    }
+                    <span class="link-status">@(Model.CurrentApplication?.ApplicationStatus ?? "Status Unavailable")</span>
+                </div>
+                <span class="current-app-badge">CURRENT</span>
+            </div>
+        </div>
+
+        <!-- Link Type dropdown -->
+        <div class="mb-3">
+            <label class="form-label">Link Type</label>
+            <select id="linkTypeSelect" class="form-select">
+                <option value="@ApplicationLinkType.Related" selected>Related</option>
+                <option value="@ApplicationLinkType.Child">Child</option>
+                <option value="@ApplicationLinkType.Parent">Parent</option>
+            </select>
+        </div>
+
+        <!-- Search input -->
+        <div class="mb-3">
+            <label class="form-label">Submission to link</label>
+            <div class="search-input-container">
+                <input type="text" id="submissionSearch" class="form-control" placeholder="Search for Submission..." autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Links display area -->
+        <div class="mb-3">
+            <label class="form-label">Links</label>
+            <div id="linksContainer" class="links-display-area border rounded p-3" style="min-height: 80px; max-height: 200px; overflow-y: auto;">
+                <div class="text-muted" id="noLinksMessage">No links added yet.</div>
+            </div>
+        </div>
+
+        <!-- Note -->
+        <p class="text-muted small">
+            <i class="fas fa-info-circle"></i> 
+            Note: Cannot link the submissions that are already connected as either a child or parent to an existing submission.
+        </p>
+
+        <!-- Hidden inputs for form submission -->
+        <abp-input type="hidden" id="SelectedApplications" asp-for="@Model.SelectedApplications" />
+        <abp-input type="hidden" id="AllApplications" asp-for="@Model.AllApplications" />
+        <abp-input type="hidden" id="GrantApplicationsList" asp-for="@Model.GrantApplicationsList" />
+        <abp-input type="hidden" id="LinkedApplicationsList" asp-for="@Model.LinkedApplicationsList" />
+        <abp-input type="hidden" id="CurrentApplicationId" asp-for="@Model.CurrentApplicationId" />
+        <input type="hidden" id="CurrentApplication" value="@Html.Raw(Model.CurrentApplication != null ? System.Text.Json.JsonSerializer.Serialize(Model.CurrentApplication) : "{}")" />
+        <input type="hidden" id="LinksWithTypes" name="LinksWithTypes" value="">
     </abp-modal-body>
     <abp-modal-footer>
-        <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="applicationLinksModelSaveBtn" >Save</button>
-        <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="applicationLinksModelSaveBtn">SAVE CHANGES</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">CANCEL</button>
     </abp-modal-footer>
 </abp-modal>
 </form>
