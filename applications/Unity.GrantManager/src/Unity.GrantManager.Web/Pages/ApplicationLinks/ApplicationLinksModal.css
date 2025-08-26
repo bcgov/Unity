@@ -217,6 +217,89 @@
     font-weight: 500;
 }
 
+/* Loading state styling */
+.link-item.loading {
+    opacity: 0.7;
+}
+
+.loading-text {
+    color: #6c757d;
+    font-style: italic;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.link-item.loading .loading-text {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Error state styling */
+.link-item.error {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+.link-error-icon {
+    color: #856404;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.link-error-icon:hover {
+    color: #533f03;
+}
+
+/* New item styling */
+.link-item.new-item {
+    position: relative;
+}
+
+@keyframes slideInFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.link-item.new-item {
+    animation: slideInFade 0.3s ease-out;
+}
+
+/* NEW badge styling */
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+/* Enhanced status badge colors */
+.link-status.submitted {
+    background-color: #28a745;
+}
+
+.link-status.draft {
+    background-color: #6c757d;
+}
+
+.link-status.review {
+    background-color: #fd7e14;
+}
+
+.link-status.approved {
+    background-color: #20c997;
+}
+
+.link-status.rejected {
+    background-color: #dc3545;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .link-item {
@@ -233,5 +316,11 @@
     .link-delete-btn {
         align-self: flex-end;
         margin-top: 8px;
+    }
+    
+    .badge.bg-success,
+    .link-error-icon {
+        margin-left: 0;
+        margin-top: 4px;
     }
 }

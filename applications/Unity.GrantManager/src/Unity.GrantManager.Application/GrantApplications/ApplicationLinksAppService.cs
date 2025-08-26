@@ -232,4 +232,104 @@ public class ApplicationLinksAppService : CrudAppService<
             await Repository.DeleteAsync(pairedLink.Id);
         }
     }
+
+    public async Task<ApplicationLinksInfoDto> GetApplicationDetailsByReferenceAsync(string referenceNumber)
+    {
+        Logger.LogInformation("GetApplicationDetailsByReferenceAsync called with referenceNumber: {ReferenceNumber}", referenceNumber);
+        
+        try
+        {
+            var applicationsQuery = await ApplicationRepository.GetQueryableAsync();
+            var application = await applicationsQuery
+                .Include(a => a.ApplicationStatus)
+                .Where(a => a.ReferenceNo == referenceNumber)
+                .FirstOrDefaultAsync();
+                
+            if (application == null)
+            {
+                Logger.LogWarning("Application not found with ReferenceNumber: {ReferenceNumber}", referenceNumber);
+                return new ApplicationLinksInfoDto
+                {
+                    Id = Guid.Empty,
+                    ApplicationId = Guid.Empty,
+                    ApplicationStatus = "Not Found",
+                    ReferenceNumber = referenceNumber,
+                    Category = "Unknown",
+                    ProjectName = "Unknown",
+                    ApplicantName = "Unknown",
+                    LinkType = ApplicationLinkType.Related
+                };
+            }
+
+            // Get related data safely
+            string category = "Unknown";
+            string applicantName = "Unknown";
+
+            try
+            {
+                var applicationFormsQuery = await ApplicationFormRepository.GetQueryableAsync();
+                var applicationForm = await applicationFormsQuery
+                    .Where(af => af.Id == application.ApplicationFormId)
+                    .FirstOrDefaultAsync();
+                if (applicationForm != null)
+                {
+                    category = applicationForm.Category ?? "Unknown";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error looking up application form");
+            }
+
+            try
+            {
+                var applicantsQuery = await ApplicantRepository.GetQueryableAsync();
+                var applicant = await applicantsQuery
+                    .Where(ap => ap.Id == application.ApplicantId)
+                    .FirstOrDefaultAsync();
+                if (applicant != null)
+                {
+                    applicantName = applicant.ApplicantName ?? "Unknown";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error looking up applicant");
+            }
+
+            string applicationStatus = "Unknown";
+            if (application.ApplicationStatus != null)
+            {
+                applicationStatus = application.ApplicationStatus.InternalStatus ?? "Unknown";
+            }
+
+            return new ApplicationLinksInfoDto
+            {
+                Id = Guid.Empty,
+                ApplicationId = application.Id,
+                ApplicationStatus = applicationStatus,
+                ReferenceNumber = application.ReferenceNo ?? referenceNumber,
+                Category = category,
+                ProjectName = application.ProjectName ?? "Unknown",
+                ApplicantName = applicantName,
+                LinkType = ApplicationLinkType.Related
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Critical error in GetApplicationDetailsByReferenceAsync for referenceNumber: {ReferenceNumber}", referenceNumber);
+            
+            return new ApplicationLinksInfoDto
+            {
+                Id = Guid.Empty,
+                ApplicationId = Guid.Empty,
+                ApplicationStatus = "Error Loading",
+                ReferenceNumber = referenceNumber,
+                Category = "Unknown",
+                ProjectName = "Unknown",
+                ApplicantName = "Unknown",
+                LinkType = ApplicationLinkType.Related
+            };
+        }
+    }
 }

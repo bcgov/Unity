@@ -183,5 +183,25 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                 _ => ApplicationLinkType.Related
             };
         }
+
+        public async Task<IActionResult> OnGetApplicationDetailsByReferenceAsync(string referenceNumber)
+        {
+            try
+            {
+                var details = await _applicationLinksService.GetApplicationDetailsByReferenceAsync(referenceNumber);
+                return new JsonResult(details);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error getting application details for reference number: {ReferenceNumber}", referenceNumber);
+                return new JsonResult(new ApplicationLinksInfoDto
+                {
+                    ReferenceNumber = referenceNumber,
+                    ApplicantName = "Error loading",
+                    Category = "Error loading",
+                    ApplicationStatus = "Error loading"
+                });
+            }
+        }
     }
 }

@@ -135,29 +135,19 @@
     });
 
     applicationLinksModal.onResult(function () {
-        console.log('DEBUG: applicationLinksModal.onResult triggered - modal should close and data should refresh');
         abp.notify.success(
             'The application links have been successfully updated.',
             'Application Links'
         );
-        console.log('DEBUG: Calling dataTable.ajax.reload()...');
         dataTable.ajax.reload();
-        console.log('DEBUG: Modal result handler completed');
     });
 
     function initializeEnhancedModal() {
-        console.log('DEBUG: initializeEnhancedModal started');
         let suggestionsArray = [];
         let allApplications = $('#AllApplications').val();
         let linkedApplicationsList = JSON.parse($('#LinkedApplicationsList').val() || '[]');
         let grantApplicationsList = JSON.parse($('#GrantApplicationsList').val() || '[]');
         let currentLinks = [];
-        
-        console.log('DEBUG: Initial data loaded:');
-        console.log('  - allApplications:', allApplications);
-        console.log('  - linkedApplicationsList length:', linkedApplicationsList.length);
-        console.log('  - grantApplicationsList length:', grantApplicationsList.length);
-        console.log('  - currentLinks length:', currentLinks.length);
 
 
         if (allApplications) {
@@ -222,41 +212,32 @@
 
         // Add keyboard navigation
         searchInput.on('keydown', function(e) {
-            console.log('DEBUG: Keydown event:', e.key, 'currentSuggestions.length:', currentSuggestions.length);
             if (currentSuggestions.length === 0) return;
 
             switch(e.key) {
                 case 'ArrowDown':
                     e.preventDefault();
                     activeSuggestionIndex = (activeSuggestionIndex + 1) % currentSuggestions.length;
-                    console.log('DEBUG: ArrowDown - activeSuggestionIndex now:', activeSuggestionIndex);
                     updateSuggestionHighlight();
                     break;
                 case 'ArrowUp':
                     e.preventDefault();
                     activeSuggestionIndex = activeSuggestionIndex <= 0 ? currentSuggestions.length - 1 : activeSuggestionIndex - 1;
-                    console.log('DEBUG: ArrowUp - activeSuggestionIndex now:', activeSuggestionIndex);
                     updateSuggestionHighlight();
                     break;
                 case 'Enter':
                     e.preventDefault();
-                    console.log('DEBUG: Enter key pressed - activeSuggestionIndex:', activeSuggestionIndex, 'currentSuggestions:', currentSuggestions);
                     if (activeSuggestionIndex >= 0 && activeSuggestionIndex < currentSuggestions.length) {
-                        console.log('DEBUG: Calling selectSuggestion with:', currentSuggestions[activeSuggestionIndex]);
                         selectSuggestion(currentSuggestions[activeSuggestionIndex], grantApplicationsList, linkedApplicationsList, currentLinks);
-                    } else {
-                        console.log('DEBUG: Enter pressed but no valid selection - activeSuggestionIndex:', activeSuggestionIndex, 'length:', currentSuggestions.length);
                     }
                     break;
                 case 'Escape':
                     e.preventDefault();
-                    console.log('DEBUG: Escape key pressed - closing suggestions');
                     currentSuggestions = [];
                     activeSuggestionIndex = -1;
                     removeAutoSuggest(searchContainer);
                     break;
                 case 'Tab':
-                    console.log('DEBUG: Tab key pressed - closing suggestions');
                     currentSuggestions = [];
                     activeSuggestionIndex = -1;
                     removeAutoSuggest(searchContainer);
@@ -278,58 +259,84 @@
                 $('.links-suggestion-element').eq(activeSuggestionIndex).addClass('suggestion-active');
             }
         }
+    }
 
-        // Helper function to select a suggestion
-        function selectSuggestion(suggestion, grantApplicationsList, linkedApplicationsList, currentLinks) {
-            console.log('DEBUG: selectSuggestion called with suggestion:', suggestion);
-            console.log('DEBUG: grantApplicationsList length:', grantApplicationsList.length);
-            console.log('DEBUG: linkedApplicationsList length:', linkedApplicationsList.length);
-            console.log('DEBUG: currentLinks before:', JSON.parse(JSON.stringify(currentLinks)));
-            
-            const parts = suggestion.split(' - ');
-            const referenceNumber = parts[0].trim();
-            console.log('DEBUG: Parsed referenceNumber:', referenceNumber);
-            
-            // Find the full application data
-            const fullApp = grantApplicationsList.find(app => app.ReferenceNo === referenceNumber);
-            console.log('DEBUG: Found fullApp:', fullApp);
-            
-            const isDuplicate = currentLinks.some(link => link.referenceNumber === referenceNumber);
-            console.log('DEBUG: Is duplicate?', isDuplicate);
-            
-            if (fullApp && !isDuplicate) {
-                const linkType = $('#linkTypeSelect').val() || 'Related';
-                console.log('DEBUG: Selected linkType:', linkType);
-                
-                // Try to get additional data from existing linked applications list if available
-                const existingLinkedApp = linkedApplicationsList.find(app => app.referenceNumber === referenceNumber);
-                console.log('DEBUG: Found existingLinkedApp:', existingLinkedApp);
-                
-                const newLink = {
-                    referenceNumber: referenceNumber,
-                    projectName: fullApp.ProjectName || 'Unknown',
-                    applicantName: existingLinkedApp?.applicantName || 'To be determined',
-                    category: existingLinkedApp?.category || 'Unknown',
-                    applicationStatus: existingLinkedApp?.applicationStatus || 'Unknown',
-                    linkType: linkType
-                };
-                
-                console.log('DEBUG: Adding new link:', newLink);
-                // Add to beginning of array so it appears at top
-                currentLinks.unshift(newLink);
-                console.log('DEBUG: currentLinks after adding:', JSON.parse(JSON.stringify(currentLinks)));
-
-                console.log('DEBUG: Calling updateLinksDisplay...');
-                updateLinksDisplay(currentLinks);
-                $('#submissionSearch').val('');
-                currentSuggestions = [];
-                activeSuggestionIndex = -1;
-                removeAutoSuggest($('.search-input-container'));
-                console.log('DEBUG: Selection process completed successfully');
-            } else {
-                console.log('DEBUG: Selection failed - fullApp exists:', !!fullApp, 'isDuplicate:', isDuplicate);
-            }
+    // Helper function to select a suggestion - moved outside setupAutoSuggest for proper scope
+    function selectSuggestion(suggestion, grantApplicationsList, linkedApplicationsList, currentLinks) {
+        const parts = suggestion.split(' - ');
+        const referenceNumber = parts[0].trim();
+        
+        // Check for duplicates
+        const isDuplicate = currentLinks.some(link => link.referenceNumber === referenceNumber);
+        if (isDuplicate) {
+            abp.notify.warn('This application is already linked.');
+            return;
         }
+        
+        // Find the full application data
+        const fullApp = grantApplicationsList.find(app => app.ReferenceNo === referenceNumber);
+        if (!fullApp) {
+            abp.notify.error('Application not found.');
+            return;
+        }
+        
+        const linkType = $('#linkTypeSelect').val() || 'Related';
+        
+        // Create link with unique ID for safe updates
+        const uniqueId = Date.now() + '_' + Math.random();
+        const newLink = {
+            id: uniqueId,
+            referenceNumber: referenceNumber,
+            projectName: fullApp.ProjectName || 'Unknown',
+            applicantName: 'Loading...',
+            category: 'Loading...',
+            applicationStatus: 'Loading...',
+            linkType: linkType,
+            isLoading: true,
+            isNew: true
+        };
+        
+        // Add to beginning of array so it appears at top
+        currentLinks.unshift(newLink);
+        updateLinksDisplay(currentLinks);
+        
+        // Clear search input
+        $('#submissionSearch').val('');
+        removeAutoSuggest($('.search-input-container'));
+        
+        // Fetch complete details via AJAX
+        $.ajax({
+            url: '/ApplicationLinks/ApplicationLinksModal?handler=ApplicationDetailsByReference',
+            type: 'GET',
+            data: { referenceNumber: referenceNumber },
+            success: function(response) {
+                // Find the link by unique ID
+                const linkToUpdate = currentLinks.find(link => link.id === uniqueId);
+                
+                // Validate link still exists AND reference number matches
+                if (linkToUpdate && linkToUpdate.referenceNumber === response.referenceNumber) {
+                    linkToUpdate.applicantName = response.applicantName || 'Unknown';
+                    linkToUpdate.category = response.category || 'Unknown';
+                    linkToUpdate.applicationStatus = response.applicationStatus || 'Unknown';
+                    linkToUpdate.isLoading = false;
+                    updateLinksDisplay(currentLinks);
+                }
+                // If not found or mismatch, ignore (link was deleted)
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching application details:', error);
+                const linkToUpdate = currentLinks.find(link => link.id === uniqueId);
+                if (linkToUpdate) {
+                    linkToUpdate.applicantName = 'Failed to load';
+                    linkToUpdate.category = 'Failed to load';
+                    linkToUpdate.applicationStatus = 'Unknown';
+                    linkToUpdate.isLoading = false;
+                    linkToUpdate.hasError = true;
+                    updateLinksDisplay(currentLinks);
+                }
+            },
+            timeout: 5000 // 5 second timeout
+        });
     }
 
     function displayAutoSuggest(container, suggestions, grantApplicationsList, linkedApplicationsList, currentLinks) {
@@ -343,52 +350,7 @@
             const suggestionElement = $('<div class="links-suggestion-element"></div>').text(suggestion);
             
             suggestionElement.on('click', function() {
-                console.log('DEBUG: Mouse click on suggestion:', suggestion);
-                console.log('DEBUG: Click handler - grantApplicationsList length:', grantApplicationsList.length);
-                console.log('DEBUG: Click handler - linkedApplicationsList length:', linkedApplicationsList.length);
-                console.log('DEBUG: Click handler - currentLinks before:', JSON.parse(JSON.stringify(currentLinks)));
-                
-                const parts = suggestion.split(' - ');
-                const referenceNumber = parts[0].trim();
-                console.log('DEBUG: Click handler - parsed referenceNumber:', referenceNumber);
-                
-                // Find the full application data
-                const fullApp = grantApplicationsList.find(app => app.ReferenceNo === referenceNumber);
-                console.log('DEBUG: Click handler - found fullApp:', fullApp);
-                
-                const isDuplicate = currentLinks.some(link => link.referenceNumber === referenceNumber);
-                console.log('DEBUG: Click handler - is duplicate?', isDuplicate);
-                
-                if (fullApp && !isDuplicate) {
-                    const linkType = $('#linkTypeSelect').val() || 'Related';
-                    console.log('DEBUG: Click handler - selected linkType:', linkType);
-                    
-                    // Try to get additional data from existing linked applications list if available
-                    const existingLinkedApp = linkedApplicationsList.find(app => app.referenceNumber === referenceNumber);
-                    console.log('DEBUG: Click handler - found existingLinkedApp:', existingLinkedApp);
-                    
-                    const newLink = {
-                        referenceNumber: referenceNumber,
-                        projectName: fullApp.ProjectName || 'Unknown',
-                        applicantName: existingLinkedApp?.applicantName || 'To be determined',
-                        category: existingLinkedApp?.category || 'Unknown',
-                        applicationStatus: existingLinkedApp?.applicationStatus || 'Unknown',
-                        linkType: linkType
-                    };
-                    
-                    console.log('DEBUG: Click handler - adding new link:', newLink);
-                    // Add to beginning of array so it appears at top
-                    currentLinks.unshift(newLink);
-                    console.log('DEBUG: Click handler - currentLinks after adding:', JSON.parse(JSON.stringify(currentLinks)));
-
-                    console.log('DEBUG: Click handler - calling updateLinksDisplay...');
-                    updateLinksDisplay(currentLinks);
-                    $('#submissionSearch').val('');
-                    removeAutoSuggest(container);
-                    console.log('DEBUG: Click handler - selection process completed successfully');
-                } else {
-                    console.log('DEBUG: Click handler - selection failed - fullApp exists:', !!fullApp, 'isDuplicate:', isDuplicate);
-                }
+                selectSuggestion(suggestion, grantApplicationsList, linkedApplicationsList, currentLinks);
             });
 
             suggestionContainer.append(suggestionElement);
@@ -402,31 +364,22 @@
     }
 
     function updateLinksDisplay(currentLinks) {
-        console.log('DEBUG: updateLinksDisplay called with currentLinks:', JSON.parse(JSON.stringify(currentLinks)));
         const linksContainer = $('#linksContainer');
         const noLinksMessage = $('#noLinksMessage');
-        console.log('DEBUG: linksContainer element found:', linksContainer.length > 0);
-        console.log('DEBUG: noLinksMessage element found:', noLinksMessage.length > 0);
 
         if (currentLinks.length === 0) {
-            console.log('DEBUG: No links to display, showing no links message');
             noLinksMessage.show();
             linksContainer.find('.link-item').remove();
             return;
         }
 
-        console.log('DEBUG: Displaying', currentLinks.length, 'links');
         noLinksMessage.hide();
         linksContainer.find('.link-item').remove();
 
         currentLinks.forEach(function(link, index) {
-            console.log('DEBUG: Creating link element for index', index, ':', link);
             const linkElement = createLinkElement(link, index, currentLinks);
             linksContainer.append(linkElement);
-            console.log('DEBUG: Link element appended for:', link.referenceNumber);
         });
-        
-        console.log('DEBUG: updateLinksDisplay completed, DOM should be updated');
     }
 
     function createLinkElement(link, index, currentLinks) {
@@ -439,13 +392,34 @@
         const applicationStatus = link.applicationStatus || 'Status Unavailable';
         const linkType = link.linkType || 'Related';
         
+        // Add additional classes based on state
+        let additionalClasses = '';
+        if (link.isLoading) additionalClasses += ' loading';
+        if (link.hasError) additionalClasses += ' error';
+        if (link.isNew) additionalClasses += ' new-item';
+        
+        // Add visual indicators for special states
+        let statusBadges = '';
+        if (link.isNew) {
+            statusBadges += '<span class="badge bg-success ms-2">NEW</span>';
+        }
+        if (link.hasError) {
+            statusBadges += '<span class="link-error-icon ms-2" title="Failed to load complete details. The link will still be created with available information."><i class="fa fa-exclamation-triangle"></i></span>';
+        }
+        
+        // Apply loading styles to text
+        const applicantDisplay = link.isLoading ? '<span class="loading-text">' + applicantName + '</span>' : applicantName;
+        const categoryDisplay = link.isLoading ? '<span class="loading-text">(' + category + ')</span>' : '(' + category + ')';
+        const statusDisplay = link.isLoading ? '<span class="loading-text">' + applicationStatus + '</span>' : applicationStatus;
+        
         const linkElement = $(`
-            <div class="link-item ${linkTypeClass}">
+            <div class="link-item ${linkTypeClass}${additionalClasses}">
                 <div class="link-info">
                     <span class="link-reference">${referenceNumber}</span>
-                    <span class="link-applicant">${applicantName}</span>
-                    <span class="link-category">(${category})</span>
-                    <span class="link-status">${applicationStatus}</span>
+                    <span class="link-applicant">${applicantDisplay}</span>
+                    <span class="link-category">${categoryDisplay}</span>
+                    <span class="link-status">${statusDisplay}</span>
+                    ${statusBadges}
                 </div>
                 <span class="link-type-badge ${linkTypeClass}">${linkType}</span>
                 <button type="button" class="link-delete-btn" data-index="${index}" title="Delete Link">
@@ -454,11 +428,54 @@
             </div>
         `);
 
-        // Handle delete button
+        // Handle delete button - use link ID for safer deletion
         linkElement.find('.link-delete-btn').on('click', function() {
-            const indexToRemove = $(this).data('index');
-            currentLinks.splice(indexToRemove, 1);
-            updateLinksDisplay(currentLinks);
+            if (link.id) {
+                // Remove by ID for safer deletion
+                const linkIndex = currentLinks.findIndex(l => l.id === link.id);
+                if (linkIndex !== -1) {
+                    currentLinks.splice(linkIndex, 1);
+                    updateLinksDisplay(currentLinks);
+                }
+            } else {
+                // Fallback to index-based deletion for existing links
+                const indexToRemove = $(this).data('index');
+                currentLinks.splice(indexToRemove, 1);
+                updateLinksDisplay(currentLinks);
+            }
+        });
+
+        // Handle error icon click to retry
+        linkElement.find('.link-error-icon').on('click', function() {
+            if (link.referenceNumber && link.hasError) {
+                // Retry fetching details
+                link.isLoading = true;
+                link.hasError = false;
+                updateLinksDisplay(currentLinks);
+                
+                $.ajax({
+                    url: '/ApplicationLinks/ApplicationLinksModal?handler=ApplicationDetailsByReference',
+                    type: 'GET',
+                    data: { referenceNumber: link.referenceNumber },
+                    success: function(response) {
+                        if (link.id && response.referenceNumber === link.referenceNumber) {
+                            link.applicantName = response.applicantName || 'Unknown';
+                            link.category = response.category || 'Unknown';
+                            link.applicationStatus = response.applicationStatus || 'Unknown';
+                            link.isLoading = false;
+                            updateLinksDisplay(currentLinks);
+                        }
+                    },
+                    error: function() {
+                        link.applicantName = 'Failed to load';
+                        link.category = 'Failed to load';
+                        link.applicationStatus = 'Unknown';
+                        link.isLoading = false;
+                        link.hasError = true;
+                        updateLinksDisplay(currentLinks);
+                    }
+                });
+            }
         });
 
         return linkElement;
@@ -467,8 +484,6 @@
     function setupFormSubmission(currentLinks) {
         $('#applicationLinksForm').off('submit').on('submit', function(e) {
             e.preventDefault(); // Prevent traditional form submission
-            console.log('DEBUG: Form submission triggered (AJAX mode)');
-            console.log('DEBUG: currentLinks at submission:', JSON.parse(JSON.stringify(currentLinks)));
             
             // Update the hidden field with current links data
             const linksWithTypes = currentLinks.map(link => ({
@@ -476,8 +491,6 @@
                 ProjectName: link.projectName,
                 LinkType: link.linkType
             }));
-
-            console.log('DEBUG: linksWithTypes for submission:', linksWithTypes);
             
             // Prepare form data for AJAX submission
             const formData = new FormData();
@@ -492,8 +505,6 @@
                 formData.append('__RequestVerificationToken', token);
             }
             
-            console.log('DEBUG: Sending AJAX request...');
-            
             // Submit via AJAX
             $.ajax({
                 url: '/ApplicationLinks/ApplicationLinksModal?handler=OnPostAsync',
@@ -502,7 +513,6 @@
                 processData: false,
                 contentType: false,
                 success: function(response) {
-                    console.log('DEBUG: AJAX success response:', response);
                     // Trigger modal result manually since ABP may not detect AJAX
                     applicationLinksModal.close();
                     abp.notify.success(
@@ -510,10 +520,9 @@
                         'Application Links'
                     );
                     dataTable.ajax.reload();
-                    console.log('DEBUG: Modal closed and data refreshed successfully');
                 },
                 error: function(xhr, status, error) {
-                    console.error('DEBUG: AJAX error:', status, error);
+                    console.error('Error updating application links:', status, error);
                     abp.notify.error('Error updating application links: ' + error);
                 }
             });
