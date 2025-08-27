@@ -20,7 +20,7 @@ namespace Unity.Payments.PaymentInfo
     {
         public async Task<PaymentInfoDto> UpdateAsync(Guid id, CreateUpdatePaymentInfoDto input)
         {
-            if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+            if (input.CustomFields is JsonElement elem && HasValue(elem) && input.CorrelationId != Guid.Empty)
             {
                 if (input.WorksheetIds?.Count > 0)
                 {
