@@ -90,7 +90,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                 // remove current application id from ths suggestion list
                 tempGrantApplications.Remove(currentApplication);
 
-                var formattedAllApplications = tempGrantApplications.Select(item => item.ReferenceNo + " - " + item.ProjectName).ToList();
+                var formattedAllApplications = tempGrantApplications.Select(item => item.ReferenceNo + " - " + item.ApplicantName).ToList();
                 var formattedLinkedApplications = filteredLinkedApplications.Select(item => item.ReferenceNumber + " - " + item.ProjectName).ToList();
 
                 AllApplications = string.Join(",", formattedAllApplications);
