@@ -533,93 +533,110 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         input.RequestedAmount ??= application.RequestedAmount;
         input.ProjectFundingTotal ??= application.ProjectFundingTotal;
     }
-
     [Authorize(UnitySelector.Project.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input)
     {
-        // Only update the fields we need to update based on the modified fields
-        // This is required to handle controls like the date picker that do not send null values for unchanged fields
-        var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
+        var application = await _applicationRepository.GetAsync(id)
+            ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
+
+        // Map updated values
         ObjectMapper.Map<UpdateProjectInfoDto, Application>(input.Data, application);
 
-        // Explicitly handle properties that are null but listed in ModifiedFields
-        var dtoProperties = typeof(UpdateProjectInfoDto).GetProperties();
-        var appProperties = typeof(Application).GetProperties().ToDictionary(p => p.Name, p => p);
+        // Clear fields explicitly set to null
+        ApplyExplicitNulls(input, application);
 
-        foreach (var fieldName in input.ModifiedFields)
-        {
-            if (dtoProperties.FirstOrDefault(p =>
-                string.Equals(p.Name, fieldName, StringComparison.OrdinalIgnoreCase)) is { } dtoProperty)
-            {
-                var value = dtoProperty.GetValue(input.Data);
-                if (value == null && appProperties.TryGetValue(dtoProperty.Name, out var appProperty) && appProperty.CanWrite)
-                {
-                    appProperty.SetValue(application, appProperty.PropertyType.IsValueType
-                        && Nullable.GetUnderlyingType(appProperty.PropertyType) == null
-                        ? Activator.CreateInstance(appProperty.PropertyType)
-                        : null);
-                }
-            }
-        }
-
-        // Calculate the percentage of the total project budget based on
-        // the requested amount and total project budget. Percentage total has to be
-        // updated whenever RequestedAmount or TotalProjectBudget changes
+        // Recalculate derived values
         application.UpdatePercentageTotalProjectBudget();
 
-        // Add custom worksheet data
-        if (input.Data.CustomFields != null && HasValue(input.Data.CustomFields) && input.Data.CorrelationId != Guid.Empty)
+        // Handle custom fields if present
+        if (HasCustomFields(input.Data))
         {
-            // Handle multiple worksheets
-            if (input.Data.WorksheetIds?.Count > 0)
-            {
-                foreach (var worksheetId in input.Data.WorksheetIds)
-                {
-                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.Data.CustomFields, worksheetId);
-                    if (worksheetCustomFields.Count > 0)
-                    {
-                        var worksheetData = new CustomDataFieldDto
-                        {
-                            WorksheetId = worksheetId,
-                            CustomFields = worksheetCustomFields,
-                            CorrelationId = input.Data.CorrelationId
-                        };
-                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, worksheetData);
-                    }
-                }
-            }
-            // Fallback for single worksheet (backward compatibility)
-            else if (input.Data.WorksheetId != Guid.Empty)
-            {
-                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
-            }
+            await PublishCustomFieldsAsync(application.Id, input.Data);
         }
 
         await _applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
-  private static bool HasValue(JsonElement element)
-{
-    return element.ValueKind switch
+    private static void ApplyExplicitNulls(PartialUpdateDto<UpdateProjectInfoDto> input, Application application)
     {
-        JsonValueKind.Object => element.EnumerateObject().Any(),
-        JsonValueKind.Array => element.EnumerateArray().Any(),
-        JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
-        JsonValueKind.Number => true,
-        JsonValueKind.True => true,
-        JsonValueKind.False => true,
-        JsonValueKind.Undefined => false,
-        JsonValueKind.Null => false,
-        _ => false
-    };
-}
+        var dtoProps = typeof(UpdateProjectInfoDto)
+            .GetProperties()
+            .ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
 
-    // Overload for object/dynamic input
-    private static bool HasValue(object? element)
-    {
-        return element is JsonElement el && HasValue(el);
+        var appProps = typeof(Application)
+            .GetProperties()
+            .ToDictionary(p => p.Name, p => p);
+
+        foreach (var field in input.ModifiedFields)
+        {
+            if (dtoProps.TryGetValue(field, out var dtoProp) &&
+                dtoProp.GetValue(input.Data) == null &&
+                appProps.TryGetValue(dtoProp.Name, out var appProp) &&
+                appProp.CanWrite)
+            {
+                appProp.SetValue(application, GetDefaultValue(appProp.PropertyType));
+            }
+        }
     }
+
+    private static bool HasCustomFields(UpdateProjectInfoDto dto) =>
+        dto.CorrelationId != Guid.Empty &&
+        dto.CustomFields != null &&
+        (dto.CustomFields?.ValueKind != JsonValueKind.Undefined) &&
+        HasValue(dto.CustomFields);
+
+    private async Task PublishCustomFieldsAsync(Guid applicationId, UpdateProjectInfoDto dto)
+    {
+        if (dto.WorksheetIds?.Count > 0)
+        {
+            foreach (var worksheetId in dto.WorksheetIds)
+            {
+                var worksheetFields = ExtractCustomFieldsForWorksheet(dto.CustomFields, worksheetId);
+                if (worksheetFields.Count > 0)
+                {
+                    await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.ProjectInfoUiAnchor, new CustomDataFieldDto
+                    {
+                        WorksheetId = worksheetId,
+                        CustomFields = worksheetFields,
+                        CorrelationId = dto.CorrelationId
+                    });
+                }
+            }
+        }
+        else if (dto.WorksheetId != Guid.Empty)
+        {
+            await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.ProjectInfoUiAnchor, dto);
+        }
+    }
+
+    private static object? GetDefaultValue(Type type) =>
+        type.IsValueType && Nullable.GetUnderlyingType(type) == null
+            ? Activator.CreateInstance(type)
+            : null;
+
+    private static bool HasValue(JsonElement element) =>
+        element.ValueKind switch
+        {
+            JsonValueKind.Object => element.EnumerateObject().Any(),
+            JsonValueKind.Array => element.EnumerateArray().Any(),
+            JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
+            JsonValueKind.Number => true,
+            JsonValueKind.True => true,
+            JsonValueKind.False => true,
+            _ => false
+        };
+
+    // Overload for object/dynamic input (safer)
+    private static bool HasValue(object? element) => element switch
+    {
+        null => false,
+        JsonElement el => HasValue(el),
+        string s => !string.IsNullOrWhiteSpace(s),
+        IEnumerable<object> e => e.Any(),
+        _ => true
+    };
+
 
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
