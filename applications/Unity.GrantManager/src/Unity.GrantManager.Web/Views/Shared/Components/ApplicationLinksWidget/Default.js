@@ -1,3 +1,14 @@
+    // Simple HTML escape utility to prevent XSS
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/\//g, '&#47;');
+    }
+
 ﻿$(function () {
     const l = abp.localization.getResource('GrantManager');
     const nullPlaceholder = '—';
@@ -458,20 +469,27 @@
         }
         
         // Apply loading styles to text
-        const applicantDisplay = link.isLoading ? '<span class="loading-text">' + applicantName + '</span>' : applicantName;
-        const categoryDisplay = link.isLoading ? '<span class="loading-text">(' + category + ')</span>' : '(' + category + ')';
-        const statusDisplay = link.isLoading ? '<span class="loading-text">' + applicationStatus + '</span>' : applicationStatus;
+        // Escape all interpolated user-controlled variables
+        const escapedApplicantName = escapeHtml(applicantName);
+        const escapedCategory = escapeHtml(category);
+        const escapedApplicationStatus = escapeHtml(applicationStatus);
+        const escapedReferenceNumber = escapeHtml(referenceNumber);
+        const escapedLinkType = escapeHtml(linkType);
+
+        const applicantDisplay = link.isLoading ? '<span class="loading-text">' + escapedApplicantName + '</span>' : escapedApplicantName;
+        const categoryDisplay = link.isLoading ? '<span class="loading-text">(' + escapedCategory + ')</span>' : '(' + escapedCategory + ')';
+        const statusDisplay = link.isLoading ? '<span class="loading-text">' + escapedApplicationStatus + '</span>' : escapedApplicationStatus;
         
         const linkElement = $(`
             <div class="link-item ${linkTypeClass}${additionalClasses}">
                 <div class="link-info">
-                    <span class="link-reference">${referenceNumber}</span>
+                    <span class="link-reference">${escapedReferenceNumber}</span>
                     <span class="link-applicant">${applicantDisplay}</span>
                     <span class="link-category">${categoryDisplay}</span>
                     <span class="link-status">${statusDisplay}</span>
                     ${statusBadges}
                 </div>
-                <span class="link-type-badge ${linkTypeClass}">${linkType}</span>
+                <span class="link-type-badge ${linkTypeClass}">${escapedLinkType}</span>
                 <button type="button" class="link-delete-btn" data-index="${index}" title="Delete Link">
                     <i class="fa fa-times"></i>
                 </button>
