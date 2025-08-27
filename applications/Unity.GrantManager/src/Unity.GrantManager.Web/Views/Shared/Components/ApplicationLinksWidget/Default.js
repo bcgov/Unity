@@ -21,7 +21,8 @@
             setTimeout(() => {
                 const tag = $('.links-container').data('linkscounttag');
                 const count = $('.links-container').attr('data-count');
-                $('#' + tag).html(count);
+                // Set text safely: parse count as integer, fallback to 0 if not valid
+                $('#' + tag).text(Number(count) || 0);
             }, 50);
             
             return {
