@@ -915,7 +915,7 @@ function updateLinksCounters() {
         $('.links-container').map(function () {
             const tag = $(this).data('linkscounttag');
             const count = $(this).attr('data-count');
-            $('#' + tag).html(count);
+            $('#' + tag).text(count);
         }).get();
     }, 100);
 }
