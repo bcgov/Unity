@@ -187,8 +187,8 @@
         // Setup auto-suggest for search input with access to originalExistingLinks and deletedLinks
         setupAutoSuggest(suggestionsArray, grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks);
 
-        // Setup form submission with access to deletedLinks
-        setupFormSubmission(currentLinks, originalExistingLinks, deletedLinks);
+        // Setup form submission
+        setupFormSubmission(currentLinks);
     }
 
     function setupAutoSuggest(suggestionsArray, grantApplicationsList, linkedApplicationsList, currentLinks, originalExistingLinks, deletedLinks) {
@@ -560,21 +560,12 @@
         return linkElement;
     }
 
-    function setupFormSubmission(currentLinks, originalExistingLinks, deletedLinks) {
+    function setupFormSubmission(currentLinks) {
         $('#applicationLinksForm').off('submit').on('submit', function(e) {
-            e.preventDefault(); // Prevent traditional form submission
-            
-            // Get final state of links (excluding those marked as deleted)
-            const finalLinks = currentLinks.filter(link => !link.isDeleted);
-            
-            // Determine which original links were actually deleted (not restored)
-            const actuallyDeletedLinks = originalExistingLinks.filter(original => 
-                !finalLinks.some(current => current.referenceNumber === original.referenceNumber) &&
-                deletedLinks.some(deleted => deleted.referenceNumber === original.referenceNumber)
-            );
+            e.preventDefault(); // Prevent traditional form submission                        
             
             // Update the hidden field with current links data
-            const linksWithTypes = finalLinks.map(link => ({
+            const linksWithTypes = currentLinks.map(link => ({
                 ReferenceNumber: link.referenceNumber,
                 ProjectName: link.projectName,
                 LinkType: link.linkType

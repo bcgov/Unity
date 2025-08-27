@@ -332,4 +332,33 @@ public class ApplicationLinksAppService : CrudAppService<
             };
         }
     }
+
+    public async Task UpdateLinkTypeAsync(Guid applicationLinkId, ApplicationLinkType newLinkType)
+    {
+        Logger.LogInformation("UpdateLinkTypeAsync called with linkId: {LinkId}, newLinkType: {LinkType}", applicationLinkId, newLinkType);
+        
+        try
+        {
+            // Get the existing link
+            var link = await Repository.GetAsync(applicationLinkId);
+            
+            if (link != null)
+            {
+                // Update the link type
+                link.LinkType = newLinkType;
+                await Repository.UpdateAsync(link);
+                
+                Logger.LogInformation("Successfully updated link type for linkId: {LinkId}", applicationLinkId);
+            }
+            else
+            {
+                Logger.LogWarning("Link not found with ID: {LinkId}", applicationLinkId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating link type for linkId: {LinkId}", applicationLinkId);
+            throw;
+        }
+    }
 }

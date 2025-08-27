@@ -117,14 +117,14 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
 
                     if (selectedLinksWithTypes != null && grantApplications != null && linkedApplications != null)
                     {
-                        // Add new links
+                        // Add new links and update existing ones
                         foreach (var linkWithType in selectedLinksWithTypes)
                         {
                             var existingLink = linkedApplications.Find(app => app.ReferenceNumber == linkWithType.ReferenceNumber);
                             
-                            // Add new link only if it's not already existing
                             if (existingLink == null)
                             {
+                                // Add new link
                                 var targetApplication = grantApplications.Find(app => app.ReferenceNo == linkWithType.ReferenceNumber);
                                 if (targetApplication != null)
                                 {
@@ -146,6 +146,23 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                                         LinkedApplicationId = CurrentApplicationId ?? Guid.Empty,
                                         LinkType = reverseLinkType
                                     });
+                                }
+                            }
+                            else
+                            {
+                                // Check if the link type has changed
+                                if (existingLink.LinkType != linkWithType.LinkType)
+                                {
+                                    // Update the existing link's type
+                                    await _applicationLinksService.UpdateLinkTypeAsync(existingLink.Id, linkWithType.LinkType);
+                                    
+                                    // Also update the reverse link
+                                    var reverseLink = await _applicationLinksService.GetLinkedApplicationAsync(CurrentApplicationId ?? Guid.Empty, existingLink.ApplicationId);
+                                    var reverseLinkType = GetReverseLinkType(linkWithType.LinkType);
+                                    await _applicationLinksService.UpdateLinkTypeAsync(reverseLink.Id, reverseLinkType);
+                                    
+                                    Logger.LogInformation("Updated link type for {ReferenceNumber} from {OldType} to {NewType}", 
+                                        linkWithType.ReferenceNumber, existingLink.LinkType, linkWithType.LinkType);
                                 }
                             }
                         }
