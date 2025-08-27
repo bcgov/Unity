@@ -533,22 +533,23 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         input.RequestedAmount ??= application.RequestedAmount;
         input.ProjectFundingTotal ??= application.ProjectFundingTotal;
     }
+
     [Authorize(UnitySelector.Project.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input)
     {
         var application = await _applicationRepository.GetAsync(id)
             ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
 
-        // Map updated values
+        // Map incoming values
         ObjectMapper.Map<UpdateProjectInfoDto, Application>(input.Data, application);
 
-        // Clear fields explicitly set to null
+        // Explicitly clear properties that were set to null in the update
         ApplyExplicitNulls(input, application);
 
-        // Recalculate derived values
+        // Update derived values
         application.UpdatePercentageTotalProjectBudget();
 
-        // Handle custom fields if present
+        // Handle custom fields
         if (HasCustomFields(input.Data))
         {
             await PublishCustomFieldsAsync(application.Id, input.Data);
@@ -580,11 +581,17 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    private static bool HasCustomFields(UpdateProjectInfoDto dto) =>
-        dto.CorrelationId != Guid.Empty &&
-        dto.CustomFields != null &&
-        (dto.CustomFields?.ValueKind != JsonValueKind.Undefined) &&
-        HasValue(dto.CustomFields);
+    private static bool HasCustomFields(UpdateProjectInfoDto dto)
+    {
+        if (dto.CorrelationId == Guid.Empty)
+            return false;
+
+        // Only check ValueKind if it's actually a JsonElement
+        if (dto.CustomFields is JsonElement el)
+            return el.ValueKind != JsonValueKind.Undefined && HasValue(el);
+
+        return false;
+    }
 
     private async Task PublishCustomFieldsAsync(Guid applicationId, UpdateProjectInfoDto dto)
     {
