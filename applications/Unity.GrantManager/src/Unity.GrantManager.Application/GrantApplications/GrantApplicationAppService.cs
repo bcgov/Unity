@@ -312,63 +312,85 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     }
 
     [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
-public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
-{
-    var application = await _applicationRepository.GetAsync(id);
-
-    await SanitizeApprovalZoneInputs(input, application);
-    await SanitizeAssessmentResultsZoneInputs(input, application);
-
-    application.ValidateAndSetDueDate(input.DueDate);
-    application.UpdateAlwaysChangeableFields(
-        input.Notes,
-        input.SubStatus,
-        input.LikelihoodOfFunding,
-        input.TotalProjectBudget,
-        input.NotificationDate,
-        input.RiskRanking
-    );
-
-    if (application.IsInFinalDecisionState())
+    public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
-        if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.Approval.Update.UpdateFinalStateFields))
+        var application = await _applicationRepository.GetAsync(id);
+
+        await SanitizeApprovalZoneInputs(input, application);
+        await SanitizeAssessmentResultsZoneInputs(input, application);
+
+        application.ValidateAndSetDueDate(input.DueDate);
+        application.UpdateAlwaysChangeableFields(
+            input.Notes,
+            input.SubStatus,
+            input.LikelihoodOfFunding,
+            input.TotalProjectBudget,
+            input.NotificationDate,
+            input.RiskRanking
+        );
+
+        if (application.IsInFinalDecisionState())
         {
-            application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.Approval.Update.UpdateFinalStateFields))
+            {
+                application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+            }
+
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields))
+            {
+                application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
+            }
+        }
+        else
+        {
+            if (await CurrentUserCanUpdateAssessmentFieldsAsync())
+            {
+                application.ValidateAndSetFinalDecisionDate(input.FinalDecisionDate);
+                application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+                application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
+                application.UpdateFieldsOnlyForPreFinalDecision(
+                    input.DueDiligenceStatus,
+                    input.RecommendedAmount,
+                    input.DeclineRational
+                );
+
+                application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
+            }
         }
 
-        if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields))
+        // Handle custom fields for assessment info
+        if (HasCustomFields(input))
         {
-            application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
+            await PublishCustomFieldsAsync(application.Id, input);
+        }
+
+        await _applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private async Task PublishCustomFieldsAsync(Guid applicationId, UpdateProjectInfoDto dto)
+    {
+        if (dto.WorksheetIds?.Count > 0)
+        {
+            foreach (var worksheetId in dto.WorksheetIds)
+            {
+                var worksheetFields = ExtractCustomFieldsForWorksheet(dto.CustomFields, worksheetId);
+                if (worksheetFields.Count > 0)
+                {
+                    await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.ProjectInfoUiAnchor, new CustomDataFieldDto
+                    {
+                        WorksheetId = worksheetId,
+                        CustomFields = worksheetFields,
+                        CorrelationId = dto.CorrelationId
+                    });
+                }
+            }
+        }
+        else if (dto.WorksheetId != Guid.Empty)
+        {
+            await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.ProjectInfoUiAnchor, dto);
         }
     }
-    else
-    {
-        if (await CurrentUserCanUpdateAssessmentFieldsAsync())
-        {
-            application.ValidateAndSetFinalDecisionDate(input.FinalDecisionDate);
-            application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
-            application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
-            application.UpdateFieldsOnlyForPreFinalDecision(
-                input.DueDiligenceStatus,
-                input.RecommendedAmount,
-                input.DeclineRational
-            );
-
-            application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
-        }
-    }
-
-    // Handle custom fields for assessment info
-    if (HasCustomFields(input))
-    {
-        await PublishCustomFieldsAsync(application.Id, input);
-    }
-
-    await _applicationRepository.UpdateAsync(application);
-    return ObjectMapper.Map<Application, GrantApplicationDto>(application);
-}
-
-
 
     private async Task PublishCustomFieldsAsync(Guid applicationId, CreateUpdateAssessmentResultsDto dto)
     {
@@ -612,29 +634,7 @@ public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, Cre
         return false;
     }
 
-    private async Task PublishCustomFieldsAsync(Guid applicationId, UpdateProjectInfoDto dto)
-    {
-        if (dto.WorksheetIds?.Count > 0)
-        {
-            foreach (var worksheetId in dto.WorksheetIds)
-            {
-                var worksheetFields = ExtractCustomFieldsForWorksheet(dto.CustomFields, worksheetId);
-                if (worksheetFields.Count > 0)
-                {
-                    await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.ProjectInfoUiAnchor, new CustomDataFieldDto
-                    {
-                        WorksheetId = worksheetId,
-                        CustomFields = worksheetFields,
-                        CorrelationId = dto.CorrelationId
-                    });
-                }
-            }
-        }
-        else if (dto.WorksheetId != Guid.Empty)
-        {
-            await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.ProjectInfoUiAnchor, dto);
-        }
-    }
+
 
     private static object? GetDefaultValue(Type type) =>
         type.IsValueType && Nullable.GetUnderlyingType(type) == null
