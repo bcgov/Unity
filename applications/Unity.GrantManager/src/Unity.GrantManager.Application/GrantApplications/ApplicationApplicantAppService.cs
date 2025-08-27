@@ -231,10 +231,17 @@ public class ApplicationApplicantAppService(
         return ObjectMapper.Map<Applications.Application, GrantApplicationDto>(updatedApplication);
     }
 
-    private static bool HasValue(JsonElement? element)
-    {
-        return element?.ValueKind != JsonValueKind.Null && element?.ValueKind != JsonValueKind.Undefined;
-    }
+    private static bool HasValue(JsonElement element) =>
+        element.ValueKind switch
+        {
+            JsonValueKind.Object => element.EnumerateObject().Any(),
+            JsonValueKind.Array => element.EnumerateArray().Any(),
+            JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
+            JsonValueKind.Number => true,
+            JsonValueKind.True => true,
+            JsonValueKind.False => true,
+            _ => false
+        };
 
     /// <summary>
     /// Updates the Applicant Summary information for the given applicant while ignoring null values unless explicitly specified in modifiedFields.
