@@ -23,6 +23,7 @@ namespace Unity.GrantManager.Integrations.Sso
     public class CssApiService(
         IEndpointManagementAppService endpointManagementAppService,
         IResilientHttpRequest resilientHttpRequest,
+        IHttpClientFactory httpClientFactory, // Add this for token requests
         IDistributedCache<TokenValidationResponse, string> accessTokenCache,
         IOptions<CssApiOptions> cssApiOptions) : ApplicationService, ICssUsersApiService
     {
@@ -50,66 +51,170 @@ namespace Unity.GrantManager.Integrations.Sso
 
         private async Task<UserSearchResult> SearchSsoAsync(string directory, Dictionary<string, string> parameters)
         {
-            var cssApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_API_BASE);
-            var tokenResponse = await GetAccessTokenAsync();
-            var baseUrl = $"{cssApiUrl}/{_cssApiOptions.Env}/{directory}/users";
-            var url = BuildUrlWithQuery(baseUrl, parameters);
-
-            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, url, null, tokenResponse.AccessToken);
-            if (response != null && response.IsSuccessStatusCode && response.Content != null)
+            try
             {
-                var json = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<UserSearchResult>(json) ?? throw new UserFriendlyException("Could not deserialize user search result.");
-                result.Success = true;
-                return result;
+                var cssApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_API_BASE);
+                var tokenResponse = await GetAccessTokenAsync();
+                var baseUrl = $"{cssApiUrl}/{_cssApiOptions.Env}/{directory}/users";
+                var url = BuildUrlWithQuery(baseUrl, parameters);
+
+                var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, url, null, tokenResponse.AccessToken);
+                
+                if (response != null && response.IsSuccessStatusCode && response.Content != null)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    
+                    if (string.IsNullOrWhiteSpace(json))
+                    {
+                        Logger.LogWarning("Empty response received from CSS API for directory {Directory}", directory);
+                        return CreateErrorResult("Empty response from CSS API");
+                    }
+
+                    try
+                    {
+                        var result = JsonSerializer.Deserialize<UserSearchResult>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                        
+                        if (result != null)
+                        {
+                            result.Success = true;
+                            return result;
+                        }
+                    }
+                    catch (JsonException ex)
+                    {
+                        Logger.LogError(ex, "Failed to deserialize user search result. JSON: {Json}", json);
+                        return CreateErrorResult("Failed to parse response from CSS API");
+                    }
+                }
+
+                var statusCode = response?.StatusCode.ToString() ?? "Unknown";
+                var errorContent = response?.Content != null ? await response.Content.ReadAsStringAsync() : "No response";
+                Logger.LogWarning("CSS API request failed. Status: {StatusCode}, Content: {Content}, URL: {Url}", 
+                    statusCode, errorContent, url);
+                
+                return CreateErrorResult($"CSS API request failed with status {statusCode}");
             }
-
-            return new UserSearchResult
+            catch (Exception ex)
             {
-                Success = false,
-                Error = "Failed to search users",
-                Data = []
-            };
+                Logger.LogError(ex, "Unexpected error during CSS API search for directory {Directory}", directory);
+                return CreateErrorResult("Unexpected error occurred while searching users");
+            }
         }
+
+        private static UserSearchResult CreateErrorResult(string error) => new()
+        {
+            Success = false,
+            Error = error,
+            Data = []
+        };
 
         private static string BuildUrlWithQuery(string basePath, Dictionary<string, string> queryParams)
         {
+            if (!queryParams.Any())
+                return basePath;
+                
             var query = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
-            return string.IsNullOrWhiteSpace(query) ? basePath : $"{basePath}?{query}";
+            return $"{basePath}?{query}";
         }
 
         private async Task<TokenValidationResponse> GetAccessTokenAsync()
         {
+            // Check cache first
             var cachedToken = await accessTokenCache.GetAsync(CSS_API_KEY);
-            if (cachedToken != null)
-                return cachedToken;
-
-            var client = new HttpClient();
-            var cssTokenApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_TOKEN_API_BASE);
-            var request = new HttpRequestMessage(HttpMethod.Post, cssTokenApiUrl);
-
-            var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_cssApiOptions.ClientId}:{_cssApiOptions.ClientSecret}"));
-            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-            request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded");
-
-            var response = await client.SendAsync(request);
-
-            if (!response.IsSuccessStatusCode || response.Content == null)
+            if (cachedToken != null && !IsTokenExpiringSoon(cachedToken))
             {
-                var errorContent = response.Content != null ? await response.Content.ReadAsStringAsync() : "No content";
-                Logger.LogError("Failed to fetch CSS API token. Status: {StatusCode}, Content: {ErrorContent}", response.StatusCode, errorContent);
-                throw new UserFriendlyException($"Error fetching token: {response.StatusCode}");
+                return cachedToken;
             }
 
-            var content = await response.Content.ReadAsStringAsync();
-            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(content) ?? throw new UserFriendlyException("Could not parse token response.");
-
-            await accessTokenCache.SetAsync(CSS_API_KEY, tokenResponse, new DistributedCacheEntryOptions
+            try
             {
-                AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
-            });
+                var cssTokenApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_TOKEN_API_BASE);
+                
+                // Use HttpClientFactory instead of new HttpClient()
+                using var client = httpClientFactory.CreateClient();
+                
+                var request = new HttpRequestMessage(HttpMethod.Post, cssTokenApiUrl);
+                var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_cssApiOptions.ClientId}:{_cssApiOptions.ClientSecret}"));
+                
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded");
 
-            return tokenResponse;
+                var response = await client.SendAsync(request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = response.Content != null ? await response.Content.ReadAsStringAsync() : "No content";
+                    Logger.LogError("Failed to fetch CSS API token. Status: {StatusCode}, Content: {ErrorContent}, URL: {Url}", 
+                        response.StatusCode, errorContent, cssTokenApiUrl);
+                    throw new UserFriendlyException($"Failed to authenticate with CSS API: {response.StatusCode}");
+                }
+
+                if (response.Content == null)
+                {
+                    Logger.LogError("CSS token API returned success but no content");
+                    throw new UserFriendlyException("Invalid response from CSS token API");
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    Logger.LogError("CSS token API returned empty content");
+                    throw new UserFriendlyException("Empty response from CSS token API");
+                }
+
+                TokenValidationResponse tokenResponse;
+                try
+                {
+                    tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    })!;
+                    
+                    if (tokenResponse == null)
+                    {
+                        throw new UserFriendlyException("Invalid token response format");
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Logger.LogError(ex, "Failed to deserialize token response. Content: {Content}", content);
+                    throw new UserFriendlyException("Failed to parse token response");
+                }
+
+                // Cache with buffer time to avoid expiration edge cases
+                var cacheExpiration = DateTimeOffset.UtcNow.AddSeconds(tokenResponse.ExpiresIn - 60); // 60 second buffer
+                await accessTokenCache.SetAsync(CSS_API_KEY, tokenResponse, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpiration = cacheExpiration
+                });
+
+                Logger.LogDebug("Successfully cached new CSS API token, expires at {ExpirationTime}", cacheExpiration);
+                return tokenResponse;
+            }
+            catch (UserFriendlyException)
+            {
+                throw; // Re-throw user-friendly exceptions as-is
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Unexpected error while fetching CSS API access token");
+                throw new UserFriendlyException("Failed to authenticate with CSS API");
+            }
+        }
+
+        /// <summary>
+        /// Check if token is expiring within the next 5 minutes
+        /// </summary>
+        private static bool IsTokenExpiringSoon(TokenValidationResponse token)
+        {
+            if (token.ExpiresIn <= 0) return true;
+            
+            // Consider token expiring if it has less than 5 minutes left
+            return token.ExpiresIn < 300;
         }
     }
 }
