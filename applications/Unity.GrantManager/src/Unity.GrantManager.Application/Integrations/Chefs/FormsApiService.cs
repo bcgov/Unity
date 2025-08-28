@@ -111,7 +111,7 @@ namespace Unity.GrantManager.Integrations.Chefs
                 var content = await response.Content.ReadAsStringAsync();
                 logger.LogError(
                     "Request to {Url} failed with status {StatusCode} ({Reason}). Response: {Content}",
-                    url,
+                    url.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", ""),
                     response.StatusCode,
                     response.ReasonPhrase,
                     content
