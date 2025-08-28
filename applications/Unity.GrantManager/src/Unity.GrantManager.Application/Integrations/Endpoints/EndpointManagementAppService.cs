@@ -110,7 +110,7 @@ namespace Unity.GrantManager.Integrations.Endpoints
             }
             else
             {
-                await using (CurrentTenant.Change(null))
+                using (CurrentTenant.Change(null))
                 {
                     dynamicUrl = await Repository.FirstOrDefaultAsync(x => x.KeyName == keyName && x.TenantId == null);
                 }
