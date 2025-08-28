@@ -94,7 +94,7 @@ namespace Unity.GrantManager.Integrations.Chefs
             var decryptedApiKey = stringEncryptionService.Decrypt(encryptedApiKey) ?? string.Empty;
             logger.LogInformation(
                 "Sending GET request to {Url} using basic auth with FormGuid: {FormGuid}",
-                url,
+                url.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", ""),
                 chefsApplicationFormGuid
             );
 
