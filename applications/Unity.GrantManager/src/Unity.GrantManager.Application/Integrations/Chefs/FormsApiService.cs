@@ -41,7 +41,8 @@ namespace Unity.GrantManager.Integrations.Chefs
 
             if (applicationForm == null)
             {
-                logger.LogWarning("No application form found for FormId: {FormId}", chefsFormId);
+                string sanitizedFormId = chefsFormId.Replace("\n", "").Replace("\r", "");
+                logger.LogWarning("No application form found for FormId: {FormId}", sanitizedFormId);
                 return null;
             }
 
