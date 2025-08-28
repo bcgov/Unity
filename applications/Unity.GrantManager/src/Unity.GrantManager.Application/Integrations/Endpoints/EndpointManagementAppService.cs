@@ -170,19 +170,23 @@ namespace Unity.GrantManager.Integrations.Endpoints
         }
 
         // ------------------------------
-        // CRUD overrides for invalidation
+        // CRUD overrides for invalidation (FIXED)
         // ------------------------------
         public override async Task<DynamicUrlDto> CreateAsync(CreateUpdateDynamicUrlDto input)
         {
             var result = await base.CreateAsync(input);
-            await InvalidateCacheAsync(result.KeyName, result.TenantId != Guid.Empty, result.TenantId);
+            // Fix: When TenantId is Guid.Empty, treat as null for tenant-agnostic URLs
+            var tenantId = result.TenantId == Guid.Empty ? null : (Guid?)result.TenantId;
+            await InvalidateCacheAsync(result.KeyName, tenantId.HasValue, tenantId);
             return result;
         }
 
         public override async Task<DynamicUrlDto> UpdateAsync(Guid id, CreateUpdateDynamicUrlDto input)
         {
             var result = await base.UpdateAsync(id, input);
-            await InvalidateCacheAsync(result.KeyName, result.TenantId != Guid.Empty, result.TenantId);
+            // Fix: When TenantId is Guid.Empty, treat as null for tenant-agnostic URLs
+            var tenantId = result.TenantId == Guid.Empty ? null : (Guid?)result.TenantId;
+            await InvalidateCacheAsync(result.KeyName, tenantId.HasValue, tenantId);
             return result;
         }
 
@@ -190,7 +194,9 @@ namespace Unity.GrantManager.Integrations.Endpoints
         {
             var entity = await Repository.GetAsync(id);
             await base.DeleteAsync(id);
-            await InvalidateCacheAsync(entity.KeyName, entity.TenantId != Guid.Empty, entity.TenantId);
+            // Fix: When TenantId is Guid.Empty, treat as null for tenant-agnostic URLs
+            var tenantId = entity.TenantId == Guid.Empty ? null : entity.TenantId;
+            await InvalidateCacheAsync(entity.KeyName, tenantId.HasValue, tenantId);
         }
     }
 }
