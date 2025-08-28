@@ -96,6 +96,8 @@ namespace Unity.GrantManager.Integrations.Endpoints
         private async Task<string?> GetUrlByKeyNameInternalAsync(string keyName, bool tenantSpecific)
         {
             var tenantId = tenantSpecific ? CurrentTenant.Id : null;
+            var cacheKey = BuildCacheKey(keyName, tenantSpecific, tenantId);
+            var cached = await _cache.GetStringAsync(cacheKey);
             if (!string.IsNullOrEmpty(cached))
                 return cached;
 
