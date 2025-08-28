@@ -101,10 +101,7 @@ namespace Unity.Modules.Shared.Http
             // Execute through resilience pipeline
             return await _pipeline.ExecuteAsync(async ct =>
             {
-                using var requestMessage = new HttpRequestMessage(httpVerb, fullUrl)
-                {
-                    Version = HttpVersion.Version20 // safer default, negotiates automatically
-                };
+                using var requestMessage = new HttpRequestMessage(httpVerb, fullUrl);
 
                 // Headers are per-request, not global
                 requestMessage.Headers.Accept.Clear();
