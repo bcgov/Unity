@@ -1,16 +1,17 @@
 /* ApplicationLinksModal CSS */
 
-/* Current application styling - now uses same structure as link items */
+/* Current application badge - styled like application-status but with green colors */
 .current-app-badge {
-    font-weight: bold;
     margin-left: auto;
     margin-right: 10px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #28a745;
     text-transform: uppercase;
-    background-color: #28a745; /* Green to indicate this is the current/source application */
-    color: white;
+    border: 3px solid #28a745;
+    border-radius: 1rem;
+    background-color: transparent;
 }
 
 .links-display-area {
@@ -36,19 +37,12 @@
     margin-bottom: 0;
 }
 
-.link-item.child { 
-    background-color: #e8f4fd; 
-    border-color: #bee5eb;
-}
-
-.link-item.parent { 
-    background-color: #fce4ec; 
-    border-color: #f8bbd9;
-}
-
-.link-item.related { 
-    background-color: #f5f5f5; 
-    border-color: #dee2e6;
+/* All link items have the same background - matching disabled input fields */
+.link-item.child,
+.link-item.parent,
+.link-item.related {
+    background-color: var(--bc-colors-grey-hover);
+    border-color: var(--bs-border-color);
 }
 
 .link-info {
@@ -71,39 +65,29 @@
     font-style: italic;
 }
 
-.link-status {
+/* Application status styling - complete styling to match other components */
+.link-item .application-status {
     display: inline-block;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background-color: #007bff;
-    color: white;
     margin-left: 8px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--bc-colors-blue-text-links);
+    text-transform: uppercase;
+    border: 3px solid var(--bc-colors-blue-text-links);
+    border-radius: 1rem;
 }
 
 .link-type-badge {
-    font-weight: bold;
+    display: inline-block;
     margin-left: auto;
     margin-right: 10px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
+    padding: 3px 12px;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    font-weight: 700;
     text-transform: uppercase;
-}
-
-.link-type-badge.child {
-    background-color: #6c757d; /* Gray color */
-    color: white;
-}
-
-.link-type-badge.parent {
-    background-color: #6c757d; /* Gray color */
-    color: white;
-}
-
-.link-type-badge.related {
-    background-color: #6c757d; /* Gray color */
+    background-color: #013366;
     color: white;
 }
 
@@ -207,15 +191,6 @@
     margin-bottom: 0.5rem;
 }
 
-#applicationLinksModal .btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-    font-weight: 500;
-}
-
-#applicationLinksModal .btn-secondary {
-    font-weight: 500;
-}
 
 /* Loading state styling */
 .link-item.loading {
@@ -274,31 +249,18 @@
     animation: slideInFade 0.3s ease-out;
 }
 
-/* NEW badge styling */
+/* NEW badge styling - styled like application-status but with green colors */
 .badge.bg-success {
-    background-color: #28a745 !important;
+    padding: 0.125rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    color: #28a745 !important;
+    text-transform: uppercase !important;
+    border: 3px solid #28a745 !important;
+    border-radius: 1rem !important;
+    background-color: transparent !important;
 }
 
-/* Enhanced status badge colors */
-.link-status.submitted {
-    background-color: #28a745;
-}
-
-.link-status.draft {
-    background-color: #6c757d;
-}
-
-.link-status.review {
-    background-color: #fd7e14;
-}
-
-.link-status.approved {
-    background-color: #20c997;
-}
-
-.link-status.rejected {
-    background-color: #dc3545;
-}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {

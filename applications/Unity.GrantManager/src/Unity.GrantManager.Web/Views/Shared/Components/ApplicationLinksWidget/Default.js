@@ -486,7 +486,7 @@
                     <span class="link-reference">${escapedReferenceNumber}</span>
                     <span class="link-applicant">${applicantDisplay}</span>
                     <span class="link-category">${categoryDisplay}</span>
-                    <span class="link-status">${statusDisplay}</span>
+                    <span class="application-status">${statusDisplay}</span>
                     ${statusBadges}
                 </div>
                 <span class="link-type-badge ${linkTypeClass}">${escapedLinkType}</span>
