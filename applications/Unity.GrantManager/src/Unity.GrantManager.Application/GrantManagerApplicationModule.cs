@@ -40,8 +40,6 @@ using Unity.GrantManager.Locks;
 using JsonSerializerOptions = System.Text.Json.JsonSerializerOptions;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.Modules.Shared.Http;
-using Volo.Abp.Caching;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
 
 namespace Unity.GrantManager;
 
