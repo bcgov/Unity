@@ -20,10 +20,8 @@ namespace Unity.Payments.PaymentInfo
     {
         public async Task<PaymentInfoDto> UpdateAsync(Guid id, CreateUpdatePaymentInfoDto input)
         {
-            // Handle custom fields for payment info
-            if (input.CustomFields != null && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+            if (input.CustomFields is JsonElement elem && HasValue(elem) && input.CorrelationId != Guid.Empty)
             {
-                // Handle multiple worksheets
                 if (input.WorksheetIds?.Count > 0)
                 {
                     foreach (var worksheetId in input.WorksheetIds)
@@ -31,17 +29,15 @@ namespace Unity.Payments.PaymentInfo
                         var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
                         if (worksheetCustomFields.Count > 0)
                         {
-                            var worksheetData = new CustomDataFieldDto
+                            await PublishCustomFieldUpdatesAsync(id, FlexConsts.PaymentInfoUiAnchor, new CustomDataFieldDto
                             {
                                 WorksheetId = worksheetId,
                                 CustomFields = worksheetCustomFields,
                                 CorrelationId = input.CorrelationId
-                            };
-                            await PublishCustomFieldUpdatesAsync(id, FlexConsts.PaymentInfoUiAnchor, worksheetData);
+                            });
                         }
                     }
                 }
-                // Fallback for single worksheet (backward compatibility)
                 else if (input.WorksheetId != Guid.Empty)
                 {
                     await PublishCustomFieldUpdatesAsync(id, FlexConsts.PaymentInfoUiAnchor, input);
@@ -51,53 +47,58 @@ namespace Unity.Payments.PaymentInfo
             return new PaymentInfoDto();
         }
 
-        private static bool HasValue(JsonElement element)
+        private static bool HasValue(JsonElement element) =>
+            element.ValueKind switch
+            {
+                JsonValueKind.Object => element.EnumerateObject().Any(),
+                JsonValueKind.Array => element.EnumerateArray().Any(),
+                JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
+                JsonValueKind.Number => true,
+                JsonValueKind.True => true,
+                JsonValueKind.False => true,
+                _ => false
+            };
+
+        protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId, string uiAnchor, CustomDataFieldDto input)
         {
-            return element.ValueKind != JsonValueKind.Null && element.ValueKind != JsonValueKind.Undefined;
+            if (!await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                return;
+
+            if (input.CorrelationId == Guid.Empty)
+            {
+                Logger.LogError("Unable to resolve worksheet version: CorrelationId is empty.");
+                return;
+            }
+
+            await localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto
+            {
+                InstanceCorrelationId = applicationId,
+                InstanceCorrelationProvider = CorrelationConsts.Application,
+                SheetCorrelationId = input.CorrelationId,
+                SheetCorrelationProvider = CorrelationConsts.FormVersion,
+                UiAnchor = uiAnchor,
+                CustomFields = input.CustomFields,
+                WorksheetId = input.WorksheetId
+            });
         }
 
-        protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
-            string uiAnchor,
-            CustomDataFieldDto input)
+        private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(JsonElement customFields, Guid worksheetId)
         {
-            if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-            {
-                if (input.CorrelationId != Guid.Empty)
-                {
-                    await localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
-                    {
-                        InstanceCorrelationId = applicationId,
-                        InstanceCorrelationProvider = CorrelationConsts.Application,
-                        SheetCorrelationId = input.CorrelationId,
-                        SheetCorrelationProvider = CorrelationConsts.FormVersion,
-                        UiAnchor = uiAnchor,
-                        CustomFields = input.CustomFields,
-                        WorksheetId = input.WorksheetId
-                    });
-                }
-                else
-                {
-                    Logger.LogError("Unable to resolve for version");
-                }
-            }
-        }        
-
-        private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(dynamic customFields, Guid worksheetId)
-        {
-            var result = new Dictionary<string, object>();
             var worksheetSuffix = $".{worksheetId}";
 
-            if (customFields is JsonElement jsonElement)
-            {
-                result = jsonElement.EnumerateObject()
-                    .Where(property => property.Name.EndsWith(worksheetSuffix))
-                    .ToDictionary(
-                        property => property.Name[..^worksheetSuffix.Length],
-                        property => property.Value.ValueKind == JsonValueKind.String ? (object)property.Value.GetString()! : string.Empty
-                    );
-            }
-
-            return result;
+            return customFields.EnumerateObject()
+                .Where(p => p.Name.EndsWith(worksheetSuffix))
+                .ToDictionary(
+                    p => p.Name[..^worksheetSuffix.Length],
+                    p => p.Value.ValueKind switch
+                    {
+                        JsonValueKind.String => (object)p.Value.GetString()!,
+                        JsonValueKind.Number => p.Value.GetDouble(),
+                        JsonValueKind.True => true,
+                        JsonValueKind.False => false,
+                        _ => string.Empty
+                    }
+                );
         }
     }
 }
