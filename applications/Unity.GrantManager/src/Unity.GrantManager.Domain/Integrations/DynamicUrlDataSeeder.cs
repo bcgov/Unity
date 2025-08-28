@@ -49,12 +49,12 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = DynamicUrlKeyNames.INTAKE_API_BASE, Url = DynamicUrls.CHEFS_PROD_URL, Description = "Common Hosted Forms Service API" },
                     new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_API_BASE, Url = DynamicUrls.CHES_PROD_URL, Description = "Common Hosted Email Service API" },
                     new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_AUTH, Url = DynamicUrls.CHES_PROD_AUTH, Description = "Common Hosted Email Service OAUTH" },
-                    (() => { var currentMessageIndex = messageIndex++; return new DynamicUrl { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{currentMessageIndex}", Url = "", Description = $"Direct message webhook {currentMessageIndex}" }; })(),
-                    (() => { var currentMessageIndex = messageIndex++; return new DynamicUrl { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{currentMessageIndex}", Url = "", Description = $"Direct message webhook {currentMessageIndex}" }; })(),
-                    (() => { var currentMessageIndex = messageIndex++; return new DynamicUrl { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{currentMessageIndex}", Url = "", Description = $"Direct message webhook {currentMessageIndex}" }; })(),
-                    (() => { var currentWebhookIndex = webhookIndex++; return new DynamicUrl { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{currentWebhookIndex}", Url = "", Description = $"Webhook {currentWebhookIndex}" }; })(),
-                    (() => { var currentWebhookIndex = webhookIndex++; return new DynamicUrl { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{currentWebhookIndex}", Url = "", Description = $"Webhook {currentWebhookIndex}" }; })(),
-                    (() => { var currentWebhookIndex = webhookIndex++; return new DynamicUrl { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{currentWebhookIndex}", Url = "", Description = $"Webhook {currentWebhookIndex}" }; })(),
+                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
+                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
                 };
 
                 foreach (var dynamicUrl in dynamicUrls)
