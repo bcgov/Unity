@@ -123,7 +123,6 @@ public class GrantManagerApplicationModule : AbpModule
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
-        context.Services.AddTransient<IConfigureOptions<IntakeClientOptions>, ConfigureIntakeClientOptions>();
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
         context.Services.AddTransient<IFormsApiService, FormsApiService>();
         

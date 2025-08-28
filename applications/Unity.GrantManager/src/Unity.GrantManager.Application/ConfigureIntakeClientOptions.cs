@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using Unity.GrantManager.Intake;
 using Unity.GrantManager.Integrations;
 using System.Threading;
@@ -9,8 +8,8 @@ namespace Unity.GrantManager;
 
 public class ConfigureIntakeClientOptions(
                                         IConfiguration configuration,
-                                        IEndpointManagementAppService endpointManagementAppService) : IAsyncConfigureOptions<IntakeClientOptions>
-{   
+                                        IEndpointManagementAppService endpointManagementAppService)
+{
     public async Task ConfigureAsync(IntakeClientOptions options, CancellationToken cancellationToken = default)
     {
         var intakeBaseUri = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.INTAKE_API_BASE);
