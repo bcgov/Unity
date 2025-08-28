@@ -63,7 +63,7 @@ namespace Unity.GrantManager.Integrations.Chefs
             string url = $"{chefsApi}/forms/{formId}";
 
             var response = await GetRequestAsync(url, chefsApplicationFormGuid, encryptedApiKey);
-            return await ParseJsonResponseAsync(response) ?? [];
+            return await ParseJsonResponseAsync(response) ?? new JObject();
         }
 
         public async Task<JObject?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
