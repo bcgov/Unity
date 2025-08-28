@@ -14,7 +14,6 @@ namespace Unity.GrantManager.Emails
         [Required]
         [MaxLength(1023)] // Max for CHES
         public string EmailSubject { get; set; } = string.Empty;
-
         
         [Required]
         public string EmailBody { get; set; } = string.Empty;

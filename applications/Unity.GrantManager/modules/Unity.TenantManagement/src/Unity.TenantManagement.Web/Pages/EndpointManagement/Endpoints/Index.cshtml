@@ -1,0 +1,51 @@
+﻿@page
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Mvc.Localization;
+@using Unity.TenantManagement.Web.Navigation;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Volo.Abp.TenantManagement.Localization;
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Tenants;
+@model IndexModel
+@inject IHtmlLocalizer<AbpTenantManagementResource> L
+@inject IAuthorizationService Authorization
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.BreadCrumb.Add(L["Menu:Endpoints"].Value);
+    PageLayout.Content.MenuItemName = TenantManagementMenuNames.Endpoints;
+}
+@section styles {
+    <abp-style-bundle name="@typeof(IndexModel).FullName">        
+        <abp-style src="/Pages/EndpointManagement/Endpoints/Index.css" />
+    </abp-style-bundle>
+}
+@section scripts {
+    <abp-script-bundle name="@typeof(IndexModel).FullName">
+        <abp-script src="/libs/js/src/popover.js" />
+        <abp-script src="/Pages/EndpointManagement/Endpoints/Index.js" />        
+    </abp-script-bundle>
+}
+
+
+<div class="container-fluid px-0">
+    <div class="action-bar p-2 filter-search-action-bar">
+        <div class="unity-page-titlebar">
+            <h4>Endpoint Management</h4>
+        </div>
+        <div class="filter-search-action-bar_search-wrapper">
+            <input type="search" id="search-endpoints" placeholder="Search" class="tbl-search">
+        </div>
+
+        <div class="btn-group" id="app_custom_buttons"></div>
+
+        <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+    <div class="p-3 pt-0">
+        <abp-card id="EndpointManagementWrapper">
+            <abp-card-body>
+                <abp-table id="EndpointsTable" striped-rows="false" class="nowrap"></abp-table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+</div>
+
+

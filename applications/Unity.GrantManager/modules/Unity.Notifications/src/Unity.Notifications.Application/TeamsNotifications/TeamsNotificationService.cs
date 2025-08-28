@@ -13,7 +13,14 @@ namespace Unity.Notifications.TeamsNotifications
     public class TeamsNotificationService
     {
         public TeamsNotificationService() : base() { }
-        private readonly List<Fact> _facts = new List<Fact>();
+
+        public const string DIRECT_MESSAGE_KEY_PREFIX = "DIRECT_MESSAGE_";
+        public const string TEAMS_ALERT = $"{DIRECT_MESSAGE_KEY_PREFIX}0";
+        public const string TEAMS_NOTIFICATION = $"{DIRECT_MESSAGE_KEY_PREFIX}1";
+
+        public static string TeamsChannel { get; set; } = string.Empty;
+
+        private readonly List<Fact> _facts = [];
 
         public async Task PostFactsToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle)
         {
@@ -51,7 +58,7 @@ namespace Unity.Notifications.TeamsNotifications
             public const string FORM_DRAFT_PUBLISHED = "eventFormDraftPublished";
         }
 
-        private static string InitializeMessageCard(string activityTitle, string activitySubtitle, List<Fact> facts)
+        public static string InitializeMessageCard(string activityTitle, string activitySubtitle, List<Fact> facts)
         {
             dynamic messageCard = MessageCard.GetMessageCard();
             JObject jsonObj = JsonConvert.DeserializeObject<dynamic>(messageCard)!;
@@ -111,49 +118,38 @@ namespace Unity.Notifications.TeamsNotifications
 
             string activitySubtitle = "Form Name: " + formName?.ToString();
 
-            List<Fact> facts = new()
-            {
-                new Fact
-                {
-                    Name = "Form Version: ",
-                    Value = version?.ToString() ?? string.Empty
-                },
-                new Fact
-                {
-                    Name = "Published: ",
-                    Value = published?.ToString() ?? string.Empty
-                },
-                new Fact
-                {
-                    Name = "Updated By: ",
-                    Value = updatedBy?.ToString() ?? string.Empty
-                },
-                new Fact
-                {
-                    Name = "Updated At: ",
-                    Value = updatedAt?.ToString() + " UTC"
-                },
-                new Fact
-                {
-                    Name = "Created By: ",
-                    Value = createdBy?.ToString() ?? string.Empty
-                },
-                new Fact
-                {
-                    Name = "Created At: ",
-                    Value = createdAt?.ToString() + " UTC"
-                },
-            };
+            // Fix for IDE0028: Simplify collection initialization
+            List<Fact> facts =
+            [
+                new Fact { Name = "Form Version: ", Value = version?.ToString() ?? string.Empty },
+                new Fact { Name = "Published: ", Value = published?.ToString() ?? string.Empty },
+                new Fact { Name = "Updated By: ", Value = updatedBy?.ToString() ?? string.Empty },
+                new Fact { Name = "Updated At: ", Value = updatedAt?.ToString() + " UTC" },
+                new Fact { Name = "Created By: ", Value = createdBy?.ToString() ?? string.Empty },
+                new Fact { Name = "Created At: ", Value = createdAt?.ToString() + " UTC" }
+            ];
 
             await PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
         }
 
-        private static async Task PostToTeamsChannelAsync(string teamsChannel, string messageCard) {
-            using var httpClient = new HttpClient();
-            using var request = new HttpRequestMessage(new HttpMethod("POST"), teamsChannel);
+        private static readonly HttpClient httpClient = new();
+
+        /// <summary>
+        /// Posts a message card to the specified Microsoft Teams channel using an HTTP POST request.
+        /// </summary>
+        /// <param name="teamsChannel">The webhook URL of the Teams channel.</param>
+        /// <param name="messageCard">The message card payload in JSON format.</param>
+        public static async Task PostToTeamsChannelAsync(string teamsChannel, string messageCard)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, teamsChannel);
             request.Content = new StringContent(messageCard);
             request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-            await httpClient.SendAsync(request);
+            var response = await httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                // Optionally log or throw an exception here
+                throw new HttpRequestException($"Failed to post to Teams channel. Status code: {response.StatusCode}");
+            }
         }
     }
 }

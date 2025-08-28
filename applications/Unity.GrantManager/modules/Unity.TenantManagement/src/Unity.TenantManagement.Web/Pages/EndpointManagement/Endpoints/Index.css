@@ -1,0 +1,16 @@
+﻿::-ms-reveal {
+    display: none;
+}
+
+#AbpContentToolbar {
+    display: flex !important;
+    background-color: transparent;
+}
+
+#EndpointManagementWrapper {
+    background-color: transparent;
+}
+
+#UserSearchTable tbody tr {
+    cursor: pointer;
+}

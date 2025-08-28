@@ -18,6 +18,7 @@ using Volo.Abp.Uow;
 using Unity.Modules.Shared.Http;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Domain.AccountCodings;
+using Unity.GrantManager.Integrations;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -26,6 +27,7 @@ namespace Unity.Payments.Integrations.Cas
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
 #pragma warning disable S107 // Methods should not have too many parameters        
     public class InvoiceService(
+                    IEndpointManagementAppService endpointManagementAppService,
                     ICasTokenService iTokenService,
                     IAccountCodingRepository accountCodingRepository,
                     PaymentConfigurationAppService paymentConfigurationAppService,
@@ -79,7 +81,7 @@ namespace Unity.Payments.Integrations.Cas
                     InvoiceLineAmount = paymentRequest.Amount,
                     DefaultDistributionAccount = accountDistributionCode // This will be at the tenant level
                 };
-                casInvoice.InvoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };
+                casInvoice.InvoiceLineDetails = [invoiceLineDetail];
             }
 
             return casInvoice;
@@ -101,16 +103,11 @@ namespace Unity.Payments.Integrations.Cas
             InvoiceResponse invoiceResponse = new();
             try
             {
-                PaymentRequest? paymentRequest = await paymentRequestRepository.GetPaymentRequestByInvoiceNumber(invoiceNumber);
-                if (paymentRequest is null)
-                {
-                    throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Payment Request not found");
-                }
+                var paymentRequest = await paymentRequestRepository.GetPaymentRequestByInvoiceNumber(invoiceNumber)
+                    ?? throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Payment Request not found");
 
                 if (!paymentRequest.AccountCodingId.HasValue)
-                {
                     throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Account Coding - Payment Request - not found");
-                }
 
                 AccountCoding accountCoding = await accountCodingRepository.GetAsync(paymentRequest.AccountCodingId.Value);
                 string accountDistributionCode = await paymentConfigurationAppService.GetAccountDistributionCode(accountCoding);// this will be on the payment request
@@ -170,14 +167,15 @@ namespace Unity.Payments.Integrations.Cas
         {
             string jsonString = JsonSerializer.Serialize(casAPInvoice);
             var authToken = await iTokenService.GetAuthTokenAsync();
-            var resource = $"{casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/";
-            var response = await resilientHttpRequest.HttpAsyncWithBody(HttpMethod.Post, resource, jsonString, authToken);
+            string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);  
+            var resource = $"{casBaseUrl}/{CFS_APINVOICE}/";
+            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Post, resource, jsonString, authToken);
 
             if (response != null)
             {
                 if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                 {
-                    var contentString = ResilientHttpRequest.ContentToString(response.Content);
+                    var contentString = await ResilientHttpRequest.ContentToStringAsync(response.Content);
                     var result = JsonSerializer.Deserialize<InvoiceResponse>(contentString)
                         ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
                     result.CASHttpStatusCode = response.StatusCode;
@@ -201,14 +199,15 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode)
         {
             var authToken = await iTokenService.GetAuthTokenAsync();
-            var resource = $"{casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
+            var casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
+            var resource = $"{casBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
 
             if (response != null
                 && response.Content != null
                 && response.IsSuccessStatusCode)
             {
-                string contentString = ResilientHttpRequest.ContentToString(response.Content);
+                string contentString = await ResilientHttpRequest.ContentToStringAsync(response.Content);
                 var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(contentString);
                 return result ?? new CasPaymentSearchResult();
             }
@@ -221,7 +220,8 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string invoiceNumber, string supplierNumber, string siteNumber)
         {
             var authToken = await iTokenService.GetAuthTokenAsync();
-            var resource = $"{casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
+            var casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
+            var resource = $"{casBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
             CasPaymentSearchResult casPaymentSearchResult = new();
 

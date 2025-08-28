@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 using NSubstitute;
 using Shouldly;
 using System;
@@ -6,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Chefs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
@@ -85,6 +86,21 @@ namespace Unity.GrantManager.Events
             }
 
             public Task<dynamic?> GetFormDataAsync(string chefsFormId, string chefsFormVersionId)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<JObject?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
+            {
+                throw new NotImplementedException();
+            }
+
+            Task<JObject> IFormsApiService.GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey)
+            {
+                throw new NotImplementedException();
+            }
+
+            Task<JObject?> IFormsApiService.GetFormDataAsync(string chefsFormId, string chefsFormVersionId)
             {
                 throw new NotImplementedException();
             }
