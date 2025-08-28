@@ -335,7 +335,7 @@ function initializeDataTable(options) {
     );
 
     // On the ITAdministrator pages, bootstrap popover is not loaded and causes the js to fail
-    if($('#btn-toggle-filter').popover+"" != "undefined") {        
+    if (typeof $('#btn-toggle-filter').popover !== "undefined") {        
         initializeFilterButtonPopover(iDt);
     }
 
