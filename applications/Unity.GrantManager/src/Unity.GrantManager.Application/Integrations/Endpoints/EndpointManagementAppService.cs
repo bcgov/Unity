@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
-using StackExchange.Redis;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Distributed;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -10,29 +11,59 @@ using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Integrations.Endpoints
 {
-    public class EndpointManagementAppService :
+    public class EndpointManagementAppService(
+        IRepository<DynamicUrl, Guid> repository,
+        IDistributedCache cache) :
         CrudAppService<
             DynamicUrl,
             DynamicUrlDto,
             Guid,
             PagedAndSortedResultRequestDto,
-            CreateUpdateDynamicUrlDto>,
+            CreateUpdateDynamicUrlDto>(repository),
         IEndpointManagementAppService
     {
-        private readonly IDistributedCache _cache;
-        private readonly IConnectionMultiplexer _redis; // for Redis-specific ops
-
-        public EndpointManagementAppService(
-            IRepository<DynamicUrl, Guid> repository,
-            IDistributedCache cache,
-            IConnectionMultiplexer redis) : base(repository)
-        {
-            _cache = cache;
-            _redis = redis;
-        }
+        private readonly IDistributedCache _cache = cache;
+        private const string CACHE_KEY_SET_PREFIX = "DynamicUrl:KeySet";
 
         private static string BuildCacheKey(string keyName, bool tenantSpecific, Guid? tenantId)
             => $"DynamicUrl:{tenantSpecific}:{tenantId ?? Guid.Empty}:{keyName}";
+
+        private static string BuildCacheKeySetKey(Guid? tenantId)
+            => $"{CACHE_KEY_SET_PREFIX}:{tenantId ?? Guid.Empty}";
+
+        private async Task AddToKeySetAsync(string cacheKey, Guid? tenantId)
+        {
+            var keySetKey = BuildCacheKeySetKey(tenantId);
+            var existing = await _cache.GetStringAsync(keySetKey);
+            var keySet = string.IsNullOrEmpty(existing)
+                ? new HashSet<string>()
+                : System.Text.Json.JsonSerializer.Deserialize<HashSet<string>>(existing) ?? new HashSet<string>();
+
+            keySet.Add(cacheKey);
+            var serialized = System.Text.Json.JsonSerializer.Serialize(keySet);
+
+            await _cache.SetStringAsync(keySetKey, serialized, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24) // longer than individual entries
+            });
+        }
+
+        private async Task RemoveFromKeySetAsync(string cacheKey, Guid? tenantId)
+        {
+            var keySetKey = BuildCacheKeySetKey(tenantId);
+            var existing = await _cache.GetStringAsync(keySetKey);
+            if (string.IsNullOrEmpty(existing)) return;
+
+            var keySet = System.Text.Json.JsonSerializer.Deserialize<HashSet<string>>(existing);
+            if (keySet?.Remove(cacheKey) == true)
+            {
+                var serialized = System.Text.Json.JsonSerializer.Serialize(keySet);
+                await _cache.SetStringAsync(keySetKey, serialized, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
+                });
+            }
+        }
 
         [UnitOfWork]
         public async Task<string> GetChefsApiBaseUrlAsync()
@@ -94,8 +125,11 @@ namespace Unity.GrantManager.Integrations.Endpoints
                     url,
                     new DistributedCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) // configurable
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
                     });
+
+                // Track this key
+                await AddToKeySetAsync(cacheKey, tenantId);
             }
 
             return url;
@@ -108,23 +142,31 @@ namespace Unity.GrantManager.Integrations.Endpoints
         {
             var cacheKey = BuildCacheKey(keyName, tenantSpecific, tenantId);
             await _cache.RemoveAsync(cacheKey);
+            await RemoveFromKeySetAsync(cacheKey, tenantId);
         }
 
         /// <summary>
-        /// Clears all DynamicUrl cache entries from Redis efficiently using SCAN.
-        /// If tenantId is specified, only clears that tenant's entries.
+        /// Clears all DynamicUrl cache entries for the specified tenant (or all tenants if null).
+        /// Uses tracked cache keys for efficient bulk clearing.
         /// </summary>
         public async Task ClearCacheAsync(Guid? tenantId = null)
         {
-            var server = _redis.GetServer(_redis.GetEndPoints()[0]);
-            var pattern = tenantId == null
-                ? "DynamicUrl:*" // all tenants
-                : $"DynamicUrl:*:{tenantId}:*"; // scoped to one tenant
+            var keySetKey = BuildCacheKeySetKey(tenantId);
+            var existing = await _cache.GetStringAsync(keySetKey);
 
-            foreach (var key in server.Keys(pattern: pattern))
+            if (!string.IsNullOrEmpty(existing))
             {
-                await _redis.GetDatabase().KeyDeleteAsync(key);
+                var keySet = System.Text.Json.JsonSerializer.Deserialize<HashSet<string>>(existing);
+                if (keySet != null)
+                {
+                    // Remove all tracked cache entries
+                    var tasks = keySet.Select(key => _cache.RemoveAsync(key));
+                    await Task.WhenAll(tasks);
+                }
             }
+
+            // Clear the key set itself
+            await _cache.RemoveAsync(keySetKey);
         }
 
         // ------------------------------
@@ -150,6 +192,5 @@ namespace Unity.GrantManager.Integrations.Endpoints
             await base.DeleteAsync(id);
             await InvalidateCacheAsync(entity.KeyName, entity.TenantId != Guid.Empty, entity.TenantId);
         }
-
     }
 }
