@@ -7,8 +7,6 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
-using Unity.GrantManager.Intake;
-using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Notifications;
 
@@ -19,11 +17,9 @@ namespace Unity.GrantManager.Intakes
     [RemoteService(false)]
     public class IntakeSubmissionAppService(INotificationsAppService notificationsAppService,
                                             IIntakeFormSubmissionManager intakeFormSubmissionManager,
-                                            IEndpointManagementAppService endpointManagementAppService,
                                             IFormsApiService formsApiService,
                                             IApplicationFormRepository applicationFormRepository,
-                                            IApplicationFormVersionAppService applicationFormVersionAppService,
-                                            IOptions<IntakeClientOptions> intakeClientOptions) : GrantManagerAppService, IIntakeSubmissionAppService
+                                            IApplicationFormVersionAppService applicationFormVersionAppService) : GrantManagerAppService, IIntakeSubmissionAppService
     {
 
         public async Task<EventSubscriptionConfirmationDto> CreateIntakeSubmissionAsync(EventSubscriptionDto eventSubscriptionDto)
@@ -83,8 +79,7 @@ namespace Unity.GrantManager.Intakes
                     string factValue = $"FormId: {eventSubscriptionDto.FormId} FormVersion: {eventSubscriptionDto.FormVersion}";
                     await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, true);
                     return false;
-                } else //if(!intakeClientOptions.Value.AllowUnregisteredVersions)
-                {
+                } else {
                     var version = ((JObject)formVersion!).SelectToken("version");
                     var published = ((JObject)formVersion!).SelectToken("published");
                     string factName = "Application Form Version Not Registered - Unknown Version";

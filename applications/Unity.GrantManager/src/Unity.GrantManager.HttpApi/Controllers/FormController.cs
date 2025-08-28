@@ -9,7 +9,6 @@ using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Domain.Entities;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Unity.GrantManager.Integrations.Chefs;
 
 namespace Unity.GrantManager.Controllers
@@ -25,8 +24,6 @@ namespace Unity.GrantManager.Controllers
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService = applicationFormVersionAppService;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         private readonly IFormsApiService _formsApiService = formsApiService;
-
-       protected ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
         [HttpPost("form/{formId}/version/{formVersionId}")]
         public async Task<IActionResult> SynchronizeChefsAvailableFields(string formId, string formVersionId)

@@ -37,7 +37,6 @@ using Unity.GrantManager.Zones;
 using Unity.GrantManager.Infrastructure;
 using Medallion.Threading;
 using Unity.GrantManager.Locks;
-using Volo.Abp;
 using JsonSerializerOptions = System.Text.Json.JsonSerializerOptions;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.Modules.Shared.Http;
@@ -198,29 +197,6 @@ public class GrantManagerApplicationModule : AbpModule
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
-        });
-    }
-
-    private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
-    {
-        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"]))
-            return;
-
-        context.Services.AddStackExchangeRedisCache(options =>
-        {
-            options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
-        });
-
-        Configure<RedisCacheOptions>(options =>
-        {
-            options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
-        });
-
-        Configure<AbpDistributedCacheOptions>(options =>
-        {
-            options.KeyPrefix = configuration["Redis:KeyPrefix"] ?? "unity";
         });
     }
 }
