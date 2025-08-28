@@ -97,11 +97,12 @@ namespace Unity.Payments.Integrations.Cas
         {
             try
             {
-                if (casSupplierResponse.TryGetProperty("code", out JsonElement codeProp) && codeProp.GetString() == "Unauthorized")
-                    throw new UserFriendlyException("Unauthorized access to CAS supplier information.");
                 var casSupplierJson = casSupplierResponse is string str ? str : casSupplierResponse.ToString();
                 using var doc = JsonDocument.Parse(casSupplierJson);
-                UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(doc.RootElement);
+                var rootElement = doc.RootElement;
+                if (rootElement.TryGetProperty("code", out JsonElement codeProp) && codeProp.GetString() == "Unauthorized")
+                    throw new UserFriendlyException("Unauthorized access to CAS supplier information.");
+                UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(rootElement);
                 supplierEto.CorrelationId = applicantId;
                 supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
                 await localEventBus.PublishAsync(supplierEto);
