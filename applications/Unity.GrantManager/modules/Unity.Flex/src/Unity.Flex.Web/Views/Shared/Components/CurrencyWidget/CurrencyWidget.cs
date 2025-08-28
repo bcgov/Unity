@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
@@ -16,9 +17,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.CurrencyWidget
         AutoInitialize = true)]
     public class CurrencyWidget : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(WorksheetFieldViewModel? fieldModel, string modelName)
+        public async Task<IViewComponentResult> InvokeAsync(WorksheetFieldViewModel? fieldModel, string modelName, Guid? worksheetId = null)
         {
-            return View(await Task.FromResult(new CurrencyViewModel() { Field = fieldModel, Name = modelName }));
+            return View(await Task.FromResult(new CurrencyViewModel() { Field = fieldModel, Name = modelName, WorksheetId = worksheetId }));
         }
     }
 

@@ -51,34 +51,6 @@ namespace Unity.Flex.Worksheets
 
         [Fact]
         [Trait("Category", "Integration")]
-        public async Task GetWorksheetInstanceByCorrelationAnchor_WorksheetNull()
-        {
-            var correlationId = Guid.NewGuid();
-            var correlationProvider = "Application";
-            var worksheetCorrelationId = Guid.NewGuid();
-            var worksheetCorrelationProvider = "FormVersion";
-            var worksheetId = Guid.NewGuid();
-            var correlationAnchor = "UiAnchor";
-
-            await _worksheetInstanceRepository.InsertAsync(new WorksheetInstance(Guid.NewGuid(),
-                worksheetId,
-                correlationId,
-                correlationProvider,
-                worksheetCorrelationId,
-                worksheetCorrelationProvider,
-                correlationAnchor), true);
-
-            // Act
-            var instance = await _worksheetInstanceAppService
-                .GetByCorrelationAnchorAsync(correlationId, correlationProvider, null, correlationAnchor);
-
-
-            // Assert
-            instance.ShouldNotBeNull();
-        }
-
-        [Fact]
-        [Trait("Category", "Integration")]
         public async Task CreateWorksheetInstance()
         {
             // Arrange

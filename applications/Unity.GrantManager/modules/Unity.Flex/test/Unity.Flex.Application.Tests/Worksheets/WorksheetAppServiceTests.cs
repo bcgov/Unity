@@ -97,7 +97,7 @@ namespace Unity.Flex.Worksheets
 
         [Fact]
         [Trait("Category", "Integration")]
-        public async Task GetWorksheetListByCorrelationAnchor_ShouldBeNull()
+        public async Task GetWorksheetListByCorrelationAnchor_ShouldBeEmpty()
         {
             // Arrange           
             var correlationId = Guid.NewGuid();
@@ -105,16 +105,16 @@ namespace Unity.Flex.Worksheets
             var anchor = "Unit Test";
 
             // Act
-            var result = await _worksheetAppService.GetByCorrelationAnchorAsync(correlationId, correlationProvider, anchor);
+            var result = await _worksheetAppService.GetListByCorrelationAnchorAsync(correlationId, correlationProvider, anchor);
 
             // Assert
-            result.ShouldBeNull();
+            result.Count.ShouldBe(0);
         }
 
 
         [Fact]
         [Trait("Category", "Integration")]
-        public async Task GetWorksheetListByCorrelationAnchor_ShouldNotBeNull()
+        public async Task GetWorksheetListByCorrelationAnchor_ShouldHaveOne()
         {
             // Arrange           
             var correlationId = Guid.NewGuid();
@@ -125,10 +125,10 @@ namespace Unity.Flex.Worksheets
             _ = await _worksheetLinkRepository.InsertAsync(new WorksheetLink(Guid.NewGuid(), worksheet.Id, correlationId, correlationProvider, anchor), true);
 
             // Act
-            var result = await _worksheetAppService.GetByCorrelationAnchorAsync(correlationId, correlationProvider, anchor);
+            var result = await _worksheetAppService.GetListByCorrelationAnchorAsync(correlationId, correlationProvider, anchor);
 
             // Assert
-            result.ShouldNotBeNull();
+            result.Count.ShouldBe(1);
         }
 
         [Fact]

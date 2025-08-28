@@ -10,6 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Dashboard;
 
@@ -44,6 +45,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     }
 
     [Authorize(GrantApplicationPermissions.Dashboard.EconomicRegionCount)]
+    [HttpPost]
     public virtual async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -70,6 +72,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     }
 
     [Authorize(GrantApplicationPermissions.Dashboard.ApplicationStatusCount)]
+    [HttpPost]
     public virtual async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -96,6 +99,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     }
 
     [Authorize(GrantApplicationPermissions.Dashboard.ApplicationTagsCount)]
+    [HttpPost]
     public virtual async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -124,6 +128,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     }
 
     [Authorize(GrantApplicationPermissions.Dashboard.RequestedAmountPerSubsector)]
+    [HttpPost]
     public virtual async Task<List<GetSubsectorRequestedAmtDto>> GetRequestedAmountPerSubsectorAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -154,6 +159,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     }
 
     [Authorize(GrantApplicationPermissions.Dashboard.ApplicationAssigneeCount)]
+    [HttpPost]
     public virtual async Task<List<GetApplicationAssigneeDto>> GetApplicationAssigneeCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);
@@ -186,6 +192,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     }
 
     [Authorize(GrantApplicationPermissions.Dashboard.RequestApprovedCount)]
+    [HttpPost]
     public virtual async Task<List<GetRequestedApprovedAmtDto>> GetRequestApprovedCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);

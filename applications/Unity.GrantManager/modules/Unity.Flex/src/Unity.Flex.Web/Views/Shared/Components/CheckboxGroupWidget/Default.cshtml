@@ -7,29 +7,34 @@
 
 @if (Model.Field != null)
 {
+    
     <fieldset>
         <legend></legend>
         @{
             var checkedValues = Model.Field?.CurrentValue?.GetCheckedOptions() ?? [];
             foreach (var option in ((CheckboxGroupDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Options ?? [])
-            {
+            {                
+                var optionId = Model.WorksheetId.HasValue
+                    ? $"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}.{Model.WorksheetId}"
+                    : $"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}";
+                
                 <div class="custom-fields-checkbox-wrapper">
                     @if (checkedValues.Contains(option.Key))
                     {
                         <input type="@Model.Field?.Type.ConvertInputType()"
-                               id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
-                               name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
+                               id="@optionId"
+                               name="@optionId"
                                onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")"
                                checked />
                     }
                     else
                     {
                         <input type="@Model.Field?.Type.ConvertInputType()"
-                               id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
-                               name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
+                               id="@optionId"
+                               name="@optionId"
                                onchange="@($"notifyFieldChange('{Model.Name}','{Model.Field?.UiAnchor}', this)")" />
                     }
-                    <label for="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")">@($"{option.Label}")</label>
+                    <label for="@optionId">@($"{option.Label}")</label>
                 </div>
             }
         }

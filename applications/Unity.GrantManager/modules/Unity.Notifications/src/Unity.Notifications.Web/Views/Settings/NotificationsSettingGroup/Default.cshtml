@@ -2,6 +2,7 @@
 @model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
 
 <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
+<abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />
 <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
 
 <div class="container-fluid px-0">
@@ -12,6 +13,7 @@
         <div class="nav nav-tabs" id="nav-tab" role="tablist">
             <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-config" type="button" role="tab">Notifications Configuration</button>
             <button class="nav-link" id="nav-template-tab" data-bs-toggle="tab" data-bs-target="#nav-template" type="button" role="tab">Email Templates</button>
+            <button class="nav-link" id="nav-internal-email-group-tab" data-bs-toggle="tab" data-bs-target="#nav-internal-email-group" type="button" role="tab">Internal Email Group</button>
         </div>
     </nav>
 
@@ -58,6 +60,25 @@
                                 text="+ Add Template"
                                 button-type="Primary" class="me-2  ms-auto" />
                     <div id="cardContainer" class="v-scroll p-3"></div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="nav-internal-email-group" role="tabpanel" aria-labelledby="nav-internal-email-group-tab">
+            <div class="row">
+                <div class="container mt-3">
+                    <div class="unity-setting-body p-3">
+                        <div class="row">
+                            <div class="container">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="m-0"><b>Email Groups</b></h5>
+                                    <button id="CreateNewEmailGroup" class="btn btn-primary" type="button" title="Create">
+                                        <span>+ ADD Email Group</span>
+                                    </button>
+                                </div>
+                                <abp-table id="EmailGroupsTable" data-resize-aware="true"></abp-table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -41,7 +41,8 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
             new EmailTempateVariableDto { Name = "Project Summary", Token = "project_summary", MapTo = "projectSummary" },
             new EmailTempateVariableDto { Name = "Signing Authority Full Name", Token = "signing_authority_full_name", MapTo = "signingAuthorityFullName" },
             new EmailTempateVariableDto { Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" },
-            new EmailTempateVariableDto { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" }
+            new EmailTempateVariableDto { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" },
+            new EmailTempateVariableDto { Name = "Requested Amount", Token = "requested_amount", MapTo = "requestedAmount" }
         };
 
         try

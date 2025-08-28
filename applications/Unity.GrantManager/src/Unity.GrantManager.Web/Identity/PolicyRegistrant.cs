@@ -229,13 +229,6 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Project.Location.Update.UpdateFinalStateFields,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.UpdateFinalStateFields));
-
-        // Project Info - Worksheet Policies
-        authorizationBuilder.AddPolicy(UnitySelector.Project.Worksheet.Default,
-            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Worksheet.Default));  // NOTE: Will be replaced when Worksheets normalized
-
-        authorizationBuilder.AddPolicy(UnitySelector.Project.Worksheet.Update,
-            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Worksheet.Update));  // NOTE: Will be replaced when Worksheets normalized
     }
 }
 

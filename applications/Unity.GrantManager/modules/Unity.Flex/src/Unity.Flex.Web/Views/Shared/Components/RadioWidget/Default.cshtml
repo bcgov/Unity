@@ -7,18 +7,26 @@
 
 @if (Model.Field != null)
 {
+    
+    var fieldBaseName = Model.WorksheetId.HasValue
+        ? $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}.{Model.WorksheetId}"
+        : $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}";
+    
     <fieldset>
         <legend></legend>
         @foreach (var option in ((RadioDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Options ?? [])
         {
+            
+            var optionId = $"{fieldBaseName}.{option.Value}";
+            
             <div class="custom-radio-button">
                 @if (Model.Field != null)
                 {
                     @if ((Model.Field?.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type))?.ToString() == option.Value)
                     {
                         <input type="@Model.Field.Type.ConvertInputType()"
-                               id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}.{option.Value}")"
-                               name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+                               id="@optionId"
+                               name="@fieldBaseName"
                                value="@($"{option.Value}")"
                                onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")"
                                checked />
@@ -26,12 +34,12 @@
                     else
                     {
                         <input type="@Model.Field?.Type.ConvertInputType()"
-                               id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Value}")"
-                               name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")"
+                               id="@optionId"
+                               name="@fieldBaseName"
                                value="@($"{option.Value}")"
                                onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")" />
                     }
-                    <label for="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")">@($"{option.Label}")</label>
+                    <label for="@optionId">@($"{option.Label}")</label>
                 }
             </div>
         }
