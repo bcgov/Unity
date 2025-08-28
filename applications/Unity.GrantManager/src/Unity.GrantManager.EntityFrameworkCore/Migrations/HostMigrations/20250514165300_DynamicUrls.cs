@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     KeyName = table.Column<string>(type: "text", nullable: false),
                     Url = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     TenantId = table.Column<Guid>(type: "uuid", nullable: true),
                     ExtraProperties = table.Column<string>(type: "text", nullable: false, defaultValue: "{}"),
                     ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
