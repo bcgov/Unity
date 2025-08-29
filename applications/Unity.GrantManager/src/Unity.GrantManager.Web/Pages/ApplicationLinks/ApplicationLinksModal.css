@@ -1,18 +1,5 @@
 /* ApplicationLinksModal CSS */
 
-/* Current application badge - styled like application-status but with green colors */
-.current-app-badge {
-    margin-left: auto;
-    margin-right: 10px;
-    padding: 0.125rem 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #28a745;
-    text-transform: uppercase;
-    border: 3px solid #28a745;
-    border-radius: 1rem;
-    background-color: transparent;
-}
 
 .links-display-area {
     background-color: #ffffff;
