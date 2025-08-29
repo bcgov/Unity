@@ -17,6 +17,7 @@
     "Menu:Intakes": "Intakes",
     "Menu:ApplicationForms": "Forms",
     "Menu:TenantManagement": "Tenants",
+    "Menu:EndpointManagement": "Endpoints",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 

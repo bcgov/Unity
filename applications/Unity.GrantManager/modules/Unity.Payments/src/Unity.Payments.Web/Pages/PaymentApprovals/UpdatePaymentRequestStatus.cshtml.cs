@@ -21,7 +21,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
     {
         public int GroupId { get; set; }
         public PaymentRequestStatus ToStatus { get; set; }
-        public List<PaymentsApprovalModel> Items { get; set; } = new();
+        public List<PaymentsApprovalModel> Items { get; set; } = [];
     }
 
     public class UpdatePaymentRequestStatus(
@@ -32,7 +32,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                         IPaymentConfigurationAppService paymentConfigurationAppService,
                         IPermissionCheckerService permissionCheckerService) : AbpPageModel
     {
-        [BindProperty] public List<PaymentGrouping> PaymentGroupings { get; set; } = new();
+        [BindProperty] public List<PaymentGrouping> PaymentGroupings { get; set; } = [];
         [BindProperty] public decimal? UserPaymentThreshold { get; set; }
         [BindProperty] public decimal PaymentThreshold { get; set; }
         [BindProperty] public bool DisableSubmit { get; set; }
@@ -44,7 +44,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         [BindProperty]
         public string? Note { get; set; } = string.Empty;
-        public List<Guid> SelectedPaymentIds { get; set; } = new();
+        public List<Guid> SelectedPaymentIds { get; set; } = [];
         public string FromStatusText { get; set; } = string.Empty;
 
         public async Task OnGetAsync(string paymentIds, bool isApprove)
@@ -53,15 +53,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             var payments = await paymentRequestAppService.GetListByPaymentIdsAsync(SelectedPaymentIds);
             var paymentApprovals = await BuildPaymentApprovalsAsync(payments);
 
-            PaymentGroupings = paymentApprovals
-                .GroupBy(item => item.ToStatus)
-                .Select((group, index) => new PaymentGrouping
-                {
-                    GroupId = index,
-                    ToStatus = group.Key,
-                    Items = group.ToList()
-                })
-                .ToList();
+            PaymentGroupings = [.. paymentApprovals.GroupBy(item => item.ToStatus).Select((group, index) => new PaymentGrouping { GroupId = index, ToStatus = group.Key, Items = [.. group] })];
 
             DisableSubmit = paymentApprovals.Count == 0 || !ModelState.IsValid;
         }
@@ -70,7 +62,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         {
             await GetFromStateForUserAsync();
             IsApproval = isApprove;
-            SelectedPaymentIds = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? new();
+            SelectedPaymentIds = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? [];
             UserPaymentThreshold = await paymentRequestAppService.GetUserPaymentThresholdAsync();
             HasPaymentConfiguration = await paymentConfigurationAppService.GetAsync() != null;
         }
@@ -194,11 +186,20 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 return PaymentRequestStatus.Submitted;
             }
 
+            if (status == PaymentRequestStatus.L3Pending && isApproval)
+            {
+                if (preventPayment)
+                {
+                    return PaymentRequestStatus.FSB;
+                }
+                return PaymentRequestStatus.Submitted;
+            }
+
             return status switch
             {
                 PaymentRequestStatus.L1Pending => isApproval ? PaymentRequestStatus.L2Pending : PaymentRequestStatus.L1Declined,
                 PaymentRequestStatus.L2Pending => PaymentRequestStatus.L2Declined,
-                PaymentRequestStatus.L3Pending => isApproval ? PaymentRequestStatus.Submitted : PaymentRequestStatus.L3Declined,
+                PaymentRequestStatus.L3Pending => PaymentRequestStatus.L3Declined,
                 _ => request.ToStatus
             };
         }

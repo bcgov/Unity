@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Worksheets.Values;
-using Unity.GrantManager.Integration.Geocoder;
+using Unity.GrantManager.Integrations.Geocoder;
 
 namespace Unity.Flex.Worksheets.Collectors
 {

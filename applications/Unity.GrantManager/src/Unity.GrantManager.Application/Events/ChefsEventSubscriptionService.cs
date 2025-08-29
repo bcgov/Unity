@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,53 +5,46 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Integration.Chefs;
-using Unity.Notifications.TeamsNotifications;
+using Unity.GrantManager.Integrations.Chefs;
+using Unity.GrantManager.Notifications;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
 namespace Unity.GrantManager.Events
 {
     [RemoteService(false)]
-    public class ChefsEventSubscriptionService : GrantManagerAppService, IChefsEventSubscriptionService
-    {
-        private readonly IApplicationFormRepository _applicationFormRepository;
-        private readonly IApplicationFormManager _applicationFormManager;
-        private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
-        private readonly ISubmissionsApiService _submissionsIntService;
-        private readonly IFormsApiService _formsApiService;
-        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
-        private readonly IConfiguration _configuration;
-
-        public ChefsEventSubscriptionService(
-            IConfiguration configuration,
+    public class ChefsEventSubscriptionService(
+            INotificationsAppService notificationsAppService,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IApplicationFormManager applicationFormManager,
-            ISubmissionsApiService submissionsIntService,
+            IFormsApiService submissionsIntService,
             IApplicationFormRepository applicationFormRepository,
             IFormsApiService formsApiService,
-            IApplicationFormVersionAppService applicationFormVersionAppService)
-        {
-            _configuration = configuration;
-            _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
-            _submissionsIntService = submissionsIntService;
-            _applicationFormRepository = applicationFormRepository;
-            _formsApiService = formsApiService;
-            _applicationFormManager = applicationFormManager;
-            _applicationFormVersionAppService = applicationFormVersionAppService;
-        }
+            IApplicationFormVersionAppService applicationFormVersionAppService) : GrantManagerAppService, IChefsEventSubscriptionService
+    {
 
         public async Task<bool> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto)
         {
-            var applicationForm = (await _applicationFormRepository
+            _ = (await applicationFormRepository
                 .GetQueryableAsync())
                 .Where(s => s.ChefsApplicationFormGuid == eventSubscriptionDto.FormId.ToString())
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault() ?? throw new EntityNotFoundException("Application Form Not Registered");
+    
+            var submissionData = await submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId)
+                ?? throw new InvalidFormDataSubmissionException();
 
-            var submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
-            var formVersion = await _formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), submissionData.submission.formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
-            var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
+            // Access the 'submission' property from the JObject using the appropriate key.
+            var submission = submissionData["submission"]
+                ?? throw new InvalidFormDataSubmissionException();
+
+            // Ensure the 'formVersionId' is accessed correctly from the 'submission' object.
+            var formVersionId = submission["formVersionId"]?.ToString()
+                ?? throw new InvalidFormDataSubmissionException();
+
+            var formVersion = await formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), formVersionId)
+                ?? throw new InvalidFormDataSubmissionException();
+            var result = intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
             return !result.IsNullOrEmpty();
         }
 
@@ -61,7 +53,7 @@ namespace Unity.GrantManager.Events
             string formId = eventSubscriptionDto.FormId.ToString();
             string formVersionId = eventSubscriptionDto.FormVersion.ToString();
 
-            var applicationForm = (await _applicationFormRepository
+            var applicationForm = (await applicationFormRepository
                 .GetQueryableAsync())
                 .Where(s => s.ChefsApplicationFormGuid == formId)
                 .OrderBy(s => s.CreationTime)
@@ -72,18 +64,27 @@ namespace Unity.GrantManager.Events
                 && applicationForm.ChefsApplicationFormGuid != null)
             {
                 // Go grab the new name/description/version and map the new available fields
-                var formVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
-                dynamic form = await _formsApiService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid), applicationForm.ChefsApplicationFormGuid.ToString(), applicationForm.ApiKey);
-                applicationForm = _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
-                await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
-                applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
-                string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
-                TeamsNotificationService.PostChefsEventToTeamsAsync(teamsChannel, eventSubscriptionDto.SubscriptionEvent, form, formVersion);
+                var formVersion = await formsApiService.GetFormDataAsync(formId, formVersionId);
+                if (formVersion == null)
+                {
+                    throw new InvalidFormDataSubmissionException("Form version data is null.");
+                }
+
+                dynamic form = await formsApiService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid), applicationForm.ChefsApplicationFormGuid.ToString(), applicationForm.ApiKey);
+                if (form == null)
+                {
+                    throw new InvalidFormDataSubmissionException("Form data is null.");
+                }
+
+                applicationForm = applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
+                await applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
+                applicationForm = await applicationFormRepository.UpdateAsync(applicationForm);
+                notificationsAppService.PostChefsEventToTeamsAsync(eventSubscriptionDto.SubscriptionEvent, form, formVersion);
             }
-            else if(applicationForm == null)
+            else if (applicationForm == null)
             {
                 EventSubscription eventSubscription = ObjectMapper.Map<EventSubscriptionDto, EventSubscription>(eventSubscriptionDto);
-                applicationForm = await _applicationFormManager.InitializeApplicationForm(eventSubscription);
+                applicationForm = await applicationFormManager.InitializeApplicationForm(eventSubscription);
             }
 
             return applicationForm != null;

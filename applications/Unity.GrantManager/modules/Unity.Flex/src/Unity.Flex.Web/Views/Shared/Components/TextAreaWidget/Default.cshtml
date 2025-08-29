@@ -7,8 +7,13 @@
 
 @if (Model.Field != null)
 {
-    <textarea id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
-              name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+    
+    var fieldId = Model.WorksheetId.HasValue
+        ? $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}.{Model.WorksheetId}"
+        : $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}";
+    
+    <textarea id="@fieldId"
+              name="@fieldId"
               rows="@(((TextAreaDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Rows ?? 1)"
               maxlength="@(((TextAreaDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.MaxLength)"
               class="form-control"              

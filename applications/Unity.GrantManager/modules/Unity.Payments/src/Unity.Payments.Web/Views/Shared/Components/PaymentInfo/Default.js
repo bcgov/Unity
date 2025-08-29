@@ -20,7 +20,9 @@
         let formData = $("#paymentInfoForm").serializeArray();
         let paymentInfoObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();
-        let worksheetId = $("#PaymentInfo_WorksheetId").val();
+        // Check for worksheet scenario - multiple vs single
+        let multipleWorksheetsIds = $("#PaymentInfo_WorksheetIds").val();
+        let singleWorksheetId = $("#PaymentInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -42,7 +44,15 @@
         }
 
         paymentInfoObj['correlationId'] = formVersionId;
-        paymentInfoObj['worksheetId'] = worksheetId;
+        
+        // Set correct payload property based on worksheet scenario
+        if (multipleWorksheetsIds) {
+            // Multiple worksheets scenario - send as worksheetIds array
+            paymentInfoObj['worksheetIds'] = multipleWorksheetsIds.split(',').map(id => id.trim());
+        } else if (singleWorksheetId) {
+            // Single worksheet scenario - send as worksheetId
+            paymentInfoObj['worksheetId'] = singleWorksheetId.trim();
+        }
         updatePaymentInfo(applicationId, paymentInfoObj);
     });
 

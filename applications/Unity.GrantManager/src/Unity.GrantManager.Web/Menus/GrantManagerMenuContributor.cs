@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
 using Unity.Identity.Web.Navigation;
+using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement;
 using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Features;
@@ -94,7 +95,19 @@ public class GrantManagerMenuContributor : IMenuContributor
                 requiredPermissionName: GrantApplicationPermissions.Dashboard.Default
             )
         );
+        // Displayed in the Grant Manager - Used at Tenant Level if the user in the IT Operations role
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.EndpointManagement,
+                displayName: "Endpoints",
+                "~/EndpointManagement/Endpoints",
+                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+            )
+        );        
 
+
+        // ********************
+        // Admin - Tenant Management 
         context.Menu.AddItem(
           new ApplicationMenuItem(
               TenantManagementMenuNames.Tenants,
@@ -133,6 +146,17 @@ public class GrantManagerMenuContributor : IMenuContributor
         }
 
 
+        // Displayed on the Tenant Managment area if the user has the ITAdministrator Role
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.EndpointManagement,
+                displayName: "Endpoints",
+                "~/EndpointManagement/Endpoints",
+                requiredPermissionName: TenantManagementPermissions.Tenants.Default
+            )
+        );
+    
+        // End Admin ********************
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue */
         //var administration = context.Menu.GetAdministration();

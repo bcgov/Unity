@@ -12,7 +12,7 @@ namespace Unity.GrantManager.Web.Identity
     [ExposeServices(typeof(ICurrentUser))]
     public class CurrentUser : ICurrentUser, ITransientDependency
     {
-        private static readonly Claim[] EmptyClaimsArray = Array.Empty<Claim>();
+        private static readonly Claim[] EmptyClaimsArray = [];
 
         public virtual bool IsAuthenticated => Id.HasValue;
 
@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Web.Identity
 
         private string[] FindRoleClaims()
         {
-            return FindClaims(UnityClaimsTypes.Role).Select(c => c.Value).Distinct().ToArray();
+            return [.. FindClaims(UnityClaimsTypes.Role).Select(c => c.Value).Distinct()];
         }
 
         private readonly ICurrentPrincipalAccessor _principalAccessor;

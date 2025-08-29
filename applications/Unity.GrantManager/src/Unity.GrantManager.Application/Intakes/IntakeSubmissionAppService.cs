@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,50 +6,30 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
-using Unity.GrantManager.Intake;
-using Unity.GrantManager.Integration.Chefs;
-using Unity.Notifications.TeamsNotifications;
+using Unity.GrantManager.Integrations.Chefs;
+using Unity.GrantManager.Notifications;
+
 using Volo.Abp;
 
 namespace Unity.GrantManager.Intakes
 {
     [RemoteService(false)]
-    public class IntakeSubmissionAppService : GrantManagerAppService, IIntakeSubmissionAppService
+    public class IntakeSubmissionAppService(INotificationsAppService notificationsAppService,
+                                            IIntakeFormSubmissionManager intakeFormSubmissionManager,
+                                            IFormsApiService formsApiService,
+                                            IApplicationFormRepository applicationFormRepository,
+                                            IApplicationFormVersionAppService applicationFormVersionAppService) : GrantManagerAppService, IIntakeSubmissionAppService
     {
-        private readonly IApplicationFormRepository _applicationFormRepository;
-        private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
-        private readonly IFormsApiService _formsApiService;
-        private readonly ISubmissionsApiService _submissionsIntService;
-        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
-        private readonly IOptions<IntakeClientOptions> _intakeClientOptions;
-        private readonly IConfiguration _configuration;
-
-        public IntakeSubmissionAppService(IIntakeFormSubmissionManager intakeFormSubmissionManager,
-            IFormsApiService formsApiService,
-            ISubmissionsApiService submissionsIntService,
-            IApplicationFormRepository applicationFormRepository,
-            IApplicationFormVersionAppService applicationFormVersionAppService,
-            IOptions<IntakeClientOptions> intakeClientOptions,
-            IConfiguration configuration)
-        {
-            _intakeFormSubmissionManager = intakeFormSubmissionManager;
-            _submissionsIntService = submissionsIntService;
-            _applicationFormRepository = applicationFormRepository;
-            _formsApiService = formsApiService;
-            _applicationFormVersionAppService = applicationFormVersionAppService;
-            _intakeClientOptions = intakeClientOptions;
-            _configuration = configuration;
-        }
 
         public async Task<EventSubscriptionConfirmationDto> CreateIntakeSubmissionAsync(EventSubscriptionDto eventSubscriptionDto)
         {
-            var applicationForm = (await _applicationFormRepository
+            var applicationForm = (await applicationFormRepository
                 .GetQueryableAsync())
                 .Where(s => s.ChefsApplicationFormGuid == eventSubscriptionDto.FormId.ToString())
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault() ?? throw new ApplicationFormSetupException("Application Form Not Registered");
 
-            JObject submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
+            JObject submissionData = await formsApiService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
 
             bool validSubmission = await ValidateSubmission(eventSubscriptionDto, submissionData);
             if (!validSubmission) {
@@ -64,7 +42,7 @@ namespace Unity.GrantManager.Intakes
                 await StoreChefsFieldMappingAsync(eventSubscriptionDto, applicationForm, token);
             }
            
-            var result = await _intakeFormSubmissionManager.ProcessFormSubmissionAsync(applicationForm, submissionData);
+            var result = await intakeFormSubmissionManager.ProcessFormSubmissionAsync(applicationForm, submissionData);
             return new EventSubscriptionConfirmationDto() { ConfirmationId = result };
         }
 
@@ -75,7 +53,7 @@ namespace Unity.GrantManager.Intakes
             if (tokenDraft != null && tokenDraft.ToString() == "True") {
                 string factName = "A draft submission was submitted and should not have been";
                 string factValue = $"FormId: {eventSubscriptionDto.FormId} SubmissionID: {eventSubscriptionDto.SubmissionId}";
-                await SendTeamsNotification(factName, factValue);
+                await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, true);
                 return false;
             }
 
@@ -83,54 +61,42 @@ namespace Unity.GrantManager.Intakes
             if (tokenDeleted != null && tokenDeleted.ToString() == "True") {
                 string factName = "A deleted submission was submitted - user navigated back and got a success message from chefs";
                 string factValue = $"FormId: {eventSubscriptionDto.FormId} SubmissionID: {eventSubscriptionDto.SubmissionId}";
-                await SendTeamsNotification(factName, factValue);
+                await  notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, false);
             }
 
             // If there are no mappings initialize the available
-            bool formVersionExists = await _applicationFormVersionAppService.FormVersionExists(eventSubscriptionDto.FormVersion.ToString());
+            bool formVersionExists = await applicationFormVersionAppService.FormVersionExists(eventSubscriptionDto.FormVersion.ToString());
 
             if (!formVersionExists)
             {
-                dynamic? formVersion = await _formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(),
+                dynamic? formVersion = await formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(),
                     eventSubscriptionDto.FormVersion.ToString());
 
                 if(formVersion == null)
                 {
                     string factName = "Application Form Version Not Registered - Unknown Version";
                     string factValue = $"FormId: {eventSubscriptionDto.FormId} FormVersion: {eventSubscriptionDto.FormVersion}";
-                    await SendTeamsNotification(factName, factValue);
+                    await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, true);
                     return false;
-                } else if(!_intakeClientOptions.Value.AllowUnregisteredVersions)
-                {
+                } else {
                     var version = ((JObject)formVersion!).SelectToken("version");
                     var published = ((JObject)formVersion!).SelectToken("published");
                     string factName = "Application Form Version Not Registered - Unknown Version";
                     string factValue = $"Application Form Version Not Registerd - Version: {version} Published: {published}";
-                    await SendTeamsNotification(factName, factValue);
+                    await notificationsAppService.NotifyChefsEventToTeamsAsync(factName, factValue, true);
                     return false;
                 }
             }
             return true;
         }
 
-        private async Task SendTeamsNotification(string factName, string factValue)
-        {
-            string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            string activityTitle = "Chefs Submission Event Validation Error";
-            string activitySubtitle = "Environment: " + envInfo;
-            string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
-            TeamsNotificationService teamsNotificationService = new();
-            teamsNotificationService.AddFact(factName, factValue);
-            await teamsNotificationService.PostFactsToTeamsAsync(teamsChannel, activityTitle, activitySubtitle);
-        }
-
         private async Task StoreChefsFieldMappingAsync(EventSubscriptionDto eventSubscriptionDto, ApplicationForm applicationForm, JToken token)
         {
             Guid formVersionId = Guid.Parse(token.ToString());
-            var formData = await _formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
+            var formData = await formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
             string chefsFormId = eventSubscriptionDto.FormId.ToString();
             string chefsFormVersionId = eventSubscriptionDto.FormVersion.ToString();
-            await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(chefsFormId, chefsFormVersionId, applicationForm.Id, formData);
+            await applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(chefsFormId, chefsFormVersionId, applicationForm.Id, formData);
         }
     }
 }

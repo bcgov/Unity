@@ -15,91 +15,84 @@ namespace Unity.GrantManager.Intakes.Mapping
         {
             logger = loggerFactory.CreateLogger("ChefsFormIOReplacement");
         }
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromMinutes(1);
 
-        private static int OneMinuteMilliseconds = 60000;
+        // Map of regex => replacement
+        private static readonly Dictionary<Regex, string> SubPatterns = new()
+        {
+            // Advanced components
+            { new Regex(@"""type""\s*:\s*""orgbook""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"select\"" },
+            { new Regex(@"""type""\s*:\s*""simpleaddressadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"address\"" },
+            { new Regex(@"""type""\s*:\s*""simplebuttonadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"button\"" },
+            { new Regex(@"""type""\s*:\s*""simplecheckboxadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"checkbox\"" },
+            { new Regex(@"""type""\s*:\s*""simplecurrencyadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"currency\"" },
+            { new Regex(@"""type""\s*:\s*""simpledatetimeadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"datetime\"" },
+            { new Regex(@"""type""\s*:\s*""simpledayadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"day\"" },
+            { new Regex(@"""type""\s*:\s*""simpleemailadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"email\"" },
+            { new Regex(@"""type""\s*:\s*""simplenumberadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"number\"" },
+            { new Regex(@"""type""\s*:\s*""simplepasswordadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"password\"" },
+            { new Regex(@"""type""\s*:\s*""simplephonenumberadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"phoneNumber\"" },
+            { new Regex(@"""type""\s*:\s*""simpleradioadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"radio\"" },
+            { new Regex(@"""type""\s*:\s*""simpleselectadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"select\"" },
+            { new Regex(@"""type""\s*:\s*""simpleselectboxesadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"selectboxes\"" },
+            { new Regex(@"""type""\s*:\s*""simplesignatureadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"signature\"" },
+            { new Regex(@"""type""\s*:\s*""simplesurveyadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"survey\"" },
+            { new Regex(@"""type""\s*:\s*""simpletagsadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"tags\"" },
+            { new Regex(@"""type""\s*:\s*""simpletextareaadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"textarea\"" },
+            { new Regex(@"""type""\s*:\s*""simpletextfieldadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"textfield\"" },
+            { new Regex(@"""type""\s*:\s*""simpletimeadvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"time\"" },
+            { new Regex(@"""type""\s*:\s*""simpleurladvanced""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"url\"" },
+
+            // Regular components
+            { new Regex(@"""type""\s*:\s*""simplebcaddress""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"address\"" },
+            { new Regex(@"""type""\s*:\s*""bcaddress""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"address\"" },
+            { new Regex(@"""type""\s*:\s*""simplebtnreset""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"button\"" },
+            { new Regex(@"""type""\s*:\s*""simplebtnsubmit""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"button\"" },
+            { new Regex(@"""type""\s*:\s*""simplecheckboxes""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"selectboxes\"" },
+            { new Regex(@"""type""\s*:\s*""simplecheckbox""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"checkbox\"" },
+            { new Regex(@"""type""\s*:\s*""simplecols2""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"columns\"" },
+            { new Regex(@"""type""\s*:\s*""simplecols3""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"columns\"" },
+            { new Regex(@"""type""\s*:\s*""simplecols4""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"columns\"" },
+            { new Regex(@"""type""\s*:\s*""simplecontent""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"content\"" },
+            { new Regex(@"""type""\s*:\s*""simpledatetime""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"datetime\"" },
+            { new Regex(@"""type""\s*:\s*""simpleday""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"day\"" },
+            { new Regex(@"""type""\s*:\s*""simpleemail""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"email\"" },
+            { new Regex(@"""type""\s*:\s*""simplefile""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"file\"" },
+            { new Regex(@"""type""\s*:\s*""simpleheading""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"header\"" },
+            { new Regex(@"""type""\s*:\s*""simplefieldset""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"fieldset\"" },
+            { new Regex(@"""type""\s*:\s*""simplenumber""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"number\"" },
+            { new Regex(@"""type""\s*:\s*""simplepanel""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"panel\"" },
+            { new Regex(@"""type""\s*:\s*""simpleparagraph""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"textarea\"" },
+            { new Regex(@"""type""\s*:\s*""simplephonenumber""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"phoneNumber\"" },
+            { new Regex(@"""type""\s*:\s*""simpleradios""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"radio\"" },
+            { new Regex(@"""type""\s*:\s*""simpleselect""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"select\"" },
+            { new Regex(@"""type""\s*:\s*""simpletabs""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"tabs\"" },
+            { new Regex(@"""type""\s*:\s*""simpletextarea""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"textarea\"" },
+            { new Regex(@"""type""\s*:\s*""simpletextfield""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"textfield\"" },
+            { new Regex(@"""type""\s*:\s*""simpletime""", RegexOptions.Compiled, RegexTimeout), "\"type\": \"time\"" }
+        };
+
         public static string ReplaceAdvancedFormIoControls(dynamic formSubmission)
         {
-            string formSubmissionStr = formSubmission.ToString();
-            if (!string.IsNullOrEmpty(formSubmissionStr))
+            string? formSubmissionStr = formSubmission?.ToString();
+            if (string.IsNullOrEmpty(formSubmissionStr))
+                return string.Empty;
+
+            string replacedString = formSubmissionStr;
+
+            try
             {
-                Dictionary<string, string> subPatterns = new Dictionary<string, string>
+                foreach (var kv in SubPatterns)
                 {
-                    { @"\borgbook\b", "select" },
-                    { @"\bsimpleaddressadvanced\b", "address" },
-                    { @"\bsimplebuttonadvanced\b", "button" },
-                    { @"\bsimplecheckboxadvanced\b", "checkbox" },
-                    { @"\bsimplecurrencyadvanced\b", "currency" },
-                    { @"\bsimpledatetimeadvanced\b", "datetime" },
-                    { @"\bsimpledayadvanced\b", "day" },
-                    { @"\bsimpleemailadvanced\b", "email" },
-                    { @"\bsimplenumberadvanced\b", "number" },
-                    { @"\bsimplepasswordadvanced\b", "password" },
-                    { @"\bsimplephonenumberadvanced\b", "phoneNumber" },
-                    { @"\bsimpleradioadvanced\b", "radio" },
-                    { @"\bsimpleselectadvanced\b", "select" },
-                    { @"\bsimpleselectboxesadvanced\b", "selectboxes" },
-                    { @"\bsimplesignatureadvanced\b", "signature" },
-                    { @"\bsimplesurveyadvanced\b", "survey" },
-                    { @"\bsimpletagsadvanced\b", "tags" },
-                    { @"\bsimpletextareaadvanced\b", "textarea" },
-                    { @"\bsimpletextfieldadvanced\b", "textfield" },
-                    { @"\bsimpletimeadvanced\b", "time" },
-                    { @"\bsimpleurladvanced\b", "url" },
-
-                    // Regular components
-                    { @"\bsimplebcaddress\b", "address" },
-                    { @"\bbcaddress\b", "address" },
-                    { @"\bsimplebtnreset\b", "button" },
-                    { @"\bsimplebtnsubmit\b", "button" },
-                    { @"\bsimplecheckboxes\b", "selectboxes" },
-                    { @"\bsimplecheckbox\b", "checkbox" },
-                    { @"\bsimplecols2\b", "columns" },
-                    { @"\bsimplecols3\b", "columns" },
-                    { @"\bsimplecols4\b", "columns" },
-                    { @"\bsimplecontent\b", "content" },
-                    { @"\bsimpledatetime\b", "datetime" },
-                    { @"\bsimpleday\b", "day" },
-                    { @"\bsimpleemail\b", "email" },
-                    { @"\bsimplefile\b", "file" },
-                    { @"\bsimpleheading\b", "header" },
-                    { @"\bsimplefieldset\b", "fieldset" },
-                    { @"\bsimplenumber\b", "number" },
-                    { @"\bsimplepanel", "panel" },
-                    { @"\bsimpleparagraph\b", "textarea" },
-                    { @"\bsimplephonenumber\b", "phoneNumber" },
-                    { @"\bsimpleradios\b", "radio" },
-                    { @"\bsimpleselect\b", "select" },
-                    { @"\bsimpletabs\b", "tabs" },
-                    { @"\bsimpletextarea\b", "textarea" },
-                    { @"\bsimpletextfield\b", "textfield" },
-                    { @"\bsimpletime\b", "time" }
-                };
-                string replacedString = formSubmissionStr;
-
-                //find the replacement
-                foreach (var subPattern in subPatterns)
-                {
-                    string patternKey = subPattern.Key;
-                    string replace = subPattern.Value;
-                    // Allow one minute timeout
-                    try
-                    {
-                        replacedString = Regex.Replace(replacedString,
-                            patternKey,
-                            replace,
-                            RegexOptions.None,
-                            TimeSpan.FromMilliseconds(OneMinuteMilliseconds));
-                    }
-                    catch (RegexMatchTimeoutException ex)
-                    {
-                        string ExceptionMessage = ex.Message;
-                        logger.LogWarning(ex, "ReplaceAdvancedFormIoControls RegEx Exception {ExceptionMessage}", ExceptionMessage);
-                    }
+                    replacedString = kv.Key.Replace(replacedString, kv.Value);
                 }
-
-                formSubmissionStr = replacedString;
             }
-            return formSubmissionStr;
+            catch (RegexMatchTimeoutException ex)
+            {
+                logger.LogWarning(ex, "ReplaceAdvancedFormIoControls RegEx Timeout: {Message}", ex.Message);
+            }
+
+            return replacedString;
         }
     }
 }

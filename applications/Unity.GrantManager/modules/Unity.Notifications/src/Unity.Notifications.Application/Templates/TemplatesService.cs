@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -81,7 +82,7 @@ public class TemplateService : ApplicationService, ITemplateService
     
     public async Task<List<TemplateVariable>> GetTemplateVariables()
     {
-        var data =  await _templateVariablesRepository.GetListAsync();
-        return data;
+        var templateVariables =  await _templateVariablesRepository.GetQueryableAsync();
+        return templateVariables.OrderBy(x => x.Name).ToList();
     }
 }

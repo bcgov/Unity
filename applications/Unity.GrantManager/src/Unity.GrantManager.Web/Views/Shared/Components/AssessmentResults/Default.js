@@ -6,7 +6,9 @@
         let combinedData = formData.concat(assessmentResultsCustomForm);
         let assessmentResultObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();     
-        let worksheetId = $("#AssessmentInfo_WorksheetId").val();       
+        // Check for worksheet scenario - multiple vs single
+        let multipleWorksheetsIds = $("#AssessmentInfo_WorksheetIds").val();
+        let singleWorksheetId = $("#AssessmentInfo_WorksheetId").val();       
 
         $.each(combinedData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -48,7 +50,16 @@
 
         try {
             assessmentResultObj['correlationId'] = formVersionId;
-            assessmentResultObj['worksheetId'] = worksheetId;
+            
+            // Set correct payload property based on worksheet scenario
+            if (multipleWorksheetsIds) {
+                // Multiple worksheets scenario - send as WorksheetIds array
+                assessmentResultObj['worksheetIds'] = multipleWorksheetsIds.split(',').map(id => id.trim());
+            } else if (singleWorksheetId) {
+                // Single worksheet scenario - send as WorksheetId
+                assessmentResultObj['worksheetId'] = singleWorksheetId.trim();
+            }
+            
             if(assessmentResultObj['ApprovedAmount'] == '') {
                 assessmentResultObj['ApprovedAmount'] = null;
             }

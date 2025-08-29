@@ -1981,10 +1981,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
 
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
@@ -3103,6 +3099,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
                     b.HasKey("Id");
 
                     b.ToTable("AccountCodings", "Payments");
@@ -3425,10 +3425,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
