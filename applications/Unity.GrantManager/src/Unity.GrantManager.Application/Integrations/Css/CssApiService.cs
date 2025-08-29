@@ -72,10 +72,7 @@ namespace Unity.GrantManager.Integrations.Sso
 
                     try
                     {
-                        var result = JsonSerializer.Deserialize<UserSearchResult>(json, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        var result = JsonSerializer.Deserialize<UserSearchResult>(json, _jsonOptions)!;
                         
                         if (result != null)
                         {
@@ -113,12 +110,18 @@ namespace Unity.GrantManager.Integrations.Sso
 
         private static string BuildUrlWithQuery(string basePath, Dictionary<string, string> queryParams)
         {
-            if (!queryParams.Any())
+            if (queryParams.Count == 0)
                 return basePath;
                 
             var query = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
             return $"{basePath}?{query}";
         }
+
+        // Define this once (e.g., at the top of your class or as a static field)
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         private async Task<TokenValidationResponse> GetAccessTokenAsync()
         {
@@ -132,13 +135,13 @@ namespace Unity.GrantManager.Integrations.Sso
             try
             {
                 var cssTokenApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_TOKEN_API_BASE);
-                
+
                 // Use HttpClientFactory instead of new HttpClient()
                 using var client = httpClientFactory.CreateClient();
-                
+
                 var request = new HttpRequestMessage(HttpMethod.Post, cssTokenApiUrl);
                 var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_cssApiOptions.ClientId}:{_cssApiOptions.ClientSecret}"));
-                
+
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
                 request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded");
 
@@ -147,7 +150,7 @@ namespace Unity.GrantManager.Integrations.Sso
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = response.Content != null ? await response.Content.ReadAsStringAsync() : "No content";
-                    Logger.LogError("Failed to fetch CSS API token. Status: {StatusCode}, Content: {ErrorContent}, URL: {Url}", 
+                    Logger.LogError("Failed to fetch CSS API token. Status: {StatusCode}, Content: {ErrorContent}, URL: {Url}",
                         response.StatusCode, errorContent, cssTokenApiUrl);
                     throw new UserFriendlyException($"Failed to authenticate with CSS API: {response.StatusCode}");
                 }
@@ -159,7 +162,7 @@ namespace Unity.GrantManager.Integrations.Sso
                 }
 
                 var content = await response.Content.ReadAsStringAsync();
-                
+
                 if (string.IsNullOrWhiteSpace(content))
                 {
                     Logger.LogError("CSS token API returned empty content");
@@ -169,11 +172,8 @@ namespace Unity.GrantManager.Integrations.Sso
                 TokenValidationResponse tokenResponse;
                 try
                 {
-                    tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(content, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    })!;
-                    
+                    tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(content, _jsonOptions)!;
+
                     if (tokenResponse == null)
                     {
                         throw new UserFriendlyException("Invalid token response format");
