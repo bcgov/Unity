@@ -5,7 +5,8 @@
     let dataTable;
 
     const listColumns = getColumns();
-    const defaultVisibleColumns = ['select',
+    const defaultVisibleColumns = [
+        'select',
         'applicantName',
         'category',
         'referenceNo',
@@ -18,16 +19,15 @@
         'projectName',
         'applicantId',
         'applicationTag',
-        'assignees'
-    ]
+        'assignees',
+    ];
 
     //For stateRestore label in modal
     let languageSetValues = {
         buttons: {
-            stateRestore: 'View %d'
+            stateRestore: 'View %d',
         },
-        stateRestore:
-        {
+        stateRestore: {
             creationModal: {
                 title: 'Create View',
                 name: 'Name',
@@ -41,8 +41,8 @@
             removeSubmit: 'Delete',
             duplicateError: 'A view with this name already exists.',
             removeError: 'Failed to remove view.',
-        }
-    }
+        },
+    };
 
     let actionButtons = [
         {
@@ -52,29 +52,44 @@
             exportOptions: {
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
-            }
+            },
         },
         {
             extend: 'savedStates',
-            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
+            className:
+                'custom-table-btn flex-none btn btn-secondary grp-savedStates',
             config: {
                 creationModal: true,
                 splitSecondaries: [
-                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk" ></i> Update'},
-                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square" ></i> Rename'},
-                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can" ></i> Delete'}
-                ]
+                    {
+                        extend: 'updateState',
+                        text: '<i class="fa-regular fa-floppy-disk" ></i> Update',
+                    },
+                    {
+                        extend: 'renameState',
+                        text: '<i class="fa-regular fa-pen-to-square" ></i> Rename',
+                    },
+                    {
+                        extend: 'removeState',
+                        text: '<i class="fa-regular fa-trash-can" ></i> Delete',
+                    },
+                ],
             },
             buttons: [
                 { extend: 'createState', text: 'Save As View' },
                 {
-                    text: "Reset to Default View",
-                    action: function (e, dt, node, config)
-                    {
+                    text: 'Reset to Default View',
+                    action: function (e, dt, node, config) {
                         dt.columns().visible(false);
 
                         // List of all columns not including default columns
-                        const allColumnNames = dt.settings()[0].aoColumns.map(col => col.name).filter(colName => !defaultVisibleColumns.includes(colName));
+                        const allColumnNames = dt
+                            .settings()[0]
+                            .aoColumns.map((col) => col.name)
+                            .filter(
+                                (colName) =>
+                                    !defaultVisibleColumns.includes(colName)
+                            );
                         const orderedIndexes = [];
 
                         // Set the visible columns, and collect id's for the reorder
@@ -92,7 +107,7 @@
                             if (colIdx !== undefined && colIdx !== -1) {
                                 orderedIndexes.push(colIdx);
                             }
-                        })
+                        });
                         dt.colReorder.order(orderedIndexes);
 
                         $('#search, .custom-filter-input').val('');
@@ -106,22 +121,22 @@
                             .find('.dt-button-collection')
                             .hide();
                         $('div.dt-button-background').trigger('click');
-                    }
+                    },
                 },
                 { extend: 'removeAllStates', text: 'Delete All Views' },
                 {
                     extend: 'spacer',
                     style: 'bar',
-                }
-            ]
-        }
+                },
+            ],
+        },
     ];
 
     let responseCallback = function (result) {
         return {
             recordsTotal: result.totalCount,
             recordsFiltered: result.totalCount,
-            data: formatItems(result.items)
+            data: formatItems(result.items),
         };
     };
 
@@ -129,11 +144,11 @@
         const newData = items.map((item, index) => {
             return {
                 ...item,
-                rowCount: index
+                rowCount: index,
             };
         });
         return newData;
-    }
+    };
 
     dataTable = initializeDataTable({
         dt,
@@ -141,7 +156,8 @@
         listColumns,
         maxRowsPerPage: 10,
         defaultSortColumn: 4,
-        dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
+        dataEndpoint:
+            unity.grantManager.grantApplications.grantApplication.getList,
         data: {},
         responseCallback,
         actionButtons,
@@ -150,32 +166,30 @@
         reorderEnabled: true,
         languageSetValues,
         dataTableName: 'GrantApplicationsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
     });
 
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-
         if (indexes?.length) {
-            indexes.forEach(index => {
-                $("#row_" + index).prop("checked", true);
-                if ($(".chkbox:checked").length == $(".chkbox").length) {
-                    $(".select-all-applications").prop("checked", true);
+            indexes.forEach((index) => {
+                $('#row_' + index).prop('checked', true);
+                if ($('.chkbox:checked').length == $('.chkbox').length) {
+                    $('.select-all-applications').prop('checked', true);
                 }
                 selectApplication(type, index, 'select_application');
             });
         }
-
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
         if (indexes?.length) {
-            indexes.forEach(index => {
+            indexes.forEach((index) => {
                 selectApplication(type, index, 'deselect_application');
-                $("#row_" + index).prop("checked", false);
-                if ($(".chkbox:checked").length != $(".chkbox").length) {
-                    $(".select-all-applications").prop("checked", false);
+                $('#row_' + index).prop('checked', false);
+                if ($('.chkbox:checked').length != $('.chkbox').length) {
+                    $('.select-all-applications').prop('checked', false);
                 }
             });
         }
@@ -224,7 +238,7 @@
             getOrganizationNumberColumn(columnIndex++),
             getOrgBookStatusColumn(columnIndex++),
             getProjectStartDateColumn(columnIndex++),
-            getProjectEndDateColumn(columnIndex++), 
+            getProjectEndDateColumn(columnIndex++),
             getProjectedFundingTotalColumn(columnIndex++),
             getTotalProjectBudgetPercentageColumn(columnIndex++),
             getTotalPaidAmountColumn(columnIndex++),
@@ -270,7 +284,12 @@
             getApplicantIdColumn(columnIndex++),
             getPayoutColumn(columnIndex++),
             getNonRegisteredOrganizationNameColumn(columnIndex++),
-        ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
+        ]
+            .map((column) => ({
+                ...column,
+                targets: [column.index],
+                orderData: [column.index, 0],
+            }))
             .sort((a, b) => a.index - b.index);
         return sortedColumns;
     }
@@ -281,8 +300,8 @@
             data: 'applicant.applicantName',
             name: 'applicantName',
             className: 'data-table-header',
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getApplicationNumberColumn(columnIndex) {
@@ -291,11 +310,11 @@
             data: 'referenceNo',
             name: 'referenceNo',
             className: 'data-table-header text-nowrap',
-            render: function (data, type, row) {                
+            render: function (data, type, row) {
                 return `<a href="/GrantApplications/Details?ApplicationId=${row.id}">${data}</a>`;
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getCategoryColumn(columnIndex) {
@@ -304,8 +323,8 @@
             data: 'category',
             name: 'category',
             className: 'data-table-header',
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getSubmissionDateColumn(columnIndex) {
@@ -314,9 +333,12 @@
             data: 'submissionDate',
             name: 'submissionDate',
             className: 'data-table-header',
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
-            index: columnIndex
-        }
+            render: DataTable.render.date(
+                'YYYY-MM-DD',
+                abp.localization.currentCulture.name
+            ),
+            index: columnIndex,
+        };
     }
 
     function getProjectNameColumn(columnIndex) {
@@ -325,8 +347,8 @@
             data: 'projectName',
             name: 'projectName',
             className: 'data-table-header',
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getSectorColumn(columnIndex) {
@@ -338,8 +360,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getSubSectorColumn(columnIndex) {
@@ -351,8 +373,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getTotalProjectBudgetColumn(columnIndex) {
@@ -364,8 +386,8 @@
             render: function (data) {
                 return formatter.format(data);
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getAssigneesColumn(columnIndex) {
@@ -378,19 +400,27 @@
                 let displayText = ' ';
 
                 if (data != null && data.length == 1) {
-                    displayText = type === 'fullName' ? getNames(data) : (data[0].fullName + getDutyText(data[0]));
+                    displayText =
+                        type === 'fullName'
+                            ? getNames(data)
+                            : data[0].fullName + getDutyText(data[0]);
                 } else if (data.length > 1) {
                     displayText = getNames(data);
                 }
 
-                return `<span class="d-flex align-items-center dt-select-assignees">
+                return (
+                    `<span class="d-flex align-items-center dt-select-assignees">
                                
-                                <span class="ps-2 flex-fill" data-toggle="tooltip" title="`
-                    + getNames(data) + '">' + displayText + '</span>' +
-                    `</span>`;
+                                <span class="ps-2 flex-fill" data-toggle="tooltip" title="` +
+                    getNames(data) +
+                    '">' +
+                    displayText +
+                    '</span>' +
+                    `</span>`
+                );
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getStatusColumn(columnIndex) {
@@ -399,8 +429,8 @@
             data: 'status',
             name: 'status',
             className: 'data-table-header',
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getRequestedAmountColumn(columnIndex) {
@@ -412,8 +442,8 @@
             render: function (data) {
                 return formatter.format(data);
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getApprovedAmountColumn(columnIndex) {
@@ -425,8 +455,8 @@
             render: function (data) {
                 return formatter.format(data);
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getEconomicRegionColumn(columnIndex) {
@@ -438,8 +468,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getRegionalDistrictColumn(columnIndex) {
@@ -451,8 +481,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getCommunityColumn(columnIndex) {
@@ -464,8 +494,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getOrganizationNumberColumn(columnIndex) {
@@ -478,8 +508,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getOrgBookStatusColumn(columnIndex) {
@@ -497,8 +527,8 @@
                     return data ?? '';
                 }
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getProjectStartDateColumn(columnIndex) {
@@ -508,12 +538,16 @@
             data: 'projectStartDate',
             className: 'data-table-header',
             render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
+                return data != null
+                    ? luxon.DateTime.fromISO(data, {
+                          locale: abp.localization.currentCulture.name,
+                      })
+                          .toUTC()
+                          .toLocaleString()
+                    : '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getProjectEndDateColumn(columnIndex) {
@@ -523,12 +557,16 @@
             data: 'projectEndDate',
             className: 'data-table-header',
             render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
+                return data != null
+                    ? luxon.DateTime.fromISO(data, {
+                          locale: abp.localization.currentCulture.name,
+                      })
+                          .toUTC()
+                          .toLocaleString()
+                    : '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getProjectedFundingTotalColumn(columnIndex) {
@@ -540,8 +578,8 @@
             render: function (data) {
                 return formatter.format(data) ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getTotalProjectBudgetPercentageColumn(columnIndex) {
@@ -553,8 +591,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getTotalPaidAmountColumn(columnIndex) {
@@ -567,8 +605,8 @@
                 let totalPaid = data?.totalPaid ?? '';
                 return formatter.format(totalPaid);
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getElectoralDistrictColumn(columnIndex) {
@@ -580,8 +618,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getApplicantElectoralDistrictColumn(columnIndex) {
@@ -593,8 +631,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getForestryOrNonForestryColumn(columnIndex) {
@@ -606,11 +644,10 @@
             render: function (data) {
                 if (data != null)
                     return data == 'FORESTRY' ? 'Forestry' : 'Non Forestry';
-                else
-                    return '';
+                else return '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getForestryFocusColumn(columnIndex) {
@@ -620,13 +657,11 @@
             data: 'forestryFocus',
             className: 'data-table-header',
             render: function (data) {
-
                 if (data) {
                     if (data == 'PRIMARY') {
-                        return 'Primary processing'
-                    }
-                    else if (data == 'SECONDARY') {
-                        return 'Secondary/Value-Added/Not Mass Timber'
+                        return 'Primary processing';
+                    } else if (data == 'SECONDARY') {
+                        return 'Secondary/Value-Added/Not Mass Timber';
                     } else if (data == 'MASS_TIMBER') {
                         return 'Mass Timber';
                     } else if (data != '') {
@@ -634,14 +669,12 @@
                     } else {
                         return '';
                     }
-                }
-                else {
+                } else {
                     return '';
                 }
-
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getAcquisitionColumn(columnIndex) {
@@ -651,17 +684,14 @@
             data: 'acquisition',
             className: 'data-table-header',
             render: function (data) {
-
                 if (data) {
                     return titleCase(data);
-                }
-                else {
+                } else {
                     return '';
                 }
-
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getCityColumn(columnIndex) {
@@ -672,10 +702,9 @@
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';
-
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getCommunityPopulationColumn(columnIndex) {
@@ -687,8 +716,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getLikelihoodOfFundingColumn(columnIndex) {
@@ -700,13 +729,12 @@
             render: function (data) {
                 if (data != null) {
                     return titleCase(data);
-                }
-                else {
+                } else {
                     return '';
                 }
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getSubStatusColumn(columnIndex) {
@@ -718,8 +746,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getTagsColumn(columnIndex) {
@@ -729,14 +757,13 @@
             data: 'applicationTag',
             className: '',
             render: function (data) {
-
                 let tagNames = data
-                    .filter(x =>  x?.tag?.name)      
-                    .map(x => x.tag.name);   
+                    .filter((x) => x?.tag?.name)
+                    .map((x) => x.tag.name);
                 return tagNames.join(', ') ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getTotalScoreColumn(columnIndex) {
@@ -748,8 +775,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getAssessmentResultColumn(columnIndex) {
@@ -761,13 +788,12 @@
             render: function (data) {
                 if (data != null) {
                     return titleCase(data);
-                }
-                else {
+                } else {
                     return '';
                 }
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getRecommendedAmountColumn(columnIndex) {
@@ -779,8 +805,8 @@
             render: function (data) {
                 return formatter.format(data) ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getDueDateColumn(columnIndex) {
@@ -790,12 +816,16 @@
             data: 'dueDate',
             className: 'data-table-header',
             render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
+                return data != null
+                    ? luxon.DateTime.fromISO(data, {
+                          locale: abp.localization.currentCulture.name,
+                      })
+                          .toUTC()
+                          .toLocaleString()
+                    : '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getOwnerColumn(columnIndex) {
@@ -807,8 +837,8 @@
             render: function (data) {
                 return data != null ? data.fullName : '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getDecisionDateColumn(columnIndex) {
@@ -818,12 +848,16 @@
             data: 'finalDecisionDate',
             className: 'data-table-header',
             render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
+                return data != null
+                    ? luxon.DateTime.fromISO(data, {
+                          locale: abp.localization.currentCulture.name,
+                      })
+                          .toUTC()
+                          .toLocaleString()
+                    : '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getProjectSummaryColumn(columnIndex) {
@@ -835,8 +869,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getOrganizationTypeColumn(columnIndex) {
@@ -848,8 +882,8 @@
             render: function (data) {
                 return getFullType(data) ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getOrganizationNameColumn(columnIndex) {
@@ -861,8 +895,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getNonRegisteredOrganizationNameColumn(columnIndex) {
@@ -874,8 +908,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getDueDiligenceStatusColumn(columnIndex) {
         return {
@@ -886,8 +920,8 @@
             render: function (data) {
                 return titleCase(data ?? '') ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getDeclineRationaleColumn(columnIndex) {
@@ -899,8 +933,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getContactFullNameColumn(columnIndex) {
@@ -912,8 +946,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getContactTitleColumn(columnIndex) {
         return {
@@ -924,8 +958,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getContactEmailColumn(columnIndex) {
         return {
@@ -936,8 +970,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getContactBusinessPhoneColumn(columnIndex) {
         return {
@@ -948,8 +982,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getContactCellPhoneColumn(columnIndex) {
         return {
@@ -960,8 +994,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getSectorSubSectorIndustryDescColumn(columnIndex) {
@@ -973,8 +1007,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getSigningAuthorityFullNameColumn(columnIndex) {
@@ -986,8 +1020,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getSigningAuthorityTitleColumn(columnIndex) {
         return {
@@ -998,8 +1032,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getSigningAuthorityEmailColumn(columnIndex) {
         return {
@@ -1010,8 +1044,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getSigningAuthorityBusinessPhoneColumn(columnIndex) {
         return {
@@ -1022,8 +1056,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getSigningAuthorityCellPhoneColumn(columnIndex) {
         return {
@@ -1034,8 +1068,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getPlaceColumn(columnIndex) {
         return {
@@ -1046,8 +1080,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getRiskRankingColumn(columnIndex) {
@@ -1059,8 +1093,8 @@
             render: function (data) {
                 return titleCase(data ?? '') ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getNotesColumn(columnIndex) {
@@ -1069,15 +1103,15 @@
             name: 'notes',
             data: 'notes',
             className: 'data-table-header multi-line',
-            width: "20rem",
+            width: '20rem',
             createdCell: function (td) {
                 $(td).css('min-width', '20rem');
             },
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getRedStopColumn(columnIndex) {
@@ -1089,8 +1123,8 @@
             render: function (data) {
                 return convertToYesNo(data);
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getIndigenousColumn(columnIndex) {
@@ -1102,8 +1136,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getFyeDayColumn(columnIndex) {
@@ -1115,8 +1149,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getFyeMonthColumn(columnIndex) {
@@ -1128,13 +1162,12 @@
             render: function (data) {
                 if (data) {
                     return titleCase(data);
-                }
-                else {
+                } else {
                     return '';
                 }
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getApplicantIdColumn(columnIndex) {
@@ -1146,8 +1179,8 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
 
     function getPayoutColumn(columnIndex) {
@@ -1157,74 +1190,72 @@
             data: 'paymentInfo',
             className: 'data-table-header',
             render: function (data) {
-                return payoutDefinition(data?.approvedAmount ?? 0, data?.totalPaid ?? 0);
+                return payoutDefinition(
+                    data?.approvedAmount ?? 0,
+                    data?.totalPaid ?? 0
+                );
             },
-            index: columnIndex
-        }
+            index: columnIndex,
+        };
     }
     function getDutyText(data) {
-        return data.duty ? (" [" + data.duty + "]") : '';
+        return data.duty ? ' [' + data.duty + ']' : '';
     }
 
     function getFullType(code) {
         const companyTypes = [
-            { code: "BC", name: "BC Company" },
-            { code: "CP", name: "Cooperative" },
-            { code: "GP", name: "General Partnership" },
-            { code: "S", name: "Society" },
-            { code: "SP", name: "Sole Proprietorship" },
-            { code: "A", name: "Extraprovincial Company" },
-            { code: "B", name: "Extraprovincial" },
-            { code: "BEN", name: "Benefit Company" },
-            { code: "C", name: "Continuation In" },
-            { code: "CC", name: "BC Community Contribution Company" },
-            { code: "CS", name: "Continued In Society" },
-            { code: "CUL", name: "Continuation In as a BC ULC" },
-            { code: "EPR", name: "Extraprovincial Registration" },
-            { code: "FI", name: "Financial Institution" },
-            { code: "FOR", name: "Foreign Registration" },
-            { code: "LIB", name: "Public Library Association" },
-            { code: "LIC", name: "Licensed (Extra-Pro)" },
-            { code: "LL", name: "Limited Liability Partnership" },
-            { code: "LLC", name: "Limited Liability Company" },
-            { code: "LP", name: "Limited Partnership" },
-            { code: "MF", name: "Miscellaneous Firm" },
-            { code: "PA", name: "Private Act" },
-            { code: "PAR", name: "Parish" },
-            { code: "QA", name: "CO 1860" },
-            { code: "QB", name: "CO 1862" },
-            { code: "QC", name: "CO 1878" },
-            { code: "QD", name: "CO 1890" },
-            { code: "QE", name: "CO 1897" },
-            { code: "REG", name: "Registraton (Extra-pro)" },
-            { code: "ULC", name: "BC Unlimited Liability Company" },
-            { code: "XCP", name: "Extraprovincial Cooperative" },
-            { code: "XL", name: "Extrapro Limited Liability Partnership" },
-            { code: "XP", name: "Extraprovincial Limited Partnership" },
-            { code: "XS", name: "Extraprovincial Society" }
+            { code: 'BC', name: 'BC Company' },
+            { code: 'CP', name: 'Cooperative' },
+            { code: 'GP', name: 'General Partnership' },
+            { code: 'S', name: 'Society' },
+            { code: 'SP', name: 'Sole Proprietorship' },
+            { code: 'A', name: 'Extraprovincial Company' },
+            { code: 'B', name: 'Extraprovincial' },
+            { code: 'BEN', name: 'Benefit Company' },
+            { code: 'C', name: 'Continuation In' },
+            { code: 'CC', name: 'BC Community Contribution Company' },
+            { code: 'CS', name: 'Continued In Society' },
+            { code: 'CUL', name: 'Continuation In as a BC ULC' },
+            { code: 'EPR', name: 'Extraprovincial Registration' },
+            { code: 'FI', name: 'Financial Institution' },
+            { code: 'FOR', name: 'Foreign Registration' },
+            { code: 'LIB', name: 'Public Library Association' },
+            { code: 'LIC', name: 'Licensed (Extra-Pro)' },
+            { code: 'LL', name: 'Limited Liability Partnership' },
+            { code: 'LLC', name: 'Limited Liability Company' },
+            { code: 'LP', name: 'Limited Partnership' },
+            { code: 'MF', name: 'Miscellaneous Firm' },
+            { code: 'PA', name: 'Private Act' },
+            { code: 'PAR', name: 'Parish' },
+            { code: 'QA', name: 'CO 1860' },
+            { code: 'QB', name: 'CO 1862' },
+            { code: 'QC', name: 'CO 1878' },
+            { code: 'QD', name: 'CO 1890' },
+            { code: 'QE', name: 'CO 1897' },
+            { code: 'REG', name: 'Registraton (Extra-pro)' },
+            { code: 'ULC', name: 'BC Unlimited Liability Company' },
+            { code: 'XCP', name: 'Extraprovincial Cooperative' },
+            { code: 'XL', name: 'Extrapro Limited Liability Partnership' },
+            { code: 'XP', name: 'Extraprovincial Limited Partnership' },
+            { code: 'XS', name: 'Extraprovincial Society' },
         ];
-        const match = companyTypes.find(entry => entry.code === code);
-        return match ? match.name : "Unknown";
+        const match = companyTypes.find((entry) => entry.code === code);
+        return match ? match.name : 'Unknown';
     }
 
+    window.addEventListener('resize', () => {});
 
-    window.addEventListener('resize', () => {
+    PubSub.subscribe('refresh_application_list', (msg, data) => {
+        dataTable.ajax.reload(null, false);
+        $('.select-all-applications').prop('checked', false);
+        PubSub.publish('clear_selected_application');
     });
-
-    PubSub.subscribe(
-        'refresh_application_list',
-        (msg, data) => {
-            dataTable.ajax.reload(null, false);
-            $(".select-all-applications").prop("checked", false);
-            PubSub.publish('clear_selected_application');
-        }
-    );
 
     function getNames(data) {
         let name = '';
         data.forEach((d, index) => {
             name = name + (' ' + d.fullName + getDutyText(d));
-            if (index != (data.length - 1)) {
+            if (index != data.length - 1) {
                 name = name + ',';
             }
         });
@@ -1242,9 +1273,9 @@
     function convertToYesNo(str) {
         switch (str) {
             case true:
-                return "Yes";
+                return 'Yes';
             case false:
-                return "No";
+                return 'No';
             default:
                 return '';
         }
@@ -1252,34 +1283,38 @@
 
     $('.select-all-applications').click(function () {
         if ($(this).is(':checked')) {
-            dataTable.rows({ 'page': 'current' }).select();
-        }
-        else {
-            dataTable.rows({ 'page': 'current' }).deselect();
+            dataTable.rows({ page: 'current' }).select();
+        } else {
+            dataTable.rows({ page: 'current' }).deselect();
         }
     });
-
 
     /* Fix when selecting option 'Other Sector/Sub/Industry Description' in the dropdown column list */
-    $(document).on('click', '.dt-button-collection .buttons-columnVisibilitynull span', function () {
-        if ($(this).text().trim() === 'Other Sector/Sub/Industry Description') {
-            // Add a custom class to the open dropdown
-            $('.dt-button-collection').addClass('shift-left');
-        } else {
-            // Optionally remove the class if another button is clicked
-            $('.dt-button-collection').removeClass('shift-left');
+    $(document).on(
+        'click',
+        '.dt-button-collection .buttons-columnVisibilitynull span',
+        function () {
+            if (
+                $(this).text().trim() ===
+                'Other Sector/Sub/Industry Description'
+            ) {
+                // Add a custom class to the open dropdown
+                $('.dt-button-collection').addClass('shift-left');
+            } else {
+                // Optionally remove the class if another button is clicked
+                $('.dt-button-collection').removeClass('shift-left');
+            }
         }
-    });
+    );
 
     $(document).on('click', function (e) {
         if (!$(e.target).closest('.dt-button-collection').length) {
             $('.dt-button-collection').removeClass('shift-left');
         }
     });
-
 });
 function payoutDefinition(approvedAmount, totalPaid) {
-    if ((approvedAmount > 0 && totalPaid > 0) && (approvedAmount  === totalPaid)) {
+    if (approvedAmount > 0 && totalPaid > 0 && approvedAmount === totalPaid) {
         return 'Fully Paid';
     } else if (totalPaid === 0) {
         return '';

@@ -4,8 +4,12 @@
     let widgetApi = {
         getFilters: function () {
             return {
-                applicationId: $wrapper.find('#ApplicantInfo_ApplicationId').val(),
-                applicationFormVersionId: $wrapper.find("#ApplicantInfo_ApplicationFormVersionId").val()
+                applicationId: $wrapper
+                    .find('#ApplicantInfo_ApplicationId')
+                    .val(),
+                applicationFormVersionId: $wrapper
+                    .find('#ApplicantInfo_ApplicationFormVersionId')
+                    .val(),
             };
         },
         init: function (filters) {
@@ -13,10 +17,10 @@
 
             // Create a new form instance and store it on the widget API
             this.zoneForm = new UnityZoneForm($widgetForm, {
-                saveButtonSelector: '#saveApplicantInfoBtn'
+                saveButtonSelector: '#saveApplicantInfoBtn',
             });
 
-            console.log("Applicant Info Initialized");
+            console.log('Applicant Info Initialized');
 
             this.zoneForm.init();
 
@@ -25,35 +29,44 @@
             registerElectoralDistrictControls(this.zoneForm.form);
             registerApplicantInfoSummaryDropdowns(this.zoneForm.form);
         },
-        refresh: function () {            
+        refresh: function () {
             const currentFilters = this.getFilters();
             widgetManager.refresh($wrapper, currentFilters);
         },
         setupEventHandlers: function () {
             const self = this;
 
-            PubSub.subscribe(
-                'applicant_info_merged',
-                () => {
-                    self.refresh();
-                }
-            );
+            PubSub.subscribe('applicant_info_merged', () => {
+                self.refresh();
+            });
 
             // Save button handler
             self.zoneForm.saveButton.on('click', function () {
-                let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
+                let applicationId = document.getElementById(
+                    'ApplicantInfo_ApplicationId'
+                ).value;
                 let applicantInfoSubmission = self.getPartialUpdate();
                 try {
                     unity.grantManager.grantApplications.applicationApplicant
-                        .updatePartialApplicantInfo(applicationId, applicantInfoSubmission)
+                        .updatePartialApplicantInfo(
+                            applicationId,
+                            applicantInfoSubmission
+                        )
                         .done(function () {
-                            abp.notify.success('The Applicant Info has been updated.');
+                            abp.notify.success(
+                                'The Applicant Info has been updated.'
+                            );
                             self.zoneForm.resetTracking();
-                            PubSub.publish("refresh_detail_panel_summary");
-                            PubSub.publish('applicant_info_updated', applicantInfoSubmission);
+                            PubSub.publish('refresh_detail_panel_summary');
+                            PubSub.publish(
+                                'applicant_info_updated',
+                                applicantInfoSubmission
+                            );
                         })
                         .fail(function (error) {
-                            abp.notify.error('Failed to update Applicant Info.');
+                            abp.notify.error(
+                                'Failed to update Applicant Info.'
+                            );
                             console.log(error);
                         });
                 } catch (error) {
@@ -67,37 +80,47 @@
 
             const customIncludes = new Set();
 
-            if (typeof Flex === 'function' && Object.keys(submissionPayload.CustomFields || {}).length > 0) {
+            if (
+                typeof Flex === 'function' &&
+                Object.keys(submissionPayload.CustomFields || {}).length > 0
+            ) {
                 // Add Worksheet Metadata and filter conditions
-                submissionPayload.CorrelationId = $("#ApplicantInfo_ApplicationFormVersionId").val();
+                submissionPayload.CorrelationId = $(
+                    '#ApplicantInfo_ApplicationFormVersionId'
+                ).val();
                 // Check for worksheet scenario - multiple vs single
-                let multipleWorksheetsIds = $("#ApplicantInfo_WorksheetIds").val();
-                let singleWorksheetId = $("#ApplicantInfo_WorksheetId").val();
-                
+                let multipleWorksheetsIds = $(
+                    '#ApplicantInfo_WorksheetIds'
+                ).val();
+                let singleWorksheetId = $('#ApplicantInfo_WorksheetId').val();
+
                 // Set correct payload property based on worksheet scenario
                 if (multipleWorksheetsIds) {
                     // Multiple worksheets scenario - send as WorksheetIds array
-                    submissionPayload.WorksheetIds = multipleWorksheetsIds.split(',').map(id => id.trim());
+                    submissionPayload.WorksheetIds = multipleWorksheetsIds
+                        .split(',')
+                        .map((id) => id.trim());
                 } else if (singleWorksheetId) {
                     // Single worksheet scenario - send as WorksheetId
                     submissionPayload.WorksheetId = singleWorksheetId.trim();
                 }
 
                 // Normalize checkboxes to string for custom worksheets
-                $(`#Unity_GrantManager_ApplicationManagement_Applicant_Worksheet input:checkbox`).each(function () {
-                    submissionPayload.CustomFields[this.name] = (this.checked).toString();
+                $(
+                    `#Unity_GrantManager_ApplicationManagement_Applicant_Worksheet input:checkbox`
+                ).each(function () {
+                    submissionPayload.CustomFields[this.name] =
+                        this.checked.toString();
                 });
 
-                customIncludes
-                    .add('CustomFields')
-                    .add('CorrelationId');
-                    
-                    // Add appropriate worksheet ID field based on scenario
-                    if(multipleWorksheetsIds) {
-                        customIncludes.add('WorksheetIds');
-                    } else if(singleWorksheetId) {
-                        customIncludes.add('WorksheetId');
-                    }
+                customIncludes.add('CustomFields').add('CorrelationId');
+
+                // Add appropriate worksheet ID field based on scenario
+                if (multipleWorksheetsIds) {
+                    customIncludes.add('WorksheetIds');
+                } else if (singleWorksheetId) {
+                    customIncludes.add('WorksheetId');
+                }
             }
 
             customIncludes.add('ApplicantId');
@@ -105,13 +128,17 @@
             let modifiedFieldData = Object.fromEntries(
                 Object.entries(submissionPayload).filter(([key, _]) => {
                     // Check if it's a modified widget field
-                    return this.zoneForm.modifiedFields.has(key) || customIncludes.has(key) || key.startsWith('custom_');
+                    return (
+                        this.zoneForm.modifiedFields.has(key) ||
+                        customIncludes.has(key) ||
+                        key.startsWith('custom_')
+                    );
                 })
             );
 
             let partialSubmissionPayload = {
                 modifiedFields: Array.from(this.zoneForm.modifiedFields),
-                data: unflattenObject(modifiedFieldData)
+                data: unflattenObject(modifiedFieldData),
             };
 
             return partialSubmissionPayload;
@@ -132,12 +159,18 @@
             const inputElement = $(`[name="${fieldName}"]`);
 
             // Handle checkboxes explicitly
-            if (inputElement.length && inputElement.attr('type') === 'checkbox') {
+            if (
+                inputElement.length &&
+                inputElement.attr('type') === 'checkbox'
+            ) {
                 // Only process the actual checkbox, not the hidden field
                 // If multiple elements with the same name, pick the checkbox
                 const checkbox = inputElement.filter('[type="checkbox"]');
                 if (checkbox.length) {
-                    if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+                    if (
+                        typeof Flex === 'function' &&
+                        Flex?.isCustomField(input)
+                    ) {
                         Flex.includeCustomFieldObj(submissionPayload, input);
                     } else {
                         submissionPayload[fieldName] = checkbox.is(':checked');
@@ -154,7 +187,10 @@
 
             let fieldValue = input.value;
 
-            if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
+            if (
+                inputElement.hasClass('unity-currency-input') ||
+                inputElement.hasClass('numeric-mask')
+            ) {
                 fieldValue = fieldValue.replace(/,/g, '');
             }
 
@@ -164,17 +200,35 @@
             } else {
                 submissionPayload[fieldName] = fieldValue;
             }
-        }
-    }
+        },
+    };
 
     return widgetApi;
-}
+};
 
 $(function () {
+    // Check if we're in a lazy loading context
+    const hasLazyContainer = $('.lazy-component-container').length > 0;
+    const isDetailsV2 = window.location.pathname.includes('DetailsV2');
+
+    // Only auto-initialize ABP zones if NOT in lazy loading context
+    if (!hasLazyContainer && !isDetailsV2) {
+        console.log('Auto-initializing ApplicantInfo ABP zones for Details.js');
+        // Initialize widget through ABP's widget system instead of global object
+        abp.zones = abp.zones || {};
+        abp.zones.applicantInfo =
+            $('[data-widget-name="ApplicantInfo"]').data('abp-widget-api') ||
+            null;
+    } else {
+        console.log(
+            'Skipping ABP zones initialization - lazy loading context detected'
+        );
+    }
+
     // Initialize widget through ABP's widget system instead of global object
     abp.zones = abp.zones || {};
-    abp.zones.applicantInfo = $('[data-widget-name="ApplicantInfo"]')
-        .data('abp-widget-api') || null;
+    abp.zones.applicantInfo =
+        $('[data-widget-name="ApplicantInfo"]').data('abp-widget-api') || null;
 
     $('#applicantLookupSelect').select2({
         ajax: {
@@ -189,7 +243,11 @@ $(function () {
                     results: data.map(function (item) {
                         const res = {
                             id: item.Id,
-                            text: `${item.UnityApplicantId?.trim() ? item.UnityApplicantId : 'None'} / ${item.ApplicantName}`,
+                            text: `${
+                                item.UnityApplicantId?.trim()
+                                    ? item.UnityApplicantId
+                                    : 'None'
+                            } / ${item.ApplicantName}`,
                             ApplicantName: item.ApplicantName,
                             OrgName: item.OrgName,
                             OrgNumber: item.OrgNumber,
@@ -200,18 +258,20 @@ $(function () {
                             IndigenousOrgInd: item.IndigenousOrgInd,
                             Sector: item.Sector,
                             SubSector: item.SubSector,
-                            SectorSubSectorIndustryDesc: item.SectorSubSectorIndustryDesc,
+                            SectorSubSectorIndustryDesc:
+                                item.SectorSubSectorIndustryDesc,
                             FiscalDay: item.FiscalDay,
                             FiscalMonth: item.FiscalMonth,
-                            UnityApplicantId: item.UnityApplicantId
+                            UnityApplicantId: item.UnityApplicantId,
                         };
-                        return res
-                    })
+                        return res;
+                    }),
                 };
-            }
+            },
         },
         minimumInputLength: 3,
-        placeholder: 'Start typing applicant name or number to search for applicant...'
+        placeholder:
+            'Start typing applicant name or number to search for applicant...',
     });
 
     $('#applicantLookupSelect').on('select2:select', function (e) {
@@ -219,23 +279,31 @@ $(function () {
         let selectedData = e.params.data;
 
         // Gather existing values from the form
-        let getVal = id => $(`#${id}`).val() || '';
+        let getVal = (id) => $(`#${id}`).val() || '';
         let existing = {
             ApplicantId: getVal('ApplicantId'),
             UnityApplicantId: getVal('ApplicantSummary_UnityApplicantId'),
-            ApplicantName: $('.application-details-breadcrumb .applicant-name').text(),
+            ApplicantName: $(
+                '.application-details-breadcrumb .applicant-name'
+            ).text(),
             OrgName: getVal('ApplicantSummary_OrgName'),
             OrgNumber: getVal('ApplicantSummary_OrgNumber'),
             NonRegOrgName: getVal('ApplicantSummary_NonRegOrgName'),
             OrganizationType: getVal('ApplicantSummary_OrganizationType'),
             OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
             OrgStatus: getVal('ApplicantSummary_OrgStatus'),
-            IndigenousOrgInd: $('#ApplicantSummary_IndigenousOrgInd').is(':checked') ? 'Yes' : 'No',
+            IndigenousOrgInd: $('#ApplicantSummary_IndigenousOrgInd').is(
+                ':checked'
+            )
+                ? 'Yes'
+                : 'No',
             Sector: getVal('ApplicantSummary_Sector'),
             SubSector: getVal('ApplicantSummary_SubSector'),
-            SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
+            SectorSubSectorIndustryDesc: getVal(
+                'ApplicantSummary_SectorSubSectorIndustryDesc'
+            ),
             FiscalDay: getVal('ApplicantSummary_FiscalDay'),
-            FiscalMonth: getVal('ApplicantSummary_FiscalMonth')
+            FiscalMonth: getVal('ApplicantSummary_FiscalMonth'),
         };
 
         let newData = {
@@ -251,9 +319,10 @@ $(function () {
             IndigenousOrgInd: selectedData.IndigenousOrgInd || '',
             Sector: selectedData.Sector || '',
             SubSector: selectedData.SubSector || '',
-            SectorSubSectorIndustryDesc: selectedData.SectorSubSectorIndustryDesc || '',
+            SectorSubSectorIndustryDesc:
+                selectedData.SectorSubSectorIndustryDesc || '',
             FiscalDay: selectedData.FiscalDay || '',
-            FiscalMonth: selectedData.FiscalMonth || ''
+            FiscalMonth: selectedData.FiscalMonth || '',
         };
 
         $('#existing_ApplicantNameHeader').text(existing.ApplicantName);
@@ -263,7 +332,10 @@ $(function () {
         for (const key in existing) {
             $(`#existing_${key}`).text(existing[key]);
             $(`#new_${key}`).text(newData[key]);
-            $(`input[name="merge_${key}"][value="existing"]`).prop('checked', true);
+            $(`input[name="merge_${key}"][value="existing"]`).prop(
+                'checked',
+                true
+            );
         }
 
         // Show step 1, hide step 2
@@ -293,9 +365,17 @@ $(function () {
             $('#mergeApplicantsMergeBtn').prop('disabled', true);
             $('#mergeApplicantsSpinner').show();
 
-            let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
-            let principalApplicantId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
-            let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
+            let selectedPrincipal = $(
+                'input[name="merge_ApplicantId"]:checked'
+            ).val();
+            let principalApplicantId =
+                selectedPrincipal === 'existing'
+                    ? existing.ApplicantId
+                    : newData.ApplicantId;
+            let nonPrincipalApplicantId =
+                selectedPrincipal === 'existing'
+                    ? newData.ApplicantId
+                    : existing.ApplicantId;
             let applicationId = $('#ApplicantInfo_ApplicationId').val();
 
             // Merge and update applicant info
@@ -304,16 +384,18 @@ $(function () {
                 mergedApplicantInfo = getMergedApplicantInfo(existing, newData);
                 mergedApplicantInfo.ApplicantId = principalApplicantId;
 
-                let formData = $("#ApplicantInfoForm").serializeArray();
+                let formData = $('#ApplicantInfoForm').serializeArray();
                 let ApplicantInfoObj = {};
-                let formVersionId = $("#ApplicationFormVersionId").val();
-                let worksheetId = $("#WorksheetId").val();
-                
+                let formVersionId = $('#ApplicationFormVersionId').val();
+                let worksheetId = $('#WorksheetId').val();
+
                 $.each(formData, function (_, input) {
-                    if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+                    if (
+                        typeof Flex === 'function' &&
+                        Flex?.isCustomField(input)
+                    ) {
                         Flex.includeCustomFieldObj(ApplicantInfoObj, input);
-                    }
-                    else {
+                    } else {
                         ApplicantInfoObj[input.name] = input.value;
 
                         if (ApplicantInfoObj[input.name] == '') {
@@ -323,15 +405,15 @@ $(function () {
                 });
 
                 $(`#ApplicantInfoForm input:checkbox`).each(function () {
-                    ApplicantInfoObj[this.name] = (this.checked).toString();
+                    ApplicantInfoObj[this.name] = this.checked.toString();
                 });
                 if (typeof Flex === 'function') {
                     Flex?.setCustomFields(ApplicantInfoObj);
                 }
 
                 Object.assign(ApplicantInfoObj, mergedApplicantInfo);
-                Object.keys(ApplicantInfoObj).forEach(key => {
-                    if (ApplicantInfoObj[key] === "") {
+                Object.keys(ApplicantInfoObj).forEach((key) => {
+                    if (ApplicantInfoObj[key] === '') {
                         ApplicantInfoObj[key] = null;
                     }
                 });
@@ -346,9 +428,15 @@ $(function () {
                 ApplicantInfoObj['correlationId'] = formVersionId;
                 ApplicantInfoObj['worksheetId'] = worksheetId;
                 ApplicantInfoObj.ApplicantId = principalApplicantId;
-              
+
                 try {
-                    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
+                    await handleApplicantMerge(
+                        applicationId,
+                        principalApplicantId,
+                        nonPrincipalApplicantId,
+                        newData,
+                        ApplicantInfoObj
+                    );
                 } catch (err) {
                     console.error(err);
                 }
@@ -365,20 +453,22 @@ $(function () {
 
         // Show the modal
         $('#mergeDuplicateApplicantsModal').modal('show');
-
     });
 
-
     $('#selectAllExistingBtn').on('click', function () {
-        $('#mergeApplicantsStep1 input[type="radio"][value="existing"]').each(function () {
-            $(this).prop('checked', true);
-        });
+        $('#mergeApplicantsStep1 input[type="radio"][value="existing"]').each(
+            function () {
+                $(this).prop('checked', true);
+            }
+        );
     });
 
     $('#selectAllNewBtn').on('click', function () {
-        $('#mergeApplicantsStep1 input[type="radio"][value="new"]').each(function () {
-            $(this).prop('checked', true);
-        });
+        $('#mergeApplicantsStep1 input[type="radio"][value="new"]').each(
+            function () {
+                $(this).prop('checked', true);
+            }
+        );
     });
 });
 
@@ -386,7 +476,8 @@ $(document).on('click', '#btnClearOrgbook', function (e) {
     e.preventDefault();
     const $f = $('#ApplicantInfoForm');
 
-    if ($f.find('#ApplicantSummary_OrgName').val()) $('#saveApplicantInfoBtn').prop('disabled', false);
+    if ($f.find('#ApplicantSummary_OrgName').val())
+        $('#saveApplicantInfoBtn').prop('disabled', false);
 
     $f.find('#ApplicantSummary_OrgName').val('').trigger('change');
     $f.find('#ApplicantSummary_OrgNumber').val('').trigger('change');
@@ -424,16 +515,23 @@ function registerElectoralDistrictControls($container) {
     const $electoralType = $('#ApplicantElectoralAddressType');
 
     // Delegate change event for both address groups
-    $container.on('change', '.physical-address-fields-group input, .mailing-address-fields-group input', function () {
-        const type = $electoralType.val();
-        if (
-            ((type === "PhysicalAddress" && $(this).closest('.physical-address-fields-group').length) ||
-                (type === "MailingAddress" && $(this).closest('.mailing-address-fields-group').length)) &&
-            !electoralDistrictLocked
-        ) {
-            refreshApplicantElectoralDistrict();
+    $container.on(
+        'change',
+        '.physical-address-fields-group input, .mailing-address-fields-group input',
+        function () {
+            const type = $electoralType.val();
+            if (
+                ((type === 'PhysicalAddress' &&
+                    $(this).closest('.physical-address-fields-group').length) ||
+                    (type === 'MailingAddress' &&
+                        $(this).closest('.mailing-address-fields-group')
+                            .length)) &&
+                !electoralDistrictLocked
+            ) {
+                refreshApplicantElectoralDistrict();
+            }
         }
-    });
+    );
 }
 
 function registerApplicantInfoSummaryDropdowns($container) {
@@ -444,17 +542,23 @@ function registerApplicantInfoSummaryDropdowns($container) {
         let childDropdown = $('#ApplicantSummary_SubSector');
         childDropdown.empty();
 
-        let subSectors = sectorList.find(sector => (sector.sectorName === selectedValue))?.subSectors;
-        childDropdown.append($('<option>', {
-            value: '',
-            text: 'Please choose...'
-        }));
+        let subSectors = sectorList.find(
+            (sector) => sector.sectorName === selectedValue
+        )?.subSectors;
+        childDropdown.append(
+            $('<option>', {
+                value: '',
+                text: 'Please choose...',
+            })
+        );
 
         $.each(subSectors, function (index, item) {
-            childDropdown.append($('<option>', {
-                value: item.subSectorName,
-                text: item.subSectorName
-            }));
+            childDropdown.append(
+                $('<option>', {
+                    value: item.subSectorName,
+                    text: item.subSectorName,
+                })
+            );
         });
     });
 
@@ -464,22 +568,41 @@ function registerApplicantInfoSummaryDropdowns($container) {
 
         abp.ajax({
             url: '/api/app/org-book/org-book-details-query/' + orgBookId,
-            type: 'GET'
+            type: 'GET',
         }).done(function (response) {
-            let entry_status = getAttributeObjectByType("entity_status", response.attributes);
-            let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
-            let entity_type = getAttributeObjectByType("entity_type", response.attributes);
+            let entry_status = getAttributeObjectByType(
+                'entity_status',
+                response.attributes
+            );
+            let org_status =
+                entry_status.value == 'HIS' ? 'HISTORICAL' : 'ACTIVE';
+            let entity_type = getAttributeObjectByType(
+                'entity_type',
+                response.attributes
+            );
 
-            $container.find('#ApplicantSummary_OrgName').val(response.names[0].text).trigger('change');
-            $container.find('#ApplicantSummary_OrgNumber').val(orgBookId).trigger('change');
-            $container.find('#ApplicantSummary_OrgStatus').val(org_status).trigger('change');
-            $container.find('#ApplicantSummary_OrganizationType').val(entity_type.value).trigger('change');
+            $container
+                .find('#ApplicantSummary_OrgName')
+                .val(response.names[0].text)
+                .trigger('change');
+            $container
+                .find('#ApplicantSummary_OrgNumber')
+                .val(orgBookId)
+                .trigger('change');
+            $container
+                .find('#ApplicantSummary_OrgStatus')
+                .val(org_status)
+                .trigger('change');
+            $container
+                .find('#ApplicantSummary_OrganizationType')
+                .val(entity_type.value)
+                .trigger('change');
         });
     });
 }
 
 function getAttributeObjectByType(type, attributes) {
-    return attributes.find(attr => attr.type === type);
+    return attributes.find((attr) => attr.type === type);
 }
 
 let electoralDistrictLocked = true; // Default: locked
@@ -492,8 +615,15 @@ function setElectoralDistrictLockState(locked) {
     const $select = $('#ElectoralDistrict');
     if (locked) {
         $select.addClass('select-disabled');
-        $select.on('mousedown.electoralLock touchstart.electoralLock', function (e) { e.preventDefault(); });
-        $select.on('focus.electoralLock', function (e) { $(this).blur(); });
+        $select.on(
+            'mousedown.electoralLock touchstart.electoralLock',
+            function (e) {
+                e.preventDefault();
+            }
+        );
+        $select.on('focus.electoralLock', function (e) {
+            $(this).blur();
+        });
     } else {
         $select.removeClass('select-disabled');
         $select.off('.electoralLock');
@@ -508,63 +638,81 @@ function setElectoralDistrictLockState(locked) {
     } else {
         $icon.removeClass('fa-lock').addClass('fa-unlock');
     }
-};
+}
 
 async function refreshApplicantElectoralDistrict() {
     try {
         let address = extractAddressInfo();
-        let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
-        let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
+        let addressDetails =
+            await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(
+                address
+            );
+        let electoralDistrict =
+            await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(
+                addressDetails?.coordinates
+            );
         if (electoralDistrict?.name) {
-            $('#ElectoralDistrict').val(electoralDistrict.name).trigger('change');
+            $('#ElectoralDistrict')
+                .val(electoralDistrict.name)
+                .trigger('change');
         }
-    }
-    catch (error) {
+    } catch (error) {
         console.error(error);
     }
-};
+}
 
 function toggleElectoralDistrictLockState() {
     setElectoralDistrictLockState(!electoralDistrictLocked);
-};
+}
 
 function extractAddressInfo() {
-    // Determine which address to use based on the flag    
-    const isPhysical = $('#ApplicantElectoralAddressType').val() === "PhysicalAddress";
+    // Determine which address to use based on the flag
+    const isPhysical =
+        $('#ApplicantElectoralAddressType').val() === 'PhysicalAddress';
 
     // Define the field prefixes
     const prefix = isPhysical ? 'PhysicalAddress' : 'MailingAddress';
 
     // Collect address parts
-    const street   = $(`#${prefix}_Street`).val() || '';
-    const city     = $(`#${prefix}_City`).val() || '';
+    const street = $(`#${prefix}_Street`).val() || '';
+    const city = $(`#${prefix}_City`).val() || '';
     const province = $(`#${prefix}_Province`).val() || '';
-    const postal   = $(`#${prefix}_Postal`).val() || '';
-    const country  = $(`#${prefix}_Country`).val() || '';
+    const postal = $(`#${prefix}_Postal`).val() || '';
+    const country = $(`#${prefix}_Country`).val() || '';
 
     // Concatenate address parts, filtering out empty values
     return [street, city, province, postal, country]
-        .filter(part => part.trim() !== '')
+        .filter((part) => part.trim() !== '')
         .join(', ');
-};
+}
 
 function getMergedApplicantInfo(existing, newData) {
     let merged = {};
     for (const key in existing) {
-        let useExisting = $(`input[name="merge_${key}"][value="existing"]`).is(':checked');
+        let useExisting = $(`input[name="merge_${key}"][value="existing"]`).is(
+            ':checked'
+        );
         merged[key] = useExisting ? existing[key] : newData[key];
     }
     return merged;
 }
 
-async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj) {
-    
-    await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
+async function handleApplicantMerge(
+    applicationId,
+    principalApplicantId,
+    nonPrincipalApplicantId,
+    newData,
+    ApplicantInfoObj
+) {
+    await setApplicantDuplicatedStatus(
+        principalApplicantId,
+        nonPrincipalApplicantId
+    );
 
     if (principalApplicantId === newData.ApplicantId) {
         await updatePrincipalApplicant(applicationId, principalApplicantId);
     }
-    
+
     await updateMergedApplicant(applicationId, ApplicantInfoObj);
 }
 
@@ -572,11 +720,9 @@ function updateMergedApplicant(applicationId, appInfoObj) {
     return unity.grantManager.grantApplications.grantApplication
         .updateMergedApplicant(applicationId, appInfoObj)
         .done(function () {
-            abp.notify.success(
-                'The Applicant info has been updated.'
-            );
+            abp.notify.success('The Applicant info has been updated.');
             $('#saveApplicantInfoBtn').prop('disabled', true);
-            PubSub.publish("refresh_detail_panel_summary");
+            PubSub.publish('refresh_detail_panel_summary');
             PubSub.publish('applicant_info_updated', appInfoObj);
             PubSub.publish('applicant_info_merged');
         });
@@ -584,42 +730,59 @@ function updateMergedApplicant(applicationId, appInfoObj) {
 
 async function generateUnityApplicantIdBtn() {
     try {
-        let nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
-        $('[data-widget-name="ApplicantInfo"]').find('#ApplicantSummary_UnityApplicantId').val(nextUnityApplicantId).trigger('change');
-    }
-    catch (error) {
+        let nextUnityApplicantId =
+            await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
+        $('[data-widget-name="ApplicantInfo"]')
+            .find('#ApplicantSummary_UnityApplicantId')
+            .val(nextUnityApplicantId)
+            .trigger('change');
+    } catch (error) {
         console.log(error);
     }
-};
+}
 
 async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj) {
     try {
-        let existingApplicant = await unity.grantManager.applicants.applicant.getExistingApplicant(unityAppId);
+        let existingApplicant =
+            await unity.grantManager.applicants.applicant.getExistingApplicant(
+                unityAppId
+            );
 
         if (existingApplicant) {
             Swal.fire({
-                icon: "error",
-                text: "Applicatn ID already exists. Please enter a unique ID.",
+                icon: 'error',
+                text: 'Applicatn ID already exists. Please enter a unique ID.',
                 confirmButtonText: 'Ok',
-                customClass: { confirmButton: 'btn btn-primary' }
+                customClass: { confirmButton: 'btn btn-primary' },
             });
         } else {
             updateApplicantInfo(appId, appInfoObj);
         }
-    }
-    catch (error) {
+    } catch (error) {
         console.log(error);
     }
 }
 
 function enableApplicantInfoSaveBtn(inputText) {
-    if (!$("#ApplicantInfoForm").valid()
-        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant') // Note: Will replace after worksheet permissions added
-        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update')
-        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update')
-        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant.Location.Update')
-        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update')
-        || formHasInvalidCurrencyCustomFields("ApplicantInfoForm")) {
+    if (
+        !$('#ApplicantInfoForm').valid() ||
+        !abp.auth.isGranted(
+            'Unity.GrantManager.ApplicationManagement.Applicant'
+        ) || // Note: Will replace after worksheet permissions added
+        !abp.auth.isGranted(
+            'Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update'
+        ) ||
+        !abp.auth.isGranted(
+            'Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update'
+        ) ||
+        !abp.auth.isGranted(
+            'Unity.GrantManager.ApplicationManagement.Applicant.Location.Update'
+        ) ||
+        !abp.auth.isGranted(
+            'Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update'
+        ) ||
+        formHasInvalidCurrencyCustomFields('ApplicantInfoForm')
+    ) {
         $('#saveApplicantInfoBtn').prop('disabled', true);
         return;
     }
@@ -630,41 +793,182 @@ function updateApplicantInfo(appId, appInfoObj) {
     return unity.grantManager.grantApplications.grantApplication
         .updateProjectApplicantInfo(appId, appInfoObj)
         .done(function () {
-            abp.notify.success(
-                'The Applicant info has been updated.'
-            );
+            abp.notify.success('The Applicant info has been updated.');
             $('#saveApplicantInfoBtn').prop('disabled', true);
-            PubSub.publish("refresh_detail_panel_summary");
+            PubSub.publish('refresh_detail_panel_summary');
             PubSub.publish('applicant_info_updated', appInfoObj);
         });
 }
 
-function setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId) {
+function setApplicantDuplicatedStatus(
+    principalApplicantId,
+    nonPrincipalApplicantId
+) {
     return $.ajax({
         url: '/api/app/applicant/set-duplicated',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
             principalApplicantId: principalApplicantId,
-            nonPrincipalApplicantId: nonPrincipalApplicantId
-        })
+            nonPrincipalApplicantId: nonPrincipalApplicantId,
+        }),
     });
 }
 
 function updatePrincipalApplicant(applicationId, principalApplicantId) {
     return $.ajax({
-            url: '/api/app/applicant/applicant-id',
-            type: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify({
-                applicationId: applicationId,
-                applicantId: principalApplicantId
-            })
-        })
+        url: '/api/app/applicant/applicant-id',
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            applicationId: applicationId,
+            applicantId: principalApplicantId,
+        }),
+    })
         .done(function () {
             abp.notify.success('Principal Applicant updated successfully.');
         })
         .fail(function (xhr, status) {
             abp.notify.error('Failed to update Principal Applicant.');
-         });
+        });
 }
+
+//////////////////////////////////
+// Global variables for lazy loading compatibility
+let applicantInfoWidgetApi;
+let applicantInfoInitialized = false;
+
+// Global initialization function for lazy loading
+window.initializeApplicantInfo = function (containerSelector = 'body') {
+    console.log('Initializing ApplicantInfo component for lazy loading');
+
+    const $container = $(containerSelector);
+
+    // Try to find and initialize ABP widget within the container
+    const $widget = $container.find('[data-widget-name="ApplicantInfo"]');
+
+    if ($widget.length > 0) {
+        console.log(
+            'Found ApplicantInfo widget, initializing through ABP system'
+        );
+
+        // Use the existing ABP widget system
+        if (typeof abp.widgets.ApplicantInfo === 'function') {
+            const widgetApi = abp.widgets.ApplicantInfo($widget);
+
+            if (widgetApi && typeof widgetApi.init === 'function') {
+                const filters = widgetApi.getFilters
+                    ? widgetApi.getFilters()
+                    : {};
+                widgetApi.init(filters);
+                $widget.data('abp-widget-api', widgetApi);
+                applicantInfoWidgetApi = widgetApi;
+            }
+        }
+    } else {
+        console.warn(
+            'ApplicantInfo widget wrapper not found in lazy-loaded content'
+        );
+    }
+
+    initializeAddContactButton($container);
+
+    applicantInfoInitialized = true;
+    console.log('ApplicantInfo initialized for lazy loading');
+};
+
+function initializeAddContactButton($container) {
+    console.log('Initializing Add Contact button functionality');
+
+    // Get application ID
+    const applicationId =
+        $container.find('#ApplicantInfo_ApplicationId').val() ||
+        $('#DetailsViewApplicationId').val();
+
+    if (!applicationId) {
+        console.error('Application ID not found for Add Contact button');
+        return;
+    }
+
+    // Initialize contact modal
+    const contactModal = new abp.ModalManager(
+        abp.appPath + 'ApplicationContact/CreateContactModal'
+    );
+
+    // Initialize contacts widget manager for the contact list
+    const contactsWidgetManager = new abp.WidgetManager({
+        wrapper:
+            $container.find('#applicationContactsWidget').length > 0
+                ? $container.find('#applicationContactsWidget')
+                : '#applicationContactsWidget',
+        filterCallback: function () {
+            return {
+                applicationId: applicationId,
+                isReadOnly: false,
+            };
+        },
+    });
+
+    // Find and setup Add Contact button
+    const $addContactButton =
+        $container.find('#AddContactButton').length > 0
+            ? $container.find('#AddContactButton')
+            : $('#AddContactButton');
+
+    if ($addContactButton.length === 0) {
+        console.warn('Add Contact button not found');
+        return;
+    }
+
+    // Remove any existing handlers to prevent duplicates
+    $addContactButton.off('click.applicantInfo');
+
+    // Add click handler
+    $addContactButton.on('click.applicantInfo', function (e) {
+        e.preventDefault();
+        console.log('Add Contact button clicked - opening modal');
+
+        contactModal.open({
+            applicationId: applicationId,
+        });
+    });
+
+    // Setup modal result handler
+    contactModal.onResult(function (result) {
+        abp.notify.success(
+            'The application contact has been successfully added.',
+            'Application Contacts'
+        );
+        contactsWidgetManager.refresh();
+        // Also publish for other components that might be listening
+        PubSub.publish('refresh_application_contacts', result);
+    });
+
+    console.log('Add Contact button initialized successfully');
+}
+
+// Global refresh function
+window.refreshApplicantInfo = function () {
+    if (
+        applicantInfoWidgetApi &&
+        typeof applicantInfoWidgetApi.refresh === 'function'
+    ) {
+        applicantInfoWidgetApi.refresh();
+    }
+};
+
+// Global cleanup function
+window.cleanupApplicantInfo = function () {
+    // The existing jQuery handlers are already namespaced, so cleanup is minimal
+    console.log('ApplicantInfo cleaned up');
+};
+
+// Debug functions
+window.ApplicantInfoDebug = {
+    isInitialized: () => applicantInfoInitialized,
+    getWidgetApi: () => applicantInfoWidgetApi,
+    forceReinitialize: () => {
+        window.cleanupApplicantInfo();
+        window.initializeApplicantInfo('body');
+    },
+};

@@ -1,4 +1,4 @@
-﻿.project-infos-container .save-project-btn {
+﻿/* .project-infos-container .save-project-btn {
     display: flex;
     justify-content: center;
     margin-top: 6.5rem;
@@ -26,9 +26,13 @@
 
 .project-info-form {
     border-bottom: 0.25rem solid var(--bc-colors-white-background);
-}
+} */
 
-.contact-info-form, .mailing-address-form, .physical-address-form, .project-info-location, .signin-authority-form {
+.contact-info-form,
+.mailing-address-form,
+.physical-address-form,
+.project-info-location,
+.signin-authority-form {
     border-bottom: 0.25rem solid var(--bc-colors-white-background);
 }
 
@@ -58,17 +62,17 @@
     border-radius: 2em;
 }
 
-.unt-btn-link { 
-    margin:0px;
+.unt-btn-link {
+    margin: 0px;
 }
 
 .aligned-select-btn {
-    padding-top: 1.7rem !important;    
+    padding-top: 1.7rem !important;
 }
 
-    .aligned-select-btn button {
-        border-radius: 2em;
-    }
+.aligned-select-btn button {
+    border-radius: 2em;
+}
 
 .select-disabled {
     background-color: #e9ecef;

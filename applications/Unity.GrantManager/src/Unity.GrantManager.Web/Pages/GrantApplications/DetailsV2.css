@@ -1,0 +1,68 @@
+@import url('Details.css');
+
+/* Skeleton Loader Styles */
+.skeleton-loader {
+    animation: skeleton-loading 1.5s infinite ease-in-out;
+    padding: 1rem;
+}
+
+.skeleton-card {
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-header {
+    height: 28px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    width: 250px;
+}
+
+.skeleton-line {
+    height: 16px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Component content transitions */
+.component-content {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.component-content.loaded {
+    opacity: 1;
+}
+
+/* Loading states */
+.lazy-component-container.loading .skeleton-loader {
+    animation-duration: 1s;
+}
+
+.lazy-component-container.error .skeleton-loader {
+    animation: none;
+    opacity: 0.3;
+}
