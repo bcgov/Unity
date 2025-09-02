@@ -110,7 +110,7 @@
     // Handle delete button clicks using event delegation
     $('#ApplicationLinksTable').on('click', '.delete-link-btn', function(e) {
         e.preventDefault();
-        var linkId = $(this).data('link-id');
+        let linkId = $(this).data('link-id');
         
         abp.message.confirm(
             'Are you sure you want to delete this application link?',
@@ -342,7 +342,7 @@
             const linkType = $('#linkTypeSelect').val() || 'Related';
             
             // Create link with unique ID for safe updates
-            const uniqueId = Date.now() + '_' + Math.random();
+            const uniqueId = Date.now() + '_' + Math.random(); // NOSONAR - Safe: ID only used for client-side DOM element tracking, not for security
             const newLink = {
                 id: uniqueId,
                 referenceNumber: referenceNumber,
@@ -443,6 +443,21 @@
         });
     }
 
+    function removeLinkFromList(link, capturedIndex, currentLinks, deletedLinks) {
+        if (link.id) {
+            // Remove by ID for safer deletion
+            const linkIndex = currentLinks.findIndex(l => l.id === link.id);
+            if (linkIndex !== -1) {
+                currentLinks.splice(linkIndex, 1);
+                updateLinksDisplay(currentLinks, deletedLinks);
+            }
+        } else {
+            // Use the captured index instead of trying to get it from 'this'
+            currentLinks.splice(capturedIndex, 1);
+            updateLinksDisplay(currentLinks, deletedLinks);
+        }
+    }
+
     function createLinkElement(link, index, currentLinks, deletedLinks) {
         const linkTypeClass = (link.linkType || 'related').toLowerCase();
         
@@ -499,7 +514,6 @@
         // Handle delete button - use link ID for safer deletion
         linkElement.find('.link-delete-btn').on('click', function() {
             // Capture the button element and index BEFORE showing dialog
-            const deleteButton = $(this);
             const capturedIndex = index;
             
             // Check if this is an existing link (not new)
@@ -517,29 +531,13 @@
                             });
                             
                             // Remove from display
-                            removeLink();
+                            removeLinkFromList(link, capturedIndex, currentLinks, deletedLinks);
                         }
                     }
                 );
             } else {
                 // New link - delete without confirmation
-                removeLink();
-            }
-            
-            function removeLink() {
-                if (link.id) {
-                    // Remove by ID for safer deletion
-                    const linkIndex = currentLinks.findIndex(l => l.id === link.id);
-                    if (linkIndex !== -1) {
-                        currentLinks.splice(linkIndex, 1);
-                        updateLinksDisplay(currentLinks, deletedLinks);
-                    }
-                } else {
-                    // Use the captured index instead of trying to get it from 'this'
-                    const indexToRemove = capturedIndex;
-                    currentLinks.splice(indexToRemove, 1);
-                    updateLinksDisplay(currentLinks, deletedLinks);
-                }
+                removeLinkFromList(link, capturedIndex, currentLinks, deletedLinks);
             }
         });
 

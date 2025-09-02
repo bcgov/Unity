@@ -217,10 +217,6 @@
 }
 
 /* New item styling */
-.link-item.new-item {
-    position: relative;
-}
-
 @keyframes slideInFade {
     0% {
         opacity: 0;
@@ -233,6 +229,7 @@
 }
 
 .link-item.new-item {
+    position: relative;
     animation: slideInFade 0.3s ease-out;
 }
 

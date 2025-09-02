@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
@@ -1288,7 +1289,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                         Id = applications.Id,
                         ProjectName = applications.ProjectName,
                         ReferenceNo = applications.ReferenceNo,
-                        ApplicantName = applicant != null ? applicant.ApplicantName : "Unknown"
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue
                     };
 
         return await query.ToListAsync();

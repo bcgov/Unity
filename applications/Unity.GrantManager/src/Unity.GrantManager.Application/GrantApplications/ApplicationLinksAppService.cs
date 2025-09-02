@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -48,9 +49,9 @@ public class ApplicationLinksAppService : CrudAppService<
                                 ApplicationId = application.Id,
                                 ApplicationStatus = application.ApplicationStatus.InternalStatus,
                                 ReferenceNumber = application.ReferenceNo,
-                                Category = appForm.Category ?? "Unknown", // Handle potential nulls
+                                Category = appForm.Category ?? GrantManagerConsts.UnknownValue, // Handle potential nulls
                                 ProjectName = application.ProjectName,
-                                ApplicantName = applicant.ApplicantName ?? "Unknown", // Handle potential nulls
+                                ApplicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue, // Handle potential nulls
                                 LinkType = applicationLinks.LinkType
                             };
 
@@ -78,9 +79,9 @@ public class ApplicationLinksAppService : CrudAppService<
                                 ApplicationId = application.Id,
                                 ApplicationStatus = application.ApplicationStatus.InternalStatus,
                                 ReferenceNumber = application.ReferenceNo,
-                                Category = appForm.Category ?? "Unknown", // Handle potential nulls
+                                Category = appForm.Category ?? GrantManagerConsts.UnknownValue, // Handle potential nulls
                                 ProjectName = application.ProjectName,
-                                ApplicantName = applicant.ApplicantName ?? "Unknown", // Handle potential nulls
+                                ApplicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue, // Handle potential nulls
                                 LinkType = applicationLinks.LinkType
                             };
 
@@ -107,18 +108,18 @@ public class ApplicationLinksAppService : CrudAppService<
                     Id = Guid.Empty,
                     ApplicationId = applicationId,
                     ApplicationStatus = "Not Found",
-                    ReferenceNumber = "Unknown",
-                    Category = "Unknown",
-                    ProjectName = "Unknown",
-                    ApplicantName = "Unknown",
+                    ReferenceNumber = GrantManagerConsts.UnknownValue,
+                    Category = GrantManagerConsts.UnknownValue,
+                    ProjectName = GrantManagerConsts.UnknownValue,
+                    ApplicantName = GrantManagerConsts.UnknownValue,
                     LinkType = ApplicationLinkType.Related
                 };
             }
 
 
             // Now try to get related data safely
-            string category = "Unknown";
-            string applicantName = "Unknown";
+            string category = GrantManagerConsts.UnknownValue;
+            string applicantName = GrantManagerConsts.UnknownValue;
 
             try
             {
@@ -128,7 +129,7 @@ public class ApplicationLinksAppService : CrudAppService<
                     .FirstOrDefaultAsync();
                 if (applicationForm != null)
                 {
-                    category = applicationForm.Category ?? "Unknown";
+                    category = applicationForm.Category ?? GrantManagerConsts.UnknownValue;
                 }
                 else
                 {
@@ -148,7 +149,7 @@ public class ApplicationLinksAppService : CrudAppService<
                     .FirstOrDefaultAsync();
                 if (applicant != null)
                 {
-                    applicantName = applicant.ApplicantName ?? "Unknown";
+                    applicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue;
                 }
                 else
                 {
@@ -161,12 +162,12 @@ public class ApplicationLinksAppService : CrudAppService<
             }
 
             // Get application status (loaded via Include)
-            string applicationStatus = "Unknown";
+            string applicationStatus;
             try
             {
                 if (application.ApplicationStatus != null)
                 {
-                    applicationStatus = application.ApplicationStatus.InternalStatus ?? "Unknown";
+                    applicationStatus = application.ApplicationStatus.InternalStatus ?? GrantManagerConsts.UnknownValue;
                 }
                 else
                 {
@@ -185,9 +186,9 @@ public class ApplicationLinksAppService : CrudAppService<
                 Id = Guid.Empty,
                 ApplicationId = application.Id,
                 ApplicationStatus = applicationStatus,
-                ReferenceNumber = application.ReferenceNo ?? "Unknown",
+                ReferenceNumber = application.ReferenceNo ?? GrantManagerConsts.UnknownValue,
                 Category = category,
-                ProjectName = application.ProjectName ?? "Unknown",
+                ProjectName = application.ProjectName ?? GrantManagerConsts.UnknownValue,
                 ApplicantName = applicantName,
                 LinkType = ApplicationLinkType.Related
             };
@@ -204,10 +205,10 @@ public class ApplicationLinksAppService : CrudAppService<
                 Id = Guid.Empty,
                 ApplicationId = applicationId,
                 ApplicationStatus = "Error Loading",
-                ReferenceNumber = "Unknown",
-                Category = "Unknown",
-                ProjectName = "Unknown",
-                ApplicantName = "Unknown",
+                ReferenceNumber = GrantManagerConsts.UnknownValue,
+                Category = GrantManagerConsts.UnknownValue,
+                ProjectName = GrantManagerConsts.UnknownValue,
+                ApplicantName = GrantManagerConsts.UnknownValue,
                 LinkType = ApplicationLinkType.Related
             };
         }
@@ -254,16 +255,16 @@ public class ApplicationLinksAppService : CrudAppService<
                     ApplicationId = Guid.Empty,
                     ApplicationStatus = "Not Found",
                     ReferenceNumber = referenceNumber,
-                    Category = "Unknown",
-                    ProjectName = "Unknown",
-                    ApplicantName = "Unknown",
+                    Category = GrantManagerConsts.UnknownValue,
+                    ProjectName = GrantManagerConsts.UnknownValue,
+                    ApplicantName = GrantManagerConsts.UnknownValue,
                     LinkType = ApplicationLinkType.Related
                 };
             }
 
             // Get related data safely
-            string category = "Unknown";
-            string applicantName = "Unknown";
+            string category = GrantManagerConsts.UnknownValue;
+            string applicantName = GrantManagerConsts.UnknownValue;
 
             try
             {
@@ -273,7 +274,7 @@ public class ApplicationLinksAppService : CrudAppService<
                     .FirstOrDefaultAsync();
                 if (applicationForm != null)
                 {
-                    category = applicationForm.Category ?? "Unknown";
+                    category = applicationForm.Category ?? GrantManagerConsts.UnknownValue;
                 }
             }
             catch (Exception ex)
@@ -289,7 +290,7 @@ public class ApplicationLinksAppService : CrudAppService<
                     .FirstOrDefaultAsync();
                 if (applicant != null)
                 {
-                    applicantName = applicant.ApplicantName ?? "Unknown";
+                    applicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue;
                 }
             }
             catch (Exception ex)
@@ -297,10 +298,10 @@ public class ApplicationLinksAppService : CrudAppService<
                 Logger.LogError(ex, "Error looking up applicant");
             }
 
-            string applicationStatus = "Unknown";
+            string applicationStatus = GrantManagerConsts.UnknownValue;
             if (application.ApplicationStatus != null)
             {
-                applicationStatus = application.ApplicationStatus.InternalStatus ?? "Unknown";
+                applicationStatus = application.ApplicationStatus.InternalStatus ?? GrantManagerConsts.UnknownValue;
             }
 
             return new ApplicationLinksInfoDto
@@ -310,7 +311,7 @@ public class ApplicationLinksAppService : CrudAppService<
                 ApplicationStatus = applicationStatus,
                 ReferenceNumber = application.ReferenceNo ?? referenceNumber,
                 Category = category,
-                ProjectName = application.ProjectName ?? "Unknown",
+                ProjectName = application.ProjectName ?? GrantManagerConsts.UnknownValue,
                 ApplicantName = applicantName,
                 LinkType = ApplicationLinkType.Related
             };
@@ -325,9 +326,9 @@ public class ApplicationLinksAppService : CrudAppService<
                 ApplicationId = Guid.Empty,
                 ApplicationStatus = "Error Loading",
                 ReferenceNumber = referenceNumber,
-                Category = "Unknown",
-                ProjectName = "Unknown",
-                ApplicantName = "Unknown",
+                Category = GrantManagerConsts.UnknownValue,
+                ProjectName = GrantManagerConsts.UnknownValue,
+                ApplicantName = GrantManagerConsts.UnknownValue,
                 LinkType = ApplicationLinkType.Related
             };
         }
@@ -336,29 +337,22 @@ public class ApplicationLinksAppService : CrudAppService<
     public async Task UpdateLinkTypeAsync(Guid applicationLinkId, ApplicationLinkType newLinkType)
     {
         Logger.LogInformation("UpdateLinkTypeAsync called with linkId: {LinkId}, newLinkType: {LinkType}", applicationLinkId, newLinkType);
-        
-        try
-        {
-            // Get the existing link
-            var link = await Repository.GetAsync(applicationLinkId);
-            
-            if (link != null)
-            {
-                // Update the link type
-                link.LinkType = newLinkType;
-                await Repository.UpdateAsync(link);
                 
-                Logger.LogInformation("Successfully updated link type for linkId: {LinkId}", applicationLinkId);
-            }
-            else
-            {
-                Logger.LogWarning("Link not found with ID: {LinkId}", applicationLinkId);
-            }
-        }
-        catch (Exception ex)
+        // Get the existing link
+        var link = await Repository.GetAsync(applicationLinkId);
+            
+        if (link != null)
         {
-            Logger.LogError(ex, "Error updating link type for linkId: {LinkId}", applicationLinkId);
-            throw;
+            // Update the link type
+            link.LinkType = newLinkType;
+            await Repository.UpdateAsync(link);
+                
+            Logger.LogInformation("Successfully updated link type for linkId: {LinkId}", applicationLinkId);
         }
+        else
+        {
+            Logger.LogWarning("Link not found with ID: {LinkId}", applicationLinkId);
+        }
+        
     }
 }

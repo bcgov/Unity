@@ -190,7 +190,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
             return new JsonResult(new { success = true });
         }
 
-        private ApplicationLinkType GetReverseLinkType(ApplicationLinkType linkType)
+        private static ApplicationLinkType GetReverseLinkType(ApplicationLinkType linkType)
         {
             return linkType switch
             {
