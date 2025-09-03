@@ -1866,6 +1866,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("LinkType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Related");
+
                     b.Property<Guid>("LinkedApplicationId")
                         .HasColumnType("uuid");
 

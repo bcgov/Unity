@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications;
@@ -11,5 +12,7 @@ public class ApplicationLinksInfoDto : EntityDto<Guid>
     public String ApplicationStatus { get; set; } = String.Empty;
     public String Category { get; set; } = String.Empty;
     public string ProjectName { get; set; } = string.Empty;
+    public string ApplicantName { get; set; } = string.Empty;
+    public ApplicationLinkType LinkType { get; set; } = ApplicationLinkType.Related;
 
 }

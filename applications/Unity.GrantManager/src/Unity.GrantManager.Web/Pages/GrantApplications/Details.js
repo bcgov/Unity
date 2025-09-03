@@ -913,7 +913,9 @@ function updateCommentsCounters() {
 function updateLinksCounters() {
     setTimeout(() => {
         $('.links-container').map(function () {
-            $('#' + $(this).data('linkscounttag')).html($(this).data('count'));
+            const tag = $(this).data('linkscounttag');
+            const count = $(this).attr('data-count');
+            $('#' + tag).text(count);
         }).get();
     }, 100);
 }

@@ -19,7 +19,6 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
-using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
 using Unity.Notifications;
 using Unity.Notifications.Integrations.Ches;
@@ -38,6 +37,9 @@ using Unity.GrantManager.Zones;
 using Unity.GrantManager.Infrastructure;
 using Medallion.Threading;
 using Unity.GrantManager.Locks;
+using JsonSerializerOptions = System.Text.Json.JsonSerializerOptions;
+using Unity.GrantManager.Integrations.Chefs;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.GrantManager;
 
@@ -121,21 +123,12 @@ public class GrantManagerApplicationModule : AbpModule
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
-        context.Services.AddSingleton<IAuthorizationHandler, ApplicationAuthorizationHandler>();
-
-        Configure<IntakeClientOptions>(options =>
-        {
-            // This fails unit tests unless set to a non empty string
-            // RestClient will throw an error - baseUrl can not be empty
-            options.BaseUri = configuration["Intake:BaseUri"] ?? "https://submit.digital.gov.bc.ca/app/api/v1";
-            options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
-            options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
-            options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
-        });
-
-        context.Services.Configure<CasClientOptions>(configuration.GetSection(key: "Payments"));
-        context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
-        context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
+        context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
+        context.Services.AddTransient<IFormsApiService, FormsApiService>();
+        
+        context.Services.Configure<CasClientOptions>(configuration.GetSection("Payments"));
+        context.Services.Configure<CssApiOptions>(configuration.GetSection("CssApi"));
+        context.Services.Configure<ChesClientOptions>(configuration.GetSection("Notifications"));
 
         ConfigureBackgroundServices(configuration);
 
@@ -152,60 +145,45 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.ConfigureRabbitMQ();
         context.Services.AddScoped<IZoneChecker, ZoneChecker>();
 
-        _ = context.Services.AddSingleton(provider =>
+        context.Services.AddSingleton(provider =>
         {
-            var options = provider.GetService<IOptions<IntakeClientOptions>>()?.Value;
-            if (null != options)
+            var options = (provider.GetService<IOptions<IntakeClientOptions>>()?.Value) ?? throw new InvalidOperationException("IntakeClientOptions not configured.");
+            if (options.BaseUri == string.Empty)
             {
-                var restOptions = new RestClientOptions(options.BaseUri)
-                {
-                    // NOTE: Basic authentication only works for fetching forms and lists of form submissions
-                    // Authenticator = options.UseBearerToken ?
-                    //    new JwtAuthenticator(options.BearerTokenPlaceholder) :
-                    //    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
+                options.BaseUri = "https://submit.digital.gov.bc.ca/app/api/v1";
+            }
 
+            var restOptions = options != null
+                ? new RestClientOptions(options.BaseUri)
+                {
                     FailOnDeserializationError = true,
                     ThrowOnDeserializationError = true
-                };
+                }
+                : new RestClientOptions();
 
-                return new RestClient(
-                    restOptions,
-                    configureSerialization: s =>
-                        s.UseSystemTextJson(new System.Text.Json.JsonSerializerOptions
-                        {
-                            WriteIndented = true,
-                            PropertyNameCaseInsensitive = true,
-                            ReadCommentHandling = JsonCommentHandling.Skip,
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                        })
-                    );
-            }
-            else
-            {
-                return new RestClient(
-                    configureSerialization: s =>
-                        s.UseSystemTextJson(new System.Text.Json.JsonSerializerOptions
-                        {
-                            WriteIndented = true,
-                            PropertyNameCaseInsensitive = true,
-                            ReadCommentHandling = JsonCommentHandling.Skip,
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                        })
-                    );
-            }
+            return new RestClient(
+                restOptions,
+                configureSerialization: s => s.UseSystemTextJson(new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNameCaseInsensitive = true,
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                })
+            );
         });
 
-        // Set the max defaults as max - we are using non serverside paging and this effect this
+        // Max paging limits
         ExtensibleLimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         ExtensibleLimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
-
         LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 
     private void ConfigureBackgroundServices(IConfiguration configuration)
     {
-        if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"])) return;
+        if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"]))
+            return;
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
@@ -217,9 +195,6 @@ public class GrantManagerApplicationModule : AbpModule
             options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
         });
 
-        /*
-         * There are Global Retry Options that can be configured, configure if required, or if handled per job 
-        */
         Configure<BackgroundJobsOptions>(options =>
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");

@@ -284,6 +284,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+                
+                b.Property(x => x.LinkType)
+                    .IsRequired()
+                    .HasDefaultValue(ApplicationLinkType.Related)
+                    .HasConversion(new EnumToStringConverter<ApplicationLinkType>());
 
             });
 

@@ -1,6 +1,4 @@
-﻿using Unity.GrantManager.Integration.Geocoder;
-
-namespace Unity.GrantManager.Integrations.Geocoder
+﻿namespace Unity.GrantManager.Integrations.Geocoder
 {
     internal static class ResultMapper
     {
