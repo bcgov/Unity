@@ -1,0 +1,272 @@
+/* ApplicationLinksModal CSS */
+
+
+.links-display-area {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    min-height: 80px;
+    max-height: 200px; /* Reduced from 300px to 200px */
+    overflow-y: auto;
+}
+
+.link-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.link-item:last-child {
+    margin-bottom: 0;
+}
+
+/* All link items have the same background - matching disabled input fields */
+.link-item.child,
+.link-item.parent,
+.link-item.related {
+    background-color: var(--bc-colors-grey-hover);
+    border-color: var(--bs-border-color);
+}
+
+.link-info {
+    flex: 1;
+}
+
+.link-reference {
+    font-weight: bold;
+    color: #495057;
+    margin-right: 8px;
+}
+
+.link-applicant {
+    color: #6c757d;
+    margin-right: 8px;
+}
+
+.link-category {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Application status styling - complete styling to match other components */
+.link-item .application-status {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--bc-colors-blue-text-links);
+    text-transform: uppercase;
+    border: 3px solid var(--bc-colors-blue-text-links);
+    border-radius: 1rem;
+}
+
+.link-type-badge {
+    display: inline-block;
+    margin-left: auto;
+    margin-right: 10px;
+    padding: 3px 12px;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background-color: #013366;
+    color: white;
+}
+
+.link-delete-btn {
+    background: none;
+    border: none;
+    color: #0066cc;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.link-delete-btn:hover {
+    background-color: #f8f9fa;
+    color: #004494;
+}
+
+.link-delete-btn:focus {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+}
+
+/* Auto-suggest dropdown styling */
+.links-suggestion-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.links-suggestion-title {
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.links-suggestion-element {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.2s;
+}
+
+.links-suggestion-element:hover,
+.links-suggestion-element.suggestion-active {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.links-suggestion-element:last-child {
+    border-bottom: none;
+}
+
+/* Search input container */
+.search-input-container {
+    position: relative;
+}
+
+/* Empty state styling */
+#noLinksMessage {
+    text-align: center;
+    color: #6c757d;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* Modal adjustments */
+#applicationLinksModal .modal-dialog {
+    max-width: 800px; /* Increased from default 500px to allow more space for links */
+    max-height: 90vh; /* Ensure modal fits within viewport height */
+}
+
+#applicationLinksModal .modal-content {
+    max-height: 90vh; /* Ensure content area fits within viewport */
+    overflow: hidden; /* Prevent modal content overflow */
+}
+
+#applicationLinksModal .modal-body {
+    overflow-y: auto; /* Allow scrolling within modal body if needed */
+    max-height: 70vh; /* Limit body height to ensure buttons remain visible */
+    padding: 1.5rem;
+}
+
+#applicationLinksModal .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+
+/* Loading state styling */
+.link-item.loading {
+    opacity: 0.7;
+}
+
+.loading-text {
+    color: #6c757d;
+    font-style: italic;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.link-item.loading .loading-text {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Error state styling */
+.link-item.error {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+.link-error-icon {
+    color: #856404;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.link-error-icon:hover {
+    color: #533f03;
+}
+
+/* New item styling */
+@keyframes slideInFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.link-item.new-item {
+    position: relative;
+    animation: slideInFade 0.3s ease-out;
+}
+
+/* NEW badge styling - styled like application-status but with green colors */
+.badge.bg-success {
+    padding: 0.125rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    color: #28a745 !important;
+    text-transform: uppercase !important;
+    border: 3px solid #28a745 !important;
+    border-radius: 1rem !important;
+    background-color: transparent !important;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .link-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .link-type-badge {
+        margin-left: 0;
+        margin-right: 0;
+        margin-top: 8px;
+    }
+    
+    .link-delete-btn {
+        align-self: flex-end;
+        margin-top: 8px;
+    }
+    
+    .badge.bg-success,
+    .link-error-icon {
+        margin-left: 0;
+        margin-top: 4px;
+    }
+}

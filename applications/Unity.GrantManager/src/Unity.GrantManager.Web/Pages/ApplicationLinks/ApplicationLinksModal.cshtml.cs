@@ -6,8 +6,19 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+
+namespace Unity.GrantManager.Web.Pages.ApplicationLinks
+{
+    public class LinkWithType
+    {
+        public string ReferenceNumber { get; set; } = string.Empty;
+        public string ProjectName { get; set; } = string.Empty;
+        public ApplicationLinkType LinkType { get; set; } = ApplicationLinkType.Related;
+    }
+}
 
 namespace Unity.GrantManager.Web.Pages.ApplicationLinks
 {
@@ -49,6 +60,11 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
         [BindProperty]
         public Guid? CurrentApplicationId { get; set; }
 
+        [BindProperty]
+        public string? LinksWithTypes { get; set; } = string.Empty;
+
+        public ApplicationLinksInfoDto? CurrentApplication { get; set; }
+
         public ApplicationLinksModalModel(IApplicationLinksService applicationLinksService, IGrantApplicationAppService grantApplicationAppService)
         {
             _applicationLinksService = applicationLinksService ?? throw new ArgumentNullException(nameof(applicationLinksService));
@@ -60,6 +76,10 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
             try
             {
                 CurrentApplicationId = applicationId;
+                
+                // Get current application info for display
+                CurrentApplication = await _applicationLinksService.GetCurrentApplicationInfoAsync(applicationId);
+                
                 var grantApplications = await _grantApplicationAppService.GetAllApplicationsAsync();
                 var tempGrantApplications = new List<GrantApplicationLiteDto>(grantApplications);
                 var currentApplication = tempGrantApplications.Single(item => item.Id == applicationId);
@@ -70,7 +90,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                 // remove current application id from ths suggestion list
                 tempGrantApplications.Remove(currentApplication);
 
-                var formattedAllApplications = tempGrantApplications.Select(item => item.ReferenceNo + " - " + item.ProjectName).ToList();
+                var formattedAllApplications = tempGrantApplications.Select(item => item.ReferenceNo + " - " + item.ApplicantName).ToList();
                 var formattedLinkedApplications = filteredLinkedApplications.Select(item => item.ReferenceNumber + " - " + item.ProjectName).ToList();
 
                 AllApplications = string.Join(",", formattedAllApplications);
@@ -81,7 +101,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, message: "Error loading tag select list");
+                Logger.LogError(ex, message: "Error loading application links modal data");
             }
         }
 
@@ -89,55 +109,116 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
         {
             try
             {
-                if (SelectedApplications != null) {
-                    string[]? selectedApplicationsArray = JsonConvert.DeserializeObject<string[]>(SelectedApplications);
+                if (!string.IsNullOrEmpty(LinksWithTypes))
+                {
+                    List<LinkWithType>? selectedLinksWithTypes = JsonConvert.DeserializeObject<List<LinkWithType>>(LinksWithTypes);
                     List<GrantApplicationLiteDto>? grantApplications = JsonConvert.DeserializeObject<List<GrantApplicationLiteDto>>(GrantApplicationsList!);
                     List<ApplicationLinksInfoDto>? linkedApplications = JsonConvert.DeserializeObject<List<ApplicationLinksInfoDto>>(LinkedApplicationsList!);
 
-                    foreach (var item in selectedApplicationsArray!)
+                    if (selectedLinksWithTypes != null && grantApplications != null && linkedApplications != null)
                     {
-                        var itemArr = item.Split('-');
-                        var referenceNo = itemArr[0].Trim();
-                        ApplicationLinksInfoDto applicationLinksInfoDto = linkedApplications!.Find(application => application.ReferenceNumber == referenceNo)!;
-                        
-                        // Add new link only if its not already existing
-                        if (applicationLinksInfoDto == null) {
-                            Guid linkedApplicationId = grantApplications!.Find(application => application.ReferenceNo == referenceNo)!.Id;
-
-                            //For CurrentApplication
-                            await _applicationLinksService.CreateAsync(new ApplicationLinksDto{
-                                ApplicationId = CurrentApplicationId ?? Guid.Empty,
-                                LinkedApplicationId = linkedApplicationId
-                            });
-
-                            //For LinkedApplication
-                            await _applicationLinksService.CreateAsync(new ApplicationLinksDto
-                            {
-                                ApplicationId = linkedApplicationId,
-                                LinkedApplicationId = CurrentApplicationId ?? Guid.Empty
-                            });
-                        }
-                    }
-
-                    // For removing the deleted links
-                    foreach (ApplicationLinksInfoDto linked in linkedApplications!)
-                    {
-                        var selectedIndex = selectedApplicationsArray!.FindIndex(selected => selected.Split('-')[0].Trim() == linked.ReferenceNumber);
-                        if(selectedIndex < 0) {
-                            await _applicationLinksService.DeleteAsync(linked.Id);
+                        // Add new links and update existing ones
+                        foreach (var linkWithType in selectedLinksWithTypes)
+                        {
+                            var existingLink = linkedApplications.Find(app => app.ReferenceNumber == linkWithType.ReferenceNumber);
                             
-                            var linkApp = await _applicationLinksService.GetLinkedApplicationAsync(CurrentApplicationId ?? Guid.Empty, linked.ApplicationId);
-                            await _applicationLinksService.DeleteAsync(linkApp.Id);
+                            if (existingLink == null)
+                            {
+                                // Add new link
+                                var targetApplication = grantApplications.Find(app => app.ReferenceNo == linkWithType.ReferenceNumber);
+                                if (targetApplication != null)
+                                {
+                                    var linkedApplicationId = targetApplication.Id;
+
+                                    // For CurrentApplication -> LinkedApplication
+                                    await _applicationLinksService.CreateAsync(new ApplicationLinksDto
+                                    {
+                                        ApplicationId = CurrentApplicationId ?? Guid.Empty,
+                                        LinkedApplicationId = linkedApplicationId,
+                                        LinkType = linkWithType.LinkType
+                                    });
+
+                                    // For LinkedApplication -> CurrentApplication (reverse link with appropriate type)
+                                    var reverseLinkType = GetReverseLinkType(linkWithType.LinkType);
+                                    await _applicationLinksService.CreateAsync(new ApplicationLinksDto
+                                    {
+                                        ApplicationId = linkedApplicationId,
+                                        LinkedApplicationId = CurrentApplicationId ?? Guid.Empty,
+                                        LinkType = reverseLinkType
+                                    });
+                                }
+                            }
+                            else
+                            {
+                                // Check if the link type has changed
+                                if (existingLink.LinkType != linkWithType.LinkType)
+                                {
+                                    // Update the existing link's type
+                                    await _applicationLinksService.UpdateLinkTypeAsync(existingLink.Id, linkWithType.LinkType);
+                                    
+                                    // Also update the reverse link
+                                    var reverseLink = await _applicationLinksService.GetLinkedApplicationAsync(CurrentApplicationId ?? Guid.Empty, existingLink.ApplicationId);
+                                    var reverseLinkType = GetReverseLinkType(linkWithType.LinkType);
+                                    await _applicationLinksService.UpdateLinkTypeAsync(reverseLink.Id, reverseLinkType);
+                                    
+                                    Logger.LogInformation("Updated link type for {ReferenceNumber} from {OldType} to {NewType}", 
+                                        linkWithType.ReferenceNumber, existingLink.LinkType, linkWithType.LinkType);
+                                }
+                            }
+                        }
+
+                        // Remove deleted links
+                        foreach (var linkedApp in linkedApplications)
+                        {
+                            var stillSelected = selectedLinksWithTypes.Any(selected => selected.ReferenceNumber == linkedApp.ReferenceNumber);
+                            if (!stillSelected)
+                            {
+                                await _applicationLinksService.DeleteAsync(linkedApp.Id);
+                                
+                                var reverseLink = await _applicationLinksService.GetLinkedApplicationAsync(CurrentApplicationId ?? Guid.Empty, linkedApp.ApplicationId);
+                                await _applicationLinksService.DeleteAsync(reverseLink.Id);
+                            }
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, message: "Error updating application tags");
+                Logger.LogError(ex, message: "Error updating application links");
             }
 
-            return NoContent();
+            return new JsonResult(new { success = true });
+        }
+
+        private static ApplicationLinkType GetReverseLinkType(ApplicationLinkType linkType)
+        {
+            return linkType switch
+            {
+                ApplicationLinkType.Parent => ApplicationLinkType.Child,
+                ApplicationLinkType.Child => ApplicationLinkType.Parent,
+                ApplicationLinkType.Related => ApplicationLinkType.Related,
+                _ => ApplicationLinkType.Related
+            };
+        }
+
+        public async Task<IActionResult> OnGetApplicationDetailsByReferenceAsync(string referenceNumber)
+        {
+            try
+            {
+                var details = await _applicationLinksService.GetApplicationDetailsByReferenceAsync(referenceNumber);
+                return new JsonResult(details);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error getting application details for reference number: {ReferenceNumber}", referenceNumber);
+                return new JsonResult(new ApplicationLinksInfoDto
+                {
+                    ReferenceNumber = referenceNumber,
+                    ApplicantName = "Error loading",
+                    Category = "Error loading",
+                    ApplicationStatus = "Error loading"
+                });
+            }
         }
     }
 }
