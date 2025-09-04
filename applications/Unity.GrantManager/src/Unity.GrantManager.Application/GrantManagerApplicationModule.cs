@@ -147,7 +147,12 @@ public class GrantManagerApplicationModule : AbpModule
 
         context.Services.AddSingleton(provider =>
         {
-            var options = provider.GetService<IOptions<IntakeClientOptions>>()?.Value;
+            var options = (provider.GetService<IOptions<IntakeClientOptions>>()?.Value) ?? throw new InvalidOperationException("IntakeClientOptions not configured.");
+            if (options.BaseUri == string.Empty)
+            {
+                options.BaseUri = "https://submit.digital.gov.bc.ca/app/api/v1";
+            }
+
             var restOptions = options != null
                 ? new RestClientOptions(options.BaseUri)
                 {

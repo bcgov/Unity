@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
@@ -1277,12 +1278,18 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
     {
 
-        var query = from applications in await _applicationRepository.GetQueryableAsync()
+        var applicationsQuery = await _applicationRepository.GetQueryableAsync();
+        var applicantsQuery = await _applicantRepository.GetQueryableAsync();
+        
+        var query = from applications in applicationsQuery
+                    join applicant in applicantsQuery on applications.ApplicantId equals applicant.Id into applicantGroup
+                    from applicant in applicantGroup.DefaultIfEmpty()
                     select new GrantApplicationLiteDto
                     {
                         Id = applications.Id,
                         ProjectName = applications.ProjectName,
-                        ReferenceNo = applications.ReferenceNo
+                        ReferenceNo = applications.ReferenceNo,
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue
                     };
 
         return await query.ToListAsync();
