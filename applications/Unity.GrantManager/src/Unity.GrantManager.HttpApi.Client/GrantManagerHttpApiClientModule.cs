@@ -35,8 +35,8 @@ public class GrantManagerHttpApiClientModule : AbpModule
         // Register Geocoder API client
         context.Services.AddHttpClient<IGeocoderApiService>(client =>
         {
-            client.BaseAddress = new Uri("https://geocoder.api.url/"); // TODO: move to config
-            // optional: client.DefaultRequestHeaders.Add("Authorization", "..."); 
+            string baseAddress = "https://geocoder.api.gov.bc.ca";
+            client.BaseAddress = new Uri(baseAddress);
         });
 
 
