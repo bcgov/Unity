@@ -10,7 +10,7 @@ using Volo.Abp.Application.Services;
 namespace Unity.GrantManager.Integrations.Geocoder
 {
     [AllowAnonymous]
-    public class GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration, IEndpointManagementAppService endpointManagementAppService) : ApplicationService
+    public class GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration, IEndpointManagementAppService endpointManagementAppService) : IGeocoderApiService
     {
         public async Task<AddressDetailsDto> GetAddressDetailsAsync(string address)
         {
