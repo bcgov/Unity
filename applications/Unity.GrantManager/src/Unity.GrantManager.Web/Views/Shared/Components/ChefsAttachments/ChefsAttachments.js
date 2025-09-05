@@ -39,7 +39,6 @@ $(function () {
             getChefsFileNameColumn(),
             getChefsLabelColumn(),
             getChefsFileDownloadColumn(),
-            getChefsExpandColumn(),
         ]
     }
 
@@ -97,19 +96,6 @@ $(function () {
         };
     }
 
-    function getChefsExpandColumn() {
-        return {
-            title: '',
-            name: 'chefsExpand',
-            data: null,
-            render: function (data, type, full, meta) {
-                return '<button class="btn btn-sm ai-toggle-btn" data-row="' + meta.row + '" style="border: none; background: transparent; padding: 4px 8px;" title="View AI Summary"><i class="fl fl-search" style="transition: opacity 0.3s;"></i></button>';
-            },
-            orderable: false,
-            width: '50px',
-            className: 'text-center'
-        };
-    }
 
     let formatItems = function (items) {
         const hardcodedData = {
@@ -245,31 +231,6 @@ $(function () {
         });
     });
 
-    // Toggle AI summary on magnifying glass click with accordion behavior
-    $(document).on('click', '.ai-toggle-btn', function(e) {
-        e.stopPropagation();
-        var $btn = $(this);
-        var $icon = $btn.find('i');
-        var rowIdx = $btn.data('row');
-        var $summaryRow = $('.ai-summary-row[data-parent-row="' + rowIdx + '"]');
-        
-        if ($summaryRow.is(':visible')) {
-            // Close current row
-            $summaryRow.hide();
-            $icon.css('opacity', '0.6');
-            $btn.attr('title', 'View AI Summary');
-        } else {
-            // Close all other open rows first (accordion behavior)
-            $('.ai-summary-row:visible').hide();
-            $('.ai-toggle-btn i').css('opacity', '0.6');
-            $('.ai-toggle-btn').attr('title', 'View AI Summary');
-            
-            // Open the clicked row
-            $summaryRow.show();
-            $icon.css('opacity', '1');
-            $btn.attr('title', 'Hide AI Summary');
-        }
-    });
 
     chefsDataTable.on('deselect', function (e, dt, type, indexes) {
         if (indexes?.length) {
@@ -340,6 +301,23 @@ $(function () {
 
     $('#attachments-tab').on('click', function () {
         chefsDataTable.columns.adjust();
+    });
+
+    // Toggle all AI summaries on View All Summaries button click
+    $('#viewAllSummaries').on('click', function(e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var $allSummaryRows = $('.ai-summary-row');
+        
+        if ($allSummaryRows.first().is(':visible')) {
+            // Hide all summaries
+            $allSummaryRows.hide();
+            $btn.attr('title', 'View All AI Summaries');
+        } else {
+            // Show all summaries
+            $allSummaryRows.show();
+            $btn.attr('title', 'Hide All AI Summaries');
+        }
     });
 
     $(downloadAll).on('click', function () {
