@@ -105,7 +105,6 @@
                         <abp-row>
                             <abp-column size="_12">
                                 <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
-                                <p>Sam</p>
                                 <div id="formio">@Html.Raw(@Model.ApplicationFormSubmissionHtml)</div>
                             </abp-column>
 
@@ -128,7 +127,7 @@
                         <div class="w-100 px-2" id="assessmentResultWidget">
                             @await Component.InvokeAsyncWithSkeleton("AssessmentResults", 
                                 new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId }, 
-                                isInitialLoad: true, 
+                                isLazyLoad: true, 
                                 tabName: "nav-review-and-assessment")
                         </div>
 
@@ -155,7 +154,7 @@
                             <div class="w-100 px-2" id="assessmentMainView">
                                 @await Component.InvokeAsyncWithSkeleton("ReviewList", 
                                     new { applicationId = Model.ApplicationId }, 
-                                    isInitialLoad: true, 
+                                    isLazyLoad: true, 
                                     tabName: "nav-review-and-assessment")
                             </div>
                         </zone>
@@ -244,7 +243,7 @@
                         <div class="w-100 px-2" id="projectInfoWidget">
                             @await Component.InvokeAsyncWithSkeleton("ProjectInfo", 
                                 new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId }, 
-                                isInitialLoad: true, 
+                                isLazyLoad: true, 
                                 tabName: "nav-project-info")
                         </div>
                     </abp-tab>
@@ -266,7 +265,7 @@
                         <div class="w-100 px-2" id="ApplicantInfoWidget">
                             @await Component.InvokeAsyncWithSkeleton("ApplicantInfo", 
                                 new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId }, 
-                                isInitialLoad: true, 
+                                isLazyLoad: true, 
                                 tabName: "nav-organization-info")
                         </div>
                     </abp-tab>
@@ -289,7 +288,7 @@
                         <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Funding.Agreement.Default)" id="FundingAgreementInfoWidget">
                             @await Component.InvokeAsyncWithSkeleton("FundingAgreementInfo", 
                                 new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId }, 
-                                isInitialLoad: true, 
+                                isLazyLoad: true, 
                                 tabName: "nav-funding-agreement-info")
                         </div>
                     </abp-tab>
@@ -311,7 +310,7 @@
                         <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Payment.Default)" id="PaymentInfoWidget">
                             @await Component.InvokeAsyncWithSkeleton("PaymentInfo", 
                                 new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId }, 
-                                isInitialLoad: true, 
+                                isLazyLoad: true, 
                                 tabName: "nav-payment-info")
                         </div>
                     </abp-tab>
@@ -377,7 +376,6 @@
 
                         <div id="applicationStatusWidget">
                             @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
-                            @* @await Component.InvokeAsyncWithSkeleton("ApplicationStatusWidget", new { assessmentId = Model.AssessmentId }, true, "nav-status-details") *@
                         </div>
                         <div id="applicationTagsWidget">
                             @await Component.InvokeAsync("ApplicationTagsWidget", new { applicationId = Model.ApplicationId })
@@ -473,7 +471,10 @@
                 @*-------- Attachments Tab Section ---------*@
                 <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Assessment Attachments</h6>
-                    @await Component.InvokeAsync("ApplicationAttachments")
+                   @await Component.InvokeAsyncWithSkeleton("ApplicationAttachments", 
+                        new { applicationId = Model.ApplicationId }, 
+                        isLazyLoad: true, 
+                        tabName: "nav-attachments")
 
                     <div class="d-flex justify-content-end m-3">
                         <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
@@ -501,7 +502,10 @@
                 @*-------- History Tab Section ---------*@
                 <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
                     <div class="px-3 pb-2" id="applicationHistoryWidget">
-                        @await Component.InvokeAsync("HistoryWidget", new { applicationId = Model.ApplicationId })
+                        @await Component.InvokeAsyncWithSkeleton("HistoryWidget", 
+                            new { applicationId = Model.ApplicationId }, 
+                            isLazyLoad: true, 
+                            tabName: "history")
                     </div>
                 </div>
                 @*-------- History Tab Section END ---------*@

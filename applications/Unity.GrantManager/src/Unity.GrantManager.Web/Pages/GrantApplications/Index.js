@@ -311,7 +311,7 @@
             name: 'referenceNo',
             className: 'data-table-header text-nowrap',
             render: function (data, type, row) {
-                return `<a href="/GrantApplications/Details?ApplicationId=${row.id}">${data}</a>`;
+                return `<a href="/GrantApplications/DetailsV2?ApplicationId=${row.id}">${data}</a>`;
             },
             index: columnIndex,
         };

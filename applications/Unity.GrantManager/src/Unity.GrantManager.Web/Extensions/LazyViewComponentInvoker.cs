@@ -13,22 +13,24 @@ namespace Unity.GrantManager.Web.Extensions
         {
             "SummaryWidget",
             "AssessmentResults",
-            "ProjectInfo", 
+            "ProjectInfo",
             "ApplicantInfo",
             "FundingAgreementInfo",
             "PaymentInfo",
-            "ReviewList"
+            "ReviewList",
+            "HistoryWidget",
+            "ApplicationAttachments"
         };
 
        public static async Task<IHtmlContent> InvokeAsyncWithSkeleton(
             this IViewComponentHelper componentHelper,
             string componentName,
             object arguments,
-            bool isInitialLoad = true,
+            bool isLazyLoad = true,
             string tabName = "")
         {
             // Check if this component should be lazy loaded
-            if (isInitialLoad && LazyComponents.Contains(componentName))
+            if (isLazyLoad && LazyComponents.Contains(componentName))
             {
                 var skeletonHtml = GenerateSkeletonHtml(componentName, arguments, tabName);
                 System.Diagnostics.Debug.WriteLine($"Generated skeleton for {componentName}: {skeletonHtml.Substring(0, Math.Min(100, skeletonHtml.Length))}...");

@@ -38,6 +38,31 @@ $(function () {
     // ADD LAZY LOADING FUNCTIONALITY HERE
     console.log('DetailsV2 with lazy ViewComponents initialized');
 
+    // Handle Bootstrap tab activation for right-side tabs (not ABP tabs)
+    $('#myTabContent')
+        .closest('.right-card')
+        .find('ul.nav-tabs')
+        .on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function (e) {
+            const $target = $(e.target);
+            const tabTarget = $target.attr('data-bs-target'); // Gets #history, #attachments, etc.
+            const tabName = tabTarget ? tabTarget.substring(1) : null; // Remove the # to get 'history'
+
+            console.log('Right-side tab activated:', tabName);
+            console.log('Target element:', $target);
+
+            // Lazy load logic
+            if (tabName && !loadedTabs.has(tabName)) {
+                console.log(`Loading components for tab: ${tabName}`);
+                loadedTabs.add(tabName);
+                loadTabComponents(tabName);
+            } else {
+                console.log(`Tab ${tabName} already loaded or invalid`);
+            }
+
+            // Adjust DataTables
+            $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+        });
+
     // Handle ABP tab activation for lazy loading - ABP tabs use different event
     $('#detailsTab').on(
         'shown.bs.tab',
@@ -68,102 +93,13 @@ $(function () {
         console.log('Tab name:', tabName);
 
         // Multiple strategies to find the tab pane - ABP tabs can have different structures
-        let tabPane = null;
+        let tabPane = $(`#${tabName}`); // Should find #history, #attachments, etc.
 
-        // Strategy 1: Look for ABP tab pane with name attribute
-        tabPane = $(`div[name="${tabName}"]`);
         if (tabPane.length > 0) {
-            console.log(`Found tab pane by name attribute: ${tabName}`);
-        }
-
-        // Strategy 2: Look for tab pane by ID
-        if (tabPane.length === 0) {
-            tabPane = $(`#${tabName}`);
-            if (tabPane.length > 0) {
-                console.log(`Found tab pane by ID: ${tabName}`);
-            }
-        }
-
-        // Strategy 3: Look for Bootstrap tab pane with aria-labelledby
-        if (tabPane.length === 0) {
-            const tabButton = $(`button[aria-controls="${tabName}"]`);
-            if (tabButton.length > 0) {
-                const tabId = tabButton.attr('id');
-                tabPane = $(`div[aria-labelledby="${tabId}"]`);
-                if (tabPane.length > 0) {
-                    console.log(
-                        `Found tab pane by aria-labelledby: ${tabName}`
-                    );
-                }
-            }
-        }
-
-        // Strategy 4: Look inside the tab content container
-        if (tabPane.length === 0) {
-            tabPane = $(`#detailsTabContent .tab-pane`).filter(function () {
-                return (
-                    $(this).attr('id') === tabName ||
-                    $(this).attr('name') === tabName ||
-                    $(this).hasClass(tabName)
-                );
-            });
-            if (tabPane.length > 0) {
-                console.log(
-                    `Found tab pane in tab content container: ${tabName}`
-                );
-            }
-        }
-
-        // Strategy 5: Direct search for lazy components with matching tab attribute
-        if (tabPane.length === 0) {
-            console.warn(
-                `Could not find tab pane for: ${tabName}, searching for lazy components directly`
-            );
-            const directComponents = $(
-                `.lazy-component-container[data-tab="${tabName}"]:not([data-loaded="true"])`
-            );
-            if (directComponents.length > 0) {
-                console.log(
-                    `Found ${directComponents.length} lazy components directly for tab: ${tabName}`
-                );
-                loadComponentsFromContainers(directComponents);
-                return;
-            }
-        }
-
-        console.log('Tab pane search results:', {
-            tabName: tabName,
-            found: tabPane.length,
-            element: tabPane.length > 0 ? tabPane[0] : null,
-        });
-
-        if (tabPane.length === 0) {
-            console.error('Could not find tab pane for:', tabName);
-            console.log('Available elements:');
-            console.log(
-                '- Divs with name attributes:',
-                $('div[name]')
-                    .map(function () {
-                        return $(this).attr('name');
-                    })
-                    .get()
-            );
-            console.log(
-                '- Elements with matching IDs:',
-                $(`[id*="${tabName}"]`)
-                    .map(function () {
-                        return this.id;
-                    })
-                    .get()
-            );
-            console.log(
-                '- All lazy component containers:',
-                $('.lazy-component-container')
-                    .map(function () {
-                        return $(this).data('tab');
-                    })
-                    .get()
-            );
+            console.log(`Found tab pane by ID: ${tabName}`);
+            console.log('Tab pane HTML content:', tabPane.html());
+        } else {
+            console.error(`Could not find tab pane with ID: ${tabName}`);
             return;
         }
 
@@ -177,11 +113,15 @@ $(function () {
 
         if (lazyComponents.length === 0) {
             console.warn(`No lazy components found in tab pane: ${tabName}`);
-            // Log what's actually in the tab pane
             console.log(
-                'Tab pane contents:',
-                tabPane.html().substring(0, 200) + '...'
+                'Looking for any .lazy-component-container:',
+                tabPane.find('.lazy-component-container').length
             );
+            console.log(
+                'Looking for any [data-component]:',
+                tabPane.find('[data-component]').length
+            );
+            console.log('All divs in tab pane:', tabPane.find('div').length);
             return;
         }
 
@@ -261,6 +201,14 @@ $(function () {
         PaymentInfo: {
             js: '/Views/Shared/Components/PaymentInfo/Default.js',
             css: '/Views/Shared/Components/PaymentInfo/Default.css',
+        },
+        HistoryWidget: {
+            js: '/Views/Shared/Components/HistoryWidget/Default.js',
+            css: '/Views/Shared/Components/HistoryWidget/Default.css',
+        },
+        ApplicationAttachments: {
+            js: '/Views/Shared/Components/ApplicationAttachments/ApplicationAttachments.js',
+            css: '/Views/Shared/Components/ApplicationAttachments/ApplicationAttachments.css',
         },
     };
 
@@ -636,6 +584,12 @@ $(function () {
             case 'PaymentInfo':
                 initializePaymentInfo($content);
                 break;
+            case 'HistoryWidget':
+                initializeHistoryWidget($content);
+                break;
+            case 'ApplicationAttachments':
+                initializeApplicationAttachments($content);
+                break;
             default:
                 console.log(
                     `Component ${componentName} loaded - no specific initialization needed`
@@ -690,6 +644,34 @@ $(function () {
             } else {
                 console.error(
                     'initializeReviewListTable function not available'
+                );
+            }
+        }, 300);
+    }
+
+    function initializeHistoryWidget($content) {
+        console.log('Initializing History Widget component for lazy loading');
+
+        setTimeout(() => {
+            if (typeof window.initializeHistoryWidget === 'function') {
+                window.initializeHistoryWidget($content);
+            } else {
+                console.error('initializeHistoryWidget function not available');
+            }
+        }, 300);
+    }
+
+    function initializeApplicationAttachments($content) {
+        console.log(
+            'Initializing Application Attachments component for lazy loading'
+        );
+
+        setTimeout(() => {
+            if (typeof window.initializeApplicationAttachments === 'function') {
+                window.initializeApplicationAttachments($content);
+            } else {
+                console.error(
+                    'initializeApplicationAttachments function not available'
                 );
             }
         }, 300);

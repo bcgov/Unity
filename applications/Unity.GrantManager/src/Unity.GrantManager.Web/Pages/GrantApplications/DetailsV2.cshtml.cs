@@ -217,6 +217,14 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                         htmlContent = await InvokeViewComponentDirectly("PaymentInfo", new { applicationId, applicationFormVersionId });
                         break;
 
+                    case "HistoryWidget":
+                        htmlContent = await InvokeViewComponentDirectly("HistoryWidget", new { applicationId });
+                        break;
+
+                    case "ApplicationAttachments":
+                        htmlContent = await InvokeViewComponentDirectly("ApplicationAttachments", new { applicationId });
+                        break;
+    
                     default:
                         return new JsonResult(new { success = false, error = "Unknown component" });
                 }
