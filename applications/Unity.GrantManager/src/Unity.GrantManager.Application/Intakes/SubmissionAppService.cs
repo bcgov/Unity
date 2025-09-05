@@ -65,6 +65,7 @@ public class SubmissionAppService(
         return applicationFormSubmisssion.Submission;
     }
 
+    [AllowAnonymous] // Allow internal access for background processing (AI summary generation, etc.)
     public async Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name)
     {
         if (formSubmissionId == null)

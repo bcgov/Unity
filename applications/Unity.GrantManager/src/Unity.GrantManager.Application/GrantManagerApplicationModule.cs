@@ -151,6 +151,11 @@ public class GrantManagerApplicationModule : AbpModule
 
         context.Services.ConfigureRabbitMQ();
         context.Services.AddScoped<IZoneChecker, ZoneChecker>();
+        
+        // Configure AI services
+        context.Services.AddHttpClient();
+        context.Services.AddTransient<Unity.GrantManager.AI.IAIService, Unity.GrantManager.AI.OpenAIService>();
+        context.Services.AddTransient<Unity.GrantManager.AI.ITextExtractionService, Unity.GrantManager.AI.TextExtractionService>();
 
         _ = context.Services.AddSingleton(provider =>
         {

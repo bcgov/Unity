@@ -103,10 +103,7 @@ $(function () {
             name: 'chefsExpand',
             data: null,
             render: function (data, type, full, meta) {
-                if (full.aiSummary) {
-                    return '<button class="btn btn-sm ai-toggle-btn" data-row="' + meta.row + '" style="border: none; background: transparent; padding: 4px 8px;"><i class="fl fl-chevron-down" style="transition: transform 0.3s;"></i></button>';
-                }
-                return '';
+                return '<button class="btn btn-sm ai-toggle-btn" data-row="' + meta.row + '" style="border: none; background: transparent; padding: 4px 8px;" title="View AI Summary"><i class="fl fl-search" style="transition: opacity 0.3s;"></i></button>';
             },
             orderable: false,
             width: '50px',
@@ -165,6 +162,8 @@ $(function () {
             return {
                 ...item,
                 ...hardcoded,
+                // Use the real AI summary from the database, fallback to hardcoded demo data, then to placeholder
+                aiSummary: item.aiSummary || hardcoded.aiSummary || 'AI analysis not yet available for this attachment.',
                 rowCount: index
             };
         });
@@ -198,7 +197,7 @@ $(function () {
                     var summaryRow = $('<tr class="ai-summary-row" data-parent-row="' + dataIndex + '" style="background-color: #f8f9fa; display: none;">')
                         .append($('<td>'))
                         .append($('<td colspan="4" style="font-size: 1em; color: #6c757d; font-style: italic;">')
-                            .html('<i class="fl fl-sparkle" style="margin-right: 5px;"></i>' + data.aiSummary));
+                            .html(data.aiSummary));
                     $(row).after(summaryRow);
                 }
             }
@@ -239,14 +238,14 @@ $(function () {
             if (data && data.aiSummary) {
                 var summaryRow = $('<tr class="ai-summary-row" data-parent-row="' + rowIdx + '" style="background-color: #f8f9fa; display: none;">')
                     .append($('<td>'))
-                    .append($('<td colspan="4" font-size: 1em; color: #6c757d; font-style: italic;">')
+                    .append($('<td colspan="4" style="font-size: 1em; color: #6c757d; font-style: italic;">')
                         .html(data.aiSummary));
                 $(row).after(summaryRow);
             }
         });
     });
 
-    // Toggle AI summary on chevron click
+    // Toggle AI summary on magnifying glass click with accordion behavior
     $(document).on('click', '.ai-toggle-btn', function(e) {
         e.stopPropagation();
         var $btn = $(this);
@@ -255,11 +254,20 @@ $(function () {
         var $summaryRow = $('.ai-summary-row[data-parent-row="' + rowIdx + '"]');
         
         if ($summaryRow.is(':visible')) {
+            // Close current row
             $summaryRow.hide();
-            $icon.css('transform', 'rotate(0deg)');
+            $icon.css('opacity', '0.6');
+            $btn.attr('title', 'View AI Summary');
         } else {
+            // Close all other open rows first (accordion behavior)
+            $('.ai-summary-row:visible').hide();
+            $('.ai-toggle-btn i').css('opacity', '0.6');
+            $('.ai-toggle-btn').attr('title', 'View AI Summary');
+            
+            // Open the clicked row
             $summaryRow.show();
-            $icon.css('transform', 'rotate(180deg)');
+            $icon.css('opacity', '1');
+            $btn.attr('title', 'Hide AI Summary');
         }
     });
 

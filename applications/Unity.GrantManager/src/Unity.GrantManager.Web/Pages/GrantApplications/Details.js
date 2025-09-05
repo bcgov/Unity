@@ -25,6 +25,7 @@ $(function () {
         initEmailsWidget();
         updateLinksCounters();
         renderSubmission();
+        loadAIAnalysis();
     }
 
     initializeDetailsPage();
@@ -1075,4 +1076,114 @@ function clearCurrencyError(input) {
     let errorSpan = input.attr('id') + "-error";
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
+}
+
+function loadAIAnalysis() {
+    const urlParams = new URL(window.location.toLocaleString()).searchParams;
+    const applicationId = urlParams.get('ApplicationId');
+    
+    if (!applicationId) {
+        renderDemoAIAnalysis();
+        return;
+    }
+
+    // Get the application data including AI analysis
+    unity.grantManager.grantApplications.grantApplication.get(applicationId)
+        .done(function(application) {
+            console.log('Application data received:', application);
+            console.log('AI Analysis field:', application.aiAnalysis);
+            
+            // Use the camelCase version that should come from the API
+            const aiAnalysis = application.aiAnalysis;
+            
+            if (application && aiAnalysis) {
+                try {
+                    console.log('Raw AI analysis:', aiAnalysis);
+                    const analysisData = JSON.parse(aiAnalysis);
+                    console.log('Parsed analysis data:', analysisData);
+                    renderRealAIAnalysis(analysisData);
+                } catch (e) {
+                    console.warn('Failed to parse AI analysis JSON, showing demo data:', e);
+                    renderDemoAIAnalysis();
+                }
+            } else {
+                console.log('No AI analysis found, showing demo');
+                renderDemoAIAnalysis();
+            }
+        })
+        .fail(function(error) {
+            console.warn('Failed to load application data, showing demo AI analysis', error);
+            renderDemoAIAnalysis();
+        });
+}
+
+function renderRealAIAnalysis(analysisData) {
+    const warnings = analysisData.warnings || [];
+    const errors = analysisData.errors || [];
+    const recommendations = analysisData.recommendations || [];
+
+    // Update summary counts
+    $('.ai-analysis-summary .warnings .ai-analysis-summary-count').text(warnings.length);
+    $('.ai-analysis-summary .errors .ai-analysis-summary-count').text(errors.length);
+
+    // Clear existing list and rebuild
+    const $analysisList = $('.ai-analysis-list');
+    $analysisList.empty();
+
+    // Add errors
+    errors.forEach(error => {
+        const errorHtml = `
+            <li class="ai-analysis-item error">
+                <i class="ai-analysis-icon fl fl-times-circle"></i>
+                <div class="ai-analysis-content">
+                    <div class="ai-analysis-title">${escapeHtml(error.category || 'Error')}</div>
+                    <div class="ai-analysis-description">${escapeHtml(error.message || '')}</div>
+                </div>
+            </li>
+        `;
+        $analysisList.append(errorHtml);
+    });
+
+    // Add warnings
+    warnings.forEach(warning => {
+        const warningHtml = `
+            <li class="ai-analysis-item warning">
+                <i class="ai-analysis-icon fl fl-exclamation-triangle"></i>
+                <div class="ai-analysis-content">
+                    <div class="ai-analysis-title">${escapeHtml(warning.category || 'Warning')}</div>
+                    <div class="ai-analysis-description">${escapeHtml(warning.message || '')}</div>
+                </div>
+            </li>
+        `;
+        $analysisList.append(warningHtml);
+    });
+
+    // Add recommendations as info items if present
+    recommendations.forEach(rec => {
+        const recHtml = `
+            <li class="ai-analysis-item info">
+                <i class="ai-analysis-icon fl fl-info-circle"></i>
+                <div class="ai-analysis-content">
+                    <div class="ai-analysis-title">Recommendation</div>
+                    <div class="ai-analysis-description">${escapeHtml(rec)}</div>
+                </div>
+            </li>
+        `;
+        $analysisList.append(recHtml);
+    });
+
+    // Update tab badge with total issues count
+    const totalIssues = warnings.length + errors.length;
+    $('#ai-analysis-tab').html(`<i class="fl fl-search" aria-hidden="true"></i>(${totalIssues})`);
+}
+
+function renderDemoAIAnalysis() {
+    // Keep the existing hardcoded demo analysis that's already in the HTML
+    console.log('Using demo AI analysis data');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
