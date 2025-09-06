@@ -119,11 +119,17 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 var queueConsumerInterface = consumerType.GetInterface("IQueueConsumer`1") ?? throw new ArgumentException($"Consumer type {consumerType.Name} must implement IQueueConsumer<T>");
                 var messageType = queueConsumerInterface.GetGenericArguments()[0];
 
-                var addConsumerMethod = typeof(QueueingStartupExtensions)
-                    .GetMethod(nameof(AddQueueMessageConsumer))
-                    ?.MakeGenericMethod(consumerType, messageType);
+                // Register the consumer type as scoped
+                services.AddScoped(consumerType);
 
-                addConsumerMethod?.Invoke(null, [services]);
+                // Register IQueueConsumerHandler<TMessageConsumer, TQueueMessage> with its implementation
+                var handlerInterfaceType = typeof(IQueueConsumerHandler<,>).MakeGenericType(consumerType, messageType);
+                var handlerImplType = typeof(QueueConsumerHandler<,>).MakeGenericType(consumerType, messageType);
+                services.AddScoped(handlerInterfaceType, handlerImplType);
+
+                // Register the hosted service for the consumer
+                var registratorType = typeof(QueueConsumerRegistratorService<,>).MakeGenericType(consumerType, messageType);
+                services.AddHostedService(registratorType);
             }
 
             return services;

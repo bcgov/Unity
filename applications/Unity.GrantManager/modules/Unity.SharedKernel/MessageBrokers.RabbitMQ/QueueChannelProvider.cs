@@ -73,7 +73,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     }
                     if (ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
                     {
-                        System.Diagnostics.Debug.WriteLine($"Queue {_queueName} exists with incompatible configuration, falling back to compatibility mode.");
+                        _logger.LogDebug("Queue {QueueName} exists with incompatible configuration, falling back to compatibility mode.", _queueName);
                         DeclareCompatibleQueue(channel);
                         return;
                     }
