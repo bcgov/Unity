@@ -1,59 +1,119 @@
-
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using System;
+using System.Collections.Concurrent;
+using System.Threading;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public sealed class ChannelProvider : IChannelProvider
+    public sealed class ChannelProvider(
+        IConnectionProvider connectionProvider,
+        ILogger<ChannelProvider> logger,
+        int maxChannels = 10000) : IChannelProvider
     {
-        private readonly IConnectionProvider _connectionProvider;
-        private readonly ILogger<ChannelProvider> _logger;
-        private IModel? _model;
+        private readonly IConnectionProvider _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
+        private readonly ILogger<ChannelProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentBag<IModel> _channelPool = [];
+        private int _currentChannelCount;
 
-        public ChannelProvider(
-            IConnectionProvider connectionProvider,
-            ILogger<ChannelProvider> logger)
-        {
-            _connectionProvider = connectionProvider;
-            _logger = logger;
-        }
+        private bool _disposed;
 
         public IModel? GetChannel()
         {
-            if (_model == null || !_model.IsOpen && _connectionProvider != null)
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
+            if (_channelPool.TryTake(out var channel))
             {
-                try
+                if (channel.IsOpen)
                 {
-                    IConnection? connection = _connectionProvider.GetConnection();
-                    if (connection != null) {
-                        _model = connection.CreateModel();
-                    }
+                    return channel;
                 }
-                catch (Exception ex)
-                {
-                    var ExceptionMessage = ex.Message;
-                    _logger.LogError(ex, "ChannelProvider GetChannel Exception: {ExceptionMessage}", ExceptionMessage);
-                }
+
+                DisposeChannel(channel);
             }
 
-            return _model;
-        }
-
-        public void Dispose()
-        {
             try
             {
-                if (_model != null)
+                if (Interlocked.Increment(ref _currentChannelCount) <= maxChannels)
                 {
-                    _model.Close();
-                    _model.Dispose();
+                    var connection = _connectionProvider.GetConnection();
+
+                    if (connection != null && connection.IsOpen)
+                    {
+                        return connection.CreateModel();
+                    }
+
+                    _logger.LogWarning("RabbitMQ connection is not open.");
+                }
+                else
+                {
+                    _logger.LogWarning("Max channel count reached ({MaxChannels}). Cannot create new channel.", maxChannels);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Cannot dispose RabbitMq channel or connection");
+                _logger.LogError(ex, "Error creating RabbitMQ channel.");
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _currentChannelCount);
+            }
+
+            return null;
+        }
+
+        public void ReturnChannel(IModel channel)
+        {
+            if (_disposed)
+            {
+                DisposeChannel(channel);
+                return;
+            }
+
+            if (channel != null && channel.IsOpen)
+            {
+                _channelPool.Add(channel);
+            }
+            else if (channel != null)
+            {
+                DisposeChannel(channel);
+            }
+        }
+
+        private void DisposeChannel(IModel channel)
+        {
+            try
+            {
+                channel.Close();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Exception while closing RabbitMQ channel.");
+            }
+
+            try
+            {
+                channel.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Exception while disposing RabbitMQ channel.");
+            }
+
+            Interlocked.Decrement(ref _currentChannelCount);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+
+            while (_channelPool.TryTake(out var channel))
+            {
+                DisposeChannel(channel);
             }
         }
     }

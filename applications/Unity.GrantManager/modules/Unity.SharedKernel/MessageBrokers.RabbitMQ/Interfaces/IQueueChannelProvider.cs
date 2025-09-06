@@ -1,12 +1,17 @@
-﻿namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
+﻿using System;
+using RabbitMQ.Client;
+
+namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
 {
     /// <summary>
-    /// A channel provider that Declares and Binds a specific queue
+    /// Provides a RabbitMQ channel that declares and binds a specific queue and its dead-letter queue.
     /// </summary>
-#pragma warning disable S2326
-    public interface IQueueChannelProvider<in TQueueMessage> : IChannelProvider where TQueueMessage : IQueueMessage
+    public interface IQueueChannelProvider<TQueueMessage> : IDisposable where TQueueMessage : IQueueMessage
     {
-    }
-#pragma warning restore S2326
-}
 
+        /// <summary>
+        /// Gets a channel for publishing or consuming messages of the specified type.
+        /// </summary>
+        IModel GetChannel();
+    }
+}
