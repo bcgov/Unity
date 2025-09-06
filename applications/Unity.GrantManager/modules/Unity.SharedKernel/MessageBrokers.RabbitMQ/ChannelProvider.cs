@@ -7,57 +7,57 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public sealed class ChannelProvider(
-        IConnectionProvider connectionProvider,
-        ILogger<ChannelProvider> logger,
-        int maxChannels = 10000) : IChannelProvider
+    public sealed class ChannelProvider : IChannelProvider, IDisposable
     {
-        private readonly IConnectionProvider _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
-        private readonly ILogger<ChannelProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly ConcurrentBag<IModel> _channelPool = [];
+        private readonly IConnectionProvider _connectionProvider;
+        private readonly ILogger<ChannelProvider> _logger;
+        private readonly int _maxChannels;
+        private readonly ConcurrentQueue<IModel> _channelPool = new();
         private int _currentChannelCount;
-
         private bool _disposed;
+
+        public ChannelProvider(IConnectionProvider connectionProvider, ILogger<ChannelProvider> logger, int maxChannels = 10000)
+        {
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _maxChannels = maxChannels;
+        }
 
         public IModel? GetChannel()
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            ThrowIfDisposed();
 
-            if (_channelPool.TryTake(out var channel))
+            // Try to reuse a channel from the pool
+            while (_channelPool.TryDequeue(out var channel))
             {
                 if (channel.IsOpen)
-                {
                     return channel;
-                }
 
                 DisposeChannel(channel);
             }
 
-            try
+            // Try to create a new channel if we haven't reached max
+            if (Interlocked.Increment(ref _currentChannelCount) <= _maxChannels)
             {
-                if (Interlocked.Increment(ref _currentChannelCount) <= maxChannels)
+                try
                 {
                     var connection = _connectionProvider.GetConnection();
-
                     if (connection != null && connection.IsOpen)
-                    {
                         return connection.CreateModel();
-                    }
 
                     _logger.LogWarning("RabbitMQ connection is not open.");
+                    Interlocked.Decrement(ref _currentChannelCount); // failed to create
                 }
-                else
+                catch (Exception ex)
                 {
-                    _logger.LogWarning("Max channel count reached ({MaxChannels}). Cannot create new channel.", maxChannels);
+                    _logger.LogError(ex, "Error creating RabbitMQ channel.");
+                    Interlocked.Decrement(ref _currentChannelCount); // failed to create
                 }
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error creating RabbitMQ channel.");
-            }
-            finally
-            {
-                Interlocked.Decrement(ref _currentChannelCount);
+                Interlocked.Decrement(ref _currentChannelCount); // revert increment since max reached
+                _logger.LogWarning("Max channel count reached ({MaxChannels}). Cannot create new channel.", _maxChannels);
             }
 
             return null;
@@ -71,21 +71,18 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 return;
             }
 
-            if (channel != null && channel.IsOpen)
-            {
-                _channelPool.Add(channel);
-            }
-            else if (channel != null)
-            {
+            if (channel.IsOpen)
+                _channelPool.Enqueue(channel);
+            else
                 DisposeChannel(channel);
-            }
         }
 
         private void DisposeChannel(IModel channel)
         {
             try
             {
-                channel.Close();
+                if (channel.IsOpen)
+                    channel.Close();
             }
             catch (Exception ex)
             {
@@ -104,6 +101,12 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             Interlocked.Decrement(ref _currentChannelCount);
         }
 
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(ChannelProvider));
+        }
+
         public void Dispose()
         {
             if (_disposed)
@@ -111,7 +114,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
             _disposed = true;
 
-            while (_channelPool.TryTake(out var channel))
+            while (_channelPool.TryDequeue(out var channel))
             {
                 DisposeChannel(channel);
             }
