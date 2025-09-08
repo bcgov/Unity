@@ -40,5 +40,14 @@ namespace Unity.GrantManager.AI
         /// <param name="rubric">The evaluation rubric to apply</param>
         /// <returns>Structured analysis with warnings and errors</returns>
         Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric);
+
+        /// <summary>
+        /// Analyzes an application and generates scoresheet answers
+        /// </summary>
+        /// <param name="applicationContent">The application form content</param>
+        /// <param name="attachmentSummaries">List of AI-generated attachment summaries</param>
+        /// <param name="scoresheetQuestions">JSON representation of scoresheet questions</param>
+        /// <returns>JSON object with answers for each scoresheet question</returns>
+        Task<string> GenerateScoresheetAnswersAsync(string applicationContent, List<string> attachmentSummaries, string scoresheetQuestions);
     }
 }

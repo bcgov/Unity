@@ -185,5 +185,58 @@ Respond only with valid JSON in the exact format requested.";
                 return "AI analysis failed - please try again later.";
             }
         }
+
+        public async Task<string> GenerateScoresheetAnswersAsync(string applicationContent, List<string> attachmentSummaries, string scoresheetQuestions)
+        {
+            if (string.IsNullOrEmpty(ApiKey))
+            {
+                _logger.LogWarning("OpenAI API key is not configured");
+                return "{}";
+            }
+
+            try
+            {
+                var attachmentSummariesText = attachmentSummaries?.Any() == true 
+                    ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
+                    : "No attachments provided.";
+
+                var analysisContent = $@"APPLICATION CONTENT:
+{applicationContent}
+
+ATTACHMENT SUMMARIES:
+- {attachmentSummariesText}
+
+SCORESHEET QUESTIONS:
+{scoresheetQuestions}
+
+Please analyze this grant application and provide appropriate answers for each scoresheet question. 
+
+For numeric questions, provide a numeric value within the specified range.
+For yes/no questions, provide either 'Yes' or 'No'.
+For text questions, provide a concise, relevant response.
+For select list questions, choose the most appropriate option from the provided choices.
+For text area questions, provide a detailed but concise response.
+
+Base your answers on the application content and attachment summaries provided. Be objective and fair in your assessment.
+
+Return your response as a JSON object where each key is the question ID and the value is the appropriate answer:
+{{
+  ""question-id-1"": ""answer-value-1"",
+  ""question-id-2"": ""answer-value-2""
+}}";
+
+                var systemPrompt = @"You are an expert grant application reviewer for the BC Government. 
+Analyze the provided application and generate appropriate answers for the scoresheet questions based on the application content.
+Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
+Respond only with valid JSON in the exact format requested.";
+
+                return await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating scoresheet answers");
+                return "{}";
+            }
+        }
     }
 }

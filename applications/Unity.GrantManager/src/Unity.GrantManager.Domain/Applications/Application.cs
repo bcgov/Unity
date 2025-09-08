@@ -132,6 +132,10 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public DateTime? ContractExecutionDate { get; set; }
     public string? RiskRanking { get; set; }
     public string? AIAnalysis { get; set; }
+
+    [Column(TypeName = "jsonb")]
+    public string? AIScoresheetAnswers { get; set; }
+
     public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
 
     public bool IsInFinalDecisionState()

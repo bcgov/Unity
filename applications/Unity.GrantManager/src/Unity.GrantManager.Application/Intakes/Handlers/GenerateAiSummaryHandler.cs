@@ -11,6 +11,10 @@ using Unity.Modules.Shared.Features;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Volo.Abp.Features;
+using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Scoresheets;
+using System.Text.Json;
 
 namespace Unity.GrantManager.Intakes.Handlers
 {
@@ -23,6 +27,9 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly ILogger<GenerateAiSummaryHandler> _logger;
         private readonly IFeatureChecker _featureChecker;
+        private readonly IScoresheetRepository _scoresheetRepository;
+        private readonly IScoresheetInstanceRepository _scoresheetInstanceRepository;
+        private readonly IApplicationFormRepository _applicationFormRepository;
 
         public GenerateAiSummaryHandler(
             IAIService aiService,
@@ -31,7 +38,10 @@ namespace Unity.GrantManager.Intakes.Handlers
             IApplicationRepository applicationRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
             ILogger<GenerateAiSummaryHandler> logger,
-            IFeatureChecker featureChecker)
+            IFeatureChecker featureChecker,
+            IScoresheetRepository scoresheetRepository,
+            IScoresheetInstanceRepository scoresheetInstanceRepository,
+            IApplicationFormRepository applicationFormRepository)
         {
             _aiService = aiService;
             _submissionAppService = submissionAppService;
@@ -40,6 +50,9 @@ namespace Unity.GrantManager.Intakes.Handlers
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _logger = logger;
             _featureChecker = featureChecker;
+            _scoresheetRepository = scoresheetRepository;
+            _scoresheetInstanceRepository = scoresheetInstanceRepository;
+            _applicationFormRepository = applicationFormRepository;
         }
 
         /// <summary>
@@ -155,6 +168,9 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                 // After processing all attachments, perform application analysis
                 await GenerateApplicationAnalysisAsync(eventData.Application, attachments);
+
+                // Generate AI scoresheet answers
+                await GenerateScoresheetAnalysisAsync(eventData.Application, attachments);
             }
             catch (Exception ex)
             {
@@ -261,6 +277,143 @@ EVALUATION CRITERIA:
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating application analysis for {ApplicationId}", application.Id);
+                // Don't throw - this should not break the main submission processing
+            }
+        }
+
+        private async Task GenerateScoresheetAnalysisAsync(Application application, List<ApplicationChefsFileAttachment> attachments)
+        {
+            try
+            {
+                _logger.LogDebug("Starting scoresheet analysis for {ApplicationId}", application.Id);
+
+                // Skip if application already has scoresheet analysis
+                if (!string.IsNullOrEmpty(application.AIScoresheetAnswers))
+                {
+                    _logger.LogDebug("Skipping scoresheet analysis for {ApplicationId} - already has scoresheet answers", application.Id);
+                    return;
+                }
+
+                // Get the scoresheet for this application's form (using direct relationship like AssessmentManager does)
+                _logger.LogDebug("Getting ApplicationForm for application {ApplicationId} with ApplicationFormId {ApplicationFormId}", 
+                    application.Id, application.ApplicationFormId);
+
+                var applicationForm = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
+                if (applicationForm == null)
+                {
+                    _logger.LogDebug("ApplicationForm not found with ID {ApplicationFormId} for application {ApplicationId}", 
+                        application.ApplicationFormId, application.Id);
+                    return;
+                }
+
+                _logger.LogDebug("Found ApplicationForm {ApplicationFormName} with ScoresheetId {ScoresheetId} for application {ApplicationId}", 
+                    applicationForm.ApplicationFormName, applicationForm.ScoresheetId, application.Id);
+
+                if (applicationForm.ScoresheetId == null)
+                {
+                    _logger.LogDebug("No scoresheet found for application {ApplicationId} - ApplicationForm {ApplicationFormId} has null ScoresheetId", 
+                        application.Id, application.ApplicationFormId);
+                    return;
+                }
+
+                var scoresheet = await _scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value);
+                if (scoresheet == null)
+                {
+                    _logger.LogDebug("Scoresheet not found for application {ApplicationId}", application.Id);
+                    return;
+                }
+
+                // Build scoresheet questions JSON
+                var questionsData = new List<object>();
+                foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
+                {
+                    foreach (var field in section.Fields.OrderBy(f => f.Order))
+                    {
+                        var questionData = new
+                        {
+                            id = field.Id.ToString(),
+                            section = section.Name,
+                            question = field.Label,
+                            description = field.Description,
+                            type = field.Type.ToString(),
+                            definition = field.Definition
+                        };
+                        questionsData.Add(questionData);
+                    }
+                }
+
+                var scoresheetJson = JsonSerializer.Serialize(questionsData, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
+                // Collect all attachment summaries that were generated
+                var attachmentSummaries = attachments
+                    .Where(a => !string.IsNullOrEmpty(a.AISummary))
+                    .Select(a => $"{a.FileName}: {a.AISummary}")
+                    .ToList();
+
+                // Get form submission for rendered HTML content
+                var formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(application.Id);
+
+                // Get application content including the full form submission
+                var applicationContent = $@"
+Project Name: {application.ProjectName}
+Reference Number: {application.ReferenceNo}
+Requested Amount: ${application.RequestedAmount:N2}
+Total Project Budget: ${application.TotalProjectBudget:N2}
+Project Summary: {application.ProjectSummary ?? "Not provided"}
+City: {application.City ?? "Not specified"}
+Economic Region: {application.EconomicRegion ?? "Not specified"}
+Community: {application.Community ?? "Not specified"}
+Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? "Not specified"}
+Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? "Not specified"}
+Submission Date: {application.SubmissionDate.ToShortDateString()}
+
+FULL APPLICATION FORM SUBMISSION:
+{formSubmission?.RenderedHTML ?? "Form submission content not available"}
+";
+
+                _logger.LogDebug("Generating AI scoresheet answers for application {ApplicationId} with {QuestionCount} questions", 
+                    application.Id, questionsData.Count);
+
+                // Generate the scoresheet answers
+                var scoresheetAnswers = await _aiService.GenerateScoresheetAnswersAsync(applicationContent, attachmentSummaries, scoresheetJson);
+
+                // Validate and sanitize the JSON before saving
+                string validatedJson = "{}"; // Default empty JSON
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(scoresheetAnswers))
+                    {
+                        // Try to parse the JSON to validate it
+                        using var jsonDoc = JsonDocument.Parse(scoresheetAnswers);
+                        validatedJson = scoresheetAnswers;
+                        _logger.LogDebug("AI generated valid JSON for scoresheet answers: {JsonPreview}", 
+                            scoresheetAnswers.Length > 200 ? scoresheetAnswers.Substring(0, 200) + "..." : scoresheetAnswers);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("AI service returned empty or null scoresheet answers for application {ApplicationId}", application.Id);
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(ex, "AI service returned invalid JSON for scoresheet answers for application {ApplicationId}. Content: {InvalidJson}", 
+                        application.Id, scoresheetAnswers);
+                    validatedJson = "{}"; // Use empty JSON as fallback
+                }
+
+                // Update the application with the validated scoresheet answers
+                application.AIScoresheetAnswers = validatedJson;
+                await _applicationRepository.UpdateAsync(application);
+
+                _logger.LogInformation("Successfully generated AI scoresheet answers for application {ApplicationId}", application.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating scoresheet analysis for {ApplicationId}", application.Id);
                 // Don't throw - this should not break the main submission processing
             }
         }
