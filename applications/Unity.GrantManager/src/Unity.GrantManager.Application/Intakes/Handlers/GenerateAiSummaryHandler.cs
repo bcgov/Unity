@@ -20,6 +20,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly ISubmissionAppService _submissionAppService;
         private readonly IApplicationChefsFileAttachmentRepository _attachmentRepository;
         private readonly IApplicationRepository _applicationRepository;
+        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly ILogger<GenerateAiSummaryHandler> _logger;
         private readonly IFeatureChecker _featureChecker;
 
@@ -28,6 +29,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             ISubmissionAppService submissionAppService,
             IApplicationChefsFileAttachmentRepository attachmentRepository,
             IApplicationRepository applicationRepository,
+            IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
             ILogger<GenerateAiSummaryHandler> logger,
             IFeatureChecker featureChecker)
         {
@@ -35,6 +37,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             _submissionAppService = submissionAppService;
             _attachmentRepository = attachmentRepository;
             _applicationRepository = applicationRepository;
+            _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _logger = logger;
             _featureChecker = featureChecker;
         }
@@ -179,7 +182,11 @@ namespace Unity.GrantManager.Intakes.Handlers
                     .Select(a => $"{a.FileName}: {a.AISummary}")
                     .ToList();
 
-                // Get application content (simplified - could be enhanced to extract more fields)
+                // Get form submission content including rendered HTML
+                var formSubmission = await _applicationFormSubmissionRepository
+                    .GetByApplicationAsync(application.Id);
+
+                // Get application content including the full form submission
                 var applicationContent = $@"
 Project Name: {application.ProjectName}
 Reference Number: {application.ReferenceNo}
@@ -192,7 +199,11 @@ Community: {application.Community ?? "Not specified"}
 Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? "Not specified"}
 Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? "Not specified"}
 Submission Date: {application.SubmissionDate.ToShortDateString()}
+
+FULL APPLICATION FORM SUBMISSION:
+{formSubmission?.RenderedHTML ?? "Form submission content not available"}
 ";
+                _logger.LogInformation("Generating analysis for following application:", applicationContent);
 
                 // Hardcoded rubric for now
                 var rubric = @"

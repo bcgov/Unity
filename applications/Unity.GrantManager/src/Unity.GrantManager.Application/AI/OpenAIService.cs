@@ -45,7 +45,7 @@ namespace Unity.GrantManager.AI
 
             try
             {
-                var systemPrompt = prompt ?? "You are a high-level grant analyst for the BC Government.";
+                var systemPrompt = prompt ?? "You are a professional grant analyst for the BC Government.";
                 
                 var requestBody = new
                 {
