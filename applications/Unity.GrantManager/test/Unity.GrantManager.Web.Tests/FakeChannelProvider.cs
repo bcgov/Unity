@@ -124,9 +124,9 @@ namespace Unity.GrantManager
         private class FakeBasicPublishBatch : IBasicPublishBatch
         {
             public void Add(string exchange, string routingKey, bool mandatory, IBasicProperties basicProperties, byte[] body) { }
-            public void Add(string exchange, string routingKey, bool mandatory, IBasicProperties basicProperties, ReadOnlyMemory<byte> body) { }
+            public static void Add(string exchange, string routingKey, bool mandatory, IBasicProperties basicProperties, ReadOnlyMemory<byte> body) { }
             public void Publish() { }
-            public void Clear() { }
+            public static void Clear() { }
         }
 
         // Fake BasicProperties (so BasicPublish won’t explode if called)
