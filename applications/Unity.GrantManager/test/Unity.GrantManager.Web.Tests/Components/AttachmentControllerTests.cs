@@ -59,7 +59,7 @@ namespace Unity.GrantManager.Components
             var chefsFileAttachmentId = Guid.NewGuid();
             var fileName = "testFile.txt";
             var contentType = "application/octet-stream";
-            var blobDto = new BlobDto { Name = fileName, Content = new byte[0], ContentType = contentType };
+            var blobDto = new BlobDto { Name = fileName, Content = Array.Empty<byte>(), ContentType = contentType };
             submissionAppService.GetChefsFileAttachment(formSubmissionId, chefsFileAttachmentId, fileName).Returns(await Task.FromResult(blobDto));
             var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService);
 
