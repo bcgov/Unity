@@ -17,6 +17,9 @@ public abstract class GrantManagerWebTestBase : AbpWebApplicationFactoryIntegrat
         // Remove only RabbitMQ consumers, leave other hosted services intact
         services.RemoveAll(typeof(QueueConsumerRegistratorService<,>));
 
+        // Remove EventLog logger to avoid ObjectDisposedException in tests
+        services.RemoveAll(typeof(Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider));
+
         base.ConfigureServices(services);
     }
 

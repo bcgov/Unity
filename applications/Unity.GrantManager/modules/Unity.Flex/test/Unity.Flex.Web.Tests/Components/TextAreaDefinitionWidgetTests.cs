@@ -19,6 +19,7 @@ namespace Unity.Flex.Web.Tests.Components
             lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         }
 
+
         [Fact]
         public async Task TextAreaDefinitionWidgetReturnsCorrectRowsCount()
         {
