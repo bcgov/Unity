@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -10,12 +11,27 @@ using Volo.Abp.AspNetCore.TestBase;
 
 namespace Unity.GrantManager;
 
+using System.Text.Json.Serialization;
+
 public abstract class GrantManagerWebTestBase : AbpWebApplicationFactoryIntegratedTest<Program>
 {
+    public static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
     protected override void ConfigureServices(IServiceCollection services)
     {
-        // Remove only RabbitMQ consumers, leave other hosted services intact
-        services.RemoveAll(typeof(QueueConsumerRegistratorService<,>));
+        // Remove only RabbitMQ consumer services
+        var descriptorsToRemove = services
+            .Where(d => d.ServiceType.IsGenericType &&
+                        d.ServiceType.GetGenericTypeDefinition() == typeof(QueueConsumerRegistratorService<,>))
+            .ToList();
+
+        foreach (var descriptor in descriptorsToRemove)
+        {
+            services.Remove(descriptor);
+        }
 
         // Remove EventLog logger to avoid ObjectDisposedException in tests
         services.RemoveAll(typeof(Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider));
@@ -28,9 +44,7 @@ public abstract class GrantManagerWebTestBase : AbpWebApplicationFactoryIntegrat
         HttpStatusCode expectedStatusCode = HttpStatusCode.OK)
     {
         var strResponse = await GetResponseAsStringAsync(url, expectedStatusCode);
-        JsonSerializerOptions jsonSerializerOptions = new(JsonSerializerDefaults.Web);
-        JsonSerializerOptions options = jsonSerializerOptions;
-        return JsonSerializer.Deserialize<T>(strResponse, options);
+        return JsonSerializer.Deserialize<T>(strResponse, GrantManagerWebTestBase.JsonOptions);
     }
 
     protected virtual async Task<string> GetResponseAsStringAsync(
