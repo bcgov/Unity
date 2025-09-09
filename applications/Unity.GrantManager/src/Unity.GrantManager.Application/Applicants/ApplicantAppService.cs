@@ -18,6 +18,8 @@ using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Application.Dtos;
+using System.Linq.Dynamic.Core;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -483,5 +485,111 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             Logger.LogError(ex, "Error updating ApplicantAgent records for ApplicationId: {ApplicationId}", applicationId);
             throw new UserFriendlyException("An error occurred while updating applicant agent records.");
         }
+    }
+
+    [RemoteService(true)]
+    public async Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input)
+    {
+        var query = await applicantRepository.GetQueryableAsync();
+
+        // Apply search filter if provided
+        if (!string.IsNullOrWhiteSpace(input.Filter))
+        {
+            var filter = input.Filter.Trim().ToLower();
+            query = query.Where(a =>
+                (a.ApplicantName != null && a.ApplicantName.ToLower().Contains(filter)) ||
+                (a.UnityApplicantId != null && a.UnityApplicantId.ToLower().Contains(filter)) ||
+                (a.OrgName != null && a.OrgName.ToLower().Contains(filter)) ||
+                (a.OrgNumber != null && a.OrgNumber.ToLower().Contains(filter)) ||
+                (a.BusinessNumber != null && a.BusinessNumber.ToLower().Contains(filter)) ||
+                (a.ElectoralDistrict != null && a.ElectoralDistrict.ToLower().Contains(filter)) ||
+                (a.Sector != null && a.Sector.ToLower().Contains(filter)) ||
+                (a.SubSector != null && a.SubSector.ToLower().Contains(filter)) ||
+                (a.OrganizationType != null && a.OrganizationType.ToLower().Contains(filter)) ||
+                (a.NonRegisteredBusinessName != null && a.NonRegisteredBusinessName.ToLower().Contains(filter)) ||
+                (a.NonRegOrgName != null && a.NonRegOrgName.ToLower().Contains(filter)) ||
+                (a.OrganizationSize != null && a.OrganizationSize.ToLower().Contains(filter)) ||
+                (a.SectorSubSectorIndustryDesc != null && a.SectorSubSectorIndustryDesc.ToLower().Contains(filter)) ||
+                (a.OrgStatus != null && a.OrgStatus.ToLower().Contains(filter))
+            );
+        }
+
+        // Get total count before paging
+        var totalCount = await query.CountAsync();
+
+        // Apply sorting
+        if (!string.IsNullOrWhiteSpace(input.Sorting))
+        {
+            query = query.OrderBy(input.Sorting);
+        }
+        else
+        {
+            query = query.OrderByDescending(a => a.CreationTime);
+        }
+
+        // Apply paging
+        query = query.PageBy(input);
+
+        // Execute query
+        var applicants = await query.ToListAsync();
+
+        // Get application counts and last application dates
+        var applicantIds = applicants.Select(a => a.Id).ToList();
+        var applicationQuery = await applicationRepository.GetQueryableAsync();
+        
+        var applicationStats = await applicationQuery
+            .Where(app => applicantIds.Contains(app.ApplicantId))
+            .GroupBy(app => app.ApplicantId)
+            .Select(g => new
+            {
+                ApplicantId = g.Key,
+                ApplicationCount = g.Count(),
+                LastApplicationDate = g.Max(app => app.CreationTime)
+            })
+            .ToListAsync();
+
+        // Map to DTOs
+        var items = applicants.Select(applicant =>
+        {
+            var stats = applicationStats.Find(s => s.ApplicantId == applicant.Id);
+            
+            return new ApplicantListDto
+            {
+                Id = applicant.Id,
+                ApplicantName = applicant.ApplicantName,
+                UnityApplicantId = applicant.UnityApplicantId,
+                OrgName = applicant.OrgName,
+                OrgNumber = applicant.OrgNumber,
+                OrgStatus = applicant.OrgStatus,
+                OrganizationType = applicant.OrganizationType,
+                Status = applicant.Status,
+                RedStop = applicant.RedStop,
+                NonRegisteredBusinessName = applicant.NonRegisteredBusinessName,
+                NonRegOrgName = applicant.NonRegOrgName,
+                OrganizationSize = applicant.OrganizationSize,
+                Sector = applicant.Sector,
+                SubSector = applicant.SubSector,
+                ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees,
+                IndigenousOrgInd = applicant.IndigenousOrgInd,
+                SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc,
+                FiscalMonth = applicant.FiscalMonth,
+                BusinessNumber = applicant.BusinessNumber,
+                FiscalDay = applicant.FiscalDay,
+                StartedOperatingDate = applicant.StartedOperatingDate.HasValue 
+                    ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue) 
+                    : null,
+                SupplierId = applicant.SupplierId?.ToString(),
+                SiteId = applicant.SiteId,
+                MatchPercentage = applicant.MatchPercentage,
+                IsDuplicated = applicant.IsDuplicated,
+                ElectoralDistrict = applicant.ElectoralDistrict,
+                ApplicationCount = stats?.ApplicationCount ?? 0,
+                LastApplicationDate = stats?.LastApplicationDate,
+                CreationTime = applicant.CreationTime,
+                LastModificationTime = applicant.LastModificationTime
+            };
+        }).ToList();
+
+        return new PagedResultDto<ApplicantListDto>(totalCount, items);
     }
 }
