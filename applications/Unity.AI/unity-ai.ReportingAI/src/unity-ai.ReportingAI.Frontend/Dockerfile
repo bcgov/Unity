@@ -1,6 +1,9 @@
 # Multi-stage build for Angular application
 FROM node:22-alpine as build
 
+# Accept build arguments
+ARG JWT_SECRET
+
 WORKDIR /app
 
 # Copy package files
@@ -11,6 +14,9 @@ RUN npm install
 
 # Copy source code
 COPY . .
+
+# Replace JWT_SECRET placeholder in environment files
+RUN sed -i "s/__JWT_SECRET_PLACEHOLDER__/${JWT_SECRET}/g" src/environments/environment.prod.ts
 
 # Build the application for Docker
 RUN npm run build -- --configuration=production
