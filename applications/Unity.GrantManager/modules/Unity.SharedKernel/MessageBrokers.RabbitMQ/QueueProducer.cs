@@ -1,55 +1,74 @@
-﻿using System.Text;
+﻿using System;
 using System.Globalization;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
-using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
-using System;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Exceptions;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public class QueueProducer<TQueueMessage> : IQueueProducer<TQueueMessage> where TQueueMessage : IQueueMessage
+    public class QueueProducer<TQueueMessage> : IQueueProducer<TQueueMessage>
+        where TQueueMessage : IQueueMessage
     {
         private readonly ILogger<QueueProducer<TQueueMessage>> _logger;
-        private readonly string? _queueName;
-        private readonly IModel? _channel;
+        private readonly IQueueChannelProvider<TQueueMessage> _channelProvider;
+        private readonly string _queueName;
+        private readonly string _exchangeName;
 
-        public QueueProducer(IQueueChannelProvider<TQueueMessage> channelProvider, ILogger<QueueProducer<TQueueMessage>> logger)
+        public QueueProducer(
+            IQueueChannelProvider<TQueueMessage> channelProvider,
+            ILogger<QueueProducer<TQueueMessage>> logger)
         {
-             _logger = logger;
-
-            try{
-                _channel = channelProvider?.GetChannel();
-                _queueName = typeof(TQueueMessage).Name;
-            } catch (Exception ex) {
-                var ExceptionMessage = ex.Message;
-                _logger.LogError(ex, "QueueProducer Constructor issue: {ExceptionMessage}", ExceptionMessage);
-            }
-
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));
+            _queueName = typeof(TQueueMessage).Name;
+            _exchangeName = $"{_queueName}.exchange";
         }
 
         public void PublishMessage(TQueueMessage message)
         {
-            if (Equals(message, default(TQueueMessage))) throw new ArgumentNullException(nameof(message));
-            if (message.TimeToLive.Ticks <= 0) throw new QueueingException($"{nameof(message.TimeToLive)} cannot be zero or negative");
-            if (_channel == null) throw new QueueingException("QueueProducer -> PublishMessage: Null Channel");
+            if (message == null)
+                throw new ArgumentNullException(nameof(message));
+
+            if (message.TimeToLive.Ticks <= 0)
+                throw new QueueingException($"{nameof(message.TimeToLive)} cannot be zero or negative");
+
+            IModel channel = _channelProvider.GetChannel();
+
             try
             {
+                // Assign message ID
                 message.MessageId = Guid.NewGuid();
+
+                // Serialize
                 var serializedMessage = SerializeMessage(message);
-                var properties = _channel.CreateBasicProperties();
-                properties.Persistent = true;
+
+                // Properties
+                var properties = channel.CreateBasicProperties();
+                properties.Persistent = true; // quorum queues persist
                 properties.Type = _queueName;
+                properties.MessageId = message.MessageId.ToString();
                 properties.Expiration = message.TimeToLive.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
 
-                _channel.BasicPublish(_queueName, _queueName, properties, serializedMessage);
+                // Publish to the exchange bound to the queue
+                channel.BasicPublish(
+                    exchange: _exchangeName,
+                    routingKey: _queueName,
+                    basicProperties: properties,
+                    body: serializedMessage
+                );
             }
             catch (Exception ex)
             {
-                var PublishMessageException = ex.Message;
-                _logger.LogError(ex, "PublishMessage Exception: {PublishMessageException}", PublishMessageException);
-                throw new QueueingException(PublishMessageException);
+                _logger.LogError(ex, "PublishMessage Exception: {Message}", ex.Message);
+                throw new QueueingException($"Publish failed: {ex.Message}", ex);
+            }
+            finally
+            {
+                // Return channel instead of disposing the provider
+                _channelProvider.Dispose(); // <- Replace with ReturnChannel if your provider exposes it
             }
         }
 
