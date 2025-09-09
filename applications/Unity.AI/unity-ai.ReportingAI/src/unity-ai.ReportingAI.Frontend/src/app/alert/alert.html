@@ -1,0 +1,20 @@
+<div class="alert-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
+  <div class="alert-dialog">
+    <div class="alert-header">
+      <h3>{{ title }}</h3>
+    </div>
+    
+    <div class="alert-body">
+      <p>{{ message }}</p>
+    </div>
+    
+    <div class="alert-footer">
+      <button class="alert-btn cancel-btn" (click)="onCancel()">
+        {{ cancelText }}
+      </button>
+      <button class="alert-btn confirm-btn" (click)="onConfirm()">
+        {{ confirmText }}
+      </button>
+    </div>
+  </div>
+</div>

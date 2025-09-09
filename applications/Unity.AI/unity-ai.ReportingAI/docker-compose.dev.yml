@@ -1,0 +1,80 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "80:80"
+    env_file:
+      - ../.env
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/angular.json:/app/angular.json
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+    environment:
+      - NODE_ENV=development
+    networks:
+      - unity-ai-network
+    depends_on:
+      - backend
+
+  backend:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=unity_ai
+      - DB_USER=unity_user
+      - DB_PASSWORD=unity_pass
+    env_file:
+      - ../.env
+    volumes:
+      - .:/app
+    networks:
+      - unity-ai-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: python app.py
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: unity_ai
+      POSTGRES_USER: unity_user
+      POSTGRES_PASSWORD: unity_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - unity-ai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unity_user -d unity_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    networks:
+      - unity-ai-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  unity-ai-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

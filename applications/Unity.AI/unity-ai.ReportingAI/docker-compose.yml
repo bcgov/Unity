@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: unity_ai
+      POSTGRES_USER: unity_user
+      POSTGRES_PASSWORD: unity_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - unity-ai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unity_user -d unity_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=unity_ai
+      - DB_USER=unity_user
+      - DB_PASSWORD=unity_pass
+    env_file:
+      - ../.env
+    # No volume mounts needed - backend code is copied into container
+    networks:
+      - unity-ai-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   ports:
+  #     - "8080:80"
+  #   networks:
+  #     - unity-ai-network
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+
+  frontend:
+    build: 
+      context: ./frontend
+    env_file:
+      - ../.env
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - unity-ai-network
+
+networks:
+  unity-ai-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

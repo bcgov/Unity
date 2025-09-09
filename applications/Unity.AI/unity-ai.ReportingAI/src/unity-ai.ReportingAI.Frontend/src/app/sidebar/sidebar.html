@@ -1,0 +1,47 @@
+<div class="sidebar">
+  <div class="sidebar-header">
+    <button class="new-chat-btn" (click)="onNewChat()">
+      <span class="new-chat-icon">+</span>
+      New Report
+    </button>
+    <h2>Reports</h2>
+  </div>
+
+  <div class="sidebar-content">
+    <div *ngIf="loading" class="loading">
+      Loading reports...
+    </div>
+
+    <div *ngIf="!loading && chats.length === 0" class="empty-state">
+      No reports yet. Start a new one!
+    </div>
+
+    <div class="chat-list" *ngIf="!loading && chats.length > 0">
+      <div 
+        *ngFor="let chat of chats" 
+        class="chat-item"
+        [class.active]="currentChatId === chat.id"
+        (click)="onChatSelect(chat)"
+      >
+        <div class="chat-title">{{ chat.title }}</div>
+        <button 
+          class="delete-chat-btn" 
+          (click)="deleteChat(chat, $event)"
+          title="Delete chat"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-alert
+  [isVisible]="showDeleteAlert"
+  title="Delete Chat"
+  message="Are you sure you want to delete this chat? This action cannot be undone."
+  confirmText="Delete"
+  cancelText="Cancel"
+  (confirm)="confirmDelete()"
+  (cancel)="cancelDelete()">
+</app-alert>
