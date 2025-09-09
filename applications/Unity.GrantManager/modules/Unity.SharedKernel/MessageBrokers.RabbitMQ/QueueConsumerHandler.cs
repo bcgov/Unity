@@ -67,7 +67,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        public void CancelQueueConsumer()
+        void IQueueConsumerHandler<TMessageConsumer, TQueueMessage>.CancelQueueConsumer()
         {
             if (_consumerChannel == null || string.IsNullOrEmpty(_consumerTag))
                 return;

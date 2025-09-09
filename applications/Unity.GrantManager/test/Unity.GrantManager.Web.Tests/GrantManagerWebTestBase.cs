@@ -2,39 +2,54 @@
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Shouldly;
-using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Volo.Abp.AspNetCore.TestBase;
 
 namespace Unity.GrantManager;
 
-using System.Text.Json.Serialization;
-
 public abstract class GrantManagerWebTestBase : AbpWebApplicationFactoryIntegratedTest<Program>
 {
-    public static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    public static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
     protected override void ConfigureServices(IServiceCollection services)
     {
-        // Remove only RabbitMQ consumer services
-        var descriptorsToRemove = services
-            .Where(d => d.ServiceType.IsGenericType &&
-                        d.ServiceType.GetGenericTypeDefinition() == typeof(QueueConsumerRegistratorService<,>))
+        //
+        // 🔹 Remove ALL RabbitMQ hosted services (consumers, registrators, etc.)
+        //
+        var hostedServices = services
+            .Where(d => typeof(Microsoft.Extensions.Hosting.IHostedService)
+                .IsAssignableFrom(d.ServiceType))
             .ToList();
 
-        foreach (var descriptor in descriptorsToRemove)
+        foreach (var descriptor in hostedServices)
         {
-            services.Remove(descriptor);
+            // Only strip RabbitMQ-related hosted services
+            if (descriptor.ImplementationType?.Namespace?.Contains("RabbitMQ") == true)
+            {
+                services.Remove(descriptor);
+            }
         }
 
-        // Remove EventLog logger to avoid ObjectDisposedException in tests
-        services.RemoveAll(typeof(Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider));
+#if WINDOWS
+        // 🔹 Remove EventLog logger to avoid ObjectDisposedException in tests
+        services.RemoveAll<Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>();
+#endif
+
+        //
+        // 🔹 Replace real channel provider with fake
+        //
+        services.Replace(
+            ServiceDescriptor.Singleton<IChannelProvider, FakeChannelProvider>()
+        );
 
         base.ConfigureServices(services);
     }
@@ -44,7 +59,7 @@ public abstract class GrantManagerWebTestBase : AbpWebApplicationFactoryIntegrat
         HttpStatusCode expectedStatusCode = HttpStatusCode.OK)
     {
         var strResponse = await GetResponseAsStringAsync(url, expectedStatusCode);
-        return JsonSerializer.Deserialize<T>(strResponse, GrantManagerWebTestBase.JsonOptions);
+        return JsonSerializer.Deserialize<T>(strResponse, JsonOptions);
     }
 
     protected virtual async Task<string> GetResponseAsStringAsync(
