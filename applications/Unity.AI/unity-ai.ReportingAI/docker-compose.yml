@@ -18,19 +18,41 @@ services:
       retries: 5
 
   backend:
-    build: .
+    build: 
+      context: ./src/unity-ai.ReportingAI.Backend
+      args:
+        - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+        - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+        - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
+        - AZURE_OPENAI_EMBEDDING_DEPLOYMENT=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT}
+        - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+        - JWT_SECRET=${JWT_SECRET}
+        - METABASE_KEY=${METABASE_KEY}
+        - MB_EMBED_SECRET=${MB_EMBED_SECRET}
+        - MB_EMBED_URL=${MB_EMBED_URL}
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - DB_NAME=unity_ai
+        - DB_USER=unity_user
+        - DB_PASSWORD=unity_pass
     ports:
       - "5000:5000"
     environment:
       - FLASK_ENV=production
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
+      - AZURE_OPENAI_EMBEDDING_DEPLOYMENT=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      - JWT_SECRET=${JWT_SECRET}
+      - METABASE_KEY=${METABASE_KEY}
+      - MB_EMBED_SECRET=${MB_EMBED_SECRET}
+      - MB_EMBED_URL=${MB_EMBED_URL}
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=unity_ai
       - DB_USER=unity_user
       - DB_PASSWORD=unity_pass
-    env_file:
-      - ../.env
-    # No volume mounts needed - backend code is copied into container
     networks:
       - unity-ai-network
     depends_on:
@@ -42,24 +64,11 @@ services:
       timeout: 10s
       retries: 3
 
-  # pgadmin:
-  #   image: dpage/pgadmin4:latest
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
-  #     PGADMIN_DEFAULT_PASSWORD: admin
-  #   ports:
-  #     - "8080:80"
-  #   networks:
-  #     - unity-ai-network
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-
   frontend:
     build: 
-      context: ./frontend
-    env_file:
-      - ../.env
+      context: ./src/unity-ai.ReportingAI.Frontend
+      args:
+        - JWT_SECRET=${JWT_SECRET}
     ports:
       - "80:80"
     depends_on:
