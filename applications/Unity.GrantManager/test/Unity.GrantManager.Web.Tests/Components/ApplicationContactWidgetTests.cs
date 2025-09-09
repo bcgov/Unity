@@ -26,8 +26,9 @@ namespace Unity.GrantManager.Components
             var expectedContactMobilePhone = "ContactMobilePhone";
             var expectedContactWorkPhone = "ContactWorkPhone";
             var expectedContactTitle = "ContactTitle";
-            List<ApplicationContactDto> applicationContactDtos = new List<ApplicationContactDto>();
-            applicationContactDtos.Add(new ApplicationContactDto()
+            List<ApplicationContactDto> applicationContactDtos = new List<ApplicationContactDto>
+            {
+                new ApplicationContactDto
                 {
                     ApplicationId = applicationId,
                     ContactType = expectedContactType,
@@ -36,7 +37,8 @@ namespace Unity.GrantManager.Components
                     ContactMobilePhone = expectedContactMobilePhone,
                     ContactWorkPhone = expectedContactWorkPhone,
                     ContactTitle = expectedContactTitle
-                });
+                }
+            };
             var httpContext = new DefaultHttpContext();
 
             applicationContactService.GetListByApplicationAsync(applicationId).Returns(await Task.FromResult(applicationContactDtos));

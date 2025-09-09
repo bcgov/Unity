@@ -16,6 +16,18 @@ namespace Unity.Flex.Web.Tests.Components
 
         public CurrencyDefinitionWidgetTests()
         {
+            // Remove EventLog logger to avoid ObjectDisposedException in test environment
+            var loggerFactory = GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>();
+            foreach (var provider in loggerFactory
+                .GetType()
+                .GetField("_providers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.GetValue(loggerFactory) as System.Collections.IEnumerable ?? new object[0])
+            {
+                if (provider.GetType().Name.Contains("EventLogLoggerProvider"))
+                {
+                    (provider as IDisposable)?.Dispose();
+                }
+            }
             lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         }
 

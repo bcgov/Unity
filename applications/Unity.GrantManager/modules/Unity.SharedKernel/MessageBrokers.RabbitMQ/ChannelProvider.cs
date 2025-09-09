@@ -15,8 +15,9 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         private readonly ConcurrentQueue<IModel> _channelPool = new();
         private int _currentChannelCount;
         private bool _disposed;
+        private const int DefaultMaxChannels = 10000;
 
-        public ChannelProvider(IConnectionProvider connectionProvider, ILogger<ChannelProvider> logger, int maxChannels = 10000)
+        public ChannelProvider(IConnectionProvider connectionProvider, ILogger<ChannelProvider> logger, int maxChannels = DefaultMaxChannels)
         {
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
