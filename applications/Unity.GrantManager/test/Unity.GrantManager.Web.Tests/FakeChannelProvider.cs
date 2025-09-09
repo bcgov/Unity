@@ -28,14 +28,17 @@ namespace Unity.GrantManager
             public string CurrentQueue => string.Empty;
             public TimeSpan ContinuationTimeout { get; set; } = TimeSpan.Zero;
 
-            // Events (no-op)
+            // Events (no-op) - this section is needed and unused
+            #pragma warning disable S1144 // Unused private code
             public event EventHandler<BasicAckEventArgs>? BasicAcks;
+            
             public event EventHandler<BasicNackEventArgs>? BasicNacks;
             public event EventHandler<EventArgs>? BasicRecoverOk;
             public event EventHandler<BasicReturnEventArgs>? BasicReturn;
             public event EventHandler<CallbackExceptionEventArgs>? CallbackException;
             public event EventHandler<FlowControlEventArgs>? FlowControl;
             public event EventHandler<ShutdownEventArgs>? ModelShutdown;
+            #pragma warning restore S1144
 
             // --- Minimal stubs for queue + exchange setup ---
             public QueueDeclareOk QueueDeclare(string queue, bool durable, bool exclusive, bool autoDelete, IDictionary<string, object> arguments)
