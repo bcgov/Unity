@@ -26,9 +26,9 @@ namespace Unity.GrantManager.Components
             var expectedContactMobilePhone = "ContactMobilePhone";
             var expectedContactWorkPhone = "ContactWorkPhone";
             var expectedContactTitle = "ContactTitle";
-            List<ApplicationContactDto> applicationContactDtos = new List<ApplicationContactDto>
+            var applicationContactDtos = new List<ApplicationContactDto>
             {
-                new ApplicationContactDto
+                new()
                 {
                     ApplicationId = applicationId,
                     ContactType = expectedContactType,
