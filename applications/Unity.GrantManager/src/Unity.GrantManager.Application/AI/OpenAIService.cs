@@ -223,7 +223,8 @@ Return your response as a JSON object where each key is the question ID and the 
 {{
   ""question-id-1"": ""answer-value-1"",
   ""question-id-2"": ""answer-value-2""
-}}";
+}}
+Do not return any markdown formatting, just the JSON by itself";
 
                 var systemPrompt = @"You are an expert grant application reviewer for the BC Government. 
 Analyze the provided application and generate appropriate answers for the scoresheet questions based on the application content.
@@ -235,6 +236,80 @@ Respond only with valid JSON in the exact format requested.";
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating scoresheet answers");
+                return "{}";
+            }
+        }
+
+        public async Task<string> GenerateScoresheetSectionAnswersAsync(string applicationContent, List<string> attachmentSummaries, string sectionJson, string sectionName)
+        {
+            if (string.IsNullOrEmpty(ApiKey))
+            {
+                _logger.LogWarning("OpenAI API key is not configured");
+                return "{}";
+            }
+
+            try
+            {
+                var attachmentSummariesText = attachmentSummaries?.Any() == true 
+                    ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
+                    : "No attachments provided.";
+
+                var analysisContent = $@"APPLICATION CONTENT:
+{applicationContent}
+
+ATTACHMENT SUMMARIES:
+- {attachmentSummariesText}
+
+SCORESHEET SECTION: {sectionName}
+{sectionJson}
+
+Please analyze this grant application and provide appropriate answers for each question in the ""{sectionName}"" section only. 
+
+For each question, provide:
+1. Your answer based on the application content
+2. A brief cited description (1-2 sentences) explaining your reasoning with specific references to the application content
+3. A confidence score from 0-100 indicating how confident you are in your answer based on available information
+
+Guidelines for answers:
+- For numeric questions, provide a numeric value within the specified range
+- For yes/no questions, provide either 'Yes' or 'No'
+- For text questions, provide a concise, relevant response
+- For select list questions, respond with ONLY the number (1, 2, 3, etc.) corresponding to your chosen option from the numbered availableOptions list. Do not include the text of the option, just the number.
+- For text area questions, provide a detailed but concise response
+- Base your confidence score on how clearly the application content supports your answer
+
+Return your response as a JSON object where each key is the question ID and the value contains the answer, citation, and confidence:
+{{
+  ""question-id-1"": {{
+    ""answer"": ""your-answer-here"",
+    ""citation"": ""Brief explanation with specific reference to application content"",
+    ""confidence"": 85
+  }},
+  ""question-id-2"": {{
+    ""answer"": ""3"",
+    ""citation"": ""Based on the project budget of $50,000 mentioned in the application, this falls into the medium budget category"",
+    ""confidence"": 90
+  }}
+}}
+
+IMPORTANT FOR SELECT LIST QUESTIONS: If a question has availableOptions like:
+[{{""number"":1,""value"":""Low (Under $25K)""}}, {{""number"":2,""value"":""Medium ($25K-$75K)""}}, {{""number"":3,""value"":""High (Over $75K)""}}]
+Then respond with ONLY the number (e.g., ""3"" for ""High (Over $75K)""), not the text value.
+
+Do not return any markdown formatting, just the JSON by itself";
+
+                var systemPrompt = @"You are an expert grant application reviewer for the BC Government. 
+Analyze the provided application and generate appropriate answers for the scoresheet section questions based on the application content.
+Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
+Always provide citations that reference specific parts of the application content to support your answers.
+Be honest about your confidence level - if information is missing or unclear, reflect this in a lower confidence score.
+Respond only with valid JSON in the exact format requested.";
+
+                return await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", sectionName);
                 return "{}";
             }
         }

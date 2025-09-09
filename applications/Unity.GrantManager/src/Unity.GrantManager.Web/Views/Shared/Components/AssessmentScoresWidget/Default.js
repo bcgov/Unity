@@ -342,3 +342,70 @@ function collapseAllAccordions(divId) {
         accordion.previousElementSibling.querySelector('.accordion-button').classList.add('collapsed');
     });
 }
+
+function markAsHumanConfirmed(inputElement) {
+    // Check if this was an AI-generated answer
+    const isHumanConfirmed = inputElement.getAttribute('data-is-human-confirmed') === 'true';
+    
+    if (!isHumanConfirmed) {
+        // Mark as human confirmed
+        inputElement.setAttribute('data-is-human-confirmed', 'true');
+        
+        // Update styling from AI-generated to human-confirmed
+        inputElement.classList.remove('ai-generated-answer');
+        inputElement.classList.add('human-confirmed-answer');
+        
+        // Remove AI indicator if it exists
+        const aiIndicator = inputElement.parentElement.querySelector('.ai-answer-indicator');
+        if (aiIndicator) {
+            aiIndicator.remove();
+        }
+        
+        // Log the change for potential tracking
+        console.log('Answer marked as human-confirmed for element:', inputElement.id);
+    }
+}
+
+// Utility function to help debug AI answer integration
+function debugAIAnswers() {
+    const aiAnswers = document.querySelectorAll('[data-is-human-confirmed="false"]');
+    const humanAnswers = document.querySelectorAll('[data-is-human-confirmed="true"]');
+    
+    console.log('=== AI Answer Integration Debug ===');
+    console.log(`Found ${aiAnswers.length} AI-generated answers`);
+    console.log(`Found ${humanAnswers.length} human-confirmed answers`);
+    
+    // Focus on select lists specifically
+    const aiSelectLists = Array.from(aiAnswers).filter(el => el.tagName === 'SELECT');
+    const brokenSelectLists = aiSelectLists.filter(el => el.value === '' || el.value === null);
+    
+    console.log(`AI Select Lists: ${aiSelectLists.length} total, ${brokenSelectLists.length} broken`);
+    
+    brokenSelectLists.forEach(select => {
+        console.log('Broken Select List:', {
+            id: select.id,
+            value: select.value,
+            selectedIndex: select.selectedIndex,
+            optionCount: select.options.length,
+            options: Array.from(select.options).map(opt => ({ value: opt.value, text: opt.text }))
+        });
+    });
+    
+    aiAnswers.forEach(element => {
+        console.log('AI Answer:', {
+            id: element.id,
+            tagName: element.tagName,
+            value: element.value,
+            hasAiClass: element.classList.contains('ai-generated-answer'),
+            hasIndicator: !!element.parentElement.querySelector('.ai-answer-indicator')
+        });
+    });
+    
+    return {
+        aiCount: aiAnswers.length,
+        humanCount: humanAnswers.length,
+        brokenSelectCount: brokenSelectLists.length,
+        aiAnswers: Array.from(aiAnswers).map(el => ({ id: el.id, tagName: el.tagName, value: el.value })),
+        humanAnswers: Array.from(humanAnswers).map(el => ({ id: el.id, tagName: el.tagName, value: el.value }))
+    };
+}

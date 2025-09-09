@@ -8,18 +8,35 @@
 <div class="mb-3">
     <label for="answer-selectlist-@Model.QuestionId" class="form-label unt-form-label">Answer</label>
     <select id="answer-selectlist-@Model.QuestionId"
-            class="form-select form-control answer-selectlist-input"
+            class="form-select form-control answer-selectlist-input @(!Model.IsHumanConfirmed ? "ai-generated-answer" : "human-confirmed-answer")"
             name="Answer-SelectList-@Model.QuestionId"
             data-original-value="@Model.Answer"
+            data-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
             disabled="@Model.IsDisabled"
-            onchange="handleInputChange('@Model.QuestionId','answer-selectlist-')">
+            onchange="handleInputChange('@Model.QuestionId','answer-selectlist-'); markAsHumanConfirmed(this)">
         <option data-numeric-value="0" value="">Please choose...</option>
         @foreach (var item in ((QuestionSelectListDefinition?)Model.Definition?.ConvertDefinition(QuestionType.SelectList))?.Options ?? [])
         {
             var truncatedValue = item.Value.Length > 70 ? item.Value.Substring(0, 70) + " ..." : item.Value;
-            <!option @(Model.Answer == @item.Value ? "selected" : "") data-numeric-value="@item.NumericValue" value="@item.Value" title="@item.Value">@truncatedValue</!option>
+            <option data-numeric-value="@item.NumericValue" value="@item.Value" title="@item.Value" selected="@(Model.Answer == item.Value)">@truncatedValue</option>
         }
     </select>
+    @if (!Model.IsHumanConfirmed && !string.IsNullOrEmpty(Model.Answer))
+    {
+        <div class="ai-answer-indicator">
+            🤖 AI-generated answer
+            @if (Model.AIConfidence.HasValue)
+            {
+                <span class="ai-confidence-score"> (Confidence: @Model.AIConfidence%)</span>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(Model.AICitation))
+        {
+            <div class="ai-citation">
+                <small><strong>AI Reasoning:</strong> @Model.AICitation</small>
+            </div>
+        }
+    }
 </div>
 
     

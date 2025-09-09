@@ -323,30 +323,8 @@ EVALUATION CRITERIA:
                     return;
                 }
 
-                // Build scoresheet questions JSON
-                var questionsData = new List<object>();
-                foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
-                {
-                    foreach (var field in section.Fields.OrderBy(f => f.Order))
-                    {
-                        var questionData = new
-                        {
-                            id = field.Id.ToString(),
-                            section = section.Name,
-                            question = field.Label,
-                            description = field.Description,
-                            type = field.Type.ToString(),
-                            definition = field.Definition
-                        };
-                        questionsData.Add(questionData);
-                    }
-                }
-
-                var scoresheetJson = JsonSerializer.Serialize(questionsData, new JsonSerializerOptions 
-                { 
-                    WriteIndented = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
+                // Process each section individually for better AI focus
+                var allSectionResults = new Dictionary<string, object>();
 
                 // Collect all attachment summaries that were generated
                 var attachmentSummaries = attachments
@@ -375,11 +353,91 @@ FULL APPLICATION FORM SUBMISSION:
 {formSubmission?.RenderedHTML ?? "Form submission content not available"}
 ";
 
-                _logger.LogDebug("Generating AI scoresheet answers for application {ApplicationId} with {QuestionCount} questions", 
-                    application.Id, questionsData.Count);
+                _logger.LogInformation("Form submission HTML length: {HtmlLength} characters", formSubmission?.RenderedHTML?.Length ?? 0);
+                if (formSubmission?.RenderedHTML?.Length > 100)
+                {
+                    _logger.LogDebug("Form submission HTML preview: {HtmlPreview}...", 
+                        formSubmission.RenderedHTML.Substring(0, Math.Min(500, formSubmission.RenderedHTML.Length)));
+                }
+                else
+                {
+                    _logger.LogWarning("Form submission HTML is missing or very short: {FullHtml}", formSubmission?.RenderedHTML);
+                }
 
-                // Generate the scoresheet answers
-                var scoresheetAnswers = await _aiService.GenerateScoresheetAnswersAsync(applicationContent, attachmentSummaries, scoresheetJson);
+                // Process each section individually
+                foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
+                {
+                    try
+                    {
+                        _logger.LogDebug("Processing section {SectionName} for application {ApplicationId}", 
+                            section.Name, application.Id);
+
+                        // Build section-specific JSON
+                        var sectionQuestionsData = new List<object>();
+                        foreach (var field in section.Fields.OrderBy(f => f.Order))
+                        {
+                            var questionData = new
+                            {
+                                id = field.Id.ToString(),
+                                question = field.Label,
+                                description = field.Description,
+                                type = field.Type.ToString(),
+                                definition = field.Definition,
+                                availableOptions = ExtractSelectListOptions(field)
+                            };
+                            sectionQuestionsData.Add(questionData);
+                        }
+
+                        var sectionJson = JsonSerializer.Serialize(sectionQuestionsData, new JsonSerializerOptions 
+                        { 
+                            WriteIndented = true,
+                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                        });
+
+                        // Generate AI answers for this section
+                        var sectionAnswers = await _aiService.GenerateScoresheetSectionAnswersAsync(
+                            applicationContent, 
+                            attachmentSummaries, 
+                            sectionJson, 
+                            section.Name);
+
+                        // Parse and store section results
+                        if (!string.IsNullOrWhiteSpace(sectionAnswers))
+                        {
+                            var cleanedJson = CleanJsonResponse(sectionAnswers);
+                            try
+                            {
+                                using var sectionDoc = JsonDocument.Parse(cleanedJson);
+                                foreach (var property in sectionDoc.RootElement.EnumerateObject())
+                                {
+                                    allSectionResults[property.Name] = property.Value.Clone();
+                                }
+                                
+                                _logger.LogDebug("Successfully processed section {SectionName} with {QuestionCount} questions", 
+                                    section.Name, sectionQuestionsData.Count);
+                            }
+                            catch (JsonException ex)
+                            {
+                                _logger.LogError(ex, "Failed to parse AI response for section {SectionName} in application {ApplicationId}. Content: {InvalidJson}", 
+                                    section.Name, application.Id, sectionAnswers);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing section {SectionName} for application {ApplicationId}", 
+                            section.Name, application.Id);
+                        // Continue with other sections even if one fails
+                    }
+                }
+
+                // Combine all section results into final JSON
+                var combinedResults = JsonSerializer.Serialize(allSectionResults, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true 
+                });
+
+                var scoresheetAnswers = combinedResults;
 
                 // Validate and sanitize the JSON before saving
                 string validatedJson = "{}"; // Default empty JSON
@@ -405,9 +463,15 @@ FULL APPLICATION FORM SUBMISSION:
                     validatedJson = "{}"; // Use empty JSON as fallback
                 }
 
-                // Update the application with the validated scoresheet answers
+                // Store in both locations: metadata for debugging and actual scoresheet answers for UI
                 application.AIScoresheetAnswers = validatedJson;
                 await _applicationRepository.UpdateAsync(application);
+
+                // Create actual scoresheet answers if there are any
+                if (!string.IsNullOrEmpty(validatedJson) && validatedJson != "{}")
+                {
+                    await CreateScoresheetAnswersFromAI(application, scoresheet, validatedJson, attachments);
+                }
 
                 _logger.LogInformation("Successfully generated AI scoresheet answers for application {ApplicationId}", application.Id);
             }
@@ -417,5 +481,204 @@ FULL APPLICATION FORM SUBMISSION:
                 // Don't throw - this should not break the main submission processing
             }
         }
+
+        private static string CleanJsonResponse(string response)
+        {
+            if (string.IsNullOrWhiteSpace(response))
+                return response;
+
+            // Remove markdown code block delimiters
+            var cleaned = response.Trim();
+            
+            // Handle ```json opening tag
+            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase))
+            {
+                var startIndex = cleaned.IndexOf('\n');
+                if (startIndex >= 0)
+                {
+                    cleaned = cleaned.Substring(startIndex + 1);
+                }
+            }
+            else if (cleaned.StartsWith("```"))
+            {
+                // Handle generic ``` opening tag
+                var startIndex = cleaned.IndexOf('\n');
+                if (startIndex >= 0)
+                {
+                    cleaned = cleaned.Substring(startIndex + 1);
+                }
+            }
+
+            // Handle closing ``` tag
+            if (cleaned.EndsWith("```"))
+            {
+                var lastIndex = cleaned.LastIndexOf("```");
+                if (lastIndex > 0)
+                {
+                    cleaned = cleaned.Substring(0, lastIndex);
+                }
+            }
+
+            return cleaned.Trim();
+        }
+
+        private static object? ExtractSelectListOptions(Unity.Flex.Domain.Scoresheets.Question field)
+        {
+            if (field.Type != Unity.Flex.Scoresheets.Enums.QuestionType.SelectList || string.IsNullOrEmpty(field.Definition))
+                return null;
+
+            try
+            {
+                var definition = JsonSerializer.Deserialize<Unity.Flex.Worksheets.Definitions.QuestionSelectListDefinition>(field.Definition);
+                if (definition?.Options != null && definition.Options.Any())
+                {
+                    return definition.Options.Select((option, index) => new
+                    {
+                        number = index + 1,
+                        value = option.Value,
+                        numericValue = option.NumericValue
+                    }).ToArray();
+                }
+            }
+            catch (JsonException)
+            {
+                // If definition parsing fails, return null
+            }
+
+            return null;
+        }
+
+        private async Task CreateScoresheetAnswersFromAI(Unity.GrantManager.Applications.Application application, 
+            Unity.Flex.Domain.Scoresheets.Scoresheet scoresheet, 
+            string validatedJson, 
+            List<ApplicationChefsFileAttachment> attachments)
+        {
+            try
+            {
+                // Find scoresheet instance for this application
+                var scoresheetInstance = await _scoresheetInstanceRepository.GetByCorrelationAsync(application.Id);
+                if (scoresheetInstance == null)
+                {
+                    return;
+                }
+
+                // Parse the AI answers
+                using var aiDoc = JsonDocument.Parse(validatedJson);
+                
+                foreach (var aiAnswer in aiDoc.RootElement.EnumerateObject())
+                {
+                    try
+                    {
+                        var questionId = Guid.Parse(aiAnswer.Name);
+                        
+                        // Check if there's already a human answer for this question
+                        var existingAnswer = scoresheetInstance.Answers.FirstOrDefault(a => a.QuestionId == questionId);
+                        if (existingAnswer != null)
+                        {
+                            continue;
+                        }
+
+                        // Find the question to determine its type
+                        var question = scoresheet.Sections
+                            .SelectMany(s => s.Fields)
+                            .FirstOrDefault(f => f.Id == questionId);
+                            
+                        if (question == null) continue;
+
+                        // Extract the answer value
+                        string answerValue;
+                        if (aiAnswer.Value.ValueKind == JsonValueKind.Object && aiAnswer.Value.TryGetProperty("answer", out var answerProp))
+                        {
+                            answerValue = answerProp.ToString();
+                        }
+                        else
+                        {
+                            answerValue = aiAnswer.Value.ToString();
+                        }
+
+                        if (string.IsNullOrEmpty(answerValue)) continue;
+
+                        // For select lists, convert AI numeric answer to actual option text
+                        if (question.Type == Unity.Flex.Scoresheets.Enums.QuestionType.SelectList)
+                        {
+                            answerValue = ConvertAIAnswerToSelectListValue(answerValue, question.Definition);
+                        }
+
+                        // Create the proper JSON format for the answer based on question type
+                        var currentValue = CreateAnswerValueJson(question.Type, answerValue);
+                        
+                        // Create the Answer record
+                        var newAnswer = new Unity.Flex.Domain.Scoresheets.Answer(Guid.NewGuid())
+                            .SetValue(currentValue);
+                        newAnswer.QuestionId = questionId;
+                        newAnswer.ScoresheetInstanceId = scoresheetInstance.Id;
+
+                        // Add to the scoresheet instance
+                        scoresheetInstance.Answers.Add(newAnswer);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing AI answer for question {QuestionName}", aiAnswer.Name);
+                        continue;
+                    }
+                }
+
+                // Update the scoresheet instance
+                await _scoresheetInstanceRepository.UpdateAsync(scoresheetInstance);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating scoresheet answers from AI for application {ApplicationId}", application.Id);
+                // Don't throw - this is supplementary functionality
+            }
+        }
+
+        private string CreateAnswerValueJson(Unity.Flex.Scoresheets.Enums.QuestionType questionType, string value)
+        {
+            object valueObject = questionType switch
+            {
+                Unity.Flex.Scoresheets.Enums.QuestionType.Text => new Unity.Flex.Worksheets.Values.TextValue(value),
+                Unity.Flex.Scoresheets.Enums.QuestionType.Number => new Unity.Flex.Worksheets.Values.NumericValue(double.TryParse(value, out var num) ? num : 0),
+                Unity.Flex.Scoresheets.Enums.QuestionType.YesNo => new Unity.Flex.Worksheets.Values.YesNoValue(value),
+                Unity.Flex.Scoresheets.Enums.QuestionType.SelectList => new Unity.Flex.Worksheets.Values.SelectListValue(value),
+                Unity.Flex.Scoresheets.Enums.QuestionType.TextArea => new Unity.Flex.Worksheets.Values.TextAreaValue(value),
+                _ => new Unity.Flex.Worksheets.Values.TextValue(value)
+            };
+
+            return JsonSerializer.Serialize(valueObject);
+        }
+
+        private string ConvertAIAnswerToSelectListValue(string aiAnswer, string? definition)
+        {
+            if (string.IsNullOrEmpty(definition) || string.IsNullOrEmpty(aiAnswer))
+                return aiAnswer;
+
+            try
+            {
+                // Parse the AI answer as a number (1-based)
+                if (!int.TryParse(aiAnswer.Trim(), out var optionNumber) || optionNumber <= 0)
+                    return aiAnswer;
+
+                // Parse the select list definition to get actual options
+                var selectListDefinition = JsonSerializer.Deserialize<Unity.Flex.Worksheets.Definitions.QuestionSelectListDefinition>(definition);
+                if (selectListDefinition?.Options != null && selectListDefinition.Options.Any())
+                {
+                    // Convert 1-based AI answer to 0-based array index
+                    var optionIndex = optionNumber - 1;
+                    if (optionIndex >= 0 && optionIndex < selectListDefinition.Options.Count)
+                    {
+                        // Return the actual option text value
+                        return selectListDefinition.Options[optionIndex].Value;
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // If parsing fails, return original answer
+            }
+
+            return aiAnswer;
+        }
+
     }
 }

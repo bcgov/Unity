@@ -49,5 +49,15 @@ namespace Unity.GrantManager.AI
         /// <param name="scoresheetQuestions">JSON representation of scoresheet questions</param>
         /// <returns>JSON object with answers for each scoresheet question</returns>
         Task<string> GenerateScoresheetAnswersAsync(string applicationContent, List<string> attachmentSummaries, string scoresheetQuestions);
+
+        /// <summary>
+        /// Analyzes an application and generates scoresheet answers for a specific section with citations and confidence scores
+        /// </summary>
+        /// <param name="applicationContent">The application form content</param>
+        /// <param name="attachmentSummaries">List of AI-generated attachment summaries</param>
+        /// <param name="sectionJson">JSON representation of the specific scoresheet section questions</param>
+        /// <param name="sectionName">Name of the section being processed</param>
+        /// <returns>JSON object with answers, citations, and confidence scores for each question in the section</returns>
+        Task<string> GenerateScoresheetSectionAnswersAsync(string applicationContent, List<string> attachmentSummaries, string sectionJson, string sectionName);
     }
 }

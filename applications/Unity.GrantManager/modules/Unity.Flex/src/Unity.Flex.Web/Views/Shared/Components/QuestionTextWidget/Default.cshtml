@@ -4,7 +4,7 @@
 
 <div class="mb-3">
     <label for="answer-text-@Model.QuestionId" class="form-label unt-form-label">Answer</label>
-    <input type="text" required="@Model.Required" class="form-control answer-text-input" 
+    <input type="text" required="@Model.Required" class="form-control answer-text-input @(!Model.IsHumanConfirmed ? "ai-generated-answer" : "human-confirmed-answer")" 
         minlength="@Model.MinLength" 
         maxlength="@Model.MaxLength" 
         disabled="@Model.IsDisabled" 
@@ -12,6 +12,23 @@
         name="Answer-Text-@Model.QuestionId" 
         value="@Model.Answer" 
         data-original-value="@Model.Answer" 
-        oninput="handleInputChange('@Model.QuestionId','answer-text-')" />
+        data-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
+        oninput="handleInputChange('@Model.QuestionId','answer-text-'); markAsHumanConfirmed(this)" />
+    @if (!Model.IsHumanConfirmed && !string.IsNullOrEmpty(Model.Answer))
+    {
+        <div class="ai-answer-indicator">
+            🤖 AI-generated answer
+            @if (Model.AIConfidence.HasValue)
+            {
+                <span class="ai-confidence-score"> (Confidence: @Model.AIConfidence%)</span>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(Model.AICitation))
+        {
+            <div class="ai-citation">
+                <small><strong>AI Reasoning:</strong> @Model.AICitation</small>
+            </div>
+        }
+    }
     <span id="error-message-@Model.QuestionId" class="text-danger field-validation-error"></span>
 </div>
