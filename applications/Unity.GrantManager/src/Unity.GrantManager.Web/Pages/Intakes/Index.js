@@ -88,26 +88,22 @@
         };
     };
 
-    let dt = $('#IntakesTable');
-
-    let dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
+    let dataTable = Unity.DataTables.create('#IntakesTable', {
         listColumns,
+        defaultVisibleColumns,
         maxRowsPerPage: 25,
         defaultSortColumn: 0,
         dataEndpoint: unity.grantManager.intakes.intake.getList,
         data: {},
         responseCallback,
-        actionButtons,
-        serverSideEnable: false,
+        customButtons: actionButtons,
+        serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
-        dataTableName: 'IntakesTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-intakes'
+        externalSearchId: 'search-intakes',
+        exportTitle: 'Intakes'
     });
 
     createModal.onResult(function () {

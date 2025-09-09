@@ -43,25 +43,21 @@
         }
     ];
 
-    let dt = $('#UserGrantProgramsTable');
-
-    initializeDataTable({
-        dt,
+    Unity.DataTables.create('#UserGrantProgramsTable', {
         listColumns,
         maxRowsPerPage: 25,
         defaultSortColumn: 0,
         dataEndpoint: unity.grantManager.identity.userTenant.getList,
         data: {},
         responseCallback,
-        actionButtons: [...commonTableActionButtons('Grant Programs')],
+        customButtons: [...commonTableActionButtons('Grant Programs')],
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
-        dataTableName: 'UserGrantProgramsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
         externalSearchId: 'search-grant-programs',
-        disableColumnSelect: true
+        disableColumnSelect: true,
+        exportTitle: 'Grant Programs'
     });
 });
 

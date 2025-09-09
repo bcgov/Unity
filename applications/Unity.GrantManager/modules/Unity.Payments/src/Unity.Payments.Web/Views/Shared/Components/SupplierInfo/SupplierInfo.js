@@ -165,8 +165,6 @@ $(function () {
     }
 
     function loadSiteInfoTable() {
-        let dt = $('#SiteInfoTable');
-
         let inputAction = function() {
             const supplierId = $("#SupplierId").val();
             return String(supplierId);
@@ -204,25 +202,22 @@ $(function () {
             }
         ];
 
-        dataTable = initializeDataTable({
-            dt,
-            defaultVisibleColumns,
+        dataTable = Unity.DataTables.create('#SiteInfoTable', {
             listColumns,
+            defaultVisibleColumns,
             maxRowsPerPage: 10,
             defaultSortColumn: 0,
             dataEndpoint: unity.grantManager.applicants.applicantSupplier.getSitesBySupplierId,
             data: inputAction,
             responseCallback,
-            actionButtons,
-            colReorder: false,
+            customButtons: actionButtons,
             serverSideEnabled: false,
             pagingEnabled: false,
             reorderEnabled: false,
             useNullPlaceholder: true,
             languageSetValues: {},
-            dataTableName: 'SiteInfoTable',
-            externalSearchInputId: 'SiteInfoSearch',
-            dynamicButtonContainerId: 'siteDynamicButtonContainerId'
+            externalSearchId: 'SiteInfoSearch',
+            exportTitle: 'Site Info'
         });
 
         function getColumns() {

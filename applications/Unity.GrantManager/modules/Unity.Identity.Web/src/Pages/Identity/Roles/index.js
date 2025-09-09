@@ -145,10 +145,9 @@ $(function () {
     let listColumns = abp.ui.extensions.tableColumns.get('identity.role').columns.toArray();
     let defaultVisibleColumns = listColumns.map((item) => { return item['data']; });
 
-    _dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
+    _dataTable = Unity.DataTables.create('#IdentityRolesTable', {
         listColumns,
+        defaultVisibleColumns,
         maxRowsPerPage: 25,
         defaultSortColumn: 1,
         dataEndpoint: _identityRoleAppService.getList,
@@ -160,15 +159,14 @@ $(function () {
                 data: result.items
             };
         },
-        actionButtons,
+        customButtons: actionButtons,
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
-        dataTableName: 'IdentityRolesTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-roles'
+        externalSearchId: 'search-roles',
+        exportTitle: 'Roles'
     });
 
     _createModal.onResult(function () {

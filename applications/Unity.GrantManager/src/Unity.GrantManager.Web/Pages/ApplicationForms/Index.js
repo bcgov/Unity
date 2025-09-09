@@ -10,7 +10,6 @@
     /**
      * Application Forms: List All
      */
-    let dt = $('#ApplicationFormsTable');
     const listColumns = [
         {
             title: l('Actions'),
@@ -110,24 +109,22 @@
         ...commonTableActionButtons(l('ApplicationForms'))
     ];
 
-    let dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
+    let dataTable = Unity.DataTables.create('#ApplicationFormsTable', {
         listColumns,
+        defaultVisibleColumns,
         maxRowsPerPage: 25,
         defaultSortColumn: 1,
         dataEndpoint: unity.grantManager.applicationForms.applicationForm.getList,
         data: {},
         responseCallback,
-        actionButtons,
+        customButtons: actionButtons,
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
-        dataTableName: 'ApplicationFormsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-forms',
+        exportTitle: 'Application Forms'
     });
 
     createModal.onResult(function () {

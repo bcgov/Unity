@@ -70,25 +70,21 @@
         };
     };
 
-    let dt = $('#EndpointsTable');
-
-    let dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
+    let dataTable = Unity.DataTables.create('#EndpointsTable', {
         listColumns,
+        defaultVisibleColumns,
         maxRowsPerPage: 25,
         defaultSortColumn: 0,
         dataEndpoint: unity.grantManager.integrations.endpoints.endpointManagement.getList,
         data: {},
         responseCallback,
-        actionButtons,
+        customButtons: actionButtons,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
-        dataTableName: 'EndpointsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-endpoints'
+        externalSearchId: 'search-endpoints',
+        exportTitle: 'Endpoints'
     });
 
     createModal.onResult(function () {

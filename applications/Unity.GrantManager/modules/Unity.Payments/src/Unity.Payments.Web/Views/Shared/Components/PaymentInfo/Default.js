@@ -5,7 +5,6 @@
         $(this).maskMoney('mask', this.value);
     });
     const formatter = createNumberFormatter();
-    let dt = $('#ApplicationPaymentRequestListTable');
     let dataTable;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
@@ -169,23 +168,22 @@
         return newData;
     }
 
-    dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
+    dataTable = Unity.DataTables.create('#ApplicationPaymentRequestListTable', {
         listColumns,
+        defaultVisibleColumns,
         maxRowsPerPage: 10,
         defaultSortColumn: 3,
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getListByApplicationId,
         data: inputAction,
         responseCallback,
-        actionButtons,
+        customButtons: actionButtons,
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
-        dataTableName: 'ApplicationPaymentRequestListTable',
         externalSearchId: 'PaymentListSearch',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'});
+        exportTitle: 'Application Payment Requests'
+    });
 
     dataTable.on('search.dt', () => handleSearch());
 

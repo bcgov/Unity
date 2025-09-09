@@ -1,5 +1,4 @@
 ﻿$(function () {
-    let dt = $('#AuditHistoryTable');
     let dataTable;
 
     const listColumns = getColumns();
@@ -24,22 +23,20 @@
         return document.getElementById('paymentId').value
     };
 
-    dataTable = initializeDataTable({
-        dt,
+    dataTable = Unity.DataTables.create('#AuditHistoryTable', {
         listColumns,
         maxRowsPerPage: 20,
         defaultSortColumn: 0,
         dataEndpoint: unity.grantManager.history.paymentHistory.getPaymentHistoryList,
         data: inputAction,
         responseCallback,
-        actionButtons,
+        customButtons: actionButtons,
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
-        dataTableName: 'AuditHistoryTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
         externalSearchId: 'search-payment-history',
+        exportTitle: 'Payment History'
     });
 
     function getColumns() {

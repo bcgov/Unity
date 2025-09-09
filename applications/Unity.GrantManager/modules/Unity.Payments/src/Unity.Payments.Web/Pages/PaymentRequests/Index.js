@@ -2,7 +2,6 @@ $(function () {
     const l = abp.localization.getResource('Payments');
     const nullPlaceholder = '—';
     const formatter = createNumberFormatter();
-    let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
     toastr.options.positionClass = 'toast-top-center';
@@ -114,22 +113,20 @@ $(function () {
         return newData;
     }
 
-    dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
+    dataTable = Unity.DataTables.create('#PaymentRequestListTable', {
         listColumns,
+        defaultVisibleColumns,
         maxRowsPerPage: 10,
         defaultSortColumn: 13,
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
         data: {},
         responseCallback,
-        actionButtons,
+        customButtons: actionButtons,
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
-        dataTableName: 'PaymentRequestListTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
-        useNullPlaceholder: true
+        useNullPlaceholder: true,
+        exportTitle: 'Payment Requests'
     });
 
     // Attach the draw event to add custom row coloring logic

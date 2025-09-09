@@ -249,24 +249,22 @@ $(function () {
     let listColumns = abp.ui.extensions.tableColumns.get('identity.user').columns.toArray();
     let defaultVisibleColumns = listColumns.map((item) => { return item['data']; });
 
-    dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
+    dataTable = Unity.DataTables.create('#UsersTable', {
         listColumns,
+        defaultVisibleColumns,
         maxRowsPerPage: 25,
         defaultSortColumn: 1,
         dataEndpoint: _identityUserAppService.getList,
         data: {},
         responseCallback: tableResponseCallback,
-        actionButtons,
+        customButtons: actionButtons,
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: false,
         languageSetValues: {},
-        dataTableName: 'UsersTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-users'
+        externalSearchId: 'search-users',
+        exportTitle: 'Users'
     });
 
     _editModal.onResult(function () {

@@ -126,24 +126,22 @@ $(function () {
         };
        
         let dt = UIElements.paymentSettingsDT;
-        return initializeDataTable({
-            dt,
-            defaultVisibleColumns,
+        return Unity.DataTables.create('#' + dt.attr('id'), {
             listColumns,
+            defaultVisibleColumns,
             maxRowsPerPage: 25,
             defaultSortColumn: 0,
             dataEndpoint: unity.grantManager.payments.paymentSettings.getL2ApproversThresholds,
             data: {},
             responseCallback,
-            actionButtons,
+            customButtons: actionButtons,
             pagingEnabled: true,
             reorderEnabled: false,
             languageSetValues: {},
-            dataTableName: 'PaymentSettingsDataTable',
-            dynamicButtonContainerId: 'dynamicButtonContainerId',
             useNullPlaceholder: true,
             disableColumnSelect: true,
-            externalSearchId: 'search-data-table'
+            externalSearchId: 'search-data-table',
+            exportTitle: 'Payment Settings'
         });
 
         function getPaymenSettingsColumns() {
@@ -245,24 +243,22 @@ $(function () {
         };
        
         let dt = UIElements.accountCodingDT;
-        return initializeDataTable({
-            dt,
-            defaultVisibleColumns,
+        return Unity.DataTables.create('#' + dt.attr('id'), {
             listColumns,
+            defaultVisibleColumns,
             maxRowsPerPage: 25,
             defaultSortColumn: 0,
             dataEndpoint: unity.grantManager.payments.accountCoding.getList,
             data: {},
             responseCallback,
-            actionButtons,
+            customButtons: actionButtons,
             pagingEnabled: true,
             reorderEnabled: false,
             languageSetValues: {},
-            dataTableName: 'AccountCodesDataTable',
-            dynamicButtonContainerId: 'dynamicButtonContainerId',
             useNullPlaceholder: true,
             disableColumnSelect: true,
-            externalSearchId: 'search-data-table'
+            externalSearchId: 'search-data-table',
+            exportTitle: 'Account Coding'
         });
     }
 

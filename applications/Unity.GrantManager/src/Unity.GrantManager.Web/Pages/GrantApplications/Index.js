@@ -135,22 +135,20 @@
         return newData;
     }
 
-    dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
+    dataTable = Unity.DataTables.create('#GrantApplicationsTable', {
         listColumns,
+        defaultVisibleColumns,
         maxRowsPerPage: 10,
         defaultSortColumn: 4,
         dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
         data: {},
         responseCallback,
-        actionButtons,
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues,
-        dataTableName: 'GrantApplicationsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'
+        exportTitle: 'Grant Applications Export',
+        customButtons: actionButtons
     });
 
     dataTable.on('search.dt', () => handleSearch());
@@ -205,7 +203,7 @@
     function getColumns() {
         let columnIndex = 1;
         const sortedColumns = [
-            getSelectColumn('Select Application', 'rowCount', 'applications'),
+            Unity.DataTables.createSelectColumn('Select Application', 'rowCount', 'applications'),
             getApplicantNameColumn(columnIndex++),
             getApplicationNumberColumn(columnIndex++),
             getCategoryColumn(columnIndex++),
