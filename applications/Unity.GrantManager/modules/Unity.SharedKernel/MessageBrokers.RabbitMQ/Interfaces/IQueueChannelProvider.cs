@@ -8,9 +8,8 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
     /// </summary>
     public interface IQueueChannelProvider<TQueueMessage> : IDisposable where TQueueMessage : IQueueMessage
     {
-
         /// <summary>
-        /// Gets a channel for publishing or consuming messages of the specified type.
+        /// Gets a channel for publishing or consuming messages.
         /// </summary>
         IModel GetChannel();
     }

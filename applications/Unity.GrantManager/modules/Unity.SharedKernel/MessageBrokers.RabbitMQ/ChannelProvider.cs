@@ -104,8 +104,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(ChannelProvider));
+            ObjectDisposedException.ThrowIf(_disposed, nameof(ChannelProvider));
         }
 
         public void Dispose()
