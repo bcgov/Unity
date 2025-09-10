@@ -58,7 +58,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
                     _scope?.Dispose();
                     _scope = null;
-                    throw;
+                    throw new InvalidOperationException($"Failed to register consumer {typeof(TMessageConsumer).Name} after {maxRetries} attempts.", ex);
                 }
             }
         }

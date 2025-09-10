@@ -7,7 +7,7 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public sealed class ChannelProvider : IChannelProvider, IDisposable
+    public sealed class ChannelProvider : IChannelProvider
     {
         private readonly IConnectionProvider _connectionProvider;
         private readonly ILogger<ChannelProvider> _logger;
@@ -104,8 +104,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(ChannelProvider));
+            ObjectDisposedException.ThrowIf(_disposed, nameof(ChannelProvider));
         }
 
         public void Dispose()

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Text;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -29,7 +30,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         public void PublishMessage(TQueueMessage message)
         {
-            if (message == null)
+            if (EqualityComparer<TQueueMessage>.Default.Equals(message, default))
                 throw new ArgumentNullException(nameof(message));
 
             if (message.TimeToLive.Ticks <= 0)

@@ -11,27 +11,19 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public class QueueConsumerHandler<TMessageConsumer, TQueueMessage>
+    public class QueueConsumerHandler<TMessageConsumer, TQueueMessage>(
+        IServiceProvider serviceProvider,
+        ILogger<QueueConsumerHandler<TMessageConsumer, TQueueMessage>> logger)
         : IQueueConsumerHandler<TMessageConsumer, TQueueMessage>
         where TMessageConsumer : IQueueConsumer<TQueueMessage>
         where TQueueMessage : class, IQueueMessage
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<QueueConsumerHandler<TMessageConsumer, TQueueMessage>> _logger;
-        private readonly string _queueName;
+        private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        private readonly ILogger<QueueConsumerHandler<TMessageConsumer, TQueueMessage>> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly string _queueName = typeof(TQueueMessage).Name;
         private IModel? _consumerChannel;
         private string? _consumerTag;
-        private readonly string _consumerName;
-
-        public QueueConsumerHandler(
-            IServiceProvider serviceProvider,
-            ILogger<QueueConsumerHandler<TMessageConsumer, TQueueMessage>> logger)
-        {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _queueName = typeof(TQueueMessage).Name;
-            _consumerName = typeof(TMessageConsumer).Name;
-        }
+        private readonly string _consumerName = typeof(TMessageConsumer).Name;
 
         public void RegisterQueueConsumer()
         {
@@ -62,7 +54,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             catch (Exception ex)
             {
                 var msg = $"BasicConsume failed for Queue '{_queueName}'";
-                _logger.LogError(ex, msg);
+                _logger.LogError(ex, "BasicConsume failed for Queue '{Queue}'", _queueName);
                 throw new QueueingException(msg, ex);
             }
         }
@@ -80,9 +72,8 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
             catch (Exception ex)
             {
-                var msg = $"Error canceling consumer {_consumerName}";
-                _logger.LogError(ex, msg);
-                throw new QueueingException(msg, ex);
+                _logger.LogError(ex, "Error canceling consumer {Consumer}", _consumerName);
+                throw new QueueingException($"Error canceling consumer {_consumerName}", ex);
             }
             finally
             {
@@ -106,10 +97,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 if (producingChannel == null)
                     throw new QueueingException("Failed to acquire producing channel");
 
-                var message = DeserializeMessage(ea.Body.ToArray());
-                if (message == null)
-                    throw new QueueingException("Failed to deserialize message");
-
+                var message = DeserializeMessage(ea.Body.ToArray()) ?? throw new QueueingException("Failed to deserialize message");
                 _logger.LogInformation("Processing MessageId {MessageId}", message.MessageId);
 
                 producingChannel.TxSelect();

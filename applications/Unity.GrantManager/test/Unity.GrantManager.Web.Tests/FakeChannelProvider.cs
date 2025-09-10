@@ -30,6 +30,7 @@ namespace Unity.GrantManager
 
             // Events (no-op) - this section is needed and unused
             #pragma warning disable S1144 // Unused private code
+            #pragma warning disable CS0067 // Event is never used
             public event EventHandler<BasicAckEventArgs>? BasicAcks;
             
             public event EventHandler<BasicNackEventArgs>? BasicNacks;
@@ -38,6 +39,7 @@ namespace Unity.GrantManager
             public event EventHandler<CallbackExceptionEventArgs>? CallbackException;
             public event EventHandler<FlowControlEventArgs>? FlowControl;
             public event EventHandler<ShutdownEventArgs>? ModelShutdown;
+            #pragma warning restore CS0067 // Event is never used
             #pragma warning restore S1144
 
             // --- Minimal stubs for queue + exchange setup ---

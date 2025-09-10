@@ -73,7 +73,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     }
                     if (ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
                     {
-                        _logger.LogDebug("Queue {QueueName} exists with incompatible configuration, falling back to compatibility mode.", _queueName);
+                        _logger.LogDebug(ex, "Queue {QueueName} exists with incompatible configuration, falling back to compatibility mode.", _queueName);
                         DeclareCompatibleQueue(channel);
                         return;
                     }
@@ -149,22 +149,17 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
-
-            if (disposing)
+            if (disposing && _channel != null && _channelProvider != null)
             {
-                if (_channel != null && _channelProvider != null)
+                try
                 {
-                    try
-                    {
-                        _channelProvider.ReturnChannel(_channel);
-                    }
-                    catch
-                    {
-                        _channel?.Dispose();
-                    }
+                    _channelProvider.ReturnChannel(_channel);
                 }
-            }
-
+                catch
+                {
+                    _channel?.Dispose();
+                }
+            }        
             _disposed = true;
             _channel = null;
         }
