@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public class QueueChannelProvider<TQueueMessage>(IChannelProvider channelProvider, ILogger<QueueChannelProvider<TQueueMessage>> logger) : IQueueChannelProvider<TQueueMessage>, IDisposable
+    public class QueueChannelProvider<TQueueMessage>(IChannelProvider channelProvider, ILogger<QueueChannelProvider<TQueueMessage>> logger) : IQueueChannelProvider<TQueueMessage>
         where TQueueMessage : IQueueMessage
     {
         private readonly IChannelProvider _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));

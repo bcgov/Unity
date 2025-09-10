@@ -1,6 +1,8 @@
 ﻿using System;
 using RabbitMQ.Client;
 
+#pragma warning disable CA1005 // Avoid excessive parameters on generic types
+#pragma warning disable S2326
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
 {
     /// <summary>
@@ -14,3 +16,5 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
         IModel GetChannel();
     }
 }
+#pragma warning restore CA1005 // Avoid excessive parameters on generic types
+#pragma warning restore S2326
