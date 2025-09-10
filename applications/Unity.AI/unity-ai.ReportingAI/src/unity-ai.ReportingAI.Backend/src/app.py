@@ -39,24 +39,24 @@ def run_server():
     print(f"Starting Flask app in {config.app.flask_env} mode with debug={config.app.debug}")
     
     # Only run initialization in the main process (not the reloader process)
-    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        # Initialize database tables
-        print("Initializing database schema...")
-        try:
-            db_manager.init_tables()
-            print("Database schema initialized successfully")
-        except Exception as e:
-            print(f"Error initializing schema: {e}")
-            sys.exit(1)
+    # if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+    #     # Initialize database tables
+    #     print("Initializing database schema...")
+    #     try:
+    #         db_manager.init_tables()
+    #         print("Database schema initialized successfully")
+    #     except Exception as e:
+    #         print(f"Error initializing schema: {e}")
+    #         sys.exit(1)
         
-        # Embed schemas on startup (optional)
-        print("Embedding database schemas...")
-        try:
-            embed_schemas_command()
-            print("Schema embedding completed successfully")
-        except Exception as e:
-            print(f"Warning: Schema embedding failed: {e}")
-            # Don't exit - app can still run without embeddings
+    #     # Embed schemas on startup (optional)
+    #     print("Embedding database schemas...")
+    #     try:
+    #         embed_schemas_command()
+    #         print("Schema embedding completed successfully")
+    #     except Exception as e:
+    #         print(f"Warning: Schema embedding failed: {e}")
+    #         # Don't exit - app can still run without embeddings
     
     app.run(
         host="0.0.0.0",

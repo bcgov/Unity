@@ -5,7 +5,6 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { Embed } from './embed';
 import { Turn } from './turn';
-import { SqlLoaderComponent } from './sql-loader/sql-loader';
 import { SqlExplanationComponent } from './sql-explanation/sql-explanation';
 import { AuthService } from './services/auth.service';
 import { ApiService } from './services/api.service';
@@ -15,7 +14,7 @@ import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, SqlLoaderComponent, SqlExplanationComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, SqlExplanationComponent, SidebarComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })

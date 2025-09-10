@@ -221,7 +221,7 @@ class SQLGenerator:
         
         # Build prompt
         prompt = self.build_prompt(question, schemas, past_questions)
-        print("Prompt:", prompt[:500] + "...")
+        print("Prompt:", prompt + "...")
         
         # Generate multiple completions in parallel
         async with aiohttp.ClientSession() as session:
@@ -270,7 +270,7 @@ class SQLGenerator:
                 # Return the first candidate with winning fingerprint
                 for fp, sql, metadata in candidates:
                     if fp == winner_fp:
-                        print(f"Majority vote winner: {sql[:100]}...")
+                        print(f"Majority vote winner: {sql}...")
                         return sql, metadata
             
             # Fallback to first valid candidate

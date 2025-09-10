@@ -130,7 +130,7 @@ def validate_token():
 
 @app.route("/api/ask", methods=["POST"])
 @require_auth
-async def ask():
+def ask():
     """
     Main endpoint for processing natural language queries.
     Generates SQL and creates Metabase cards.
@@ -138,7 +138,7 @@ async def ask():
     data = request.get_json()
     user_data = get_user_from_token()
     
-    try:
+    async def async_ask():
         question = data.get("question")
         conversation = data.get("conversation", [])
         
@@ -240,7 +240,9 @@ async def ask():
             "visualization_options": metadata.get('visualization_options', []),
             "SQL": sql
         }, 200
-        
+    
+    try:
+        return asyncio.run(async_ask())
     except Exception as e:
         print(f"Error in /api/ask: {e}")
         return abort(500, "Internal server error")
@@ -305,12 +307,12 @@ def delete_question():
 
 @app.route("/api/explain_sql", methods=["POST"])
 @require_auth
-async def explain_sql():
+def explain_sql():
     """Generate a user-friendly explanation for SQL query"""
     data = request.get_json()
     user_data = get_user_from_token()
     
-    try:
+    async def async_explain_sql():
         sql = data.get("sql")
         
         if not sql:
@@ -322,7 +324,9 @@ async def explain_sql():
         return {
             "explanation": explanation
         }, 200
-        
+    
+    try:
+        return asyncio.run(async_explain_sql())
     except Exception as e:
         print(f"Error in /api/explain_sql: {e}")
         return {
@@ -429,23 +433,3 @@ def delete_chat(chat_id):
         return abort(500, "Internal server error")
 
 
-def run_async(coro):
-    """Helper to run async functions in Flask routes"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
-
-
-# Wrap async route handlers
-original_ask = ask
-def ask():
-    return run_async(original_ask())
-app.view_functions['ask'] = ask
-
-original_explain_sql = explain_sql
-def explain_sql():
-    return run_async(original_explain_sql())
-app.view_functions['explain_sql'] = explain_sql
