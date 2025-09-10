@@ -1,85 +1,96 @@
-﻿using RabbitMQ.Client;
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Extensions.Logging;
+using RabbitMQ.Client;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
-using System.Threading;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public class QueueChannelProvider<TQueueMessage>(IChannelProvider channelProvider, ILogger<QueueChannelProvider<TQueueMessage>> logger) : IQueueChannelProvider<TQueueMessage>
+    public class PooledQueueChannelProvider<TQueueMessage>(IChannelProvider channelProvider,
+                                      ILogger<PooledQueueChannelProvider<TQueueMessage>> logger) : IQueueChannelProvider<TQueueMessage>
         where TQueueMessage : IQueueMessage
     {
         private readonly IChannelProvider _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));
-        private readonly ILogger<QueueChannelProvider<TQueueMessage>> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly Lock _lock = new();
-        private IModel? _channel;
-        private bool _disposed;
-        private bool _queuesDeclared;
+        private readonly ILogger<PooledQueueChannelProvider<TQueueMessage>> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentQueue<IModel> _channelPool = new();
+        private readonly SemaphoreSlim _channelSemaphore = new(MaxChannels, MaxChannels);
         private readonly string _queueName = typeof(TQueueMessage).Name;
+        private bool _disposed;
 
+        private const int MaxChannels = 10000;
+        private readonly TimeSpan _channelWaitTimeout = TimeSpan.FromSeconds(10); // Timeout for GetChannel()
+
+        /// <summary>
+        /// Get a channel from the pool or create a new one
+        /// </summary>
         public IModel GetChannel()
         {
-            ObjectDisposedException.ThrowIf(_disposed, typeof(QueueChannelProvider<TQueueMessage>));
+            ObjectDisposedException.ThrowIf(_disposed, nameof(PooledQueueChannelProvider<TQueueMessage>));
 
-            lock (_lock)
+            // Wait for an available slot, fail gracefully if timeout
+            if (!_channelSemaphore.Wait(_channelWaitTimeout))
             {
-                if (_channel == null || !_channel.IsOpen)
-                {
-                    _channel?.Dispose();
-                    _channel = _channelProvider.GetChannel();
-                    _queuesDeclared = false;
-                }
-
-                if (_channel == null || !_channel.IsOpen)
-                    throw new InvalidOperationException("Failed to get a valid RabbitMQ channel");
-
-                if (!_queuesDeclared)
-                {
-                    DeclareQueueAndDeadLetter(_channel);
-                    _queuesDeclared = true;
-                }
-
-                return _channel;
+                throw new TimeoutException($"Unable to acquire a RabbitMQ channel for queue {_queueName} within {_channelWaitTimeout.TotalSeconds} seconds.");
             }
+
+            try
+            {
+                while (_channelPool.TryDequeue(out var pooledChannel))
+                {
+                    if (pooledChannel.IsOpen)
+                        return pooledChannel;
+
+                    DisposeChannel(pooledChannel);
+                }
+
+                // No available channel, create a new one
+                var channel = _channelProvider.GetChannel() ?? throw new InvalidOperationException("Channel cannot be null.");
+                DeclareQueueAndDeadLetter(channel);
+                return channel;
+            }
+            catch
+            {
+                _channelSemaphore.Release(); // Release semaphore if failed
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Return a channel to the pool
+        /// </summary>
+        public void ReturnChannel(IModel channel)
+        {
+            if (channel != null && !_disposed && channel.IsOpen)
+                _channelPool.Enqueue(channel);
+            else if (channel != null)
+                DisposeChannel(channel);
+
+            _channelSemaphore.Release();
         }
 
         private void DeclareQueueAndDeadLetter(IModel channel)
         {
             try
             {
-                // First, try to declare the queue as passive to check if it exists
                 try
                 {
                     channel.QueueDeclarePassive(_queueName);
-                    // Queue exists and is compatible, just declare exchange and binding
                     DeclareCompatibleQueue(channel);
-                    return;
                 }
                 catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex)
                 {
-                    // The channel is now closed. Get a new one immediately.
-                    _channel?.Dispose();
-                    _channel = _channelProvider.GetChannel();
-                    channel = _channel ?? throw new InvalidOperationException("Failed to get a new RabbitMQ channel after an error.");
-
-                    // Check the reason for the exception
                     if (ex.ShutdownReason.ReplyCode == 404)
-                    {
-                        // Queue not found, declare it with the full dead-letter configuration
                         DeclareQueueWithDeadLetter(channel);
-                        return;
-                    }
-                    if (ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
+                    else if (ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
                     {
-                        _logger.LogDebug(ex, "Queue {QueueName} exists with incompatible configuration, falling back to compatibility mode.", _queueName);
+                        _logger.LogDebug(ex, "Queue {QueueName} exists with incompatible configuration, running compatibility mode.", _queueName);
                         DeclareCompatibleQueue(channel);
-                        return;
                     }
-
-                    // Re-throw any other exceptions
-                    throw;
+                    else
+                        throw;
                 }
             }
             catch (Exception ex)
@@ -130,16 +141,41 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 channel.ExchangeDeclare(mainExchange, ExchangeType.Direct, durable: true);
                 channel.QueueBind(_queueName, mainExchange, _queueName);
 
-                _logger.LogWarning("Queue {QueueName} exists with incompatible configuration. Running in compatibility mode without dead letter support.", _queueName);
+                _logger.LogWarning("Queue {QueueName} exists with incompatible configuration. Running in compatibility mode.", _queueName);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Failed to declare queue {_queueName} in compatibility mode. " +
-                    "The existing queue has incompatible configuration and cannot be used.", ex);
+                    $"Failed to declare queue {_queueName} in compatibility mode.", ex);
             }
         }
 
+        private void DisposeChannel(IModel channel)
+        {
+            if (channel == null) return;
+
+            try
+            {
+                if (channel.IsOpen) channel.Close();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error closing channel.");
+            }
+
+            try
+            {
+                channel.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error disposing channel.");
+            }
+        }
+
+        /// <summary>
+        /// Dispose pattern with finalizer suppression
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
@@ -149,19 +185,18 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
-            if (disposing && _channel != null && _channelProvider != null)
-            {
-                try
-                {
-                    _channelProvider.ReturnChannel(_channel);
-                }
-                catch
-                {
-                    _channel?.Dispose();
-                }
-            }        
             _disposed = true;
-            _channel = null;
+
+            if (disposing)
+            {
+                while (_channelPool.TryDequeue(out var channel))
+                {
+                    DisposeChannel(channel);
+                }
+
+                _channelSemaphore.Dispose();
+            }
+            // No unmanaged resources to clean up
         }
 
         public string QueueName => _queueName;

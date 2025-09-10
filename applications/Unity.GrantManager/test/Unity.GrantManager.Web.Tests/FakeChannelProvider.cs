@@ -75,7 +75,7 @@ namespace Unity.GrantManager
                 => Guid.NewGuid().ToString();
             public void BasicCancel(string consumerTag) { }
             public void BasicCancelNoWait(string consumerTag) { }
-            public BasicGetResult BasicGet(string queue, bool autoAck) => new BasicGetResult(0, false, null, null, 0, null, null);
+            public BasicGetResult BasicGet(string queue, bool autoAck) => new(0, false, null, null, 0, null, null);
             public void BasicPublish(string exchange, string routingKey, bool mandatory, IBasicProperties basicProperties, ReadOnlyMemory<byte> body) { }
             public void BasicQos(uint prefetchSize, ushort prefetchCount, bool global) { }
 
