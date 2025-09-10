@@ -22,7 +22,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         private volatile bool _disposed;
         private volatile bool _queueDeclared;
 
-        private const int MaxChannels = 10000;
+        private const int MaxChannels = 5000;
         private readonly TimeSpan _channelWaitTimeout = TimeSpan.FromSeconds(10);
 
         public PooledQueueChannelProvider(
@@ -77,7 +77,8 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
             else
             {
-                DisposeChannel(channel);
+                if (channel != null)
+                    DisposeChannel(channel);
             }
 
             try { _channelSemaphore.Release(); } catch (ObjectDisposedException) { }
