@@ -363,16 +363,30 @@ public class ApplicationLinksAppService : CrudAppService<
         var result = new ApplicationLinkValidationResult();
         
         // Validate current app constraints
-        var currentAppHasErrors = ValidateCurrentAppConstraints(proposedLinks);
+        var currentAppHasErrorsOnParent = ValidateCurrentAppConstraints(proposedLinks);
         
         // Process each proposed link
         foreach (var proposedLink in proposedLinks)
         {
-            if (proposedLink.LinkType == ApplicationLinkType.Related)
-                continue;
-            
-            bool hasError = currentAppHasErrors || await ValidateTargetAppConflicts(currentApplicationId, proposedLink);
-            result.ValidationErrors[proposedLink.ReferenceNumber] = hasError;
+            if (proposedLink.LinkType == ApplicationLinkType.Parent)
+            {
+                bool hasError = currentAppHasErrorsOnParent;
+                result.ValidationErrors[proposedLink.ReferenceNumber] = hasError;
+                if (hasError)
+                {
+                    result.ErrorMessages[proposedLink.ReferenceNumber] = "Error: A submission can not have two parents. Please revise the link type.";
+                }
+            }
+            else if (proposedLink.LinkType == ApplicationLinkType.Child)
+            {
+                bool hasError = await ValidateTargetAppConflicts(currentApplicationId, proposedLink);
+                result.ValidationErrors[proposedLink.ReferenceNumber] = hasError;
+                if (hasError)
+                {
+                    result.ErrorMessages[proposedLink.ReferenceNumber] = "Error: The selected submission already has a parent. A submission cannot have multiple parents.";
+                }
+            }
+                
         }
         
         return result;
@@ -382,8 +396,7 @@ public class ApplicationLinksAppService : CrudAppService<
     {
         // Check if proposed links would exceed parent/child limit (1 max)
         var parentChildCount = proposedLinks.Count(l => 
-            l.LinkType == ApplicationLinkType.Parent || 
-            l.LinkType == ApplicationLinkType.Child);
+            l.LinkType == ApplicationLinkType.Parent);
             
         return parentChildCount > 1;
     }
@@ -396,9 +409,15 @@ public class ApplicationLinksAppService : CrudAppService<
         var targetExternalLinks = targetLinks.Where(l => 
             l.ApplicationId != currentApplicationId && 
             l.ApplicationId != proposedLink.TargetApplicationId).ToList();
-        
-        return targetExternalLinks.Any(l => 
-            l.LinkType == ApplicationLinkType.Parent || 
-            l.LinkType == ApplicationLinkType.Child);
+
+        if(proposedLink.LinkType == ApplicationLinkType.Child)
+        {
+            // If linking as child, check if target is already a parent from other links
+            return targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent);
+        }
+        else
+        {
+            return false;
+        }
     }
 }

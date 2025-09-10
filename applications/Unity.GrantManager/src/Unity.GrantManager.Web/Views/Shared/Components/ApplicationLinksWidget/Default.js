@@ -164,7 +164,7 @@ $(function () {
         let validationErrors = {}; // { referenceNumber: boolean }
         let hasValidationErrors = false;
         let hasChanges = false; // Track if any changes made
-        const VALIDATION_ERROR_MESSAGE = "Error: Cannot link the submissions that are already connected as either a child or parent to an existing submission. The Parent & Child linking is in a single level";
+        const VALIDATION_ERROR_MESSAGE = "Error: Validation error.";
         
         // Generate unique IDs for existing links once
         const timestamp = Date.now();
@@ -306,6 +306,7 @@ $(function () {
         
         function processValidationResponse(response) {
             validationErrors = response.validationErrors || {};
+            const errorMessages = response.errorMessages || {};
             
             // Filter out errors for deleted links
             const activeValidationErrors = Object.keys(validationErrors)
@@ -332,7 +333,7 @@ $(function () {
                     
                     if (hasError) {
                         link.hasValidationError = true;
-                        link.validationErrorMessage = VALIDATION_ERROR_MESSAGE;
+                        link.validationErrorMessage = errorMessages[link.referenceNumber] || VALIDATION_ERROR_MESSAGE;
                     } else {
                         link.hasValidationError = false;
                         link.validationErrorMessage = '';

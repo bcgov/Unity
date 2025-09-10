@@ -30,6 +30,6 @@ public class ApplicationLinkValidationRequest
 public class ApplicationLinkValidationResult
 {
     public Dictionary<string, bool> ValidationErrors { get; set; } = new();
+    public Dictionary<string, string> ErrorMessages { get; set; } = new();
     public bool HasErrors => ValidationErrors.Any(x => x.Value);
-    public string ErrorMessage => "Error: Cannot link the submissions that are already connected as either a child or parent to an existing submission. The Parent & Child linking is in a single level";
 }
