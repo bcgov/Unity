@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,16 +10,9 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.Notifications;
 
-public class NotificationsDataSeedContributor : IDataSeedContributor, ITransientDependency
+public class NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository,
+                                              IEmailGroupsRepository emailGroupsRepository) : IDataSeedContributor, ITransientDependency
 {
-    private readonly ITemplateVariablesRepository _templateVariablesRepository;
-    private readonly IEmailGroupsRepository _emailGroupsRepository;
-
-    public NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository, IEmailGroupsRepository emailGroupsRepository)
-    {
-        _templateVariablesRepository = templateVariablesRepository;
-        _emailGroupsRepository = emailGroupsRepository;
-    }
 
     public async Task SeedAsync(DataSeedContext context)
     {
@@ -48,17 +41,18 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
             new EmailTempateVariableDto { Name = "Project Summary", Token = "project_summary", MapTo = "projectSummary" },
             new EmailTempateVariableDto { Name = "Signing Authority Full Name", Token = "signing_authority_full_name", MapTo = "signingAuthorityFullName" },
             new EmailTempateVariableDto { Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" },
-            new EmailTempateVariableDto { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" }
+            new EmailTempateVariableDto { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" },
+            new EmailTempateVariableDto { Name = "Requested Amount", Token = "requested_amount", MapTo = "requestedAmount" }
         };
 
         try
         {
             foreach (var template in emailTemplateVariableDtos)
             {
-                var existingVariable = await _templateVariablesRepository.FindAsync(tv => tv.Token == template.Token);
+                var existingVariable = await templateVariablesRepository.FindAsync(tv => tv.Token == template.Token);
                 if (existingVariable == null)
                 {
-                    await _templateVariablesRepository.InsertAsync(
+                    await templateVariablesRepository.InsertAsync(
                         new TemplateVariable { Name = template.Name, Token = template.Token, MapTo = template.MapTo },
                         autoSave: true
                     );
@@ -66,7 +60,7 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
                 else if (existingVariable.Token == "category" && existingVariable.MapTo == "category")
                 {
                     existingVariable.MapTo = "applicationForm.category";
-                    await _templateVariablesRepository.UpdateAsync(existingVariable, autoSave: true);
+                    await templateVariablesRepository.UpdateAsync(existingVariable, autoSave: true);
                 }
             }
         }
@@ -82,13 +76,13 @@ public class NotificationsDataSeedContributor : IDataSeedContributor, ITransient
         };
         try
         {
-            var allGroups = await _emailGroupsRepository.GetListAsync();
+            var allGroups = await emailGroupsRepository.GetListAsync();
             foreach (var emailGroup in emailGroups)
             {
                 var existingGroup = allGroups.FirstOrDefault(g => g.Name == emailGroup.Name);
                 if (existingGroup == null)
                 {
-                    await _emailGroupsRepository.InsertAsync(
+                    await emailGroupsRepository.InsertAsync(
                         new EmailGroup { Name = emailGroup.Name, Description = emailGroup.Description, Type = emailGroup.Type },
                         autoSave: true
                     );

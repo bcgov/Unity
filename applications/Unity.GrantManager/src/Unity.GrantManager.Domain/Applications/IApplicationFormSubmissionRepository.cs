@@ -7,4 +7,5 @@ namespace Unity.GrantManager.Applications;
 public interface IApplicationFormSubmissionRepository : IRepository<ApplicationFormSubmission, Guid>
 {
     Task<ApplicationFormSubmission> GetByApplicationAsync(Guid applicationId);
+    Task<ApplicationFormDetails> GetFormDetailsByApplicationIdAsync(Guid applicationId);
 }

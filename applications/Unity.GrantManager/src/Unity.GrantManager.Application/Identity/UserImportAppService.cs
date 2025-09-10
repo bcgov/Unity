@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Integration.Css;
+using Unity.GrantManager.Integrations.Css;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Identity;

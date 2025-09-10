@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Unity.GrantManager.Integrations;
 using Unity.Modules.Shared.Integrations;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -12,6 +13,7 @@ namespace Unity.Payments.Integrations.Cas
     [IntegrationService]
     [ExposeServices(typeof(CasTokenService), typeof(ICasTokenService))]
     public class CasTokenService(
+        IEndpointManagementAppService endpointManagementAppService,
         IOptions<CasClientOptions> casClientOptions,
         IHttpClientFactory httpClientFactory,
         IDistributedCache<TokenValidationResponse, string> chesTokenCache
@@ -22,9 +24,10 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<string> GetAuthTokenAsync()
         {
+            string caseBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             ClientOptions clientOptions = new ClientOptions
             {
-                Url = $"{casClientOptions.Value.CasBaseUrl}/{OAUTH_PATH}",
+                Url = $"{caseBaseUrl}/{OAUTH_PATH}",
                 ClientId = casClientOptions.Value.CasClientId,
                 ClientSecret = casClientOptions.Value.CasClientSecret,
                 ApiKey = CAS_API_KEY,

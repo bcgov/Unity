@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace Unity.GrantManager.Integration.Css
+namespace Unity.GrantManager.Integrations.Css
 {
     public interface ICssUsersApiService : IApplicationService
     {

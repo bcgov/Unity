@@ -13,14 +13,7 @@ public class ReportingMenuContributor : IMenuContributor
 
     private static Task ConfigureReportingMenuAsync(MenuConfigurationContext context)
     {
-        //Add main menu items.
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                    ReportingMenus.Prefix,
-                    displayName: "Reporting Admin",
-                    "~/ReportingAdmin",
-                    requiredPermissionName: IdentityConsts.ITAdminPermissionName
-        ));
+
         context.Menu.AddItem(
             new ApplicationMenuItem(
                     ReportingMenus.Prefix,

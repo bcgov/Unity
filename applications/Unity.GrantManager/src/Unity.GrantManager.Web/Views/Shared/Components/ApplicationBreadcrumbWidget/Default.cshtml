@@ -7,7 +7,7 @@
     <div class="application-details-breadcrumb">
         <div class="reference-no">@Model.ReferenceNo</div>
         <div class="applicant-name">@Model.ApplicantName</div>
-        <div class="form-version pr-1">@(string.Format("(Form Version: {0})", Model.ApplicationFormVersion))</div>
+        <div class="form-version pr-1">@Model.SubmissionFormDescription</div>
         <div class="application-status">@Model.ApplicationStatus</div>    
     </div>
 </div>

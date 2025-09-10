@@ -193,6 +193,13 @@ internal static class PolicyRegistrant
             context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITAdminPermissionName)
         ));
 
+        // IT Operations Policies
+        authorizationBuilder.AddPolicy(IdentityConsts.ITOperationsPolicyName,
+        policy => policy.RequireAssertion(context =>
+            context.User.IsInRole(IdentityConsts.ITOperationsRoleName) ||
+            context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITOperationsPermissionName)
+        ));
+
         // Project Info Policies
         authorizationBuilder.AddPolicy(UnitySelector.Project.Default,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Default));

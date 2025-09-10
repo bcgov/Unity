@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
@@ -154,16 +155,17 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
             return appDto;
         }).ToList();
-        
+
         long totalCount = 0;
         try
         {
             totalCount = await _applicationRepository.GetCountAsync();
-        } catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             Logger.LogError(ex, "An exception occurred GetCountAsync: {ExceptionMessage}", ex.Message);
         }
-       
+
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
 
@@ -222,6 +224,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<GrantApplicationDto> GetAsync(Guid id)
     {
+        // NOTE: Changes to this method can impact Email Notification Templates
         var application = await _applicationRepository.GetWithFullDetailsByIdAsync(id);
 
         if (application == null) return new GrantApplicationDto();
@@ -250,7 +253,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Sector = application.Applicant.Sector;
             appDto.OrganizationType = application.Applicant.OrganizationType;
             appDto.SubSector = application.Applicant.SubSector;
-            appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;            
+            appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
 
         return appDto;
@@ -318,7 +321,14 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         await SanitizeAssessmentResultsZoneInputs(input, application);
 
         application.ValidateAndSetDueDate(input.DueDate);
-        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate, input.RiskRanking);
+        application.UpdateAlwaysChangeableFields(
+            input.Notes,
+            input.SubStatus,
+            input.LikelihoodOfFunding,
+            input.TotalProjectBudget,
+            input.NotificationDate,
+            input.RiskRanking
+        );
 
         if (application.IsInFinalDecisionState())
         {
@@ -327,7 +337,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
             }
 
-            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields)) // User allowed to edit specific fields past approval
+            if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields))
             {
                 application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
             }
@@ -339,45 +349,72 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 application.ValidateAndSetFinalDecisionDate(input.FinalDecisionDate);
                 application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
                 application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
-                application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
+                application.UpdateFieldsOnlyForPreFinalDecision(
+                    input.DueDiligenceStatus,
                     input.RecommendedAmount,
-                    input.DeclineRational);
+                    input.DeclineRational
+                );
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
             }
         }
 
         // Handle custom fields for assessment info
-        if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+        if (HasCustomFields(input))
         {
-            // Handle multiple worksheets
-            if (input.WorksheetIds?.Count > 0)
-            {
-                foreach (var worksheetId in input.WorksheetIds)
-                {
-                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
-                    if (worksheetCustomFields.Count > 0)
-                    {
-                        var worksheetData = new CustomDataFieldDto
-                        {
-                            WorksheetId = worksheetId,
-                            CustomFields = worksheetCustomFields,
-                            CorrelationId = input.CorrelationId
-                        };
-                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, worksheetData);
-                    }
-                }
-            }
-            // Fallback for single worksheet (backward compatibility)
-            else if (input.WorksheetId != Guid.Empty)
-            {
-                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, input);
-            }
+            await PublishCustomFieldsAsync(application.Id, input);
         }
 
         await _applicationRepository.UpdateAsync(application);
-
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private async Task PublishCustomFieldsAsync(Guid applicationId, UpdateProjectInfoDto dto)
+    {
+        if (dto.WorksheetIds?.Count > 0)
+        {
+            foreach (var worksheetId in dto.WorksheetIds)
+            {
+                var worksheetFields = ExtractCustomFieldsForWorksheet(dto.CustomFields, worksheetId);
+                if (worksheetFields.Count > 0)
+                {
+                    await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.ProjectInfoUiAnchor, new CustomDataFieldDto
+                    {
+                        WorksheetId = worksheetId,
+                        CustomFields = worksheetFields,
+                        CorrelationId = dto.CorrelationId
+                    });
+                }
+            }
+        }
+        else if (dto.WorksheetId != Guid.Empty)
+        {
+            await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.ProjectInfoUiAnchor, dto);
+        }
+    }
+
+    private async Task PublishCustomFieldsAsync(Guid applicationId, CreateUpdateAssessmentResultsDto dto)
+    {
+        if (dto.WorksheetIds?.Count > 0)
+        {
+            foreach (var worksheetId in dto.WorksheetIds)
+            {
+                var worksheetFields = ExtractCustomFieldsForWorksheet(dto.CustomFields, worksheetId);
+                if (worksheetFields.Count > 0)
+                {
+                    await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.AssessmentInfoUiAnchor, new CustomDataFieldDto
+                    {
+                        WorksheetId = worksheetId,
+                        CustomFields = worksheetFields,
+                        CorrelationId = dto.CorrelationId
+                    });
+                }
+            }
+        }
+        else if (dto.WorksheetId != Guid.Empty)
+        {
+            await PublishCustomFieldUpdatesAsync(applicationId, FlexConsts.AssessmentInfoUiAnchor, dto);
+        }
     }
 
     private async Task SanitizeApprovalZoneInputs(CreateUpdateAssessmentResultsDto input, Application application)
@@ -488,7 +525,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.Place = input.Place;
 
             // Handle custom fields for project info
-            if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+            if (input.CustomFields != null && HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
             {
                 // Handle multiple worksheets
                 if (input.WorksheetIds?.Count > 0)
@@ -535,118 +572,148 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     [Authorize(UnitySelector.Project.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input)
     {
-        // Only update the fields we need to update based on the modified fields
-        // This is required to handle controls like the date picker that do not send null values for unchanged fields
-        var application = await _applicationRepository.GetAsync(id) ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
+        var application = await _applicationRepository.GetAsync(id)
+            ?? throw new EntityNotFoundException($"Application with ID {id} not found.");
+
+        // Map incoming values
         ObjectMapper.Map<UpdateProjectInfoDto, Application>(input.Data, application);
 
-        // Explicitly handle properties that are null but listed in ModifiedFields
-        var dtoProperties = typeof(UpdateProjectInfoDto).GetProperties();
-        var appProperties = typeof(Application).GetProperties().ToDictionary(p => p.Name, p => p);
+        // Explicitly clear properties that were set to null in the update
+        ApplyExplicitNulls(input, application);
 
-        foreach (var fieldName in input.ModifiedFields)
-        {
-            if (dtoProperties.FirstOrDefault(p =>
-                string.Equals(p.Name, fieldName, StringComparison.OrdinalIgnoreCase)) is { } dtoProperty)
-            {
-                var value = dtoProperty.GetValue(input.Data);
-                if (value == null && appProperties.TryGetValue(dtoProperty.Name, out var appProperty) && appProperty.CanWrite)
-                {
-                    appProperty.SetValue(application, appProperty.PropertyType.IsValueType
-                        && Nullable.GetUnderlyingType(appProperty.PropertyType) == null
-                        ? Activator.CreateInstance(appProperty.PropertyType)
-                        : null);
-                }
-            }
-        }
-
-        // Calculate the percentage of the total project budget based on
-        // the requested amount and total project budget. Percentage total has to be
-        // updated whenever RequestedAmount or TotalProjectBudget changes
+        // Update derived values
         application.UpdatePercentageTotalProjectBudget();
 
-        // Add custom worksheet data
-        if (HasValue(input.Data.CustomFields) && input.Data.CorrelationId != Guid.Empty)
+        // Handle custom fields
+        if (HasCustomFields(input.Data))
         {
-            // Handle multiple worksheets
-            if (input.Data.WorksheetIds?.Count > 0)
-            {
-                foreach (var worksheetId in input.Data.WorksheetIds)
-                {
-                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.Data.CustomFields, worksheetId);
-                    if (worksheetCustomFields.Count > 0)
-                    {
-                        var worksheetData = new CustomDataFieldDto
-                        {
-                            WorksheetId = worksheetId,
-                            CustomFields = worksheetCustomFields,
-                            CorrelationId = input.Data.CorrelationId
-                        };
-                        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, worksheetData);
-                    }
-                }
-            }
-            // Fallback for single worksheet (backward compatibility)
-            else if (input.Data.WorksheetId != Guid.Empty)
-            {
-                await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.Data);
-            }
+            await PublishCustomFieldsAsync(application.Id, input.Data);
         }
 
         await _applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
+    private static void ApplyExplicitNulls(PartialUpdateDto<UpdateProjectInfoDto> input, Application application)
+    {
+        var dtoProps = typeof(UpdateProjectInfoDto)
+            .GetProperties()
+            .ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
+
+        var appProps = typeof(Application)
+            .GetProperties()
+            .ToDictionary(p => p.Name, p => p);
+
+        foreach (var field in input.ModifiedFields)
+        {
+            if (dtoProps.TryGetValue(field, out var dtoProp) &&
+                dtoProp.GetValue(input.Data) == null &&
+                appProps.TryGetValue(dtoProp.Name, out var appProp) &&
+                appProp.CanWrite)
+            {
+                appProp.SetValue(application, GetDefaultValue(appProp.PropertyType));
+            }
+        }
+    }
+
+    private static bool HasCustomFields<T>(T dto)
+        where T : class
+    {
+        var correlationIdProp = typeof(T).GetProperty("CorrelationId");
+        var customFieldsProp = typeof(T).GetProperty("CustomFields");
+
+        if (correlationIdProp == null || customFieldsProp == null)
+            return false;
+
+        var correlationId = (Guid)(correlationIdProp.GetValue(dto) ?? Guid.Empty);
+        if (correlationId == Guid.Empty)
+            return false;
+
+        if (customFieldsProp.GetValue(dto) is JsonElement el)
+            return el.ValueKind != JsonValueKind.Undefined && HasValue(el);
+
+        return false;
+    }
+
+
+
+    private static object? GetDefaultValue(Type type) =>
+        type.IsValueType && Nullable.GetUnderlyingType(type) == null
+            ? Activator.CreateInstance(type)
+            : null;
+
+    private static bool HasValue(JsonElement element) =>
+        element.ValueKind switch
+        {
+            JsonValueKind.Object => element.EnumerateObject().Any(),
+            JsonValueKind.Array => element.EnumerateArray().Any(),
+            JsonValueKind.String => !string.IsNullOrWhiteSpace(element.GetString()),
+            JsonValueKind.Number => true,
+            JsonValueKind.True => true,
+            JsonValueKind.False => true,
+            _ => false
+        };
+
+    // Overload for object/dynamic input (safer)
+    private static bool HasValue(object? element) => element switch
+    {
+        null => false,
+        JsonElement el => HasValue(el),
+        string s => !string.IsNullOrWhiteSpace(s),
+        IEnumerable<object> e => e.Any(),
+        _ => true
+    };
+
+
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
 
-        if (application != null)
+        // Update simple fields
+        if (application.ContractNumber != input.ContractNumber ||
+            application.ContractExecutionDate != input.ContractExecutionDate)
         {
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
+        }
 
-            // Handle custom fields for funding agreement info
-            if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+        // Handle custom fields
+        if (HasValue(input.CustomFields) && input.CorrelationId != Guid.Empty)
+        {
+            if (input.WorksheetIds?.Count > 0)
             {
-                // Handle multiple worksheets
-                if (input.WorksheetIds?.Count > 0)
+                foreach (var worksheetId in input.WorksheetIds)
                 {
-                    foreach (var worksheetId in input.WorksheetIds)
+                    var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
+                    if (worksheetCustomFields.Count > 0)
                     {
-                        var worksheetCustomFields = ExtractCustomFieldsForWorksheet(input.CustomFields, worksheetId);
-                        if (worksheetCustomFields.Count > 0)
+                        var worksheetData = new CustomDataFieldDto
                         {
-                            var worksheetData = new CustomDataFieldDto
-                            {
-                                WorksheetId = worksheetId,
-                                CustomFields = worksheetCustomFields,
-                                CorrelationId = input.CorrelationId
-                            };
-                            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, worksheetData);
-                        }
+                            WorksheetId = worksheetId,
+                            CustomFields = worksheetCustomFields,
+                            CorrelationId = input.CorrelationId
+                        };
+
+                        await PublishCustomFieldUpdatesAsync(
+                            application.Id,
+                            FlexConsts.FundingAgreementInfoUiAnchor,
+                            worksheetData
+                        );
                     }
                 }
-                // Fallback for single worksheet (backward compatibility)
-                else if (input.WorksheetId != Guid.Empty)
-                {
-                    await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.FundingAgreementInfoUiAnchor, input);
-                }
             }
-
-            await _applicationRepository.UpdateAsync(application);
-
-            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+            else if (input.WorksheetId != Guid.Empty) // backward compatibility
+            {
+                await PublishCustomFieldUpdatesAsync(
+                    application.Id,
+                    FlexConsts.FundingAgreementInfoUiAnchor,
+                    input
+                );
+            }
         }
-        else
-        {
-            throw new EntityNotFoundException();
-        }
-    }
 
-    private static bool HasValue(JsonElement element)
-    {
-        return element.ValueKind != JsonValueKind.Null && element.ValueKind != JsonValueKind.Undefined;
+        await _applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
     /// <summary>
@@ -682,7 +749,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             .FirstOrDefaultAsync(a => a.ApplicantId == application.ApplicantId)
             ?? new ApplicantAgent
             {
-                ApplicantId   = application.ApplicantId,
+                ApplicantId = application.ApplicantId,
                 ApplicationId = application.Id
             };
 
@@ -705,10 +772,10 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
-        
+
         var applicant = await _applicantRepository
             .FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
-        
+
         applicant.OrganizationType = input.OrganizationType ?? "";
         applicant.OrgName = input.OrgName ?? "";
         applicant.OrgNumber = input.OrgNumber ?? "";
@@ -1142,7 +1209,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             return null;
         }
-    
+
         return form.AccountCodingId;
     }
 
@@ -1211,12 +1278,18 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
     {
 
-        var query = from applications in await _applicationRepository.GetQueryableAsync()
+        var applicationsQuery = await _applicationRepository.GetQueryableAsync();
+        var applicantsQuery = await _applicantRepository.GetQueryableAsync();
+        
+        var query = from applications in applicationsQuery
+                    join applicant in applicantsQuery on applications.ApplicantId equals applicant.Id into applicantGroup
+                    from applicant in applicantGroup.DefaultIfEmpty()
                     select new GrantApplicationLiteDto
                     {
                         Id = applications.Id,
                         ProjectName = applications.ProjectName,
-                        ReferenceNo = applications.ReferenceNo
+                        ReferenceNo = applications.ReferenceNo,
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue
                     };
 
         return await query.ToListAsync();

@@ -1,30 +1,27 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using RestSharp;
-using System.Threading.Tasks;
-using Unity.GrantManager.Integration.Geocoder;
 using Unity.GrantManager.Integrations.Exceptions;
-using Unity.GrantManager.Integrations.Http;
+using Unity.Modules.Shared.Http;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Integrations.Geocoder
 {
-    //[IntegrationService]
-    //[ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderApiService))]
     [AllowAnonymous]
-    public class GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration) : ApplicationService, IGeocoderApiService
+    public class GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration, IEndpointManagementAppService endpointManagementAppService) : IGeocoderApiService
     {
         public async Task<AddressDetailsDto> GetAddressDetailsAsync(string address)
         {
             var resource = $"{configuration["Geocoder:LocationDetails:BaseUri"]}/addresses.json?outputSRS=3005&addressString={address}";
-
             return ResultMapper.MapToLocation(await GetGeoCodeDataSegmentAsync(resource));
         }
 
         public async Task<ElectoralDistrictDto> GetElectoralDistrictAsync(LocationCoordinates locationCoordinates)
         {
-            var resource = $"{configuration["Geocoder:BaseUri"]}" +
+            var geoCoderBaseUri = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.GEOCODER_API_BASE);
+            var resource = $"{geoCoderBaseUri}" +
                 $"{configuration["Geocoder:ElectoralDistrict:feature"]}" +
                 $"&srsname=EPSG:4326" +
                 $"&propertyName={configuration["Geocoder:ElectoralDistrict:property"]}" +
@@ -63,20 +60,17 @@ namespace Unity.GrantManager.Integrations.Geocoder
 
         private async Task<dynamic?> GetGeoCodeDataSegmentAsync(string resource)
         {
-            var response = await resilientRestClient.HttpAsync(Method.Get, resource);
+            var response = await resilientRestClient.HttpAsync(HttpMethod.Get, resource, null, null);
 
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
+            if (response != null && response.IsSuccessStatusCode && response.Content != null)
             {
-                string content = response.Content;
+                var content = await response.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<dynamic>(content)!;
             }
             else
             {
-                throw new IntegrationServiceException($"Error with integrating with request resource");
+                throw new IntegrationServiceException($"Error integrating with resource: {resource}. Status: {response?.StatusCode}");
             }
         }
     }
 }
-
