@@ -16,6 +16,7 @@ namespace Unity.Flex.Web.Tests.Components
 
         public CurrencyDefinitionWidgetTests()
         {
+            // Lazily resolve services needed by the ViewComponent
             lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         }
 
@@ -32,7 +33,7 @@ namespace Unity.Flex.Web.Tests.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new CurrencyDefinitionWidget()
+            var viewComponent = new CurrencyDefinitionWidget
             {
                 ViewComponentContext = viewComponentContext,
                 LazyServiceProvider = lazyServiceProvider

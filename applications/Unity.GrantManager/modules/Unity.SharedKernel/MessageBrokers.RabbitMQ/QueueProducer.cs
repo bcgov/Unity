@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Text;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -29,46 +30,48 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         public void PublishMessage(TQueueMessage message)
         {
-            if (message == null)
+            if (EqualityComparer<TQueueMessage>.Default.Equals(message, default))
                 throw new ArgumentNullException(nameof(message));
 
             if (message.TimeToLive.Ticks <= 0)
                 throw new QueueingException($"{nameof(message.TimeToLive)} cannot be zero or negative");
 
-            IModel channel = _channelProvider.GetChannel();
+            var channel = _channelProvider.GetChannel();
 
             try
             {
-                // Assign message ID
                 message.MessageId = Guid.NewGuid();
 
-                // Serialize
                 var serializedMessage = SerializeMessage(message);
 
-                // Properties
                 var properties = channel.CreateBasicProperties();
                 properties.Persistent = true; // quorum queues persist
                 properties.Type = _queueName;
                 properties.MessageId = message.MessageId.ToString();
                 properties.Expiration = message.TimeToLive.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
 
-                // Publish to the exchange bound to the queue
+                // Enable publisher confirms once per channel
+                channel.ConfirmSelect();
+
                 channel.BasicPublish(
                     exchange: _exchangeName,
                     routingKey: _queueName,
                     basicProperties: properties,
                     body: serializedMessage
                 );
+
+                // Wait for confirmation
+                if (!channel.WaitForConfirms(TimeSpan.FromSeconds(5)))
+                {
+                    throw new QueueingException($"Publish failed: broker did not confirm message {message.MessageId}");
+                }
+
+                _logger.LogInformation("Published message {MessageId} to {Queue}", message.MessageId, _queueName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "PublishMessage Exception: {Message}", ex.Message);
                 throw new QueueingException($"Publish failed: {ex.Message}", ex);
-            }
-            finally
-            {
-                // Return channel instead of disposing the provider
-                _channelProvider.Dispose(); // <- Replace with ReturnChannel if your provider exposes it
             }
         }
 

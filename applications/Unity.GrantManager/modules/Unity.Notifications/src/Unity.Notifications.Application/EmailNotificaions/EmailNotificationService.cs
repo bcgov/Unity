@@ -14,7 +14,6 @@ using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.Integrations.RabbitMQ;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Settings;
-using Unity.Notifications.TeamsNotifications;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -96,7 +95,7 @@ public class EmailNotificationService(
             return null;
         }
         var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName, emailCC, emailBCC);
-        EmailLog emailLog = new EmailLog();
+        EmailLog emailLog = new();
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
         emailLog.Status = status ?? EmailStatus.Initialized;
@@ -123,13 +122,7 @@ public class EmailNotificationService(
             {
                 var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
                 var scheme = "https";
-                var request = httpContextAccessor.HttpContext?.Request;
-
-                if (request == null)
-                {
-                    throw new InvalidOperationException("HttpContext or Request is null.");
-                }
-
+                var request = (httpContextAccessor.HttpContext?.Request) ?? throw new InvalidOperationException("HttpContext or Request is null.");
                 var host = request.Host.ToUriComponent();
                 var pathBase = "/GrantApplications/Details?ApplicationId=";
                 var baseUrl = $"{scheme}://{host}{pathBase}";
@@ -233,7 +226,7 @@ public class EmailNotificationService(
 
     public async Task<EmailLog?> GetEmailLogById(Guid id)
     {
-        EmailLog emailLog = new EmailLog();
+        EmailLog emailLog = new();
         try
         {
             emailLog = await emailLogsRepository.GetAsync(id);
@@ -286,10 +279,12 @@ public class EmailNotificationService(
     /// <param name="EmailLog">The email log to send to q</param>
     public async Task SendEmailToQueue(EmailLog emailLog)
     {
-        EmailNotificationEvent emailNotificationEvent = new EmailNotificationEvent();
-        emailNotificationEvent.Id = emailLog.Id;
-        emailNotificationEvent.TenantId = emailLog.TenantId;
-        emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
+        EmailNotificationEvent emailNotificationEvent = new()
+        {
+            Id = emailLog.Id,
+            TenantId = emailLog.TenantId,
+            RetryAttempts = emailLog.RetryAttempts
+        };
         await emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
