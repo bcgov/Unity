@@ -204,7 +204,14 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 else
                 {
                     DisposeChannel(channel);
-                    try { _channelSemaphore.Release(); } catch (ObjectDisposedException) { }
+                    try
+                    {
+                        _channelSemaphore.Release();
+                    }
+                    catch (ObjectDisposedException ex)
+                    {
+                        _logger.LogWarning(ex, "Attempted to release a disposed semaphore in CleanupIdleChannels.");
+                    }
                 }
             }
         }
