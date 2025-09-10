@@ -321,7 +321,7 @@ $(function () {
 
         tags.input.addEventListener('focusout', function (e) {
             // Don't close suggestions if clicking inside the suggestions container
-            if (e.relatedTarget && e.relatedTarget.closest('.tags-suggestion-container')) {
+            if (e.relatedTarget?.closest('.tags-suggestion-container')) {
                 return;
             }
             
