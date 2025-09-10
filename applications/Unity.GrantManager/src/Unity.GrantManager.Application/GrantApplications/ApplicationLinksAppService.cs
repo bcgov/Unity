@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -24,8 +23,7 @@ public class ApplicationLinksAppService : CrudAppService<
     public IApplicationRepository ApplicationRepository { get; set; } = null!;
     public IApplicationFormRepository ApplicationFormRepository { get; set; } = null!;
     public IApplicantRepository ApplicantRepository { get; set; } = null!;
-
-    // Constructor for the required repository
+    
     public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : base(repository) { }
 
     public async Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId)
@@ -362,7 +360,7 @@ public class ApplicationLinksAppService : CrudAppService<
     {
         var result = new ApplicationLinkValidationResult();
         
-        // Validate current app constraints
+        // Validate current app constraints on parent limits
         var currentAppHasErrorsOnParent = ValidateCurrentAppConstraints(proposedLinks);
         
         // Process each proposed link
@@ -394,7 +392,7 @@ public class ApplicationLinksAppService : CrudAppService<
     
     private static bool ValidateCurrentAppConstraints(List<ApplicationLinkValidationRequest> proposedLinks)
     {
-        // Check if proposed links would exceed parent/child limit (1 max)
+        // Check if proposed links would exceed parent limit (1 max)
         var parentChildCount = proposedLinks.Count(l => 
             l.LinkType == ApplicationLinkType.Parent);
             
@@ -412,7 +410,7 @@ public class ApplicationLinksAppService : CrudAppService<
 
         if(proposedLink.LinkType == ApplicationLinkType.Child)
         {
-            // If linking as child, check if target is already a parent from other links
+            // If linking as child, check if target is already a parent from other submissions
             return targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent);
         }
         else
