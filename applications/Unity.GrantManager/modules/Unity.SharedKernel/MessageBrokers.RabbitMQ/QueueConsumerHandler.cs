@@ -30,13 +30,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
             using var scope = _serviceProvider.CreateScope();
             var channelProvider = scope.ServiceProvider.GetRequiredService<IQueueChannelProvider<TQueueMessage>>();
-            var consumerChannel = channelProvider.GetChannel();
-
-            if (consumerChannel == null)
-            {
-                throw new QueueingException($"Failed to create consumer channel for {_queueName}");
-            }
-
+            var consumerChannel = channelProvider.GetChannel() ?? throw new QueueingException($"Failed to create consumer channel for {_queueName}");
             var consumer = new AsyncEventingBasicConsumer(consumerChannel);
             consumer.Received += HandleMessage;
 
@@ -51,9 +45,8 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
             catch (Exception ex)
             {
-                var msg = $"BasicConsume failed for Queue '{_queueName}'";
-                _logger.LogError(ex, msg);
-                throw new QueueingException(msg, ex);
+                _logger.LogError(ex, "BasicConsume failed for Queue '{Queue}'", _queueName);
+                throw new QueueingException($"BasicConsume failed for Queue '{_queueName}'", ex);
             }
         }
 
