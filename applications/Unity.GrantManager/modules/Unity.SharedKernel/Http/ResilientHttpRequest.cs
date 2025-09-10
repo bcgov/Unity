@@ -146,8 +146,7 @@ namespace Unity.Modules.Shared.Http
                     BackoffType = DelayBackoffType.Exponential,
                     OnRetry = args =>
                     {
-                        // Log retry attempts for debugging
-                        Console.WriteLine($"[{pipelineName}] Retry attempt {args.AttemptNumber} for request");
+                        // Retry attempt occurred for HTTP request
                         return ValueTask.CompletedTask;
                     }
                 });
@@ -339,7 +338,7 @@ namespace Unity.Modules.Shared.Http
                 }
 
                 var credentials = Convert.ToBase64String(
-                    Encoding.UTF8.GetBytes($"{username}:{password}"));
+                    Encoding.ASCII.GetBytes($"{username}:{password}"));
                 request.Headers.Add(AuthorizationHeader, $"Basic {credentials}");
             }
         }

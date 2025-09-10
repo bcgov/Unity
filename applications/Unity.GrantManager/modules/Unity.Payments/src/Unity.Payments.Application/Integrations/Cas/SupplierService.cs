@@ -184,7 +184,7 @@ namespace Unity.Payments.Integrations.Cas
                 SupplierSiteCode = supplierSiteCode,
                 AddressLine1 = addressLine1,
                 AddressLine2 = addressLine2,
-                AddressLine3 = addressLine2,
+                AddressLine3 = string.Empty,
                 City = city,
                 Province = province,
                 Country = country,
