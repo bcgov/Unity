@@ -18,9 +18,10 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         private readonly SemaphoreSlim _channelSemaphore = new(MaxChannels, MaxChannels);
         private readonly Timer _cleanupTimer;
         private readonly string _queueName = typeof(TQueueMessage).Name;
-        
+
         private volatile bool _disposed;
         private volatile bool _queueDeclared;
+        private readonly object _queueDeclareLock = new();
 
         private const int MaxChannels = 5000;
         private readonly TimeSpan _channelWaitTimeout = TimeSpan.FromSeconds(10);
@@ -81,14 +82,21 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     DisposeChannel(channel);
             }
 
-            try { _channelSemaphore.Release(); } catch (ObjectDisposedException) { }
+            try
+            {
+                _channelSemaphore.Release();
+            }
+            catch (ObjectDisposedException ex)
+            {
+                _logger.LogWarning(ex, "Attempted to release a disposed semaphore in ReturnChannel.");
+            }
         }
 
         private void EnsureQueueDeclared(IModel channel)
         {
             if (_queueDeclared) return;
 
-            lock (this)
+            lock (_queueDeclareLock)
             {
                 if (_queueDeclared) return;
 
@@ -100,7 +108,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to declare queue {QueueName}", _queueName);
-                    throw;
+                    throw new InvalidOperationException($"Failed to declare queue '{_queueName}'. See inner exception for details.", ex);
                 }
             }
         }
@@ -120,7 +128,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 }
                 else if (ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
                 {
-                    _logger.LogWarning("Queue {QueueName} exists with incompatible config, using compatibility mode", _queueName);
+                    _logger.LogWarning(ex, "Queue {QueueName} exists with incompatible config, using compatibility mode", _queueName);
                     BindToExchange(channel);
                 }
                 else
@@ -138,7 +146,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
             // Create dead letter setup
             channel.ExchangeDeclare(dlxName, ExchangeType.Direct, durable: true);
-            channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false, 
+            channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false,
                 new Dictionary<string, object> { { "x-queue-type", "quorum" }, { "x-overflow", "reject-publish" } });
             channel.QueueBind(dlqName, dlxName, dlqName);
 
