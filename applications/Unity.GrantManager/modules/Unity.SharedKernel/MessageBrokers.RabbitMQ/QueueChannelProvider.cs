@@ -117,18 +117,49 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         {
             try
             {
-                channel.QueueDeclarePassive(_queueName);
+                var dlxName = $"{_queueName}.dlx";
+                var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
+
+                // Ensure DLX exchange exists
+                channel.ExchangeDeclare(dlxName, ExchangeType.Direct, durable: true);
+
+                // Ensure DLQ exists and is bound to DLX
+                channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false,
+                    arguments: new Dictionary<string, object>
+                    {
+                        { "x-queue-type", "quorum" },
+                        { "x-overflow", "reject-publish" }
+                    });
+                channel.QueueBind(dlqName, dlxName, dlqName);
+
+                // Declare main queue with DLX args
+                channel.QueueDeclare(
+                    _queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: new Dictionary<string, object>
+                    {
+                        { "x-queue-type", "quorum" },
+                        { "x-overflow", "reject-publish" },
+                        { "x-dead-letter-exchange", dlxName },
+                        { "x-dead-letter-routing-key", dlqName },
+                        { "x-dead-letter-strategy", "at-least-once" },
+                        { "x-delivery-limit", 10 }
+                    });
+
                 BindToExchange(channel);
             }
             catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex)
             {
-                if (ex.ShutdownReason.ReplyCode == 404)
+                if (ex.ShutdownReason.ReplyCode == 406 &&
+                    ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
                 {
-                    CreateQueueWithDeadLetter(channel);
-                }
-                else if (ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
-                {
-                    _logger.LogWarning(ex, "Queue {QueueName} exists with incompatible config, using compatibility mode", _queueName);
+                    _logger.LogWarning(
+                        ex,
+                        "Queue {QueueName} exists with incompatible config. Using existing queue in compatibility mode.",
+                        _queueName);
+
                     BindToExchange(channel);
                 }
                 else
@@ -136,33 +167,6 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     throw;
                 }
             }
-        }
-
-        private void CreateQueueWithDeadLetter(IModel channel)
-        {
-            var dlxName = $"{_queueName}.dlx";
-            var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
-            var mainExchange = $"{_queueName}.exchange";
-
-            // Create dead letter setup
-            channel.ExchangeDeclare(dlxName, ExchangeType.Direct, durable: true);
-            channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false,
-                new Dictionary<string, object> { { "x-queue-type", "quorum" }, { "x-overflow", "reject-publish" } });
-            channel.QueueBind(dlqName, dlxName, dlqName);
-
-            // Create main queue with dead letter
-            channel.ExchangeDeclare(mainExchange, ExchangeType.Direct, durable: true);
-            channel.QueueDeclare(_queueName, durable: true, exclusive: false, autoDelete: false,
-                new Dictionary<string, object>
-                {
-                    { "x-queue-type", "quorum" },
-                    { "x-overflow", "reject-publish" },
-                    { "x-dead-letter-exchange", dlxName },
-                    { "x-dead-letter-routing-key", dlqName },
-                    { "x-dead-letter-strategy", "at-least-once" },
-                    { "x-delivery-limit", 10 }
-                });
-            channel.QueueBind(_queueName, mainExchange, _queueName);
         }
 
         private void BindToExchange(IModel channel)
