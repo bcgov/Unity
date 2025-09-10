@@ -10,7 +10,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
     public sealed class PooledChannelProvider(
         IConnectionProvider connectionProvider,
         ILogger<PooledChannelProvider> logger,
-        int maxChannels = PooledChannelProvider.DefaultMaxChannels) : IChannelProvider, IDisposable
+        int maxChannels = PooledChannelProvider.DefaultMaxChannels) : IChannelProvider
     {
         private readonly IConnectionProvider _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
         private readonly ILogger<PooledChannelProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -10,7 +10,7 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
     public class PooledQueueChannelProvider<TQueueMessage>(IChannelProvider channelProvider,
-                                      ILogger<PooledQueueChannelProvider<TQueueMessage>> logger) : IQueueChannelProvider<TQueueMessage>, IDisposable
+                                      ILogger<PooledQueueChannelProvider<TQueueMessage>> logger) : IQueueChannelProvider<TQueueMessage>
         where TQueueMessage : IQueueMessage
     {
         private readonly IChannelProvider _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));
@@ -19,7 +19,9 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         private readonly SemaphoreSlim _channelSemaphore = new(MaxChannels, MaxChannels);
         private readonly string _queueName = typeof(TQueueMessage).Name;
         private bool _disposed;
+
         private const int MaxChannels = 10000;
+        private readonly TimeSpan _channelWaitTimeout = TimeSpan.FromSeconds(10); // Timeout for GetChannel()
 
         /// <summary>
         /// Get a channel from the pool or create a new one
@@ -28,7 +30,11 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         {
             ObjectDisposedException.ThrowIf(_disposed, nameof(PooledQueueChannelProvider<TQueueMessage>));
 
-            _channelSemaphore.Wait(); // Wait for an available slot
+            // Wait for an available slot, fail gracefully if timeout
+            if (!_channelSemaphore.Wait(_channelWaitTimeout))
+            {
+                throw new TimeoutException($"Unable to acquire a RabbitMQ channel for queue {_queueName} within {_channelWaitTimeout.TotalSeconds} seconds.");
+            }
 
             try
             {
@@ -47,7 +53,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
             catch
             {
-                _channelSemaphore.Release(); // Release if failed
+                _channelSemaphore.Release(); // Release semaphore if failed
                 throw;
             }
         }
@@ -144,28 +150,53 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        private static void DisposeChannel(IModel channel)
+        private void DisposeChannel(IModel channel)
         {
             if (channel == null) return;
 
-            try { if (channel.IsOpen) channel.Close(); } catch { }
-            try { channel.Dispose(); } catch { }
+            try
+            {
+                if (channel.IsOpen) channel.Close();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error closing channel.");
+            }
+
+            try
+            {
+                channel.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error disposing channel.");
+            }
         }
 
+        /// <summary>
+        /// Dispose pattern with finalizer suppression
+        /// </summary>
         public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
             _disposed = true;
 
-            while (_channelPool.TryDequeue(out var channel))
+            if (disposing)
             {
-                DisposeChannel(channel);
+                while (_channelPool.TryDequeue(out var channel))
+                {
+                    DisposeChannel(channel);
+                }
+
+                _channelSemaphore.Dispose();
             }
-
-            _channelSemaphore.Dispose();
-
-            // Prevent the GC from calling a finalizer
-            GC.SuppressFinalize(this);
+            // No unmanaged resources to clean up
         }
 
         public string QueueName => _queueName;
