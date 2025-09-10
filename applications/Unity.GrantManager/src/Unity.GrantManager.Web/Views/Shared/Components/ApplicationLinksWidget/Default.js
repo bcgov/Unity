@@ -371,7 +371,6 @@ $(function () {
                         <div id="validationSummaryContainer" class="validation-summary alert alert-danger" role="alert">
                             <i class="fa fa-exclamation-triangle validation-summary-icon"></i>
                             <strong>Validation Error:</strong> <span id="validationErrorCount">${errorCount}</span> link(s) cannot be saved. 
-                            Cannot link submissions that are already connected as either a child or parent. 
                             Please remove the highlighted links.
                         </div>
                     `;
@@ -879,25 +878,6 @@ $(function () {
 
         // Setup form submission
         setupFormSubmission();
-        
-        // Add handler for link type dropdown change
-        $('#linkTypeSelect').on('change', function() {
-            const newType = $(this).val();
-            
-            // When changing type, update any newly added links that don't have a type yet
-            currentLinks.forEach(link => {
-                if (link.isNew && !link.isExisting) {
-                    link.linkType = newType;
-                }
-            });
-            
-            // Re-validate if changing to/from Parent/Child
-            const shouldValidate = newType !== 'Related' || currentLinks.some(l => l.linkType !== 'Related');
-            
-            if (shouldValidate) {
-                validateAllLinks();
-            }
-        });
         
         // Validate existing Parent/Child links on load
         const hasParentChildLinks = currentLinks.some(link => link.linkType !== 'Related');
