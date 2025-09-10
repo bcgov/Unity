@@ -355,4 +355,50 @@ public class ApplicationLinksAppService : CrudAppService<
         }
         
     }
+
+    public async Task<ApplicationLinkValidationResult> ValidateApplicationLinksAsync(
+        Guid currentApplicationId, 
+        List<ApplicationLinkValidationRequest> proposedLinks)
+    {
+        var result = new ApplicationLinkValidationResult();
+        
+        // Validate current app constraints
+        var currentAppHasErrors = ValidateCurrentAppConstraints(proposedLinks);
+        
+        // Process each proposed link
+        foreach (var proposedLink in proposedLinks)
+        {
+            if (proposedLink.LinkType == ApplicationLinkType.Related)
+                continue;
+            
+            bool hasError = currentAppHasErrors || await ValidateTargetAppConflicts(currentApplicationId, proposedLink);
+            result.ValidationErrors[proposedLink.ReferenceNumber] = hasError;
+        }
+        
+        return result;
+    }
+    
+    private static bool ValidateCurrentAppConstraints(List<ApplicationLinkValidationRequest> proposedLinks)
+    {
+        // Check if proposed links would exceed parent/child limit (1 max)
+        var parentChildCount = proposedLinks.Count(l => 
+            l.LinkType == ApplicationLinkType.Parent || 
+            l.LinkType == ApplicationLinkType.Child);
+            
+        return parentChildCount > 1;
+    }
+    
+    private async Task<bool> ValidateTargetAppConflicts(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
+    {
+        var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
+        
+        // Exclude reverse links and self-references
+        var targetExternalLinks = targetLinks.Where(l => 
+            l.ApplicationId != currentApplicationId && 
+            l.ApplicationId != proposedLink.TargetApplicationId).ToList();
+        
+        return targetExternalLinks.Any(l => 
+            l.LinkType == ApplicationLinkType.Parent || 
+            l.LinkType == ApplicationLinkType.Child);
+    }
 }
