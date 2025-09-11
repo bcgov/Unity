@@ -233,7 +233,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
         {
             try
             {
-                if (links == null || !links.Any())
+                if (links == null || links.Count == 0)
                 {
                     return new JsonResult(new ApplicationLinkValidationResult());
                 }
