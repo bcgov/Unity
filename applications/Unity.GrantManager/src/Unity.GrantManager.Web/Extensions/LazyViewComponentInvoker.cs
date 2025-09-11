@@ -109,23 +109,24 @@ namespace Unity.GrantManager.Web.Extensions
         
         private static string GenerateGenericSkeleton()
         {
-            return @"
-                <div class='skeleton-loader skeleton-generic'>
-                    <div class='skeleton-card'>
-                        <div class='skeleton-header'></div>
-                        <div class='skeleton-line'></div>
-                        <div class='skeleton-line short'></div>
-                        <div class='skeleton-line'></div>
-                        <div class='skeleton-line'></div>
-                        <div class='skeleton-line short'></div>
-                        <div class='skeleton-line'></div>
-                    </div>
-                </div>";
+            const string skeletonHtml = @"
+            <div class='skeleton-loader skeleton-generic'>
+                <div class='skeleton-card'>
+                <div class='skeleton-header'></div>
+                <div class='skeleton-line'></div>
+                <div class='skeleton-line short'></div>
+                <div class='skeleton-line'></div>
+                <div class='skeleton-line'></div>
+                <div class='skeleton-line short'></div>
+                <div class='skeleton-line'></div>
+                </div>
+            </div>";
+            return skeletonHtml;
         }
 
         private static string GenerateCustomTabSkeleton()
         {
-            return @"
+            const string skeletonHtml = @"
                 <div class='skeleton-loader skeleton-custom-tab'>
                     <div class='skeleton-card'>
                         <div class='skeleton-header-large'></div>
@@ -146,7 +147,8 @@ namespace Unity.GrantManager.Web.Extensions
                             <div class='skeleton-button'></div>
                         </div>
                     </div>
-                </div>";
+                </div>"; 
+            return skeletonHtml;
         }
 
         private static string BuildQueryString(object arguments)

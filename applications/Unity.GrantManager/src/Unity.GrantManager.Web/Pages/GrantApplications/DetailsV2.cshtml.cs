@@ -211,7 +211,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             };
         }
 
-        private JsonResult? ValidateParameters(Guid applicationId, string component, ComponentParameters parameters)
+        private static JsonResult? ValidateParameters(Guid applicationId, string component, ComponentParameters parameters)
         {
             if (applicationId == Guid.Empty)
             {
