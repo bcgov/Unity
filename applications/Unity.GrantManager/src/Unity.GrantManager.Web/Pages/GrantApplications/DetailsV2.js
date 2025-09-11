@@ -34,10 +34,6 @@ $(function () {
 
     initializeDetailsPage();
 
-    /****lazy loading start *****/
-    // ADD LAZY LOADING FUNCTIONALITY HERE
-    console.log('DetailsV2 with lazy ViewComponents initialized');
-
     // Handle Bootstrap tab activation for right-side tabs (not ABP tabs)
     $('#myTabContent')
         .closest('.right-card')
@@ -94,6 +90,12 @@ $(function () {
 
         // Multiple strategies to find the tab pane - ABP tabs can have different structures
         let tabPane = $(`#${tabName}`); // Should find #history, #attachments, etc.
+
+        // For custom tabs, also try finding by nav-* prefix
+        if (tabPane.length === 0 && tabName.startsWith('nav-')) {
+            const customTabName = tabName.replace('nav-', '');
+            tabPane = $(`[name="${customTabName}"]`);
+        }
 
         if (tabPane.length > 0) {
             console.log(`Found tab pane by ID: ${tabName}`);
@@ -209,6 +211,10 @@ $(function () {
         ApplicationAttachments: {
             js: '/Views/Shared/Components/ApplicationAttachments/ApplicationAttachments.js',
             css: '/Views/Shared/Components/ApplicationAttachments/ApplicationAttachments.css',
+        },
+        CustomTabWidget: {
+            js: '/Views/Shared/Components/CustomTabWidget/Default.js',
+            css: '/Views/Shared/Components/CustomTabWidget/Default.css',
         },
     };
 
@@ -590,6 +596,9 @@ $(function () {
             case 'ApplicationAttachments':
                 initializeApplicationAttachments($content);
                 break;
+            case 'CustomTabWidget':
+                initializeCustomTabWidget($content);
+                break;
             default:
                 console.log(
                     `Component ${componentName} loaded - no specific initialization needed`
@@ -620,7 +629,6 @@ $(function () {
 
     function initializeProjectInfo($content) {
         console.log('Initializing Project Info component');
-        // Add any project info specific JavaScript here
     }
 
     function initializeApplicantInfo($content) {
@@ -672,6 +680,33 @@ $(function () {
             } else {
                 console.error(
                     'initializeApplicationAttachments function not available'
+                );
+            }
+        }, 300);
+    }
+
+    function initializeCustomTabWidget($content) {
+        console.log(
+            'Initializing Custom Tab Widget component for lazy loading'
+        );
+
+        setTimeout(() => {
+            if (typeof window.initializeCustomTabWidget === 'function') {
+                const $container = $content.closest(
+                    '.lazy-component-container'
+                );
+                const tabName = $container.data('tab') || 'custom-tab';
+
+                console.log(
+                    `Calling initializeCustomTabWidget with container:`,
+                    $content,
+                    `tabName:`,
+                    tabName
+                );
+                window.initializeCustomTabWidget($content, tabName);
+            } else {
+                console.error(
+                    'initializeCustomTabWidget function not available'
                 );
             }
         }, 300);

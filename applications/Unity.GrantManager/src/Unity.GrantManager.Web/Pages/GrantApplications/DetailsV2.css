@@ -1,6 +1,63 @@
 @import url('Details.css');
 
 /* Skeleton Loader Styles */
+.skeleton-custom-tab .skeleton-header-large {
+    height: 24px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    width: 60%;
+}
+
+.skeleton-form-group {
+    margin-bottom: 16px;
+}
+
+.skeleton-label {
+    height: 14px;
+    width: 30%;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.skeleton-input {
+    height: 38px;
+    width: 100%;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-textarea {
+    height: 80px;
+    width: 100%;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.skeleton-button {
+    height: 36px;
+    width: 120px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+}
+
 .skeleton-loader {
     animation: skeleton-loading 1.5s infinite ease-in-out;
     padding: 1rem;
