@@ -24,6 +24,8 @@ public class ApplicantSummaryViewModel
     [SelectItems(nameof(ApplicantInfoViewModel.OrganizationTypeList))]
     public string? OrganizationType { get; set; }
 
+    [Display(Name = "ApplicantInfoView:ApplicantInfo.BusinessNumber")]
+    public string? BusinessNumber { get; set; }
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.NonRegOrgName")]
     public string? NonRegOrgName { get; set; }
