@@ -1,11 +1,11 @@
 $(function () {
     const UIElements = {
         tables: $('.custom-dynamic-table'),
-        tableSearches: $('.custom-tbl-search')
+        tableSearches: $('.custom-tbl-search'),
     };
 
     let editDatagridRowModal = new abp.ModalManager({
-        viewUrl: '../Components/DataGrid/EditDataRowModal'
+        viewUrl: '../Components/DataGrid/EditDataRowModal',
     });
 
     // Function to handle new row addition
@@ -22,11 +22,13 @@ $(function () {
         // Create the edit button HTML and append it to the last cell of the new row
         $(newRowNode).find('td:last').html(getEditRowButtonTemplate());
 
-        // Attach click event handler to the newly added button 
-        $(newRowNode).find('.row-edit-btn').on('click', function () {
-            let button = this; // `this` refers to the button element 
-            editDataRow(button);
-        });
+        // Attach click event handler to the newly added button
+        $(newRowNode)
+            .find('.row-edit-btn')
+            .on('click', function () {
+                let button = this; // `this` refers to the button element
+                editDataRow(button);
+            });
 
         abp.notify.success('Row added successfully.', 'New Row');
     }
@@ -40,7 +42,8 @@ $(function () {
     function resetTableAttributes(row, response) {
         let table = row.closest('table');
 
-        table.attr('data-value-id', response.responseText.valueId)
+        table
+            .attr('data-value-id', response.responseText.valueId)
             .attr('data-field-id', response.responseText.fieldId)
             .attr('data-wsi-id', response.responseText.worksheetInstanceId)
             .attr('data-ws-id', response.responseText.worksheetId)
@@ -54,7 +57,10 @@ $(function () {
 
         // Set the worksheet instance ID for these tables
         otherTables.each(function () {
-            $(this).attr('data-wsi-id', response.responseText.worksheetInstanceId);
+            $(this).attr(
+                'data-wsi-id',
+                response.responseText.worksheetInstanceId
+            );
         });
     }
 
@@ -83,10 +89,16 @@ $(function () {
 
         if (isNewRow) {
             // Convert dataToUpdate object to an array of values in the same order as the columns
-            let newRowData = table.columns().header().toArray().map(header => {
-                let columnName = $(header).text();
-                return dataToUpdate[columnName] !== undefined ? dataToUpdate[columnName] : '';
-            });
+            let newRowData = table
+                .columns()
+                .header()
+                .toArray()
+                .map((header) => {
+                    let columnName = $(header).text();
+                    return dataToUpdate[columnName] !== undefined
+                        ? dataToUpdate[columnName]
+                        : '';
+                });
 
             // Add a placeholder for the button in the last column
             newRowData.push('');
@@ -107,45 +119,55 @@ $(function () {
 
     // Function to update totals
     function updateTotals(table, fieldId) {
-        // Iterate through each input field that has the id pattern 'total-{key}'
         $('#summary-' + fieldId + ' input[id^="total-"]').each(function () {
             let inputId = $(this).attr('id');
             let key = inputId.replace('total-', '');
-            let total = 0;
-            let headerFound = false;
-
-            // Find the corresponding column in the DataTable by matching the key
-            table.columns().header().each(function (header, index) {
-                if ($(header).text() === key) {
-                    headerFound = true;
-                    // Sum up all numeric values in the column
-                    table.column(index).data().each(function (value, rowIndex) {
-                        // Remove currency symbols and commas for numeric check
-                        let cleanedValue = value.replace(/[^\d.-]/g, '');
-
-                        if (isNumeric(cleanedValue)) {
-                            total += parseFloat(cleanedValue);
-                        }
-                    });
-                }
-            });
-
-            // Update the input field with the calculated total only if the header is found 
-            if (headerFound) {
-                if ($(this).data('field-type') === 'Currency') {
-                    $(this).val(formatCurrency(total));
-                }
-                else {
-                    $(this).val(total);
-                }
+            let total = calculateColumnTotal(table, key);
+            if (total !== null) {
+                setTotalInputValue($(this), total);
             }
         });
     }
 
-    // Function to format currency as CAD 
+    function calculateColumnTotal(table, key) {
+        let total = 0;
+        let headerFound = false;
+        table
+            .columns()
+            .header()
+            .each(function (header, index) {
+                if ($(header).text() === key) {
+                    headerFound = true;
+                    table
+                        .column(index)
+                        .data()
+                        .each(function (value) {
+                            let cleanedValue = value.replace(/[^\d.-]/g, '');
+                            if (isNumeric(cleanedValue)) {
+                                total += parseFloat(cleanedValue);
+                            }
+                        });
+                }
+            });
+        return headerFound ? total : null;
+    }
+
+    function setTotalInputValue($input, total) {
+        if ($input.data('field-type') === 'Currency') {
+            $input.val(formatCurrency(total));
+        } else {
+            $input.val(total);
+        }
+    }
+
+    // Function to format currency as CAD
     function formatCurrency(value) {
-        return new Intl.NumberFormat('en-CA',
-            { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+        return new Intl.NumberFormat('en-CA', {
+            style: 'currency',
+            currency: 'CAD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(value);
     }
 
     // Function to check if a value is numeric
@@ -160,17 +182,19 @@ $(function () {
             if ($(headers[i]).text() === columnName) {
                 return i;
             }
-        } return -1; // Return -1 if the column is not found 
+        }
+        return -1; // Return -1 if the column is not found
     }
 
-    function openEditDatagridRowModal(valueId,
+    function openEditDatagridRowModal(
+        valueId,
         fieldId,
         worksheetId,
         worksheetInstanceId,
         row,
         isNew,
-        uiAnchor) {
-
+        uiAnchor
+    ) {
         let formVersionId = $('#ApplicationFormVersionId').val();
         let applicationId = $('#DetailsViewApplicationId').val();
 
@@ -184,7 +208,7 @@ $(function () {
             // There is dependency here on the core module and details page !
             formVersionId: formVersionId,
             applicationId: applicationId,
-            uiAnchor: uiAnchor
+            uiAnchor: uiAnchor,
         });
     }
 
@@ -202,14 +226,16 @@ $(function () {
                 let tableElement = $('#' + tableId);
                 let tableDataSet = tableElement[0].dataset;
 
-                openEditDatagridRowModal(tableDataSet.valueId,
+                openEditDatagridRowModal(
+                    tableDataSet.valueId,
                     tableDataSet.fieldId,
                     tableDataSet.wsId,
                     tableDataSet.wsiId,
                     0,
                     true,
-                    tableDataSet.wsAnchor);
-            }
+                    tableDataSet.wsAnchor
+                );
+            },
         },
         {
             id: 'ExportData',
@@ -220,7 +246,7 @@ $(function () {
             exportOptions: {
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
-            }
+            },
         },
     ];
 
@@ -243,15 +269,17 @@ $(function () {
                 lengthChange: false,
                 dom: 'Bftip',
                 buttons: configureButtons($element[0].id),
-                order: [[0, 'desc']]
+                order: [[0, 'desc']],
             });
             configureTable(table, $element[0].id);
         });
     }
 
     function configureButtons(fieldId) {
-        let options = ($(`#table-options-${fieldId}`).val()).split(',');
-        let availableOptions = actionButtons.filter(item => options.includes(item.id));
+        let options = $(`#table-options-${fieldId}`).val().split(',');
+        let availableOptions = actionButtons.filter((item) =>
+            options.includes(item.id)
+        );
         return availableOptions;
     }
 
@@ -259,32 +287,47 @@ $(function () {
         table.buttons().container().prependTo(`#btn-container-${fieldId}`);
         let knownColumns = [];
 
-        table.columns().header().to$().each(function (index) {
-            let isActions = $(this).hasClass('custom-actions-header');
-            if ($(this).text() != '' && !isActions) {
-                knownColumns.push({ title: $(this).text(), visible: true, index: index + 1, isActions: isActions });
-            }
-        });
+        table
+            .columns()
+            .header()
+            .to$()
+            .each(function (index) {
+                let isActions = $(this).hasClass('custom-actions-header');
+                if ($(this).text() != '' && !isActions) {
+                    knownColumns.push({
+                        title: $(this).text(),
+                        visible: true,
+                        index: index + 1,
+                        isActions: isActions,
+                    });
+                }
+            });
 
         table.button().add(actionButtons.length + 1, {
             text: 'Columns',
             extend: 'collection',
             buttons: getColumnToggleButtonsSorted(knownColumns, table),
-            className: 'custom-table-btn flex-none btn btn-secondary'
+            className: 'custom-table-btn flex-none btn btn-secondary',
         });
 
         table.columns().every(function (index) {
-            if (index === table.columns().count() - 1) { // Check if it is the last column
+            if (index === table.columns().count() - 1) {
+                // Check if it is the last column
                 table.column(index).header().innerHTML = 'Actions'; // Update column header if needed
-                table.column(index).nodes().each(function (cell) {
-                    cell.innerHTML = getEditRowButtonTemplate(); // Add edit button to each cell
+                table
+                    .column(index)
+                    .nodes()
+                    .each(function (cell) {
+                        cell.innerHTML = getEditRowButtonTemplate(); // Add edit button to each cell
 
-                    // Attach click event handler to the newly added button 
-                    $(cell).find('.row-edit-btn').on('click', function () {
-                        let button = this; // `this` refers to the button element 
-                        editDataRow(button);
+                        // Attach click event handler to the newly added button
+                        $(cell)
+                            .find('.row-edit-btn')
+                            .on('click', function () {
+                                let button = this; // `this` refers to the button element
+                                editDataRow(button);
+                            });
                     });
-                });
             }
         });
     }
@@ -314,20 +357,19 @@ $(function () {
         let table = $(button).closest('table');
         let tableDataSet = table[0].dataset;
 
-        openEditDatagridRowModal(tableDataSet.valueId,
+        openEditDatagridRowModal(
+            tableDataSet.valueId,
             tableDataSet.fieldId,
             tableDataSet.wsId,
             tableDataSet.wsiId,
             rowDataSet.rowNo,
             false,
-            tableDataSet.uiAnchor);
+            tableDataSet.uiAnchor
+        );
     }
 
-    PubSub.subscribe(
-        'worksheet_preview_datagrid_refresh',
-        () => {
-            // refresh the dom elements binding and init the datagrid view
-            buildDataTables($('.custom-dynamic-table'));
-        }
-    );
+    PubSub.subscribe('worksheet_preview_datagrid_refresh', () => {
+        // refresh the dom elements binding and init the datagrid view
+        buildDataTables($('.custom-dynamic-table'));
+    });
 });
