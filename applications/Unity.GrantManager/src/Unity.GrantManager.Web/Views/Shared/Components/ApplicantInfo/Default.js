@@ -228,6 +228,7 @@ $(function () {
             OrgNumber: getVal('ApplicantSummary_OrgNumber'),
             NonRegOrgName: getVal('ApplicantSummary_NonRegOrgName'),
             OrganizationType: getVal('ApplicantSummary_OrganizationType'),
+            BusinessNumber: getVal('ApplicantSummary_BusinessNumber'),
             OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
             OrgStatus: getVal('ApplicantSummary_OrgStatus'),
             IndigenousOrgInd: $('#ApplicantSummary_IndigenousOrgInd').is(':checked') ? 'Yes' : 'No',
@@ -246,6 +247,7 @@ $(function () {
             OrgNumber: selectedData.OrgNumber || '',
             NonRegOrgName: selectedData.NonRegOrgName || '',
             OrganizationType: selectedData.OrganizationType || '',
+            BusinessNumber: selectedData.BusinessNumber || '',
             OrganizationSize: selectedData.OrganizationSize || '',
             OrgStatus: selectedData.OrgStatus || '',
             IndigenousOrgInd: selectedData.IndigenousOrgInd || '',
@@ -392,6 +394,7 @@ $(document).on('click', '#btnClearOrgbook', function (e) {
     $f.find('#ApplicantSummary_OrgNumber').val('').trigger('change');
     $f.find('#ApplicantSummary_OrgStatus').val('').trigger('change');
     $f.find('#ApplicantSummary_OrganizationType').val('').trigger('change');
+    $f.find('#ApplicantSummary_BusinessNumber').val('').trigger('change');
 
     $('#orgBookSelect').val(null).trigger('change');
 });
@@ -469,17 +472,20 @@ function registerApplicantInfoSummaryDropdowns($container) {
             let entry_status = getAttributeObjectByType("entity_status", response.attributes);
             let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
             let entity_type = getAttributeObjectByType("entity_type", response.attributes);
+            let business_number = getAttributeObjectByType("business_number", response.names);
 
             $container.find('#ApplicantSummary_OrgName').val(response.names[0].text).trigger('change');
             $container.find('#ApplicantSummary_OrgNumber').val(orgBookId).trigger('change');
             $container.find('#ApplicantSummary_OrgStatus').val(org_status).trigger('change');
             $container.find('#ApplicantSummary_OrganizationType').val(entity_type.value).trigger('change');
+            $container.find('#ApplicantSummary_BusinessNumber').val(business_number.text).trigger('change');
         });
     });
 }
 
 function getAttributeObjectByType(type, attributes) {
-    return attributes.find(attr => attr.type === type);
+    if (!Array.isArray(attributes))  return { type: '', value: '', text: '' };
+    return attributes.find(attr => attr.type === type) || { type: '', value: '', text: '' };
 }
 
 let electoralDistrictLocked = true; // Default: locked

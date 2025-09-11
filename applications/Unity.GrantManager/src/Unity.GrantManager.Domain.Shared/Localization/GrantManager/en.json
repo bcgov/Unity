@@ -392,6 +392,7 @@
     "ApplicantInfoView:ApplicantInfo.SigningAuthorityCellPhone": "Phone",
     "ApplicantInfoView:ApplicantInfo.OrgName": "Registered Organization Name",
     "ApplicantInfoView:ApplicantInfo.OrgNumber": "Registered Organization Number",
+    "ApplicantInfoView:ApplicantInfo.BusinessNumber": "Business Number",
     "ApplicantInfoView:ApplicantInfo.OrgBookStatus": "Org book status ",
     "ApplicantInfoView:ApplicantInfo.OrganizationType": "Organization Type",
     "ApplicantInfoView:ApplicantInfo.OrganizationSize": "Organization Size",
