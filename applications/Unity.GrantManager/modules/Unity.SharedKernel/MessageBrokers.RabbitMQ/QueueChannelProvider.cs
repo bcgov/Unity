@@ -1,172 +1,236 @@
-﻿using RabbitMQ.Client;
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Extensions.Logging;
+using RabbitMQ.Client;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
-using System.Threading;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public class QueueChannelProvider<TQueueMessage>(IChannelProvider channelProvider, ILogger<QueueChannelProvider<TQueueMessage>> logger) : IQueueChannelProvider<TQueueMessage>
+    public sealed class PooledQueueChannelProvider<TQueueMessage> : IQueueChannelProvider<TQueueMessage>
         where TQueueMessage : IQueueMessage
     {
-        private readonly IChannelProvider _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));
-        private readonly ILogger<QueueChannelProvider<TQueueMessage>> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly Lock _lock = new();
-        private IModel? _channel;
-        private bool _disposed;
-        private bool _queuesDeclared;
+        private readonly IChannelProvider _channelProvider;
+        private readonly ILogger<PooledQueueChannelProvider<TQueueMessage>> _logger;
+        private readonly ConcurrentQueue<IModel> _channelPool = new();
+        private readonly SemaphoreSlim _channelSemaphore = new(MaxChannels, MaxChannels);
+        private readonly Timer _cleanupTimer;
         private readonly string _queueName = typeof(TQueueMessage).Name;
+
+        private volatile bool _disposed;
+        private volatile bool _queueDeclared;
+        private readonly object _queueDeclareLock = new();
+
+        private const int MaxChannels = 5000;
+        private readonly TimeSpan _channelWaitTimeout = TimeSpan.FromSeconds(10);
+
+        public PooledQueueChannelProvider(
+            IChannelProvider channelProvider,
+            ILogger<PooledQueueChannelProvider<TQueueMessage>> logger)
+        {
+            _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            _cleanupTimer = new Timer(_ => CleanupIdleChannels(), null,
+                TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        }
 
         public IModel GetChannel()
         {
-            ObjectDisposedException.ThrowIf(_disposed, typeof(QueueChannelProvider<TQueueMessage>));
+            ObjectDisposedException.ThrowIf(_disposed, nameof(PooledQueueChannelProvider<TQueueMessage>));
 
-            lock (_lock)
+            if (!_channelSemaphore.Wait(_channelWaitTimeout))
             {
-                if (_channel == null || !_channel.IsOpen)
+                throw new TimeoutException(
+                    $"Unable to acquire a channel for queue {_queueName} within {_channelWaitTimeout.TotalSeconds} seconds.");
+            }
+
+            try
+            {
+                // Try to get an existing channel
+                while (_channelPool.TryDequeue(out var pooled))
                 {
-                    _channel?.Dispose();
-                    _channel = _channelProvider.GetChannel();
-                    _queuesDeclared = false;
+                    if (pooled.IsOpen)
+                        return pooled;
+
+                    DisposeChannel(pooled);
                 }
 
-                if (_channel == null || !_channel.IsOpen)
-                    throw new InvalidOperationException("Failed to get a valid RabbitMQ channel");
-
-                if (!_queuesDeclared)
-                {
-                    DeclareQueueAndDeadLetter(_channel);
-                    _queuesDeclared = true;
-                }
-
-                return _channel;
+                // Create new channel
+                var channel = _channelProvider.GetChannel() ?? throw new InvalidOperationException("Channel cannot be null.");
+                EnsureQueueDeclared(channel);
+                return channel;
+            }
+            catch
+            {
+                _channelSemaphore.Release();
+                throw;
             }
         }
 
-        private void DeclareQueueAndDeadLetter(IModel channel)
+        public void ReturnChannel(IModel channel)
+        {
+            if (channel?.IsOpen == true && !_disposed)
+            {
+                _channelPool.Enqueue(channel);
+            }
+            else
+            {
+                if (channel != null)
+                    DisposeChannel(channel);
+            }
+
+            try
+            {
+                _channelSemaphore.Release();
+            }
+            catch (ObjectDisposedException ex)
+            {
+                _logger.LogWarning(ex, "Attempted to release a disposed semaphore in ReturnChannel.");
+            }
+        }
+
+        private void EnsureQueueDeclared(IModel channel)
+        {
+            if (_queueDeclared) return;
+
+            lock (_queueDeclareLock)
+            {
+                if (_queueDeclared) return;
+
+                try
+                {
+                    DeclareQueue(channel);
+                    _queueDeclared = true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to declare queue {QueueName}", _queueName);
+                    throw new InvalidOperationException($"Failed to declare queue '{_queueName}'. See inner exception for details.", ex);
+                }
+            }
+        }
+
+        private void DeclareQueue(IModel channel)
         {
             try
             {
-                // First, try to declare the queue as passive to check if it exists
-                try
+                var dlxName = $"{_queueName}.dlx";
+                var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
+
+                // Ensure DLX exchange exists
+                channel.ExchangeDeclare(dlxName, ExchangeType.Direct, durable: true);
+
+                // Ensure DLQ exists and is bound to DLX
+                channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false,
+                    arguments: new Dictionary<string, object>
+                    {
+                        { "x-queue-type", "quorum" },
+                        { "x-overflow", "reject-publish" }
+                    });
+                channel.QueueBind(dlqName, dlxName, dlqName);
+
+                // Declare main queue with DLX args
+                channel.QueueDeclare(
+                    _queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: new Dictionary<string, object>
+                    {
+                        { "x-queue-type", "quorum" },
+                        { "x-overflow", "reject-publish" },
+                        { "x-dead-letter-exchange", dlxName },
+                        { "x-dead-letter-routing-key", dlqName },
+                        { "x-dead-letter-strategy", "at-least-once" },
+                        { "x-delivery-limit", 10 }
+                    });
+
+                BindToExchange(channel);
+            }
+            catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex)
+            {
+                if (ex.ShutdownReason.ReplyCode == 406 &&
+                    ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
                 {
-                    channel.QueueDeclarePassive(_queueName);
-                    // Queue exists and is compatible, just declare exchange and binding
-                    DeclareCompatibleQueue(channel);
-                    return;
+                    _logger.LogWarning(
+                        ex,
+                        "Queue {QueueName} exists with incompatible config. Using existing queue in compatibility mode.",
+                        _queueName);
+
+                    BindToExchange(channel);
                 }
-                catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex)
+                else
                 {
-                    // The channel is now closed. Get a new one immediately.
-                    _channel?.Dispose();
-                    _channel = _channelProvider.GetChannel();
-                    channel = _channel ?? throw new InvalidOperationException("Failed to get a new RabbitMQ channel after an error.");
-
-                    // Check the reason for the exception
-                    if (ex.ShutdownReason.ReplyCode == 404)
-                    {
-                        // Queue not found, declare it with the full dead-letter configuration
-                        DeclareQueueWithDeadLetter(channel);
-                        return;
-                    }
-                    if (ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
-                    {
-                        _logger.LogDebug("Queue {QueueName} exists with incompatible configuration, falling back to compatibility mode.", _queueName);
-                        DeclareCompatibleQueue(channel);
-                        return;
-                    }
-
-                    // Re-throw any other exceptions
                     throw;
                 }
             }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to declare queues for {_queueName}", ex);
-            }
         }
 
-        private void DeclareQueueWithDeadLetter(IModel channel)
+        private void BindToExchange(IModel channel)
         {
-            var dlxName = $"{_queueName}.dlx";
-            var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
             var mainExchange = $"{_queueName}.exchange";
-
-            channel.ExchangeDeclare(dlxName, ExchangeType.Direct, durable: true);
-
-            var dlqArgs = new Dictionary<string, object>
-            {
-                { "x-queue-type", "quorum" },
-                { "x-overflow", "reject-publish" }
-            };
-
-            channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false, arguments: dlqArgs);
-            channel.QueueBind(dlqName, dlxName, dlqName);
-
             channel.ExchangeDeclare(mainExchange, ExchangeType.Direct, durable: true);
-
-            var mainQArgs = new Dictionary<string, object>
-            {
-                { "x-queue-type", "quorum" },
-                { "x-overflow", "reject-publish" },
-                { "x-dead-letter-exchange", dlxName },
-                { "x-dead-letter-routing-key", dlqName },
-                { "x-dead-letter-strategy", "at-least-once" },
-                { "x-delivery-limit", 10 }
-            };
-
-            channel.QueueDeclare(_queueName, durable: true, exclusive: false, autoDelete: false, arguments: mainQArgs);
             channel.QueueBind(_queueName, mainExchange, _queueName);
         }
 
-        private void DeclareCompatibleQueue(IModel channel)
+        private void DisposeChannel(IModel channel)
         {
-            var mainExchange = $"{_queueName}.exchange";
+            if (channel == null) return;
 
             try
             {
-                channel.ExchangeDeclare(mainExchange, ExchangeType.Direct, durable: true);
-                channel.QueueBind(_queueName, mainExchange, _queueName);
-
-                _logger.LogWarning("Queue {QueueName} exists with incompatible configuration. Running in compatibility mode without dead letter support.", _queueName);
+                if (channel.IsOpen) channel.Close();
+                channel.Dispose();
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException(
-                    $"Failed to declare queue {_queueName} in compatibility mode. " +
-                    "The existing queue has incompatible configuration and cannot be used.", ex);
+                _logger.LogDebug(ex, "Error disposing channel");
+            }
+        }
+
+        private void CleanupIdleChannels()
+        {
+            if (_disposed) return;
+
+            var channels = new List<IModel>();
+            while (_channelPool.TryDequeue(out var channel))
+                channels.Add(channel);
+
+            foreach (var channel in channels)
+            {
+                if (channel.IsOpen)
+                {
+                    _channelPool.Enqueue(channel);
+                }
+                else
+                {
+                    DisposeChannel(channel);
+                    try
+                    {
+                        _channelSemaphore.Release();
+                    }
+                    catch (ObjectDisposedException ex)
+                    {
+                        _logger.LogWarning(ex, "Attempted to release a disposed semaphore in CleanupIdleChannels.");
+                    }
+                }
             }
         }
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
             if (_disposed) return;
-
-            if (disposing)
-            {
-                if (_channel != null && _channelProvider != null)
-                {
-                    try
-                    {
-                        _channelProvider.ReturnChannel(_channel);
-                    }
-                    catch
-                    {
-                        _channel?.Dispose();
-                    }
-                }
-            }
-
             _disposed = true;
-            _channel = null;
+
+            _cleanupTimer?.Dispose();
+
+            while (_channelPool.TryDequeue(out var channel))
+                DisposeChannel(channel);
+
+            _channelSemaphore.Dispose();
         }
 
         public string QueueName => _queueName;

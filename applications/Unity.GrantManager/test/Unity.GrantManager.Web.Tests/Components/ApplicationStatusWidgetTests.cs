@@ -8,11 +8,18 @@ using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Web.Views.Shared.Components.ApplicationStatusWidget;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Components
 {
-    public class ApplicationStatusWidgetTests : GrantManagerWebTestBase
+    public class ApplicationStatusWidgetTests
     {
+        public ApplicationStatusWidgetTests()
+        {
+            // Disable logging to avoid ObjectDisposedException in tests
+            LoggerFactory.Create(builder => builder.ClearProviders());
+        }
+
         [Fact]
         public async Task ApplicationStatusWidgetReturnsStatus()
         {

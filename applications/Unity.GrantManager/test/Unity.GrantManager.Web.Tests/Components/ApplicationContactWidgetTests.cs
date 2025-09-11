@@ -14,6 +14,12 @@ namespace Unity.GrantManager.Components
 {
     public class ApplicationContactWidgetTests : GrantManagerWebTestBase
     {
+        public ApplicationContactWidgetTests()
+        {
+            // Disable logging to avoid disposed logger errors during tests
+            Environment.SetEnvironmentVariable("Logging:LogLevel:Default", "None");
+        }
+
         [Fact]
         public async Task ApplicationContactWidgetReturnsStatus()
         {
