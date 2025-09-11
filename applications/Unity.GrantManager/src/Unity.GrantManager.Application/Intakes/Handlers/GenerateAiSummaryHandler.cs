@@ -449,7 +449,7 @@ FULL APPLICATION FORM SUBMISSION:
                         using var jsonDoc = JsonDocument.Parse(scoresheetAnswers);
                         validatedJson = scoresheetAnswers;
                         _logger.LogDebug("AI generated valid JSON for scoresheet answers: {JsonPreview}", 
-                            scoresheetAnswers.Length > 200 ? scoresheetAnswers.Substring(0, 200) + "..." : scoresheetAnswers);
+                            scoresheetAnswers);
                     }
                     else
                     {
@@ -468,9 +468,17 @@ FULL APPLICATION FORM SUBMISSION:
                 await _applicationRepository.UpdateAsync(application);
 
                 // Create actual scoresheet answers if there are any
+                _logger.LogError("About to check validatedJson: length={Length}, content={Content}", 
+                    validatedJson?.Length ?? 0, validatedJson);
+                
                 if (!string.IsNullOrEmpty(validatedJson) && validatedJson != "{}")
                 {
+                    _logger.LogError("Calling CreateScoresheetAnswersFromAI for application {ApplicationId}", application.Id);
                     await CreateScoresheetAnswersFromAI(application, scoresheet, validatedJson, attachments);
+                }
+                else
+                {
+                    _logger.LogError("NOT calling CreateScoresheetAnswersFromAI - validatedJson is empty or null");
                 }
 
                 _logger.LogInformation("Successfully generated AI scoresheet answers for application {ApplicationId}", application.Id);
@@ -553,17 +561,22 @@ FULL APPLICATION FORM SUBMISSION:
             string validatedJson, 
             List<ApplicationChefsFileAttachment> attachments)
         {
+            _logger.LogError("CreateScoresheetAnswersFromAI: Method called for application {ApplicationId}", application.Id);
+            
             try
             {
                 // Find scoresheet instance for this application
                 var scoresheetInstance = await _scoresheetInstanceRepository.GetByCorrelationAsync(application.Id);
                 if (scoresheetInstance == null)
                 {
+                    _logger.LogError("No scoresheet instance found for application {ApplicationId}", application.Id);
                     return;
                 }
 
                 // Parse the AI answers
                 using var aiDoc = JsonDocument.Parse(validatedJson);
+                var answerCount = aiDoc.RootElement.EnumerateObject().Count();
+                _logger.LogError("Found scoresheet instance, processing {AnswerCount} AI answers", answerCount);
                 
                 foreach (var aiAnswer in aiDoc.RootElement.EnumerateObject())
                 {
@@ -598,11 +611,6 @@ FULL APPLICATION FORM SUBMISSION:
 
                         if (string.IsNullOrEmpty(answerValue)) continue;
 
-                        // For select lists, convert AI numeric answer to actual option text
-                        if (question.Type == Unity.Flex.Scoresheets.Enums.QuestionType.SelectList)
-                        {
-                            answerValue = ConvertAIAnswerToSelectListValue(answerValue, question.Definition);
-                        }
 
                         // Create the proper JSON format for the answer based on question type
                         var currentValue = CreateAnswerValueJson(question.Type, answerValue);
@@ -648,37 +656,6 @@ FULL APPLICATION FORM SUBMISSION:
             return JsonSerializer.Serialize(valueObject);
         }
 
-        private string ConvertAIAnswerToSelectListValue(string aiAnswer, string? definition)
-        {
-            if (string.IsNullOrEmpty(definition) || string.IsNullOrEmpty(aiAnswer))
-                return aiAnswer;
-
-            try
-            {
-                // Parse the AI answer as a number (1-based)
-                if (!int.TryParse(aiAnswer.Trim(), out var optionNumber) || optionNumber <= 0)
-                    return aiAnswer;
-
-                // Parse the select list definition to get actual options
-                var selectListDefinition = JsonSerializer.Deserialize<Unity.Flex.Worksheets.Definitions.QuestionSelectListDefinition>(definition);
-                if (selectListDefinition?.Options != null && selectListDefinition.Options.Any())
-                {
-                    // Convert 1-based AI answer to 0-based array index
-                    var optionIndex = optionNumber - 1;
-                    if (optionIndex >= 0 && optionIndex < selectListDefinition.Options.Count)
-                    {
-                        // Return the actual option text value
-                        return selectListDefinition.Options[optionIndex].Value;
-                    }
-                }
-            }
-            catch (JsonException)
-            {
-                // If parsing fails, return original answer
-            }
-
-            return aiAnswer;
-        }
 
     }
 }

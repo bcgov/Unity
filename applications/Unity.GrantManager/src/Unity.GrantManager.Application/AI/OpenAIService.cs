@@ -43,10 +43,12 @@ namespace Unity.GrantManager.AI
                 return "AI analysis not available - service not configured.";
             }
 
+            _logger.LogDebug("Calling OpenAI with prompt: {prompt}", content);
+
             try
             {
                 var systemPrompt = prompt ?? "You are a professional grant analyst for the BC Government.";
-                
+
                 var requestBody = new
                 {
                     model = Model,
@@ -67,6 +69,8 @@ namespace Unity.GrantManager.AI
 
                 var response = await _httpClient.PostAsync(ApiUrl, httpContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
+
+                _logger.LogDebug("\nResponse: {response}", responseContent);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -274,7 +278,7 @@ Guidelines for answers:
 - For numeric questions, provide a numeric value within the specified range
 - For yes/no questions, provide either 'Yes' or 'No'
 - For text questions, provide a concise, relevant response
-- For select list questions, respond with ONLY the number (1, 2, 3, etc.) corresponding to your chosen option from the numbered availableOptions list. Do not include the text of the option, just the number.
+- For select list questions, respond with ONLY the number from the 'number' field (1, 2, 3, etc.) of your chosen option. NEVER return 0 - the lowest valid answer is 1. For example: if you want '(0 pts) No outcomes provided', choose the option where number=1, not 0.
 - For text area questions, provide a detailed but concise response
 - Base your confidence score on how clearly the application content supports your answer
 

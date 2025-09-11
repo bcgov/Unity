@@ -45,6 +45,7 @@ namespace Unity.GrantManager.Intakes
 
         public async Task<EventSubscriptionConfirmationDto> CreateIntakeSubmissionAsync(EventSubscriptionDto eventSubscriptionDto)
         {
+
             var applicationForm = (await _applicationFormRepository
                 .GetQueryableAsync())
                 .Where(s => s.ChefsApplicationFormGuid == eventSubscriptionDto.FormId.ToString())
