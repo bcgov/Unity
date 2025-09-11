@@ -22,24 +22,45 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             _serviceProvider = serviceProvider;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Registering  {ConsumberName} as Consumer for Queue {QueueName}", typeof(TMessageConsumer).Name, typeof(TQueueMessage).Name);
-            try
-            {
-                // Every registration of a IQueueConsumerHandler will have it's own scope
-                // This will result in messages to the QeueueConsumer will have their own incomming RabbitMQ channel
-                _scope = _serviceProvider.CreateScope();
-                _consumerHandler = _scope.ServiceProvider.GetRequiredService<IQueueConsumerHandler<TMessageConsumer, TQueueMessage>>();
-                _consumerHandler?.RegisterQueueConsumer();
-            }
-            catch (Exception ex)
-            {
-                var MessageException = ex.Message;
-                _logger.LogError(ex, "QueueConsumerRegistratorService StartAsync {MessageException}", MessageException);
-            }
+            var maxRetries = 3;
+            var retryDelay = TimeSpan.FromSeconds(5);
 
-            return Task.CompletedTask;
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    _logger.LogInformation("Registering consumer {ConsumerName} (attempt {Attempt}/{MaxRetries})",
+                        typeof(TMessageConsumer).Name, attempt, maxRetries);
+
+                    _scope = _serviceProvider.CreateScope();
+                    _consumerHandler = _scope.ServiceProvider.GetRequiredService<IQueueConsumerHandler<TMessageConsumer, TQueueMessage>>();
+                    _consumerHandler.RegisterQueueConsumer();
+
+                    _logger.LogInformation("Successfully registered consumer {ConsumerName}", typeof(TMessageConsumer).Name);
+                    return;
+                }
+                catch (Exception ex) when (attempt < maxRetries)
+                {
+                    _logger.LogWarning(ex, "Failed to register consumer {ConsumerName} on attempt {Attempt}. Retrying in {Delay}s...",
+                        typeof(TMessageConsumer).Name, attempt, retryDelay.TotalSeconds);
+
+                    _scope?.Dispose();
+                    _scope = null;
+
+                    await Task.Delay(retryDelay, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to register consumer {ConsumerName} after {MaxRetries} attempts",
+                        typeof(TMessageConsumer).Name, maxRetries);
+
+                    _scope?.Dispose();
+                    _scope = null;
+                    throw new InvalidOperationException($"Failed to register consumer {typeof(TMessageConsumer).Name} after {maxRetries} attempts.", ex);
+                }
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
@@ -60,7 +81,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 var ExceptionMessage = ex.Message;
                 _logger.LogError(ex, "QueueConsumerRegistratorService StopAsync Exception: {ExceptionMessage}", ExceptionMessage);
             }
-            
+
             return Task.CompletedTask;
         }
     }

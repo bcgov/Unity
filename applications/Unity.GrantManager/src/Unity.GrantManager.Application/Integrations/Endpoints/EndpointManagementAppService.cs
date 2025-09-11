@@ -35,9 +35,7 @@ namespace Unity.GrantManager.Integrations.Endpoints
         {
             var keySetKey = BuildCacheKeySetKey(tenantId);
             var existing = await _cache.GetStringAsync(keySetKey);
-            var keySet = string.IsNullOrEmpty(existing)
-                ? new HashSet<string>()
-                : System.Text.Json.JsonSerializer.Deserialize<HashSet<string>>(existing) ?? new HashSet<string>();
+            var keySet = string.IsNullOrEmpty(existing) ? [] : System.Text.Json.JsonSerializer.Deserialize<HashSet<string>>(existing) ?? [];
 
             keySet.Add(cacheKey);
             var serialized = System.Text.Json.JsonSerializer.Serialize(keySet);
@@ -80,17 +78,13 @@ namespace Unity.GrantManager.Integrations.Endpoints
         public async Task<string> GetUgmUrlByKeyNameAsync(string keyName)
         {
             var url = await GetUrlByKeyNameInternalAsync(keyName, tenantSpecific: false);
-            if (url == null)
-                throw new UserFriendlyException($"URL for key '{keyName}' not configured.");
-            return url;
+            return url ?? throw new UserFriendlyException($"URL for key '{keyName}' not configured.");
         }
 
         public async Task<string> GetUrlByKeyNameAsync(string keyName)
         {
             var url = await GetUrlByKeyNameInternalAsync(keyName, tenantSpecific: true);
-            if (url == null)
-                throw new UserFriendlyException($"URL for key '{keyName}' not configured.");
-            return url;
+            return url ?? throw new UserFriendlyException($"URL for key '{keyName}' not configured.");
         }
 
         private async Task<string?> GetUrlByKeyNameInternalAsync(string keyName, bool tenantSpecific)

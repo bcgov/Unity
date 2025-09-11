@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Volo.Abp.Application.Services;
-using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
 using Unity.Modules.Shared.Http;
@@ -29,17 +28,17 @@ namespace Unity.Payments.Integrations.Cas
         private readonly ILocalEventBus localEventBus;
         private readonly IResilientHttpRequest resilientHttpRequest;
         private readonly ICasTokenService iTokenService;
-        public SupplierService  (ILocalEventBus localEventBus,
+        public SupplierService(ILocalEventBus localEventBus,
                                 IEndpointManagementAppService endpointManagementAppService,
                                 IResilientHttpRequest resilientHttpRequest,
                                 ICasTokenService iTokenService)
         {
-                this.localEventBus = localEventBus;
-                this.resilientHttpRequest = resilientHttpRequest;
-                this.iTokenService = iTokenService;
+            this.localEventBus = localEventBus;
+            this.resilientHttpRequest = resilientHttpRequest;
+            this.iTokenService = iTokenService;
 
-                // Initialize the base API URL once during construction
-                casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
+            // Initialize the base API URL once during construction
+            casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
         }
         private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
         {
@@ -158,7 +157,6 @@ namespace Unity.Payments.Integrations.Cas
             };
         }
 
-
         protected static SiteEto GetSiteEto(dynamic site)
         {
             string supplierSiteCode = site["suppliersitecode"].ToString();
@@ -186,7 +184,7 @@ namespace Unity.Payments.Integrations.Cas
                 SupplierSiteCode = supplierSiteCode,
                 AddressLine1 = addressLine1,
                 AddressLine2 = addressLine2,
-                AddressLine3 = addressLine2,
+                AddressLine3 = string.Empty,
                 City = city,
                 Province = province,
                 Country = country,
@@ -200,13 +198,14 @@ namespace Unity.Payments.Integrations.Cas
                 LastUpdated = siteLastUpdatedDate
             };
         }
+
         public async Task<dynamic> GetCasSupplierInformationAsync(string? supplierNumber)
         {
             if (!string.IsNullOrEmpty(supplierNumber))
             {
                 var casBaseApi = await casBaseApiTask;
                 var resource = $"{casBaseApi}/{CFS_SUPPLIER}/{supplierNumber}";
-                return await GetCasSupplierInformationByResourceAsync(resource);
+                return await GetCasSupplierInformationByResourceAsync<dynamic>(resource);
             }
             else
             {
@@ -220,7 +219,7 @@ namespace Unity.Payments.Integrations.Cas
             {
                 var casBaseApi = await casBaseApiTask;
                 var resource = $"{casBaseApi}/{CFS_SUPPLIER}/{bn9}/businessnumber";
-                return await GetCasSupplierInformationByResourceAsync(resource);
+                return await GetCasSupplierInformationByResourceAsync<dynamic>(resource);
             }
             else
             {
@@ -229,92 +228,88 @@ namespace Unity.Payments.Integrations.Cas
         }
 
 
-        private async Task<dynamic> GetCasSupplierInformationByResourceAsync(string? resource)
+        // Alternative version with type safety
+        private async Task<TSupplierInfo> GetCasSupplierInformationByResourceAsync<TSupplierInfo>(string? resource)
+            where TSupplierInfo : class
         {
-            if (!string.IsNullOrEmpty(resource))
+            if (string.IsNullOrWhiteSpace(resource))
             {
-                var authToken = await iTokenService.GetAuthTokenAsync();
-                try
-                {
-                    using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
-                    if (response != null)
-                    {
-                        if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
-                        {
-                            var contentString = await response.Content.ReadAsStringAsync();
-                            var result = JsonSerializer.Deserialize<dynamic>(contentString)
-                                ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
-                            return result;
-                        }
-                        else if (response.StatusCode == HttpStatusCode.NotFound)
-                        {
-                            throw new UserFriendlyException("Supplier not Found.");
-                        }
-                        else if (response.StatusCode != HttpStatusCode.OK)
-                        {
-                            throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);
-                        }
-                        else
-                        {
-                            throw new UserFriendlyException("The CAS Supplier Number was not found.");
-                        }
-                    }
-                    else
-                    {
-                        throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: Null response");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    string ExceptionMessage = ex.Message;
-                    Logger.LogError(ex, "An exception occurred while fetching CAS Supplier Information: {ExceptionMessage}", ExceptionMessage);
-                    throw new UserFriendlyException($"Failed to fetch supplier information from CAS. Exception:  {ExceptionMessage}");
-                }
+                throw new UserFriendlyException("CAS Supplier Service: No Supplier Number provided");
             }
-            else
+
+            var authToken = await iTokenService.GetAuthTokenAsync();
+
+            try
             {
-                throw new UserFriendlyException("CAS Supplier Service: No Supplier Number");
+                // Use the long-lived method for extended timeout (up to 3 minutes)
+                using var response = await resilientHttpRequest.HttpLongLivedAsync(
+                    HttpMethod.Get,
+                    resource,
+                    authToken: authToken);
+
+                return response.StatusCode switch
+                {
+                    HttpStatusCode.NotFound => throw new UserFriendlyException("Supplier not found"),
+                    HttpStatusCode.OK => await ResilientHttpRequest.ContentToJsonAsync<TSupplierInfo>(response.Content)
+                        ?? throw new UserFriendlyException("Failed to parse supplier information"),
+                    _ => throw new UserFriendlyException($"CAS service returned error: {response.StatusCode}")
+                };
+            }
+            catch (UserFriendlyException ufe)
+            {
+                Logger.LogError(ufe, "Error fetching CAS supplier info for: {Resource}", resource);
+                throw;
+            }
+            catch (OperationCanceledException ex)
+            {
+                Logger.LogWarning(ex, "Long-lived CAS supplier request timed out for resource: {Resource}", resource);
+                throw new UserFriendlyException("The supplier information request timed out after 3 minutes. Please try again later.");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error fetching CAS supplier info for: {Resource}", resource);
+                throw new UserFriendlyException($"Failed to fetch supplier information: {ex.Message}");
             }
         }
     }
+}
 
 #pragma warning disable S125 // Sections of code should not be commented out
 
-    /*
-     * Response:
-           {
-            "suppliernumber": "2002492",
-            "suppliername": "GENSUPPOSP2016, ONE",
-            "subcategory": "Individual",
-            "sin": null,
-            "providerid": null,
-            "businessnumber": null,
-            "status": "INACTIVE",
-            "supplierprotected": null,
-            "standardindustryclassification": null,
-            "lastupdated": "2024-05-10 12:21:53",
-            "supplieraddress": [
-                {
-                    "suppliersitecode": "001",
-                    "addressline1": "100-3350 DOUGLAS ST",
-                    "addressline2": null,
-                    "addressline3": null,
-                    "city": "VICTORIA",
-                    "province": "BC",
-                    "country": "CA",
-                    "postalcode": "V8Z3L1",
-                    "emailaddress": null,
-                    "accountnumber": null,
-                    "branchnumber": null,
-                    "banknumber": null,
-                    "eftadvicepref": null,
-                    "providerid": null,
-                    "status": "INACTIVE",
-                    "siteprotected": null,
-                    "lastupdated": "2021-03-18 14:46:32"
-                }
-            ]
-        }
-    */
+/*
+ * Response:
+       {
+        "suppliernumber": "2002492",
+        "suppliername": "GENSUPPOSP2016, ONE",
+        "subcategory": "Individual",
+        "sin": null,
+        "providerid": null,
+        "businessnumber": null,
+        "status": "INACTIVE",
+        "supplierprotected": null,
+        "standardindustryclassification": null,
+        "lastupdated": "2024-05-10 12:21:53",
+        "supplieraddress": [
+            {
+                "suppliersitecode": "001",
+                "addressline1": "100-3350 DOUGLAS ST",
+                "addressline2": null,
+                "addressline3": null,
+                "city": "VICTORIA",
+                "province": "BC",
+                "country": "CA",
+                "postalcode": "V8Z3L1",
+                "emailaddress": null,
+                "accountnumber": null,
+                "branchnumber": null,
+                "banknumber": null,
+                "eftadvicepref": null,
+                "providerid": null,
+                "status": "INACTIVE",
+                "siteprotected": null,
+                "lastupdated": "2021-03-18 14:46:32"
+            }
+        ]
+    }
+*/
 #pragma warning restore S125 // Sections of code should not be commented out
-}

@@ -1,81 +1,238 @@
-﻿using RabbitMQ.Client;
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using RabbitMQ.Client;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public class QueueChannelProvider<TQueueMessage> : IQueueChannelProvider<TQueueMessage> where TQueueMessage : IQueueMessage
+    public sealed class PooledQueueChannelProvider<TQueueMessage> : IQueueChannelProvider<TQueueMessage>
+        where TQueueMessage : IQueueMessage
     {
         private readonly IChannelProvider _channelProvider;
-        private IModel? _channel;
-        private bool disposedValue;
-        private readonly string _queueName;
+        private readonly ILogger<PooledQueueChannelProvider<TQueueMessage>> _logger;
+        private readonly ConcurrentQueue<IModel> _channelPool = new();
+        private readonly SemaphoreSlim _channelSemaphore = new(MaxChannels, MaxChannels);
+        private readonly Timer _cleanupTimer;
+        private readonly string _queueName = typeof(TQueueMessage).Name;
 
-        public QueueChannelProvider(
-            IChannelProvider channelProvider)
+        private volatile bool _disposed;
+        private volatile bool _queueDeclared;
+        private readonly object _queueDeclareLock = new();
+
+        private const int MaxChannels = 5000;
+        private readonly TimeSpan _channelWaitTimeout = TimeSpan.FromSeconds(10);
+
+        public PooledQueueChannelProvider(
+            IChannelProvider channelProvider,
+            ILogger<PooledQueueChannelProvider<TQueueMessage>> logger)
         {
-            _channelProvider = channelProvider;
-            _queueName = typeof(TQueueMessage).Name;
+            _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            _cleanupTimer = new Timer(_ => CleanupIdleChannels(), null,
+                TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
         }
 
-        public IModel? GetChannel()
+        public IModel GetChannel()
         {
-            _channel = _channelProvider?.GetChannel();
-            DeclareQueueAndDeadLetter();
-            return _channel;
-        }
+            ObjectDisposedException.ThrowIf(_disposed, nameof(PooledQueueChannelProvider<TQueueMessage>));
 
-        private void DeclareQueueAndDeadLetter()
-        {
-            var deadLetterQueueName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
-
-            // Declare the DeadLetter Queue
-            var deadLetterQueueArgs = new Dictionary<string, object>
+            if (!_channelSemaphore.Wait(_channelWaitTimeout))
             {
-                { "x-queue-type", "quorum" }, 
-                { "overflow", "reject-publish" } // If the queue is full, reject the publish
-            };
-            if(_channel == null) return;
+                throw new TimeoutException(
+                    $"Unable to acquire a channel for queue {_queueName} within {_channelWaitTimeout.TotalSeconds} seconds.");
+            }
 
-            _channel.ExchangeDeclare(deadLetterQueueName, ExchangeType.Direct);
-            _channel.QueueDeclare(deadLetterQueueName, true, false, false, deadLetterQueueArgs);
-            _channel.QueueBind(deadLetterQueueName, deadLetterQueueName, deadLetterQueueName, null);
-
-            // Declare the Queue
-            var queueArgs = new Dictionary<string, object>
+            try
             {
-                { "x-dead-letter-exchange", deadLetterQueueName },
-                { "x-dead-letter-routing-key", deadLetterQueueName },
-                { "x-queue-type", "quorum" },
-                { "x-dead-letter-strategy", "at-least-once" }, // Ensure that deadletter messages are delivered in any case see: https://www.rabbitmq.com/quorum-queues.html#dead-lettering
-                { "overflow", "reject-publish" } // If the queue is full, reject the publish
-            };
-
-            _channel.ExchangeDeclare(_queueName, ExchangeType.Direct);
-            _channel.QueueDeclare(_queueName, true, false, false, queueArgs);
-            _channel.QueueBind(_queueName, _queueName, _queueName, null);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
+                // Try to get an existing channel
+                while (_channelPool.TryDequeue(out var pooled))
                 {
-                    // dispose managed state (managed objects)
+                    if (pooled.IsOpen)
+                        return pooled;
+
+                    DisposeChannel(pooled);
                 }
 
-                disposedValue = true;
+                // Create new channel
+                var channel = _channelProvider.GetChannel() ?? throw new InvalidOperationException("Channel cannot be null.");
+                EnsureQueueDeclared(channel);
+                return channel;
+            }
+            catch
+            {
+                _channelSemaphore.Release();
+                throw;
+            }
+        }
+
+        public void ReturnChannel(IModel channel)
+        {
+            if (channel?.IsOpen == true && !_disposed)
+            {
+                _channelPool.Enqueue(channel);
+            }
+            else
+            {
+                if (channel != null)
+                    DisposeChannel(channel);
+            }
+
+            try
+            {
+                _channelSemaphore.Release();
+            }
+            catch (ObjectDisposedException ex)
+            {
+                _logger.LogWarning(ex, "Attempted to release a disposed semaphore in ReturnChannel.");
+            }
+        }
+
+        private void EnsureQueueDeclared(IModel channel)
+        {
+            if (_queueDeclared) return;
+
+            lock (_queueDeclareLock)
+            {
+                if (_queueDeclared) return;
+
+                try
+                {
+                    DeclareQueue(channel);
+                    _queueDeclared = true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to declare queue {QueueName}", _queueName);
+                    throw new InvalidOperationException($"Failed to declare queue '{_queueName}'. See inner exception for details.", ex);
+                }
+            }
+        }
+
+        private void DeclareQueue(IModel channel)
+        {
+            try
+            {
+                var dlxName = $"{_queueName}.dlx";
+                var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
+
+                // Ensure DLX exchange exists
+                channel.ExchangeDeclare(dlxName, ExchangeType.Direct, durable: true);
+
+                // Ensure DLQ exists and is bound to DLX
+                channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false,
+                    arguments: new Dictionary<string, object>
+                    {
+                        { "x-queue-type", "quorum" },
+                        { "x-overflow", "reject-publish" }
+                    });
+                channel.QueueBind(dlqName, dlxName, dlqName);
+
+                // Declare main queue with DLX args
+                channel.QueueDeclare(
+                    _queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: new Dictionary<string, object>
+                    {
+                        { "x-queue-type", "quorum" },
+                        { "x-overflow", "reject-publish" },
+                        { "x-dead-letter-exchange", dlxName },
+                        { "x-dead-letter-routing-key", dlqName },
+                        { "x-dead-letter-strategy", "at-least-once" },
+                        { "x-delivery-limit", 10 }
+                    });
+
+                BindToExchange(channel);
+            }
+            catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex)
+            {
+                if (ex.ShutdownReason.ReplyCode == 406 &&
+                    ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Queue {QueueName} exists with incompatible config. Using existing queue in compatibility mode.",
+                        _queueName);
+
+                    BindToExchange(channel);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        private void BindToExchange(IModel channel)
+        {
+            var mainExchange = $"{_queueName}.exchange";
+            channel.ExchangeDeclare(mainExchange, ExchangeType.Direct, durable: true);
+            channel.QueueBind(_queueName, mainExchange, _queueName);
+        }
+
+        private void DisposeChannel(IModel channel)
+        {
+            if (channel == null) return;
+
+            try
+            {
+                if (channel.IsOpen) channel.Close();
+                channel.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error disposing channel");
+            }
+        }
+
+        private void CleanupIdleChannels()
+        {
+            if (_disposed) return;
+
+            var channels = new List<IModel>();
+            while (_channelPool.TryDequeue(out var channel))
+                channels.Add(channel);
+
+            foreach (var channel in channels)
+            {
+                if (channel.IsOpen)
+                {
+                    _channelPool.Enqueue(channel);
+                }
+                else
+                {
+                    DisposeChannel(channel);
+                    try
+                    {
+                        _channelSemaphore.Release();
+                    }
+                    catch (ObjectDisposedException ex)
+                    {
+                        _logger.LogWarning(ex, "Attempted to release a disposed semaphore in CleanupIdleChannels.");
+                    }
+                }
             }
         }
 
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            if (_disposed) return;
+            _disposed = true;
+
+            _cleanupTimer?.Dispose();
+
+            while (_channelPool.TryDequeue(out var channel))
+                DisposeChannel(channel);
+
+            _channelSemaphore.Dispose();
         }
+
+        public string QueueName => _queueName;
     }
 }
