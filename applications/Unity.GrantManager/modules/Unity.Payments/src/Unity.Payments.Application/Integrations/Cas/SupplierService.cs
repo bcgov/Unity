@@ -46,7 +46,9 @@ namespace Unity.Payments.Integrations.Cas
         {
             Logger.LogInformation("UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
             if (!await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) || string.IsNullOrEmpty(supplierNumber))
+            {
                 return;
+            }
 
             var casSupplierResponse = await GetCasSupplierInformationAsync(supplierNumber);
             await UpdateSupplierInfo(casSupplierResponse, applicantId);
@@ -56,7 +58,9 @@ namespace Unity.Payments.Integrations.Cas
         {
             Logger.LogInformation("UpdateApplicantSupplierInfoByBn9: {Bn9}, {ApplicantId}", bn9, applicantId);
             if (!await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) || string.IsNullOrEmpty(bn9))
+            {
                 throw new UserFriendlyException("Feature is disabled or BN9 is null or empty.");
+            }
 
             var casSupplierResponse = await GetCasSupplierInformationByBn9Async(bn9);
             try
@@ -84,7 +88,9 @@ namespace Unity.Payments.Integrations.Cas
                 using var doc = JsonDocument.Parse(casSupplierJson);
                 var root = doc.RootElement;
                 if (root.TryGetProperty("code", out JsonElement codeProp) && codeProp.GetString() == "Unauthorized")
+                {
                     throw new UserFriendlyException("Unauthorized access to CAS supplier information.");
+                }
 
                 var supplierEto = GetEventDtoFromCasResponse(root);
                 supplierEto.CorrelationId = applicantId;
@@ -105,12 +111,24 @@ namespace Unity.Payments.Integrations.Cas
                     ? prop.ToString()
                     : string.Empty;
 
-            DateTime.TryParse(GetProp("lastupdated"), out DateTime lastUpdatedDate);
+            DateTime lastUpdatedDate = default;
+            var lastUpdatedStr = GetProp("lastupdated");
+            if (!string.IsNullOrEmpty(lastUpdatedStr))
+            {
+                if (!DateTime.TryParse(lastUpdatedStr, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out lastUpdatedDate))
+                {
+                    Logger.LogWarning("Failed to parse 'lastupdated' date: {LastUpdated}", lastUpdatedStr);
+                }
+            }
 
             var siteEtos = new List<SiteEto>();
             if (casSupplierResponse.TryGetProperty("supplieraddress", out var sitesJson) && sitesJson.ValueKind == JsonValueKind.Array)
+            {
                 foreach (var site in sitesJson.EnumerateArray())
+                {
                     siteEtos.Add(GetSiteEto(site));
+                }
+            }
 
             return new UpsertSupplierEto
             {
@@ -132,7 +150,16 @@ namespace Unity.Payments.Integrations.Cas
             string Get(string name) => site.TryGetProperty(name, out var prop) && prop.ValueKind != JsonValueKind.Null ? prop.ToString() : string.Empty;
             string accountNumber = Get("accountnumber");
             string maskedAccountNumber = accountNumber.Length > 4 ? new string('*', accountNumber.Length - 4) + accountNumber[^4..] : accountNumber;
-            DateTime.TryParse(Get("lastupdated"), out DateTime siteLastUpdatedDate);
+            DateTime siteLastUpdatedDate = default;
+            var lastUpdatedStr = Get("lastupdated");
+            if (!string.IsNullOrEmpty(lastUpdatedStr))
+            {
+                if (!DateTime.TryParse(lastUpdatedStr, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out siteLastUpdatedDate))
+                {
+                    // Optionally log or handle the failed parse here
+                    siteLastUpdatedDate = default;
+                }
+            }
 
             return new SiteEto
             {
@@ -157,7 +184,10 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<dynamic> GetCasSupplierInformationAsync(string? supplierNumber)
         {
             if (string.IsNullOrEmpty(supplierNumber))
+            {
                 throw new UserFriendlyException("CAS Supplier Service: No Supplier Number");
+            }
+
             var casBaseApi = await casBaseApiTask;
             var resource = $"{casBaseApi}/{CFS_SUPPLIER}/{supplierNumber}";
             return await GetCasSupplierInformationByResourceAsync<dynamic>(resource);
@@ -166,7 +196,10 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<dynamic> GetCasSupplierInformationByBn9Async(string? bn9)
         {
             if (string.IsNullOrEmpty(bn9))
+            {
                 throw new UserFriendlyException("CAS Supplier Service: No Supplier Number");
+            }
+
             var casBaseApi = await casBaseApiTask;
             var resource = $"{casBaseApi}/{CFS_SUPPLIER}/{bn9}/businessnumber";
             return await GetCasSupplierInformationByResourceAsync<dynamic>(resource);
@@ -176,17 +209,25 @@ namespace Unity.Payments.Integrations.Cas
             where TSupplierInfo : class
         {
             if (string.IsNullOrWhiteSpace(resource))
+            {
                 throw new UserFriendlyException("CAS Supplier Service: No Supplier Number provided");
+            }
 
             var authToken = await iTokenService.GetAuthTokenAsync();
             try
             {
                 using var response = await resilientHttpRequest.HttpLongLivedAsync(HttpMethod.Get, resource, authToken: authToken);
                 if (response.StatusCode == HttpStatusCode.NotFound)
+                {
                     throw new UserFriendlyException("Supplier not found");
+                }
+
                 if (response.StatusCode == HttpStatusCode.OK)
+                {
                     return await ResilientHttpRequest.ContentToJsonAsync<TSupplierInfo>(response.Content)
                         ?? throw new UserFriendlyException("Failed to parse supplier information");
+                }
+
                 throw new UserFriendlyException($"CAS service returned error: {response.StatusCode}");
             }
             catch (OperationCanceledException ex)

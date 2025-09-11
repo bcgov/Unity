@@ -131,8 +131,8 @@ namespace Unity.Modules.Shared.Http
         }
 
         private static ResiliencePipeline<HttpResponseMessage> BuildPipeline(
-            int maxRetryAttempts, 
-            TimeSpan pauseBetweenFailures, 
+            int maxRetryAttempts,
+            TimeSpan pauseBetweenFailures,
             TimeSpan httpRequestTimeout)
         {
             var builder = new ResiliencePipelineBuilder<HttpResponseMessage>();
@@ -192,12 +192,12 @@ namespace Unity.Modules.Shared.Http
             CancellationToken cancellationToken = default)
         {
             return await ExecuteHttpRequestAsync(
-                httpVerb, 
-                resource, 
-                body, 
-                authToken, 
-                basicAuth, 
-                isLongLived: false, 
+                httpVerb,
+                resource,
+                body,
+                authToken,
+                basicAuth,
+                isLongLived: false,
                 cancellationToken);
         }
 
@@ -215,12 +215,12 @@ namespace Unity.Modules.Shared.Http
             CancellationToken cancellationToken = default)
         {
             return await ExecuteHttpRequestAsync(
-                httpVerb, 
-                resource, 
-                body, 
-                authToken, 
-                basicAuth, 
-                isLongLived: true, 
+                httpVerb,
+                resource,
+                body,
+                authToken,
+                basicAuth,
+                isLongLived: true,
                 cancellationToken);
         }
 
@@ -236,7 +236,9 @@ namespace Unity.Modules.Shared.Http
             ObjectDisposedException.ThrowIf(_disposed, nameof(ResilientHttpRequest));
             ArgumentNullException.ThrowIfNull(httpVerb);
             if (string.IsNullOrWhiteSpace(resource))
-            throw new ArgumentException("Resource cannot be null or whitespace.", nameof(resource));
+            {
+                throw new ArgumentException("Resource cannot be null or whitespace.", nameof(resource));
+            }
 
             var fullUrl = BuildFullUrl(resource);
             var sanitizedFullUrl = fullUrl.ToString().Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
@@ -246,34 +248,34 @@ namespace Unity.Modules.Shared.Http
 
             try
             {
-            _logger?.LogDebug("Starting {RequestType} HTTP {Method} request to {Url} (timeout: {Timeout})", 
-                requestType, httpVerb, sanitizedFullUrl, timeoutDuration);
+                _logger?.LogDebug("Starting {RequestType} HTTP {Method} request to {Url} (timeout: {Timeout})",
+                    requestType, httpVerb, sanitizedFullUrl, timeoutDuration);
 
-            return await pipeline.ExecuteAsync(async ct =>
-            {
-                using var requestMessage = CreateHttpRequestMessage(httpVerb, fullUrl, body, authToken, basicAuth);
-                
-                var response = await _httpClient.SendAsync(requestMessage, ct);
-                
-                _logger?.LogDebug("Received HTTP {StatusCode} response from {RequestType} {Method} {Url}", 
-                response.StatusCode, requestType, httpVerb, sanitizedFullUrl);
-                
-                return response;
-            }, cancellationToken);
+                return await pipeline.ExecuteAsync(async ct =>
+                {
+                    using var requestMessage = CreateHttpRequestMessage(httpVerb, fullUrl, body, authToken, basicAuth);
+
+                    var response = await _httpClient.SendAsync(requestMessage, ct);
+
+                    _logger?.LogDebug("Received HTTP {StatusCode} response from {RequestType} {Method} {Url}",
+                    response.StatusCode, requestType, httpVerb, sanitizedFullUrl);
+
+                    return response;
+                }, cancellationToken);
             }
             catch (OperationCanceledException ex) when (ex.InnerException is TimeoutException || cancellationToken.IsCancellationRequested)
             {
-            _logger?.LogWarning(ex, "{RequestType} HTTP request timed out after {Timeout} for {Method} {Url}. Exception: {Exception}", 
-                requestType, timeoutDuration, httpVerb, sanitizedFullUrl, ex);
-            throw new TimeoutException(
-                $"The {requestType} HTTP request timed out after {timeoutDuration} for {httpVerb} {sanitizedFullUrl}.", ex);
+                _logger?.LogWarning(ex, "{RequestType} HTTP request timed out after {Timeout} for {Method} {Url}. Exception: {Exception}",
+                    requestType, timeoutDuration, httpVerb, sanitizedFullUrl, ex);
+                throw new TimeoutException(
+                    $"The {requestType} HTTP request timed out after {timeoutDuration} for {httpVerb} {sanitizedFullUrl}.", ex);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-            _logger?.LogError(ex, "{RequestType} HTTP request failed for {Method} {Url}", 
-                requestType, httpVerb, sanitizedFullUrl);
-            throw new HttpRequestException(
-                $"The {requestType} HTTP request failed for {httpVerb} {sanitizedFullUrl}. See inner exception for details.", ex);
+                _logger?.LogError(ex, "{RequestType} HTTP request failed for {Method} {Url}",
+                    requestType, httpVerb, sanitizedFullUrl);
+                throw new HttpRequestException(
+                    $"The {requestType} HTTP request failed for {httpVerb} {sanitizedFullUrl}. See inner exception for details.", ex);
             }
         }
 
@@ -358,8 +360,8 @@ namespace Unity.Modules.Shared.Http
         {
             string bodyString = body switch
             {
-            string s => s,
-            _ => JsonSerializer.Serialize(body, CamelCaseOptions)
+                string s => s,
+                _ => JsonSerializer.Serialize(body, CamelCaseOptions)
             };
 
             return new StringContent(bodyString, Encoding.UTF8, ContentTypeJson);
@@ -383,7 +385,9 @@ namespace Unity.Modules.Shared.Http
 
             var content = await httpContent.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(content))
-            return default;
+            {
+                return default;
+            }
 
             options ??= new JsonSerializerOptions
             {
