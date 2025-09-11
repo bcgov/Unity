@@ -237,6 +237,7 @@ namespace Unity.Modules.Shared.Http
                 throw new ArgumentException("Resource cannot be null or whitespace.", nameof(resource));
 
             var fullUrl = BuildFullUrl(resource);
+            var sanitizedFullUrl = fullUrl.ToString().Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
             var pipeline = isLongLived ? GetOrCreateLongLivedPipeline() : GetOrCreatePipeline();
             var requestType = isLongLived ? "long-lived" : "standard";
             var timeoutDuration = isLongLived ? _longLivedHttpRequestTimeout : _httpRequestTimeout;
@@ -244,7 +245,7 @@ namespace Unity.Modules.Shared.Http
             try
             {
                 _logger?.LogDebug("Starting {RequestType} HTTP {Method} request to {Url} (timeout: {Timeout})", 
-                    requestType, httpVerb, fullUrl, timeoutDuration);
+                    requestType, httpVerb, sanitizedFullUrl, timeoutDuration);
 
                 return await pipeline.ExecuteAsync(async ct =>
                 {
@@ -253,7 +254,7 @@ namespace Unity.Modules.Shared.Http
                     var response = await _httpClient.SendAsync(requestMessage, ct);
                     
                     _logger?.LogDebug("Received HTTP {StatusCode} response from {RequestType} {Method} {Url}", 
-                        response.StatusCode, requestType, httpVerb, fullUrl);
+                        response.StatusCode, requestType, httpVerb, sanitizedFullUrl);
                     
                     return response;
                 }, cancellationToken);
@@ -261,13 +262,13 @@ namespace Unity.Modules.Shared.Http
             catch (OperationCanceledException ex) when (ex.InnerException is TimeoutException || cancellationToken.IsCancellationRequested)
             {
                 _logger?.LogWarning("{RequestType} HTTP request timed out after {Timeout} for {Method} {Url}", 
-                    requestType, timeoutDuration, httpVerb, fullUrl);
+                    requestType, timeoutDuration, httpVerb, sanitizedFullUrl);
                 throw;
             }
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _logger?.LogError(ex, "{RequestType} HTTP request failed for {Method} {Url}", 
-                    requestType, httpVerb, fullUrl);
+                    requestType, httpVerb, sanitizedFullUrl);
                 throw;
             }
         }
