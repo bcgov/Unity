@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Unity.Modules.Shared.Http
 {
     [IntegrationService]
-    public class ResilientHttpRequest : IResilientHttpRequest, IDisposable
+    public class ResilientHttpRequest : IResilientHttpRequest
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<ResilientHttpRequest>? _logger;
@@ -109,7 +109,7 @@ namespace Unity.Modules.Shared.Http
 
             lock (_pipelineLock)
             {
-                return _pipeline ??= BuildPipeline(_maxRetryAttempts, _pauseBetweenFailures, _httpRequestTimeout, "Standard");
+                return _pipeline ??= BuildPipeline(_maxRetryAttempts, _pauseBetweenFailures, _httpRequestTimeout);
             }
         }
 
@@ -120,15 +120,14 @@ namespace Unity.Modules.Shared.Http
 
             lock (_pipelineLock)
             {
-                return _longLivedPipeline ??= BuildPipeline(_longLivedMaxRetryAttempts, _longLivedPauseBetweenFailures, _longLivedHttpRequestTimeout, "LongLived");
+                return _longLivedPipeline ??= BuildPipeline(_longLivedMaxRetryAttempts, _longLivedPauseBetweenFailures, _longLivedHttpRequestTimeout);
             }
         }
 
         private static ResiliencePipeline<HttpResponseMessage> BuildPipeline(
             int maxRetryAttempts, 
             TimeSpan pauseBetweenFailures, 
-            TimeSpan httpRequestTimeout,
-            string pipelineName)
+            TimeSpan httpRequestTimeout)
         {
             var builder = new ResiliencePipelineBuilder<HttpResponseMessage>();
 
@@ -413,6 +412,7 @@ namespace Unity.Modules.Shared.Http
             {
                 // Note: We don't dispose _httpClient as it may be managed by DI container
                 _disposed = true;
+                GC.SuppressFinalize(this);
             }
         }
     }

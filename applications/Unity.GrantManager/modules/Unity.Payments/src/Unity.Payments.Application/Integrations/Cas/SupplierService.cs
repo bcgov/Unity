@@ -255,13 +255,14 @@ namespace Unity.Payments.Integrations.Cas
                     _ => throw new UserFriendlyException($"CAS service returned error: {response.StatusCode}")
                 };
             }
-            catch (UserFriendlyException)
+            catch (UserFriendlyException ufe)
             {
+                Logger.LogError(ufe, "Error fetching CAS supplier info for: {Resource}", resource);
                 throw;
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                Logger.LogWarning("Long-lived CAS supplier request timed out for resource: {Resource}", resource);
+                Logger.LogWarning(ex, "Long-lived CAS supplier request timed out for resource: {Resource}", resource);
                 throw new UserFriendlyException("The supplier information request timed out after 3 minutes. Please try again later.");
             }
             catch (Exception ex)
