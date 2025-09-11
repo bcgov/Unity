@@ -113,13 +113,10 @@ namespace Unity.Payments.Integrations.Cas
 
             DateTime lastUpdatedDate = default;
             var lastUpdatedStr = GetProp("lastupdated");
-            if (!string.IsNullOrEmpty(lastUpdatedStr))
+            if (!string.IsNullOrEmpty(lastUpdatedStr) && !DateTime.TryParse(lastUpdatedStr, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out lastUpdatedDate))
             {
-                if (!DateTime.TryParse(lastUpdatedStr, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out lastUpdatedDate))
-                {
-                    Logger.LogWarning("Failed to parse 'lastupdated' date: {LastUpdated}", lastUpdatedStr);
-                }
-            }
+                Logger.LogWarning("Failed to parse 'lastupdated' date: {LastUpdated}", lastUpdatedStr);
+            }      
 
             var siteEtos = new List<SiteEto>();
             if (casSupplierResponse.TryGetProperty("supplieraddress", out var sitesJson) && sitesJson.ValueKind == JsonValueKind.Array)
@@ -152,14 +149,11 @@ namespace Unity.Payments.Integrations.Cas
             string maskedAccountNumber = accountNumber.Length > 4 ? new string('*', accountNumber.Length - 4) + accountNumber[^4..] : accountNumber;
             DateTime siteLastUpdatedDate = default;
             var lastUpdatedStr = Get("lastupdated");
-            if (!string.IsNullOrEmpty(lastUpdatedStr))
+            if (!string.IsNullOrEmpty(lastUpdatedStr) && !DateTime.TryParse(lastUpdatedStr, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out siteLastUpdatedDate))
             {
-                if (!DateTime.TryParse(lastUpdatedStr, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out siteLastUpdatedDate))
-                {
-                    // Optionally log or handle the failed parse here
-                    siteLastUpdatedDate = default;
-                }
-            }
+                // Optionally log or handle the failed parse here
+                siteLastUpdatedDate = default;
+            }           
 
             return new SiteEto
             {
