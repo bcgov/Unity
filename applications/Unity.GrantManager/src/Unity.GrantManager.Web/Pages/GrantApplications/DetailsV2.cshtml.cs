@@ -229,12 +229,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         private async Task<IHtmlContent?> LoadComponentAsync(string component, Guid applicationId, Guid applicationFormVersionId, ComponentParameters parameters)
         {
-            // Console.WriteLine($"Loading component: {component} with parameters:");
-            // Console.WriteLine($"- instanceCorrelationId: {parameters.InstanceCorrelationId}");
-            // Console.WriteLine($"- worksheetId: {parameters.WorksheetIdStr}");
-            // Console.WriteLine($"- name: {parameters.Name}");
-            // Console.WriteLine($"- title: {parameters.Title}");
-
             return component switch
             {
                 "AssessmentResults" => await InvokeViewComponentDirectly("AssessmentResults", new { applicationId, applicationFormVersionId }),
@@ -283,7 +277,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         #region Supporting Classes
 
-        private class ComponentParameters
+        private sealed class ComponentParameters
         {
             public Guid InstanceCorrelationId { get; set; }
             public string InstanceCorrelationProvider { get; set; } = "";
