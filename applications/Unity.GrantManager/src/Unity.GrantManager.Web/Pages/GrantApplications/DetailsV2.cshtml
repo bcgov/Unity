@@ -137,15 +137,17 @@
                               feature-requirement="Unity.Flex">
                             <div id="assessmentResultsCustomWidget">
                                 <form id="assessmentResultsCustomForm">
-                                    @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
-                                             new
-                                             {
-                                                 instanceCorrelationId = Model.ApplicationId,
-                                                 instanceCorrelationProvider = CorrelationConsts.Application,
-                                                 sheetCorrelationId = Model.ApplicationFormVersionId,
-                                                 sheetCorrelationProvider = CorrelationConsts.FormVersion,
-                                                 uiAnchor = FlexConsts.AssessmentInfoUiAnchor
-                                             })
+                                    @await Component.InvokeAsyncWithSkeleton(typeof(WorksheetInstanceWidget),
+                                        new
+                                        {
+                                            instanceCorrelationId = Model.ApplicationId,
+                                            instanceCorrelationProvider = CorrelationConsts.Application,
+                                            sheetCorrelationId = Model.ApplicationFormVersionId,
+                                            sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                                            uiAnchor = FlexConsts.AssessmentInfoUiAnchor
+                                        },
+                                        isLazyLoad: true,
+                                        tabName: "nav-review-and-assessment")
                                 </form>
                             </div>
                         </zone>
@@ -295,7 +297,10 @@
                     <div id="applicationDetails">
 
                         <div id="applicationStatusWidget">
-                            @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
+                            @await Component.InvokeAsyncWithSkeleton("ApplicationStatusWidget", 
+                                new { applicationId = Model.ApplicationId }, 
+                                isLazyLoad: true, 
+                                tabName: "details")
                         </div>
                         <div id="applicationTagsWidget">
                             @await Component.InvokeAsync("ApplicationTagsWidget", new { applicationId = Model.ApplicationId })

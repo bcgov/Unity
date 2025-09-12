@@ -204,6 +204,10 @@ $(function () {
             js: '/Views/Shared/Components/PaymentInfo/Default.js',
             css: '/Views/Shared/Components/PaymentInfo/Default.css',
         },
+        ApplicationStatusWidget: {
+            js: '/Views/Shared/Components/ApplicationStatusWidget/Default.js',
+            css: '/Views/Shared/Components/ApplicationStatusWidget/Default.css',
+        },
         HistoryWidget: {
             js: '/Views/Shared/Components/HistoryWidget/Default.js',
             css: '/Views/Shared/Components/HistoryWidget/Default.css',
@@ -215,6 +219,10 @@ $(function () {
         CustomTabWidget: {
             js: '/Views/Shared/Components/CustomTabWidget/Default.js',
             css: '/Views/Shared/Components/CustomTabWidget/Default.css',
+        },
+        WorksheetInstanceWidget: {
+            js: '/Views/Shared/Components/WorksheetInstanceWidget/Default.js',
+            css: '/Views/Shared/Components/WorksheetInstanceWidget/Default.css',
         },
     };
 
@@ -590,6 +598,9 @@ $(function () {
             case 'PaymentInfo':
                 initializePaymentInfo($content);
                 break;
+            case 'ApplicationStatusWidget':
+                initializeApplicationStatusWidget($content);
+                break;
             case 'HistoryWidget':
                 initializeHistoryWidget($content);
                 break;
@@ -598,6 +609,9 @@ $(function () {
                 break;
             case 'CustomTabWidget':
                 initializeCustomTabWidget($content);
+                break;
+            case 'WorksheetInstanceWidget':
+                initializeWorksheetInstanceWidget($content);
                 break;
             default:
                 console.log(
@@ -657,6 +671,24 @@ $(function () {
         }, 300);
     }
 
+    function initializeApplicationStatusWidget($content) {
+        console.log(
+            'Initializing Application Status Widget component for lazy loading'
+        );
+
+        setTimeout(() => {
+            if (
+                typeof window.initializeApplicationStatusWidget === 'function'
+            ) {
+                window.initializeApplicationStatusWidget($content);
+            } else {
+                console.log(
+                    'ApplicationStatusWidget loaded - no specific initialization function found'
+                );
+            }
+        }, 300);
+    }
+
     function initializeHistoryWidget($content) {
         console.log('Initializing History Widget component for lazy loading');
 
@@ -707,6 +739,24 @@ $(function () {
             } else {
                 console.error(
                     'initializeCustomTabWidget function not available'
+                );
+            }
+        }, 300);
+    }
+
+    function initializeWorksheetInstanceWidget($content) {
+        console.log(
+            'Initializing Worksheet Instance Widget component for lazy loading'
+        );
+
+        setTimeout(() => {
+            if (
+                typeof window.initializeWorksheetInstanceWidget === 'function'
+            ) {
+                window.initializeWorksheetInstanceWidget($content);
+            } else {
+                console.error(
+                    'initializeWorksheetInstanceWidget function not available'
                 );
             }
         }, 300);

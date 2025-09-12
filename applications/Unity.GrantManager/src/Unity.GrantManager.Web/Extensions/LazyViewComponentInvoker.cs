@@ -18,9 +18,11 @@ namespace Unity.GrantManager.Web.Extensions
             "FundingAgreementInfo",
             "PaymentInfo",
             "ReviewList",
+            "ApplicationStatusWidget",
             "HistoryWidget",
             "ApplicationAttachments",
-            "CustomTabWidgetViewComponent"
+            "CustomTabWidgetViewComponent",
+            "WorksheetInstanceWidget"
         };
 
        public static async Task<IHtmlContent> InvokeAsyncWithSkeleton(
