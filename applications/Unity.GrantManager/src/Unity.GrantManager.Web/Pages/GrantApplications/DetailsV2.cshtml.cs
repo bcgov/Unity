@@ -22,6 +22,7 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget;
 using Unity.GrantManager.Zones;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -170,67 +171,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {
             try
             {
-                IHtmlContent? htmlContent = null;
+                // Extract and validate parameters
+                var componentParams = ExtractComponentParameters();
+                var validationResult = ValidateParameters(applicationId, component, componentParams);
+                if (validationResult != null) return validationResult;
 
-                // Validate input parameters
-                if (applicationId == Guid.Empty)
-                {
-                    return new JsonResult(new { success = false, error = "Invalid applicationId" });
-                }
-
-                switch (component)
-                {
-                    case "AssessmentResults":
-                        htmlContent = await InvokeViewComponentDirectly("AssessmentResults", new { applicationId, applicationFormVersionId });
-                        break;
-
-                    case "ReviewList":
-                        htmlContent = await InvokeViewComponentDirectly("ReviewList", new { applicationId });
-                        break;
-
-                    case "ProjectInfo":
-                        try
-                        {
-                            htmlContent = await InvokeViewComponentDirectly("ProjectInfo", new { applicationId, applicationFormVersionId });
-                        }
-                        catch (Exception projEx)
-                        {
-                            return new JsonResult(new
-                            {
-                                success = false,
-                                error = $"ProjectInfo component error: {projEx.Message}",
-                                innerException = projEx.InnerException?.Message,
-                                stackTrace = projEx.StackTrace
-                            });
-                        }
-                        break;
-
-                    case "ApplicantInfo":
-                        htmlContent = await InvokeViewComponentDirectly("ApplicantInfo", new { applicationId, applicationFormVersionId });
-                        break;
-
-                    case "FundingAgreementInfo":
-                        htmlContent = await InvokeViewComponentDirectly("FundingAgreementInfo", new { applicationId, applicationFormVersionId });
-                        break;
-
-                    case "PaymentInfo":
-                        htmlContent = await InvokeViewComponentDirectly("PaymentInfo", new { applicationId, applicationFormVersionId });
-                        break;
-
-                    case "HistoryWidget":
-                        htmlContent = await InvokeViewComponentDirectly("HistoryWidget", new { applicationId });
-                        break;
-
-                    case "ApplicationAttachments":
-                        htmlContent = await InvokeViewComponentDirectly("ApplicationAttachments", new { applicationId });
-                        break;
-    
-                    default:
-                        return new JsonResult(new { success = false, error = "Unknown component" });
-                }
-
+                // Load the component
+                var htmlContent = await LoadComponentAsync(component, applicationId, applicationFormVersionId, componentParams);
                 var htmlString = htmlContent != null ? GetHtmlString(htmlContent) : "";
-                
+
                 return new JsonResult(new
                 {
                     success = true,
@@ -241,26 +190,131 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             }
             catch (Exception ex)
             {
-                return new JsonResult(new
-                {
-                    success = false,
-                    error = ex.Message,
-                    component = component,
-                    innerException = ex.InnerException?.Message,
-                    stackTrace = ex.StackTrace // Add for debugging
-                });
+                return CreateErrorResponse(ex, component);
             }
+        }
+
+        #region Private Helper Methods
+
+        private ComponentParameters ExtractComponentParameters()
+        {
+            return new ComponentParameters
+            {
+                InstanceCorrelationId = Guid.TryParse(Request.Query["instanceCorrelationId"].FirstOrDefault(), out var instanceId) ? instanceId : Guid.Empty,
+                InstanceCorrelationProvider = Request.Query["instanceCorrelationProvider"].FirstOrDefault() ?? "",
+                SheetCorrelationId = Request.Query["sheetCorrelationId"].FirstOrDefault() ?? "",
+                SheetCorrelationProvider = Request.Query["sheetCorrelationProvider"].FirstOrDefault() ?? "",
+                UiAnchor = Request.Query["uiAnchor"].FirstOrDefault() ?? "",
+                Name = Request.Query["name"].FirstOrDefault() ?? "",
+                Title = Request.Query["title"].FirstOrDefault() ?? "",
+                WorksheetIdStr = Request.Query["worksheetId"].FirstOrDefault() ?? ""
+            };
+        }
+
+        private static JsonResult? ValidateParameters(Guid applicationId, string component, ComponentParameters parameters)
+        {
+            if (applicationId == Guid.Empty)
+            {
+                return new JsonResult(new { success = false, error = "Invalid applicationId" });
+            }
+
+            // Special validation for CustomTabWidget
+            if (component == "CustomTabWidget" && !Guid.TryParse(parameters.WorksheetIdStr, out _))
+            {
+                return new JsonResult(new { success = false, error = "Invalid worksheetId parameter" });
+            }
+
+            return null;
+        }
+
+        private async Task<IHtmlContent?> LoadComponentAsync(string component, Guid applicationId, Guid applicationFormVersionId, ComponentParameters parameters)
+        {
+            return component switch
+            {
+                "AssessmentResults" => await InvokeViewComponentDirectly("AssessmentResults", new { applicationId, applicationFormVersionId }),
+                "ReviewList" => await InvokeViewComponentDirectly("ReviewList", new { applicationId }),
+                "ProjectInfo" => await InvokeViewComponentDirectly("ProjectInfo", new { applicationId, applicationFormVersionId }),
+                "ApplicantInfo" => await InvokeViewComponentDirectly("ApplicantInfo", new { applicationId, applicationFormVersionId }),
+                "FundingAgreementInfo" => await InvokeViewComponentDirectly("FundingAgreementInfo", new { applicationId, applicationFormVersionId }),
+                "PaymentInfo" => await InvokeViewComponentDirectly("PaymentInfo", new { applicationId, applicationFormVersionId }),
+                "HistoryWidget" => await InvokeViewComponentDirectly("HistoryWidget", new { applicationId }),
+                "ApplicationAttachments" => await InvokeViewComponentDirectly("ApplicationAttachments", new { applicationId }),
+                "CustomTabWidget" => await LoadCustomTabWidget(parameters),
+                _ => throw new ArgumentException($"Unknown component: {component}")
+            };
+        }
+
+        private async Task<IHtmlContent> LoadCustomTabWidget(ComponentParameters parameters)
+        {
+            var worksheetId = Guid.Parse(parameters.WorksheetIdStr);
+            
+            return await InvokeViewComponentDirectly(typeof(CustomTabWidgetViewComponent), new
+            {
+                instanceCorrelationId = parameters.InstanceCorrelationId,
+                instanceCorrelationProvider = parameters.InstanceCorrelationProvider,
+                sheetCorrelationId = parameters.SheetCorrelationId,
+                sheetCorrelationProvider = parameters.SheetCorrelationProvider,
+                uiAnchor = parameters.UiAnchor,
+                name = parameters.Name,
+                title = parameters.Title,
+                worksheetId = worksheetId
+            });
+        }
+
+        private static JsonResult CreateErrorResponse(Exception ex, string component)
+        {
+            return new JsonResult(new
+            {
+                success = false,
+                error = ex.Message,
+                component = component,
+                innerException = ex.InnerException?.Message,
+                stackTrace = ex.StackTrace
+            });
+        }
+
+        #endregion
+
+        #region Supporting Classes
+
+        private sealed class ComponentParameters
+        {
+            public Guid InstanceCorrelationId { get; set; }
+            public string InstanceCorrelationProvider { get; set; } = "";
+            public string SheetCorrelationId { get; set; } = "";
+            public string SheetCorrelationProvider { get; set; } = "";
+            public string UiAnchor { get; set; } = "";
+            public string Name { get; set; } = "";
+            public string Title { get; set; } = "";
+            public string WorksheetIdStr { get; set; } = "";
+        }
+
+        #endregion
+
+        // Public overloads for different component invocation types
+        private async Task<IHtmlContent> InvokeViewComponentDirectly(Type componentType, object arguments)
+        {
+            return await InvokeViewComponentCoreAsync(componentType: componentType, arguments: arguments);
         }
 
         private async Task<IHtmlContent> InvokeViewComponentDirectly(string componentName, object arguments)
         {
-            // Use a simpler approach with StringWriter to capture the output
+            return await InvokeViewComponentCoreAsync(componentName: componentName, arguments: arguments);
+        }
+
+        // Core method that handles both Type and string-based invocations
+        private async Task<IHtmlContent> InvokeViewComponentCoreAsync(Type? componentType = null, string? componentName = null, object? arguments = null)
+        {
+            // Validate input parameters
+            if (componentType == null && string.IsNullOrEmpty(componentName))
+            {
+                throw new ArgumentException("Either componentType or componentName must be provided");
+            }
+
             using var writer = new StringWriter();
 
-            // Create ActionContext
+            // Create contexts
             var actionContext = new ActionContext(HttpContext, RouteData, PageContext.ActionDescriptor);
-
-            // Create ViewContext with our StringWriter
             var viewContext = new ViewContext(
                 actionContext,
                 new FakeView(),
@@ -270,17 +324,17 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 new HtmlHelperOptions()
             );
 
-            // Get ViewComponent helper and contextualize it properly
+            // Get and configure ViewComponent helper
             var viewComponentHelper = HttpContext.RequestServices.GetRequiredService<IViewComponentHelper>();
-
-            // Cast to the correct type and contextualize
             if (viewComponentHelper is IViewContextAware contextAware)
             {
                 contextAware.Contextualize(viewContext);
             }
 
-            // Invoke the ViewComponent
-            var result = await viewComponentHelper.InvokeAsync(componentName, arguments);
+            // Invoke based on available identifier
+            var result = componentType != null
+                ? await viewComponentHelper.InvokeAsync(componentType, arguments)
+                : await viewComponentHelper.InvokeAsync(componentName!, arguments);
 
             return new HtmlString(GetHtmlString(result));
         }
@@ -290,7 +344,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             using var writer = new StringWriter();
             htmlContent.WriteTo(writer, System.Text.Encodings.Web.HtmlEncoder.Default);
             return writer.ToString();
-        }   
+        }  
     }
     
 

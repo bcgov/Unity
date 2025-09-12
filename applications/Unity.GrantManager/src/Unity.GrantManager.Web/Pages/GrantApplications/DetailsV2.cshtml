@@ -137,15 +137,17 @@
                               feature-requirement="Unity.Flex">
                             <div id="assessmentResultsCustomWidget">
                                 <form id="assessmentResultsCustomForm">
-                                    @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
-                                             new
-                                             {
-                                                 instanceCorrelationId = Model.ApplicationId,
-                                                 instanceCorrelationProvider = CorrelationConsts.Application,
-                                                 sheetCorrelationId = Model.ApplicationFormVersionId,
-                                                 sheetCorrelationProvider = CorrelationConsts.FormVersion,
-                                                 uiAnchor = FlexConsts.AssessmentInfoUiAnchor
-                                             })
+                                    @await Component.InvokeAsyncWithSkeleton(typeof(WorksheetInstanceWidget),
+                                        new
+                                        {
+                                            instanceCorrelationId = Model.ApplicationId,
+                                            instanceCorrelationProvider = CorrelationConsts.Application,
+                                            sheetCorrelationId = Model.ApplicationFormVersionId,
+                                            sheetCorrelationProvider = CorrelationConsts.FormVersion,
+                                            uiAnchor = FlexConsts.AssessmentInfoUiAnchor
+                                        },
+                                        isLazyLoad: true,
+                                        tabName: "nav-review-and-assessment")
                                 </form>
                             </div>
                         </zone>
@@ -176,67 +178,9 @@
                         </abp-row>
                     </abp-tab>
                 }
-
-                @* @if (await IsZoneVisible(UnitySelector.Review.Default))
-                {
-                    <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
-                        <div class="w-100 px-2" id="assessmentResultWidget">
-                            @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                        </div>
-
-                        <zone id="@UnitySelector.Review.Worksheet.Default" form-id="@Model.ApplicationFormId"
-                              zone-requirement="@UnitySelector.Review.Default"
-                              permission-requirement="@UnitySelector.Review.Default"
-                              feature-requirement="Unity.Flex">
-                            <div id="assessmentResultsCustomWidget">
-                                <form id="assessmentResultsCustomForm">
-                                    @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
-                                             new
-                                             {
-                                                 instanceCorrelationId = Model.ApplicationId,
-                                                 instanceCorrelationProvider = CorrelationConsts.Application,
-                                                 sheetCorrelationId = Model.ApplicationFormVersionId,
-                                                 sheetCorrelationProvider = CorrelationConsts.FormVersion,
-                                                 uiAnchor = FlexConsts.AssessmentInfoUiAnchor
-                                             })
-                                </form>
-                            </div>
-                        </zone>
-
-                        <zone id="@UnitySelector.Review.AssessmentReviewList.Default" form-id="@Model.ApplicationFormId">
-                            <div class="w-100 px-2" id="assessmentMainView">
-                                @await Component.InvokeAsync("ReviewList")
-                            </div>
-                        </zone>
-
-                        <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
-                            <abp-column size="_12">
-                                <abp-row>
-                                    <abp-column size="_12" class="back-button-container">
-                                        <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
-                                    </abp-column>
-                                    <abp-column size="_8">
-                                        <h4 class="review-heading">Assessment Result Attachments</h4>
-                                    </abp-column>
-                                    <abp-column size="_4" class="add-review-btn-container">
-
-                                    </abp-column>
-                                </abp-row>
-                            </abp-column>
-                        </abp-row>
-                    </abp-tab>
-                } *@
                 @*-------- Review & Assessment Section END ---------*@
 
                 @*-------- Project Info Section ---------*@
-                @* @if (await IsZoneVisible(UnitySelector.Project.Default))
-                {
-                    <abp-tab name="nav-project-info" title="Project Info">
-                        <div class="w-100 px-2" id="projectInfoWidget">
-                            @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                        </div>
-                    </abp-tab>
-                } *@
                 @if (await IsZoneVisible(UnitySelector.Project.Default))
                 {
                     <abp-tab name="nav-project-info" title="Project Info">
@@ -251,14 +195,6 @@
                 @*-------- Project Info Section END ---------*@
 
                 @*-------- Applicant Info Section ---------*@
-                @* @if (await IsZoneVisible(UnitySelector.Applicant.Default))
-                {
-                    <abp-tab name="nav-organization-info" title="Applicant Info">
-                        <div class="w-100 px-2" id="ApplicantInfoWidget">
-                            @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                        </div>
-                    </abp-tab>
-                } *@
                 @if (await IsZoneVisible(UnitySelector.Applicant.Default))
                 {
                     <abp-tab name="nav-organization-info" title="Applicant Info">
@@ -274,14 +210,6 @@
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Funding Agreement Info Section ---------*@
-                @* @if (IsZoneEnabled(UnitySelector.Funding.Default))
-                {
-                    <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
-                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Funding.Agreement.Default)" id="FundingAgreementInfoWidget">
-                            @await Component.InvokeAsync("FundingAgreementInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                        </div>
-                    </abp-tab>
-                } *@
                 @if (IsZoneEnabled(UnitySelector.Funding.Default))
                 {
                     <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
@@ -296,14 +224,6 @@
                 @*-------- Funding Agreement Section END ---------*@
 
                 @*-------- Payments Section ---------*@
-                @* @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && await IsZoneVisible(UnitySelector.Payment.Default))
-                {
-                    <abp-tab name="nav-payment-info" title="Payment Info">
-                        <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Payment.Default)" id="PaymentInfoWidget">
-                            @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                        </div>
-                    </abp-tab>
-                } *@
                 @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && await IsZoneVisible(UnitySelector.Payment.Default))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
@@ -322,7 +242,7 @@
                     @foreach (var customTab in Model.CustomTabs)
                     {
                         <abp-tab name="@customTab.Worksheet?.Name" title="@customTab.Worksheet?.Title">
-                            @await Component.InvokeAsync(typeof(CustomTabWidgetViewComponent), new
+                                @await Component.InvokeAsyncWithSkeleton(typeof(CustomTabWidgetViewComponent), new
                                 {
                                     instanceCorrelationId = Model.ApplicationId,
                                     instanceCorrelationProvider = CorrelationConsts.Application,
@@ -332,7 +252,9 @@
                                     name = customTab.Worksheet?.Name,
                                     title = customTab.Worksheet?.Title,
                                     worksheetId = customTab.Worksheet?.Id
-                                })
+                                },
+                                     isLazyLoad: true,
+                                     tabName: $"nav-{customTab.Worksheet?.Name}")
                         </abp-tab>
                     }
                 }
@@ -375,7 +297,10 @@
                     <div id="applicationDetails">
 
                         <div id="applicationStatusWidget">
-                            @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
+                            @await Component.InvokeAsyncWithSkeleton("ApplicationStatusWidget", 
+                                new { applicationId = Model.ApplicationId }, 
+                                isLazyLoad: true, 
+                                tabName: "details")
                         </div>
                         <div id="applicationTagsWidget">
                             @await Component.InvokeAsync("ApplicationTagsWidget", new { applicationId = Model.ApplicationId })
@@ -474,7 +399,7 @@
                    @await Component.InvokeAsyncWithSkeleton("ApplicationAttachments", 
                         new { applicationId = Model.ApplicationId }, 
                         isLazyLoad: true, 
-                        tabName: "nav-attachments")
+                        tabName: "attachments")
 
                     <div class="d-flex justify-content-end m-3">
                         <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">

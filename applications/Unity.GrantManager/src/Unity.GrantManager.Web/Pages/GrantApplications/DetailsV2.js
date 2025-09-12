@@ -34,10 +34,6 @@ $(function () {
 
     initializeDetailsPage();
 
-    /****lazy loading start *****/
-    // ADD LAZY LOADING FUNCTIONALITY HERE
-    console.log('DetailsV2 with lazy ViewComponents initialized');
-
     // Handle Bootstrap tab activation for right-side tabs (not ABP tabs)
     $('#myTabContent')
         .closest('.right-card')
@@ -94,6 +90,12 @@ $(function () {
 
         // Multiple strategies to find the tab pane - ABP tabs can have different structures
         let tabPane = $(`#${tabName}`); // Should find #history, #attachments, etc.
+
+        // For custom tabs, also try finding by nav-* prefix
+        if (tabPane.length === 0 && tabName.startsWith('nav-')) {
+            const customTabName = tabName.replace('nav-', '');
+            tabPane = $(`[name="${customTabName}"]`);
+        }
 
         if (tabPane.length > 0) {
             console.log(`Found tab pane by ID: ${tabName}`);
@@ -202,6 +204,10 @@ $(function () {
             js: '/Views/Shared/Components/PaymentInfo/Default.js',
             css: '/Views/Shared/Components/PaymentInfo/Default.css',
         },
+        ApplicationStatusWidget: {
+            js: '/Views/Shared/Components/ApplicationStatusWidget/Default.js',
+            css: '/Views/Shared/Components/ApplicationStatusWidget/Default.css',
+        },
         HistoryWidget: {
             js: '/Views/Shared/Components/HistoryWidget/Default.js',
             css: '/Views/Shared/Components/HistoryWidget/Default.css',
@@ -209,6 +215,14 @@ $(function () {
         ApplicationAttachments: {
             js: '/Views/Shared/Components/ApplicationAttachments/ApplicationAttachments.js',
             css: '/Views/Shared/Components/ApplicationAttachments/ApplicationAttachments.css',
+        },
+        CustomTabWidget: {
+            js: '/Views/Shared/Components/CustomTabWidget/Default.js',
+            css: '/Views/Shared/Components/CustomTabWidget/Default.css',
+        },
+        WorksheetInstanceWidget: {
+            js: '/Views/Shared/Components/WorksheetInstanceWidget/Default.js',
+            css: '/Views/Shared/Components/WorksheetInstanceWidget/Default.css',
         },
     };
 
@@ -584,11 +598,20 @@ $(function () {
             case 'PaymentInfo':
                 initializePaymentInfo($content);
                 break;
+            case 'ApplicationStatusWidget':
+                initializeApplicationStatusWidget($content);
+                break;
             case 'HistoryWidget':
                 initializeHistoryWidget($content);
                 break;
             case 'ApplicationAttachments':
                 initializeApplicationAttachments($content);
+                break;
+            case 'CustomTabWidget':
+                initializeCustomTabWidget($content);
+                break;
+            case 'WorksheetInstanceWidget':
+                initializeWorksheetInstanceWidget($content);
                 break;
             default:
                 console.log(
@@ -620,7 +643,6 @@ $(function () {
 
     function initializeProjectInfo($content) {
         console.log('Initializing Project Info component');
-        // Add any project info specific JavaScript here
     }
 
     function initializeApplicantInfo($content) {
@@ -649,6 +671,24 @@ $(function () {
         }, 300);
     }
 
+    function initializeApplicationStatusWidget($content) {
+        console.log(
+            'Initializing Application Status Widget component for lazy loading'
+        );
+
+        setTimeout(() => {
+            if (
+                typeof window.initializeApplicationStatusWidget === 'function'
+            ) {
+                window.initializeApplicationStatusWidget($content);
+            } else {
+                console.log(
+                    'ApplicationStatusWidget loaded - no specific initialization function found'
+                );
+            }
+        }, 300);
+    }
+
     function initializeHistoryWidget($content) {
         console.log('Initializing History Widget component for lazy loading');
 
@@ -672,6 +712,51 @@ $(function () {
             } else {
                 console.error(
                     'initializeApplicationAttachments function not available'
+                );
+            }
+        }, 300);
+    }
+
+    function initializeCustomTabWidget($content) {
+        console.log(
+            'Initializing Custom Tab Widget component for lazy loading'
+        );
+
+        setTimeout(() => {
+            if (typeof window.initializeCustomTabWidget === 'function') {
+                const $container = $content.closest(
+                    '.lazy-component-container'
+                );
+                const tabName = $container.data('tab') || 'custom-tab';
+
+                console.log(
+                    `Calling initializeCustomTabWidget with container:`,
+                    $content,
+                    `tabName:`,
+                    tabName
+                );
+                window.initializeCustomTabWidget($content, tabName);
+            } else {
+                console.error(
+                    'initializeCustomTabWidget function not available'
+                );
+            }
+        }, 300);
+    }
+
+    function initializeWorksheetInstanceWidget($content) {
+        console.log(
+            'Initializing Worksheet Instance Widget component for lazy loading'
+        );
+
+        setTimeout(() => {
+            if (
+                typeof window.initializeWorksheetInstanceWidget === 'function'
+            ) {
+                window.initializeWorksheetInstanceWidget($content);
+            } else {
+                console.error(
+                    'initializeWorksheetInstanceWidget function not available'
                 );
             }
         }, 300);
