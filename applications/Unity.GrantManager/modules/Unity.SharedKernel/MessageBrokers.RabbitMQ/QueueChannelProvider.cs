@@ -12,7 +12,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
     public sealed class PooledQueueChannelProvider<TQueueMessage> : IQueueChannelProvider<TQueueMessage>
         where TQueueMessage : IQueueMessage
     {
-        private readonly IChannelProvider _channelProvider;
+        private readonly IQueueChannelProvider<TQueueMessage> _channelProvider;
         private readonly ILogger<PooledQueueChannelProvider<TQueueMessage>> _logger;
         private readonly ConcurrentQueue<IModel> _channelPool = new();
         private readonly SemaphoreSlim _channelSemaphore = new(MaxChannels, MaxChannels);
@@ -27,7 +27,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         private readonly TimeSpan _channelWaitTimeout = TimeSpan.FromSeconds(10);
 
         public PooledQueueChannelProvider(
-            IChannelProvider channelProvider,
+            IQueueChannelProvider<TQueueMessage> channelProvider,
             ILogger<PooledQueueChannelProvider<TQueueMessage>> logger)
         {
             _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));

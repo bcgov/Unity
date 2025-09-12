@@ -48,6 +48,10 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 _logger.LogError(ex, "BasicConsume failed for Queue '{Queue}'", _queueName);
                 throw new QueueingException($"BasicConsume failed for Queue '{_queueName}'", ex);
             }
+            finally
+            {
+                channelProvider.ReturnChannel(consumerChannel); // <-- make sure your provider has this
+            }
         }
 
         void IQueueConsumerHandler<TMessageConsumer, TQueueMessage>.CancelQueueConsumer()

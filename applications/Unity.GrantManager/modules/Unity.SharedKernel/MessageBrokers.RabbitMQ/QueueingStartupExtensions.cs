@@ -30,7 +30,6 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             });
 
             services.TryAddSingleton<IConnectionProvider, ConnectionProvider>();
-            services.TryAddScoped<IChannelProvider, PooledChannelProvider>();
 
             services.TryAddScoped(typeof(IQueueChannelProvider<>), typeof(PooledQueueChannelProvider<>));
             services.TryAddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));

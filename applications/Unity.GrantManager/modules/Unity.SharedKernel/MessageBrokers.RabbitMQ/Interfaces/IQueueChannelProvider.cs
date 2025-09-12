@@ -14,6 +14,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
         /// Gets a channel for publishing or consuming messages.
         /// </summary>
         IModel GetChannel();
+        void ReturnChannel(IModel channel);
     }
 }
 #pragma warning restore CA1005 // Avoid excessive parameters on generic types
