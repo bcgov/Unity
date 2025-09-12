@@ -249,6 +249,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.OrgNumber = application.Applicant.OrgNumber;
             appDto.OrganizationSize = application.Applicant.OrganizationSize;
             appDto.OrgStatus = application.Applicant.OrgStatus;
+            appDto.BusinessNumber = application.Applicant.BusinessNumber;
             appDto.NonRegOrgName = application.Applicant.NonRegOrgName;
             appDto.Sector = application.Applicant.Sector;
             appDto.OrganizationType = application.Applicant.OrganizationType;

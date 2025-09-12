@@ -197,6 +197,7 @@ $(function () {
                             OrganizationType: item.OrganizationType,
                             OrganizationSize: item.OrganizationSize,
                             OrgStatus: item.OrgStatus,
+                            BusinessNumber: item.BusinessNumber,
                             IndigenousOrgInd: item.IndigenousOrgInd,
                             Sector: item.Sector,
                             SubSector: item.SubSector,
@@ -344,7 +345,9 @@ $(function () {
                 ApplicantInfoObj['ApplicantSummary.OrgNumber'] = orgNumber;
                 const orgStatus = $('#ApplicantSummary_OrgStatus').val();
                 ApplicantInfoObj['ApplicantSummary.OrgStatus'] = orgStatus;
-
+                const businessNumber = $('#ApplicantSummary_BusinessNumber').val();
+                ApplicantInfoObj['ApplicantSummary.BusinessNumber'] = businessNumber;
+                
                 ApplicantInfoObj['correlationId'] = formVersionId;
                 ApplicantInfoObj['worksheetId'] = worksheetId;
                 ApplicantInfoObj.ApplicantId = principalApplicantId;

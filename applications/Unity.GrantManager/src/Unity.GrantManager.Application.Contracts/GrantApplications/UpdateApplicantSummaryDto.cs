@@ -9,6 +9,7 @@ public class UpdateApplicantSummaryDto
     public string? OrgName { get; set; }
     public string? NonRegOrgName { get; set; }
     public string? OrgStatus { get; set; }
+    public string? BusinessNumber { get; set; }
     public string? OrganizationType { get; set; }
     public string? OrganizationSize { get; set; }
     public string? SectorSubSectorIndustryDesc { get; set; }
