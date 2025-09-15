@@ -1,0 +1,22 @@
+/* Applicants page styles - will be fully implemented in Stage 8 */
+.container-applicants {
+    padding: 0;
+}
+
+.applicants-scrollable-content {
+    overflow-x: auto;
+}
+
+/* Table styling */
+#ApplicantsTable_wrapper {
+    margin-top: 1rem;
+}
+
+/* Temporary styles until Stage 8 */
+.dataTables_wrapper .dataTables_filter {
+    float: right;
+}
+
+.dataTables_wrapper .dataTables_length {
+    float: left;
+}
