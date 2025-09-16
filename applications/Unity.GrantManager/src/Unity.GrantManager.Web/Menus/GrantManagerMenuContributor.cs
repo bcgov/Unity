@@ -7,6 +7,9 @@ using Unity.TenantManagement;
 using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
+using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Web.Menus;
 
@@ -23,9 +26,10 @@ public class GrantManagerMenuContributor : IMenuContributor
         }
     }
 
-    private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
+    private async static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         var l = context.GetLocalizer<GrantManagerResource>();
+        var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
@@ -100,8 +104,20 @@ public class GrantManagerMenuContributor : IMenuContributor
                 "~/EndpointManagement/Endpoints",
                 requiredPermissionName: IdentityConsts.ITOperationsPermissionName
             )
-        );        
+        );
 
+        if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
+        {
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    GrantManagerMenus.AIReporting,
+                    l["Menu:AIReporting"],
+                    "~/AIReporting",
+                    icon: "fl fl-view-dashboard",
+                    order: 9
+                )
+            );
+        }
 
         // ********************
         // Admin - Tenant Management 
@@ -147,7 +163,7 @@ public class GrantManagerMenuContributor : IMenuContributor
         //}
         //*/
 
-        return Task.CompletedTask;
+        //return Task.CompletedTask;
 #pragma warning restore S125 // Sections of code should not be commented out
     }
 }
