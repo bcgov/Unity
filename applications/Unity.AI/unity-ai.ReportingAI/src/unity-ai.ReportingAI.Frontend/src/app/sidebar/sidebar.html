@@ -34,6 +34,19 @@
       </div>
     </div>
   </div>
+  
+  <div class="sidebar-footer">
+    <button class="footer-btn feedback-btn" title="Feedback" (click)="openFeedbackModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M5 21V3.90002C5 3.90002 5.875 3 8.5 3C11.125 3 12.875 4.8 15.5 4.8C18.125 4.8 19 3.9 19 3.9V14.7C19 14.7 18.125 15.6 15.5 15.6C12.875 15.6 11.125 13.8 8.5 13.8C5.875 13.8 5 14.7 5 14.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="footer-btn info-btn" title="Information" (click)="openInfoModal()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+      </svg>
+    </button>
+  </div>
 </div>
 
 <app-alert
@@ -45,3 +58,68 @@
   (confirm)="confirmDelete()"
   (cancel)="cancelDelete()">
 </app-alert>
+
+<!-- Feedback Modal -->
+<div class="feedback-modal-overlay" *ngIf="showFeedbackModal" (click)="closeFeedbackModal()">
+  <div class="feedback-modal" (click)="$event.stopPropagation()">
+    <div class="feedback-modal-header">
+      <h3>Report Bug</h3>
+      <button class="feedback-modal-close" (click)="closeFeedbackModal()">×</button>
+    </div>
+    <div class="feedback-modal-body">
+      <p>Flag this report as having a bug or issue.</p>
+      <label for="feedbackMessage">Additional details (optional):</label>
+      <textarea 
+        id="feedbackMessage"
+        class="feedback-textarea"
+        [(ngModel)]="feedbackMessage"
+        placeholder="Describe the issue you encountered..."
+        rows="4">
+      </textarea>
+    </div>
+    <div class="feedback-modal-footer">
+      <button class="feedback-btn-cancel" (click)="closeFeedbackModal()">Cancel</button>
+      <button class="feedback-btn-submit" (click)="submitFeedback()">Flag as Bug</button>
+    </div>
+  </div>
+</div>
+
+<!-- Information Modal -->
+<div class="info-modal-overlay" *ngIf="showInfoModal" (click)="closeInfoModal()">
+  <div class="info-modal" (click)="$event.stopPropagation()">
+    <div class="info-modal-header">
+      <h3>About Unity AI Reporting</h3>
+      <button class="info-modal-close" (click)="closeInfoModal()">×</button>
+    </div>
+    <div class="info-modal-body">
+      <div class="info-section">
+        <h4>What is this tool?</h4>
+        <p>Unity AI Reporting is an intelligent report generation tool that converts your natural language questions into data visualizations and reports.</p>
+      </div>
+      
+      <div class="info-section">
+        <h4>How to use:</h4>
+        <ul>
+          <li><strong>Ask questions</strong> in plain English about your data</li>
+          <li><strong>View reports</strong> generated automatically from your questions</li>
+          <li><strong>Switch views</strong> between table, charts, and other visualizations</li>
+          <li><strong>Save reports</strong> - they're automatically saved to your sidebar</li>
+          <li><strong>Flag issues</strong> using the flag button to report bugs or problems</li>
+        </ul>
+      </div>
+      
+      <div class="info-section">
+        <h4>Tips:</h4>
+        <ul>
+          <li>Be specific about the data you want to see</li>
+          <li>Ask follow-up questions to refine your reports</li>
+          <li>Use the visualization dropdown to change chart types</li>
+          <li>Click the external link button to view reports in Metabase</li>
+        </ul>
+      </div>
+    </div>
+    <div class="info-modal-footer">
+      <button class="info-btn-close" (click)="closeInfoModal()">Got it</button>
+    </div>
+  </div>
+</div>

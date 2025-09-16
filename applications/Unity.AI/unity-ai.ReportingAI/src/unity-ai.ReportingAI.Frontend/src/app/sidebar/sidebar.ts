@@ -1,7 +1,9 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
+import { ToastService } from '../services/toast.service';
 import { AlertComponent } from '../alert/alert';
 
 export interface Chat {
@@ -13,7 +15,7 @@ export interface Chat {
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule, AlertComponent],
+  imports: [CommonModule, FormsModule, AlertComponent],
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css']
 })
@@ -31,7 +33,17 @@ export class SidebarComponent {
   showDeleteAlert: boolean = false;
   chatToDelete: Chat | null = null;
 
-  constructor(private apiService: ApiService) {}
+  // Feedback modal state
+  showFeedbackModal: boolean = false;
+  feedbackMessage: string = '';
+
+  // Information modal state
+  showInfoModal: boolean = false;
+
+  constructor(
+    private apiService: ApiService,
+    private toastService: ToastService
+  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadChats();
@@ -97,6 +109,7 @@ export class SidebarComponent {
     if (!this.chatToDelete) return;
 
     const deletedChatId = this.chatToDelete.id;
+    const chatTitle = this.chatToDelete.title;
     
     try {
       await firstValueFrom(
@@ -109,8 +122,13 @@ export class SidebarComponent {
       if (this.currentChatId === deletedChatId) {
         this.newChat.emit();
       }
+
+      // Show success toast
+      this.toastService.success(`Report "${chatTitle}" deleted successfully`);
+      
     } catch (error) {
-      // Handle error silently
+      // Show error toast
+      this.toastService.error('Failed to delete report. Please try again.');
     }
 
     this.cancelDelete();
@@ -119,5 +137,63 @@ export class SidebarComponent {
   cancelDelete(): void {
     this.showDeleteAlert = false;
     this.chatToDelete = null;
+  }
+
+  openFeedbackModal(): void {
+    this.showFeedbackModal = true;
+    this.feedbackMessage = '';
+  }
+
+  closeFeedbackModal(): void {
+    this.showFeedbackModal = false;
+    this.feedbackMessage = '';
+  }
+
+  async submitFeedback(): Promise<void> {
+    if (!this.currentChatId) {
+      this.toastService.error('No current report to flag');
+      return;
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.apiService.submitFeedback<any>(
+          this.currentChatId,
+          'bug_report',
+          this.feedbackMessage.trim()
+        )
+      );
+
+      console.log('Feedback submitted successfully:', response.feedback_id);
+      this.closeFeedbackModal();
+      
+      // Show success toast
+      const messageText = this.feedbackMessage.trim() 
+        ? 'Bug report submitted with your feedback, thank you'
+        : 'Bug report submitted successfully, thank you';
+      this.toastService.success(messageText);
+      
+    } catch (error: any) {
+      console.error('Failed to submit feedback:', error);
+      
+      // Show error toast with specific message
+      let errorMessage = 'Failed to submit bug report. Please try again.';
+      if (error?.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      this.toastService.error(errorMessage);
+      // Keep the modal open so user can retry
+    }
+  }
+
+  openInfoModal(): void {
+    this.showInfoModal = true;
+  }
+
+  closeInfoModal(): void {
+    this.showInfoModal = false;
   }
 }

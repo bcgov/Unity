@@ -46,6 +46,29 @@ class DatabaseManager:
                     CREATE INDEX IF NOT EXISTS idx_chats_tenant_id ON chats(tenant_id);
                 """)
                 
+                # Feedback table for bug reports and user feedback
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS feedback (
+                        feedback_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        chat_id UUID NOT NULL REFERENCES chats(chat_id) ON DELETE CASCADE,
+                        user_id TEXT NOT NULL,
+                        tenant_id TEXT NOT NULL,
+                        feedback_type TEXT NOT NULL DEFAULT 'bug_report',
+                        message TEXT,
+                        user_agent TEXT,
+                        metadata JSONB,
+                        status TEXT DEFAULT 'open',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                    
+                    CREATE INDEX IF NOT EXISTS idx_feedback_chat_id ON feedback(chat_id);
+                    CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);
+                    CREATE INDEX IF NOT EXISTS idx_feedback_tenant_id ON feedback(tenant_id);
+                    CREATE INDEX IF NOT EXISTS idx_feedback_type ON feedback(feedback_type);
+                    CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status);
+                """)
+                
                 # You can add more tables here for extensibility
                 # For example: user_preferences, query_history, etc.
                 
@@ -200,6 +223,100 @@ class ChatRepository:
                 conn.commit()
 
 
+class FeedbackRepository:
+    """Repository for feedback/bug reports management"""
+    
+    def __init__(self, db_manager: DatabaseManager):
+        self.db = db_manager
+    
+    def submit_feedback(self, chat_id: str, user_id: str, tenant_id: str, 
+                       feedback_type: str, message: str, user_agent: str = None, 
+                       metadata: Dict = None) -> str:
+        """Submit feedback for a chat"""
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO feedback (chat_id, user_id, tenant_id, feedback_type, message, user_agent, metadata)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    RETURNING feedback_id
+                """, (chat_id, user_id, tenant_id, feedback_type, message, user_agent, 
+                      json.dumps(metadata) if metadata else None))
+                
+                feedback_id = str(cur.fetchone()[0])
+                conn.commit()
+                return feedback_id
+    
+    def get_feedback(self, feedback_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific feedback entry"""
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT f.feedback_id, f.chat_id, f.user_id, f.tenant_id, f.feedback_type,
+                           f.message, f.user_agent, f.metadata, f.status, f.created_at, f.updated_at,
+                           c.title as chat_title
+                    FROM feedback f
+                    LEFT JOIN chats c ON f.chat_id = c.chat_id
+                    WHERE f.feedback_id = %s
+                """, (feedback_id,))
+                
+                row = cur.fetchone()
+                if not row:
+                    return None
+                
+                return {
+                    "feedback_id": str(row[0]),
+                    "chat_id": str(row[1]),
+                    "user_id": row[2],
+                    "tenant_id": row[3],
+                    "feedback_type": row[4],
+                    "message": row[5],
+                    "user_agent": row[6],
+                    "metadata": row[7],
+                    "status": row[8],
+                    "created_at": row[9].isoformat(),
+                    "updated_at": row[10].isoformat(),
+                    "chat_title": row[11]
+                }
+    
+    def get_feedback_by_chat(self, chat_id: str) -> List[Dict[str, Any]]:
+        """Get all feedback for a specific chat"""
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT feedback_id, feedback_type, message, status, created_at
+                    FROM feedback
+                    WHERE chat_id = %s
+                    ORDER BY created_at DESC
+                """, (chat_id,))
+                
+                feedback_list = []
+                for row in cur.fetchall():
+                    feedback_list.append({
+                        "feedback_id": str(row[0]),
+                        "feedback_type": row[1],
+                        "message": row[2],
+                        "status": row[3],
+                        "created_at": row[4].isoformat()
+                    })
+                
+                return feedback_list
+    
+    def update_feedback_status(self, feedback_id: str, status: str) -> bool:
+        """Update feedback status"""
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE feedback 
+                    SET status = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE feedback_id = %s
+                """, (status, feedback_id))
+                
+                updated = cur.rowcount > 0
+                conn.commit()
+                return updated
+
+
 # Global instances
 db_manager = DatabaseManager()
 chat_repository = ChatRepository(db_manager)
+feedback_repository = FeedbackRepository(db_manager)

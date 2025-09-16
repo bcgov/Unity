@@ -6,15 +6,17 @@ import { CommonModule } from '@angular/common';
 import { Embed } from './embed';
 import { Turn } from './turn';
 import { SqlExplanationComponent } from './sql-explanation/sql-explanation';
+import { ToastComponent } from './toast/toast.component';
 import { AuthService } from './services/auth.service';
 import { ApiService } from './services/api.service';
+import { ToastService } from './services/toast.service';
 import { IframeDetectorService } from './iframe-detector.service';
 import { SidebarComponent, Chat } from './sidebar/sidebar';
 import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, SqlExplanationComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, SqlExplanationComponent, SidebarComponent, ToastComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
@@ -33,6 +35,7 @@ export class App implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private authService: AuthService,
     private apiService: ApiService,
+    private toastService: ToastService,
     private iframeDetector: IframeDetectorService
   ) {}
 
@@ -254,8 +257,12 @@ export class App implements OnInit, OnDestroy {
           if (this.sidebar) {
             this.sidebar.loadChats();
           }
+          
+          // Show success toast for entire chat deletion
+          this.toastService.success('Report deleted successfully');
         } catch (deleteError) {
           console.error('Error deleting empty chat:', deleteError);
+          this.toastService.error('Failed to delete report. Please try again.');
         }
         return; // Exit early since there's nothing left to update
       }
@@ -273,9 +280,13 @@ export class App implements OnInit, OnDestroy {
       // Save the updated conversation to the database
       await this.saveChat();
       
+      // Show success toast for individual question deletion
+      this.toastService.success('Question deleted successfully');
+      
     } catch (error) {
-      // Handle error silently or show user feedback
+      // Show error toast
       console.error('Error deleting question:', error);
+      this.toastService.error('Failed to delete question. Please try again.');
     }
   }
 

@@ -110,4 +110,23 @@ export class ApiService {
   validateToken<T>(): Observable<T> {
     return this.post<T>('/validate-token', {});
   }
+
+  // Feedback methods
+  submitFeedback<T>(chatId: string, feedbackType: string, message: string): Observable<T> {
+    return this.post<T>('/feedback', {
+      chat_id: chatId,
+      feedback_type: feedbackType,
+      message: message,
+      timestamp: new Date().toISOString(),
+      frontend_version: '1.0.0'
+    });
+  }
+
+  getFeedback<T>(feedbackId: string): Observable<T> {
+    return this.get<T>(`/feedback/${feedbackId}`);
+  }
+
+  getChatFeedback<T>(chatId: string): Observable<T> {
+    return this.get<T>(`/chats/${chatId}/feedback`);
+  }
 }

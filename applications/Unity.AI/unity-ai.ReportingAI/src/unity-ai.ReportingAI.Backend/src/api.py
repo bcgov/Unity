@@ -8,7 +8,7 @@ import json
 import aiohttp
 from typing import Dict, Any, Generator
 from config import config
-from database import db_manager, chat_repository
+from database import db_manager, chat_repository, feedback_repository
 from metabase import metabase_client
 from chat import chat_manager
 from sql_generator import sql_generator
@@ -432,4 +432,109 @@ def delete_chat(chat_id):
         print(f"Error deleting chat: {e}")
         return abort(500, "Internal server error")
 
+
+# Feedback endpoints
+
+@app.route("/api/feedback", methods=["POST"])
+@require_auth
+def submit_feedback():
+    """Submit feedback/bug report for a chat"""
+    data = request.get_json()
+    user_data = get_user_from_token()
+    
+    try:
+        # Extract user context from JWT token
+        user_id = user_data["user_id"]
+        tenant_id = user_data["tenant"]
+        
+        # Get request data
+        chat_id = data.get("chat_id")
+        feedback_type = data.get("feedback_type", "bug_report")
+        message = data.get("message", "").strip()
+        user_agent = request.headers.get("User-Agent")
+        
+        # Get metadata from request
+        metadata = {
+            "timestamp": data.get("timestamp"),
+            "frontend_version": data.get("frontend_version"),
+            "browser_info": {
+                "user_agent": user_agent,
+                "ip_address": request.remote_addr
+            }
+        }
+        
+        if not chat_id:
+            return abort(400, "chat_id is required")
+        
+        # Validate that the chat exists and belongs to the user
+        chat_data = chat_repository.get_chat(chat_id, user_id)
+        if not chat_data:
+            return abort(404, "Chat not found")
+        
+        # Submit feedback
+        feedback_id = feedback_repository.submit_feedback(
+            chat_id=chat_id,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            feedback_type=feedback_type,
+            message=message,
+            user_agent=user_agent,
+            metadata=metadata
+        )
+        
+        print(f"Feedback submitted: {feedback_id} for chat {chat_id} by user {user_id}")
+        
+        return {
+            "success": True,
+            "feedback_id": feedback_id,
+            "message": "Feedback submitted successfully"
+        }, 200
+        
+    except Exception as e:
+        print(f"Error submitting feedback: {e}")
+        return abort(500, "Internal server error")
+
+
+@app.route("/api/feedback/<feedback_id>", methods=["GET"])
+@require_auth
+def get_feedback(feedback_id):
+    """Get a specific feedback entry (for admin use)"""
+    user_data = get_user_from_token()
+    
+    try:
+        feedback_data = feedback_repository.get_feedback(feedback_id)
+        
+        if not feedback_data:
+            return abort(404, "Feedback not found")
+        
+        # Only allow users to see their own feedback
+        if feedback_data["user_id"] != user_data["user_id"]:
+            return abort(403, "Access denied")
+        
+        return jsonify(feedback_data), 200
+        
+    except Exception as e:
+        print(f"Error getting feedback: {e}")
+        return abort(500, "Internal server error")
+
+
+@app.route("/api/chats/<chat_id>/feedback", methods=["GET"])
+@require_auth
+def get_chat_feedback(chat_id):
+    """Get all feedback for a specific chat"""
+    user_data = get_user_from_token()
+    
+    try:
+        # Validate that the chat exists and belongs to the user
+        user_id = user_data["user_id"]
+        chat_data = chat_repository.get_chat(chat_id, user_id)
+        if not chat_data:
+            return abort(404, "Chat not found")
+        
+        feedback_list = feedback_repository.get_feedback_by_chat(chat_id)
+        return jsonify(feedback_list), 200
+        
+    except Exception as e:
+        print(f"Error getting chat feedback: {e}")
+        return abort(500, "Internal server error")
 
