@@ -24,4 +24,5 @@ public class ApplicationApplicantInfoDto : GrantApplicationApplicantDto
     public List<ApplicantAddressDto> ApplicantAddresses { get; set; } = [];
     public Guid ApplicationFormId { get; set; }
     public string NonRegOrgName { get; set; } = string.Empty;
+    public new string BusinessNumber { get; set; } = string.Empty;
 }

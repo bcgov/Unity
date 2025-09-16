@@ -16,5 +16,5 @@ public interface IApplicationLinksService : ICrudAppService<
     Task DeleteWithPairAsync(Guid applicationLinkId);
     Task<ApplicationLinksInfoDto> GetApplicationDetailsByReferenceAsync(string referenceNumber);
     Task UpdateLinkTypeAsync(Guid applicationLinkId, ApplicationLinkType newLinkType);
-
+    Task<ApplicationLinkValidationResult> ValidateApplicationLinksAsync(Guid currentApplicationId, List<ApplicationLinkValidationRequest> proposedLinks);
 }

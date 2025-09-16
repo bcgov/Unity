@@ -11,6 +11,7 @@ namespace Unity.GrantManager.GrantApplications
         public string? OrgName { get; set; }
         public string? OrgNumber { get; set; }
         public string? OrgStatus { get; set; }
+        public string? BusinessNumber { get; set; }
         public string? OrganizationType { get; set; }
         public string? OrganizationSize { get; set; }
 

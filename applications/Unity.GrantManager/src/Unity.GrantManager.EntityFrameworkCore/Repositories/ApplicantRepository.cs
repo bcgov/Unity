@@ -94,6 +94,7 @@ namespace Unity.GrantManager.Repositories
                     a.OrganizationSize,
                     a.ApproxNumberOfEmployees,
                     a.OrgStatus,
+                    a.BusinessNumber,
                     a.IndigenousOrgInd,
                     a.Sector,
                     a.SubSector,

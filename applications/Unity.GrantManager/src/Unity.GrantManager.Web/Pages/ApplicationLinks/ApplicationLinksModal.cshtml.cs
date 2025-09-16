@@ -18,6 +18,12 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
         public string ProjectName { get; set; } = string.Empty;
         public ApplicationLinkType LinkType { get; set; } = ApplicationLinkType.Related;
     }
+
+    public class LinkValidationRequestDto
+    {
+        public string ReferenceNumber { get; set; } = string.Empty;
+        public ApplicationLinkType LinkType { get; set; }
+    }
 }
 
 namespace Unity.GrantManager.Web.Pages.ApplicationLinks
@@ -219,6 +225,58 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                     ApplicationStatus = "Error loading"
                 });
             }
+        }
+
+        public async Task<IActionResult> OnGetValidateLinksAsync(
+            [FromQuery] List<LinkValidationRequestDto> links, 
+            [FromQuery] Guid currentApplicationId)
+        {
+            try
+            {
+                if (links == null || links.Count == 0)
+                {
+                    return new JsonResult(new ApplicationLinkValidationResult());
+                }
+
+                var validationRequests = await BuildValidationRequests(links);
+                
+                var validationResult = await _applicationLinksService.ValidateApplicationLinksAsync(
+                    currentApplicationId, 
+                    validationRequests);
+                    
+                return new JsonResult(validationResult);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error validating application links");
+                return new JsonResult(new ApplicationLinkValidationResult { ValidationErrors = new Dictionary<string, bool>() });
+            }
+        }
+        
+        private async Task<List<ApplicationLinkValidationRequest>> BuildValidationRequests(List<LinkValidationRequestDto> links)
+        {
+            var validationRequests = new List<ApplicationLinkValidationRequest>();
+            var allApps = await _grantApplicationAppService.GetAllApplicationsAsync();
+            
+            // Handle potential duplicate reference numbers
+            var appLookup = allApps
+                .GroupBy(a => a.ReferenceNo)
+                .ToDictionary(g => g.Key, g => g.First().Id);
+            
+            foreach (var link in links)
+            {
+                if (!string.IsNullOrEmpty(link.ReferenceNumber) && appLookup.TryGetValue(link.ReferenceNumber, out var appId))
+                {
+                    validationRequests.Add(new ApplicationLinkValidationRequest
+                    {
+                        TargetApplicationId = appId,
+                        ReferenceNumber = link.ReferenceNumber,
+                        LinkType = link.LinkType
+                    });
+                }
+            }
+            
+            return validationRequests;
         }
     }
 }
