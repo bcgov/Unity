@@ -1,11 +1,11 @@
 $(function () {
     const UIElements = {
         tables: $('.custom-dynamic-table'),
-        tableSearches: $('.custom-tbl-search')
+        tableSearches: $('.custom-tbl-search'),
     };
 
     let editDatagridRowModal = new abp.ModalManager({
-        viewUrl: '../Components/DataGrid/EditDataRowModal'
+        viewUrl: '../Components/DataGrid/EditDataRowModal',
     });
 
     // Function to handle new row addition
@@ -22,13 +22,17 @@ $(function () {
         // Create the edit button HTML and append it to the last cell of the new row
         $(newRowNode).find('td:last').html(getEditRowButtonTemplate());
 
-        // Attach click event handler to the newly added button 
-        $(newRowNode).find('.row-edit-btn').on('click', function () {
-            let button = this; // `this` refers to the button element 
-            editDataRow(button);
-        });
+        // Attach click event handler to the newly added button
+        attachEditButtonHandler($(newRowNode));
 
         abp.notify.success('Row added successfully.', 'New Row');
+    }
+
+    // Function to attach edit button handler
+    function attachEditButtonHandler(rowElement) {
+        rowElement.find('.row-edit-btn').on('click', function () {
+            editDataRow(this);
+        });
     }
 
     // Function to set data attributes on the row
@@ -36,42 +40,68 @@ $(function () {
         row.attr('data-row-no', rowIndex);
     }
 
+    // Function to update worksheet instance ID for related tables
+    function updateRelatedTablesWSI(form, worksheetInstanceId) {
+        let otherTables = form.find('table.custom-dynamic-table');
+        otherTables.each(function () {
+            $(this).attr('data-wsi-id', worksheetInstanceId);
+        });
+    }
+
     // Function to reset the table level attributes
     function resetTableAttributes(row, response) {
         let table = row.closest('table');
+        let responseData = response.responseText;
 
-        table.attr('data-value-id', response.responseText.valueId)
-            .attr('data-field-id', response.responseText.fieldId)
-            .attr('data-wsi-id', response.responseText.worksheetInstanceId)
-            .attr('data-ws-id', response.responseText.worksheetId)
-            .attr('data-ws-anchor', response.responseText.uiAnchor);
+        table
+            .attr('data-value-id', responseData.valueId)
+            .attr('data-field-id', responseData.fieldId)
+            .attr('data-wsi-id', responseData.worksheetInstanceId)
+            .attr('data-ws-id', responseData.worksheetId)
+            .attr('data-ws-anchor', responseData.uiAnchor);
 
-        // Find the form containing the row
+        // Find the form containing the row and update related tables
         let form = row.closest('form');
+        updateRelatedTablesWSI(form, responseData.worksheetInstanceId);
+    }
 
-        // Find other tables within the same form with class 'custom-dynamic-table'
-        let otherTables = form.find('table.custom-dynamic-table');
-
-        // Set the worksheet instance ID for these tables
-        otherTables.each(function () {
-            $(this).attr('data-wsi-id', response.responseText.worksheetInstanceId);
-        });
+    // Function to update a single column in a row
+    function updateColumnData(table, rowIndex, columnName, newValue) {
+        let columnIndex = getColumnIndex(table, columnName);
+        if (columnIndex !== -1) {
+            table.cell(rowIndex, columnIndex).data(newValue);
+        } else {
+            console.warn('Column not found:', columnName);
+        }
     }
 
     // Function to update an existing row
     function updateRow(table, dataToUpdate, rowIndex) {
         $.each(dataToUpdate, function (columnName, newValue) {
-            let columnIndex = getColumnIndex(table, columnName);
-            if (columnIndex !== -1) {
-                table.cell(rowIndex, columnIndex).data(newValue);
-            } else {
-                console.warn('Column not found:', columnName);
-            }
+            updateColumnData(table, rowIndex, columnName, newValue);
         });
 
         // Redraw the table to reflect the updates
         table.draw();
         abp.notify.success('Update successful.', 'Update');
+    }
+
+    // Function to create new row data array
+    function createNewRowData(table, dataToUpdate) {
+        let newRowData = table
+            .columns()
+            .header()
+            .toArray()
+            .map((header) => {
+                let columnName = $(header).text();
+                return dataToUpdate[columnName] !== undefined
+                    ? dataToUpdate[columnName]
+                    : '';
+            });
+
+        // Add a placeholder for the button in the last column
+        newRowData.push('');
+        return newRowData;
     }
 
     // Main function to handle editDatagridRowModal result
@@ -82,15 +112,7 @@ $(function () {
         let isNewRow = response.responseText.isNew;
 
         if (isNewRow) {
-            // Convert dataToUpdate object to an array of values in the same order as the columns
-            let newRowData = table.columns().header().toArray().map(header => {
-                let columnName = $(header).text();
-                return dataToUpdate[columnName] !== undefined ? dataToUpdate[columnName] : '';
-            });
-
-            // Add a placeholder for the button in the last column
-            newRowData.push('');
-
+            let newRowData = createNewRowData(table, dataToUpdate);
             addNewRow(table, newRowData, response, rowIndex);
         } else {
             updateRow(table, dataToUpdate, rowIndex);
@@ -107,45 +129,64 @@ $(function () {
 
     // Function to update totals
     function updateTotals(table, fieldId) {
-        // Iterate through each input field that has the id pattern 'total-{key}'
         $('#summary-' + fieldId + ' input[id^="total-"]').each(function () {
             let inputId = $(this).attr('id');
             let key = inputId.replace('total-', '');
-            let total = 0;
-            let headerFound = false;
-
-            // Find the corresponding column in the DataTable by matching the key
-            table.columns().header().each(function (header, index) {
-                if ($(header).text() === key) {
-                    headerFound = true;
-                    // Sum up all numeric values in the column
-                    table.column(index).data().each(function (value, rowIndex) {
-                        // Remove currency symbols and commas for numeric check
-                        let cleanedValue = value.replace(/[^\d.-]/g, '');
-
-                        if (isNumeric(cleanedValue)) {
-                            total += parseFloat(cleanedValue);
-                        }
-                    });
-                }
-            });
-
-            // Update the input field with the calculated total only if the header is found 
-            if (headerFound) {
-                if ($(this).data('field-type') === 'Currency') {
-                    $(this).val(formatCurrency(total));
-                }
-                else {
-                    $(this).val(total);
-                }
+            let total = calculateColumnTotal(table, key);
+            if (total !== null) {
+                setTotalInputValue($(this), total);
             }
         });
     }
 
-    // Function to format currency as CAD 
+    // Function to process column data for totals
+    function processColumnDataForTotal(table, columnIndex) {
+        let total = 0;
+        table
+            .column(columnIndex)
+            .data()
+            .each(function (value) {
+                let cleanedValue = value.replace(/[^\d.-]/g, '');
+                if (isNumeric(cleanedValue)) {
+                    total += parseFloat(cleanedValue);
+                }
+            });
+        return total;
+    }
+
+    function calculateColumnTotal(table, key) {
+        let total = 0;
+        let headerFound = false;
+
+        table
+            .columns()
+            .header()
+            .each(function (header, index) {
+                if ($(header).text() === key) {
+                    headerFound = true;
+                    total = processColumnDataForTotal(table, index);
+                }
+            });
+
+        return headerFound ? total : null;
+    }
+
+    function setTotalInputValue($input, total) {
+        if ($input.data('field-type') === 'Currency') {
+            $input.val(formatCurrency(total));
+        } else {
+            $input.val(total);
+        }
+    }
+
+    // Function to format currency as CAD
     function formatCurrency(value) {
-        return new Intl.NumberFormat('en-CA',
-            { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+        return new Intl.NumberFormat('en-CA', {
+            style: 'currency',
+            currency: 'CAD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(value);
     }
 
     // Function to check if a value is numeric
@@ -160,17 +201,19 @@ $(function () {
             if ($(headers[i]).text() === columnName) {
                 return i;
             }
-        } return -1; // Return -1 if the column is not found 
+        }
+        return -1; // Return -1 if the column is not found
     }
 
-    function openEditDatagridRowModal(valueId,
+    function openEditDatagridRowModal(
+        valueId,
         fieldId,
         worksheetId,
         worksheetInstanceId,
         row,
         isNew,
-        uiAnchor) {
-
+        uiAnchor
+    ) {
         let formVersionId = $('#ApplicationFormVersionId').val();
         let applicationId = $('#DetailsViewApplicationId').val();
 
@@ -184,8 +227,28 @@ $(function () {
             // There is dependency here on the core module and details page !
             formVersionId: formVersionId,
             applicationId: applicationId,
-            uiAnchor: uiAnchor
+            uiAnchor: uiAnchor,
         });
+    }
+
+    // Function to handle add record action
+    function handleAddRecordAction(e, dt, node, config) {
+        // Access the DataTable ID
+        let tableId = dt.table().node().id;
+
+        // Access the data attributes
+        let tableElement = $('#' + tableId);
+        let tableDataSet = tableElement[0].dataset;
+
+        openEditDatagridRowModal(
+            tableDataSet.valueId,
+            tableDataSet.fieldId,
+            tableDataSet.wsId,
+            tableDataSet.wsiId,
+            0,
+            true,
+            tableDataSet.wsAnchor
+        );
     }
 
     let actionButtons = [
@@ -194,22 +257,7 @@ $(function () {
             text: 'Add',
             title: 'Add Record',
             className: 'custom-table-btn flex-none btn btn-secondary',
-            action: function (e, dt, node, config) {
-                // Access the DataTable ID
-                let tableId = dt.table().node().id;
-
-                // Access the data attributes
-                let tableElement = $('#' + tableId);
-                let tableDataSet = tableElement[0].dataset;
-
-                openEditDatagridRowModal(tableDataSet.valueId,
-                    tableDataSet.fieldId,
-                    tableDataSet.wsId,
-                    tableDataSet.wsiId,
-                    0,
-                    true,
-                    tableDataSet.wsAnchor);
-            }
+            action: handleAddRecordAction,
         },
         {
             id: 'ExportData',
@@ -220,7 +268,7 @@ $(function () {
             exportOptions: {
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
-            }
+            },
         },
     ];
 
@@ -231,78 +279,118 @@ $(function () {
         bindUIEvents();
     }
 
+    // Function to create and configure a single DataTable
+    function createDataTable(element) {
+        let $element = $(element);
+        let table = $element.DataTable({
+            paging: false,
+            bInfo: false,
+            searching: true,
+            serverside: false,
+            info: false,
+            lengthChange: false,
+            dom: 'Bftip',
+            buttons: configureButtons($element[0].id),
+            order: [[0, 'desc']],
+        });
+        configureTable(table, $element[0].id);
+    }
+
     function buildDataTables(tables) {
         tables.each(function () {
-            let $element = $(this);
-            let table = $(this).DataTable({
-                paging: false,
-                bInfo: false,
-                searching: true,
-                serverside: false,
-                info: false,
-                lengthChange: false,
-                dom: 'Bftip',
-                buttons: configureButtons($element[0].id),
-                order: [[0, 'desc']]
-            });
-            configureTable(table, $element[0].id);
+            createDataTable(this);
         });
     }
 
     function configureButtons(fieldId) {
-        let options = ($(`#table-options-${fieldId}`).val()).split(',');
-        let availableOptions = actionButtons.filter(item => options.includes(item.id));
+        let options = $(`#table-options-${fieldId}`).val().split(',');
+        let availableOptions = actionButtons.filter((item) =>
+            options.includes(item.id)
+        );
         return availableOptions;
     }
 
-    function configureTable(table, fieldId) {
-        table.buttons().container().prependTo(`#btn-container-${fieldId}`);
+    // Function to collect known columns information
+    function collectKnownColumns(table) {
         let knownColumns = [];
+        table
+            .columns()
+            .header()
+            .to$()
+            .each(function (index) {
+                let isActions = $(this).hasClass('custom-actions-header');
+                if ($(this).text() != '' && !isActions) {
+                    knownColumns.push({
+                        title: $(this).text(),
+                        visible: true,
+                        index: index + 1,
+                        isActions: isActions,
+                    });
+                }
+            });
+        return knownColumns;
+    }
 
-        table.columns().header().to$().each(function (index) {
-            let isActions = $(this).hasClass('custom-actions-header');
-            if ($(this).text() != '' && !isActions) {
-                knownColumns.push({ title: $(this).text(), visible: true, index: index + 1, isActions: isActions });
-            }
-        });
-
+    // Function to setup action buttons for table
+    function setupTableActionButtons(table, knownColumns) {
         table.button().add(actionButtons.length + 1, {
             text: 'Columns',
             extend: 'collection',
             buttons: getColumnToggleButtonsSorted(knownColumns, table),
-            className: 'custom-table-btn flex-none btn btn-secondary'
+            className: 'custom-table-btn flex-none btn btn-secondary',
         });
+    }
 
+    // Function to setup action column cells
+    function setupActionColumnCells(table, columnIndex) {
+        table
+            .column(columnIndex)
+            .nodes()
+            .each(function (cell) {
+                cell.innerHTML = getEditRowButtonTemplate();
+                attachEditButtonHandler($(cell));
+            });
+    }
+
+    // Function to configure action columns
+    function configureActionColumns(table) {
         table.columns().every(function (index) {
-            if (index === table.columns().count() - 1) { // Check if it is the last column
-                table.column(index).header().innerHTML = 'Actions'; // Update column header if needed
-                table.column(index).nodes().each(function (cell) {
-                    cell.innerHTML = getEditRowButtonTemplate(); // Add edit button to each cell
+            let isLastColumn = index === table.columns().count() - 1;
+            if (!isLastColumn) return;
 
-                    // Attach click event handler to the newly added button 
-                    $(cell).find('.row-edit-btn').on('click', function () {
-                        let button = this; // `this` refers to the button element 
-                        editDataRow(button);
-                    });
-                });
-            }
+            // Update column header and setup cells
+            table.column(index).header().innerHTML = 'Actions';
+            setupActionColumnCells(table, index);
         });
+    }
+
+    function configureTable(table, fieldId) {
+        table.buttons().container().prependTo(`#btn-container-${fieldId}`);
+
+        let knownColumns = collectKnownColumns(table);
+        setupTableActionButtons(table, knownColumns);
+        configureActionColumns(table);
     }
 
     function getEditRowButtonTemplate() {
         return '<input type="button" class="btn btn-edit row-edit-btn" value="Edit"></input>';
     }
 
-    function bindUIEvents() {
-        UIElements.tableSearches.on('keyup', function () {
-            let table = $(`#${this.dataset.tableId}`).DataTable();
-            table.search(this.value).draw();
-        });
+    // Function to handle table search keyup event
+    function handleTableSearchKeyup() {
+        let table = $(`#${this.dataset.tableId}`).DataTable();
+        table.search(this.value).draw();
+    }
 
-        UIElements.tableSearches.on('search', function () {
-            let table = $(`#${this.dataset.tableId}`).DataTable();
-            table.search('').draw();
-        });
+    // Function to handle table search event
+    function handleTableSearch() {
+        let table = $(`#${this.dataset.tableId}`).DataTable();
+        table.search('').draw();
+    }
+
+    function bindUIEvents() {
+        UIElements.tableSearches.on('keyup', handleTableSearchKeyup);
+        UIElements.tableSearches.on('search', handleTableSearch);
     }
 
     function editDataRow(button) {
@@ -314,20 +402,19 @@ $(function () {
         let table = $(button).closest('table');
         let tableDataSet = table[0].dataset;
 
-        openEditDatagridRowModal(tableDataSet.valueId,
+        openEditDatagridRowModal(
+            tableDataSet.valueId,
             tableDataSet.fieldId,
             tableDataSet.wsId,
             tableDataSet.wsiId,
             rowDataSet.rowNo,
             false,
-            tableDataSet.uiAnchor);
+            tableDataSet.uiAnchor
+        );
     }
 
-    PubSub.subscribe(
-        'worksheet_preview_datagrid_refresh',
-        () => {
-            // refresh the dom elements binding and init the datagrid view
-            buildDataTables($('.custom-dynamic-table'));
-        }
-    );
+    PubSub.subscribe('worksheet_preview_datagrid_refresh', () => {
+        // refresh the dom elements binding and init the datagrid view
+        buildDataTables($('.custom-dynamic-table'));
+    });
 });

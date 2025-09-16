@@ -1,0 +1,108 @@
+﻿body {
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.5;
+    color: #333;
+}
+
+h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ddd;
+}
+
+label {
+    font-weight: 700;
+    display: block;
+}
+
+.answer {
+    margin-top: 0.3rem;
+}
+
+ul {
+    margin: 0.3rem 0 0 1.2rem;
+    padding: 0;
+}
+
+li {
+    margin-bottom: 0.3rem;
+}
+h1 {
+    font-weight: bold;
+    font-size: 2em;
+}
+
+.card-body {
+    height: 90vh;
+    overflow-y: scroll;
+}
+.card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+#resultText {
+    resize: none;
+    width: 100%;
+    height: 300px;
+    border-radius: 10px;
+}
+
+.left-card-body {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide all left-card-body sections by default … */
+.left-card-body {
+    display: none;
+}
+
+/* … except the one we’ll mark as active in JS */
+.left-card-body.active {
+    display: block;
+}
+
+.btn-group {
+    background-color: white;
+}
+
+.btn-group .btn {
+    color: black;
+    border-radius: 5px;
+}
+
+/* Optional: visual state for the active toggle button */
+.btn-group .btn.active {
+    background-color: black;
+    color: white;
+}
+    .btn-group .btn-outline-primary:not(.active):hover,
+    .btn-group .btn-outline-primary:not(.active):focus,
+    .btn-group .btn-outline-primary:not(.active):active {
+        background-color: transparent !important; /* no blue fill */
+        color: black !important; /* keep text colour consistent */
+        border-color: black !important; /* optional – matches your base style */
+        box-shadow: none !important; /* wipes the blue focus ring */
+    }
+
+    /* 2. Also strip the focus ring from the button that *is* active, so it stays solid black */
+    .btn-group .btn-outline-primary.active:focus {
+        box-shadow: none !important;
+    }
+
+    /* 3. You can tighten up the original “active” style if you like */
+    .btn-group .btn.active {
+        background-color: black;
+        color: white;
+        border-color: black; /* ensure border doesn’t revert to blue */
+    }
+
+#finalResult {
+    padding-bottom: 30px;
+}

@@ -17,4 +17,8 @@ public static class GrantManagerMenus
     public const string Intakes = Prefix + ".Intakes";
     public const string ApplicationForms = Prefix + ".ApplicationForms";
     public const string EndpointManagement = Prefix + ".EndpointManagement";
+
+    public const string Recapllm = Prefix + ".Recapllm";
+    public const string RecapReporting = Prefix + ".RecapReporting";
+
 }

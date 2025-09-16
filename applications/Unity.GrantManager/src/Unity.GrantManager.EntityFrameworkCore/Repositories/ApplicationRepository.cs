@@ -108,11 +108,6 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         {
             return field.Replace("subStatusDisplayValue", "SubStatus", StringComparison.OrdinalIgnoreCase);
         }
-        if (field.StartsWith("applicationTag ", StringComparison.OrdinalIgnoreCase) || field.Equals("applicationTag", StringComparison.OrdinalIgnoreCase))
-        {
-            var parts = field.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-            return parts.Length == 2 ? $"ApplicationTags.FirstOrDefault().Text {parts[1]}" : "ApplicationTags.FirstOrDefault().Text";
-        }
         if (field.StartsWith("organizationType ", StringComparison.OrdinalIgnoreCase) || field.Equals("organizationType", StringComparison.OrdinalIgnoreCase))
         {
             return field.Replace("organizationType", "Applicant.OrganizationType", StringComparison.OrdinalIgnoreCase);
