@@ -3,7 +3,7 @@ Configuration module for the Metabase Reporter application.
 Handles environment variables and application settings.
 """
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from dataclasses import dataclass
 from dotenv import load_dotenv
 

@@ -1,20 +1,15 @@
 """
 API module with Flask routes for the application.
 """
-from flask import Flask, request, abort, jsonify, Response, stream_with_context
+from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 import asyncio
-import json
-import aiohttp
-from typing import Dict, Any, Generator
 from config import config
 from database import db_manager, chat_repository, feedback_repository
 from metabase import metabase_client
 from chat import chat_manager
 from sql_generator import sql_generator
-from auth import require_auth, optional_auth, auth_manager, get_user_from_token
-import openai
-import os
+from auth import require_auth, get_user_from_token
 
 
 def create_app():
@@ -200,7 +195,7 @@ def ask():
             
             print(f"SQL: {sql}")
             print(f"Metadata: {metadata}")
-            print(f"About to create Metabase card...")
+            print("About to create Metabase card...")
             print(f"Metabase client type: {type(metabase_client)}")
             
             # Create Metabase card
@@ -253,7 +248,6 @@ def ask():
 def change_display():
     """Update visualization type for a Metabase card"""
     data = request.get_json()
-    user_data = get_user_from_token()
     
     try:
         mode = data.get("mode")
@@ -289,7 +283,6 @@ def change_display():
 def delete_question():
     """Delete a Metabase card"""
     data = request.get_json()
-    user_data = get_user_from_token()
     
     try:
         card_id = data.get("card_id")
@@ -310,7 +303,6 @@ def delete_question():
 def explain_sql():
     """Generate a user-friendly explanation for SQL query"""
     data = request.get_json()
-    user_data = get_user_from_token()
     
     async def async_explain_sql():
         sql = data.get("sql")
@@ -360,7 +352,6 @@ def get_chats():
 @require_auth
 def get_chat(chat_id):
     """Get a specific chat and validate/recreate cards"""
-    data = request.get_json()
     user_data = get_user_from_token()
     
     try:

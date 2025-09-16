@@ -4,8 +4,6 @@ Database module for managing PostgreSQL connections and operations.
 import psycopg
 from typing import Any, List, Dict, Optional
 import json
-from datetime import datetime
-import uuid
 from config import config
 
 

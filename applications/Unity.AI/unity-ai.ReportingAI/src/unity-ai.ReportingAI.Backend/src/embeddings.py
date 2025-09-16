@@ -2,7 +2,7 @@
 Embeddings module for managing vector storage and retrieval.
 Handles schema embedding and similarity search for NL to SQL.
 """
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
 from langchain_postgres import PGVector

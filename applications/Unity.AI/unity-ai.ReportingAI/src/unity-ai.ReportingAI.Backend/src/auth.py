@@ -3,9 +3,9 @@ Authentication module for JWT token validation and user management.
 """
 import os
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
-from flask import request, jsonify, current_app
+from flask import request, jsonify
 from typing import Optional, Dict, Any, Callable
 
 
@@ -36,9 +36,9 @@ class AuthManager:
             'user_id': user_id,
             'tenant': tenant_id,
             'mb_url': mb_url,
-            'iat': datetime.utcnow(),
-            'exp': datetime.utcnow() + timedelta(hours=expires_in_hours),
-            'jti': f"{user_id}_{int(datetime.utcnow().timestamp())}"  # Unique token ID
+            'iat': datetime.now(tz=timezone.utc),
+            'exp': datetime.now(tz=timezone.utc) + timedelta(hours=expires_in_hours),
+            'jti': f"{user_id}_{int(datetime.now(tz=timezone.utc).timestamp())}"  # Unique token ID
         }
         
         return jwt.encode(payload, self.jwt_secret, algorithm=self.jwt_algorithm)

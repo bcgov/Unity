@@ -143,13 +143,13 @@ class MetabaseClient:
             
         except requests.exceptions.Timeout:
             print("Metabase request timed out after 30 seconds")
-            raise Exception("Metabase API request timed out")
+            raise requests.exceptions.Timeout("Metabase API request timed out")
         except requests.exceptions.ConnectionError as e:
             print(f"Connection error to Metabase: {e}")
-            raise Exception(f"Connection error to Metabase: {e}")
+            raise requests.exceptions.ConnectionError(f"Connection error to Metabase: {e}")
         except Exception as e:
             print(f"Unexpected error during Metabase request: {e}")
-            raise Exception(f"Unexpected error during Metabase request: {e}")
+            raise requests.exceptions.RequestException(f"Unexpected error during Metabase request: {e}")
         
         if r.status_code != 200:
             print(f"Metabase API error - Status: {r.status_code}, Response: {r.text}")
@@ -162,7 +162,7 @@ class MetabaseClient:
         except Exception as e:
             print(f"Error parsing Metabase response: {e}")
             print(f"Response text: {r.text}")
-            raise Exception(f"Error parsing Metabase response: {e}")
+            raise ValueError(f"Error parsing Metabase response: {e}")
         
         # Enable embedding
         print(f"Enabling embedding for card {card_id}...")
@@ -177,10 +177,10 @@ class MetabaseClient:
             
         except requests.exceptions.Timeout:
             print("Metabase embedding enable request timed out")
-            raise Exception("Metabase embedding enable request timed out")
+            raise requests.exceptions.Timeout("Metabase embedding enable request timed out")
         except requests.exceptions.ConnectionError as e:
             print(f"Connection error enabling embedding: {e}")
-            raise Exception(f"Connection error enabling embedding: {e}")
+            raise requests.exceptions.ConnectionError(f"Connection error enabling embedding: {e}")
         
         if r2.status_code != 200:
             print(f"Error enabling embedding - Status: {r2.status_code}, Response: {r2.text}")
@@ -262,7 +262,7 @@ class MetabaseClient:
             print(f"JWT payload created: {payload}")
             
             if not self.config.embed_secret:
-                raise Exception("Metabase embed_secret not configured")
+                raise ValueError("Metabase embed_secret not configured")
             
             token = jwt.encode(
                 payload,
@@ -278,7 +278,7 @@ class MetabaseClient:
             
         except Exception as e:
             print(f"Error generating embed URL: {e}")
-            raise Exception(f"Error generating embed URL: {e}")
+            raise requests.exceptions.ConnectionError(f"Error generating embed URL: {e}")
     
     def check_card_exists(self, card_id: int) -> bool:
         """Check if a card exists in Metabase"""

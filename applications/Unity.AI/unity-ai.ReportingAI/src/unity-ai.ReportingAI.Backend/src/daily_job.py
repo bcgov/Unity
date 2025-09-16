@@ -1,6 +1,5 @@
 import os
 import requests
-from datetime import datetime
 
 metabase_url = "https://test-unity-reporting.apps.silver.devops.gov.bc.ca"
 headers = {"x-api-key": os.getenv("METABASE_KEY")}
