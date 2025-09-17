@@ -517,7 +517,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 (a.FiscalMonth != null && a.FiscalMonth.ToLower().Contains(filter)) ||
                 (a.IndigenousOrgInd != null && a.IndigenousOrgInd.Contains(filter)) ||
 
-                // Numeric fields using SQL CAST
+                // Numeric fields
                 (a.FiscalDay.HasValue && a.FiscalDay.Value.ToString().Contains(filter)) ||
                 (a.MatchPercentage.HasValue && a.MatchPercentage.Value.ToString().Contains(filter)) ||
 
@@ -538,7 +538,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                     a.LastModificationTime.Value.Month.ToString().Contains(filter) ||
                     a.LastModificationTime.Value.Day.ToString().Contains(filter))) ||
                 
-                // GUID fields using SQL CAST
+                // GUID fields
                 (a.SupplierId.HasValue && a.SupplierId.Value.ToString().Contains(filter)) ||
                 (a.SiteId.HasValue && a.SiteId.Value.ToString().Contains(filter))
             );
