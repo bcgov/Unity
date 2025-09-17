@@ -5,6 +5,6 @@ namespace Unity.Payments.Integrations.Cas
 {
     public interface ICasTokenService : IApplicationService
     {
-        Task<string> GetAuthTokenAsync();
+        Task<string> GetAuthTokenAsync(string? certificatePath = null);
     }
 }

@@ -9,14 +9,13 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using Unity.GrantManager.Integrations.Css;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Caching;
 using Unity.Modules.Shared.Http;
 
-namespace Unity.GrantManager.Integrations.Sso
+namespace Unity.GrantManager.Integrations.Css
 {
     [IntegrationService]
     [ExposeServices(typeof(CssApiService), typeof(ICssUsersApiService))]
@@ -118,7 +117,7 @@ namespace Unity.GrantManager.Integrations.Sso
         }
 
         // Define this once (e.g., at the top of your class or as a static field)
-        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
         };
