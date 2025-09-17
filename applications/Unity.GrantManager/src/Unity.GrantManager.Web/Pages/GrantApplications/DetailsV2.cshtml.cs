@@ -238,6 +238,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 "FundingAgreementInfo" => await InvokeViewComponentDirectly("FundingAgreementInfo", new { applicationId, applicationFormVersionId }),
                 "PaymentInfo" => await InvokeViewComponentDirectly("PaymentInfo", new { applicationId, applicationFormVersionId }),
                 "HistoryWidget" => await InvokeViewComponentDirectly("HistoryWidget", new { applicationId }),
+                "ApplicationStatusWidget" => await InvokeViewComponentDirectly("ApplicationStatusWidget", new { applicationId }),
                 "ApplicationAttachments" => await InvokeViewComponentDirectly("ApplicationAttachments", new { applicationId }),
                 "CustomTabWidget" => await LoadCustomTabWidget(parameters),
                 _ => throw new ArgumentException($"Unknown component: {component}")

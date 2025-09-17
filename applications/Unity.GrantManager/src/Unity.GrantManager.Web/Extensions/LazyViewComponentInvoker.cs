@@ -18,8 +18,8 @@ namespace Unity.GrantManager.Web.Extensions
             "FundingAgreementInfo",
             "PaymentInfo",
             "ReviewList",
-            "ApplicationStatusWidget",
             "HistoryWidget",
+            "ApplicationStatusWidget",
             "ApplicationAttachments",
             "CustomTabWidgetViewComponent",
             "WorksheetInstanceWidget"

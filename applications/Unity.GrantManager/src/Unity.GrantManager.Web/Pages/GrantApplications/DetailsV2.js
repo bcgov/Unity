@@ -30,6 +30,34 @@ $(function () {
         initEmailsWidget();
         updateLinksCounters();
         renderSubmission();
+
+        loadInitiallyActiveTabs();
+    }
+
+    function loadInitiallyActiveTabs() {
+        // Load components in the initially active right-side tab (details)
+        setTimeout(() => {
+            const activeRightTab = $('#myTabContent .tab-pane.active');
+            if (activeRightTab.length > 0) {
+                const tabId = activeRightTab.attr('id');
+                // console.log('Loading initially active right tab:', tabId);
+                if (!loadedTabs.has(tabId)) {
+                    loadTabComponents(tabId);
+                    loadedTabs.add(tabId);
+                }
+            }
+
+            // Load components in the initially active left-side tab (nav-summery)
+            const activeLeftTab = $('#detailsTabContent .tab-pane.active');
+            if (activeLeftTab.length > 0) {
+                const tabId = activeLeftTab.attr('id');
+                // console.log('Loading initially active left tab:', tabId);
+                if (!loadedTabs.has(tabId)) {
+                    loadTabComponents(tabId);
+                    loadedTabs.add(tabId);
+                }
+            }
+        }, 100);
     }
 
     initializeDetailsPage();
@@ -204,13 +232,13 @@ $(function () {
             js: '/Views/Shared/Components/PaymentInfo/Default.js',
             css: '/Views/Shared/Components/PaymentInfo/Default.css',
         },
-        ApplicationStatusWidget: {
-            js: '/Views/Shared/Components/ApplicationStatusWidget/Default.js',
-            css: '/Views/Shared/Components/ApplicationStatusWidget/Default.css',
-        },
         HistoryWidget: {
             js: '/Views/Shared/Components/HistoryWidget/Default.js',
             css: '/Views/Shared/Components/HistoryWidget/Default.css',
+        },
+        ApplicationStatusWidget: {
+            js: '/Views/Shared/Components/ApplicationStatusWidget/Default.js',
+            css: '/Views/Shared/Components/ApplicationStatusWidget/Default.css',
         },
         ApplicationAttachments: {
             js: '/Views/Shared/Components/ApplicationAttachments/ApplicationAttachments.js',
@@ -598,11 +626,11 @@ $(function () {
             case 'PaymentInfo':
                 initializePaymentInfo($content);
                 break;
-            case 'ApplicationStatusWidget':
-                initializeApplicationStatusWidget($content);
-                break;
             case 'HistoryWidget':
                 initializeHistoryWidget($content);
+                break;
+            case 'ApplicationStatusWidget':
+                initializeApplicationStatusWidget($content);
                 break;
             case 'ApplicationAttachments':
                 initializeApplicationAttachments($content);
@@ -671,6 +699,18 @@ $(function () {
         }, 300);
     }
 
+    function initializeHistoryWidget($content) {
+        console.log('Initializing History Widget component for lazy loading');
+
+        setTimeout(() => {
+            if (typeof window.initializeHistoryWidget === 'function') {
+                window.initializeHistoryWidget($content);
+            } else {
+                console.error('initializeHistoryWidget function not available');
+            }
+        }, 300);
+    }
+
     function initializeApplicationStatusWidget($content) {
         console.log(
             'Initializing Application Status Widget component for lazy loading'
@@ -685,18 +725,6 @@ $(function () {
                 console.log(
                     'ApplicationStatusWidget loaded - no specific initialization function found'
                 );
-            }
-        }, 300);
-    }
-
-    function initializeHistoryWidget($content) {
-        console.log('Initializing History Widget component for lazy loading');
-
-        setTimeout(() => {
-            if (typeof window.initializeHistoryWidget === 'function') {
-                window.initializeHistoryWidget($content);
-            } else {
-                console.error('initializeHistoryWidget function not available');
             }
         }, 300);
     }
