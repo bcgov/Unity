@@ -40,7 +40,6 @@ $(function () {
             const activeRightTab = $('#myTabContent .tab-pane.active');
             if (activeRightTab.length > 0) {
                 const tabId = activeRightTab.attr('id');
-                // console.log('Loading initially active right tab:', tabId);
                 if (!loadedTabs.has(tabId)) {
                     loadTabComponents(tabId);
                     loadedTabs.add(tabId);
@@ -51,7 +50,6 @@ $(function () {
             const activeLeftTab = $('#detailsTabContent .tab-pane.active');
             if (activeLeftTab.length > 0) {
                 const tabId = activeLeftTab.attr('id');
-                // console.log('Loading initially active left tab:', tabId);
                 if (!loadedTabs.has(tabId)) {
                     loadTabComponents(tabId);
                     loadedTabs.add(tabId);
