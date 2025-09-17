@@ -32,11 +32,11 @@ export class App implements OnInit, OnDestroy {
   selectedVisualization: string = 'table';
 
   constructor(
-    private sanitizer: DomSanitizer,
-    private authService: AuthService,
-    private apiService: ApiService,
-    private toastService: ToastService,
-    private iframeDetector: IframeDetectorService
+    private readonly sanitizer: DomSanitizer,
+    private readonly authService: AuthService,
+    private readonly apiService: ApiService,
+    private readonly toastService: ToastService,
+    private readonly iframeDetector: IframeDetectorService
   ) {}
 
   @ViewChild('turnsContainer') private turnsContainer!: ElementRef<HTMLDivElement>;
@@ -135,9 +135,23 @@ export class App implements OnInit, OnDestroy {
           this.apiService.explainSql<{ explanation: string }>(turn.embed.SQL)
         );
         turn.embed.sql_explanation = explanationResponse.explanation;
-      } catch (error) {
-        // If explanation fails, use a default message
-        turn.embed.sql_explanation = "This query retrieves and analyzes your data.";
+      } catch (error: any) {
+        console.error('Failed to generate SQL explanation:', error);
+
+        // Provide user feedback about the failure
+        let errorMessage = 'Failed to generate SQL explanation. ';
+        if (error?.status === 429) {
+          errorMessage += 'Rate limit exceeded. Please try again later.';
+        } else if (error?.status >= 500) {
+          errorMessage += 'Server error. Please try again.';
+        } else {
+          errorMessage += 'Please try again or contact support if the issue persists.';
+        }
+
+        this.toastService.error(errorMessage);
+
+        // Set a fallback explanation that indicates the failure
+        turn.embed.sql_explanation = "Unable to generate explanation at this time.";
       }
     }
 
@@ -228,8 +242,92 @@ export class App implements OnInit, OnDestroy {
     }, 10000);
   }
 
-  async redirectToMB(turn: Turn) {
-    return window.open(`${this.authService.getMetabaseUrl()}/question/${turn.embed.card_id}`, '_blank');
+  async redirectToMB(turn: Turn): Promise<Window | null> {
+    try {
+      const metabaseUrl = this.authService.getMetabaseUrl();
+      const cardId = turn.embed.card_id;
+      
+      // Validate Metabase URL
+      if (!metabaseUrl || !this.isValidMetabaseUrl(metabaseUrl)) {
+        console.error('Invalid or missing Metabase URL');
+        this.toastService.error('Unable to open Metabase - invalid configuration');
+        return null;
+      }
+      
+      // Validate card ID
+      if (!cardId || !this.isValidCardId(cardId)) {
+        console.error('Invalid card ID');
+        this.toastService.error('Unable to open Metabase - invalid card ID');
+        return null;
+      }
+      
+      // Construct and validate the full URL
+      const fullUrl = `${metabaseUrl}/question/${cardId}`;
+      if (!this.isValidRedirectUrl(fullUrl, metabaseUrl)) {
+        console.error('Invalid redirect URL constructed');
+        this.toastService.error('Unable to open Metabase - security validation failed');
+        return null;
+      }
+      
+      return window.open(fullUrl, '_blank');
+    } catch (error) {
+      console.error('Error redirecting to Metabase:', error);
+      this.toastService.error('Unable to open Metabase');
+      return null;
+    }
+  }
+
+  private isValidMetabaseUrl(url: string): boolean {
+    try {
+      const parsedUrl = new URL(url);
+      // Only allow HTTPS URLs (or HTTP for localhost development)
+      if (parsedUrl.protocol !== 'https:' && 
+          !(parsedUrl.protocol === 'http:' && parsedUrl.hostname === 'localhost')) {
+        return false;
+      }
+      
+      // Basic hostname validation - should be a valid domain
+      const hostname = parsedUrl.hostname;
+      if (!hostname || hostname.length === 0 || hostname.includes('..')) {
+        return false;
+      }
+      
+      // Prevent common malicious patterns
+      if (hostname.includes('javascript:') || hostname.includes('data:') || hostname.includes('vbscript:')) {
+        return false;
+      }
+      
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private isValidCardId(cardId: any): boolean {
+    // Ensure card ID is a positive integer
+    return Number.isInteger(cardId) && cardId > 0 && cardId <= 999999999;
+  }
+
+  private isValidRedirectUrl(fullUrl: string, expectedBaseUrl: string): boolean {
+    try {
+      const parsedFullUrl = new URL(fullUrl);
+      const parsedBaseUrl = new URL(expectedBaseUrl);
+      
+      // Ensure the full URL starts with the expected base URL
+      if (parsedFullUrl.origin !== parsedBaseUrl.origin) {
+        return false;
+      }
+      
+      // Ensure the path follows expected pattern
+      const pathPattern = /^\/question\/\d+$/;
+      if (!pathPattern.test(parsedFullUrl.pathname)) {
+        return false;
+      }
+      
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async deleteQuestion(turn: Turn) {

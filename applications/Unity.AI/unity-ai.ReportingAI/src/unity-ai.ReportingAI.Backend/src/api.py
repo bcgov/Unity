@@ -10,6 +10,67 @@ from metabase import metabase_client
 from chat import chat_manager
 from sql_generator import sql_generator
 from auth import require_auth, get_user_from_token
+import re
+
+
+def _sanitize_field_array(field_array):
+    """
+    Sanitize field arrays to prevent XSS attacks.
+    Only allows alphanumeric characters, underscores, dots, and hyphens.
+    """
+    if not isinstance(field_array, list):
+        return []
+    
+    sanitized = []
+    for field in field_array:
+        if isinstance(field, str):
+            # Allow only safe characters: letters, numbers, underscore, dot, hyphen
+            if re.match(r'^[a-zA-Z0-9_.-]+$', field) and len(field) <= 100:
+                sanitized.append(field)
+        elif isinstance(field, (int, float)):
+            # Allow numeric values
+            sanitized.append(field)
+    
+    return sanitized
+
+
+def _sanitize_mode(mode):
+    """
+    Sanitize visualization mode parameter.
+    Only allows predefined safe visualization types.
+    """
+    if not isinstance(mode, str):
+        return None
+    
+    # Whitelist of allowed visualization modes
+    allowed_modes = ['table', 'bar', 'line', 'pie', 'map', 'scatter', 'area', 'column']
+    
+    # Clean the mode string and check against whitelist
+    clean_mode = mode.strip().lower()
+    if clean_mode in allowed_modes and len(clean_mode) <= 20:
+        return clean_mode
+    
+    return None
+
+
+def _sanitize_card_id(card_id):
+    """
+    Sanitize card ID parameter.
+    Ensures it's a positive integer within reasonable bounds.
+    """
+    try:
+        # Convert to int if it's a string representation
+        if isinstance(card_id, str):
+            card_id = int(card_id)
+        
+        # Validate it's a positive integer within reasonable bounds
+        if isinstance(card_id, int) and 1 <= card_id <= 999999999:
+            return card_id
+            
+    except (ValueError, TypeError):
+        pass
+    
+    return None
 
 
 def create_app():
@@ -60,7 +121,7 @@ def ready():
             db_manager.get_connection()
             db_status = "healthy"
         except Exception as e:
-            db_status = f"unhealthy: {str(e)}"
+            db_status = "unhealthy"
             
         # Check JWT secret configuration
         jwt_status = "healthy"
@@ -69,7 +130,7 @@ def ready():
             if not auth_manager.jwt_secret:
                 jwt_status = "unhealthy: JWT_SECRET not configured"
         except Exception as e:
-            jwt_status = f"unhealthy: {str(e)}"
+            jwt_status = "unhealthy"
             
         # Check environment configuration
         config_status = "healthy"
@@ -77,7 +138,7 @@ def ready():
             # Test basic config access
             config.app.debug  # This will fail if config is broken
         except Exception as e:
-            config_status = f"unhealthy: {str(e)}"
+            config_status = "unhealthy"
             
         # Determine overall readiness
         all_healthy = all(
@@ -102,8 +163,7 @@ def ready():
         return jsonify({
             "status": "not ready",
             "service": "unity-ai-backend",
-            "version": "1.0.0",
-            "error": str(e)
+            "version": "1.0.0"
         }), 503
 
 
@@ -259,19 +319,33 @@ def change_display():
         if not all([mode, card_id]):
             return abort(400, "mode and card_id are required")
         
+        # Validate and sanitize input
+        safe_mode = _sanitize_mode(mode)
+        if not safe_mode:
+            return abort(400, "Invalid mode parameter")
+        
+        safe_card_id = _sanitize_card_id(card_id)
+        if not safe_card_id:
+            return abort(400, "Invalid card_id parameter")
+        
+        # Ensure field arrays contain only safe values
+        safe_x_field = _sanitize_field_array(x_field) if isinstance(x_field, list) else []
+        safe_y_field = _sanitize_field_array(y_field) if isinstance(y_field, list) else []
+        safe_visualization_options = _sanitize_field_array(visualization_options) if isinstance(visualization_options, list) else []
+        
         # Update card visualization
-        metabase_client.update_card_visualization(card_id, mode, x_field, y_field)
+        metabase_client.update_card_visualization(safe_card_id, safe_mode, safe_x_field, safe_y_field)
         
         # Generate new embed URL
-        embed_url = metabase_client.generate_embed_url(card_id)
+        embed_url = metabase_client.generate_embed_url(safe_card_id)
         
-        return {
+        return jsonify({
             "url": embed_url,
-            "card_id": card_id,
-            "x_field": x_field,
-            "y_field": y_field,
-            "visualization_options": visualization_options
-        }, 200
+            "card_id": safe_card_id,
+            "x_field": safe_x_field,
+            "y_field": safe_y_field,
+            "visualization_options": safe_visualization_options
+        }), 200
         
     except Exception as e:
         print(f"Error in /api/change_display: {e}")

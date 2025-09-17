@@ -211,6 +211,7 @@ class SQLGenerator:
         Returns:
             Tuple of (sql, metadata) or (None, None) if generation fails
         """
+        
         # Check for hardcoded examples first (can be removed in production)
         hardcoded = self._check_hardcoded_examples(question)
         if hardcoded:
@@ -234,6 +235,7 @@ class SQLGenerator:
         # Process completions and extract valid candidates
         candidates = []
         for raw in completions:
+            print(f"\n\n{raw}\n\n")
             if not raw:
                 continue
             

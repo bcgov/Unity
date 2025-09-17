@@ -1,5 +1,5 @@
 aiohappyeyeballs==2.6.1
-aiohttp==3.12.13
+aiohttp>=3.12.14
 aiosignal==1.4.0
 annotated-types==0.7.0
 anyio==4.9.0
@@ -108,7 +108,7 @@ tqdm==4.67.1
 typer==0.16.0
 typing-inspection==0.4.1
 typing_extensions==4.14.0
-urllib3==2.4.0
+urllib3>=2.5.0
 uvicorn==0.35.0
 uvloop==0.21.0
 watchfiles==1.1.0
