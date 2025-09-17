@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Users;
@@ -27,6 +28,7 @@ namespace Unity.GrantManager.Identity
             // Get user & tenant info
             var userId = _currentUser.GetId().ToString();
             var tenant = _currentTenant.Name ?? "UnknownTenant";
+            var isITAdmin = _currentUser.IsInRole(IdentityConsts.ITAdminRoleName);
 
             // Build claims
             var claims = new[]
@@ -34,6 +36,7 @@ namespace Unity.GrantManager.Identity
                 new Claim("user_id", userId ?? "unknown"),
                 new Claim("tenant", tenant),
                 new Claim("mb_url", "https://test-unity-reporting.apps.silver.devops.gov.bc.ca"), // TODO: change based on env in OpenShift
+                new Claim("is_it_admin", isITAdmin.ToString().ToLower()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
