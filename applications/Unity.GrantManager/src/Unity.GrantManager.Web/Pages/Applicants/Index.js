@@ -31,63 +31,461 @@ $(function () {
         return newData;
     };
 
-    // Basic column definitions - will be fully implemented in Stage 6
+    // Complete column definitions following GrantApplications pattern
     function getColumns() {
         let columnIndex = 1;
-        return [
-            getSelectColumn('Select Applicant', 'rowCount', 'applicants'),
+        const columns = [
             {
-                data: 'applicantName',
-                name: 'applicantName',
-                title: 'Applicant Name',
-                index: columnIndex++
+                ...getSelectColumn('Select Applicant', 'rowCount', 'applicants'),
+                orderable: false,
+                searchable: false,
+                index: 0
             },
-            {
-                data: 'unityApplicantId',
-                name: 'unityApplicantId',
-                title: 'Unity Applicant ID',
-                index: columnIndex++
-            },
-            {
-                data: 'orgName',
-                name: 'orgName',
-                title: 'Organization Name',
-                index: columnIndex++
-            },
-            {
-                data: 'orgNumber',
-                name: 'orgNumber',
-                title: 'Organization Number',
-                index: columnIndex++
-            },
-            {
-                data: 'orgStatus',
-                name: 'orgStatus',
-                title: 'Organization Status',
-                index: columnIndex++
-            },
-            {
-                data: 'organizationType',
-                name: 'organizationType',
-                title: 'Organization Type',
-                index: columnIndex++
-            },
-            {
-                data: 'status',
-                name: 'status',
-                title: 'Status',
-                index: columnIndex++
-            },
-            {
-                data: 'redStop',
-                name: 'redStop',
-                title: 'Red Stop',
-                index: columnIndex++,
-                render: function(data) {
-                    return data ? 'Yes' : 'No';
-                }
-            }
+            getApplicantNameColumn(columnIndex++),
+            getUnityApplicantIdColumn(columnIndex++),
+            getOrgNameColumn(columnIndex++),
+            getOrgNumberColumn(columnIndex++),
+            getOrgStatusColumn(columnIndex++),
+            getOrganizationTypeColumn(columnIndex++),
+            getStatusColumn(columnIndex++),
+            getRedStopColumn(columnIndex++),
+            getNonRegisteredBusinessNameColumn(columnIndex++),
+            getNonRegOrgNameColumn(columnIndex++),
+            getOrganizationSizeColumn(columnIndex++),
+            getSectorColumn(columnIndex++),
+            getSubSectorColumn(columnIndex++),
+            getApproxNumberOfEmployeesColumn(columnIndex++),
+            getIndigenousOrgIndColumn(columnIndex++),
+            getSectorSubSectorIndustryDescColumn(columnIndex++),
+            getFiscalMonthColumn(columnIndex++),
+            getBusinessNumberColumn(columnIndex++),
+            getFiscalDayColumn(columnIndex++),
+            getStartedOperatingDateColumn(columnIndex++),
+            getSupplierIdColumn(columnIndex++),
+            getSiteIdColumn(columnIndex++),
+            getMatchPercentageColumn(columnIndex++),
+            getIsDuplicatedColumn(columnIndex++),
+            getElectoralDistrictColumn(columnIndex++),
+            getApplicationCountColumn(columnIndex++),
+            getLastApplicationDateColumn(columnIndex++),
+            getCreationTimeColumn(columnIndex++),
+            getLastModificationTimeColumn(columnIndex++)
         ];
+        
+        // Map columns with targets and orderData, but exclude select column from orderData
+        const sortedColumns = columns.map((column) => ({
+            ...column,
+            targets: [column.index],
+            // Only add orderData for non-select columns (index > 0)
+            ...(column.index > 0 ? { orderData: [column.index] } : {})
+        })).sort((a, b) => a.index - b.index);
+        
+        return sortedColumns;
+    }
+
+    function getApplicantNameColumn(columnIndex) {
+        return {
+            title: 'Applicant Name',
+            data: 'applicantName',
+            name: 'applicantName',
+            className: 'data-table-header',
+            index: columnIndex
+        }
+    }
+
+    function getUnityApplicantIdColumn(columnIndex) {
+        return {
+            title: 'Unity Applicant ID',
+            data: 'unityApplicantId',
+            name: 'unityApplicantId',
+            className: 'data-table-header text-nowrap',
+            render: function (data, type, row) {
+                return `<a href="/GrantApplicants/Details?ApplicantId=${row.id}">${data}</a>`;
+            },
+            index: columnIndex
+        }
+    }
+
+    function getOrgNameColumn(columnIndex) {
+        return {
+            title: 'Organization Name',
+            data: 'orgName',
+            name: 'orgName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getOrgNumberColumn(columnIndex) {
+        return {
+            title: 'Organization Number',
+            data: 'orgNumber',
+            name: 'orgNumber',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getOrgStatusColumn(columnIndex) {
+        return {
+            title: 'Organization Status',
+            data: 'orgStatus',
+            name: 'orgStatus',
+            className: 'data-table-header',
+            render: function (data) {
+                if (data != null && data == 'ACTIVE') {
+                    return 'Active';
+                } else if (data != null && data == 'HISTORICAL') {
+                    return 'Historical';
+                } else {
+                    return data ?? '';
+                }
+            },
+            index: columnIndex
+        }
+    }
+
+    function getOrganizationTypeColumn(columnIndex) {
+        return {
+            title: 'Organization Type',
+            data: 'organizationType',
+            name: 'organizationType',
+            className: 'data-table-header',
+            render: function (data) {
+                return getFullType(data) ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getStatusColumn(columnIndex) {
+        return {
+            title: 'Status',
+            data: 'status',
+            name: 'status',
+            className: 'data-table-header',
+            index: columnIndex
+        }
+    }
+
+    function getRedStopColumn(columnIndex) {
+        return {
+            title: 'Red-Stop',
+            data: 'redStop',
+            name: 'redStop',
+            className: 'data-table-header',
+            render: function (data) {
+                return convertToYesNo(data);
+            },
+            index: columnIndex
+        }
+    }
+
+    function getNonRegisteredBusinessNameColumn(columnIndex) {
+        return {
+            title: 'Non-Registered Business Name',
+            data: 'nonRegisteredBusinessName',
+            name: 'nonRegisteredBusinessName',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getNonRegOrgNameColumn(columnIndex) {
+        return {
+            title: 'Non-Registered Organization Name',
+            data: 'nonRegOrgName',
+            name: 'nonRegOrgName',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getOrganizationSizeColumn(columnIndex) {
+        return {
+            title: 'Organization Size',
+            data: 'organizationSize',
+            name: 'organizationSize',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getSectorColumn(columnIndex) {
+        return {
+            title: 'Sector',
+            data: 'sector',
+            name: 'sector',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getSubSectorColumn(columnIndex) {
+        return {
+            title: 'SubSector',
+            data: 'subSector',
+            name: 'subSector',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getApproxNumberOfEmployeesColumn(columnIndex) {
+        return {
+            title: 'Approx. Number of Employees',
+            data: 'approxNumberOfEmployees',
+            name: 'approxNumberOfEmployees',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getIndigenousOrgIndColumn(columnIndex) {
+        return {
+            title: 'Indigenous',
+            data: 'indigenousOrgInd',
+            name: 'indigenousOrgInd',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getSectorSubSectorIndustryDescColumn(columnIndex) {
+        return {
+            title: 'Other Sector/Sub/Industry Description',
+            data: 'sectorSubSectorIndustryDesc',
+            name: 'sectorSubSectorIndustryDesc',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getFiscalMonthColumn(columnIndex) {
+        return {
+            title: 'FYE Month',
+            data: 'fiscalMonth',
+            name: 'fiscalMonth',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                if (data) {
+                    return titleCase(data);
+                } else {
+                    return '';
+                }
+            },
+            index: columnIndex
+        }
+    }
+
+    function getBusinessNumberColumn(columnIndex) {
+        return {
+            title: 'Business Number',
+            data: 'businessNumber',
+            name: 'businessNumber',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getFiscalDayColumn(columnIndex) {
+        return {
+            title: 'FYE Day',
+            data: 'fiscalDay',
+            name: 'fiscalDay',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getStartedOperatingDateColumn(columnIndex) {
+        return {
+            title: 'Started Operating Date',
+            data: 'startedOperatingDate',
+            name: 'startedOperatingDate',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data != null ? luxon.DateTime.fromISO(data, {
+                    locale: abp.localization.currentCulture.name,
+                }).toUTC().toLocaleString() : '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getSupplierIdColumn(columnIndex) {
+        return {
+            title: 'Supplier ID',
+            data: 'supplierId',
+            name: 'supplierId',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getSiteIdColumn(columnIndex) {
+        return {
+            title: 'Site ID',
+            data: 'siteId',
+            name: 'siteId',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getMatchPercentageColumn(columnIndex) {
+        return {
+            title: 'Match Percentage',
+            data: 'matchPercentage',
+            name: 'matchPercentage',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                if (data != null) {
+                    return data + '%';
+                }
+                return '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getIsDuplicatedColumn(columnIndex) {
+        return {
+            title: 'Is Duplicated',
+            data: 'isDuplicated',
+            name: 'isDuplicated',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return convertToYesNo(data);
+            },
+            index: columnIndex
+        }
+    }
+
+    function getElectoralDistrictColumn(columnIndex) {
+        return {
+            title: 'Electoral District',
+            data: 'electoralDistrict',
+            name: 'electoralDistrict',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getApplicationCountColumn(columnIndex) {
+        return {
+            title: 'Application Count',
+            data: 'applicationCount',
+            name: 'applicationCount',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? 0;
+            },
+            index: columnIndex
+        }
+    }
+
+    function getLastApplicationDateColumn(columnIndex) {
+        return {
+            title: 'Last Application Date',
+            data: 'lastApplicationDate',
+            name: 'lastApplicationDate',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data != null ? luxon.DateTime.fromISO(data, {
+                    locale: abp.localization.currentCulture.name,
+                }).toUTC().toLocaleString() : '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getCreationTimeColumn(columnIndex) {
+        return {
+            title: 'Creation Time',
+            data: 'creationTime',
+            name: 'creationTime',
+            className: 'data-table-header',
+            visible: false,
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
+            index: columnIndex
+        }
+    }
+
+    function getLastModificationTimeColumn(columnIndex) {
+        return {
+            title: 'Last Modified',
+            data: 'lastModificationTime',
+            name: 'lastModificationTime',
+            className: 'data-table-header',
+            visible: false,
+            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
+            index: columnIndex
+        }
     }
 
     // For stateRestore label in modal
@@ -121,8 +519,68 @@ $(function () {
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'export'
             }
+        },
+        {
+            extend: 'savedStates',
+            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
+            config: {
+                creationModal: true,
+                splitSecondaries: [
+                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk" ></i> Update'},
+                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square" ></i> Rename'},
+                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can" ></i> Delete'}
+                ]
+            },
+            buttons: [
+                { extend: 'createState', text: 'Save As View' },
+                {
+                    text: "Reset to Default View",
+                    action: function (e, dt, node, config)
+                    {
+                        dt.columns().visible(false);
+
+                        // List of all columns not including default columns
+                        const allColumnNames = dt.settings()[0].aoColumns.map(col => col.name).filter(colName => !defaultVisibleColumns.includes(colName));
+                        const orderedIndexes = [];
+
+                        // Set the visible columns, and collect id's for the reorder
+                        defaultVisibleColumns.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                dt.column(colIdx).visible(true);
+                                orderedIndexes.push(colIdx);
+                            }
+                        });
+
+                        // Column reorder only works if all columns included in new order, so get the rest of the columns
+                        allColumnNames.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                orderedIndexes.push(colIdx);
+                            }
+                        })
+                        dt.colReorder.order(orderedIndexes);
+
+                        $('#search, .custom-filter-input').val('');
+                        dt.columns().search('');
+                        dt.search('');
+                        dt.order([28, 'desc']).draw(); // Sort by creationTime descending
+
+                        // Close the dropdown
+                        dt.buttons('.grp-savedStates')
+                            .container()
+                            .find('.dt-button-collection')
+                            .hide();
+                        $('div.dt-button-background').trigger('click');
+                    }
+                },
+                { extend: 'removeAllStates', text: 'Delete All Views' },
+                {
+                    extend: 'spacer',
+                    style: 'bar',
+                }
+            ]
         }
-        // Columns button is automatically added by initializeDataTable
     ];
 
     let responseCallback = function (result) {
@@ -140,28 +598,129 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 1, // Sort by applicantName by default
+        defaultSortColumn: 28, // Sort by creationTime (column 28) descending
         dataEndpoint: unity.grantManager.applicants.applicant.getList,
         data: {},
         responseCallback,
         actionButtons,
         serverSideEnabled: true, // Important: Enable server-side processing
         pagingEnabled: true,
-        reorderEnabled: true
+        reorderEnabled: true,
+        languageSetValues,
+        dataTableName: 'ApplicantsTable',
+        dynamicButtonContainerId: 'dynamicButtonContainerId'
     });
 
-    // Handle row selection for future ActionBar functionality
+    // Handle row selection and publish events for ActionBar
     dataTable.on('select', function (e, dt, type, indexes) {
-        handleRowSelection();
+        if (type === 'row' && indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", true);
+                if ($(".chkbox:checked").length == $(".chkbox").length) {
+                    $(".select-all-applicants").prop("checked", true);
+                }
+                const data = dataTable.row(index).data();
+                PubSub.publish('select_applicant', data);
+            });
+        }
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        handleRowSelection();
+        if (type === 'row' && indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", false);
+                if ($(".chkbox:checked").length != $(".chkbox").length) {
+                    $(".select-all-applicants").prop("checked", false);
+                }
+                const data = dataTable.row(index).data();
+                PubSub.publish('deselect_applicant', data);
+            });
+        }
     });
 
-    function handleRowSelection() {
-        const selectedRows = dataTable.rows({ selected: true }).count();
-        // TODO: Update ActionBar buttons based on selection when Stage 7 is implemented
-        console.log('Selected rows:', selectedRows);
+    // Handle search from ActionBar
+    $('#search').on('input', function () {
+        dataTable.search($(this).val()).draw();
+    });
+
+    // For savedStates
+    $('.grp-savedStates').text('Save View');
+    $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Subscribe to refresh events
+    PubSub.subscribe('refresh_applicant_list', (msg, data) => {
+        dataTable.ajax.reload(null, false);
+        $(".select-all-applicants").prop("checked", false);
+        PubSub.publish('clear_selected_applicant');
+    });
+
+    // Handle select-all checkbox functionality
+    $('.select-all-applicants').click(function () {
+        if ($(this).is(':checked')) {
+            dataTable.rows({ 'page': 'current' }).select();
+        } else {
+            dataTable.rows({ 'page': 'current' }).deselect();
+        }
+    });
+
+    // Helper functions for column rendering
+    function titleCase(str) {
+        str = str.toLowerCase().split(' ');
+        for (let i = 0; i < str.length; i++) {
+            str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
+        }
+        return str.join(' ');
+    }
+
+    function convertToYesNo(str) {
+        switch (str) {
+            case true:
+                return "Yes";
+            case false:
+                return "No";
+            default:
+                return '';
+        }
+    }
+
+    function getFullType(code) {
+        const companyTypes = [
+            { code: "BC", name: "BC Company" },
+            { code: "CP", name: "Cooperative" },
+            { code: "GP", name: "General Partnership" },
+            { code: "S", name: "Society" },
+            { code: "SP", name: "Sole Proprietorship" },
+            { code: "A", name: "Extraprovincial Company" },
+            { code: "B", name: "Extraprovincial" },
+            { code: "BEN", name: "Benefit Company" },
+            { code: "C", name: "Continuation In" },
+            { code: "CC", name: "BC Community Contribution Company" },
+            { code: "CS", name: "Continued In Society" },
+            { code: "CUL", name: "Continuation In as a BC ULC" },
+            { code: "EPR", name: "Extraprovincial Registration" },
+            { code: "FI", name: "Financial Institution" },
+            { code: "FOR", name: "Foreign Registration" },
+            { code: "LIB", name: "Public Library Association" },
+            { code: "LIC", name: "Licensed (Extra-Pro)" },
+            { code: "LL", name: "Limited Liability Partnership" },
+            { code: "LLC", name: "Limited Liability Company" },
+            { code: "LP", name: "Limited Partnership" },
+            { code: "MF", name: "Miscellaneous Firm" },
+            { code: "PA", name: "Private Act" },
+            { code: "PAR", name: "Parish" },
+            { code: "QA", name: "CO 1860" },
+            { code: "QB", name: "CO 1862" },
+            { code: "QC", name: "CO 1878" },
+            { code: "QD", name: "CO 1890" },
+            { code: "QE", name: "CO 1897" },
+            { code: "REG", name: "Registraton (Extra-pro)" },
+            { code: "ULC", name: "BC Unlimited Liability Company" },
+            { code: "XCP", name: "Extraprovincial Cooperative" },
+            { code: "XL", name: "Extrapro Limited Liability Partnership" },
+            { code: "XP", name: "Extraprovincial Limited Partnership" },
+            { code: "XS", name: "Extraprovincial Society" }
+        ];
+        const match = companyTypes.find(entry => entry.code === code);
+        return match ? match.name : "Unknown";
     }
 });
