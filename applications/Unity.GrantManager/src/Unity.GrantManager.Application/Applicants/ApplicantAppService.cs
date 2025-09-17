@@ -492,73 +492,11 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     {
         var query = await applicantRepository.GetQueryableAsync();
 
-        // Apply search filter if provided
-        if (!string.IsNullOrWhiteSpace(input.Filter))
-        {
-            var filter = input.Filter.Trim().ToLower();
-            query = query.Where(a =>
-                // String fields
-                (a.ApplicantName != null && a.ApplicantName.ToLower().Contains(filter)) ||
-                (a.UnityApplicantId != null && a.UnityApplicantId.ToLower().Contains(filter)) ||
-                (a.OrgName != null && a.OrgName.ToLower().Contains(filter)) ||
-                (a.OrgNumber != null && a.OrgNumber.ToLower().Contains(filter)) ||
-                (a.BusinessNumber != null && a.BusinessNumber.ToLower().Contains(filter)) ||
-                (a.ElectoralDistrict != null && a.ElectoralDistrict.ToLower().Contains(filter)) ||
-                (a.Sector != null && a.Sector.ToLower().Contains(filter)) ||
-                (a.SubSector != null && a.SubSector.ToLower().Contains(filter)) ||
-                (a.OrganizationType != null && a.OrganizationType.ToLower().Contains(filter)) ||
-                (a.NonRegisteredBusinessName != null && a.NonRegisteredBusinessName.ToLower().Contains(filter)) ||
-                (a.NonRegOrgName != null && a.NonRegOrgName.ToLower().Contains(filter)) ||
-                (a.OrganizationSize != null && a.OrganizationSize.ToLower().Contains(filter)) ||
-                (a.SectorSubSectorIndustryDesc != null && a.SectorSubSectorIndustryDesc.ToLower().Contains(filter)) ||
-                (a.OrgStatus != null && a.OrgStatus.ToLower().Contains(filter)) ||
-                (a.Status != null && a.Status.ToLower().Contains(filter)) ||
-                (a.ApproxNumberOfEmployees != null && a.ApproxNumberOfEmployees.ToLower().Contains(filter)) ||
-                (a.FiscalMonth != null && a.FiscalMonth.ToLower().Contains(filter)) ||
-                (a.IndigenousOrgInd != null && a.IndigenousOrgInd.Contains(filter)) ||
+        // Apply default sorting (client-side DataTable handles search, sorting, and paging)
+        query = query.OrderByDescending(a => a.CreationTime);
 
-                // Numeric fields
-                (a.FiscalDay.HasValue && a.FiscalDay.Value.ToString().Contains(filter)) ||
-                (a.MatchPercentage.HasValue && a.MatchPercentage.Value.ToString().Contains(filter)) ||
-
-                // Boolean fields (true, false, yes, no)
-                ((filter == "true" || filter == "yes") && (a.RedStop == true || a.IsDuplicated == true)) ||
-                ((filter == "false" || filter == "no") && (a.RedStop == false || a.IsDuplicated == false)) ||
-                
-                // Date fields using component extraction
-                (a.StartedOperatingDate.HasValue && (
-                    a.StartedOperatingDate.Value.Year.ToString().Contains(filter) ||
-                    a.StartedOperatingDate.Value.Month.ToString().Contains(filter) ||
-                    a.StartedOperatingDate.Value.Day.ToString().Contains(filter))) ||
-                (a.CreationTime.Year.ToString().Contains(filter) ||
-                 a.CreationTime.Month.ToString().Contains(filter) ||
-                 a.CreationTime.Day.ToString().Contains(filter)) ||
-                (a.LastModificationTime.HasValue && (
-                    a.LastModificationTime.Value.Year.ToString().Contains(filter) ||
-                    a.LastModificationTime.Value.Month.ToString().Contains(filter) ||
-                    a.LastModificationTime.Value.Day.ToString().Contains(filter))) ||
-                
-                // GUID fields
-                (a.SupplierId.HasValue && a.SupplierId.Value.ToString().Contains(filter)) ||
-                (a.SiteId.HasValue && a.SiteId.Value.ToString().Contains(filter))
-            );
-        }
-
-        // Get total count before paging
+        // Get total count
         var totalCount = await query.CountAsync();
-
-        // Apply sorting
-        if (!string.IsNullOrWhiteSpace(input.Sorting))
-        {
-            query = query.OrderBy(input.Sorting);
-        }
-        else
-        {
-            query = query.OrderByDescending(a => a.CreationTime);
-        }
-
-        // Apply paging
-        query = query.PageBy(input);
 
         // Execute query
         var applicants = await query.ToListAsync();

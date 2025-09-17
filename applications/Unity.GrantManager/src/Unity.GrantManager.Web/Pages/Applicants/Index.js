@@ -480,6 +480,15 @@ $(function () {
 
     let actionButtons = [
         {
+            text: 'Filter',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            id: "btn-toggle-filter",
+            action: function (e, dt, node, config) { },
+            attr: {
+                id: 'btn-toggle-filter'
+            }
+        },
+        {
             extend: 'csv',
             text: 'Export',
             className: 'custom-table-btn flex-none btn btn-secondary',
@@ -558,7 +567,7 @@ $(function () {
             recordsFiltered: result.totalCount,
             data: formatItems(result.items)
         };
-    };
+    };    
 
     // Initialize DataTable with server-side processing
     dataTable = initializeDataTable({
@@ -571,13 +580,14 @@ $(function () {
         data: {},
         responseCallback,
         actionButtons,
-        serverSideEnabled: true, // Important: Enable server-side processing
+        serverSideEnabled: false, // Switch to client-side processing to enable filter functionality
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues,
         dataTableName: 'ApplicantsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId'
     });
+
 
     // Handle row selection and publish events for ActionBar
     dataTable.on('select', function (e, dt, type, indexes) {
@@ -630,6 +640,8 @@ $(function () {
             dataTable.rows({ 'page': 'current' }).deselect();
         }
     });
+
+
 
     // Helper functions for column rendering
     function titleCase(str) {
