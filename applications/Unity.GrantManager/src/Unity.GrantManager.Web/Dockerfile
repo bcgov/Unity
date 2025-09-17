@@ -7,10 +7,10 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # set up node
-ARG NODE_VERSION=18.17.1
-ARG YARN_VERSION=1.22.19
+ARG NODE_VERSION=22.17.0
+ARG YARN_VERSION=1.22.22
 ARG NODE_DOWNLOAD_URL=https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz
-ARG NODE_DOWNLOAD_SHA=2cb75f2bc04b0a3498733fbee779b2f76fe3f655188b4ac69ef2887b6721da2d
+ARG NODE_DOWNLOAD_SHA=0fa01328a0f3d10800623f7107fbcd654a60ec178fab1ef5b9779e94e0419e1a
 
 RUN curl -SL --compressed "${NODE_DOWNLOAD_URL}" --output nodejs.tar.gz \
     && echo "${NODE_DOWNLOAD_SHA} nodejs.tar.gz" | sha256sum -c - \
@@ -56,7 +56,14 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" \
 FROM base AS final
 WORKDIR /app
 COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
-# CAS Dev/Test Certs changed
+# CAS Dev/Test Certs changed - again Sept 17
+
+COPY ["/src/Unity.GrantManager.Web/certs/cas2024inter.crt", "/usr/local/share/ca-certificates/cas2024inter.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas2024root.crt", "/usr/local/share/ca-certificates/cas2024root.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas2025inter.crt", "/usr/local/share/ca-certificates/cas2025inter.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas2025root.crt", "/usr/local/share/ca-certificates/cas2025root.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas2025top.crt", "/usr/local/share/ca-certificates/cas2025top.crt"]
+
 COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
 COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
 COPY ["/src/Unity.GrantManager.Web/certs/sslcomroot.crt", "/usr/local/share/ca-certificates/sslcomroot.crt"]
@@ -67,7 +74,12 @@ RUN mkdir -p /.aspnet && \
     mkdir -p /app/logs && \
     chmod 755 /.aspnet && \
     chmod 755 /.dotnet && \
-    chmod 755 /app/logs && \
+    chmod 755 /app/logs && \        
+    chmod 644 /usr/local/share/ca-certificates/cas2024inter.crt && \
+    chmod 644 /usr/local/share/ca-certificates/cas2024root.crt && \ 
+    chmod 644 /usr/local/share/ca-certificates/cas2025inter.crt && \
+    chmod 644 /usr/local/share/ca-certificates/cas2025root.crt && \
+    chmod 644 /usr/local/share/ca-certificates/cas2025top.crt && \
     chmod 644 /usr/local/share/ca-certificates/cas.crt && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
     chmod 644 /usr/local/share/ca-certificates/sslcomroot.crt && \
