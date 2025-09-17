@@ -1,22 +1,132 @@
-/* Applicants page styles - will be fully implemented in Stage 8 */
-.container-applicants {
-    padding: 0;
+#ApplicantsTable_filter label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+    margin-right: 5px;
 }
 
-.applicants-scrollable-content {
-    overflow-x: auto;
+#ApplicantsTable_filter input {
+    margin: 0.25rem;
 }
 
-/* Table styling */
-#ApplicantsTable_wrapper {
-    margin-top: 1rem;
+table.dataTable tbody tr {
+    cursor: pointer;
 }
 
-/* Temporary styles until Stage 8 */
-.dataTables_wrapper .dataTables_filter {
-    float: right;
+.dt-select-assignees {
+    min-width: 145px;
 }
 
-.dataTables_wrapper .dataTables_length {
-    float: left;
+.single-payment {
+    border: var(--bs-border-width) solid;
+    border-color: var(--bs-border-color);
 }
+
+.payment-item {
+    background-color: var(--bc-colors-ligh-gray-background);
+}
+
+
+/**CSS for dataTable stateRestore - Save View**/
+.container-applicants .dtsr-background {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.cstm-save-view .dt-button-collection {
+    width: 230px;
+}
+
+.cstm-save-view .dt-button-split a {
+    line-height: 35px;
+}
+
+.cstm-save-view .dt-button-collection .dt-button-active.dt-button-split > *:first-child:after {
+    margin-top: -18px;
+}
+
+.container-applicants .dtsr-creation .dtsr-creation-form .dtsr-form-row:nth-of-type(2) {
+    display: none;
+}
+
+.container-applicants .dtsr-creation-title, 
+.container-applicants .dtsr-confirmation-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.container-applicants .dtsr-confirmation .dtsr-creation-form .dtsr-form-row label, 
+.container-applicants .dtsr-creation .dtsr-creation-form .dtsr-form-row label {
+    width: 100%;
+    text-align: left;
+}
+
+.container-applicants .dtsr-confirmation .dtsr-creation-form .dtsr-form-row .dtsr-input, 
+.container-applicants .dtsr-creation .dtsr-creation-form .dtsr-form-row .dtsr-input, 
+.container-applicants .dtsr-creation-form input[type=text] {
+    width: 100% !important;
+}
+
+.container-applicants .dtsr-confirmation input[type=text],
+.container-applicants .dtsr-creation input[type=text] {
+    padding: 0.375rem 0.75rem;
+    width: 100%;
+}
+
+.container-applicants .dtsr-name-label {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.container-applicants .dtsr-creation input, 
+.container-applicants .dtsr-rename-modal input {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: 4px !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+}
+
+.container-applicants .dtsr-confirmation .dtsr-creation-form .dtsr-form-row,
+.container-applicants .dtsr-creation .dtsr-creation-form .dtsr-form-row {
+    display: inherit;
+}
+
+.container-applicants div.dtsr-confirmation div.dtsr-modal-foot,
+.container-applicants div.dtsr-confirmation div.dtsr-confirmation-buttons,
+.container-applicants div.dtsr-creation div.dtsr-modal-foot,
+.container-applicants div.dtsr-creation div.dtsr-confirmation-buttons {
+    text-align: left;
+}
+
+.container-applicants div.dtsr-confirmation button, 
+.container-applicants div.dtsr-creation button,
+.container-applicants div.dtsr-confirmation-buttons button {
+    color: var(--bc-colors-white-primary-500);
+    background-color: var(--bc-colors-blue-primary);
+    --bs-btn-active-color: var(--bc-colors-blue-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-white-primary);
+    --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
+    --bs-btn-disabled-bg: var(--bc-colors-white-primary-500);
+}
+
+.container-applicants .dtsr-confirmation button,
+.container-applicants .dtsr-creation button:hover,
+.container-applicants .dtsr-confirmation-buttons button:hover {
+    background-color: var(--bc-colors-primary-hover);
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
+    border-color: var(--bc-colors-blue-primary);
+}
+
+.container-applicants .dt-button-split {
+    border-radius:inherit;
+}
+
+.dt-button-collection.shift-left {
+    left: unset !important; 
+    right: 0px !important;
+}
+
+/**end**/

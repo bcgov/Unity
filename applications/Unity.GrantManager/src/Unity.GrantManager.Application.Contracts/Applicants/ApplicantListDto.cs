@@ -33,8 +33,4 @@ public class ApplicantListDto : AuditedEntityDto<Guid>
     public decimal? MatchPercentage { get; set; }
     public bool? IsDuplicated { get; set; }
     public string? ElectoralDistrict { get; set; }
-    
-    // Calculated fields for display
-    public int ApplicationCount { get; set; }
-    public DateTime? LastApplicationDate { get; set; }
 }

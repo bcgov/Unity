@@ -66,8 +66,6 @@ $(function () {
             getMatchPercentageColumn(columnIndex++),
             getIsDuplicatedColumn(columnIndex++),
             getElectoralDistrictColumn(columnIndex++),
-            getApplicationCountColumn(columnIndex++),
-            getLastApplicationDateColumn(columnIndex++),
             getCreationTimeColumn(columnIndex++),
             getLastModificationTimeColumn(columnIndex++)
         ];
@@ -434,36 +432,6 @@ $(function () {
         }
     }
 
-    function getApplicationCountColumn(columnIndex) {
-        return {
-            title: 'Application Count',
-            data: 'applicationCount',
-            name: 'applicationCount',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? 0;
-            },
-            index: columnIndex
-        }
-    }
-
-    function getLastApplicationDateColumn(columnIndex) {
-        return {
-            title: 'Last Application Date',
-            data: 'lastApplicationDate',
-            name: 'lastApplicationDate',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
-            },
-            index: columnIndex
-        }
-    }
-
     function getCreationTimeColumn(columnIndex) {
         return {
             title: 'Creation Time',
@@ -564,7 +532,7 @@ $(function () {
                         $('#search, .custom-filter-input').val('');
                         dt.columns().search('');
                         dt.search('');
-                        dt.order([28, 'desc']).draw(); // Sort by creationTime descending
+                        dt.order([26, 'desc']).draw(); // Sort by creationTime descending
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
@@ -598,7 +566,7 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 28, // Sort by creationTime (column 28) descending
+        defaultSortColumn: 26, // Sort by creationTime (column 26) descending
         dataEndpoint: unity.grantManager.applicants.applicant.getList,
         data: {},
         responseCallback,

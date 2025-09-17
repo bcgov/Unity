@@ -11,14 +11,14 @@
 
 <div class="action-bar p-2 search-action-bar">
     <div class="search-action-bar_search-wrapper">
-        <input type="search" id="search" placeholder="Search" class="tbl-search">
+        <input type="search" id="search" placeholder="@L["Common:Command:Search"].Value" class="tbl-search">
     </div>
 
     <div class="btn-group" id="app_custom_buttons">
         @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList))
         {
             <abp-button id="openApplicant"
-                        text="@L["Open"].Value"
+                        text="@L["ApplicationList:OpenButton"].Value"
                         data-selector="applicants-table-actions"
                         class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                         button-type="Secondary" />

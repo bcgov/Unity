@@ -16,6 +16,7 @@
     "Menu:ApplicationForms": "Forms",
     "Menu:TenantManagement": "Tenants",
     "Menu:EndpointManagement": "Endpoints",
+    "Menu:Applicants": "Applicants",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
@@ -67,6 +68,7 @@
     "ProposalDate": "Proposal Date",
     "SubmissionDate": "Submission Date",
     "GrantApplications": "Grant Applications",
+    "Applicants": "Applicants",
     "Multiple": "Multiple",
 
     "ApplicationList:OpenButton": "Open",

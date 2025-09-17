@@ -533,27 +533,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         // Execute query
         var applicants = await query.ToListAsync();
 
-        // Get application counts and last application dates
-        var applicantIds = applicants.Select(a => a.Id).ToList();
-        var applicationQuery = await applicationRepository.GetQueryableAsync();
-        
-        var applicationStats = await applicationQuery
-            .Where(app => applicantIds.Contains(app.ApplicantId))
-            .GroupBy(app => app.ApplicantId)
-            .Select(g => new
-            {
-                ApplicantId = g.Key,
-                ApplicationCount = g.Count(),
-                LastApplicationDate = g.Max(app => app.CreationTime)
-            })
-            .ToListAsync();
-
         // Map to DTOs
-        var items = applicants.Select(applicant =>
-        {
-            var stats = applicationStats.Find(s => s.ApplicantId == applicant.Id);
-            
-            return new ApplicantListDto
+        var items = applicants.Select(applicant => new ApplicantListDto
             {
                 Id = applicant.Id,
                 ApplicantName = applicant.ApplicantName,
@@ -583,12 +564,9 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 MatchPercentage = applicant.MatchPercentage,
                 IsDuplicated = applicant.IsDuplicated,
                 ElectoralDistrict = applicant.ElectoralDistrict,
-                ApplicationCount = stats?.ApplicationCount ?? 0,
-                LastApplicationDate = stats?.LastApplicationDate,
                 CreationTime = applicant.CreationTime,
                 LastModificationTime = applicant.LastModificationTime
-            };
-        }).ToList();
+            }).ToList();
 
         return new PagedResultDto<ApplicantListDto>(totalCount, items);
     }

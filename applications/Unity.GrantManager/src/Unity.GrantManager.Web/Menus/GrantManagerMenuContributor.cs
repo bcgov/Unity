@@ -125,6 +125,17 @@ public class GrantManagerMenuContributor : IMenuContributor
                 requiredPermissionName: TenantManagementPermissions.Tenants.Default
             )
         );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.Applicants,
+                l["Menu:Applicants"],
+                "~/GrantApplicants",
+                icon: "fl fl-other-user",
+                order: 9,
+                requiredPermissionName: GrantApplicationPermissions.Applicants.ViewList
+            )
+        );
     
         // End Admin ********************
 #pragma warning disable S125 // Sections of code should not be commented out
