@@ -244,31 +244,34 @@ export class App implements OnInit, OnDestroy {
 
   async redirectToMB(turn: Turn): Promise<Window | null> {
     try {
+      // AuthService now validates the URL before returning it
       const metabaseUrl = this.authService.getMetabaseUrl();
       const cardId = turn.embed.card_id;
-      
-      // Validate Metabase URL
-      if (!metabaseUrl || !this.isValidMetabaseUrl(metabaseUrl)) {
+
+      // Check if we have a valid Metabase URL (already validated in auth service)
+      if (!metabaseUrl) {
         console.error('Invalid or missing Metabase URL');
         this.toastService.error('Unable to open Metabase - invalid configuration');
         return null;
       }
-      
+
       // Validate card ID
       if (!cardId || !this.isValidCardId(cardId)) {
         console.error('Invalid card ID');
         this.toastService.error('Unable to open Metabase - invalid card ID');
         return null;
       }
-      
-      // Construct and validate the full URL
+
+      // Construct the URL (metabaseUrl is now guaranteed to be safe)
       const fullUrl = `${metabaseUrl}/question/${cardId}`;
+
+      // Additional validation to ensure the constructed URL is still safe
       if (!this.isValidRedirectUrl(fullUrl, metabaseUrl)) {
         console.error('Invalid redirect URL constructed');
         this.toastService.error('Unable to open Metabase - security validation failed');
         return null;
       }
-      
+
       return window.open(fullUrl, '_blank');
     } catch (error) {
       console.error('Error redirecting to Metabase:', error);
@@ -277,31 +280,6 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
-  private isValidMetabaseUrl(url: string): boolean {
-    try {
-      const parsedUrl = new URL(url);
-      // Only allow HTTPS URLs (or HTTP for localhost development)
-      if (parsedUrl.protocol !== 'https:' && 
-          !(parsedUrl.protocol === 'http:' && parsedUrl.hostname === 'localhost')) {
-        return false;
-      }
-      
-      // Basic hostname validation - should be a valid domain
-      const hostname = parsedUrl.hostname;
-      if (!hostname || hostname.length === 0 || hostname.includes('..')) {
-        return false;
-      }
-      
-      // Prevent common malicious patterns
-      if (hostname.includes('javascript:') || hostname.includes('data:') || hostname.includes('vbscript:')) {
-        return false;
-      }
-      
-      return true;
-    } catch {
-      return false;
-    }
-  }
 
   private isValidCardId(cardId: any): boolean {
     // Ensure card ID is a positive integer
