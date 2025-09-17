@@ -543,6 +543,14 @@ $(function () {
                         dt.search('');
                         dt.order([26, 'desc']).draw(); // Sort by creationTime descending
 
+                        // Rebuild the COLUMNS button to reflect new visibility state
+                        const colvisBtn = dt.button('customColvis:name');
+                        if (colvisBtn) {
+                            colvisBtn.collectionRebuild(
+                                getColumnToggleButtonsSorted(listColumns, dt)
+                            );
+                        }
+
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
                             .container()
