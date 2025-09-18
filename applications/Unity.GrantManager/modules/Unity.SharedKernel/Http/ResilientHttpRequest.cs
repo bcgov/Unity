@@ -151,7 +151,7 @@ namespace Unity.Modules.Shared.Http
             }, cancellationToken);
         }
 
-        private HttpRequestMessage BuildRequestMessage(
+        private static HttpRequestMessage BuildRequestMessage(
             HttpMethod httpVerb,
             Uri fullUrl,
             object? body,
