@@ -1,43 +1,61 @@
-# Metabase Reporter
+# Unity AI Platform
 
-A modular, extensible natural language to SQL application integrated with Metabase. Convert natural language queries into SQL, create visualizations, and manage conversations with multi-tenant support.
+A comprehensive AI-powered platform featuring reporting and assessment capabilities with advanced data insights and intelligent automation.
 
-## Features
+## Platform Components
 
+### 📊 Unity.AI.Reporting
 - 🤖 **Natural Language to SQL**: Convert plain English questions into SQL queries
 - 📊 **Metabase Integration**: Automatic card creation and visualization
 - 🏢 **Multi-Tenant Support**: Database isolation per tenant with db_id filtering
 - 💬 **Conversation Management**: Save and restore chat histories
 - 🔍 **Smart Schema Search**: Vector embeddings for relevant table discovery
 - 🎯 **Majority Voting**: Multiple LLM samples for robust SQL generation
+
+### 🔍 Unity.AI.Assessment (Coming Soon)
+- 🎯 **Intelligent Assessment**: AI-powered evaluation and scoring
+- 📋 **Automated Analysis**: Smart content assessment and feedback
 - 🔌 **Extensible Architecture**: Modular design for easy customization
 
 ## Project Structure
 
 ```
 applications/
-└── unity-ai.ReportingAI/
-    ├── src/
-    │   └── unity-ai.ReportingAI.Backend/
-    │       └── src/                    # Modular Python backend
-    │           ├── config.py          # Configuration management
-    │           ├── database.py        # Database operations
-    │           ├── metabase.py        # Metabase API client
-    │           ├── embeddings.py      # Vector embeddings
-    │           ├── chat.py            # Chat management
-    │           ├── sql_generator.py   # NL to SQL conversion
-    │           ├── api.py             # Flask API routes
-    │           ├── app.py             # Main entry point
-    │           ├── custom_fields.py   # Custom field utilities
-    │           └── daily_job.py       # Scheduled tasks
-    ├── .env                           # Environment configuration
-    ├── requirements.txt               # Python dependencies
-    ├── QDECOMP_examples.json         # NL-to-SQL training examples
-    ├── sql_examples.json             # Additional SQL examples
-    ├── docker-compose.yml            # Production orchestration
-    ├── docker-compose.dev.yml        # Development orchestration
-    ├── Dockerfile                    # Backend container definition
-    └── README.md                     # This file
+├── Unity.AI.Reporting.Backend/        # Python Flask backend (Active)
+│   ├── src/                           # Modular Python backend
+│   │   ├── config.py                 # Configuration management
+│   │   ├── database.py               # Database operations
+│   │   ├── metabase.py               # Metabase API client
+│   │   ├── embeddings.py             # Vector embeddings
+│   │   ├── chat.py                   # Chat management
+│   │   ├── sql_generator.py          # NL to SQL conversion
+│   │   ├── api.py                    # Flask API routes
+│   │   ├── app.py                    # Main entry point
+│   │   ├── custom_fields.py          # Custom field utilities
+│   │   └── daily_job.py              # Scheduled tasks
+│   ├── requirements.txt              # Python dependencies
+│   ├── Dockerfile                    # Backend container definition
+│   └── README.md                     # Backend documentation
+├── Unity.AI.Reporting.Frontend/       # Angular frontend (Active)
+│   ├── src/                          # Angular application
+│   ├── angular.json                  # Angular configuration
+│   ├── package.json                  # Node.js dependencies
+│   ├── Dockerfile                    # Frontend container definition
+│   └── README.md                     # Frontend documentation
+├── Unity.AI.Assessment.Backend/      # Assessment backend (Placeholder)
+│   ├── src/                          # Flask application placeholder
+│   ├── requirements.txt              # Python dependencies
+│   ├── Dockerfile                    # Backend container definition
+│   └── README.md                     # Backend documentation
+├── Unity.AI.Assessment.Frontend/     # Assessment frontend (Placeholder)
+│   ├── dist/                         # Built application placeholder
+│   ├── package.json                  # Node.js dependencies
+│   ├── Dockerfile                    # Frontend container definition
+│   └── README.md                     # Frontend documentation
+├── .env.example                      # Environment configuration template
+├── docker-compose.yml                # Production orchestration
+├── docker-compose.dev.yml            # Development orchestration
+└── README.md                         # This file
 ```
 
 ## Quick Start
@@ -64,14 +82,14 @@ pip install -r requirements.txt
 
 4. **Initialize database**
 ```bash
-cd src/unity-ai.ReportingAI.Backend/src
+cd applications/Unity.AI.Reporting.Backend/src
 python app.py
 # The database tables will be created automatically
 ```
 
 5. **Embed database schemas**
 ```bash
-cd src/unity-ai.ReportingAI.Backend/src
+cd applications/Unity.AI.Reporting.Backend/src
 python app.py embed
 # Or for a specific database:
 python app.py embed 3
@@ -85,7 +103,7 @@ python app.py embed 3
 docker-compose up --build
 
 # Embed schemas in the backend container
-docker-compose exec backend python src/unity-ai.ReportingAI.Backend/src/app.py embed
+docker-compose exec backend python app.py embed
 ```
 
 #### Development
@@ -138,7 +156,7 @@ EMBED_WORKSHEETS=true
 
 ### Tenant Configuration
 
-Add new tenants in `src/unity-ai.ReportingAI.Backend/src/config.py`:
+Add new tenants in `applications/Unity.AI.Reporting.Backend/src/config.py`:
 
 ```python
 def _load_tenant_mappings(self):
@@ -179,15 +197,15 @@ def _load_tenant_mappings(self):
 ### Backend Commands
 ```bash
 # Run the Flask server
-cd src/unity-ai.ReportingAI.Backend/src
+cd applications/Unity.AI.Reporting.Backend/src
 python app.py
 
 # Embed database schemas
-cd src/unity-ai.ReportingAI.Backend/src
+cd applications/Unity.AI.Reporting.Backend/src
 python app.py embed [db_id]
 
 # Show help
-cd src/unity-ai.ReportingAI.Backend/src
+cd applications/Unity.AI.Reporting.Backend/src
 python app.py help
 ```
 
@@ -195,10 +213,10 @@ python app.py help
 
 ### Adding New Use Cases
 
-1. **Configure the tenant** in `src/unity-ai.ReportingAI.Backend/src/config.py`
-2. **Customize schema extraction** in `src/unity-ai.ReportingAI.Backend/src/embeddings.py`
+1. **Configure the tenant** in `applications/Unity.AI.Reporting.Backend/src/config.py`
+2. **Customize schema extraction** in `applications/Unity.AI.Reporting.Backend/src/embeddings.py`
 3. **Add domain-specific examples** to `QDECOMP_examples.json`
-4. **Extend API endpoints** in `src/unity-ai.ReportingAI.Backend/src/api.py`
+4. **Extend API endpoints** in `applications/Unity.AI.Reporting.Backend/src/api.py`
 
 ### Replacing Components
 
@@ -212,7 +230,7 @@ The modular architecture allows easy replacement of:
 
 ### Running Tests
 ```bash
-cd src/unity-ai.ReportingAI.Backend/src
+cd applications/Unity.AI.Reporting.Backend/src
 python -m pytest tests/
 ```
 
