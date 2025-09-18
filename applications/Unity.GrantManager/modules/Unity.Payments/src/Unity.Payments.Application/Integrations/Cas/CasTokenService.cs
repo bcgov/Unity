@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Unity.GrantManager.Integrations;
+using Unity.Modules.Shared.Http;
 using Unity.Modules.Shared.Integrations;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -16,13 +17,15 @@ namespace Unity.Payments.Integrations.Cas
         IEndpointManagementAppService endpointManagementAppService,
         IOptions<CasClientOptions> casClientOptions,
         IHttpClientFactory httpClientFactory,
-        IDistributedCache<TokenValidationResponse, string> chesTokenCache
+        IResilientHttpRequest resilientHttpRequest,
+        Microsoft.Extensions.Caching.Distributed.IDistributedCache casTokenCache,
+        Microsoft.Extensions.Logging.ILogger<TokenService> tokenServiceLogger
     ) : ApplicationService, ICasTokenService
     {
         private const string OAUTH_PATH = "oauth/token";
         private const string CAS_API_KEY = "CasApiKey";
 
-        public async Task<string> GetAuthTokenAsync()
+        public async Task<string> GetAuthTokenAsync(string? certificatePath = null)
         {
             string caseBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             ClientOptions clientOptions = new ClientOptions
@@ -30,11 +33,13 @@ namespace Unity.Payments.Integrations.Cas
                 Url = $"{caseBaseUrl}/{OAUTH_PATH}",
                 ClientId = casClientOptions.Value.CasClientId,
                 ClientSecret = casClientOptions.Value.CasClientSecret,
-                ApiKey = CAS_API_KEY,
+                CertificatePath = certificatePath ?? string.Empty,
+                ApiKey = CAS_API_KEY
             };
 
-            TokenService tokenService = new(httpClientFactory, chesTokenCache, Logger);
-            return await tokenService.GetAuthTokenAsync(clientOptions);
+            TokenService tokenService = new(httpClientFactory, resilientHttpRequest, casTokenCache, tokenServiceLogger);
+            var tokenResponse = await tokenService.GetAndCacheAccessTokenAsync(clientOptions);
+            return tokenResponse?.AccessToken ?? string.Empty;
         }
     }
 }

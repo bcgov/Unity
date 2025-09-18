@@ -23,5 +23,15 @@ namespace Unity.Modules.Shared.Http
         /// Set a base URL to be used for relative request paths.
         /// </summary>
         void SetBaseUrl(string baseUrl);
+        
+        Task<HttpResponseMessage> HttpAsyncSecured(
+            HttpMethod httpVerb,
+            string resource,
+            string certPath,
+            string? certPassword = null,
+            object? body = null,
+            string? authToken = null,
+            (string username, string password)? basicAuth = null,
+            CancellationToken cancellationToken = default);
     }
 }

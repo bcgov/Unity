@@ -521,7 +521,21 @@ function setElectoralDistrictLockState(locked) {
 
 async function refreshApplicantElectoralDistrict() {
     try {
-        let address = extractAddressInfo();
+        // Determine which address to use based on the flag    
+        const isPhysical = $('#ApplicantElectoralAddressType').val() === "PhysicalAddress";
+
+        // Define the field prefixes
+        const prefix = isPhysical ? 'PhysicalAddress' : 'MailingAddress';         
+        let address = extractAddressInfo(prefix);
+        if (!address || address.trim() === '') {
+            Swal.fire({
+                icon: "warning",
+                text: `Please fill in the ${prefix} address fields before refreshing the electoral district.`,
+                confirmButtonText: 'Ok',
+                customClass: { confirmButton: 'btn btn-primary' }
+            });
+            return;
+        }
         let addressDetails = await unity.grantManager.integrations.geocoder.geocoderApi.getAddressDetails(address);
         let electoralDistrict = await unity.grantManager.integrations.geocoder.geocoderApi.getElectoralDistrict(addressDetails?.coordinates);
         if (electoralDistrict?.name) {
@@ -537,12 +551,7 @@ function toggleElectoralDistrictLockState() {
     setElectoralDistrictLockState(!electoralDistrictLocked);
 };
 
-function extractAddressInfo() {
-    // Determine which address to use based on the flag    
-    const isPhysical = $('#ApplicantElectoralAddressType').val() === "PhysicalAddress";
-
-    // Define the field prefixes
-    const prefix = isPhysical ? 'PhysicalAddress' : 'MailingAddress';
+function extractAddressInfo(prefix) {
 
     // Collect address parts
     const street   = $(`#${prefix}_Street`).val() || '';

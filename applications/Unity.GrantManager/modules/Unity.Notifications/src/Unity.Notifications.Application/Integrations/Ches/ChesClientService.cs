@@ -6,8 +6,8 @@ using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
-using Volo.Abp.Caching;
 using Unity.GrantManager.Integrations;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.Notifications.Integrations.Ches
 {
@@ -15,11 +15,12 @@ namespace Unity.Notifications.Integrations.Ches
     [RemoteService(false, Name = "Ches")]
     [ExposeServices(typeof(ChesClientService), typeof(IChesClientService))]
     public class ChesClientService(
-        IDistributedCache<TokenValidationResponse, string> chesTokenCache,
+        Microsoft.Extensions.Caching.Distributed.IDistributedCache chesTokenCache,
         IResilientHttpRequest resilientHttpRequest,
         IEndpointManagementAppService endpointManagementAppService,
         IHttpClientFactory httpClientFactory,
-        IOptions<ChesClientOptions> chesClientOptions
+        IOptions<ChesClientOptions> chesClientOptions,
+        ILogger<TokenService> tokenServiceLogger
     ) : ApplicationService, IChesClientService
     {
         public async Task<HttpResponseMessage?> SendAsync(object emailRequest)
@@ -50,9 +51,13 @@ namespace Unity.Notifications.Integrations.Ches
                 ClientSecret = chesClientOptions.Value.ChesClientSecret,
                 ApiKey = "ChesApiKey"
             };
-
-            TokenService tokenService = new(httpClientFactory, chesTokenCache, Logger);
-            return await tokenService.GetAuthTokenAsync(clientOptions);
+            TokenService tokenService = new(httpClientFactory, resilientHttpRequest, chesTokenCache, tokenServiceLogger);
+            var tokenResponse = await tokenService.GetAndCacheAccessTokenAsync(clientOptions);
+            if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.AccessToken))
+            {
+                throw new AbpException("Failed to retrieve access token from Ches token service.");
+            }
+            return tokenResponse.AccessToken;
         }
     }
 }

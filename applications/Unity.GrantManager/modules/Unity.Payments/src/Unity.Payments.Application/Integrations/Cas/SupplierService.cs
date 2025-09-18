@@ -41,12 +41,14 @@ namespace Unity.Payments.Integrations.Cas
                 // Initialize the base API URL once during construction
                 casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
         }
+
+        const string casCertPath = "/etc/ssl/certs/cas2025top.pem";
+
         private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
         {
             var url = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             return url ?? throw new UserFriendlyException("Payment API base URL is not configured.");
         }
-
 
         public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {
@@ -233,9 +235,9 @@ namespace Unity.Payments.Integrations.Cas
         {
             if (!string.IsNullOrEmpty(resource))
             {
-                var authToken = await iTokenService.GetAuthTokenAsync();
+                var authToken = await iTokenService.GetAuthTokenAsync(certificatePath: casCertPath);
                 try
-                {
+                {                    
                     using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
                     if (response != null)
                     {
