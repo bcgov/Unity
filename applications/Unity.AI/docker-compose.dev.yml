@@ -1,4 +1,8 @@
+# Unity AI Platform - Development Docker Compose
+# Hot reload enabled for Unity.AI.Reporting components
+
 services:
+  # Shared Database Service (PostgreSQL with pgvector)
   postgres:
     image: pgvector/pgvector:pg16
     environment:
@@ -17,9 +21,10 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  # Unity.AI.Reporting Backend (Development with hot reload)
+  reporting-backend:
     build: 
-      context: ./src/unity-ai.ReportingAI.Backend
+      context: ./Unity.AI.Reporting.Backend
       args:
         - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
         - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
@@ -38,7 +43,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - FLASK_ENV=production
+      - FLASK_ENV=development
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
@@ -53,29 +58,48 @@ services:
       - DB_NAME=unity_ai
       - DB_USER=unity_user
       - DB_PASSWORD=unity_pass
+    volumes:
+      - ./Unity.AI.Reporting.Backend/src:/app
     networks:
       - unity-ai-network
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  frontend:
-    build: 
-      context: ./src/unity-ai.ReportingAI.Frontend
+  # Unity.AI.Reporting Frontend (Development with hot reload)
+  reporting-frontend:
+    build:
+      context: ./Unity.AI.Reporting.Frontend
+      dockerfile: Dockerfile.dev
       args:
         - JWT_SECRET=${JWT_SECRET}
     ports:
       - "80:80"
-    depends_on:
-      backend:
-        condition: service_started
+    volumes:
+      - ./Unity.AI.Reporting.Frontend/src:/app/src
+      - ./Unity.AI.Reporting.Frontend/angular.json:/app/angular.json
+      - ./Unity.AI.Reporting.Frontend/package.json:/app/package.json
+      - ./Unity.AI.Reporting.Frontend/tsconfig.json:/app/tsconfig.json
+      - /app/src/environments
+    environment:
+      - NODE_ENV=development
     networks:
       - unity-ai-network
+    depends_on:
+      - reporting-backend
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    networks:
+      - unity-ai-network
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 networks:
   unity-ai-network:
