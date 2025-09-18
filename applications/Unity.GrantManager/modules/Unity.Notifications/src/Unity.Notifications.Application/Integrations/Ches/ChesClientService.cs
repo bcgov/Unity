@@ -6,8 +6,9 @@ using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
+using Volo.Abp.Caching;
 using Unity.GrantManager.Integrations;
-using Microsoft.Extensions.Logging;
+using Unity.GrantManager.Integrations.Css;
 
 namespace Unity.Notifications.Integrations.Ches
 {
@@ -15,12 +16,11 @@ namespace Unity.Notifications.Integrations.Ches
     [RemoteService(false, Name = "Ches")]
     [ExposeServices(typeof(ChesClientService), typeof(IChesClientService))]
     public class ChesClientService(
-        Microsoft.Extensions.Caching.Distributed.IDistributedCache chesTokenCache,
+        IDistributedCache<TokenValidationResponse, string> chesTokenCache,
         IResilientHttpRequest resilientHttpRequest,
         IEndpointManagementAppService endpointManagementAppService,
         IHttpClientFactory httpClientFactory,
-        IOptions<ChesClientOptions> chesClientOptions,
-        ILogger<TokenService> tokenServiceLogger
+        IOptions<ChesClientOptions> chesClientOptions
     ) : ApplicationService, IChesClientService
     {
         public async Task<HttpResponseMessage?> SendAsync(object emailRequest)
@@ -28,7 +28,6 @@ namespace Unity.Notifications.Integrations.Ches
             string authToken = await GetAuthTokenAsync();
             string notificationsApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTIFICATION_API_BASE);
             var resource = $"{notificationsApiUrl}/email";
-
             // Pass the object directly; ResilientHttpRequest will serialize it to JSON
             var response = await resilientHttpRequest.HttpAsync(
                 HttpMethod.Post,
@@ -36,14 +35,11 @@ namespace Unity.Notifications.Integrations.Ches
                 emailRequest,
                 authToken
             );
-
             return response;
         }
-
         private async Task<string> GetAuthTokenAsync()
         {
             string notificationsAuthUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTIFICATION_AUTH);
-
             ClientOptions clientOptions = new()
             {
                 Url = notificationsAuthUrl,
@@ -51,13 +47,9 @@ namespace Unity.Notifications.Integrations.Ches
                 ClientSecret = chesClientOptions.Value.ChesClientSecret,
                 ApiKey = "ChesApiKey"
             };
-            TokenService tokenService = new(httpClientFactory, resilientHttpRequest, chesTokenCache, tokenServiceLogger);
-            var tokenResponse = await tokenService.GetAndCacheAccessTokenAsync(clientOptions);
-            if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.AccessToken))
-            {
-                throw new AbpException("Failed to retrieve access token from Ches token service.");
-            }
-            return tokenResponse.AccessToken;
+
+            TokenService tokenService = new(httpClientFactory, chesTokenCache, Logger);
+            return await tokenService.GetAuthTokenAsync(clientOptions);
         }
     }
 }
