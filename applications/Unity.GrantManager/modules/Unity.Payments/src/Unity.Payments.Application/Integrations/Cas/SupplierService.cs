@@ -235,7 +235,7 @@ namespace Unity.Payments.Integrations.Cas
         {
             if (!string.IsNullOrEmpty(resource))
             {
-                var authToken = await iTokenService.GetAuthTokenAsync(certificatePath: casCertPath);
+                var authToken = await iTokenService.GetAuthTokenAsync();
                 try
                 {                    
                     using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
