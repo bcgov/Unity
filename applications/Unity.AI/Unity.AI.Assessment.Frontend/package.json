@@ -1,0 +1,7 @@
+{
+  "name": "unity-ai-assessment-frontend",
+  "version": "1",
+  "scripts": {
+    "build": "mkdir -p dist && echo 'Frontend build completed - dist directory ready'"
+  }
+}

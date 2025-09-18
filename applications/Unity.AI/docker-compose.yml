@@ -1,4 +1,8 @@
+# Unity AI Platform - Production Docker Compose
+# Contains services for Unity.AI.Reporting (active) and placeholders for Unity.AI.Assessment
+
 services:
+  # Shared Database Service (PostgreSQL with pgvector)
   postgres:
     image: pgvector/pgvector:pg16
     environment:
@@ -17,9 +21,10 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  # Unity.AI.Reporting Backend (Python Flask + AI)
+  reporting-backend:
     build: 
-      context: ./src/unity-ai.ReportingAI.Backend
+      context: ./Unity.AI.Reporting.Backend
       args:
         - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
         - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
@@ -38,7 +43,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - FLASK_ENV=development
+      - FLASK_ENV=production
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
@@ -53,47 +58,54 @@ services:
       - DB_NAME=unity_ai
       - DB_USER=unity_user
       - DB_PASSWORD=unity_pass
-    volumes:
-      - ./src/unity-ai.ReportingAI.Backend/src:/app
     networks:
       - unity-ai-network
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  frontend:
-    build:
-      context: ./src/unity-ai.ReportingAI.Frontend
-      dockerfile: Dockerfile.dev
+  # Unity.AI.Reporting Frontend (Angular)
+  reporting-frontend:
+    build: 
+      context: ./Unity.AI.Reporting.Frontend
       args:
         - JWT_SECRET=${JWT_SECRET}
     ports:
       - "80:80"
-    volumes:
-      - ./src/unity-ai.ReportingAI.Frontend/src:/app/src
-      - ./src/unity-ai.ReportingAI.Frontend/angular.json:/app/angular.json
-      - ./src/unity-ai.ReportingAI.Frontend/package.json:/app/package.json
-      - ./src/unity-ai.ReportingAI.Frontend/tsconfig.json:/app/tsconfig.json
-      - /app/src/environments
-    environment:
-      - NODE_ENV=development
+    depends_on:
+      reporting-backend:
+        condition: service_started
     networks:
       - unity-ai-network
-    depends_on:
-      - backend
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "8080:80"
-    networks:
-      - unity-ai-network
-    depends_on:
-      postgres:
-        condition: service_healthy
+  # Unity.AI.Assessment Backend (Future Development)
+  # assessment-backend:
+  #   build: 
+  #     context: ./Unity.AI.Assessment.Backend
+  #   ports:
+  #     - "5001:5000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - unity-ai-network
+
+  # Unity.AI.Assessment Frontend (Future Development)  
+  # assessment-frontend:
+  #   build:
+  #     context: ./Unity.AI.Assessment.Frontend
+  #   ports:
+  #     - "81:80"
+  #   depends_on:
+  #     assessment-backend:
+  #       condition: service_started
+  #   networks:
+  #     - unity-ai-network
 
 networks:
   unity-ai-network:
