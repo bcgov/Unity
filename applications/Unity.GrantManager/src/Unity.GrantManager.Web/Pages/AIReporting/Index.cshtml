@@ -1,6 +1,7 @@
 ﻿@page
 @model Unity.GrantManager.Web.Pages.AIReporting.IndexModel
 @using Unity.GrantManager.Web.Pages.AIReporting
+@using Unity.Modules.Shared.Permissions
 @using Volo.Abp.Features
 
 @section styles {
@@ -11,7 +12,7 @@
 {
     <abp-script src="/libs/jquery/jquery.js" />
     <abp-script src="/libs/bootstrap-4/dist/js/bootstrap.min.js"></abp-script>
-    @if (await FeatureChecker.IsEnabledAsync("Unity.AIReporting"))
+    @if (await FeatureChecker.IsEnabledAsync("Unity.AIReporting") || User.IsInRole(IdentityConsts.ITAdminRoleName))
     {
         <abp-script src="/Pages/AIReporting/Index.js" />
     }
