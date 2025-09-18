@@ -1,0 +1,197 @@
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Unity AI Administration</h1>
+    <div class="admin-actions">
+      <button class="btn btn-secondary" (click)="goToMainApp()">Main App</button>
+      <button class="btn btn-danger" (click)="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="admin-content">
+    <div class="admin-section">
+      <h2>🐛 Bug Reports & Feedback</h2>
+      <div class="feedback-controls">
+        <button
+          class="btn btn-secondary"
+          (click)="loadFeedback()"
+          [disabled]="isLoading">
+          {{isLoading ? 'Loading...' : 'Refresh'}}
+        </button>
+        <div class="feedback-filters">
+          <select [(ngModel)]="selectedStatus" (change)="filterFeedback()" class="filter-select">
+            <option value="">All Status</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+          <select [(ngModel)]="selectedType" (change)="filterFeedback()" class="filter-select">
+            <option value="">All Types</option>
+            <option value="bug_report">Bug Report</option>
+            <option value="feature_request">Feature Request</option>
+            <option value="general">General</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="feedback-summary" *ngIf="feedbackSummary">
+        <div class="summary-stat">
+          <span class="summary-number">{{feedbackSummary.total}}</span>
+          <span class="summary-label">Total</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-number">{{feedbackSummary.open}}</span>
+          <span class="summary-label">Open</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-number">{{feedbackSummary.inProgress}}</span>
+          <span class="summary-label">In Progress</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-number">{{feedbackSummary.resolved}}</span>
+          <span class="summary-label">Resolved</span>
+        </div>
+      </div>
+
+      <div class="feedback-list" *ngIf="!isLoading">
+        <div class="feedback-item" *ngFor="let feedback of filteredFeedback" [class]="'status-' + feedback.status">
+          <div class="feedback-header">
+            <div class="feedback-meta">
+              <span class="feedback-id">{{feedback.feedback_id.substring(0, 8)}}</span>
+              <span class="feedback-type badge badge-{{feedback.feedback_type}}">{{feedback.feedback_type}}</span>
+              <span class="feedback-status badge badge-{{feedback.status}}">{{feedback.status}}</span>
+              <span class="feedback-date">{{formatDate(feedback.created_at)}}</span>
+            </div>
+            <div class="feedback-actions">
+              <select
+                [value]="feedback.status"
+                (change)="updateFeedbackStatus(feedback.feedback_id, $event)"
+                class="status-select">
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="feedback-content">
+            <div class="feedback-details">
+              <div class="feedback-info">
+                <strong>User:</strong> {{feedback.user_id}}<br>
+                <strong>Tenant:</strong> {{feedback.tenant_id}}<br>
+                <strong>Chat:</strong>
+                <span class="chat-title" *ngIf="feedback.chat_title"> {{feedback.chat_title}}</span>
+                <span class="chat-id" *ngIf="!feedback.chat_title"> {{feedback.chat_id.substring(0, 8)}}</span>
+              </div>
+              <div class="feedback-message" *ngIf="feedback.message">
+                <strong>User Comment:</strong>
+                <p>{{feedback.message}}</p>
+              </div>
+
+              <div class="feedback-context" *ngIf="feedback.current_question || feedback.previous_question">
+                <details open>
+                  <summary>Question & SQL Context</summary>
+                  <div class="context-info">
+                    <!-- Current Question -->
+                    <div class="context-section" *ngIf="feedback.current_question">
+                      <h4>Current Question</h4>
+                      <div class="question-text">{{feedback.current_question}}</div>
+
+                      <div *ngIf="feedback.current_sql" class="sql-section">
+                        <h5>Generated SQL</h5>
+                        <pre class="sql-code">{{feedback.current_sql}}</pre>
+                      </div>
+
+                      <div *ngIf="feedback.current_sql_explanation" class="sql-explanation">
+                        <h5>SQL Explanation</h5>
+                        <p>{{feedback.current_sql_explanation}}</p>
+                      </div>
+                    </div>
+
+                    <!-- Previous Question (if exists) -->
+                    <div class="context-section" *ngIf="feedback.previous_question">
+                      <h4>Previous Question</h4>
+                      <div class="question-text">{{feedback.previous_question}}</div>
+
+                      <div *ngIf="feedback.previous_sql" class="sql-section">
+                        <h5>Generated SQL</h5>
+                        <pre class="sql-code">{{feedback.previous_sql}}</pre>
+                      </div>
+
+                      <div *ngIf="feedback.previous_sql_explanation" class="sql-explanation">
+                        <h5>SQL Explanation</h5>
+                        <p>{{feedback.previous_sql_explanation}}</p>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div class="feedback-technical" *ngIf="feedback.user_agent || feedback.metadata">
+                <details>
+                  <summary>Technical Details</summary>
+                  <div class="technical-info">
+                    <div *ngIf="feedback.user_agent">
+                      <strong>User Agent:</strong> {{feedback.user_agent}}
+                    </div>
+                    <div *ngIf="feedback.metadata">
+                      <strong>Metadata:</strong>
+                      <pre>{{formatMetadata(feedback.metadata)}}</pre>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="no-feedback" *ngIf="filteredFeedback.length === 0">
+          <p>No feedback items match the selected filters.</p>
+        </div>
+      </div>
+
+      <div class="loading-state" *ngIf="isLoading">
+        <div class="loading-spinner"></div>
+        <p>Loading feedback...</p>
+      </div>
+
+      <div class="error-state" *ngIf="errorMessage">
+        <p class="error-message">{{errorMessage}}</p>
+        <button class="btn btn-secondary" (click)="loadFeedback()">Retry</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>🚀 Other Admin Features</h2>
+      <p>Additional admin features will be available in future releases:</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>👥 User Management</h3>
+          <p>Manage user accounts, roles, and permissions</p>
+        </div>
+
+        <div class="feature-card">
+          <h3>📊 System Analytics</h3>
+          <p>View usage statistics and system performance metrics</p>
+        </div>
+
+        <div class="feature-card">
+          <h3>🔧 Configuration</h3>
+          <p>Configure system settings and integrations</p>
+        </div>
+
+        <div class="feature-card">
+          <h3>📋 Audit Logs</h3>
+          <p>Monitor system activity and security events</p>
+        </div>
+
+        <div class="feature-card">
+          <h3>⚙️ Metabase Integration</h3>
+          <p>Manage Metabase connections and databases</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

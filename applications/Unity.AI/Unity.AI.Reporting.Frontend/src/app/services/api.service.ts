@@ -111,15 +111,39 @@ export class ApiService {
     return this.post<T>('/validate-token', {});
   }
 
+  // Admin check method
+  checkAdmin<T>(): Observable<T> {
+    return this.post<T>('/check-admin', {});
+  }
+
   // Feedback methods
-  submitFeedback<T>(chatId: string, feedbackType: string, message: string): Observable<T> {
-    return this.post<T>('/feedback', {
+  submitFeedback<T>(chatId: string, feedbackType: string, message: string, context?: {
+    currentQuestion?: string;
+    currentSql?: string;
+    currentSqlExplanation?: string;
+    previousQuestion?: string;
+    previousSql?: string;
+    previousSqlExplanation?: string;
+  }): Observable<T> {
+    const payload: any = {
       chat_id: chatId,
       feedback_type: feedbackType,
       message: message,
       timestamp: new Date().toISOString(),
       frontend_version: '1.0.0'
-    });
+    };
+
+    // Add context data if provided
+    if (context) {
+      if (context.currentQuestion) payload.current_question = context.currentQuestion;
+      if (context.currentSql) payload.current_sql = context.currentSql;
+      if (context.currentSqlExplanation) payload.current_sql_explanation = context.currentSqlExplanation;
+      if (context.previousQuestion) payload.previous_question = context.previousQuestion;
+      if (context.previousSql) payload.previous_sql = context.previousSql;
+      if (context.previousSqlExplanation) payload.previous_sql_explanation = context.previousSqlExplanation;
+    }
+
+    return this.post<T>('/feedback', payload);
   }
 
   getFeedback<T>(feedbackId: string): Observable<T> {
@@ -128,5 +152,13 @@ export class ApiService {
 
   getChatFeedback<T>(chatId: string): Observable<T> {
     return this.get<T>(`/chats/${chatId}/feedback`);
+  }
+
+  // Admin methods
+  getAllFeedback<T>(limit: number = 100, offset: number = 0): Observable<T> {
+    const params = new URLSearchParams();
+    params.set('limit', limit.toString());
+    params.set('offset', offset.toString());
+    return this.get<T>(`/admin/feedback?${params.toString()}`);
   }
 }

@@ -1,10 +1,12 @@
 
 
 <div class="outer-container">
-  <app-sidebar 
+  <app-sidebar
     #sidebar
     [isOpen]="sidebarOpen"
     [currentChatId]="currentChatId"
+    [conversation]="conversation"
+    [currentTurnIndex]="currentTurnIndex"
     (toggleSidebar)="toggleSidebar()"
     (chatSelected)="onChatSelected($event)"
     (newChat)="onNewChat()">

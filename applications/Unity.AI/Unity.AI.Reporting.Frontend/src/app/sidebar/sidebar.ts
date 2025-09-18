@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { ToastService } from '../services/toast.service';
 import { AlertComponent } from '../alert/alert';
+import { Turn } from '../turn';
 
 export interface Chat {
   id: string;
@@ -22,6 +23,8 @@ export interface Chat {
 export class SidebarComponent {
   @Input() isOpen: boolean = false;
   @Input() currentChatId: string | null = null;
+  @Input() conversation: Turn[] = [];
+  @Input() currentTurnIndex: number = 0;
   @Output() toggleSidebar = new EventEmitter<void>();
   @Output() chatSelected = new EventEmitter<Chat>();
   @Output() newChat = new EventEmitter<void>();
@@ -156,11 +159,15 @@ export class SidebarComponent {
     }
 
     try {
+      // Extract conversation context
+      const context = this.extractConversationContext();
+
       const response = await firstValueFrom(
         this.apiService.submitFeedback<any>(
           this.currentChatId,
           'bug_report',
-          this.feedbackMessage.trim()
+          this.feedbackMessage.trim(),
+          context
         )
       );
 
@@ -195,5 +202,27 @@ export class SidebarComponent {
 
   closeInfoModal(): void {
     this.showInfoModal = false;
+  }
+
+  private extractConversationContext(): any {
+    const context: any = {};
+
+    // Get current turn data
+    if (this.conversation.length > 0 && this.currentTurnIndex >= 0 && this.currentTurnIndex < this.conversation.length) {
+      const currentTurn = this.conversation[this.currentTurnIndex];
+      context.currentQuestion = currentTurn.question;
+      context.currentSql = currentTurn.embed?.SQL;
+      context.currentSqlExplanation = currentTurn.sql_explanation || currentTurn.embed?.sql_explanation;
+    }
+
+    // Get previous turn data (if exists)
+    if (this.currentTurnIndex > 0) {
+      const previousTurn = this.conversation[this.currentTurnIndex - 1];
+      context.previousQuestion = previousTurn.question;
+      context.previousSql = previousTurn.embed?.SQL;
+      context.previousSqlExplanation = previousTurn.sql_explanation || previousTurn.embed?.sql_explanation;
+    }
+
+    return context;
   }
 }

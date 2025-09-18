@@ -182,6 +182,62 @@ def validate_token():
         "expires": user_data["exp"]
     }), 200
 
+@app.route("/api/check-admin", methods=["POST"])
+@require_auth
+def check_admin():
+    """
+    Check if the current user has admin privileges
+    Returns admin status without exposing JWT contents to frontend
+    """
+    user_data = get_user_from_token()
+
+    # Extract is_it_admin from JWT payload
+    is_admin = user_data.get("is_it_admin", False)
+
+    return jsonify({
+        "is_admin": bool(is_admin),
+        "user_id": user_data["user_id"]
+    }), 200
+
+
+@app.route("/api/admin/feedback", methods=["GET"])
+@require_auth
+def get_feedback_for_admin():
+    """
+    Get all feedback entries for admin review
+    Requires admin privileges
+    """
+    user_data = get_user_from_token()
+
+    # Check if user is admin
+    is_admin = user_data.get("is_it_admin", False)
+    if not is_admin:
+        return jsonify({"error": "Admin privileges required"}), 403
+
+    # Get pagination parameters
+    try:
+        limit = int(request.args.get('limit', 100))
+        offset = int(request.args.get('offset', 0))
+
+        # Ensure reasonable limits
+        limit = min(limit, 1000)  # Max 1000 entries per request
+        offset = max(offset, 0)   # No negative offsets
+
+    except ValueError:
+        return jsonify({"error": "Invalid pagination parameters"}), 400
+
+    try:
+        feedback_list = feedback_repository.get_all_feedback(limit=limit, offset=offset)
+        return jsonify({
+            "feedback": feedback_list,
+            "limit": limit,
+            "offset": offset,
+            "count": len(feedback_list)
+        }), 200
+
+    except Exception as e:
+        print(f"Error retrieving feedback: {e}")
+        return jsonify({"error": "Failed to retrieve feedback"}), 500
 
 @app.route("/api/ask", methods=["POST"])
 @require_auth
@@ -517,6 +573,13 @@ def submit_feedback():
         feedback_type = data.get("feedback_type", "bug_report")
         message = data.get("message", "").strip()
         user_agent = request.headers.get("User-Agent")
+
+        current_question = data.get("current_question")
+        current_sql = data.get("current_sql")
+        current_sql_explanation = data.get("current_sql_explanation")
+        previous_question = data.get("previous_question")
+        previous_sql = data.get("previous_sql")
+        previous_sql_explanation = data.get("previous_sql_explanation")
         
         # Get metadata from request
         metadata = {
@@ -544,7 +607,13 @@ def submit_feedback():
             feedback_type=feedback_type,
             message=message,
             user_agent=user_agent,
-            metadata=metadata
+            metadata=metadata,
+            current_question = data.get("current_question")
+            current_sql = data.get("current_sql")
+            current_sql_explanation = data.get("current_sql_explanation")
+            previous_question = data.get("previous_question")
+            previous_sql = data.get("previous_sql")
+            previous_sql_explanation = data.get("previous_sql_explanation")
         )
         
         print(f"Feedback submitted: {feedback_id} for chat {chat_id} by user {user_id}")

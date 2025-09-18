@@ -85,19 +85,6 @@ Commands:
     python app.py embed [db_id]    - Embed database schemas
     python app.py g [db_id]        - Embed database schemas (alias)
     python app.py help             - Show this help message
-
-Environment Variables:
-    FLASK_ENV          - Environment (development/production)
-    DB_HOST            - PostgreSQL host
-    DB_PORT            - PostgreSQL port
-    DB_NAME            - Database name
-    DB_USER            - Database user
-    DB_PASSWORD        - Database password
-    MB_EMBED_URL       - Metabase URL
-    METABASE_KEY       - Metabase API key
-    MB_EMBED_SECRET    - Metabase embed secret
-    COMPLETION_ENDPOINT - LLM API endpoint
-    COMPLETION_KEY     - LLM API key
             """)
         
         else:

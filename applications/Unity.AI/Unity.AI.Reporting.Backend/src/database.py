@@ -56,6 +56,12 @@ class DatabaseManager:
                         user_agent TEXT,
                         metadata JSONB,
                         status TEXT DEFAULT 'open',
+                        current_question TEXT,
+                        current_sql TEXT,
+                        current_sql_explanation TEXT,
+                        previous_question TEXT,
+                        previous_sql TEXT,
+                        previous_sql_explanation TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
@@ -227,18 +233,25 @@ class FeedbackRepository:
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
     
-    def submit_feedback(self, chat_id: str, user_id: str, tenant_id: str, 
-                       feedback_type: str, message: str, user_agent: str = None, 
-                       metadata: Dict = None) -> str:
+    def submit_feedback(self, chat_id: str, user_id: str, tenant_id: str,
+                       feedback_type: str, message: str, user_agent: str = None,
+                       metadata: Dict = None, current_question: str = None,
+                       current_sql: str = None, current_sql_explanation: str = None,
+                       previous_question: str = None, previous_sql: str = None,
+                       previous_sql_explanation: str = None) -> str:
         """Submit feedback for a chat"""
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO feedback (chat_id, user_id, tenant_id, feedback_type, message, user_agent, metadata)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO feedback (chat_id, user_id, tenant_id, feedback_type, message, user_agent, metadata,
+                                        current_question, current_sql, current_sql_explanation,
+                                        previous_question, previous_sql, previous_sql_explanation)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING feedback_id
-                """, (chat_id, user_id, tenant_id, feedback_type, message, user_agent, 
-                      json.dumps(metadata) if metadata else None))
+                """, (chat_id, user_id, tenant_id, feedback_type, message, user_agent,
+                      json.dumps(metadata) if metadata else None,
+                      current_question, current_sql, current_sql_explanation,
+                      previous_question, previous_sql, previous_sql_explanation))
                 
                 feedback_id = str(cur.fetchone()[0])
                 conn.commit()
@@ -251,6 +264,8 @@ class FeedbackRepository:
                 cur.execute("""
                     SELECT f.feedback_id, f.chat_id, f.user_id, f.tenant_id, f.feedback_type,
                            f.message, f.user_agent, f.metadata, f.status, f.created_at, f.updated_at,
+                           f.current_question, f.current_sql, f.current_sql_explanation,
+                           f.previous_question, f.previous_sql, f.previous_sql_explanation,
                            c.title as chat_title
                     FROM feedback f
                     LEFT JOIN chats c ON f.chat_id = c.chat_id
@@ -273,7 +288,13 @@ class FeedbackRepository:
                     "status": row[8],
                     "created_at": row[9].isoformat(),
                     "updated_at": row[10].isoformat(),
-                    "chat_title": row[11]
+                    "current_question": row[11],
+                    "current_sql": row[12],
+                    "current_sql_explanation": row[13],
+                    "previous_question": row[14],
+                    "previous_sql": row[15],
+                    "previous_sql_explanation": row[16],
+                    "chat_title": row[17]
                 }
     
     def get_feedback_by_chat(self, chat_id: str) -> List[Dict[str, Any]]:
@@ -304,14 +325,55 @@ class FeedbackRepository:
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    UPDATE feedback 
+                    UPDATE feedback
                     SET status = %s, updated_at = CURRENT_TIMESTAMP
                     WHERE feedback_id = %s
                 """, (status, feedback_id))
-                
+
                 updated = cur.rowcount > 0
                 conn.commit()
                 return updated
+
+    def get_all_feedback(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get all feedback entries for admin view"""
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT f.feedback_id, f.chat_id, f.user_id, f.tenant_id, f.feedback_type,
+                           f.message, f.user_agent, f.metadata, f.status, f.created_at, f.updated_at,
+                           f.current_question, f.current_sql, f.current_sql_explanation,
+                           f.previous_question, f.previous_sql, f.previous_sql_explanation,
+                           c.title as chat_title
+                    FROM feedback f
+                    LEFT JOIN chats c ON f.chat_id = c.chat_id
+                    ORDER BY f.created_at DESC
+                    LIMIT %s OFFSET %s
+                """, (limit, offset))
+
+                feedback_list = []
+                for row in cur.fetchall():
+                    feedback_list.append({
+                        "feedback_id": str(row[0]),
+                        "chat_id": str(row[1]),
+                        "user_id": row[2],
+                        "tenant_id": row[3],
+                        "feedback_type": row[4],
+                        "message": row[5],
+                        "user_agent": row[6],
+                        "metadata": row[7],
+                        "status": row[8],
+                        "created_at": row[9].isoformat(),
+                        "updated_at": row[10].isoformat(),
+                        "current_question": row[11],
+                        "current_sql": row[12],
+                        "current_sql_explanation": row[13],
+                        "previous_question": row[14],
+                        "previous_sql": row[15],
+                        "previous_sql_explanation": row[16],
+                        "chat_title": row[17]
+                    })
+
+                return feedback_list
 
 
 # Global instances
