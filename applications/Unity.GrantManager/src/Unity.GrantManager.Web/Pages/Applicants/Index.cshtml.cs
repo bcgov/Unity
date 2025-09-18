@@ -12,5 +12,6 @@ public class IndexModel : GrantManagerPageModel
 
     public void OnGet()
     {
+        // Method intentionally left empty.
     }
 }

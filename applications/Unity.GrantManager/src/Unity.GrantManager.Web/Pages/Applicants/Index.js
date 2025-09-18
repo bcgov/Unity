@@ -1,6 +1,4 @@
-$(function () {
-    const formatter = createNumberFormatter();
-    const l = abp.localization.getResource('GrantManager');
+$(function () {    
     let dt = $('#ApplicantsTable');
     let dataTable;
 
@@ -593,7 +591,40 @@ $(function () {
         reorderEnabled: true,
         languageSetValues,
         dataTableName: 'ApplicantsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        // Add state handling to validate and clear corrupted states
+        stateSaveCallback: function(settings, data) {
+            try {
+                localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data));
+            } catch(e) {
+                console.error('Failed to save DataTable state:', e);
+            }
+        },
+        stateLoadCallback: function(settings) {
+            try {
+                const savedState = localStorage.getItem('DataTables_' + settings.sInstance);
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    // Validate that saved state column count matches current table
+                    if (state.columns && state.columns.length !== listColumns.length) {
+                        console.warn('Saved DataTable state has different column count (saved: ' + 
+                            state.columns.length + ', current: ' + listColumns.length + 
+                            '). Clearing invalid state.');
+                        localStorage.removeItem('DataTables_' + settings.sInstance);
+                        return null;
+                    }
+                    return state;
+                }
+            } catch(e) {
+                console.error('Failed to load DataTable state, clearing:', e);
+                try {
+                    localStorage.removeItem('DataTables_' + settings.sInstance);
+                } catch(removeError) {
+                    console.error('Failed to remove corrupted state:', removeError);
+                }
+            }
+            return null;
+        }
     });
 
 

@@ -19,7 +19,6 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Application.Dtos;
-using System.Linq.Dynamic.Core;
 
 namespace Unity.GrantManager.Applicants;
 
