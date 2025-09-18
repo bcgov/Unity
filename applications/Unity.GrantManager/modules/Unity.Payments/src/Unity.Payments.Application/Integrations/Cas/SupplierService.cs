@@ -42,8 +42,6 @@ namespace Unity.Payments.Integrations.Cas
                 casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
         }
 
-        const string casCertPath = "/etc/ssl/certs/cas2025top.pem";
-
         private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
         {
             var url = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
@@ -237,7 +235,7 @@ namespace Unity.Payments.Integrations.Cas
             {
                 var authToken = await iTokenService.GetAuthTokenAsync();
                 try
-                {                    
+                {
                     using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
                     if (response != null)
                     {

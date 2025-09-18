@@ -1,4 +1,4 @@
-﻿﻿using System.Net.Http;
+﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Unity.GrantManager.Integrations;
@@ -14,7 +14,7 @@ namespace Unity.Payments.Integrations.Cas
     [IntegrationService]
     [ExposeServices(typeof(CasTokenService), typeof(ICasTokenService))]
 
-public class CasTokenService(
+    public class CasTokenService(
         IEndpointManagementAppService endpointManagementAppService,
         IOptions<CasClientOptions> casClientOptions,
         IHttpClientFactory httpClientFactory,
