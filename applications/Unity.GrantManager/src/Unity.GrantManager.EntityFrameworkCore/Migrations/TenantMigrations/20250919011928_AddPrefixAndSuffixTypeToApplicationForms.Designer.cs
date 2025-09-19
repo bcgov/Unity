@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250919011928_AddPrefixAndSuffixTypeToApplicationForms")]
+    partial class AddPrefixAndSuffixTypeToApplicationForms
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1254,9 +1257,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("UnityApplicationId")
-                        .HasColumnType("text");
-
                     b.Property<string>("RegionalDistrict")
                         .HasColumnType("text");
 
@@ -1636,13 +1636,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("IsDirectApproval")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Prefix")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("SuffixType")
-                        .HasColumnType("integer");
-
-
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -1657,6 +1650,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<decimal?>("PaymentApprovalThreshold")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("Prefix")
+                        .HasColumnType("text");
+
                     b.Property<bool>("PreventPayment")
                         .HasColumnType("boolean");
 
@@ -1665,6 +1661,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<Guid?>("ScoresheetId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("SuffixType")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
