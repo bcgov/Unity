@@ -39,12 +39,23 @@ public class GrantManagerMenuContributor : IMenuContributor
         );
 
         context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.Applicants,
+                l["Menu:Applicants"],
+                "~/GrantApplicants",
+                icon: "fl fl-other-user",
+                order: 2,
+                requiredPermissionName: GrantApplicationPermissions.Applicants.ViewList
+            )
+        );
+
+        context.Menu.AddItem(
                new ApplicationMenuItem(
                    UnityIdentityMenuNames.Roles,
                    l["Menu:Roles"],
                    "~/Identity/Roles",
                    icon: "fl fl-settings",
-                   order: 2,
+                   order: 3,
                    requiredPermissionName: IdentityPermissions.Roles.Default
                )
            );
@@ -55,7 +66,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Users"],
                 "~/Identity/Users",
                 icon: "fl fl-other-user",
-                order: 3,
+                order: 4,
                 requiredPermissionName: IdentityPermissions.Users.Default
             )
         );
@@ -66,7 +77,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Intakes"],
                 "~/Intakes",
                 icon: "fl fl-settings",
-                order: 4,
+                order: 5,
                 requiredPermissionName: GrantManagerPermissions.Intakes.Default
             )
         );
@@ -77,7 +88,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:ApplicationForms"],
                 "~/ApplicationForms",
                 icon: "fl fl-settings",
-                order: 5,
+                order: 6,
                 requiredPermissionName: GrantManagerPermissions.ApplicationForms.Default
             )
         );
