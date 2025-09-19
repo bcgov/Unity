@@ -1,0 +1,15 @@
+/* Applicant Details Page Styles */
+.applicant-details-container {
+    padding: 20px;
+}
+
+.detail-item {
+    margin-bottom: 15px;
+}
+
+.detail-label {
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+/* Placeholder for future styling */

@@ -1,0 +1,29 @@
+@using Unity.GrantManager.Localization;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.Extensions.Localization;
+@using Unity.GrantManager.Permissions
+@using Volo.Abp.Authorization.Permissions;
+
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IAuthorizationService AuthorizationService
+@inject IPermissionChecker PermissionChecker
+
+<div class="action-bar p-2 search-action-bar">
+    <div class="search-action-bar_search-wrapper">
+        <input type="search" id="search" placeholder="@L["Common:Command:Search"].Value" class="tbl-search">
+    </div>
+
+    <div class="btn-group" id="app_custom_buttons">
+        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList))
+        {
+            <abp-button id="openApplicant"
+                        text="@L["ApplicationList:OpenButton"].Value"
+                        data-selector="applicants-table-actions"
+                        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                        button-type="Secondary" />
+        }
+    </div>
+
+    @* Spacer to align buttons properly *@
+    <span id="dynamicButtonContainerId"></span>
+</div>

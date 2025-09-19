@@ -1,6 +1,6 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
-namespace Unity.Modules.Shared.Integrations
+namespace Unity.GrantManager.Integrations.Css
 {
     public class TokenValidationResponse
     {

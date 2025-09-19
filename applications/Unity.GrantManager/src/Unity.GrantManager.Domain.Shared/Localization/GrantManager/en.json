@@ -16,6 +16,7 @@
     "Menu:ApplicationForms": "Forms",
     "Menu:TenantManagement": "Tenants",
     "Menu:EndpointManagement": "Endpoints",
+    "Menu:Applicants": "Applicants",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
@@ -67,6 +68,7 @@
     "ProposalDate": "Proposal Date",
     "SubmissionDate": "Submission Date",
     "GrantApplications": "Grant Applications",
+    "Applicants": "Applicants",
     "Multiple": "Multiple",
 
     "ApplicationList:OpenButton": "Open",
@@ -126,6 +128,7 @@
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
+    "Permission:GrantApplicationManagement.Applicants.ViewList": "View Applicant List",
     "Permission:GrantApplicationManagement.Applicants.AssignApplicant": "Assign Applicant to an Application",
     "Permission:GrantApplicationManagement.Assignments.Default": "Assignment",
     "Permission:GrantApplicationManagement.Assignments.AssignInitial": "Initial Assignment",

@@ -41,12 +41,12 @@ namespace Unity.Payments.Integrations.Cas
                 // Initialize the base API URL once during construction
                 casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
         }
+
         private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
         {
             var url = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             return url ?? throw new UserFriendlyException("Payment API base URL is not configured.");
         }
-
 
         public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {

@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.Integrations.Geocoder
+﻿namespace Unity.GrantManager.Integration.Geocoder
 {
     public class AddressDetailsDto
     {
