@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Unity.Payments.Events;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Applicants;
@@ -19,4 +20,5 @@ public interface IApplicantAppService : IApplicationService
     Task<int> GetNextUnityApplicantIdAsync();
     Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId);
     Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery);
+    Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input);
 }

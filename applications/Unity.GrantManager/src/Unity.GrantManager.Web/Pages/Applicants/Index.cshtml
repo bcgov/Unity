@@ -1,0 +1,33 @@
+@page "/GrantApplicants"
+
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.GrantManager.Web.Pages.Applicants
+@using Microsoft.Extensions.Localization
+
+@model IndexModel
+
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.MenuItemName = "GrantManager.Applicants";
+    PageLayout.Content.Title = L["Applicants"].Value;
+    ViewBag.PageTitle = "Applicants";
+}
+
+@section scripts
+{
+    <abp-script src="/libs/select2/js/select2.full.min.js" />
+    <abp-script src="/Pages/Applicants/Index.js" />
+}
+
+@section styles {
+    <abp-style src="/Pages/Applicants/Index.css" />
+}
+
+<div class="container-fluid px-2 container-applicants">
+    @await Component.InvokeAsync("ApplicantsActionBar")
+    <div class="applicants-scrollable-content">
+        <abp-table id="ApplicantsTable"></abp-table>
+    </div>
+</div>

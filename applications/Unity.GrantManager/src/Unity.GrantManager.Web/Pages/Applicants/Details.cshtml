@@ -1,0 +1,53 @@
+@page "/GrantApplicants/Details"
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.Web.Pages.Applicants
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+
+@model DetailsModel
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+
+@{
+    PageLayout.Content.Title = L["Applicants"].Value;
+    PageLayout.Content.BreadCrumb.Add(L["Applicants"], "/GrantApplicants");
+    PageLayout.Content.BreadCrumb.Add(L["Details"]);
+}
+
+@section styles {
+    <abp-style src="/Pages/Applicants/Details.css" />
+}
+
+<abp-container>
+    <abp-row>
+        <abp-column>
+            <abp-card>
+                <abp-card-header>
+                    <h3>@L["Applicant Details"]</h3>
+                </abp-card-header>
+                <abp-card-body>
+                    @if (Model.ApplicantId != Guid.Empty)
+                    {
+                        <div class="mb-3">
+                            <strong>Applicant ID:</strong> @Model.ApplicantId
+                        </div>
+                        <div class="text-muted">
+                            <em>Full applicant details will be displayed here in future development.</em>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            @L["No applicant ID provided."]
+                        </div>
+                    }
+                </abp-card-body>
+                <abp-card-footer>
+                    <a href="/GrantApplicants" class="btn btn-secondary">
+                        <i class="fa fa-arrow-left"></i> @L["Back to Applicants"]
+                    </a>
+                </abp-card-footer>
+            </abp-card>
+        </abp-column>
+    </abp-row>
+</abp-container>
