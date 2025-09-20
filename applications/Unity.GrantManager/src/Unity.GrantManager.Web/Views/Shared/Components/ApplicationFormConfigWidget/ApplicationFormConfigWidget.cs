@@ -34,7 +34,10 @@ public class ApplicationFormConfigWidget : AbpViewComponent
             ConfigType = configType,
             IsDirectApproval = applicationForm?.IsDirectApproval ?? false,
             ElectoralDistrictAddressType = applicationForm?.ElectoralDistrictAddressType ?? GrantApplications.AddressType.PhysicalAddress,
-            ElectoralDistrictAddressTypes = LoadElectoralAddressOptions()
+            ElectoralDistrictAddressTypes = LoadElectoralAddressOptions(),
+            Prefix = applicationForm?.Prefix,
+            SuffixType = applicationForm?.SuffixType ?? GrantApplications.SuffixConfigType.SequentialNumber,
+            SuffixTypes = LoadSuffixOptions()
         };
 
         return View(viewModel);
@@ -56,6 +59,21 @@ public class ApplicationFormConfigWidget : AbpViewComponent
                 .ToList();
 
         return electoralDistrictAddressOptions;
+    }
+
+
+    private static List<SelectListItem> LoadSuffixOptions()
+    {
+        List<SelectListItem> suffixOptions = ApplicationForm
+            .GetAvailableSuffixTypes()
+            .Select(x => new SelectListItem
+            {
+                Value = ((int)x.SuffixType).ToString(),
+                Text = x.DisplayName
+            })
+                .ToList();
+
+        return suffixOptions;
     }
 }
 

@@ -28,7 +28,7 @@
             </label>
         </div>
     </div>
-
+    <hr />
     <div class="row">
         <div class="col-12 p-3">
             <h6 class="mb-3"><b>Electoral District Configuration</b></h6>
@@ -49,6 +49,47 @@
             </label>
         </div>
     </div>
+    <hr />
+    <div class="row">
+        <div class="col-12 p-3">
+            <h6 class="mb-3"><b>Unity Application ID Settings</b></h6>
+                <div class="row">
+                    <div class="col-4">
+                         <label class="form-label" for="prefix">Prefix</label>
+                        <input type="text" 
+                            class="form-control" 
+                            id="prefix" 
+                            name="prefix" 
+                            value="@Model?.Prefix" 
+                            placeholder="Enter prefix" />
+                    </div>
+                    <div class="col-4">
+                         <label class="form-label" for="suffixType">Suffix Type</label>
+                        <select class="form-select form-control"
+                            id="suffixType"
+                            name="suffixType">
+                            <option value="">Please choose..</option>
+                            @foreach (SelectListItem option in Model?.SuffixTypes ?? Enumerable.Empty<SelectListItem>())
+                            {
+                            var selected = option.Value == ((int)(Model?.SuffixType ?? 0)).ToString();
+                            <option value="@option.Value" selected="@(selected ? "selected" : null)">@option.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            <label class="form-label note mt-1" style="display:block">
+                <b>NOTE:</b>
+                The system will automatically generate a unique ID for each new submission by combining your chosen prefix with either a sequential number 
+                or a submission number, depending on the suffix type.
+                <br /> 
+                <br /> 
+                <b>NOTE:</b>
+                If multiple forms are assigned the same prefix, they will share a single, continuous sequence of numbers.
+                @* @L["ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress"].Value *@
+            </label>
+        </div>
+    </div>
+
 
     <div class="row">
         <div class="col-12">

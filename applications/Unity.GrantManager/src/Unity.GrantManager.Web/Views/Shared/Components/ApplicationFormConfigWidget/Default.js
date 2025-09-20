@@ -1,9 +1,15 @@
 (function () {
     const form = document.getElementById('otherConfigForm');
     const directApproval = form.elements['directApproval'];
-    const electoralDistrictAddressType = form.elements['electoralDistrictAddressType'];
-    const applicationFormId = document.getElementById('applicationFormId').value;
-    const displayAddressChangeWarning = document.getElementById('change-electoral-address-warning');
+    const electoralDistrictAddressType =
+        form.elements['electoralDistrictAddressType'];
+    const prefix = form.elements['prefix'];
+    const suffixType = form.elements['suffixType'];
+    const applicationFormId =
+        document.getElementById('applicationFormId').value;
+    const displayAddressChangeWarning = document.getElementById(
+        'change-electoral-address-warning'
+    );
     const saveButton = document.getElementById('btn-save-other-config');
     const cancelButton = document.getElementById('btn-cancel-other-config');
     const backButton = document.getElementById('btn-back-other-config');
@@ -39,6 +45,13 @@
     let isSaving = false;
 
     saveButton.addEventListener('click', function (event) {
+        console.log('Save button clicked');
+        console.log(event);
+        console.log(
+            electoralDistrictAddressType.value,
+            prefix.value,
+            suffixType.value
+        );
         if (isSaving || saveButton.disabled) {
             event.preventDefault();
             return;
@@ -52,20 +65,26 @@
             type: 'PATCH',
             data: JSON.stringify({
                 isDirectApproval: directApproval.checked,
-                electoralDistrictAddressType: electoralDistrictAddressType.value
+                electoralDistrictAddressType:
+                    electoralDistrictAddressType.value,
+                prefix: prefix.value,
+                suffixType: suffixType.value,
             }),
-            contentType: 'application/json'
-        }).done(function () {
-            abp.notify.success('Other configuration saved successfully.');
-        }).fail(function (error) {
-            abp.notify.error('Failed to save other configuration.');
-        }).always(function () {
-            resetFormState();
-            isSaving = false;
-        });
+            contentType: 'application/json',
+        })
+            .done(function () {
+                abp.notify.success('Other configuration saved successfully.');
+            })
+            .fail(function (error) {
+                abp.notify.error('Failed to save other configuration.');
+            })
+            .always(function () {
+                resetFormState();
+                isSaving = false;
+            });
     });
 
-    function resetFormState() {        
+    function resetFormState() {
         saveButton.disabled = true;
         cancelButton.disabled = true;
         displayAddressChangeWarning.style.display = 'none';

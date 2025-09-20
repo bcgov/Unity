@@ -29,8 +29,28 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public decimal? PaymentApprovalThreshold { get; set; }
     public bool RenderFormIoToHtml { get; set; } = false;
     public bool IsDirectApproval { get; set; } = false;
-    public AddressType? ElectoralDistrictAddressType { get; set; } = AddressType.PhysicalAddress;
+    public string? Prefix { get; set; }
+    public SuffixConfigType? SuffixType { get; set; }  = SuffixConfigType.SequentialNumber;
+    public static List<(SuffixConfigType SuffixType, string DisplayName)> GetAvailableSuffixTypes()
+    {
+        return [
+            new (SuffixConfigType.SequentialNumber, "Sequential Number"),
+            new (SuffixConfigType.SubmissionNumber, "Submission Number")
+        ];
+    }
 
+    public ApplicationForm SetSuffixType(SuffixConfigType suffixType)
+    {
+        if (!Enum.IsDefined(typeof(SuffixConfigType), suffixType))
+        {
+            throw new ArgumentOutOfRangeException(nameof(suffixType), "Invalid suffix type provided.");
+        }
+        SuffixType = suffixType;
+
+        return this;
+    }
+
+    public AddressType? ElectoralDistrictAddressType { get; set; } = AddressType.PhysicalAddress;
     public static List<(AddressType AddressType, string DisplayName)> GetAvailableElectoralDistrictAddressTypes()
     {
         return [
