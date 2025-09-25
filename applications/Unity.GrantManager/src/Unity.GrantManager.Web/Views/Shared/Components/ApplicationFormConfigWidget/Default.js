@@ -26,11 +26,48 @@
     saveButton.disabled = true;
     cancelButton.disabled = true;
 
+    // Function to update Unity ID preview
+    function updateUnityIdPreview() {
+        const previewDiv = document.getElementById('unityIdPreview');
+        const previewValue = document.getElementById('unityIdPreviewValue');
+        const prefixValue = prefix.value.trim();
+        const suffixTypeValue = suffixType.value;
+        
+        // Hide preview if no prefix or suffix type is not selected
+        if (!prefixValue || !suffixTypeValue) {
+            previewDiv.style.display = 'none';
+            return;
+        }
+        
+        let sampleId = '';
+        
+        // Generate sample based on suffix type
+        if (suffixTypeValue === '1') { // Sequential Number
+            sampleId = prefixValue + '00001';
+        } else if (suffixTypeValue === '2') { // Submission Number
+            sampleId = prefixValue + '4B2EA7CB';
+        }
+        
+        if (sampleId) {
+            previewValue.textContent = sampleId;
+            previewDiv.style.display = 'block';
+        } else {
+            previewDiv.style.display = 'none';
+        }
+    }
+
     // Enable save and cancel buttons on any form input change
     form.addEventListener('change', function () {
         saveButton.disabled = false;
         cancelButton.disabled = false;
     });
+    
+    // Update preview when prefix or suffix type changes
+    prefix.addEventListener('input', updateUnityIdPreview);
+    suffixType.addEventListener('change', updateUnityIdPreview);
+    
+    // Initial preview update
+    updateUnityIdPreview();
 
     // Show warning when electoralDistrictAddressType changes
     electoralDistrictAddressType.addEventListener('change', function () {
@@ -44,6 +81,9 @@
         electoralDistrictAddressType.value = lastSavedValues.electoralDistrictAddressType;
         prefix.value = lastSavedValues.prefix;
         suffixType.value = lastSavedValues.suffixType;
+        
+        // Update preview after restoring values
+        updateUnityIdPreview();
         
         resetFormState();
     });
