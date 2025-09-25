@@ -14,6 +14,14 @@
     const cancelButton = document.getElementById('btn-cancel-other-config');
     const backButton = document.getElementById('btn-back-other-config');
 
+    // Store last saved values
+    let lastSavedValues = {
+        directApproval: directApproval.checked,
+        electoralDistrictAddressType: electoralDistrictAddressType.value,
+        prefix: prefix.value,
+        suffixType: suffixType.value
+    };
+
     // Initially disable the save and cancel buttons
     saveButton.disabled = true;
     cancelButton.disabled = true;
@@ -31,7 +39,12 @@
 
     // Hide warning and disable buttons when cancel button is clicked
     cancelButton.addEventListener('click', function () {
-        form.reset();
+        // Restore last saved values
+        directApproval.checked = lastSavedValues.directApproval;
+        electoralDistrictAddressType.value = lastSavedValues.electoralDistrictAddressType;
+        prefix.value = lastSavedValues.prefix;
+        suffixType.value = lastSavedValues.suffixType;
+        
         resetFormState();
     });
 
@@ -68,11 +81,18 @@
                 electoralDistrictAddressType:
                     electoralDistrictAddressType.value,
                 prefix: prefix.value,
-                suffixType: suffixType.value,
+                suffixType: suffixType.value === "" ? null : suffixType.value,
             }),
             contentType: 'application/json',
         })
             .done(function () {
+                // Update last saved values after successful save
+                lastSavedValues = {
+                    directApproval: directApproval.checked,
+                    electoralDistrictAddressType: electoralDistrictAddressType.value,
+                    prefix: prefix.value,
+                    suffixType: suffixType.value
+                };
                 abp.notify.success('Other configuration saved successfully.');
             })
             .fail(function (error) {

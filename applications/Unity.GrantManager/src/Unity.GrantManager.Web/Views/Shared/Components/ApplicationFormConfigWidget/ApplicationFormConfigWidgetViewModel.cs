@@ -17,7 +17,7 @@ public class ApplicationFormConfigWidgetViewModel
 
     public string? Prefix { get; set; }
     
-    public SuffixConfigType? SuffixType { get; set; } = SuffixConfigType.SequentialNumber;
+    public SuffixConfigType? SuffixType { get; set; }
     public List<SelectListItem> SuffixTypes { get; set; } = [];
 
     public static List<SelectListItem> FormatOptionsList(Dictionary<string, string> optionsList)

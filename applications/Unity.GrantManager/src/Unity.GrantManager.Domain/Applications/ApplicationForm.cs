@@ -30,7 +30,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public bool RenderFormIoToHtml { get; set; } = false;
     public bool IsDirectApproval { get; set; } = false;
     public string? Prefix { get; set; }
-    public SuffixConfigType? SuffixType { get; set; }  = SuffixConfigType.SequentialNumber;
+    public SuffixConfigType? SuffixType { get; set; }
     public static List<(SuffixConfigType SuffixType, string DisplayName)> GetAvailableSuffixTypes()
     {
         return [

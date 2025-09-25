@@ -36,7 +36,7 @@ public class ApplicationFormConfigWidget : AbpViewComponent
             ElectoralDistrictAddressType = applicationForm?.ElectoralDistrictAddressType ?? GrantApplications.AddressType.PhysicalAddress,
             ElectoralDistrictAddressTypes = LoadElectoralAddressOptions(),
             Prefix = applicationForm?.Prefix,
-            SuffixType = applicationForm?.SuffixType ?? GrantApplications.SuffixConfigType.SequentialNumber,
+            SuffixType = applicationForm?.SuffixType,
             SuffixTypes = LoadSuffixOptions()
         };
 
