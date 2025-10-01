@@ -80,4 +80,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? Place {  get; set; }
     public string? RiskRanking  { get; set;}
     public PaymentInfoDto? PaymentInfo { get; set; }
+    public string? UnityApplicationId { get; set; }
 }
