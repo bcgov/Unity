@@ -35,11 +35,13 @@ public class SequenceRepository(IDbContextProvider<GrantTenantDbContext> dbConte
             {
                 // Use 'public' as default for PostgreSQL if no schema is configured
                 schema = "public";
-            }          
-            
+            }
+
+            var commandBuilder = new NpgsqlCommandBuilder();
+            var safeSchema = commandBuilder.QuoteIdentifier(schema);
+                        
             using var command = connection.CreateCommand();
-            // Always use explicit schema qualification
-            command.CommandText = $"SELECT {schema}.get_next_sequence_number(@tenantId, @prefix);";
+            command.CommandText = $"SELECT {safeSchema}.get_next_sequence_number(@tenantId, @prefix);";
             command.Parameters.Add(new NpgsqlParameter("tenantId", tenantId));
             command.Parameters.Add(new NpgsqlParameter("prefix", prefix));
             
@@ -65,9 +67,11 @@ public class SequenceRepository(IDbContextProvider<GrantTenantDbContext> dbConte
                 "TenantId: {TenantId}, Prefix: {Prefix}. " +
                 "This error is isolated and will not affect the main transaction.",
                 tenantId, prefix);
-            
-            // Re-throw to be handled by the caller's graceful degradation
-            throw;
+
+            // throw to be handled by the caller's graceful degradation            
+            throw new InvalidOperationException(
+                $"Failed to generate sequence number for tenant '{tenantId}' with prefix '{prefix}'. ",
+                ex);
         }
     }
 }

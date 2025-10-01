@@ -41,7 +41,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public ApplicationForm SetSuffixType(SuffixConfigType suffixType)
     {
-        if (!Enum.IsDefined(typeof(SuffixConfigType), suffixType))
+        if (!Enum.IsDefined(suffixType))
         {
             throw new ArgumentOutOfRangeException(nameof(suffixType), "Invalid suffix type provided.");
         }
