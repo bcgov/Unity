@@ -7,6 +7,11 @@
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;')
             .replace(/\//g, '&#47;');
+    }
+    
+    // Format version number to VX.0 format
+    function formatVersion(version) {
+        return version ? ` V${version}.0` : '';
     } 
 
 $(function () {
@@ -67,7 +72,14 @@ $(function () {
                 {
                     title: l('ApplicationLinks:Category'),
                     data: 'category',
-                    width: '30%'
+                    width: '30%',
+                    render: function (data, type, full) {
+                        if (type === 'display') {
+                            const versionText = formatVersion(full.formVersion);
+                            return `${data}${versionText}`;
+                        }
+                        return data;
+                    }
                 },
                 {
                     title: l('ApplicationLinks:ID'),
@@ -203,6 +215,7 @@ $(function () {
                     category: linkedApp.Category || linkedApp.category || 'Unknown',
                     applicationStatus: linkedApp.ApplicationStatus || linkedApp.applicationStatus || 'Unknown',
                     linkType: mappedLinkType,
+                    formVersion: linkedApp.FormVersion || linkedApp.formVersion || null,
                     isExisting: true,
                     isNew: false
                 };
@@ -465,11 +478,12 @@ $(function () {
             const category = escapeHtml(link.category || 'Unknown Category');
             const applicationStatus = escapeHtml(link.applicationStatus || 'Status Unavailable');
             const linkType = escapeHtml(link.linkType || 'Related');
+            const versionText = formatVersion(link.formVersion || link.FormVersion);
             
             const applicantDisplay = link.isLoading ? 
                 `<span class="loading-text">${applicantName}</span>` : applicantName;
             const categoryDisplay = link.isLoading ? 
-                `<span class="loading-text">(${category})</span>` : `(${category})`;
+                `<span class="loading-text">(${category}${versionText})</span>` : `(${category}${versionText})`;
             const statusDisplay = link.isLoading ? 
                 `<span class="loading-text">${applicationStatus}</span>` : applicationStatus;
             
@@ -569,6 +583,7 @@ $(function () {
                         link.applicantName = response.applicantName || 'Unknown';
                         link.category = response.category || 'Unknown';
                         link.applicationStatus = response.applicationStatus || 'Unknown';
+                        link.formVersion = response.formVersion || null;
                         link.isLoading = false;
                         UIService.updateLinksDisplay(state);
                     }
@@ -788,6 +803,7 @@ $(function () {
                 category: 'Loading...',
                 applicationStatus: 'Loading...',
                 linkType: linkType,
+                formVersion: null,
                 isLoading: true,
                 isNew: !this.isOriginalLink(referenceNumber, state),
                 isExisting: this.isOriginalLink(referenceNumber, state),
@@ -828,6 +844,7 @@ $(function () {
                         linkToUpdate.applicantName = response.applicantName || 'Unknown';
                         linkToUpdate.category = response.category || 'Unknown';
                         linkToUpdate.applicationStatus = response.applicationStatus || 'Unknown';
+                        linkToUpdate.formVersion = response.formVersion || null;
                         linkToUpdate.isLoading = false;
                         UIService.updateLinksDisplay(state);
                     }

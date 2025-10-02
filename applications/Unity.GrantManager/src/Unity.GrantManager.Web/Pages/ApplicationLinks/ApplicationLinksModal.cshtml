@@ -23,7 +23,7 @@
                     <span class="link-applicant">@(Model.CurrentApplication?.ApplicantName ?? "Unknown")</span>
                     @if (!string.IsNullOrEmpty(Model.CurrentApplication?.Category))
                     {
-                        <span class="link-category">(@Model.CurrentApplication.Category)</span>
+                        <span class="link-category">(@Model.CurrentApplication.Category@(Model.CurrentApplication.FormVersion.HasValue ? $" V{Model.CurrentApplication.FormVersion}.0" : ""))</span>
                     }
                     else
                     {
