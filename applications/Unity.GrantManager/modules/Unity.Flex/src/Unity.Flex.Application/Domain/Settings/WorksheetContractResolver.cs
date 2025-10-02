@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using System.Reflection;
 using Unity.Flex.Domain.Worksheets;
-
+using Unity.Flex.Domain.WorksheetLinks;
 
 namespace Unity.Flex.Domain.Settings;
 
@@ -16,6 +16,8 @@ public class WorksheetContractResolver : DefaultContractResolver
 
         if ((property.DeclaringType == typeof(WorksheetSection) && (property.PropertyName == "Worksheet" || property.PropertyName == "WorksheetId")) ||
             (property.DeclaringType == typeof(CustomField) && (property.PropertyName == "Section" || property.PropertyName == "SectionId")) ||
+            (property.DeclaringType == typeof(WorksheetLink) && property.PropertyName == "Worksheet") ||
+            (property.DeclaringType == typeof(Worksheet) && property.PropertyName == "Links") ||
             property.PropertyName == "TenantId" ||
             property.PropertyName == "IsDeleted" ||
             property.PropertyName == "DeleterId" ||
