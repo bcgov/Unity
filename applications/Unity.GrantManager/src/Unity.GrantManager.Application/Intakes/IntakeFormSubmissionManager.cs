@@ -26,7 +26,8 @@ namespace Unity.GrantManager.Intakes
                                              IIntakeFormSubmissionMapper _intakeFormSubmissionMapper,
                                              IApplicationFormVersionRepository _applicationFormVersionRepository,
                                              CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper,
-                                             ILocalEventBus localEventBus) : DomainService, IIntakeFormSubmissionManager
+                                             ILocalEventBus localEventBus,
+                                             ISequenceRepository _sequenceRepository) : DomainService, IIntakeFormSubmissionManager
     {
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
         {
@@ -96,10 +97,94 @@ namespace Unity.GrantManager.Intakes
             return application.Id;
         }
 
+        #region Unity Application ID Generation
+
+        private async Task<string?> GenerateUnityApplicationIdAsync(
+            ApplicationForm applicationForm,
+            string? referenceNo)
+        {
+            // Return null if no configuration
+            if (string.IsNullOrWhiteSpace(applicationForm.Prefix) || 
+                applicationForm.SuffixType == null)
+            {
+                return null;
+            }
+            
+            try
+            {
+                return applicationForm.SuffixType switch
+                {
+                    SuffixConfigType.SequentialNumber => 
+                        await GenerateSequentialIdAsync(applicationForm.Prefix),
+                    SuffixConfigType.SubmissionNumber => 
+                        GenerateSubmissionId(applicationForm.Prefix, referenceNo),
+                    _ => null
+                };
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't throw - graceful degradation
+                Logger.LogError(ex, 
+                    "Failed to generate Unity Application ID. " +
+                    "Prefix: {Prefix}, SuffixType: {SuffixType}",
+                    applicationForm.Prefix, applicationForm.SuffixType);
+                return null;
+            }
+        }
+        
+        private async Task<string> GenerateSequentialIdAsync(string prefix)
+        {
+            // Get next sequence number from repository
+            var sequenceNumber = await _sequenceRepository.GetNextSequenceNumberAsync(prefix);
+            
+            // Auto-expand digits (minimum 5, expands as needed)
+            // Examples: 00001, 00002, ..., 99999, 100000, 100001, ...
+            var digits = Math.Max(5, sequenceNumber.ToString().Length);
+            return $"{prefix}{sequenceNumber.ToString($"D{digits}")}";
+        }
+        
+        private string? GenerateSubmissionId(string prefix, string? referenceNo)
+        {
+            if (string.IsNullOrWhiteSpace(referenceNo))
+            {
+                Logger.LogWarning(
+                    "Cannot generate Unity ID for submission type: ReferenceNo is empty");
+                return null;
+            }
+            
+            // Simple concatenation for submission type
+            return $"{prefix}{referenceNo}";
+        }
+
+        #endregion
+
         private async Task<Application> CreateNewApplicationAsync(IntakeMapping intakeMap,
             ApplicationForm applicationForm)
         {            
             var submittedStatus = await _applicationStatusRepository.FirstAsync(s => s.StatusCode.Equals(GrantApplicationState.SUBMITTED));
+            
+            // Generate Unity Application ID with graceful degradation
+            string? unityApplicationId = null;
+            try
+            {
+                unityApplicationId = await GenerateUnityApplicationIdAsync(applicationForm, intakeMap.ConfirmationId);
+                    
+                if (!string.IsNullOrEmpty(unityApplicationId))
+                {
+                    Logger.LogInformation(
+                        "Generated Unity Application ID: {UnityId} for form {FormId}", 
+                        unityApplicationId, applicationForm.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but continue - application creation is priority
+                Logger.LogError(ex, 
+                    "Failed to generate Unity Application ID for form {FormId}. " +
+                    "Application will be created without Unity ID.", 
+                    applicationForm.Id);
+            }
+            
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
@@ -107,6 +192,7 @@ namespace Unity.GrantManager.Intakes
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,                    
                     ReferenceNo = intakeMap.ConfirmationId ?? string.Empty,
+                    UnityApplicationId = unityApplicationId,
                     Acquisition = intakeMap.Acquisition,
                     Forestry = intakeMap.Forestry,
                     ForestryFocus = intakeMap.ForestryFocus,
