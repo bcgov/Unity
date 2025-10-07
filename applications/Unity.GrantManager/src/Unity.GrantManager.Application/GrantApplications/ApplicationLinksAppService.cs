@@ -485,7 +485,7 @@ public class ApplicationLinksAppService : CrudAppService<
                 }
                 
                 // Check target app conflicts
-                return await GetTargetAppValidationError(currentApplicationId, proposedLink);
+                return await GetChildTargetValidationError(currentApplicationId, proposedLink);
                 
             default:
                 return string.Empty;
@@ -509,7 +509,7 @@ public class ApplicationLinksAppService : CrudAppService<
         return string.Empty;
     }
     
-    private async Task<string> GetTargetAppValidationError(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
+    private async Task<string> GetChildTargetValidationError(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
     {
         var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
 
