@@ -187,6 +187,12 @@ $(function () {
         },
 
         initialize: function() {
+            // Reset state that should not persist across modal sessions
+            this.state.deletedLinks = [];
+            this.state.validationErrors = {};
+            this.state.hasValidationErrors = false;
+            this.state.hasChanges = false;
+            
             this.state.allApplications = $('#AllApplications').val();
             this.state.linkedApplicationsList = JSON.parse($('#LinkedApplicationsList').val() || '[]');
             this.state.grantApplicationsList = JSON.parse($('#GrantApplicationsList').val() || '[]');

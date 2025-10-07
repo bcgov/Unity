@@ -411,62 +411,123 @@ public class ApplicationLinksAppService : CrudAppService<
     {
         var result = new ApplicationLinkValidationResult();
         
-        // Validate current app constraints on parent limits
-        var currentAppHasErrorsOnParent = ValidateCurrentAppConstraints(proposedLinks);
+        // Skip validation for empty or Related-only links
+        var hierarchicalLinks = proposedLinks.Where(l => l.LinkType != ApplicationLinkType.Related).ToList();
+        if (hierarchicalLinks.Count == 0)
+        {
+            return result;
+        }
+        
+        // Validate current app constraints
+        var currentAppError = GetCurrentAppConstraintError(hierarchicalLinks);
         
         // Process each proposed link
-        foreach (var proposedLink in proposedLinks)
+        foreach (var proposedLink in hierarchicalLinks)
         {
-            if (proposedLink.LinkType == ApplicationLinkType.Parent)
+            var errorMessage = await GetLinkValidationError(currentApplicationId, proposedLink, currentAppError, hierarchicalLinks);
+            
+            if (!string.IsNullOrEmpty(errorMessage))
             {
-                bool hasError = currentAppHasErrorsOnParent;
-                result.ValidationErrors[proposedLink.ReferenceNumber] = hasError;
-                if (hasError)
-                {
-                    result.ErrorMessages[proposedLink.ReferenceNumber] = "Error: A submission can not have two parents. Please revise the link type.";
-                }
+                result.ValidationErrors[proposedLink.ReferenceNumber] = true;
+                result.ErrorMessages[proposedLink.ReferenceNumber] = errorMessage;
             }
-            else if (proposedLink.LinkType == ApplicationLinkType.Child)
+            else
             {
-                bool hasError = await ValidateTargetAppConflicts(currentApplicationId, proposedLink);
-                result.ValidationErrors[proposedLink.ReferenceNumber] = hasError;
-                if (hasError)
-                {
-                    result.ErrorMessages[proposedLink.ReferenceNumber] = "Error: The selected submission already has a parent. A submission cannot have multiple parents.";
-                }
+                result.ValidationErrors[proposedLink.ReferenceNumber] = false;
             }
-                
         }
         
         return result;
     }
     
-    private static bool ValidateCurrentAppConstraints(List<ApplicationLinkValidationRequest> proposedLinks)
+    private static string GetCurrentAppConstraintError(List<ApplicationLinkValidationRequest> proposedLinks)
     {
-        // Check if proposed links would exceed parent limit (1 max)
-        var parentChildCount = proposedLinks.Count(l => 
-            l.LinkType == ApplicationLinkType.Parent);
-            
-        return parentChildCount > 1;
+        var parentCount = proposedLinks.Count(l => l.LinkType == ApplicationLinkType.Parent);
+        var hasParent = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent); 
+        var hasChild = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Child); 
+
+        if (parentCount > 1)
+        {
+            return "Error: A submission can not have two parents. Please revise the link type.";
+        }
+        
+        if (hasParent && hasChild)
+        {
+            return "Error: Cannot add a parent link. This application already has children.";
+        }
+        
+        return string.Empty;
     }
     
-    private async Task<bool> ValidateTargetAppConflicts(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
+    private async Task<string> GetLinkValidationError(
+        Guid currentApplicationId, 
+        ApplicationLinkValidationRequest proposedLink,
+        string currentAppError,
+        List<ApplicationLinkValidationRequest> allProposedLinks)
+    {
+        switch (proposedLink.LinkType)
+        {
+            case ApplicationLinkType.Parent:
+                // First check current app constraints
+                if (!string.IsNullOrEmpty(currentAppError))
+                {
+                    return currentAppError;
+                }
+                
+                // Then check if the proposed parent is already a child of another app
+                return await GetParentTargetValidationError(currentApplicationId, proposedLink);
+                
+            case ApplicationLinkType.Child:
+                // Check if current app is trying to be both parent and child
+                if (!string.IsNullOrEmpty(currentAppError) && allProposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
+                {
+                    return "Error: This application is already a child of another application. An application cannot be both a parent and a child.";
+                }
+                
+                // Check target app conflicts
+                return await GetTargetAppValidationError(currentApplicationId, proposedLink);
+                
+            default:
+                return string.Empty;
+        }
+    }
+    
+    private async Task<string> GetParentTargetValidationError(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
     {
         var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
+
+        // Exclude reverse links and self-references
+        var targetExternalLinks = targetLinks.Where(l =>
+            l.ApplicationId != currentApplicationId &&
+            l.ApplicationId != proposedLink.TargetApplicationId).ToList();
+
+        if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
+        {
+            return "Error: The selected submission is already a child of another application. An application cannot be both a parent and a child.";
+        }
         
+        return string.Empty;
+    }
+    
+    private async Task<string> GetTargetAppValidationError(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
+    {
+        var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
+
         // Exclude reverse links and self-references
         var targetExternalLinks = targetLinks.Where(l => 
             l.ApplicationId != currentApplicationId && 
             l.ApplicationId != proposedLink.TargetApplicationId).ToList();
-
-        if(proposedLink.LinkType == ApplicationLinkType.Child)
+        
+        if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
         {
-            // If linking as child, check if target is already a parent from other submissions
-            return targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent);
+            return "Error: The selected submission already has a parent. A submission cannot have multiple parents.";
         }
-        else
+        
+        if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Child))
         {
-            return false;
+            return "Error: The selected submission is already a parent to other applications. An application cannot be both a parent and a child.";
         }
+        
+        return string.Empty;
     }
 }
