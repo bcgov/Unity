@@ -20,6 +20,14 @@ public class ApplicationLinksAppService : CrudAppService<
         ApplicationLinksDto,
         Guid>, IApplicationLinksService
 {
+    // Validation Error Messages
+    private const string ERROR_MULTIPLE_PARENTS = "Error: A submission can not have two parents. Please revise the link type.";
+    private const string ERROR_PARENT_WITH_CHILDREN = "Error: Cannot add a parent link. This application already has children.";
+    private const string ERROR_TARGET_CHILD_CANNOT_BE_PARENT = "Error: The selected submission is already a child of another application. An application cannot be both a parent and a child.";
+    private const string ERROR_TARGET_ALREADY_HAS_PARENT = "Error: The selected submission already has a parent. A submission cannot have multiple parents.";
+    private const string ERROR_TARGET_IS_PARENT_TO_OTHERS = "Error: The selected submission is already a parent to other applications. An application cannot be both a parent and a child.";
+    private const string ERROR_CURRENT_APP_IS_CHILD = "Error: This application is already a child of another application. An application cannot be both a parent and a child.";
+
     public IApplicationLinksRepository ApplicationLinksRepository { get; set; } = null!;
     public IApplicationRepository ApplicationRepository { get; set; } = null!;
     public IApplicantRepository ApplicantRepository { get; set; } = null!;
@@ -419,12 +427,12 @@ public class ApplicationLinksAppService : CrudAppService<
         }
         
         // Validate current app constraints
-        var currentAppError = GetCurrentAppConstraintError(hierarchicalLinks);
+        var currentAppError = ValidateCurrentApplicationConstraints(hierarchicalLinks);
         
         // Process each proposed link
         foreach (var proposedLink in hierarchicalLinks)
         {
-            var errorMessage = await GetLinkValidationError(currentApplicationId, proposedLink, currentAppError, hierarchicalLinks);
+            var errorMessage = await ValidateLinkBasedOnType(currentApplicationId, proposedLink, currentAppError, hierarchicalLinks);
             
             if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -440,7 +448,7 @@ public class ApplicationLinksAppService : CrudAppService<
         return result;
     }
     
-    private static string GetCurrentAppConstraintError(List<ApplicationLinkValidationRequest> proposedLinks)
+    private static string ValidateCurrentApplicationConstraints(List<ApplicationLinkValidationRequest> proposedLinks)
     {
         var parentCount = proposedLinks.Count(l => l.LinkType == ApplicationLinkType.Parent);
         var hasParent = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent); 
@@ -448,18 +456,18 @@ public class ApplicationLinksAppService : CrudAppService<
 
         if (parentCount > 1)
         {
-            return "Error: A submission can not have two parents. Please revise the link type.";
+            return ERROR_MULTIPLE_PARENTS;
         }
         
         if (hasParent && hasChild)
         {
-            return "Error: Cannot add a parent link. This application already has children.";
+            return ERROR_PARENT_WITH_CHILDREN;
         }
         
         return string.Empty;
     }
     
-    private async Task<string> GetLinkValidationError(
+    private async Task<string> ValidateLinkBasedOnType(
         Guid currentApplicationId, 
         ApplicationLinkValidationRequest proposedLink,
         string currentAppError,
@@ -475,24 +483,24 @@ public class ApplicationLinksAppService : CrudAppService<
                 }
                 
                 // Then check if the proposed parent is already a child of another app
-                return await GetParentTargetValidationError(currentApplicationId, proposedLink);
+                return await ValidateTargetCannotBeParentIfAlreadyChild(currentApplicationId, proposedLink);
                 
             case ApplicationLinkType.Child:
                 // Check if current app is trying to be both parent and child
                 if (!string.IsNullOrEmpty(currentAppError) && allProposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
                 {
-                    return "Error: This application is already a child of another application. An application cannot be both a parent and a child.";
+                    return ERROR_CURRENT_APP_IS_CHILD;
                 }
                 
                 // Check target app conflicts
-                return await GetChildTargetValidationError(currentApplicationId, proposedLink);
+                return await ValidateTargetCanAcceptChildLink(currentApplicationId, proposedLink);
                 
             default:
                 return string.Empty;
         }
     }
     
-    private async Task<string> GetParentTargetValidationError(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
+    private async Task<string> ValidateTargetCannotBeParentIfAlreadyChild(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
     {
         var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
 
@@ -503,13 +511,13 @@ public class ApplicationLinksAppService : CrudAppService<
 
         if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
         {
-            return "Error: The selected submission is already a child of another application. An application cannot be both a parent and a child.";
+            return ERROR_TARGET_CHILD_CANNOT_BE_PARENT;
         }
         
         return string.Empty;
     }
     
-    private async Task<string> GetChildTargetValidationError(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
+    private async Task<string> ValidateTargetCanAcceptChildLink(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
     {
         var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
 
@@ -520,12 +528,12 @@ public class ApplicationLinksAppService : CrudAppService<
         
         if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
         {
-            return "Error: The selected submission already has a parent. A submission cannot have multiple parents.";
+            return ERROR_TARGET_ALREADY_HAS_PARENT;
         }
         
         if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Child))
         {
-            return "Error: The selected submission is already a parent to other applications. An application cannot be both a parent and a child.";
+            return ERROR_TARGET_IS_PARENT_TO_OTHERS;
         }
         
         return string.Empty;
