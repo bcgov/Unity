@@ -2,6 +2,8 @@
   "culture": "en",
   "texts": {
     "MyAccount":  "My account",
-    "SamplePageMessage": "A sample page for the Reporting module"
+    "SamplePageMessage": "A sample page for the Reporting module",
+    "Setting:GrantManager.Reporting.ViewRole.DisplayName": "View Role",
+    "Setting:GrantManager.Reporting.ViewRole.Description": "The database role to assign to generated reporting views for access control"
   }
 }

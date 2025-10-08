@@ -35,7 +35,9 @@ namespace Unity.GrantManager.Reporting
         private async Task GenerateFormVersionFields(Guid formVersionId)
         {
             var applicationFormVersion = await applicationFormVersionRepository.GetAsync(formVersionId);
-            await reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
+            
+            // Deprecated - reporting fields are now generated differently
+            // await reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
         }
 
         /// <summary>

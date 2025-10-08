@@ -6,13 +6,16 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.VirtualFileSystem;
 using Unity.Reporting.EntityFrameworkCore;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.SettingManagement;
 
 namespace Unity.Reporting;
 
 [DependsOn(
     typeof(ReportingApplicationContractsModule),
+    typeof(ReportingEntityFrameworkCoreModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule)    
+    typeof(AbpAutoMapperModule),
+    typeof(AbpSettingManagementApplicationModule)
     )]
 public class ReportingApplicationModule : AbpModule
 {
@@ -42,16 +45,16 @@ public class ReportingApplicationModule : AbpModule
             options.AddMaps<ReportingApplicationModule>(validate: true);
         });
 
+        context.Services.AddHttpClientProxies(
+            typeof(ReportingApplicationContractsModule).Assembly,
+            ReportingRemoteServiceConsts.RemoteServiceName
+        );
+
         Configure<AbpAspNetCoreMvcOptions>(options =>
         {
             options.ConventionalControllers.Create(typeof(ReportingApplicationModule).Assembly);
         });
 
         context.Services.AddAssemblyOf<ReportingApplicationModule>();
-
-        context.Services.AddAbpDbContext<ReportingDbContext>(options =>
-        {
-            /* Add custom repositories here. */
-        });
     }
 }

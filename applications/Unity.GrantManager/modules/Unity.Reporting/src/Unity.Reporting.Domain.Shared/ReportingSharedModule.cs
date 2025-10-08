@@ -6,12 +6,14 @@ using Volo.Abp.Localization.ExceptionHandling;
 using Volo.Abp.Validation;
 using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.Settings;
 
 namespace Unity.Reporting;
 
 [DependsOn(
     typeof(AbpValidationModule),
-    typeof(AbpDddDomainSharedModule)
+    typeof(AbpDddDomainSharedModule),
+    typeof(AbpSettingsModule)
 )]
 public class ReportingDomainSharedModule : AbpModule
 {

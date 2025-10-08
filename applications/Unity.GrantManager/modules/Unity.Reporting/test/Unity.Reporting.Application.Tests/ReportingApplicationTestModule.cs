@@ -5,5 +5,4 @@ namespace Unity.Reporting;
 [DependsOn(typeof(ReportingApplicationModule))]
 public class ReportingApplicationTestModule : AbpModule
 {
-
 }

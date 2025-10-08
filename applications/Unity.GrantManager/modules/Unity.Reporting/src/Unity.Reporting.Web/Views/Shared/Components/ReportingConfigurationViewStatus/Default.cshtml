@@ -1,0 +1,107 @@
+@using Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationViewStatus;
+@using Unity.Reporting.Configuration;
+@model ReportingConfigurationViewStatusViewModel
+
+@{
+    Layout = null;
+}
+
+@functions {
+    private string GetStatusIcon(ViewStatus status)
+    {
+        return status switch
+        {
+            ViewStatus.SUCCESS => "fl fl-checkmark",
+            ViewStatus.FAILED => "fl fl-cross",
+            ViewStatus.GENERATING => "", // No icon for generating, use text instead
+            _ => ""
+        };
+    }
+
+    private string GetStatusTooltip(ViewStatus status)
+    {
+        return status switch
+        {
+            ViewStatus.SUCCESS => "View generation completed successfully",
+            ViewStatus.FAILED => "View generation failed",
+            ViewStatus.GENERATING => "View is currently being generated",
+            _ => ""
+        };
+    }
+
+    private string GetStatusColor(ViewStatus status)
+    {
+        return status switch
+        {
+            ViewStatus.SUCCESS => "#42814A", // Green
+            ViewStatus.FAILED => "#CE3E39",  // Red
+            ViewStatus.GENERATING => "#5595D9", // Blue
+            _ => "#053662" // Default blue
+        };
+    }
+}
+
+@if (!string.IsNullOrEmpty(Model.ViewName) && Model.ViewStatus.HasValue)
+{
+    string statusIcon = GetStatusIcon(Model.ViewStatus.Value) ?? "";
+    string statusTooltip = GetStatusTooltip(Model.ViewStatus.Value) ?? "";
+
+    <div class="view-status-compact d-flex align-items-center" style="gap: 8px; margin-right: 10px; @(Model.HasMapping ? "" : "display: none;")">
+
+        <span>View Name: </span><span class="view-name-text">@Model.ViewName</span>
+
+        @if (!string.IsNullOrEmpty(statusIcon))
+        {
+            <i class="@statusIcon"
+               data-bs-toggle="tooltip"
+               data-bs-placement="top"
+               data-bs-original-title="@statusTooltip"
+               style="color: @GetStatusColor(Model.ViewStatus.Value);"></i>
+        }
+        else if (Model.ViewStatus.Value == ViewStatus.GENERATING)
+        {
+            <span class="status-text-only"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-original-title="@statusTooltip"
+                  style="font-size: 0.875rem; color: @GetStatusColor(Model.ViewStatus.Value);">Generating...</span>
+        }
+
+        @if (Model.ViewStatus.Value == ViewStatus.SUCCESS)
+        {
+            <button type="button" 
+                    class="btn btn-sm btn-outline-primary preview-view-btn" 
+                    data-version-id="@Model.VersionId"
+                    data-provider="@Model.Provider"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    data-bs-original-title="Preview sample data from the generated view">
+                <i class="fa fa-eye"></i> Preview
+            </button>
+        }
+
+    </div>
+
+    <!-- Modal for view data preview -->
+    <div class="modal fade" id="viewDataPreviewModal" tabindex="-1" aria-labelledby="viewDataPreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewDataPreviewModalLabel">View Data Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="viewDataPreviewContent">
+                        <!-- Preview content will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="text-muted me-auto">
+                        <small><i class="fa fa-info-circle"></i> Preview shows sample data from the first application in the view</small>
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
