@@ -52,9 +52,9 @@ namespace Unity.Payments.PaymentRequests
         public async Task NotifyFinancialAdvisorsAndPaymentGroupOfFailedPayments()
         {
             var tenants = await _tenantRepository.GetListAsync();
-            foreach (var tenant in tenants)
+            foreach (var tenantId in tenants.Select(tenant => tenant.Id))
             {
-                using (_currentTenant.Change(tenant.Id))
+                using (_currentTenant.Change(tenantId))
                 {
                     List<PaymentRequest> failedPaymentList = await GetFailedPayments();
                     if (failedPaymentList != null && failedPaymentList.Count > 0)
@@ -69,7 +69,7 @@ namespace Unity.Payments.PaymentRequests
 
                             if (financialAnalystEmails.Count == 0 && paymentsEmailGroupAddresses.Count == 0)
                             {
-                                Logger.LogWarning("NotifyFinancialAdvisorsAndPaymentGroupsOfFailedPayments: no recipients found for tenant {TenantId}", tenant.Id);
+                                Logger.LogWarning("NotifyFinancialAdvisorsAndPaymentGroupsOfFailedPayments: no recipients found for tenant {TenantId}", tenantId);
                                 continue;
                             }
 
