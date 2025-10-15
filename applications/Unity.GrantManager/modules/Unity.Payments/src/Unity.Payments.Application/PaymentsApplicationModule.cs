@@ -15,6 +15,9 @@ using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.AspNetCore.ExceptionHandling;
+using System.Reflection;
+using System.Linq;
+using Unity.Payments.PaymentRequests.Notifications;
 
 namespace Unity.Payments;
 
@@ -44,6 +47,9 @@ public class PaymentsApplicationModule : AbpModule
         context.Services.ConfigureRabbitMQ();
         context.Services.AddQueueMessageConsumer<InvoiceConsumer, InvoiceMessages>();
         context.Services.AddQueueMessageConsumer<ReconciliationConsumer, ReconcilePaymentMessages>();
+
+        // Register email recipient strategies for auto-discovery
+        RegisterEmailRecipientStrategies(context.Services);
 
         Configure<AbpMultiTenancyOptions>(options =>
         {
@@ -93,4 +99,22 @@ public class PaymentsApplicationModule : AbpModule
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 
+    /// <summary>
+    /// Automatically discovers and registers all email recipient strategy implementations.
+    /// This enables the EmailRecipientStrategyFactory to find strategies via dependency injection.
+    /// </summary>
+    private static void RegisterEmailRecipientStrategies(IServiceCollection services)
+    {
+        var strategyTypes = typeof(PaymentsApplicationModule).Assembly
+            .GetTypes()
+            .Where(t => typeof(IEmailRecipientStrategy).IsAssignableFrom(t) && 
+                       !t.IsInterface && 
+                       !t.IsAbstract)
+            .ToList();
+
+        foreach (var strategyType in strategyTypes)
+        {
+            services.AddTransient(typeof(IEmailRecipientStrategy), strategyType);
+        }
+    }
 }

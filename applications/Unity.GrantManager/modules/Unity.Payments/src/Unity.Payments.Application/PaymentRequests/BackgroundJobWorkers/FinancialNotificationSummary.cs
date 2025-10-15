@@ -45,6 +45,6 @@ public class FinancialNotificationSummary : QuartzBackgroundWorkerBase
 
     public override async Task Execute(IJobExecutionContext context)
     {
-        await _financialSummaryService.NotifyFinancialAdvisorsAndPaymentGroupOfFailedPayments();
+        await _financialSummaryService.NotifyFailedPayments();
     }
 }

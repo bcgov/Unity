@@ -9,14 +9,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Volo.Abp.EventBus.Local;
-using Volo.Abp.Identity;
-using Volo.Abp.Identity.Integration;
-using Volo.Abp.Users;
-using Unity.GrantManager.Identity;
-using Unity.Notifications.EmailGroups;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Unity.Notifications.Settings;
+using Unity.Payments.PaymentRequests.Notifications;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -24,32 +20,25 @@ namespace Unity.Payments.PaymentRequests
     {
         private readonly IPaymentRequestRepository _paymentRequestsRepository;
         private readonly ITenantRepository _tenantRepository;
-        private readonly ICurrentTenant _currentTenant;
-        private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
+        private readonly ICurrentTenant _currentTenant;        
         private readonly ILocalEventBus _localEventBus;
-        private readonly IEmailGroupsRepository _emailGroupsRepository;
-        private readonly IEmailGroupUsersRepository _emailGroupUsersRepository;
-        private const string PaymentsEmailGroupName = "Payments";
+        private readonly EmailRecipientStrategyFactory _emailRecipientStrategyFactory;
 
         public FinancialSummaryService (
-            IIdentityUserIntegrationService identityUserIntegrationService,
             IPaymentRequestRepository paymentRequestsRepository,
             ITenantRepository tenantRepository,
             ICurrentTenant currentTenant,
             ILocalEventBus localEventBus,
-            IEmailGroupsRepository emailGroupsRepository,
-            IEmailGroupUsersRepository emailGroupUsersRepository)
-        {          
-            _identityUserLookupAppService = identityUserIntegrationService;
+            EmailRecipientStrategyFactory emailRecipientStrategyFactory)
+        {
             _paymentRequestsRepository = paymentRequestsRepository;
             _tenantRepository = tenantRepository;
             _currentTenant = currentTenant;
             _localEventBus = localEventBus;
-            _emailGroupsRepository = emailGroupsRepository;
-            _emailGroupUsersRepository = emailGroupUsersRepository;
+            _emailRecipientStrategyFactory = emailRecipientStrategyFactory;
         }
 
-        public async Task NotifyFinancialAdvisorsAndPaymentGroupOfFailedPayments()
+        public async Task NotifyFailedPayments()
         {
             var tenants = await _tenantRepository.GetListAsync();
             foreach (var tenantId in tenants.Select(tenant => tenant.Id))
@@ -62,19 +51,32 @@ namespace Unity.Payments.PaymentRequests
                         string failedContent = GetFailedPaymentContent(failedPaymentList);                        
                         if (!failedContent.IsNullOrEmpty())
                         {
-                            var usersResult = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
-                            var users = usersResult.Items?.Cast<IUserData>() ?? [];
-                            List<string> financialAnalystEmails = await GetFinancialAnalystEmails(users);
-                            List<string> paymentsEmailGroupAddresses = await GetPaymentsEmailGroupEmailsAsync(users);
-
-                            if (financialAnalystEmails.Count == 0 && paymentsEmailGroupAddresses.Count == 0)
+                            // Use strategy pattern to collect emails from all registered strategies
+                            // Each strategy is responsible for obtaining its own data sources
+                            var strategies = _emailRecipientStrategyFactory.GetAllStrategies();
+                            HashSet<string> recipientEmails = new(StringComparer.OrdinalIgnoreCase);
+                            
+                            foreach (var strategy in strategies)
                             {
-                                Logger.LogWarning("NotifyFinancialAdvisorsAndPaymentGroupsOfFailedPayments: no recipients found for tenant {TenantId}", tenantId);
-                                continue;
+                                try
+                                {
+                                    var emails = await strategy.GetEmailRecipientsAsync();
+                                    recipientEmails.UnionWith(emails);
+                                    Logger.LogDebug("NotifyFailedPayments: Strategy '{StrategyName}' contributed {Count} emails", 
+                                        strategy.StrategyName, emails.Count);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logger.LogWarning(ex, "NotifyFailedPayments: Strategy '{StrategyName}' failed to get email recipients", 
+                                        strategy.StrategyName);
+                                }
                             }
 
-                            HashSet<string> recipientEmails = new(financialAnalystEmails, StringComparer.OrdinalIgnoreCase);
-                            recipientEmails.UnionWith(paymentsEmailGroupAddresses);
+                            if (recipientEmails.Count == 0)
+                            {
+                                Logger.LogWarning("NotifyFailedPayments: No recipients found from any strategy for tenant {TenantId}", tenantId);
+                                continue;
+                            }
 
                             var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
                             string fromAddress = defaultFromAddress ?? "NoReply@gov.bc.ca";
@@ -100,11 +102,11 @@ namespace Unity.Payments.PaymentRequests
         private static string GetFailedPaymentContent(List<PaymentRequest> failedPaymentRequests)
         {
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.Append("<b>Failed CAS Payment Requests</b>\n");
-            using (Table table = new Table(sb))
+            using (Table table = new(sb))
             {
-                Row header = new Row(sb, true);
+                Row header = new(sb, true);
 
                 header.AddCell("Payment Id");
                 header.AddCell("Amount");
@@ -114,76 +116,20 @@ namespace Unity.Payments.PaymentRequests
 
                 foreach (var paymentRequest in failedPaymentRequests)
                 {
-                    using (Row row = table.AddRow())
-                    {
-                        row.AddCell(paymentRequest.ReferenceNumber ?? string.Empty);
-                        row.AddCell(paymentRequest.Amount.ToString());
-                        row.AddCell(paymentRequest.PayeeName);
-                        row.AddCell(paymentRequest.CasResponse ?? string.Empty);                        
-                    }
+                    using Row row = table.AddRow();
+                    row.AddCell(paymentRequest.ReferenceNumber ?? string.Empty);
+                    row.AddCell(paymentRequest.Amount.ToString());
+                    row.AddCell(paymentRequest.PayeeName);
+                    row.AddCell(paymentRequest.CasResponse ?? string.Empty);
                 }
             }
             return sb.ToString();
         }
 
-        private async Task<List<string>> GetFinancialAnalystEmails(IEnumerable<IUserData> users)
-        {
-            List<string> financialAnalystEmails = [];
-            if (users != null)
-            {
-                foreach (var user in users)
-                {
-                    var roles = await _identityUserLookupAppService.GetRoleNamesAsync(user.Id);
-                    if(roles != null && roles.Contains(UnityRoles.FinancialAnalyst) && !string.IsNullOrWhiteSpace(user.Email))
-                    {
-                        financialAnalystEmails.Add(user.Email);
-                    }
-                }
-            }
-            return financialAnalystEmails;
-        }
-
-        private async Task<List<string>> GetPaymentsEmailGroupEmailsAsync(IEnumerable<IUserData> users)
-        {
-            List<string> paymentsEmails = [];
-            string normalizedPaymentsGroupName = PaymentsEmailGroupName.ToUpperInvariant();
-            var paymentsGroup = (await _emailGroupsRepository.GetListAsync(group => group.Name != null && group.Name.ToUpper() == normalizedPaymentsGroupName)).FirstOrDefault();
-            if (paymentsGroup == null)
-            {
-                return paymentsEmails;
-            }
-
-            var groupUsers = await _emailGroupUsersRepository.GetListAsync(groupUser => groupUser.GroupId == paymentsGroup.Id);
-            if (groupUsers == null || groupUsers.Count == 0)
-            {
-                return paymentsEmails;
-            }
-
-            Dictionary<Guid, string> userEmailLookup = users?
-                .Where(user => !string.IsNullOrWhiteSpace(user.Email))
-                .GroupBy(user => user.Id)
-                .Select(group => group.First())
-                .ToDictionary(user => user.Id, user => user.Email)
-                ?? [];
-
-            foreach (Guid userId in groupUsers.Select(groupUser => groupUser.UserId).Distinct())
-            {
-                if (userEmailLookup.TryGetValue(userId, out string? email) && !string.IsNullOrWhiteSpace(email))
-                {
-                    paymentsEmails.Add(email);
-                }
-                else
-                {
-                    Logger.LogWarning("NotifyFinancialAdvisorsOfNightlyFailedPayments: no email found for user {UserId} in Payments email group", userId);
-                }
-            }
-
-            return paymentsEmails;
-        }
         
         public async Task<List<PaymentRequest>> GetFailedPayments()
         {
-            List <PaymentRequest> failedPaymentList = new List<PaymentRequest>();
+            List <PaymentRequest> failedPaymentList = [];
 
             try
             {
