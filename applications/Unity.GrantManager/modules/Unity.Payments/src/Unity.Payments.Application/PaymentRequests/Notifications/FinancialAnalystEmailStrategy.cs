@@ -56,7 +56,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
                 Logger.LogError(ex, "FinancialAnalystEmailStrategy: Failed to search users");
             }
 
-            Logger.LogInformation("FinancialAnalystEmailStrategy: Found {Count} financial analyst emails", financialAnalystEmails.Count);
+            Logger.LogInformation("FinancialAnalystEmailStrategy: Collected financial analyst emails.");
             return financialAnalystEmails;
         }
     }
