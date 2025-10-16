@@ -46,14 +46,14 @@ namespace Unity.Payments.PaymentRequests.Notifications
                 
                 if (paymentsGroup == null)
                 {
-                    Logger.LogWarning("PaymentsEmailGroupStrategy: No '{GroupName}' email group found", PaymentsEmailGroupName);
+                    Logger.LogWarning("PaymentsEmailGroupStrategy: No Payments email group found.");
                     return paymentsEmails;
                 }
 
                 var groupUsers = await _emailGroupUsersRepository.GetListAsync(groupUser => groupUser.GroupId == paymentsGroup.Id);
                 if (groupUsers == null || groupUsers.Count == 0)
                 {
-                    Logger.LogWarning("PaymentsEmailGroupStrategy: No users found in '{GroupName}' email group", PaymentsEmailGroupName);
+                    Logger.LogWarning("PaymentsEmailGroupStrategy: No users found in Payments email group.");
                     return paymentsEmails;
                 }
 
@@ -75,15 +75,15 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     }
                     else
                     {
-                        Logger.LogWarning("PaymentsEmailGroupStrategy: No email found for a user in '{GroupName}' email group.", PaymentsEmailGroupName);
+                        Logger.LogWarning("PaymentsEmailGroupStrategy: No email found for a user in Payments email group.");
                     }
                 }
 
-                Logger.LogInformation("PaymentsEmailGroupStrategy: Found {Count} emails from '{GroupName}' group", paymentsEmails.Count, PaymentsEmailGroupName);
+                Logger.LogInformation("PaymentsEmailGroupStrategy: Successfully found emails from Payments email group.");
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "PaymentsEmailGroupStrategy: Error retrieving emails from '{GroupName}' group", PaymentsEmailGroupName);
+                Logger.LogError(ex, "PaymentsEmailGroupStrategy: Error retrieving emails from Payments email group.");
             }
 
             return paymentsEmails;
