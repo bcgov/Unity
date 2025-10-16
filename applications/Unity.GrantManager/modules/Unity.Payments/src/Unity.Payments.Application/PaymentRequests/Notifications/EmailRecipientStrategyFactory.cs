@@ -31,9 +31,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
             {
                 var strategies = _serviceProvider.GetServices<IEmailRecipientStrategy>().ToList();
                 
-                Logger.LogInformation("EmailRecipientStrategyFactory: Discovered {Count} email recipient strategies: {StrategyNames}", 
-                    strategies.Count, 
-                    string.Join(", ", strategies.Select(s => s.StrategyName)));
+                Logger.LogInformation("EmailRecipientStrategyFactory: Discovered email recipient strategies.");
                 
                 return strategies;
             }
