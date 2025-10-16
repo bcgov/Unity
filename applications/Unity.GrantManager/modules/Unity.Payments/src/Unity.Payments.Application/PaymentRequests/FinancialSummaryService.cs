@@ -62,8 +62,8 @@ namespace Unity.Payments.PaymentRequests
                                 {
                                     var emails = await strategy.GetEmailRecipientsAsync();
                                     recipientEmails.UnionWith(emails);
-                                    Logger.LogDebug("NotifyFailedPayments: Strategy '{StrategyName}' contributed {Count} emails", 
-                                        strategy.StrategyName, emails.Count);
+                                    Logger.LogDebug("NotifyFailedPayments: Strategy '{StrategyName}' contributed email addresses", 
+                                        strategy.StrategyName);
                                 }
                                 catch (Exception ex)
                                 {
