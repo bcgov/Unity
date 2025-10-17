@@ -1,4 +1,12 @@
 ﻿$(function () {
+    const FormHierarchyType = {
+        None: 0,
+        Parent: 1,
+        Child: 2
+    };
+    const parentFormPageSize = 20;
+    const l = abp.localization.getResource('GrantManager');
+
     const UIElements = {
         btnSave: $('#btn-save-payment-configuration'),
         btnBack: $('#btn-back-payment-configuration'),
@@ -8,14 +16,38 @@
         payable: $('#Payable'),
         hasEditPermission: $('#HasEditFormPaymentConfiguration'),
         paymentApprovalThreshold: $('#PaymentApprovalThreshold'),
-        paymentThresholdForm: $('#PaymentThresholdForm')
+        paymentThresholdForm: $('#PaymentThresholdForm'),
+        formHierarchySection: $('#form-hierarchy-section'),
+        formHierarchy: $('#FormHierarchy'),
+        parentFormColumn: $('#parent-form-column'),
+        parentFormSelect: $('#ParentForm'),
+        parentFormId: $('#ParentFormId')
     };
+
+    init();
+
+    function init() {
+        bindUIEvents();
+        initializeParentFormLookup();
+        toggleFormHierarchySection();
+        toggleParentFormSection();
+
+        toastr.options.positionClass = 'toast-top-center';
+        UIElements.btnSave.prop('disabled', true);
+    }
 
     function bindUIEvents() {
         UIElements.accountCode.on('change', enableSaveButton);
         UIElements.preventPayment.on('change', enableSaveButton);
-        UIElements.payable.on('change', enableSaveButton);
+        UIElements.payable.on('change', function () {
+            toggleFormHierarchySection();
+            enableSaveButton();
+        });
         UIElements.paymentApprovalThreshold.on('change', enableSaveButton);
+        UIElements.formHierarchy.on('change', function () {
+            toggleParentFormSection();
+            enableSaveButton();
+        });
 
         UIElements.btnSave.on('click', saveButtonAction);
         UIElements.btnBack.on('click', backButtonAction);
@@ -24,14 +56,100 @@
         UIElements.paymentApprovalThreshold.on('input', preventDecimalKeyPress);
     }
 
-    init();
+    function initializeParentFormLookup() {
+        UIElements.parentFormSelect.select2({
+            width: '100%',
+            allowClear: true,
+            placeholder: UIElements.parentFormSelect.data('placeholder') || 'Please choose...(Form Name V1.0)',
+            minimumInputLength: 2,
+            ajax: {
+                transport: function (params, success, failure) {
+                    const currentPage = params.data.page || 1;
+                    unity.grantManager.applicationForms.applicationForm.getParentFormLookup({
+                        filter: params.data.term || '',
+                        skipCount: (currentPage - 1) * parentFormPageSize,
+                        maxResultCount: parentFormPageSize,
+                        excludeFormId: UIElements.appFormId.val()
+                    }).then(success).catch(failure);
+                },
+                delay: 300,
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    const items = (data.items || []).map(function (item) {
+                        return {
+                            id: item.applicationFormVersionId,
+                            text: `${item.applicationFormName}${formatVersion(item.version)}`,
+                            parentFormId: item.applicationFormId
+                        };
+                    });
 
-    function init() {
-        bindUIEvents();
-        toastr.options.positionClass = 'toast-top-center';
-        UIElements.btnSave.prop('disabled', true);
+                    return {
+                        results: items,
+                        pagination: {
+                            more: (params.page * parentFormPageSize) < (data.totalCount || 0)
+                        }
+                    };
+                }
+            }
+        });
+
+        UIElements.parentFormSelect.on('select2:select', function (e) {
+            const data = e.params && e.params.data ? e.params.data : {};
+            setParentFormId(data.parentFormId);
+            enableSaveButton();
+        });
+
+        UIElements.parentFormSelect.on('select2:clear', function () {
+            setParentFormId('');
+            enableSaveButton();
+        });
+
+        UIElements.parentFormSelect.on('change', enableSaveButton);
+
+        applyInitialParentFormSelection();
     }
-    
+
+    function applyInitialParentFormSelection() {
+        const selectedOption = UIElements.parentFormSelect.find('option:selected');
+        if (selectedOption.length) {
+            const parentIdFromOption = selectedOption.data('parentFormId');
+            if (parentIdFromOption) {
+                setParentFormId(parentIdFromOption);
+            }
+        }
+    }
+
+    function toggleFormHierarchySection() {
+        const isPayable = UIElements.payable.is(':checked');
+        if (isPayable) {
+            UIElements.formHierarchySection.removeClass('d-none');
+        } else {
+            UIElements.formHierarchySection.addClass('d-none');
+            UIElements.formHierarchy.val('').trigger('change');
+            resetParentFormSelection();
+        }
+        toggleParentFormSection();
+    }
+
+    function toggleParentFormSection() {
+        const hierarchyValue = UIElements.formHierarchy.val();
+        if (hierarchyValue === String(FormHierarchyType.Child)) {
+            UIElements.parentFormColumn.removeClass('d-none');
+        } else {
+            UIElements.parentFormColumn.addClass('d-none');
+            resetParentFormSelection();
+        }
+    }
+
+    function resetParentFormSelection() {
+        UIElements.parentFormSelect.val(null).trigger('change');
+        setParentFormId('');
+    }
+
+    function setParentFormId(value) {
+        UIElements.parentFormId.val(value || '');
+    }
+
     function preventDecimalKeyPress(e) {
         const input = e.target;
         const cursorPosition = input.selectionStart;
@@ -55,7 +173,40 @@
         }
     }
 
+    function validateFormHierarchyBeforeSave() {
+        if (!UIElements.payable.is(':checked')) {
+            return true;
+        }
+
+        const hierarchyValue = UIElements.formHierarchy.val();
+        if (!hierarchyValue) {
+            abp.notify.error(l('GrantManager:PayableFormRequiresHierarchy'));
+            return false;
+        }
+
+        if (hierarchyValue === String(FormHierarchyType.Child)) {
+            if (!UIElements.parentFormId.val()) {
+                abp.notify.error(l('GrantManager:ChildFormRequiresParentForm'));
+                return false;
+            }
+
+            if (!UIElements.parentFormSelect.val()) {
+                abp.notify.error(l('GrantManager:ChildFormRequiresParentFormVersion'));
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     function saveButtonAction() {
+        if (!validateFormHierarchyBeforeSave()) {
+            return;
+        }
+
+        const hierarchyValue = UIElements.formHierarchy.val();
+        const formHierarchy = hierarchyValue ? parseInt(hierarchyValue, 10) : null;
+        const parentFormVersionId = UIElements.parentFormSelect.val();
 
         unity.grantManager.applicationForms.applicationForm.savePaymentConfiguration(
             {
@@ -63,7 +214,10 @@
                 applicationFormId: UIElements.appFormId.val(),
                 preventPayment: UIElements.preventPayment.is(':checked'),
                 payable: UIElements.payable.is(':checked'),
-                paymentApprovalThreshold: UIElements.paymentApprovalThreshold.val() === '' ? null : UIElements.paymentApprovalThreshold.val()
+                paymentApprovalThreshold: UIElements.paymentApprovalThreshold.val() === '' ? null : UIElements.paymentApprovalThreshold.val(),
+                formHierarchy: Number.isNaN(formHierarchy) ? null : formHierarchy,
+                parentFormId: UIElements.parentFormId.val() || null,
+                parentFormVersionId: parentFormVersionId || null
             })
             .then(() => {
                 UIElements.btnSave.prop('disabled', true);
@@ -84,10 +238,8 @@
     }
 
     function backButtonAction() {
-
         // If the save is enabled show a sweet alert to confirm the back action
         if (UIElements.btnSave.prop('disabled') === false) {
-
             Swal.fire({
                 title: "Are you sure?",
                 text: "You have unsaved changes.",
@@ -101,9 +253,6 @@
                 if (result.isConfirmed) {
                     location.href = '/ApplicationForms';
                 }
-                else {
-                    return;
-                }
             });
         } else {
             location.href = '/ApplicationForms';
@@ -115,5 +264,8 @@
             UIElements.btnSave.prop('disabled', false);
         }
     }
-});
 
+    function formatVersion(version) {
+        return version ? ` V${version}.0` : '';
+    }
+});

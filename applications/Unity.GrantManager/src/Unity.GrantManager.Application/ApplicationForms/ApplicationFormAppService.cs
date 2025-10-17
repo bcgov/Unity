@@ -187,12 +187,105 @@ public class ApplicationFormAppService
     [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
     public async Task SavePaymentConfiguration(FormPaymentConfigurationDto dto)
     {
+        ArgumentNullException.ThrowIfNull(dto);
+
         var appForm = await Repository.GetAsync(dto.ApplicationFormId);
+
+        if (dto.Payable)
+        {
+            if (!dto.FormHierarchy.HasValue || dto.FormHierarchy == FormHierarchyType.None)
+            {
+                throw new BusinessException(GrantManagerDomainErrorCodes.PayableFormRequiresHierarchy);
+            }
+
+            if (dto.FormHierarchy == FormHierarchyType.Child)
+            {
+                if (!dto.ParentFormId.HasValue)
+                {
+                    throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
+                }
+
+                if (!dto.ParentFormVersionId.HasValue)
+                {
+                    throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentFormVersion);
+                }
+
+                if (dto.ParentFormId.Value == appForm.Id)
+                {
+                    throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormCannotReferenceSelf);
+                }
+
+                var parentForm = await Repository.FindAsync(dto.ParentFormId.Value);
+                if (parentForm is null)
+                {
+                    throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
+                }
+
+                var parentFormVersion = await _applicationFormVersionRepository.FindAsync(dto.ParentFormVersionId.Value);
+                if (parentFormVersion is null || parentFormVersion.ApplicationFormId != parentForm.Id)
+                {
+                    throw new BusinessException(GrantManagerDomainErrorCodes.ParentFormVersionMismatch);
+                }
+            }
+        }
+
         appForm.AccountCodingId = dto.AccountCodingId;
         appForm.Payable = dto.Payable;
         appForm.PreventPayment = dto.PreventPayment;
         appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
         await Repository.UpdateAsync(appForm);
+    }
+
+    [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
+    public async Task<PagedResultDto<ParentFormLookupDto>> GetParentFormLookupAsync(ParentFormLookupRequestDto input)
+    {
+        input ??= new ParentFormLookupRequestDto();
+
+        var maxResultCount = input.MaxResultCount > 0 ? input.MaxResultCount : 20;
+        var skipCount = input.SkipCount > 0 ? input.SkipCount : 0;
+        var normalizedFilter = string.IsNullOrWhiteSpace(input.Filter) ? null : input.Filter.Trim();
+
+        var formsQueryable = await Repository.GetQueryableAsync();
+        var versionsQueryable = await _applicationFormVersionRepository.GetQueryableAsync();
+
+        var query =
+            from form in formsQueryable
+            join version in versionsQueryable on form.Id equals version.ApplicationFormId
+            where version.Published
+            select new { form, version };
+
+        if (input.ExcludeFormId.HasValue)
+        {
+            query = query.Where(x => x.form.Id != input.ExcludeFormId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(normalizedFilter))
+        {
+            var loweredFilter = normalizedFilter.ToLowerInvariant();
+            query = query.Where(x =>
+                x.form.ApplicationFormName != null &&
+                x.form.ApplicationFormName.ToLower().Contains(loweredFilter));
+        }
+
+        var totalCount = await AsyncExecuter.CountAsync(query);
+
+        var items = await AsyncExecuter.ToListAsync(
+            query
+                .OrderBy(x => x.form.ApplicationFormName)
+                .ThenByDescending(x => x.version.Version)
+                .Skip(skipCount)
+                .Take(maxResultCount)
+        );
+
+        var results = items.Select(x => new ParentFormLookupDto
+        {
+            ApplicationFormId = x.form.Id,
+            ApplicationFormVersionId = x.version.Id,
+            ApplicationFormName = x.form.ApplicationFormName ?? string.Empty,
+            Version = x.version.Version
+        }).ToList();
+
+        return new PagedResultDto<ParentFormLookupDto>(totalCount, results);
     }
 
     public async Task<decimal?> GetFormPaymentApprovalThresholdByApplicationIdAsync(Guid applicationId)

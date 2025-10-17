@@ -11,6 +11,7 @@ using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.ApplicationForms;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
 {
@@ -38,6 +39,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
             model.PaymentApprovalThreshold = applicationForm?.PaymentApprovalThreshold;
             model.PreventAutomaticPaymentToCAS = applicationForm?.PreventPayment ?? false;
             model.AccountCode = applicationForm?.AccountCodingId;
+            model.FormHierarchyList = new()
+            {
+                new SelectListItem { Value = ((int)FormHierarchyType.Parent).ToString(), Text = "Parent Form" },
+                new SelectListItem { Value = ((int)FormHierarchyType.Child).ToString(), Text = "Child Form" }
+            };
             model.AccountCodeList = new();
             foreach (var accountCoding in accountCodings)
             {
@@ -61,6 +67,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
         {
             context.Files
               .AddIfNotContains("/Views/Shared/Components/PaymentConfiguration/Default.css");
+            context.Files
+              .AddIfNotContains("/libs/select2/css/select2.min.css");
         }
     }
 
@@ -72,6 +80,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
               .AddIfNotContains("/Views/Shared/Components/PaymentConfiguration/Default.js");
             context.Files
               .AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
+            context.Files
+              .AddIfNotContains("/libs/select2/js/select2.full.min.js");
         }
     }
 }
