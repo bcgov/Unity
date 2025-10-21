@@ -1,0 +1,12 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantBreadcrumbWidget;
+
+@model ApplicantBreadcrumbWidgetViewModel
+
+<div class="breadcrumb-container">
+    <abp-button icon="fl fl-arrow-left" icon-type="Other" id="goBackToApplicants" class="px-2"></abp-button>
+    <div class="applicant-details-breadcrumb">
+        <div class="unity-applicant-id">@Model.UnityApplicantId</div>
+        <div class="applicant-name">@Model.ApplicantName</div>
+        <div class="applicant-status">@Model.Status</div>    
+    </div>
+</div>

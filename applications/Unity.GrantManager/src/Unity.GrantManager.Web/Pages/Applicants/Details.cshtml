@@ -10,44 +10,131 @@
 
 @{
     PageLayout.Content.Title = L["Applicants"].Value;
-    PageLayout.Content.BreadCrumb.Add(L["Applicants"], "/GrantApplicants");
-    PageLayout.Content.BreadCrumb.Add(L["Details"]);
 }
 
 @section styles {
     <abp-style src="/Pages/Applicants/Details.css" />
+    <abp-style src="/Views/Shared/Components/ApplicantBreadcrumbWidget/Default.css" />
 }
 
-<abp-container>
-    <abp-row>
-        <abp-column>
-            <abp-card>
-                <abp-card-header>
-                    <h3>@L["Applicant Details"]</h3>
-                </abp-card-header>
-                <abp-card-body>
-                    @if (Model.ApplicantId != Guid.Empty)
-                    {
-                        <div class="mb-3">
-                            <strong>Applicant ID:</strong> @Model.ApplicantId
+@section scripts {
+    <abp-script src="/Pages/Applicants/Details.js" />
+}
+
+<div id="applicantBreadcrumbWidget" class="fade-in-load">
+    @await Component.InvokeAsync("ApplicantBreadcrumbWidget", new { applicantId = @Model.ApplicantId })
+</div>
+
+<input type="hidden" id="DetailsViewApplicantId" value="@Model.ApplicantId" />
+
+<div id="main-loading">
+    <div class="d-flex justify-content-center">
+        <img src="/images/homepage/unity.svg" alt="unity-applicant-loading">
+    </div>
+    <div class="m-4 d-flex justify-content-center">
+        <div class="spinner-border">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<div class="m-0 h-100 applicant-details-container fade-in-load" id="main-container">
+    <div id="main-left">
+        <abp-card>
+            <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
+                
+                @*-------- Organization Info Section ---------*@
+                <abp-tab name="nav-organization-info" active="true" title="Organization Info">
+                    <div class="w-100 px-2" id="OrganizationInfoWidget">
+                        @await Component.InvokeAsync("ApplicantOrganizationInfo", new { applicantId = Model.ApplicantId })
+                    </div>
+                </abp-tab>
+                @*-------- Organization Info Section END ---------*@
+
+            </abp-tabs>
+        </abp-card>
+    </div>
+    
+    <div id="main-divider" class="divider"></div>
+    
+    <div id="main-right">
+        <abp-card class="right-card">
+            <ul class="nav nav-tabs details-nav flex-nowrap">
+                <li class="nav-item">
+                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">Details</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i></button>
+                </li>
+            </ul>
+
+            <div class="tab-content details-scrollable" id="myTabContent">
+                
+                @*-------- Details Tab Section ---------*@
+                <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                    <div id="applicantDetails">
+                        <div class="px-3 pt-4 pb-2">
+                            <h6 class="fw-bold">Applicant Summary</h6>
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <strong>Unity Applicant ID:</strong> @Model.UnityApplicantId
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>Name:</strong> @Model.ApplicantDisplayName
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>Status:</strong> 
+                                    <span class="badge bg-primary">@Model.Status</span>
+                                </div>
+                                @if (Model.Applicant?.IsDuplicated == true)
+                                {
+                                    <div class="col-12 mb-2">
+                                        <div class="alert alert-warning">
+                                            <i class="fa fa-exclamation-triangle"></i> 
+                                            This applicant is marked as a potential duplicate (Match: @(Model.Applicant.MatchPercentage?.ToString("F1") ?? "N/A")%)
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.Applicant?.RedStop == true)
+                                {
+                                    <div class="col-12 mb-2">
+                                        <div class="alert alert-danger">
+                                            <i class="fa fa-stop-circle"></i> 
+                                            Red Stop: This applicant has been flagged for review.
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         </div>
-                        <div class="text-muted">
-                            <em>Full applicant details will be displayed here in future development.</em>
+                    </div>
+                </div>
+                @*-------- Details Tab Section END ---------*@
+
+                @*-------- History Tab Section ---------*@
+                <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+                    <div class="px-3 pb-2" id="applicantHistoryWidget">
+                        <h6 class="fw-bold px-0 pt-4 pb-2 m-0">Audit Information</h6>
+                        <div class="audit-info p-3">
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <strong>Created:</strong> @(Model.Applicant?.CreationTime.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A")
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>Created By:</strong> @(Model.Applicant?.CreatorId?.ToString() ?? "N/A")
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>Last Modified:</strong> @(Model.Applicant?.LastModificationTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A")
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>Last Modified By:</strong> @(Model.Applicant?.LastModifierId?.ToString() ?? "N/A")
+                                </div>
+                            </div>
                         </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning">
-                            @L["No applicant ID provided."]
-                        </div>
-                    }
-                </abp-card-body>
-                <abp-card-footer>
-                    <a href="/GrantApplicants" class="btn btn-secondary">
-                        <i class="fa fa-arrow-left"></i> @L["Back to Applicants"]
-                    </a>
-                </abp-card-footer>
-            </abp-card>
-        </abp-column>
-    </abp-row>
-</abp-container>
+                    </div>
+                </div>
+                @*-------- History Tab Section END ---------*@
+                
+            </div>
+        </abp-card>
+    </div>
+</div>
