@@ -51,6 +51,14 @@
                 </abp-tab>
                 @*-------- Organization Info Section END ---------*@
 
+                @*-------- Addresses Section ---------*@
+                <abp-tab name="nav-addresses" title="Addresses">
+                    <div class="w-100 px-2" id="AddressesWidget">
+                        @await Component.InvokeAsync("ApplicantAddresses", new { applicantId = Model.ApplicantId })
+                    </div>
+                </abp-tab>
+                @*-------- Addresses Section END ---------*@
+
             </abp-tabs>
         </abp-card>
     </div>

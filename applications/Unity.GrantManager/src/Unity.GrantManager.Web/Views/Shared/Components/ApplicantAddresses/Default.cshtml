@@ -1,0 +1,23 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
+@using System.Text.Json
+
+@model ApplicantAddressesViewModel
+
+@{
+    Layout = null;
+}
+
+<div class="addresses-container" data-count="@Model.Addresses.Count">
+    <div class="px-3 mb-4">
+        <abp-table id="ApplicantAddressesTable"
+                   hoverable-rows="true"
+                   data-resize-aware="true"
+                   class="addresses-table">
+        </abp-table>
+    </div>
+</div>
+
+<input type="hidden" id="ApplicantAddresses_Data"
+       value='@Json.Serialize(Model.Addresses)' />
+<input type="hidden" id="ApplicantAddresses_ApplicantId"
+       value="@Model.ApplicantId" />
