@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Identity;
-using Volo.Abp.Application.Services;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.Users;
@@ -14,14 +14,17 @@ namespace Unity.Payments.PaymentRequests.Notifications
     /// Email recipient strategy that collects emails from users with the Financial Analyst role.
     /// Automatically discovered via reflection and registered in PaymentsApplicationModule.
     /// </summary>
-    public class FinancialAnalystEmailStrategy : ApplicationService, IEmailRecipientStrategy
+    [ExposeServices(typeof(IEmailRecipientStrategy))]
+    public class FinancialAnalystEmailStrategy : IEmailRecipientStrategy, ITransientDependency
     {
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
+        private readonly ILogger<FinancialAnalystEmailStrategy> _logger;
 
         public string StrategyName => "FinancialAnalyst";
 
-        public FinancialAnalystEmailStrategy(IIdentityUserIntegrationService identityUserIntegrationService)
+        public FinancialAnalystEmailStrategy(ILogger<FinancialAnalystEmailStrategy> logger, IIdentityUserIntegrationService identityUserIntegrationService)
         {
+            _logger = logger;
             _identityUserLookupAppService = identityUserIntegrationService;
         }
 
@@ -47,16 +50,16 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     }
                     catch (System.Exception ex)
                     {
-                        Logger.LogWarning(ex, "FinancialAnalystEmailStrategy: Failed to get roles for a user.");
+                        _logger.LogWarning(ex, "FinancialAnalystEmailStrategy: Failed to get roles for a user.");
                     }
                 }
             }
             catch (System.Exception ex)
             {
-                Logger.LogError(ex, "FinancialAnalystEmailStrategy: Failed to search users");
+                _logger.LogError(ex, "FinancialAnalystEmailStrategy: Failed to search users");
             }
 
-            Logger.LogInformation("FinancialAnalystEmailStrategy: Collected financial analyst emails.");
+            _logger.LogInformation("FinancialAnalystEmailStrategy: Collected financial analyst emails.");
             return financialAnalystEmails;
         }
     }

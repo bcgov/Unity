@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Payments.PaymentRequests.Notifications
@@ -13,11 +11,11 @@ namespace Unity.Payments.PaymentRequests.Notifications
     /// </summary>
     public class EmailRecipientStrategyFactory : ApplicationService
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IEnumerable<IEmailRecipientStrategy> _emailRecipientStrategies;
 
-        public EmailRecipientStrategyFactory(IServiceProvider serviceProvider)
+        public EmailRecipientStrategyFactory(IEnumerable<IEmailRecipientStrategy> emailRecipientStrategies)
         {
-            _serviceProvider = serviceProvider;
+            _emailRecipientStrategies = emailRecipientStrategies;
         }
 
         /// <summary>
@@ -25,21 +23,9 @@ namespace Unity.Payments.PaymentRequests.Notifications
         /// Strategies are automatically discovered via reflection and registered in PaymentsApplicationModule.
         /// </summary>
         /// <returns>List of all available email recipient strategies</returns>
-        public List<IEmailRecipientStrategy> GetAllStrategies()
+        public IEnumerable<IEmailRecipientStrategy> GetAllStrategies()
         {
-            try
-            {
-                var strategies = _serviceProvider.GetServices<IEmailRecipientStrategy>().ToList();
-                
-                Logger.LogInformation("EmailRecipientStrategyFactory: Discovered email recipient strategies.");
-                
-                return strategies;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "EmailRecipientStrategyFactory: Error discovering email recipient strategies");
-                return [];
-            }
+            return _emailRecipientStrategies;
         }
 
         /// <summary>
@@ -49,7 +35,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
         /// <returns>The strategy if found, null otherwise</returns>
         public IEmailRecipientStrategy? GetStrategy(string strategyName)
         {
-            return GetAllStrategies().Find(s =>
+            return GetAllStrategies().FirstOrDefault(s =>
                 string.Equals(s.StrategyName, strategyName, StringComparison.OrdinalIgnoreCase));
         }
     }

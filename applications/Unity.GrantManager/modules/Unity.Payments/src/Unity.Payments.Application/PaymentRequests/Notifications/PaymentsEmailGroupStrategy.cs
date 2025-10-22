@@ -1,13 +1,13 @@
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Unity.Notifications.EmailGroups;
-using Volo.Abp.Application.Services;
-using Volo.Abp.Users;
-using Volo.Abp.Identity.Integration;
-using System;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
+using Volo.Abp.Identity.Integration;
+using Volo.Abp.Users;
 
 namespace Unity.Payments.PaymentRequests.Notifications
 {
@@ -15,11 +15,13 @@ namespace Unity.Payments.PaymentRequests.Notifications
     /// Email recipient strategy that collects emails from the "Payments" email group.
     /// Automatically discovered via reflection and registered in PaymentsApplicationModule.
     /// </summary>
-    public class PaymentsEmailGroupStrategy : ApplicationService, IEmailRecipientStrategy
+    [ExposeServices(typeof(IEmailRecipientStrategy))]
+    public class PaymentsEmailGroupStrategy : IEmailRecipientStrategy, ITransientDependency
     {
         private readonly IEmailGroupsRepository _emailGroupsRepository;
         private readonly IEmailGroupUsersRepository _emailGroupUsersRepository;
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
+        private readonly ILogger<PaymentsEmailGroupStrategy> _logger;
         private const string PaymentsEmailGroupName = "Payments";
 
         public string StrategyName => "PaymentsEmailGroup";
@@ -27,11 +29,13 @@ namespace Unity.Payments.PaymentRequests.Notifications
         public PaymentsEmailGroupStrategy(
             IEmailGroupsRepository emailGroupsRepository,
             IEmailGroupUsersRepository emailGroupUsersRepository,
-            IIdentityUserIntegrationService identityUserIntegrationService)
+            IIdentityUserIntegrationService identityUserIntegrationService,
+            ILogger<PaymentsEmailGroupStrategy> logger )
         {
             _emailGroupsRepository = emailGroupsRepository;
             _emailGroupUsersRepository = emailGroupUsersRepository;
             _identityUserLookupAppService = identityUserIntegrationService;
+            _logger = logger;
         }
 
         public async Task<List<string>> GetEmailRecipientsAsync()
@@ -46,14 +50,14 @@ namespace Unity.Payments.PaymentRequests.Notifications
                 
                 if (paymentsGroup == null)
                 {
-                    Logger.LogWarning("PaymentsEmailGroupStrategy: No Payments email group found.");
+                    _logger.LogWarning("PaymentsEmailGroupStrategy: No Payments email group found.");
                     return paymentsEmails;
                 }
 
                 var groupUsers = await _emailGroupUsersRepository.GetListAsync(groupUser => groupUser.GroupId == paymentsGroup.Id);
                 if (groupUsers == null || groupUsers.Count == 0)
                 {
-                    Logger.LogWarning("PaymentsEmailGroupStrategy: No users found in Payments email group.");
+                    _logger.LogWarning("PaymentsEmailGroupStrategy: No users found in Payments email group.");
                     return paymentsEmails;
                 }
 
@@ -75,15 +79,15 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     }
                     else
                     {
-                        Logger.LogWarning("PaymentsEmailGroupStrategy: No email found for a user in Payments email group.");
+                        _logger.LogWarning("PaymentsEmailGroupStrategy: No email found for a user in Payments email group.");
                     }
                 }
 
-                Logger.LogInformation("PaymentsEmailGroupStrategy: Successfully found emails from Payments email group.");
+                _logger.LogInformation("PaymentsEmailGroupStrategy: Successfully found emails from Payments email group.");
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "PaymentsEmailGroupStrategy: Error retrieving emails from Payments email group.");
+                _logger.LogError(ex, "PaymentsEmailGroupStrategy: Error retrieving emails from Payments email group.");
             }
 
             return paymentsEmails;
