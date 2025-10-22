@@ -93,5 +93,4 @@ public class PaymentsApplicationModule : AbpModule
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 
-    
 }
