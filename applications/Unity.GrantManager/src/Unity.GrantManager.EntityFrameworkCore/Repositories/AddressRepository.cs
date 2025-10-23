@@ -24,7 +24,10 @@ namespace Unity.GrantManager.Repositories
         public async Task<List<ApplicantAddress>> FindByApplicantIdAsync(Guid applicantId)
         {
             var dbSet = await GetDbSetAsync();
-            return await dbSet.AsNoTracking().Where(a => a.ApplicantId == applicantId).ToListAsync();
+            return await dbSet.AsNoTracking()
+                .Include(a => a.Application)
+                .Where(a => a.ApplicantId == applicantId)
+                .ToListAsync();
         }
     }
 }

@@ -8,26 +8,46 @@
     width: 100%;
 }
 
-/* Badge styling for address types */
-.badge.bg-primary {
-    background-color: #0d6efd !important;
-    color: #fff;
+#ApplicantAddressesTable_wrapper {
+    width: 100%;
 }
 
-.badge.bg-warning {
-    background-color: #ffc107 !important;
+#ApplicantAddressesTable_wrapper .dataTables_scroll {
+    overflow: visible;
 }
 
-.badge.bg-warning.text-dark {
-    color: #000 !important;
+#ApplicantAddressesTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner,
+#ApplicantAddressesTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner table {
+    width: 100% !important;
 }
 
-.badge.bg-success {
-    background-color: #198754 !important;
-    color: #fff;
+#ApplicantAddressesTable_wrapper .dataTables_scrollBody {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-height: none !important;
 }
 
-.badge.bg-secondary {
-    background-color: #6c757d !important;
-    color: #fff;
+#ApplicantAddressesTable_wrapper .dataTables_scrollBody table {
+    width: 100% !important;
+}
+
+#ApplicantAddressesTable {
+    width: 100% !important;
+}
+
+/* Address type badge styling - matching ApplicationLinksModal link-type-badge */
+.address-type-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background-color: #013366;
+    color: white;
+}
+
+/* Mailing address badge - green color matching ApplicationLinksModal NEW badge */
+.address-type-badge.mailing {
+    background-color: #28a745;
 }

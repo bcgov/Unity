@@ -54,9 +54,12 @@
     display: flex;
 }
 
-#main-left,
+#main-left {
+    width: 70%;
+}
+
 #main-right {
-    width: 50%;
+    width: 30%;
 }
 
 #main-divider {

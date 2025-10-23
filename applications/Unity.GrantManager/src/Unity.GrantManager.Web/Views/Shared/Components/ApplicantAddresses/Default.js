@@ -6,7 +6,7 @@ $(function () {
         abp.libs.datatables.normalizeConfiguration({
             data: addressesData,
             serverSide: false,
-            order: [[0, 'asc']],
+            order: [[1, 'asc']],
             searching: true,
             paging: true,
             pageLength: 10,
@@ -18,19 +18,19 @@ $(function () {
             },
             columnDefs: [
                 {
-                    title: 'Type',
+                    title: 'Address Type',
                     data: 'addressType',
                     width: '15%',
                     render: function (data, type, full) {
                         if (type === 'display') {
-                            const badgeClass = getBadgeClass(data);
-                            return `<span class="badge ${badgeClass}">${data}</span>`;
+                            const badgeClass = data === 'Mailing' ? 'address-type-badge mailing' : 'address-type-badge';
+                            return `<span class="${badgeClass}">${data}</span>`;
                         }
                         return data;
                     }
                 },
                 {
-                    title: 'Reference No',
+                    title: 'Submission #',
                     data: 'referenceNo',
                     width: '12%',
                     render: function (data) {
@@ -88,17 +88,4 @@ $(function () {
             ],
         })
     );
-
-    function getBadgeClass(addressType) {
-        switch(addressType) {
-            case 'Physical Address':
-                return 'bg-primary';
-            case 'Mailing Address':
-                return 'bg-warning text-dark';
-            case 'Business Address':
-                return 'bg-success';
-            default:
-                return 'bg-secondary';
-        }
-    }
 });

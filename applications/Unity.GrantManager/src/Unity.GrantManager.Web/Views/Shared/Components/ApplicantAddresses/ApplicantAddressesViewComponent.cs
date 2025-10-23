@@ -31,50 +31,45 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                 return View(new ApplicantAddressesViewModel { ApplicantId = applicantId });
             }
 
-            try
-            {
-                // Load addresses using repository method
-                // Note: The repository method returns addresses without Application navigation property loaded
-                // We'll handle null Application gracefully in the mapping
-                var addresses = await _applicantAddressRepository.FindByApplicantIdAsync(applicantId);
+            
+            // Load addresses using repository method
+            // Note: The repository method returns addresses without Application navigation property loaded
+            // We'll handle null Application gracefully in the mapping
+            var addresses = await _applicantAddressRepository.FindByApplicantIdAsync(applicantId);
 
-                var viewModel = new ApplicantAddressesViewModel
-                {
-                    ApplicantId = applicantId,
-                    Addresses = addresses
-                        .OrderByDescending(a => a.CreationTime)
-                        .Select(a => new ApplicantAddressItemDto
-                        {
-                            Id = a.Id,
-                            AddressType = GetAddressTypeName(a.AddressType),
-                            ReferenceNo = a.ApplicationId.HasValue && a.Application != null
-                                ? a.Application.ReferenceNo
-                                : "N/A",
-                            Street = a.Street ?? string.Empty,
-                            Street2 = a.Street2 ?? string.Empty,
-                            Unit = a.Unit ?? string.Empty,
-                            City = a.City ?? string.Empty,
-                            Province = a.Province ?? string.Empty,
-                            Postal = a.Postal ?? string.Empty,
-                            Country = a.Country ?? string.Empty
-                        }).ToList()
-                };
-
-                return View(viewModel);
-            }
-            catch (Exception)
+            var viewModel = new ApplicantAddressesViewModel
             {
-                return View(new ApplicantAddressesViewModel { ApplicantId = applicantId });
-            }
+                ApplicantId = applicantId,
+                Addresses = addresses
+                    .OrderByDescending(a => a.CreationTime)
+                    .Select(a => new ApplicantAddressItemDto
+                    {
+                        Id = a.Id,
+                        AddressType = GetAddressTypeName(a.AddressType),
+                        ReferenceNo = a.ApplicationId.HasValue && a.Application != null
+                            ? a.Application.ReferenceNo
+                            : "N/A",
+                        Street = a.Street ?? string.Empty,
+                        Street2 = a.Street2 ?? string.Empty,
+                        Unit = a.Unit ?? string.Empty,
+                        City = a.City ?? string.Empty,
+                        Province = a.Province ?? string.Empty,
+                        Postal = a.Postal ?? string.Empty,
+                        Country = a.Country ?? string.Empty
+                    }).ToList()
+            };
+
+            return View(viewModel);
+            
         }
 
         private string GetAddressTypeName(GrantApplications.AddressType addressType)
         {
             return addressType switch
             {
-                GrantApplications.AddressType.PhysicalAddress => "Physical Address",
-                GrantApplications.AddressType.MailingAddress => "Mailing Address",
-                GrantApplications.AddressType.BusinessAddress => "Business Address",
+                GrantApplications.AddressType.PhysicalAddress => "Physical",
+                GrantApplications.AddressType.MailingAddress => "Mailing",
+                GrantApplications.AddressType.BusinessAddress => "Business",
                 _ => "Unknown"
             };
         }
