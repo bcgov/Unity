@@ -41,9 +41,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
 
                     // Organization Summary
                     UnityApplicantId = applicant.UnityApplicantId ?? string.Empty,
-                    ApplicantDisplayName = !string.IsNullOrEmpty(applicant.ApplicantName)
-                        ? applicant.ApplicantName
-                        : "Unknown Applicant",
                     ApplicantName = applicant.ApplicantName ?? string.Empty,
                     OrgNumber = applicant.OrgNumber ?? string.Empty,
                     BusinessNumber = applicant.BusinessNumber ?? string.Empty,
