@@ -6,6 +6,10 @@
     Layout = null;
 }
 
+<div id="ApplicantOrganizationInfo_SectorData" style="display:none;">
+    @Html.Raw(Json.Serialize(Model.Sectors))
+</div>
+
 <input type="hidden" id="ApplicantOrganizationInfo_ApplicantId" value="@Model.ApplicantId" />
 
 @if (Model.ApplicantId != Guid.Empty)
@@ -26,43 +30,55 @@
                         <abp-column size="_12" class="px-1">
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="ApplicantName" disabled />
-                                </abp-column>
-                                <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="UnityApplicantId" label="Unity Applicant ID" disabled />
+                                    <abp-input asp-for="OrgName" disabled />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="OrgNumber" disabled />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-select asp-for="OrgStatus" asp-items="Model.OrgStatusList" id="ApplicantOrganizationInfo_OrgStatus" disabled />
                                 </abp-column>                                
                             </abp-row>
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_4" class="px-1">
+                                    <abp-select asp-for="OrganizationType" asp-items="Model.OrganizationTypeList" id="ApplicantOrganizationInfo_OrganizationType" disabled />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="BusinessNumber" disabled />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="OrgStatus" disabled />
-                                </abp-column>
-                                <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="OrganizationType" disabled />
+                                    <abp-input asp-for="UnityApplicantId" />
                                 </abp-column>
                             </abp-row>
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="OrganizationSize" disabled />
+                                    <abp-input asp-for="NonRegOrgName" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="Status" disabled />
+                                    <abp-input asp-for="OrganizationSize" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="NonRegisteredBusinessName" disabled />
+                                    <div class="switch-container">
+                                        <div class="px-3 form-check unt-form-switch form-switch">
+                                            <abp-input type="checkbox" asp-for="IndigenousOrgInd" />
+                                        </div>
+                                    </div>
                                 </abp-column>
                             </abp-row>
                             <abp-row class="m-0 p-0">
-                                <abp-column size="_6" class="px-1">
-                                    <abp-input asp-for="NonRegOrgName" disabled />
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="ApplicantName" />
                                 </abp-column>
-                                <abp-column size="_6" class="px-1">
-                                    <abp-input asp-for="ApproxNumberOfEmployees" disabled />
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="Status" />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="NonRegisteredBusinessName" />
+                                </abp-column>
+                            </abp-row>
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="ApproxNumberOfEmployees" />
                                 </abp-column>
                             </abp-row>
                         </abp-column>
@@ -85,23 +101,16 @@
                     <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="px-1">
                             <abp-row class="m-0 p-0">
-                                <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="Sector" disabled />
+                                <abp-column size="_6" class="px-1">
+                                    <abp-select asp-for="Sector" asp-items="Model.SectorList" id="ApplicantOrganizationInfo_Sector" />
                                 </abp-column>
-                                <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="SubSector" disabled />
-                                </abp-column>
-                                <abp-column size="_4" class="px-1">
-                                    <div class="switch-container">
-                                        <div class="px-3 form-check unt-form-switch form-switch">
-                                            <abp-input type="checkbox" asp-for="IndigenousOrgInd" disabled />
-                                        </div>
-                                    </div>
+                                <abp-column size="_6" class="px-1">
+                                    <abp-select asp-for="SubSector" asp-items="Model.SubSectorList" id="ApplicantOrganizationInfo_SubSector" />
                                 </abp-column>
                             </abp-row>
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_12" class="px-1">
-                                    <abp-input asp-for="SectorSubSectorIndustryDesc" disabled />
+                                    <abp-input asp-for="SectorSubSectorIndustryDesc" />
                                 </abp-column>
                             </abp-row>
                         </abp-column>
@@ -125,13 +134,13 @@
                         <abp-column size="_12" class="px-1">
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="FiscalMonth" disabled />
+                                    <abp-select asp-for="FiscalMonth" asp-items="Model.FiscalMonthList" id="ApplicantOrganizationInfo_FiscalMonth" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="FiscalDay" disabled />
+                                    <abp-select asp-for="FiscalDay" asp-items="Model.FiscalDayList" id="ApplicantOrganizationInfo_FiscalDay" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="StartedOperatingDate" disabled />
+                                    <abp-input asp-for="StartedOperatingDate" />
                                 </abp-column>
                             </abp-row>
                         </abp-column>
@@ -161,7 +170,7 @@
                                     <abp-input asp-for="SiteId" disabled />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="ElectoralDistrict" disabled />
+                                    <abp-select asp-for="ElectoralDistrict" asp-items="Model.ElectoralDistrictList" id="ApplicantOrganizationInfo_ElectoralDistrict" />
                                 </abp-column>
                             </abp-row>
                         </abp-column>
@@ -190,14 +199,14 @@
                                 <abp-column size="_4" class="px-1">
                                     <div class="switch-container">
                                         <div class="px-3 form-check unt-form-switch form-switch">
-                                            <abp-input type="checkbox" asp-for="IsDuplicated" disabled />
+                                            <abp-input type="checkbox" asp-for="IsDuplicated" />
                                         </div>
                                     </div>
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <div class="switch-container">
                                         <div class="px-3 form-check unt-form-switch form-switch">
-                                            <abp-input type="checkbox" asp-for="RedStop" disabled />
+                                            <abp-input type="checkbox" asp-for="RedStop" />
                                         </div>
                                     </div>
                                 </abp-column>

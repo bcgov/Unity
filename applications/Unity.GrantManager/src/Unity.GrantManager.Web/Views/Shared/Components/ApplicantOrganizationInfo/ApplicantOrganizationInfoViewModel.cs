@@ -1,11 +1,24 @@
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Unity.GrantManager.Locality;
+using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationInfo
 {
     public class ApplicantOrganizationInfoViewModel
     {
         public Guid ApplicantId { get; set; }
+
+        public List<SelectListItem> OrgStatusList { get; set; } = [];
+        public List<SelectListItem> OrganizationTypeList { get; set; } = [];
+        public List<SelectListItem> FiscalDayList { get; set; } = [];
+        public List<SelectListItem> FiscalMonthList { get; set; } = [];
+        public List<SelectListItem> SectorList { get; set; } = [];
+        public List<SelectListItem> SubSectorList { get; set; } = [];
+        public List<SelectListItem> ElectoralDistrictList { get; set; } = [];
+        public List<SectorDto> Sectors { get; set; } = [];
 
         // Organization Summary Section
         [Display(Name = "Unity Applicant ID")]
@@ -14,13 +27,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
         [Display(Name = "Applicant Name")]
         public string ApplicantName { get; set; } = string.Empty;
 
-        [Display(Name = "Organization Number")]
+        [Display(Name = "Registered Organization Name")]
+        public string OrgName { get; set; } = string.Empty;
+
+        [Display(Name = "Registered Organization Number")]
         public string OrgNumber { get; set; } = string.Empty;
 
         [Display(Name = "Business Number")]
         public string BusinessNumber { get; set; } = string.Empty;
 
-        [Display(Name = "Organization Status")]
+        [Display(Name = "Org Book Status")]
         public string OrgStatus { get; set; } = string.Empty;
 
         [Display(Name = "Organization Type")]
@@ -51,7 +67,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
         [Display(Name = "Indigenous Organization")]
         public bool IndigenousOrgInd { get; set; } = false;
 
-        [Display(Name = "Industry Description")]
+        [Display(Name = "Other Sector/Sub/Industry Description")]
+        [TextArea(Rows = 2)]
         public string SectorSubSectorIndustryDesc { get; set; } = string.Empty;
 
         // Financial Information Section

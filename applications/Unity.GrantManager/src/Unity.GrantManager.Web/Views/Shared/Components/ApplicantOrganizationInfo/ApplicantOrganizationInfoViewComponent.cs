@@ -1,11 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Locality;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using System.Collections.Generic;
 
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationInfo
@@ -18,10 +24,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
     public class ApplicantOrganizationInfoViewComponent : AbpViewComponent
     {
         private readonly IApplicantRepository _applicantRepository;
+        private readonly ISectorService _sectorService;
+        private readonly IElectoralDistrictService _electoralDistrictService;
 
-        public ApplicantOrganizationInfoViewComponent(IApplicantRepository applicantRepository)
+        public ApplicantOrganizationInfoViewComponent(
+            IApplicantRepository applicantRepository,
+            ISectorService sectorService,
+            IElectoralDistrictService electoralDistrictService)
         {
             _applicantRepository = applicantRepository;
+            _sectorService = sectorService;
+            _electoralDistrictService = electoralDistrictService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
@@ -42,6 +55,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
                     // Organization Summary
                     UnityApplicantId = applicant.UnityApplicantId ?? string.Empty,
                     ApplicantName = applicant.ApplicantName ?? string.Empty,
+                    OrgName = applicant.OrgName ?? string.Empty,
                     OrgNumber = applicant.OrgNumber ?? string.Empty,
                     BusinessNumber = applicant.BusinessNumber ?? string.Empty,
                     OrgStatus = applicant.OrgStatus ?? string.Empty,
@@ -55,7 +69,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
                     // Sector Information
                     Sector = applicant.Sector ?? string.Empty,
                     SubSector = applicant.SubSector ?? string.Empty,
-                    IndigenousOrgInd = applicant.IndigenousOrgInd == "true" || applicant.IndigenousOrgInd == "True",
+                    IndigenousOrgInd = applicant.IndigenousOrgInd == "true" || applicant.IndigenousOrgInd == "True" || applicant.IndigenousOrgInd == "Yes",
                     SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc ?? string.Empty,
 
                     // Financial Information
@@ -76,12 +90,81 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
                     RedStop = applicant.RedStop == true
                 };
 
+                await PopulateOptionListsAsync(viewModel);
+
                 return View(viewModel);
             }
             catch (Exception)
             {
                 return View(new ApplicantOrganizationInfoViewModel());
             }
+        }
+
+        private async Task PopulateOptionListsAsync(ApplicantOrganizationInfoViewModel model)
+        {
+            model.OrgStatusList = FormatOptionsList(ProjectInfoOptionsList.OrgBookStatusList);
+            model.OrganizationTypeList = FormatOptionsList(ProjectInfoOptionsList.OrganizationTypeList);
+            model.FiscalDayList = [.. FormatOptionsList(ApplicantInfoOptionsList.FiscalDayList)
+                .OrderBy(item => int.Parse(item.Text, CultureInfo.InvariantCulture))];
+            model.FiscalMonthList = [.. FormatOptionsList(ApplicantInfoOptionsList.FiscalMonthList)
+                .OrderBy(item => DateTime.ParseExact(item.Text, "MMMM", CultureInfo.InvariantCulture).Month)];
+
+            AddDefaultOption(model.OrgStatusList);
+            AddDefaultOption(model.OrganizationTypeList);
+            AddDefaultOption(model.FiscalDayList);
+            AddDefaultOption(model.FiscalMonthList);
+
+            IList<SectorDto> sectors = await _sectorService.GetListAsync();
+            model.Sectors = [.. sectors];
+
+            model.SectorList = sectors
+                .Select(sector => new SelectListItem { Value = sector.SectorName, Text = sector.SectorName })
+                .ToList();
+            AddDefaultOption(model.SectorList);
+
+            model.SubSectorList = BuildSubSectorList(model.Sectors, model.Sector);
+
+            IList<ElectoralDistrictDto> electoralDistricts = await _electoralDistrictService.GetListAsync();
+            model.ElectoralDistrictList = electoralDistricts
+                .Select(district => new SelectListItem { Value = district.ElectoralDistrictName, Text = district.ElectoralDistrictName })
+                .ToList();
+            AddDefaultOption(model.ElectoralDistrictList);
+        }
+
+        private static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> source)
+        {
+            List<SelectListItem> items = [];
+
+            foreach (KeyValuePair<string, string> entry in source)
+            {
+                items.Add(new SelectListItem { Value = entry.Key, Text = entry.Value });
+            }
+
+            return items;
+        }
+
+        private static List<SelectListItem> BuildSubSectorList(IEnumerable<SectorDto> sectors, string? selectedSector)
+        {
+            IEnumerable<SubSectorDto> subSectors = sectors
+                .FirstOrDefault(sector => sector.SectorName == selectedSector)?.SubSectors ?? Enumerable.Empty<SubSectorDto>();
+
+            List<SelectListItem> subSectorList = subSectors
+                .Select(subSector => new SelectListItem { Value = subSector.SubSectorName, Text = subSector.SubSectorName })
+                .ToList();
+
+            AddDefaultOption(subSectorList);
+
+            return subSectorList;
+        }
+
+        private static void AddDefaultOption(IList<SelectListItem> items)
+        {
+            if (items.Any(option => string.IsNullOrWhiteSpace(option.Value)))
+            {
+                return;
+            }
+
+            items.Insert(0, new SelectListItem { Value = string.Empty, Text = "Please choose..." });
         }
     }
 
