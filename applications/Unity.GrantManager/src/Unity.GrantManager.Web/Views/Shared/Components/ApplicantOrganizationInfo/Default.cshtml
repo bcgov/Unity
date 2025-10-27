@@ -27,13 +27,39 @@
                         </abp-column>
                     </abp-row>
                     <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="px-1 mb-4">
+                            <label class="form-label" for="ApplicantOrganizationInfo_OrgBookSelect">Search in BC Registries</label>
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_11" class="px-1">
+                                    <select id="ApplicantOrganizationInfo_OrgBookSelect"
+                                            asp-for="SelectedOrgBookId"
+                                            class="auto-complete-select"
+                                            data-autocomplete-minimum-input-length="3"
+                                            data-autocomplete-api-url="/api/app/org-book/org-book-autocomplete-query"
+                                            data-autocomplete-display-property="value"
+                                            data-autocomplete-value-property="topic_source_id"
+                                            data-autocomplete-items-property="results"
+                                            data-autocomplete-filter-param-name="orgBookQuery"
+                                            data-autocomplete-placeholder="Start typing a name or number to search..."
+                                            data-autocomplete-allow-clear="true">
+                                    </select>
+                                </abp-column>
+                                <abp-column size="_1" class="px-1">
+                                    <button class="btn unt-btn-link btn-link p-0" id="ApplicantOrganizationInfo_ClearOrgBook" type="button" title="Remove registered organization" style="margin-top: 0.25rem;">
+                                        <i class="fa fa-xmark"></i>
+                                    </button>
+                                </abp-column>
+                            </abp-row>
+                        </abp-column>
+                    </abp-row>                    
+                    <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="px-1">
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="OrgName" disabled />
+                                    <abp-input asp-for="OrgName" id="ApplicantOrganizationInfo_OrgName" disabled />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="OrgNumber" disabled />
+                                    <abp-input asp-for="OrgNumber" id="ApplicantOrganizationInfo_OrgNumber" disabled />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <abp-select asp-for="OrgStatus" asp-items="Model.OrgStatusList" id="ApplicantOrganizationInfo_OrgStatus" disabled />
@@ -44,18 +70,18 @@
                                     <abp-select asp-for="OrganizationType" asp-items="Model.OrganizationTypeList" id="ApplicantOrganizationInfo_OrganizationType" disabled />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="BusinessNumber" disabled />
+                                    <abp-input asp-for="BusinessNumber" id="ApplicantOrganizationInfo_BusinessNumber" disabled />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="UnityApplicantId" />
+                                    <abp-input asp-for="UnityApplicantId" id="ApplicantOrganizationInfo_UnityApplicantId" />
                                 </abp-column>
                             </abp-row>
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="NonRegOrgName" />
+                                    <abp-input asp-for="NonRegOrgName" id="ApplicantOrganizationInfo_NonRegOrgName" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="OrganizationSize" />
+                                    <abp-input asp-for="OrganizationSize" id="ApplicantOrganizationInfo_OrganizationSize" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <div class="switch-container">
@@ -67,18 +93,18 @@
                             </abp-row>
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="ApplicantName" />
+                                    <abp-input asp-for="ApplicantName" id="ApplicantOrganizationInfo_ApplicantName" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="Status" />
+                                    <abp-input asp-for="Status" id="ApplicantOrganizationInfo_Status" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="NonRegisteredBusinessName" />
+                                    <abp-input asp-for="NonRegisteredBusinessName" id="ApplicantOrganizationInfo_NonRegisteredBusinessName" />
                                 </abp-column>
                             </abp-row>
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="ApproxNumberOfEmployees" />
+                                    <abp-input asp-for="ApproxNumberOfEmployees" id="ApplicantOrganizationInfo_ApproxNumberOfEmployees" />
                                 </abp-column>
                             </abp-row>
                         </abp-column>

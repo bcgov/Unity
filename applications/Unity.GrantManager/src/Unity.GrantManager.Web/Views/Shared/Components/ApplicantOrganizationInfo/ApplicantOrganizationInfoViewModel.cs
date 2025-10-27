@@ -19,6 +19,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
         public List<SelectListItem> SubSectorList { get; set; } = [];
         public List<SelectListItem> ElectoralDistrictList { get; set; } = [];
         public List<SectorDto> Sectors { get; set; } = [];
+        public string? SelectedOrgBookId { get; set; }
 
         // Organization Summary Section
         [Display(Name = "Unity Applicant ID")]
