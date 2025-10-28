@@ -608,12 +608,12 @@ def submit_feedback():
             message=message,
             user_agent=user_agent,
             metadata=metadata,
-            current_question = data.get("current_question")
-            current_sql = data.get("current_sql")
-            current_sql_explanation = data.get("current_sql_explanation")
-            previous_question = data.get("previous_question")
-            previous_sql = data.get("previous_sql")
-            previous_sql_explanation = data.get("previous_sql_explanation")
+            current_question=data.get("current_question"),
+            current_sql=data.get("current_sql"),
+            current_sql_explanation=data.get("current_sql_explanation"),
+            previous_question=data.get("previous_question"),
+            previous_sql=data.get("previous_sql"),
+            previous_sql_explanation=data.get("previous_sql_explanation")
         )
         
         print(f"Feedback submitted: {feedback_id} for chat {chat_id} by user {user_id}")
@@ -657,18 +657,61 @@ def get_feedback(feedback_id):
 def get_chat_feedback(chat_id):
     """Get all feedback for a specific chat"""
     user_data = get_user_from_token()
-    
+
     try:
         # Validate that the chat exists and belongs to the user
         user_id = user_data["user_id"]
         chat_data = chat_repository.get_chat(chat_id, user_id)
         if not chat_data:
             return abort(404, "Chat not found")
-        
+
         feedback_list = feedback_repository.get_feedback_by_chat(chat_id)
         return jsonify(feedback_list), 200
-        
+
     except Exception as e:
         print(f"Error getting chat feedback: {e}")
         return abort(500, "Internal server error")
+
+
+@app.route("/api/admin/feedback/<feedback_id>/status", methods=["PUT"])
+@require_auth
+def update_feedback_status(feedback_id):
+    """
+    Update feedback status for admin users
+    Requires admin privileges
+    """
+    user_data = get_user_from_token()
+
+    # Check if user is admin
+    is_admin = user_data.get("is_it_admin", False)
+    if not is_admin:
+        return jsonify({"error": "Admin privileges required"}), 403
+
+    data = request.get_json()
+    new_status = data.get("status")
+
+    if not new_status:
+        return jsonify({"error": "status is required"}), 400
+
+    # Validate status value
+    valid_statuses = ["open", "in_progress", "resolved", "closed"]
+    if new_status not in valid_statuses:
+        return jsonify({"error": f"Invalid status. Must be one of: {', '.join(valid_statuses)}"}), 400
+
+    try:
+        success = feedback_repository.update_feedback_status(feedback_id, new_status)
+
+        if not success:
+            return jsonify({"error": "Feedback not found"}), 404
+
+        return jsonify({
+            "success": True,
+            "feedback_id": feedback_id,
+            "status": new_status,
+            "message": "Feedback status updated successfully"
+        }), 200
+
+    except Exception as e:
+        print(f"Error updating feedback status: {e}")
+        return jsonify({"error": "Failed to update feedback status"}), 500
 

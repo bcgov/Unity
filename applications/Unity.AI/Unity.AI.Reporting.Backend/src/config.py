@@ -59,6 +59,11 @@ class AIConfig:
         """Check if Azure OpenAI should be used"""
         return bool(self.azure_endpoint and self.azure_api_key and self.azure_deployment)
 
+    @property
+    def use_azure_embeddings(self) -> bool:
+        """Check if Azure OpenAI embeddings should be used"""
+        return bool(self.azure_endpoint and self.azure_api_key and self.azure_embedding_deployment)
+
 
 @dataclass
 class AppConfig:

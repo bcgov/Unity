@@ -161,4 +161,10 @@ export class ApiService {
     params.set('offset', offset.toString());
     return this.get<T>(`/admin/feedback?${params.toString()}`);
   }
+
+  updateFeedbackStatus<T>(feedbackId: string, status: string): Observable<T> {
+    return this.put<T>(`/admin/feedback/${feedbackId}/status`, {
+      status: status
+    });
+  }
 }

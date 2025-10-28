@@ -21,4 +21,5 @@ RUN sed -i "s/__JWT_SECRET_PLACEHOLDER__/${JWT_SECRET}/g" src/environments/envir
 EXPOSE 80
 
 # Start the development server with live reload on port 80
-CMD ["npm", "run", "start", "--", "--host", "0.0.0.0", "--port", "80", "--poll", "1000"]
+# Using npx ng directly for better compatibility with Angular CLI 20+
+CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "80", "--poll", "1000", "--disable-host-check"]

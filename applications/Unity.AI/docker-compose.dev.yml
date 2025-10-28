@@ -70,7 +70,7 @@ services:
   reporting-frontend:
     build:
       context: ./Unity.AI.Reporting.Frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
       args:
         - JWT_SECRET=${JWT_SECRET}
     ports:

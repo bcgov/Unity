@@ -109,22 +109,31 @@ export class AdminComponent implements OnInit {
     const target = event.target as HTMLSelectElement;
     const newStatus = target.value;
 
+    // Define variables before try block so they're accessible in catch block
+    const feedback = this.feedbackList.find(f => f.feedback_id === feedbackId);
+    const originalStatus = feedback?.status;
+
     try {
       // Update in the local array immediately for better UX
-      const feedback = this.feedbackList.find(f => f.feedback_id === feedbackId);
       if (feedback) {
         feedback.status = newStatus;
         this.calculateSummary();
         this.filterFeedback();
       }
 
-      // TODO: Add API call to update status in backend
-      // await firstValueFrom(this.apiService.updateFeedbackStatus(feedbackId, newStatus));
+      // Call API to update status in backend
+      await firstValueFrom(this.apiService.updateFeedbackStatus(feedbackId, newStatus));
+      console.log(`Feedback ${feedbackId} status updated to ${newStatus}`);
 
     } catch (error) {
       console.error('Error updating feedback status:', error);
       // Revert the change on error
-      await this.loadFeedback();
+      if (feedback && originalStatus) {
+        feedback.status = originalStatus;
+        this.calculateSummary();
+        this.filterFeedback();
+      }
+      this.errorMessage = 'Failed to update feedback status. Please try again.';
     }
   }
 
@@ -136,11 +145,6 @@ export class AdminComponent implements OnInit {
   formatMetadata(metadata: any): string {
     if (!metadata) return '';
     return JSON.stringify(metadata, null, 2);
-  }
-
-  logout(): void {
-    this.authService.clearToken();
-    window.location.href = '/';
   }
 
   goToMainApp(): void {

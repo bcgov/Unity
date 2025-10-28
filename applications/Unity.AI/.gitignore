@@ -21,6 +21,7 @@ __pycache__/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+chroma_db/
 
 # Unity AI specific
 embedded_schema/
