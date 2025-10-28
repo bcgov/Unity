@@ -258,8 +258,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationTags",
                     GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
+                b.Ignore(x => x.Text); // Text property is not mapped to database
                 b.HasOne(x => x.Tag)
-                 .WithMany() 
+                 .WithMany()
                  .HasForeignKey(x => x.TagId)
                  .IsRequired()
                  .OnDelete(DeleteBehavior.NoAction);

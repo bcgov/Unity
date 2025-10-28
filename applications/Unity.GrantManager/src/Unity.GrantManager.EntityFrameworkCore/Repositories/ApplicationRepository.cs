@@ -111,7 +111,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         if (field.StartsWith("applicationTag ", StringComparison.OrdinalIgnoreCase) || field.Equals("applicationTag", StringComparison.OrdinalIgnoreCase))
         {
             var parts = field.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-            return parts.Length == 2 ? $"ApplicationTags.FirstOrDefault().Text {parts[1]}" : "ApplicationTags.FirstOrDefault().Text";
+            return parts.Length == 2 ? $"ApplicationTags.FirstOrDefault().Tag.Name {parts[1]}" : "ApplicationTags.FirstOrDefault().Tag.Name";
         }
         if (field.StartsWith("organizationType ", StringComparison.OrdinalIgnoreCase) || field.Equals("organizationType", StringComparison.OrdinalIgnoreCase))
         {
