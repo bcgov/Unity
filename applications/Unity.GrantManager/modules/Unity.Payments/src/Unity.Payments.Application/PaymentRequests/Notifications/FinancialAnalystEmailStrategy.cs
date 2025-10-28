@@ -33,22 +33,19 @@ namespace Unity.Payments.PaymentRequests.Notifications
             try
             {
                 // Strategy obtains its own users from the identity service
-                var usersResult = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
+                // Filter users by FinancialAnalyst role in the initial search to avoid N+1 queries
+                var searchInput = new UserLookupSearchInputDto
+                {
+                    RoleNames = new List<string> { UnityRoles.FinancialAnalyst }
+                };
+                var usersResult = await _identityUserLookupAppService.SearchAsync(searchInput);
                 var users = usersResult.Items?.Cast<IUserData>() ?? [];
-                
+
                 foreach (var user in users)
                 {
-                    try
+                    if (!string.IsNullOrWhiteSpace(user.Email))
                     {
-                        var roles = await _identityUserLookupAppService.GetRoleNamesAsync(user.Id);
-                        if (roles != null && roles.Contains(UnityRoles.FinancialAnalyst) && !string.IsNullOrWhiteSpace(user.Email))
-                        {
-                            financialAnalystEmails.Add(user.Email);
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        _logger.LogWarning(ex, "FinancialAnalystEmailStrategy: Failed to get roles for a user.");
+                        financialAnalystEmails.Add(user.Email);
                     }
                 }
             }
