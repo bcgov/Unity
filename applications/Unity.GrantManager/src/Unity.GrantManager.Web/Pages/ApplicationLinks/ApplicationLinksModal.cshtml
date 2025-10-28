@@ -23,7 +23,7 @@
                     <span class="link-applicant">@(Model.CurrentApplication?.ApplicantName ?? "Unknown")</span>
                     @if (!string.IsNullOrEmpty(Model.CurrentApplication?.Category))
                     {
-                        <span class="link-category">(@Model.CurrentApplication.Category)</span>
+                        <span class="link-category">(@Model.CurrentApplication.Category@(Model.CurrentApplication.FormVersion.HasValue ? $" V{Model.CurrentApplication.FormVersion}.0" : ""))</span>
                     }
                     else
                     {
@@ -63,7 +63,7 @@
         <!-- Note -->
         <p class="text-muted small">
             <i class="fas fa-info-circle"></i> 
-            Note: Cannot link the submissions that are already connected as either a child or parent to an existing submission.
+            Note: A submission can only have one parent. Submissions cannot be both a parent and a child (no multi-level hierarchies allowed).
         </p>
 
         <!-- Hidden inputs for form submission -->
