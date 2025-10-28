@@ -5,8 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Notifications.EmailGroups;
 using Volo.Abp.Identity;
-using Volo.Abp.Identity.Integration;
-using Volo.Abp.Users;
 
 namespace Unity.Payments.PaymentRequests.Notifications
 {
@@ -18,7 +16,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
     {
         private readonly IEmailGroupsRepository _emailGroupsRepository;
         private readonly IEmailGroupUsersRepository _emailGroupUsersRepository;
-        private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
+        private readonly IIdentityUserRepository _identityUserRepository;
         private readonly ILogger<PaymentsEmailGroupStrategy> _logger;
         private const string PaymentsEmailGroupName = "Payments";
 
@@ -27,25 +25,25 @@ namespace Unity.Payments.PaymentRequests.Notifications
         public PaymentsEmailGroupStrategy(
             IEmailGroupsRepository emailGroupsRepository,
             IEmailGroupUsersRepository emailGroupUsersRepository,
-            IIdentityUserIntegrationService identityUserIntegrationService,
+            IIdentityUserRepository identityUserRepository,
             ILogger<PaymentsEmailGroupStrategy> logger )
         {
             _emailGroupsRepository = emailGroupsRepository;
             _emailGroupUsersRepository = emailGroupUsersRepository;
-            _identityUserLookupAppService = identityUserIntegrationService;
+            _identityUserRepository = identityUserRepository;
             _logger = logger;
         }
 
         public async Task<List<string>> GetEmailRecipientsAsync()
         {
             List<string> paymentsEmails = [];
-            
+
             try
             {
                 string normalizedPaymentsGroupName = PaymentsEmailGroupName.ToUpperInvariant();
-                var paymentsGroup = (await _emailGroupsRepository.GetListAsync(group => 
+                var paymentsGroup = (await _emailGroupsRepository.GetListAsync(group =>
                     group.Name != null && group.Name.ToUpper() == normalizedPaymentsGroupName)).FirstOrDefault();
-                
+
                 if (paymentsGroup == null)
                 {
                     _logger.LogWarning("PaymentsEmailGroupStrategy: No Payments email group found.");
@@ -61,20 +59,14 @@ namespace Unity.Payments.PaymentRequests.Notifications
                 }
 
                 // Only fetch users whose IDs are in the Payments group
-                var paymentsUserIds = groupUsers.Select(groupUser => groupUser.UserId).Distinct().ToList();
-                var usersResult = await _identityUserLookupAppService.SearchAsync(
-                    new UserLookupSearchInputDto
-                    {
-                        UserIds = paymentsUserIds
-                    }
-                );
-                var users = usersResult.Items?.Cast<IUserData>() ?? [];
+                var paymentsUserIds = groupUsers.Select(groupUser => groupUser.UserId).Distinct().ToArray();
+                var users = await _identityUserRepository.GetListByIdsAsync(paymentsUserIds);
 
                 Dictionary<Guid, string> userEmailLookup = users
                     .Where(user => !string.IsNullOrWhiteSpace(user.Email))
                     .GroupBy(user => user.Id)
                     .Select(group => group.First())
-                    .ToDictionary(user => user.Id, user => user.Email);
+                    .ToDictionary(user => user.Id, user => user.Email!);
 
                 foreach (Guid userId in groupUsers.Select(groupUser => groupUser.UserId).Distinct())
                 {
