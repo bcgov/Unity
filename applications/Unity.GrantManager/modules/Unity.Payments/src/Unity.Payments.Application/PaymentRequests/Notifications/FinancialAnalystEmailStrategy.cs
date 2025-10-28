@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Identity;
-using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.Users;
@@ -14,8 +13,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
     /// Email recipient strategy that collects emails from users with the Financial Analyst role.
     /// Automatically discovered via reflection and registered in PaymentsApplicationModule.
     /// </summary>
-    [ExposeServices(typeof(IEmailRecipientStrategy))]
-    public class FinancialAnalystEmailStrategy : IEmailRecipientStrategy, ITransientDependency
+    public class FinancialAnalystEmailStrategy : IEmailRecipientStrategy
     {
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
         private readonly ILogger<FinancialAnalystEmailStrategy> _logger;

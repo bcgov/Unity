@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Volo.Abp.DependencyInjection;
 
 namespace Unity.Payments.PaymentRequests.Notifications
 {
@@ -8,7 +9,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
     /// Implementations are automatically discovered via reflection and registered in PaymentsApplicationModule.
     /// Each strategy is responsible for obtaining emails from its own data source.
     /// </summary>
-    public interface IEmailRecipientStrategy
+    public interface IEmailRecipientStrategy : ISingletonDependency
     {
         /// <summary>
         /// Unique name identifier for this strategy
