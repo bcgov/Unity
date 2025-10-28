@@ -60,8 +60,14 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     return paymentsEmails;
                 }
 
-                // Strategy obtains its own users from the identity service
-                var usersResult = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
+                // Only fetch users whose IDs are in the Payments group
+                var paymentsUserIds = groupUsers.Select(groupUser => groupUser.UserId).Distinct().ToList();
+                var usersResult = await _identityUserLookupAppService.SearchAsync(
+                    new UserLookupSearchInputDto
+                    {
+                        UserIds = paymentsUserIds
+                    }
+                );
                 var users = usersResult.Items?.Cast<IUserData>() ?? [];
 
                 Dictionary<Guid, string> userEmailLookup = users
