@@ -1,7 +1,6 @@
 using Quartz;
 using System;
 using System.Threading.Tasks;
-using System.Linq;
 using Unity.Payments.PaymentRequests.Notifications;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.SettingManagement;
