@@ -30,7 +30,7 @@ public class FinancialNotificationSummaryWorker : QuartzBackgroundWorkerBase
         _logger = logger;
         _strategies = strategies;
 
-        _logger.LogInformation("FinancialNotificationSummary Constructor: Found {Count} email strategies", strategies.Count());
+        _logger.LogInformation("FinancialNotificationSummary Constructor: Email strategies registered.");
 
         string casFinancialNotificationExpression = "";
 
