@@ -294,7 +294,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                         Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
                         OwnerId = application.OwnerId,
-
+                        UnityApplicationId = application.UnityApplicationId
                     };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
