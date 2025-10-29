@@ -9,7 +9,7 @@ $(document).ready(function () {
 
     // Handle tab switching animations
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-        var targetTab = $(e.target).attr('data-bs-target');
+        let targetTab = $(e.target).attr('data-bs-target');
         $(document).find(targetTab).addClass('fade-in-load visible');
     });
 
