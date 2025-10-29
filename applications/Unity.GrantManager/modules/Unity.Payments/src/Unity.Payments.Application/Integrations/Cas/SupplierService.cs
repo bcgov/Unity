@@ -29,17 +29,17 @@ namespace Unity.Payments.Integrations.Cas
         private readonly ILocalEventBus localEventBus;
         private readonly IResilientHttpRequest resilientHttpRequest;
         private readonly ICasTokenService iTokenService;
-        public SupplierService  (ILocalEventBus localEventBus,
+        public SupplierService(ILocalEventBus localEventBus,
                                 IEndpointManagementAppService endpointManagementAppService,
                                 IResilientHttpRequest resilientHttpRequest,
                                 ICasTokenService iTokenService)
         {
-                this.localEventBus = localEventBus;
-                this.resilientHttpRequest = resilientHttpRequest;
-                this.iTokenService = iTokenService;
+            this.localEventBus = localEventBus;
+            this.resilientHttpRequest = resilientHttpRequest;
+            this.iTokenService = iTokenService;
 
-                // Initialize the base API URL once during construction
-                casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
+            // Initialize the base API URL once during construction
+            casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
         }
 
         private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
@@ -159,47 +159,63 @@ namespace Unity.Payments.Integrations.Cas
         }
 
 
-        protected static SiteEto GetSiteEto(dynamic site)
+        protected static SiteEto GetSiteEto(JsonElement site)
         {
-            string supplierSiteCode = site["suppliersitecode"].ToString();
-            string addressLine1 = site["addressline1"].ToString();
-            string addressLine2 = site["addressline2"].ToString();
-            string city = site["city"].ToString();
-            string province = site["province"].ToString();
-            string country = site["country"].ToString();
-            string postalCode = site["postalcode"].ToString();
-            string emailAddress = site["emailaddress"].ToString();
-            string eftAdvicePref = site["eftadvicepref"].ToString();
-            string accountNumber = site["accountnumber"].ToString();
+            string accountNumber = GetProperty("accountnumber", site);
             string maskedAccountNumber = accountNumber.Length > 4
                 ? new string('*', accountNumber.Length - 4) + accountNumber[^4..]
                 : accountNumber;
             string bankAccount = maskedAccountNumber;
-            string providerId = site["providerid"].ToString();
-            string siteStatus = site["status"].ToString();
-            string siteProtected = site["siteprotected"].ToString();
-            string siteLastUpdated = site["lastupdated"].ToString();
+            string siteLastUpdated = GetProperty("lastupdated", site);
+
+            var props = (
+                SupplierSiteCode: GetProperty("suppliersitecode", site),
+                AddressLine1: GetProperty("addressline1", site),
+                AddressLine2: GetProperty("addressline2", site),
+                City: GetProperty("city", site),
+                Province: GetProperty("province", site),
+                Country: GetProperty("country", site),
+                PostalCode: GetProperty("postalcode", site),
+                EmailAddress: GetProperty("emailaddress", site),
+                EFTAdvicePref: GetProperty("eftadvicepref", site),
+                BankAccount: bankAccount,
+                ProviderId: GetProperty("providerid", site),
+                Status: GetProperty("status", site),
+                SiteProtected: GetProperty("siteprotected", site),
+                LastUpdated: GetProperty("lastupdated", site)
+            );
+
 
             _ = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime siteLastUpdatedDate);
+
             return new SiteEto
             {
-                SupplierSiteCode = supplierSiteCode,
-                AddressLine1 = addressLine1,
-                AddressLine2 = addressLine2,
-                AddressLine3 = addressLine2,
-                City = city,
-                Province = province,
-                Country = country,
-                PostalCode = postalCode,
-                EmailAddress = emailAddress,
-                EFTAdvicePref = eftAdvicePref,
-                BankAccount = bankAccount,
-                ProviderId = providerId,
-                Status = siteStatus,
-                SiteProtected = siteProtected,
+                SupplierSiteCode = props.SupplierSiteCode,
+                AddressLine1 = props.AddressLine1,
+                AddressLine2 = props.AddressLine2,
+                AddressLine3 = props.AddressLine2,
+                City = props.City,
+                Province = props.Province,
+                Country = props.Country,
+                PostalCode = props.PostalCode,
+                EmailAddress = props.EmailAddress,
+                EFTAdvicePref = props.EFTAdvicePref,
+                BankAccount = maskedAccountNumber,
+                ProviderId = props.ProviderId,
+                Status = props.Status,
+                SiteProtected = props.SiteProtected,
                 LastUpdated = siteLastUpdatedDate
             };
         }
+
+        private static string GetProperty(string name, JsonElement jsonElement)
+        {
+
+            return jsonElement.TryGetProperty(name, out var prop) && prop.ValueKind != JsonValueKind.Null
+                ? prop.ToString()
+                : string.Empty;
+        }
+
         public async Task<dynamic> GetCasSupplierInformationAsync(string? supplierNumber)
         {
             if (!string.IsNullOrEmpty(supplierNumber))
@@ -236,7 +252,7 @@ namespace Unity.Payments.Integrations.Cas
                 var authToken = await iTokenService.GetAuthTokenAsync();
                 try
                 {
-                    using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
+                    using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);
                     if (response != null)
                     {
                         if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
