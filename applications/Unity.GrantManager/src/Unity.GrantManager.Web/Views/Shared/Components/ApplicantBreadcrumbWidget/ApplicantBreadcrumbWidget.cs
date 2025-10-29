@@ -21,6 +21,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantBreadcrumbWidg
         [Route("")]
         public async Task<IActionResult> GetApplicantBreadcrumbWidgetAsync(Guid applicantId)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid model state.");
+            }
+
             try
             {
                 var applicant = await _applicantRepository.GetAsync(applicantId);
@@ -29,11 +34,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantBreadcrumbWidg
                 {
                     ApplicantId = applicant.Id,
                     UnityApplicantId = applicant.UnityApplicantId ?? "N/A",
-                    ApplicantName = !string.IsNullOrEmpty(applicant.OrgName) 
-                        ? applicant.OrgName 
-                        : (!string.IsNullOrEmpty(applicant.ApplicantName) 
+                    ApplicantName = !string.IsNullOrEmpty(applicant.ApplicantName) 
                             ? applicant.ApplicantName 
-                            : applicant.NonRegOrgName ?? "Unknown Applicant"),
+                            : "Unknown Applicant",
                     Status = applicant.Status ?? "Active"
                 };
 

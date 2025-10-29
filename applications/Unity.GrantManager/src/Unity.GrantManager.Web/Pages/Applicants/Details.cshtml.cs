@@ -4,7 +4,6 @@ using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Permissions;
-using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.Web.Pages.Applicants
 {

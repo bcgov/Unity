@@ -21,6 +21,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantBreadcrumbWidg
         [Route("RefreshApplicantBreadcrumb")]
         public async Task<IActionResult> RefreshApplicantBreadcrumbAsync(Guid applicantId)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid model state.");
+            }
+
             var viewComponent = new ApplicantBreadcrumbWidgetViewComponent(_applicantRepository);
             var result = await viewComponent.InvokeAsync(applicantId);
             return result as ViewResult ?? View();
