@@ -121,6 +121,10 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         {
             return field.Replace("organizationName", "Applicant.OrgName", StringComparison.OrdinalIgnoreCase);
         }
+        if (field.StartsWith("businessNumber ", StringComparison.OrdinalIgnoreCase) || field.Equals("businessNumber", StringComparison.OrdinalIgnoreCase))
+        {
+            return field.Replace("businessNumber", "Applicant.BusinessNumber", StringComparison.OrdinalIgnoreCase);
+        }
         if (field.StartsWith("contactFullName ", StringComparison.OrdinalIgnoreCase) || field.Equals("contactFullName", StringComparison.OrdinalIgnoreCase))
         {
             return field.Replace("contactFullName", "ApplicantAgent.Name", StringComparison.OrdinalIgnoreCase);
