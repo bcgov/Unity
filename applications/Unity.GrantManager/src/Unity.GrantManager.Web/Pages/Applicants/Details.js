@@ -10,7 +10,7 @@ $(document).ready(function () {
     // Handle tab switching animations
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         var targetTab = $(e.target).attr('data-bs-target');
-        $(targetTab).addClass('fade-in-load visible');
+        $(document).find(targetTab).addClass('fade-in-load visible');
     });
 
     // Add event listeners for tab clicks to adjust DataTables
