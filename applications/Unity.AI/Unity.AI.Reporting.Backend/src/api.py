@@ -299,10 +299,11 @@ def ask():
             # Generate SQL from natural language
             logger.info("Starting SQL generation...")
             try:
-                sql, metadata = await sql_generator.generate_sql(
+                sql, metadata, sql_tokens = await sql_generator.generate_sql(
                     question, past_questions, db_id
                 )
                 logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
+                logger.debug(f"SQL generation tokens: {sql_tokens}")
             except Exception as sql_error:
                 logger.error(f"SQL generation failed with error: {sql_error}", exc_info=True)
                 logger.debug(f"Error type: {type(sql_error)}")
@@ -373,7 +374,8 @@ def ask():
             "y_field": metadata.get('y_axis', []),
             "title": metadata.get("title", "Untitled"),
             "visualization_options": metadata.get('visualization_options', []),
-            "SQL": sql
+            "SQL": sql,
+            "tokens": sql_tokens  # Include token usage from SQL generation
         }, 200
     
     try:
@@ -465,10 +467,11 @@ def explain_sql():
             return abort(400, "sql is required")
         
         # Generate explanation using the sql_generator
-        explanation = await sql_generator.explain_sql(sql)
-        
+        explanation, explanation_tokens = await sql_generator.explain_sql(sql)
+
         return {
-            "explanation": explanation
+            "explanation": explanation,
+            "tokens": explanation_tokens  # Include token usage from explanation
         }, 200
     
     try:

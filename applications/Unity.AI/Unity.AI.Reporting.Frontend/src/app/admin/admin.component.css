@@ -258,6 +258,22 @@
   border-left: 4px solid #6c757d;
 }
 
+/* Token usage display */
+.token-info {
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-left: 4px solid #667eea;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #495057;
+}
+
+.token-info strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
 .feedback-header {
   display: flex;
   justify-content: space-between;

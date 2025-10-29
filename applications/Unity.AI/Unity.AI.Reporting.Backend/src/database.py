@@ -347,7 +347,8 @@ class FeedbackRepository:
                            f.message, f.user_agent, f.metadata, f.status, f.created_at, f.updated_at,
                            f.current_question, f.current_sql, f.current_sql_explanation,
                            f.previous_question, f.previous_sql, f.previous_sql_explanation,
-                           c.title as chat_title
+                           c.title as chat_title,
+                           c.conversation->0->'embed'->'tokens' as tokens
                     FROM feedback f
                     LEFT JOIN chats c ON f.chat_id = c.chat_id
                     ORDER BY f.created_at DESC
@@ -356,7 +357,7 @@ class FeedbackRepository:
 
                 feedback_list = []
                 for row in cur.fetchall():
-                    feedback_list.append({
+                    feedback_item = {
                         "feedback_id": str(row[0]),
                         "chat_id": str(row[1]),
                         "user_id": row[2],
@@ -375,7 +376,13 @@ class FeedbackRepository:
                         "previous_sql": row[15],
                         "previous_sql_explanation": row[16],
                         "chat_title": row[17]
-                    })
+                    }
+
+                    # Add token information if available
+                    if row[18]:
+                        feedback_item["tokens"] = row[18]
+
+                    feedback_list.append(feedback_item)
 
                 return feedback_list
 

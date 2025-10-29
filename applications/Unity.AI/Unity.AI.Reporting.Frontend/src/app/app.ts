@@ -132,9 +132,19 @@ export class App implements OnInit, OnDestroy {
     if (turn.sql_explanation_visible && !turn.embed.sql_explanation) {
       try {
         const explanationResponse = await firstValueFrom(
-          this.apiService.explainSql<{ explanation: string }>(turn.embed.SQL)
+          this.apiService.explainSql<{
+            explanation: string;
+            tokens?: { prompt_tokens: number; completion_tokens: number; total_tokens: number; }
+          }>(turn.embed.SQL)
         );
         turn.embed.sql_explanation = explanationResponse.explanation;
+
+        // Combine explanation tokens with existing SQL generation tokens
+        if (explanationResponse.tokens && turn.embed.tokens) {
+          turn.embed.tokens.prompt_tokens += explanationResponse.tokens.prompt_tokens;
+          turn.embed.tokens.completion_tokens += explanationResponse.tokens.completion_tokens;
+          turn.embed.tokens.total_tokens += explanationResponse.tokens.total_tokens;
+        }
       } catch (error: any) {
         console.error('Failed to generate SQL explanation:', error);
 

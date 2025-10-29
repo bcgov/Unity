@@ -147,6 +147,32 @@ export class AdminComponent implements OnInit {
     return JSON.stringify(metadata, null, 2);
   }
 
+  /**
+   * Extract token information from feedback
+   * Returns token counts if available
+   */
+  getTokenInfo(feedback: FeedbackItem): { prompt: number; completion: number; total: number } | null {
+    // Token information is extracted from the conversation by the backend
+    // and included directly in the feedback object
+    const feedbackWithTokens = feedback as any;
+    if (feedbackWithTokens.tokens) {
+      return {
+        prompt: feedbackWithTokens.tokens.prompt_tokens || 0,
+        completion: feedbackWithTokens.tokens.completion_tokens || 0,
+        total: feedbackWithTokens.tokens.total_tokens || 0
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Format token info for display
+   */
+  formatTokens(tokens: { prompt: number; completion: number; total: number } | null): string {
+    if (!tokens) return 'N/A';
+    return `${tokens.total} (${tokens.prompt} in / ${tokens.completion} out)`;
+  }
+
   goToMainApp(): void {
     this.router.navigate(['/app']);
   }

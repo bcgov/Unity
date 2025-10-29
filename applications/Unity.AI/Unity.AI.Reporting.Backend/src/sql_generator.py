@@ -93,10 +93,15 @@ class SQLGenerator:
         return winner if freq > 1 else None
     
     async def fetch_completion(self, prompt: str, session: aiohttp.ClientSession,
-                              index: int) -> Optional[str]:
-        """Fetch a single completion from the LLM"""
+                              index: int) -> Optional[Tuple[str, Dict[str, int]]]:
+        """Fetch a single completion from the LLM
+
+        Returns:
+            Tuple of (completion_text, usage_dict) where usage_dict contains
+            prompt_tokens, completion_tokens, and total_tokens
+        """
         logger.debug(f"[{index}] Tokens in prompt: {len(self.tokenizer.encode(prompt))}")
-        
+
         if self.config.use_azure:
             # Use Azure OpenAI
             headers = {
@@ -142,8 +147,9 @@ class SQLGenerator:
                 return None
 
             data = await response.json()
-            logger.debug(f"[{index}] Tokens used: {data['usage']['total_tokens']}")
-            return data["choices"][0]["message"]["content"]
+            usage = data.get('usage', {})
+            logger.debug(f"[{index}] Tokens used: {usage.get('total_tokens', 0)}")
+            return data["choices"][0]["message"]["content"], usage
     
     def load_examples(self) -> List[str]:
         """Load example queries for few-shot prompting"""
@@ -203,23 +209,26 @@ class SQLGenerator:
         return prompt
     
     async def generate_sql(self, question: str, past_questions: List[Dict],
-                          db_id: int) -> Tuple[Optional[str], Optional[Dict]]:
+                          db_id: int) -> Tuple[Optional[str], Optional[Dict], Optional[Dict]]:
         """
         Generate SQL from natural language question using majority voting.
-        
+
         Args:
             question: Natural language question
             past_questions: List of past questions and SQL
             db_id: Database ID
-            
+
         Returns:
-            Tuple of (sql, metadata) or (None, None) if generation fails
+            Tuple of (sql, metadata, token_usage) or (None, None, None) if generation fails
+            where token_usage contains prompt_tokens, completion_tokens, total_tokens
         """
-        
+
         # Check for hardcoded examples first (can be removed in production)
         hardcoded = self._check_hardcoded_examples(question)
         if hardcoded:
-            return hardcoded
+            # Hardcoded examples have no token usage
+            sql, metadata = hardcoded
+            return sql, metadata, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         
         # Get relevant schemas
         schemas = self.embeddings.get_formatted_schemas(question, db_id)
@@ -235,13 +244,26 @@ class SQLGenerator:
                 for i in range(self.config.k_samples)
             ]
             completions = await asyncio.gather(*tasks)
-        
+
+        # Aggregate token usage from all completions
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
+        total_tokens = 0
+
         # Process completions and extract valid candidates
         candidates = []
-        for raw in completions:
-            logger.debug(f"Raw completion:\n{raw}")
-            if not raw:
+        for completion_result in completions:
+            if not completion_result:
                 continue
+
+            # Unpack the tuple (text, usage)
+            raw, usage = completion_result
+            logger.debug(f"Raw completion:\n{raw}")
+
+            # Aggregate tokens
+            total_prompt_tokens += usage.get('prompt_tokens', 0)
+            total_completion_tokens += usage.get('completion_tokens', 0)
+            total_tokens += usage.get('total_tokens', 0)
 
             sql = self.extract_sql(raw)
             if not sql:
@@ -267,24 +289,31 @@ class SQLGenerator:
                 logger.error(f"Error generating fingerprint: {e}", exc_info=True)
                 continue
         
+        # Prepare token usage dict
+        token_usage = {
+            "prompt_tokens": total_prompt_tokens,
+            "completion_tokens": total_completion_tokens,
+            "total_tokens": total_tokens
+        }
+
         # Majority voting on fingerprints
         if candidates:
             fingerprints = [fp for fp, _, _ in candidates]
             winner_fp = self.find_majority(fingerprints)
-            
+
             if winner_fp:
                 # Return the first candidate with winning fingerprint
                 for fp, sql, metadata in candidates:
                     if fp == winner_fp:
                         logger.info(f"Majority vote winner: {sql[:100]}...")
-                        return sql, metadata
+                        return sql, metadata, token_usage
 
             # Fallback to first valid candidate
             logger.info("No majority, using first candidate")
-            return candidates[0][1], candidates[0][2]
+            return candidates[0][1], candidates[0][2], token_usage
 
         logger.warning("No valid candidates generated")
-        return None, None
+        return None, None, token_usage
     
     def _check_hardcoded_examples(self, question: str) -> Optional[Tuple[str, Dict]]:
         """Check for hardcoded example queries (for demo/testing)"""
@@ -429,15 +458,16 @@ ORDER BY
             return examples[question]
         return None
     
-    async def explain_sql(self, sql: str) -> str:
+    async def explain_sql(self, sql: str) -> Tuple[str, Dict[str, int]]:
         """
         Generate a concise explanation of the given SQL query.
-        
+
         Args:
             sql: The SQL query to explain
-            
+
         Returns:
-            A short, user-friendly explanation of what the SQL does
+            Tuple of (explanation, token_usage) where token_usage contains
+            prompt_tokens, completion_tokens, and total_tokens
         """
         try:
             prompt = f"""Please provide an extremely succinct explanation of this report you created. Start with "I've...":
@@ -486,15 +516,16 @@ ORDER BY
                 ) as response:
                     if response.status != 200:
                         logger.error(f"Error explaining SQL: {response.status}")
-                        return "This query retrieves and analyzes your data."
+                        return "This query retrieves and analyzes your data.", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
                     data = await response.json()
                     explanation = data["choices"][0]["message"]["content"].strip()
-                    return explanation
+                    usage = data.get('usage', {})
+                    return explanation, usage
 
         except Exception as e:
             logger.error(f"Error generating SQL explanation: {e}", exc_info=True)
-            return "This query retrieves and analyzes your data."
+            return "This query retrieves and analyzes your data.", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
 
 # Global SQL generator instance
