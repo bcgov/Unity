@@ -161,56 +161,35 @@ namespace Unity.Payments.Integrations.Cas
 
         protected static SiteEto GetSiteEto(JsonElement site)
         {
-            string accountNumber = GetProperty("accountnumber", site);
+            string accountNumber = GetJsonProperty("accountnumber", site);
             string maskedAccountNumber = accountNumber.Length > 4
                 ? new string('*', accountNumber.Length - 4) + accountNumber[^4..]
                 : accountNumber;
-            string bankAccount = maskedAccountNumber;
-            string siteLastUpdated = GetProperty("lastupdated", site);
-
-            var props = (
-                SupplierSiteCode: GetProperty("suppliersitecode", site),
-                AddressLine1: GetProperty("addressline1", site),
-                AddressLine2: GetProperty("addressline2", site),
-                City: GetProperty("city", site),
-                Province: GetProperty("province", site),
-                Country: GetProperty("country", site),
-                PostalCode: GetProperty("postalcode", site),
-                EmailAddress: GetProperty("emailaddress", site),
-                EFTAdvicePref: GetProperty("eftadvicepref", site),
-                BankAccount: bankAccount,
-                ProviderId: GetProperty("providerid", site),
-                Status: GetProperty("status", site),
-                SiteProtected: GetProperty("siteprotected", site),
-                LastUpdated: GetProperty("lastupdated", site)
-            );
-
-
+            string siteLastUpdated = GetJsonProperty("lastupdated", site);
             _ = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime siteLastUpdatedDate);
 
             return new SiteEto
             {
-                SupplierSiteCode = props.SupplierSiteCode,
-                AddressLine1 = props.AddressLine1,
-                AddressLine2 = props.AddressLine2,
-                AddressLine3 = props.AddressLine2,
-                City = props.City,
-                Province = props.Province,
-                Country = props.Country,
-                PostalCode = props.PostalCode,
-                EmailAddress = props.EmailAddress,
-                EFTAdvicePref = props.EFTAdvicePref,
+                SupplierSiteCode = GetJsonProperty("suppliersitecode", site),
+                AddressLine1 = GetJsonProperty("addressline1", site),
+                AddressLine2 = GetJsonProperty("addressline2", site),
+                AddressLine3 = GetJsonProperty("addressline2", site),
+                City = GetJsonProperty("city", site),
+                Province = GetJsonProperty("province", site),
+                Country = GetJsonProperty("country", site),
+                PostalCode = GetJsonProperty("postalcode", site),
+                EmailAddress = GetJsonProperty("emailaddress", site),
+                EFTAdvicePref = GetJsonProperty("eftadvicepref", site),
                 BankAccount = maskedAccountNumber,
-                ProviderId = props.ProviderId,
-                Status = props.Status,
-                SiteProtected = props.SiteProtected,
+                ProviderId = GetJsonProperty("providerid", site),
+                Status = GetJsonProperty("status", site),
+                SiteProtected = GetJsonProperty("siteprotected", site),
                 LastUpdated = siteLastUpdatedDate
             };
         }
 
-        private static string GetProperty(string name, JsonElement jsonElement)
+        private static string GetJsonProperty(string name, JsonElement jsonElement)
         {
-
             return jsonElement.TryGetProperty(name, out var prop) && prop.ValueKind != JsonValueKind.Null
                 ? prop.ToString()
                 : string.Empty;
