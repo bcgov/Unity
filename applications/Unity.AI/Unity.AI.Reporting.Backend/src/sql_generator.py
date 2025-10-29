@@ -9,12 +9,16 @@ import asyncio
 import aiohttp
 import tiktoken
 import datetime as dt
+import logging
 from typing import Dict, Any, List, Optional, Tuple
 from collections import Counter
 from config import config
 from embeddings import embedding_manager
 from metabase import metabase_client
 import time
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class SQLGenerator:
@@ -88,10 +92,10 @@ class SQLGenerator:
         winner, freq = counts.most_common(1)[0]
         return winner if freq > 1 else None
     
-    async def fetch_completion(self, prompt: str, session: aiohttp.ClientSession, 
+    async def fetch_completion(self, prompt: str, session: aiohttp.ClientSession,
                               index: int) -> Optional[str]:
         """Fetch a single completion from the LLM"""
-        print(f"[{index}] Tokens in prompt: {len(self.tokenizer.encode(prompt))}")
+        logger.debug(f"[{index}] Tokens in prompt: {len(self.tokenizer.encode(prompt))}")
         
         if self.config.use_azure:
             # Use Azure OpenAI
@@ -133,12 +137,12 @@ class SQLGenerator:
             json=json_data
         ) as response:
             if response.status != 200:
-                print(f"[{index}] Error: {response.status}")
-                print(await response.text())
+                logger.error(f"[{index}] Error: {response.status}")
+                logger.error(await response.text())
                 return None
-            
+
             data = await response.json()
-            print(f"[{index}] Tokens used: {data['usage']['total_tokens']}")
+            logger.debug(f"[{index}] Tokens used: {data['usage']['total_tokens']}")
             return data["choices"][0]["message"]["content"]
     
     def load_examples(self) -> List[str]:
@@ -165,7 +169,7 @@ class SQLGenerator:
                 )
             return formatted
         except FileNotFoundError:
-            print("Warning: QDECOMP_examples.json not found, using empty examples")
+            logger.warning("QDECOMP_examples.json not found, using empty examples")
             return []
     
     def build_prompt(self, question: str, schemas: str, 
@@ -222,8 +226,8 @@ class SQLGenerator:
         
         # Build prompt
         prompt = self.build_prompt(question, schemas, past_questions)
-        print("Prompt:", prompt + "...")
-        
+        logger.debug(f"Prompt: {prompt[:200]}...")
+
         # Generate multiple completions in parallel
         async with aiohttp.ClientSession() as session:
             tasks = [
@@ -235,32 +239,32 @@ class SQLGenerator:
         # Process completions and extract valid candidates
         candidates = []
         for raw in completions:
-            print(f"\n\n{raw}\n\n")
+            logger.debug(f"Raw completion:\n{raw}")
             if not raw:
                 continue
-            
+
             sql = self.extract_sql(raw)
             if not sql:
-                print("No SQL found in completion")
+                logger.debug("No SQL found in completion")
                 continue
-            
+
             metadata = self.extract_metadata(raw)
             if not metadata:
-                print("No metadata found in completion")
+                logger.debug("No metadata found in completion")
                 continue
             
             # Validate SQL
             is_valid, error = self.metabase.validate_sql(sql, db_id)
             if not is_valid:
-                print(f"SQL validation failed: {error}\nFor sql: {sql}")
+                logger.warning(f"SQL validation failed: {error}\nFor sql: {sql}")
                 continue
-            
+
             # Generate fingerprint
             try:
                 fingerprint = self.fingerprint_results(sql, db_id)
                 candidates.append((fingerprint, sql, metadata))
             except Exception as e:
-                print(f"Error generating fingerprint: {e}")
+                logger.error(f"Error generating fingerprint: {e}", exc_info=True)
                 continue
         
         # Majority voting on fingerprints
@@ -272,14 +276,14 @@ class SQLGenerator:
                 # Return the first candidate with winning fingerprint
                 for fp, sql, metadata in candidates:
                     if fp == winner_fp:
-                        print(f"Majority vote winner: {sql}...")
+                        logger.info(f"Majority vote winner: {sql[:100]}...")
                         return sql, metadata
-            
+
             # Fallback to first valid candidate
-            print("No majority, using first candidate")
+            logger.info("No majority, using first candidate")
             return candidates[0][1], candidates[0][2]
-        
-        print("No valid candidates generated")
+
+        logger.warning("No valid candidates generated")
         return None, None
     
     def _check_hardcoded_examples(self, question: str) -> Optional[Tuple[str, Dict]]:
@@ -481,15 +485,15 @@ ORDER BY
                     json=json_data
                 ) as response:
                     if response.status != 200:
-                        print(f"Error explaining SQL: {response.status}")
+                        logger.error(f"Error explaining SQL: {response.status}")
                         return "This query retrieves and analyzes your data."
-                    
+
                     data = await response.json()
                     explanation = data["choices"][0]["message"]["content"].strip()
                     return explanation
-                    
+
         except Exception as e:
-            print(f"Error generating SQL explanation: {e}")
+            logger.error(f"Error generating SQL explanation: {e}", exc_info=True)
             return "This query retrieves and analyzes your data."
 
 

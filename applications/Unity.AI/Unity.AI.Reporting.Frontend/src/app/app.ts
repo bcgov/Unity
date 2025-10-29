@@ -244,11 +244,14 @@ export class App implements OnInit, OnDestroy {
 
   async redirectToMB(turn: Turn): Promise<Window | null> {
     try {
-      // AuthService now validates the URL before returning it
-      const metabaseUrl = this.authService.getMetabaseUrl();
+      // Get Metabase URL from backend configuration
+      const metabaseUrlResponse = await firstValueFrom(
+        this.apiService.getMetabaseUrl<{ metabase_url: string }>()
+      );
+      const metabaseUrl = metabaseUrlResponse.metabase_url;
       const cardId = turn.embed.card_id;
 
-      // Check if we have a valid Metabase URL (already validated in auth service)
+      // Check if we have a valid Metabase URL
       if (!metabaseUrl) {
         console.error('Invalid or missing Metabase URL');
         this.toastService.error('Unable to open Metabase - invalid configuration');
@@ -262,7 +265,7 @@ export class App implements OnInit, OnDestroy {
         return null;
       }
 
-      // Construct the URL (metabaseUrl is now guaranteed to be safe)
+      // Construct the URL
       const fullUrl = `${metabaseUrl}/question/${cardId}`;
 
       // Additional validation to ensure the constructed URL is still safe

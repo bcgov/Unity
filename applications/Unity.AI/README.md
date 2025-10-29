@@ -130,7 +130,7 @@ Create a `.env` file in the project root:
 # Metabase Configuration
 METABASE_KEY=mb_your-metabase-api-key
 MB_EMBED_SECRET=your-embed-secret
-MB_EMBED_URL=https://your-metabase-instance.com
+MB_URL=https://your-metabase-instance.com
 
 # JWT Authentication
 JWT_SECRET="your-super-secret-key-here"

@@ -116,6 +116,11 @@ export class ApiService {
     return this.post<T>('/check-admin', {});
   }
 
+  // Get Metabase URL from backend
+  getMetabaseUrl<T>(): Observable<T> {
+    return this.get<T>('/metabase-url');
+  }
+
   // Feedback methods
   submitFeedback<T>(chatId: string, feedbackType: string, message: string, context?: {
     currentQuestion?: string;

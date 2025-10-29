@@ -4,7 +4,6 @@ import { BehaviorSubject, Observable } from 'rxjs';
 export interface JwtPayload {
   user_id?: string;
   tenant?: string;
-  mb_url?: string;
   jti?: string;
   exp?: number;
   iss?: string;
@@ -178,61 +177,6 @@ export class AuthService {
   getTenantId(): string | null {
     const payload = this.decodeToken();
     return payload?.tenant || null;
-  }
-
-  getMetabaseUrl(): string | null {
-    const payload = this.decodeToken();
-    const rawUrl = payload?.mb_url;
-
-    if (!rawUrl) {
-      return null;
-    }
-
-    // Validate the Metabase URL before returning it
-    if (!this.isValidMetabaseUrl(rawUrl)) {
-      console.warn('Invalid Metabase URL in JWT token:', rawUrl);
-      return null;
-    }
-
-    return rawUrl;
-  }
-
-  private isValidMetabaseUrl(url: string): boolean {
-    try {
-      const parsedUrl = new URL(url);
-
-      // Only allow HTTPS URLs (or HTTP for localhost development)
-      if (parsedUrl.protocol !== 'https:' &&
-          !(parsedUrl.protocol === 'http:' &&
-            (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1'))) {
-        return false;
-      }
-
-      // Basic hostname validation - should be a valid domain
-      const hostname = parsedUrl.hostname;
-      if (!hostname || hostname.length === 0 || hostname.includes('..')) {
-        return false;
-      }
-
-      // Prevent common malicious patterns
-      if (hostname.includes('javascript:') || hostname.includes('data:') || hostname.includes('vbscript:')) {
-        return false;
-      }
-
-      // Additional validation: ensure hostname doesn't contain suspicious characters
-      if (!/^[a-zA-Z0-9.-]+$/.test(hostname)) {
-        return false;
-      }
-
-      // Ensure URL doesn't have suspicious query parameters or fragments
-      if (parsedUrl.search.includes('javascript:') || parsedUrl.hash.includes('javascript:')) {
-        return false;
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
   }
 
   getUserId(): string | null {

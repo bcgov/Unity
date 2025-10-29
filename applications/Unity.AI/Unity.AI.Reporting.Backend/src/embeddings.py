@@ -2,6 +2,7 @@
 Embeddings module for managing vector storage and retrieval.
 Handles schema embedding and similarity search for NL to SQL.
 """
+import logging
 from typing import List, Optional
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
@@ -9,6 +10,9 @@ from langchain_postgres import PGVector
 from config import config
 from database import db_manager
 from metabase import metabase_client
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class SchemaExtractor:
@@ -91,9 +95,9 @@ class SchemaExtractor:
                             page += f"\n - {col}: '{truncated}'"
                     
                     docs.append(page)
-                    print(f"Extracted schema for {table['name']}")
+                    logger.debug(f"Extracted schema for {table['name']}")
             except Exception as e:
-                print(f"Error processing table {table['name']}: {e}")
+                logger.error(f"Error processing table {table['name']}: {e}", exc_info=True)
         
         return docs
 
@@ -140,13 +144,13 @@ class EmbeddingManager:
         
         # Purge existing embeddings for this db_id
         db_manager.purge_embeddings(db_id, config.app.collection_name)
-        
-        print(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
-        
+
+        logger.info(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
+
         # Extract and embed schemas for each type
         for schema_type in schema_types:
             schemas = self.schema_extractor.extract_schemas(db_id, schema_type)
-            
+
             # Create documents with metadata
             documents = [
                 Document(
@@ -158,10 +162,10 @@ class EmbeddingManager:
                 )
                 for schema in schemas
             ]
-            
+
             if documents:
                 self.vector_store.add_documents(documents)
-                print(f"Added {len(documents)} {schema_type} schema embeddings")
+                logger.info(f"Added {len(documents)} {schema_type} schema embeddings")
     
     def search_similar_schemas(self, query: str, db_id: int, 
                              k_public: int = 4, k_custom: int = 4) -> List[Document]:

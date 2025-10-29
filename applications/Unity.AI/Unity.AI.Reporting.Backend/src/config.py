@@ -88,7 +88,7 @@ class Config:
         )
         
         self.metabase = MetabaseConfig(
-            url=os.getenv("MB_EMBED_URL", ""),
+            url=os.getenv("MB_URL", ""),
             api_key=os.getenv("METABASE_KEY", ""),
             embed_secret=os.getenv("MB_EMBED_SECRET", "")
         )
@@ -131,7 +131,7 @@ class Config:
                 "schema_types": ["public"]
             },
             "default": {
-                "db_id": 3,
+                "db_id": int(os.getenv("DEFAULT_EMBED_DB_ID", "3")),
                 "collection_id": 47,
                 "schema_types": ["public"]
             }
