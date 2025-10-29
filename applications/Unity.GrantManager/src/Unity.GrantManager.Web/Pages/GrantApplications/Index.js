@@ -247,6 +247,7 @@
             getProjectSummaryColumn(columnIndex++),
             getOrganizationTypeColumn(columnIndex++),
             getOrganizationNameColumn(columnIndex++),
+            getBusinessNumberColumn(columnIndex++),
             getDueDiligenceStatusColumn(columnIndex++),
             getDeclineRationaleColumn(columnIndex++),
             getContactFullNameColumn(columnIndex++),
@@ -858,6 +859,19 @@
             title: l('Summary:Application.OrganizationName'),
             name: 'organizationName',
             data: 'organizationName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getBusinessNumberColumn(columnIndex) {
+        return {
+            title: l('Summary:Application.BusinessNumber'),
+            name: 'businessNumber',
+            data: 'applicant.businessNumber',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';
