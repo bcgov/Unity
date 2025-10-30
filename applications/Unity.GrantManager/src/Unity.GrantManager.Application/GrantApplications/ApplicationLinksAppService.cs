@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.ApplicationForms;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -20,72 +20,135 @@ public class ApplicationLinksAppService : CrudAppService<
         ApplicationLinksDto,
         Guid>, IApplicationLinksService
 {
+    // Validation Error Messages
+    private const string ERROR_MULTIPLE_PARENTS = "Error: A submission can not have two parents. Please revise the link type.";
+    private const string ERROR_PARENT_WITH_CHILDREN = "Error: Cannot add a parent link. This application already has children.";
+    private const string ERROR_TARGET_CHILD_CANNOT_BE_PARENT = "Error: The selected submission is already a child of another application. An application cannot be both a parent and a child.";
+    private const string ERROR_TARGET_ALREADY_HAS_PARENT = "Error: The selected submission already has a parent. A submission cannot have multiple parents.";
+    private const string ERROR_TARGET_IS_PARENT_TO_OTHERS = "Error: The selected submission is already a parent to other applications. An application cannot be both a parent and a child.";
+    private const string ERROR_CURRENT_APP_IS_CHILD = "Error: This application is already a child of another application. An application cannot be both a parent and a child.";
+
     public IApplicationLinksRepository ApplicationLinksRepository { get; set; } = null!;
     public IApplicationRepository ApplicationRepository { get; set; } = null!;
-    public IApplicationFormRepository ApplicationFormRepository { get; set; } = null!;
     public IApplicantRepository ApplicantRepository { get; set; } = null!;
-
-    // Constructor for the required repository
+    public IApplicationFormAppService ApplicationFormAppService { get; set; } = null!;
+    
     public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : base(repository) { }
 
     public async Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId)
     {
         var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();
         var applicationsQuery = await ApplicationRepository.GetQueryableAsync();
-        var applicationFormsQuery = await ApplicationFormRepository.GetQueryableAsync();
         var applicantsQuery = await ApplicantRepository.GetQueryableAsync();
 
-        var combinedQuery = from applicationLinks in applicationLinksQuery
-                            join application in applicationsQuery on applicationLinks.LinkedApplicationId equals application.Id into appLinks
-                            from application in appLinks.DefaultIfEmpty() // Left join for safety
-                            join appForm in applicationFormsQuery on application.ApplicationFormId equals appForm.Id into appForms
-                            from appForm in appForms.DefaultIfEmpty() // Left join for safety
-                            join applicant in applicantsQuery on application.ApplicantId equals applicant.Id into applicants
-                            from applicant in applicants.DefaultIfEmpty() // Left join for safety
-                            where applicationLinks.ApplicationId == applicationId || applicationLinks.LinkedApplicationId == applicationId
-                            select new ApplicationLinksInfoDto
-                            {
-                                Id = applicationLinks.Id,
-                                ApplicationId = application.Id,
-                                ApplicationStatus = application.ApplicationStatus.InternalStatus,
-                                ReferenceNumber = application.ReferenceNo,
-                                Category = appForm.Category ?? GrantManagerConsts.UnknownValue, // Handle potential nulls
-                                ProjectName = application.ProjectName,
-                                ApplicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue, // Handle potential nulls
-                                LinkType = applicationLinks.LinkType
-                            };
+        // Get basic application and applicant data without form details
+        var basicQuery = from applicationLinks in applicationLinksQuery
+                        join application in applicationsQuery on applicationLinks.LinkedApplicationId equals application.Id into appLinks
+                        from application in appLinks.DefaultIfEmpty() // Left join for safety
+                        join applicant in applicantsQuery on application.ApplicantId equals applicant.Id into applicants
+                        from applicant in applicants.DefaultIfEmpty() // Left join for safety
+                        where applicationLinks.ApplicationId == applicationId || applicationLinks.LinkedApplicationId == applicationId
+                        select new
+                        {
+                            Id = applicationLinks.Id,
+                            ApplicationId = application.Id,
+                            ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                            ReferenceNumber = application.ReferenceNo,
+                            ProjectName = application.ProjectName,
+                            ApplicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue,
+                            LinkType = applicationLinks.LinkType
+                        };
 
-        return await combinedQuery.ToListAsync();
+        var basicResults = await basicQuery.ToListAsync();
+        var resultList = new List<ApplicationLinksInfoDto>();
+
+        // For each application, get the form details using the service
+        foreach (var basicResult in basicResults)
+        {
+            string category = GrantManagerConsts.UnknownValue;
+            int? formVersion = null;
+
+            try
+            {
+                var formDetails = await ApplicationFormAppService.GetFormDetailsByApplicationIdAsync(basicResult.ApplicationId);
+                category = formDetails.ApplicationFormCategory ?? GrantManagerConsts.UnknownValue;
+                formVersion = formDetails.ApplicationFormVersion;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to get form details for application {ApplicationId}", basicResult.ApplicationId);
+            }
+
+            resultList.Add(new ApplicationLinksInfoDto
+            {
+                Id = basicResult.Id,
+                ApplicationId = basicResult.ApplicationId,
+                ApplicationStatus = basicResult.ApplicationStatus,
+                ReferenceNumber = basicResult.ReferenceNumber,
+                Category = category,
+                ProjectName = basicResult.ProjectName,
+                ApplicantName = basicResult.ApplicantName,
+                LinkType = basicResult.LinkType,
+                FormVersion = formVersion
+            });
+        }
+
+        return resultList;
     }
 
     public async Task<ApplicationLinksInfoDto> GetLinkedApplicationAsync(Guid currentApplicationId, Guid linkedApplicationId)
     {
         var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();
         var applicationsQuery = await ApplicationRepository.GetQueryableAsync();
-        var applicationFormsQuery = await ApplicationFormRepository.GetQueryableAsync();
         var applicantsQuery = await ApplicantRepository.GetQueryableAsync();
 
-        var combinedQuery = from applicationLinks in applicationLinksQuery
-                            join application in applicationsQuery on applicationLinks.LinkedApplicationId equals application.Id into appLinks
-                            from application in appLinks.DefaultIfEmpty() // Left join for safety
-                            join appForm in applicationFormsQuery on application.ApplicationFormId equals appForm.Id into appForms
-                            from appForm in appForms.DefaultIfEmpty() // Left join for safety
-                            join applicant in applicantsQuery on application.ApplicantId equals applicant.Id into applicants
-                            from applicant in applicants.DefaultIfEmpty() // Left join for safety
-                            where applicationLinks.ApplicationId == linkedApplicationId && applicationLinks.LinkedApplicationId == currentApplicationId
-                            select new ApplicationLinksInfoDto
-                            {
-                                Id = applicationLinks.Id,
-                                ApplicationId = application.Id,
-                                ApplicationStatus = application.ApplicationStatus.InternalStatus,
-                                ReferenceNumber = application.ReferenceNo,
-                                Category = appForm.Category ?? GrantManagerConsts.UnknownValue, // Handle potential nulls
-                                ProjectName = application.ProjectName,
-                                ApplicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue, // Handle potential nulls
-                                LinkType = applicationLinks.LinkType
-                            };
+        // Get basic application and applicant data without form details
+        var basicQuery = from applicationLinks in applicationLinksQuery
+                        join application in applicationsQuery on applicationLinks.LinkedApplicationId equals application.Id into appLinks
+                        from application in appLinks.DefaultIfEmpty() // Left join for safety
+                        join applicant in applicantsQuery on application.ApplicantId equals applicant.Id into applicants
+                        from applicant in applicants.DefaultIfEmpty() // Left join for safety
+                        where applicationLinks.ApplicationId == linkedApplicationId && applicationLinks.LinkedApplicationId == currentApplicationId
+                        select new
+                        {
+                            Id = applicationLinks.Id,
+                            ApplicationId = application.Id,
+                            ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                            ReferenceNumber = application.ReferenceNo,
+                            ProjectName = application.ProjectName,
+                            ApplicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue,
+                            LinkType = applicationLinks.LinkType
+                        };
 
-        return await combinedQuery.SingleAsync();
+        var basicResult = await basicQuery.SingleAsync();
+
+        // Get form details using the service
+        string category = GrantManagerConsts.UnknownValue;
+        int? formVersion = null;
+
+        try
+        {
+            var formDetails = await ApplicationFormAppService.GetFormDetailsByApplicationIdAsync(basicResult.ApplicationId);
+            category = formDetails.ApplicationFormCategory ?? GrantManagerConsts.UnknownValue;
+            formVersion = formDetails.ApplicationFormVersion;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to get form details for application {ApplicationId}", basicResult.ApplicationId);
+        }
+
+        return new ApplicationLinksInfoDto
+        {
+            Id = basicResult.Id,
+            ApplicationId = basicResult.ApplicationId,
+            ApplicationStatus = basicResult.ApplicationStatus,
+            ReferenceNumber = basicResult.ReferenceNumber,
+            Category = category,
+            ProjectName = basicResult.ProjectName,
+            ApplicantName = basicResult.ApplicantName,
+            LinkType = basicResult.LinkType,
+            FormVersion = formVersion
+        };
     }
 
     public async Task<ApplicationLinksInfoDto> GetCurrentApplicationInfoAsync(Guid applicationId)
@@ -112,7 +175,8 @@ public class ApplicationLinksAppService : CrudAppService<
                     Category = GrantManagerConsts.UnknownValue,
                     ProjectName = GrantManagerConsts.UnknownValue,
                     ApplicantName = GrantManagerConsts.UnknownValue,
-                    LinkType = ApplicationLinkType.Related
+                    LinkType = ApplicationLinkType.Related,
+                    FormVersion = null
                 };
             }
 
@@ -120,25 +184,17 @@ public class ApplicationLinksAppService : CrudAppService<
             // Now try to get related data safely
             string category = GrantManagerConsts.UnknownValue;
             string applicantName = GrantManagerConsts.UnknownValue;
+            int? formVersion = null;
 
             try
             {
-                var applicationFormsQuery = await ApplicationFormRepository.GetQueryableAsync();
-                var applicationForm = await applicationFormsQuery
-                    .Where(af => af.Id == application.ApplicationFormId)
-                    .FirstOrDefaultAsync();
-                if (applicationForm != null)
-                {
-                    category = applicationForm.Category ?? GrantManagerConsts.UnknownValue;
-                }
-                else
-                {
-                    Logger.LogWarning("Application form not found with ID: {ApplicationFormId}", application.ApplicationFormId);
-                }
+                var formDetails = await ApplicationFormAppService.GetFormDetailsByApplicationIdAsync(applicationId);
+                category = formDetails.ApplicationFormCategory ?? GrantManagerConsts.UnknownValue;
+                formVersion = formDetails.ApplicationFormVersion;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error looking up application form with ID: {ApplicationFormId}", application.ApplicationFormId);
+                Logger.LogError(ex, "Error looking up form details for application ID: {ApplicationId}", applicationId);
             }
 
             try
@@ -190,7 +246,8 @@ public class ApplicationLinksAppService : CrudAppService<
                 Category = category,
                 ProjectName = application.ProjectName ?? GrantManagerConsts.UnknownValue,
                 ApplicantName = applicantName,
-                LinkType = ApplicationLinkType.Related
+                LinkType = ApplicationLinkType.Related,
+                FormVersion = formVersion
             };
             
             return result;
@@ -209,7 +266,8 @@ public class ApplicationLinksAppService : CrudAppService<
                 Category = GrantManagerConsts.UnknownValue,
                 ProjectName = GrantManagerConsts.UnknownValue,
                 ApplicantName = GrantManagerConsts.UnknownValue,
-                LinkType = ApplicationLinkType.Related
+                LinkType = ApplicationLinkType.Related,
+                FormVersion = null
             };
         }
     }
@@ -258,28 +316,25 @@ public class ApplicationLinksAppService : CrudAppService<
                     Category = GrantManagerConsts.UnknownValue,
                     ProjectName = GrantManagerConsts.UnknownValue,
                     ApplicantName = GrantManagerConsts.UnknownValue,
-                    LinkType = ApplicationLinkType.Related
+                    LinkType = ApplicationLinkType.Related,
+                    FormVersion = null
                 };
             }
 
             // Get related data safely
             string category = GrantManagerConsts.UnknownValue;
             string applicantName = GrantManagerConsts.UnknownValue;
+            int? formVersion = null;
 
             try
             {
-                var applicationFormsQuery = await ApplicationFormRepository.GetQueryableAsync();
-                var applicationForm = await applicationFormsQuery
-                    .Where(af => af.Id == application.ApplicationFormId)
-                    .FirstOrDefaultAsync();
-                if (applicationForm != null)
-                {
-                    category = applicationForm.Category ?? GrantManagerConsts.UnknownValue;
-                }
+                var formDetails = await ApplicationFormAppService.GetFormDetailsByApplicationIdAsync(application.Id);
+                category = formDetails.ApplicationFormCategory ?? GrantManagerConsts.UnknownValue;
+                formVersion = formDetails.ApplicationFormVersion;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error looking up application form");
+                Logger.LogError(ex, "Error looking up form details for application ID: {ApplicationId}", application.Id);
             }
 
             try
@@ -313,7 +368,8 @@ public class ApplicationLinksAppService : CrudAppService<
                 Category = category,
                 ProjectName = application.ProjectName ?? GrantManagerConsts.UnknownValue,
                 ApplicantName = applicantName,
-                LinkType = ApplicationLinkType.Related
+                LinkType = ApplicationLinkType.Related,
+                FormVersion = formVersion
             };
         }
         catch (Exception ex)
@@ -329,7 +385,8 @@ public class ApplicationLinksAppService : CrudAppService<
                 Category = GrantManagerConsts.UnknownValue,
                 ProjectName = GrantManagerConsts.UnknownValue,
                 ApplicantName = GrantManagerConsts.UnknownValue,
-                LinkType = ApplicationLinkType.Related
+                LinkType = ApplicationLinkType.Related,
+                FormVersion = null
             };
         }
     }
@@ -354,5 +411,131 @@ public class ApplicationLinksAppService : CrudAppService<
             Logger.LogWarning("Link not found with ID: {LinkId}", applicationLinkId);
         }
         
+    }
+
+    public async Task<ApplicationLinkValidationResult> ValidateApplicationLinksAsync(
+        Guid currentApplicationId, 
+        List<ApplicationLinkValidationRequest> proposedLinks)
+    {
+        var result = new ApplicationLinkValidationResult();
+        
+        // Skip validation for empty or Related-only links
+        var hierarchicalLinks = proposedLinks.Where(l => l.LinkType != ApplicationLinkType.Related).ToList();
+        if (hierarchicalLinks.Count == 0)
+        {
+            return result;
+        }
+        
+        // Validate current app constraints
+        var currentAppError = ValidateCurrentApplicationConstraints(hierarchicalLinks);
+        
+        // Process each proposed link
+        foreach (var proposedLink in hierarchicalLinks)
+        {
+            var errorMessage = await ValidateLinkBasedOnType(currentApplicationId, proposedLink, currentAppError, hierarchicalLinks);
+            
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                result.ValidationErrors[proposedLink.ReferenceNumber] = true;
+                result.ErrorMessages[proposedLink.ReferenceNumber] = errorMessage;
+            }
+            else
+            {
+                result.ValidationErrors[proposedLink.ReferenceNumber] = false;
+            }
+        }
+        
+        return result;
+    }
+    
+    private static string ValidateCurrentApplicationConstraints(List<ApplicationLinkValidationRequest> proposedLinks)
+    {
+        var parentCount = proposedLinks.Count(l => l.LinkType == ApplicationLinkType.Parent);
+        var hasParent = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent); 
+        var hasChild = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Child); 
+
+        if (parentCount > 1)
+        {
+            return ERROR_MULTIPLE_PARENTS;
+        }
+        
+        if (hasParent && hasChild)
+        {
+            return ERROR_PARENT_WITH_CHILDREN;
+        }
+        
+        return string.Empty;
+    }
+    
+    private async Task<string> ValidateLinkBasedOnType(
+        Guid currentApplicationId, 
+        ApplicationLinkValidationRequest proposedLink,
+        string currentAppError,
+        List<ApplicationLinkValidationRequest> allProposedLinks)
+    {
+        switch (proposedLink.LinkType)
+        {
+            case ApplicationLinkType.Parent:
+                // First check current app constraints
+                if (!string.IsNullOrEmpty(currentAppError))
+                {
+                    return currentAppError;
+                }
+                
+                // Then check if the proposed parent is already a child of another app
+                return await ValidateTargetCannotBeParentIfAlreadyChild(currentApplicationId, proposedLink);
+                
+            case ApplicationLinkType.Child:
+                // Check if current app is trying to be both parent and child
+                if (!string.IsNullOrEmpty(currentAppError) && allProposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
+                {
+                    return ERROR_CURRENT_APP_IS_CHILD;
+                }
+                
+                // Check target app conflicts
+                return await ValidateTargetCanAcceptChildLink(currentApplicationId, proposedLink);
+                
+            default:
+                return string.Empty;
+        }
+    }
+    
+    private async Task<string> ValidateTargetCannotBeParentIfAlreadyChild(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
+    {
+        var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
+
+        // Exclude reverse links and self-references
+        var targetExternalLinks = targetLinks.Where(l =>
+            l.ApplicationId != currentApplicationId &&
+            l.ApplicationId != proposedLink.TargetApplicationId).ToList();
+
+        if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
+        {
+            return ERROR_TARGET_CHILD_CANNOT_BE_PARENT;
+        }
+        
+        return string.Empty;
+    }
+    
+    private async Task<string> ValidateTargetCanAcceptChildLink(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
+    {
+        var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
+
+        // Exclude reverse links and self-references
+        var targetExternalLinks = targetLinks.Where(l => 
+            l.ApplicationId != currentApplicationId && 
+            l.ApplicationId != proposedLink.TargetApplicationId).ToList();
+        
+        if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
+        {
+            return ERROR_TARGET_ALREADY_HAS_PARENT;
+        }
+        
+        if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Child))
+        {
+            return ERROR_TARGET_IS_PARENT_TO_OTHERS;
+        }
+        
+        return string.Empty;
     }
 }

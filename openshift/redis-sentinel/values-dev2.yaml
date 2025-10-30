@@ -1,0 +1,17 @@
+redis:
+  fullnameOverride: dev2-redis-ha
+  sentinel:
+    masterSet: redisMasterSet
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "20m"
+  replica:
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 96Mi
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "20m"

@@ -7,6 +7,8 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.VirtualFileSystem;
 using Unity.TenantManagement;
 using Unity.Notifications;
+using Unity.GrantManager.Integrations.Geocoder;
+using System;
 
 namespace Unity.GrantManager;
 
@@ -29,6 +31,14 @@ public class GrantManagerHttpApiClientModule : AbpModule
             typeof(GrantManagerApplicationContractsModule).Assembly,
             RemoteServiceName
         );
+
+        // Register Geocoder API client
+        context.Services.AddHttpClient<IGeocoderApiService>(client =>
+        {
+            string baseAddress = "https://geocoder.api.gov.bc.ca";
+            client.BaseAddress = new Uri(baseAddress);
+        });
+
 
         Configure<AbpVirtualFileSystemOptions>(options =>
         {

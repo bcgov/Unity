@@ -12,6 +12,9 @@ using Volo.Abp.DependencyInjection;
 using Xunit;
 using Microsoft.AspNetCore.Authorization;
 
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 namespace Unity.GrantManager.Components
 {
     public class ProjectInfoWidgetTests : GrantManagerWebTestBase
@@ -20,6 +23,18 @@ namespace Unity.GrantManager.Components
 
         public ProjectInfoWidgetTests()
         {
+            // Remove EventLog logger provider to prevent ObjectDisposedException during tests
+            var loggerFactory = GetRequiredService<ILoggerFactory>();
+            foreach (var provider in loggerFactory
+                .GetType()
+                .GetField("_providers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.GetValue(loggerFactory) as System.Collections.Generic.List<ILoggerProvider> ?? new System.Collections.Generic.List<ILoggerProvider>())
+            {
+                if (provider.GetType().Name.Contains("EventLog"))
+                {
+                    provider.Dispose();
+                }
+            }
             lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();                
         }
 

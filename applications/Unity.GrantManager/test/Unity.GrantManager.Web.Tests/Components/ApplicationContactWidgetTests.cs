@@ -14,6 +14,12 @@ namespace Unity.GrantManager.Components
 {
     public class ApplicationContactWidgetTests : GrantManagerWebTestBase
     {
+        public ApplicationContactWidgetTests()
+        {
+            // Disable logging to avoid disposed logger errors during tests
+            Environment.SetEnvironmentVariable("Logging:LogLevel:Default", "None");
+        }
+
         [Fact]
         public async Task ApplicationContactWidgetReturnsStatus()
         {
@@ -26,8 +32,9 @@ namespace Unity.GrantManager.Components
             var expectedContactMobilePhone = "ContactMobilePhone";
             var expectedContactWorkPhone = "ContactWorkPhone";
             var expectedContactTitle = "ContactTitle";
-            List<ApplicationContactDto> applicationContactDtos = new List<ApplicationContactDto>();
-            applicationContactDtos.Add(new ApplicationContactDto()
+            var applicationContactDtos = new List<ApplicationContactDto>
+            {
+                new()
                 {
                     ApplicationId = applicationId,
                     ContactType = expectedContactType,
@@ -36,7 +43,8 @@ namespace Unity.GrantManager.Components
                     ContactMobilePhone = expectedContactMobilePhone,
                     ContactWorkPhone = expectedContactWorkPhone,
                     ContactTitle = expectedContactTitle
-                });
+                }
+            };
             var httpContext = new DefaultHttpContext();
 
             applicationContactService.GetListByApplicationAsync(applicationId).Returns(await Task.FromResult(applicationContactDtos));

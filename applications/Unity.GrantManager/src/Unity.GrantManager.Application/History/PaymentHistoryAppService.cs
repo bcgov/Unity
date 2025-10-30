@@ -27,13 +27,14 @@ namespace Unity.GrantManager.History
                 {
                     string origninalValue = CleanValue(propertyChange.OriginalValue);
                     string newValue = CleanValue(propertyChange.NewValue);
+                    string displayNewValue = MapFsbToDisplayText(newValue);
                     DateTime utcDateTime = DateTime.SpecifyKind(entityChange.EntityChange.ChangeTime, DateTimeKind.Utc);
                     HistoryDto historyDto = new()
                     {
                         EntityName = GetShortEntityName(entityChange.EntityChange.EntityTypeFullName),
                         PropertyName = propertyChange.PropertyName, // The name of the property on the entity class.
                         OriginalValue = origninalValue,
-                        NewValue = newValue,
+                        NewValue = displayNewValue,
                         ChangeTime = utcDateTime.ToLocalTime(),
                         UserName = entityChange.UserName
                     };
@@ -41,6 +42,11 @@ namespace Unity.GrantManager.History
                 }
             }
             return historyList;
+        }
+
+        private static string MapFsbToDisplayText(string value)
+        {
+            return value == "FSB" ? "Sent to Account Payable" : value;
         }
 
         private static string GetShortEntityName(string fullEntityName)

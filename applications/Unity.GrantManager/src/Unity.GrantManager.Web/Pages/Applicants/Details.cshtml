@@ -1,0 +1,183 @@
+@page "/GrantApplicants/Details"
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.Web.Pages.Applicants
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+
+@model DetailsModel
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+
+@{
+    PageLayout.Content.Title = L["Applicants"].Value;
+}
+
+@section styles {
+    <abp-style src="/Pages/Applicants/Details.css" />
+    <abp-style src="/Views/Shared/Components/ApplicantBreadcrumbWidget/Default.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/Applicants/Details.js" />
+}
+
+<div id="applicantBreadcrumbWidget" class="fade-in-load">
+    @await Component.InvokeAsync("ApplicantBreadcrumbWidget", new { applicantId = @Model.ApplicantId })
+</div>
+
+<input type="hidden" id="DetailsViewApplicantId" value="@Model.ApplicantId" />
+
+<div id="main-loading">
+    <div class="d-flex justify-content-center">
+        <img src="/images/homepage/unity.svg" alt="unity-applicant-loading">
+    </div>
+    <div class="m-4 d-flex justify-content-center">
+        <div class="spinner-border">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<div class="m-0 h-100 applicant-details-container fade-in-load" id="main-container">
+    <div id="main-left">
+        <abp-card>
+            <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
+                
+                @*-------- Organization Info Section ---------*@
+                <abp-tab name="nav-organization-info" active="true" title="Organization Info">
+                    <div class="w-100 px-2" id="OrganizationInfoWidget">
+                        <h6>Under Construction</h6>
+                        @*-------- await Component.InvokeAsync("ApplicantOrganizationInfo", new { applicantId = Model.ApplicantId }) ---------*@
+                    </div>
+                </abp-tab>
+                @*-------- Organization Info Section END ---------*@
+
+                @*-------- Addresses Section ---------*@
+                <abp-tab name="nav-addresses" title="Addresses/Contact Info">
+                    <div class="w-100 px-2" id="AddressesWidget">
+                        <h6>Under Construction</h6>
+                        @*-------- await Component.InvokeAsync("ApplicantAddresses", new { applicantId = Model.ApplicantId }) ---------*@
+                    </div>
+                </abp-tab>
+                @*-------- Addresses Section END ---------*@
+
+                @*-------- Submissions Section ---------*@
+                <abp-tab name="nav-submissions" title="Submissions">
+                    <div class="w-100 px-2" id="SubmissionsWidget">
+                        <h6>Under Construction</h6>
+                        @*-------- await Component.InvokeAsync("ApplicantSubmissions", new { applicantId = Model.ApplicantId }) ---------*@
+                    </div>
+                </abp-tab>
+                @*-------- Submissions Section END ---------*@
+
+                @*-------- Payments Section ---------*@
+                <abp-tab name="nav-payments" title="Payments">
+                    <div class="w-100 px-2" id="PaymentsWidget">
+                        <h6>Under Construction</h6>
+                        @*-------- await Component.InvokeAsync("ApplicantPayments", new { applicantId = Model.ApplicantId }) ---------*@
+                    </div>
+                </abp-tab>
+                @*-------- Payments Section END ---------*@
+
+            </abp-tabs>
+        </abp-card>
+    </div>
+    
+    <div id="main-divider" class="divider"></div>
+    
+    <div id="main-right">
+        <abp-card class="right-card">
+            <ul class="nav nav-tabs details-nav flex-nowrap">
+                <li class="nav-item">
+                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">Details</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="true">Email</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="true">Comments</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="true">Links</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="true">Attachment</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="true">Comments</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i></button>
+                </li>
+            </ul>
+
+            <div class="tab-content details-scrollable" id="myTabContent">
+                
+                @*-------- Details Tab Section ---------*@
+                <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                    <div id="applicantDetails">
+                        <div class="px-3 pt-4 pb-2">
+                            <h6 class="fw-bold">Applicant Details</h6>
+                            <h6>Under Construction</h6>
+                        </div>
+                    </div>
+                </div>
+                @*-------- Details Tab Section END ---------*@
+
+                @*-------- Emails Tab Section ---------*@
+                <div class="tab-pane fade" id="emails" role="tabpanel" aria-labelledby="emails-tab">
+                    <div id="applicantEmails">
+                        <div class="px-3 pt-4 pb-2">
+                            <h6 class="fw-bold">Emails</h6> 
+                            <h6>Under Construction</h6>
+                        </div>
+                    </div>
+                </div>
+                @*-------- Emails Tab Section END ---------*@
+
+                @*-------- Comments Tab Section ---------*@
+                <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
+                    <div id="applicantComments">
+                        <div class="px-3 pt-4 pb-2">
+                            <h6 class="fw-bold">Comments</h6>
+                            <h6>Under Construction</h6>
+                        </div>
+                    </div>
+                </div>
+                @*-------- Comments Tab Section END ---------*@
+
+                @*-------- Links Tab Section ---------*@
+                <div class="tab-pane fade" id="links" role="tabpanel" aria-labelledby="links-tab">
+                    <div id="applicantLinks">
+                        <div class="px-3 pt-4 pb-2">
+                            <h6 class="fw-bold">Links</h6>
+                            <h6>Under Construction</h6>
+                        </div>
+                    </div>
+                </div>
+                @*-------- Links Tab Section END ---------*@
+
+                @*-------- Attachments Tab Section ---------*@
+                <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
+                    <div id="applicantAttachments">
+                        <div class="px-3 pt-4 pb-2">
+                            <h6 class="fw-bold">Attachments</h6>
+                            <h6>Under Construction</h6>
+                        </div>
+                    </div>
+                </div>
+                @*-------- Attachments Tab Section END ---------*@
+
+                @*-------- History Tab Section ---------*@
+                <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+                    <div class="px-3 pb-2" id="applicantHistoryWidget">
+                        <h6 class="fw-bold">History</h6>
+                        <h6>Under Construction</h6>
+                    </div>
+                </div>
+                @*-------- History Tab Section END ---------*@
+                
+            </div>
+        </abp-card>
+    </div>
+</div>

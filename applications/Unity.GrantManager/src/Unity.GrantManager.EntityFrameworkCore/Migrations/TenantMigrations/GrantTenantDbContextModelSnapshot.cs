@@ -1294,6 +1294,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<int?>("TotalScore")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UnityApplicationId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicantId");
@@ -1647,6 +1650,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<decimal?>("PaymentApprovalThreshold")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("Prefix")
+                        .HasColumnType("text");
+
                     b.Property<bool>("PreventPayment")
                         .HasColumnType("boolean");
 
@@ -1655,6 +1661,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<Guid?>("ScoresheetId")
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("SuffixType")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")

@@ -8,6 +8,7 @@ using Volo.Abp.DependencyInjection;
 using System.Net.Http;
 using Volo.Abp.Caching;
 using Unity.GrantManager.Integrations;
+using Unity.GrantManager.Integrations.Css;
 
 namespace Unity.Notifications.Integrations.Ches
 {
@@ -27,7 +28,6 @@ namespace Unity.Notifications.Integrations.Ches
             string authToken = await GetAuthTokenAsync();
             string notificationsApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTIFICATION_API_BASE);
             var resource = $"{notificationsApiUrl}/email";
-
             // Pass the object directly; ResilientHttpRequest will serialize it to JSON
             var response = await resilientHttpRequest.HttpAsync(
                 HttpMethod.Post,
@@ -35,14 +35,11 @@ namespace Unity.Notifications.Integrations.Ches
                 emailRequest,
                 authToken
             );
-
             return response;
         }
-
         private async Task<string> GetAuthTokenAsync()
         {
             string notificationsAuthUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTIFICATION_AUTH);
-
             ClientOptions clientOptions = new()
             {
                 Url = notificationsAuthUrl,

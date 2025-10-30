@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.Integrations.Sso
+﻿namespace Unity.GrantManager.Integrations.Css
 {
     public class CssApiOptions
     {

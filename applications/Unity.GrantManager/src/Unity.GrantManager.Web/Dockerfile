@@ -56,7 +56,14 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" \
 FROM base AS final
 WORKDIR /app
 COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
-# CAS Dev/Test Certs changed
+# CAS Dev/Test Certs changed - again Sept 17
+
+COPY ["/src/Unity.GrantManager.Web/certs/cas2024inter.crt", "/usr/local/share/ca-certificates/cas2024inter.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas2024root.crt", "/usr/local/share/ca-certificates/cas2024root.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas2025inter.crt", "/usr/local/share/ca-certificates/cas2025inter.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas2025root.crt", "/usr/local/share/ca-certificates/cas2025root.crt"]
+COPY ["/src/Unity.GrantManager.Web/certs/cas2025top.crt", "/usr/local/share/ca-certificates/cas2025top.crt"]
+
 COPY ["/src/Unity.GrantManager.Web/certs/casroot.crt", "/usr/local/share/ca-certificates/casroot.crt"]
 COPY ["/src/Unity.GrantManager.Web/certs/cas.crt", "/usr/local/share/ca-certificates/cas.crt"]
 COPY ["/src/Unity.GrantManager.Web/certs/sslcomroot.crt", "/usr/local/share/ca-certificates/sslcomroot.crt"]
@@ -67,7 +74,12 @@ RUN mkdir -p /.aspnet && \
     mkdir -p /app/logs && \
     chmod 755 /.aspnet && \
     chmod 755 /.dotnet && \
-    chmod 755 /app/logs && \
+    chmod 755 /app/logs && \        
+    chmod 644 /usr/local/share/ca-certificates/cas2024inter.crt && \
+    chmod 644 /usr/local/share/ca-certificates/cas2024root.crt && \ 
+    chmod 644 /usr/local/share/ca-certificates/cas2025inter.crt && \
+    chmod 644 /usr/local/share/ca-certificates/cas2025root.crt && \
+    chmod 644 /usr/local/share/ca-certificates/cas2025top.crt && \
     chmod 644 /usr/local/share/ca-certificates/cas.crt && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
     chmod 644 /usr/local/share/ca-certificates/sslcomroot.crt && \

@@ -3,18 +3,19 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Unity.GrantManager.Integration.Geocoder;
 using Unity.GrantManager.Integrations.Exceptions;
 using Unity.Modules.Shared.Http;
-using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Integrations.Geocoder
 {
     [AllowAnonymous]
-    public class GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration, IEndpointManagementAppService endpointManagementAppService) : ApplicationService
+    public class GeocoderApiService(IResilientHttpRequest resilientRestClient, IConfiguration configuration, IEndpointManagementAppService endpointManagementAppService) : IGeocoderApiService
     {
         public async Task<AddressDetailsDto> GetAddressDetailsAsync(string address)
         {
-            var resource = $"{configuration["Geocoder:LocationDetails:BaseUri"]}/addresses.json?outputSRS=3005&addressString={address}";
+            var geoCoderLocationDetails = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.GEOCODER_LOCATION_API_BASE);
+            var resource = $"{geoCoderLocationDetails}/addresses.json?outputSRS=3005&addressString={address}";
             return ResultMapper.MapToLocation(await GetGeoCodeDataSegmentAsync(resource));
         }
 
@@ -34,7 +35,8 @@ namespace Unity.GrantManager.Integrations.Geocoder
 
         public async Task<EconomicRegionDto> GetEconomicRegionAsync(LocationCoordinates locationCoordinates)
         {
-            var resource = $"{configuration["Geocoder:BaseUri"]}" +
+            var geoCoderBaseUri = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.GEOCODER_API_BASE);
+            var resource = $"{geoCoderBaseUri}" +
                  $"{configuration["Geocoder:EconomicRegion:feature"]}" +
                  $"&srsname=EPSG:4326" +
                  $"&propertyName={configuration["Geocoder:EconomicRegion:property"]}" +
@@ -47,7 +49,8 @@ namespace Unity.GrantManager.Integrations.Geocoder
 
         public async Task<RegionalDistrictDto> GetRegionalDistrictAsync(LocationCoordinates locationCoordinates)
         {
-            var resource = $"{configuration["Geocoder:BaseUri"]}" +
+            var geoCoderBaseUri = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.GEOCODER_API_BASE);
+            var resource =  $"{geoCoderBaseUri}" +
                $"{configuration["Geocoder:RegionalDistrict:feature"]}" +
                $"&srsname=EPSG:4326" +
                $"&propertyName={configuration["Geocoder:RegionalDistrict:property"]}" +

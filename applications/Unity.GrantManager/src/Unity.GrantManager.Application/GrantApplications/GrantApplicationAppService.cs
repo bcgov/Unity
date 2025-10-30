@@ -108,7 +108,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-        List<PaymentDetailsDto> paymentRequests = new List<PaymentDetailsDto>();
+        List<PaymentDetailsDto> paymentRequests = [];
         if (paymentsFeatureEnabled)
         {
             paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
@@ -125,7 +125,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
             appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? new List<ApplicationTags>());
+            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? []);
             appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
             appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
             appDto.NonRegOrgName = firstApplication.Applicant?.NonRegOrgName ?? string.Empty;
@@ -249,6 +249,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.OrgNumber = application.Applicant.OrgNumber;
             appDto.OrganizationSize = application.Applicant.OrganizationSize;
             appDto.OrgStatus = application.Applicant.OrgStatus;
+            appDto.BusinessNumber = application.Applicant.BusinessNumber;
             appDto.NonRegOrgName = application.Applicant.NonRegOrgName;
             appDto.Sector = application.Applicant.Sector;
             appDto.OrganizationType = application.Applicant.OrganizationType;
@@ -293,7 +294,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                         Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
                         OwnerId = application.OwnerId,
-
+                        UnityApplicationId = application.UnityApplicationId
                     };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
@@ -1095,7 +1096,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDtos.Add(appDto);
         }
 
-        return new List<GrantApplicationDto>(appDtos);
+        return [.. appDtos];
     }
 
     public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)

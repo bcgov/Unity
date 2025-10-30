@@ -170,6 +170,8 @@ public class ApplicationFormAppService
         var form = await Repository.GetAsync(id);
         form.IsDirectApproval = config.IsDirectApproval;
         form.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
+        form.Prefix = config.Prefix;
+        form.SuffixType = config.SuffixType;
         await Repository.UpdateAsync(form);
     }
 

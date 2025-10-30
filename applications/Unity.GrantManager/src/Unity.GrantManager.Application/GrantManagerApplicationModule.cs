@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
-using Unity.GrantManager.Integrations.Sso;
+using Unity.GrantManager.Integrations.Css;
 using Unity.TenantManagement;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BlobStoring;
@@ -40,6 +40,7 @@ using Unity.GrantManager.Locks;
 using JsonSerializerOptions = System.Text.Json.JsonSerializerOptions;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.Modules.Shared.Http;
+using Unity.GrantManager.Integrations.Geocoder;
 
 namespace Unity.GrantManager;
 
@@ -125,7 +126,10 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
         context.Services.AddTransient<IFormsApiService, FormsApiService>();
-        
+
+        context.Services.AddScoped<IGeocoderApiService, GeocoderApiService>();        
+        context.Services.AddScoped<GeocoderApiService>();
+
         context.Services.Configure<CasClientOptions>(configuration.GetSection("Payments"));
         context.Services.Configure<CssApiOptions>(configuration.GetSection("CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection("Notifications"));

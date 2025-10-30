@@ -24,7 +24,8 @@ $(function () {
         initCommentsWidget();
         initEmailsWidget();
         updateLinksCounters();
-        renderSubmission();
+        renderSubmission();        
+        applyTabHeightOffset();
     }
 
     initializeDetailsPage();

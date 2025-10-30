@@ -44,6 +44,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             // Applicant
             var applicatPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applicants.Default, L("Permission:GrantApplicationManagement.Applicants.Default"));
+            applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.ViewList, L("Permission:GrantApplicationManagement.Applicants.ViewList"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagement.Applicants.Edit"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.AssignApplicant, L("Permission:GrantApplicationManagement.Applicants.AssignApplicant"));
 

@@ -18,6 +18,7 @@
     border-radius: 4px;
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
+    flex-wrap: wrap;
 }
 
 .link-item:last-child {
@@ -245,6 +246,60 @@
     background-color: transparent !important;
 }
 
+
+/* Validation error styling */
+.link-item.validation-error {
+    background-color: #f8d7da;
+    border: 2px solid #f5c6cb;
+    position: relative;
+}
+
+.link-item.validation-error .link-info {
+    margin-bottom: 8px;
+}
+
+.validation-error-message {
+    display: block;
+    width: calc(100% + 24px);
+    color: #721c24;
+    background-color: #f8d7da;
+    padding: 8px 12px;
+    margin: 8px -12px -12px -12px;
+    border-top: 1px solid #f5c6cb;
+    font-size: 0.875rem;
+    border-radius: 0 0 4px 4px;
+    flex-basis: 100%;
+    order: 10;
+}
+
+.validation-error-icon {
+    margin-right: 6px;
+}
+
+/* Disabled save button */
+#applicationLinksModelSaveBtn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* Optional: Different styling based on disable reason */
+#applicationLinksModelSaveBtn[title*="No changes"]:disabled {
+    opacity: 0.5;
+}
+
+#applicationLinksModelSaveBtn[title*="validation error"]:disabled {
+    opacity: 0.65;
+}
+
+/* Validation summary */
+.validation-summary {
+    margin-bottom: 15px;
+}
+
+.validation-summary-icon {
+    margin-right: 8px;
+    font-size: 18px;
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
