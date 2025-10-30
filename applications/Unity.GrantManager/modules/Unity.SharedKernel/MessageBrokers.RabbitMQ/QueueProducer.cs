@@ -1,55 +1,77 @@
-﻿using System.Text;
+﻿using System;
 using System.Globalization;
+using System.Text;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
-using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
-using System;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Exceptions;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
-    public class QueueProducer<TQueueMessage> : IQueueProducer<TQueueMessage> where TQueueMessage : IQueueMessage
+    public class QueueProducer<TQueueMessage> : IQueueProducer<TQueueMessage>
+        where TQueueMessage : IQueueMessage
     {
         private readonly ILogger<QueueProducer<TQueueMessage>> _logger;
-        private readonly string? _queueName;
-        private readonly IModel? _channel;
+        private readonly IQueueChannelProvider<TQueueMessage> _channelProvider;
+        private readonly string _queueName;
+        private readonly string _exchangeName;
 
-        public QueueProducer(IQueueChannelProvider<TQueueMessage> channelProvider, ILogger<QueueProducer<TQueueMessage>> logger)
+        public QueueProducer(
+            IQueueChannelProvider<TQueueMessage> channelProvider,
+            ILogger<QueueProducer<TQueueMessage>> logger)
         {
-             _logger = logger;
-
-            try{
-                _channel = channelProvider?.GetChannel();
-                _queueName = typeof(TQueueMessage).Name;
-            } catch (Exception ex) {
-                var ExceptionMessage = ex.Message;
-                _logger.LogError(ex, "QueueProducer Constructor issue: {ExceptionMessage}", ExceptionMessage);
-            }
-
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _channelProvider = channelProvider ?? throw new ArgumentNullException(nameof(channelProvider));
+            _queueName = typeof(TQueueMessage).Name;
+            _exchangeName = $"{_queueName}.exchange";
         }
 
         public void PublishMessage(TQueueMessage message)
         {
-            if (Equals(message, default(TQueueMessage))) throw new ArgumentNullException(nameof(message));
-            if (message.TimeToLive.Ticks <= 0) throw new QueueingException($"{nameof(message.TimeToLive)} cannot be zero or negative");
-            if (_channel == null) throw new QueueingException("QueueProducer -> PublishMessage: Null Channel");
+            if (EqualityComparer<TQueueMessage>.Default.Equals(message, default))
+                throw new ArgumentNullException(nameof(message));
+
+            if (message.TimeToLive.Ticks <= 0)
+                throw new QueueingException($"{nameof(message.TimeToLive)} cannot be zero or negative");
+
+            var channel = _channelProvider.GetChannel();
+
             try
             {
                 message.MessageId = Guid.NewGuid();
+
                 var serializedMessage = SerializeMessage(message);
-                var properties = _channel.CreateBasicProperties();
-                properties.Persistent = true;
+
+                var properties = channel.CreateBasicProperties();
+                properties.Persistent = true; // quorum queues persist
                 properties.Type = _queueName;
+                properties.MessageId = message.MessageId.ToString();
                 properties.Expiration = message.TimeToLive.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
 
-                _channel.BasicPublish(_queueName, _queueName, properties, serializedMessage);
+                // Enable publisher confirms once per channel
+                channel.ConfirmSelect();
+
+                channel.BasicPublish(
+                    exchange: _exchangeName,
+                    routingKey: _queueName,
+                    basicProperties: properties,
+                    body: serializedMessage
+                );
+
+                // Wait for confirmation
+                if (!channel.WaitForConfirms(TimeSpan.FromSeconds(5)))
+                {
+                    throw new QueueingException($"Publish failed: broker did not confirm message {message.MessageId}");
+                }
+
+                _logger.LogInformation("Published message {MessageId} to {Queue}", message.MessageId, _queueName);
             }
             catch (Exception ex)
             {
-                var PublishMessageException = ex.Message;
-                _logger.LogError(ex, "PublishMessage Exception: {PublishMessageException}", PublishMessageException);
-                throw new QueueingException(PublishMessageException);
+                _logger.LogError(ex, "PublishMessage Exception: {Message}", ex.Message);
+                throw new QueueingException($"Publish failed: {ex.Message}", ex);
             }
         }
 

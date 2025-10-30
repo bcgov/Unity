@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
@@ -10,14 +10,15 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
-using Unity.GrantManager.Integration.Orgbook;
+using Unity.Payments.Events;
+using Volo.Abp;
+using Unity.GrantManager.Integrations.Orgbook;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
-using Unity.Payments.Events;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
-using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -50,6 +51,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicant.NonRegOrgName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegOrgName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
             applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
+            applicant.BusinessNumber = intakeMap.BusinessNumber ?? applicant.BusinessNumber;
             applicant.OrganizationType = intakeMap.OrganizationType ?? applicant.OrganizationType;
             applicant.Sector = intakeMap.Sector ?? applicant.Sector;
             applicant.SubSector = intakeMap.SubSector ?? applicant.SubSector;
@@ -288,6 +290,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             NonRegOrgName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
             OrgNumber = intakeMap.OrgNumber,
+            BusinessNumber = intakeMap.BusinessNumber,
             OrganizationType = intakeMap.OrganizationType,
             Sector = intakeMap.Sector,
             SubSector = intakeMap.SubSector,
@@ -483,5 +486,57 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             Logger.LogError(ex, "Error updating ApplicantAgent records for ApplicationId: {ApplicationId}", applicationId);
             throw new UserFriendlyException("An error occurred while updating applicant agent records.");
         }
+    }
+
+    [RemoteService(true)]
+    public async Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input)
+    {
+        var query = await applicantRepository.GetQueryableAsync();
+
+        // Apply default sorting (client-side DataTable handles search, sorting, and paging)
+        query = query.OrderByDescending(a => a.CreationTime);
+
+        // Get total count
+        var totalCount = await query.CountAsync();
+
+        // Execute query
+        var applicants = await query.ToListAsync();
+
+        // Map to DTOs
+        var items = applicants.Select(applicant => new ApplicantListDto
+            {
+                Id = applicant.Id,
+                ApplicantName = applicant.ApplicantName,
+                UnityApplicantId = applicant.UnityApplicantId,
+                OrgName = applicant.OrgName,
+                OrgNumber = applicant.OrgNumber,
+                OrgStatus = applicant.OrgStatus,
+                OrganizationType = applicant.OrganizationType,
+                Status = applicant.Status,
+                RedStop = applicant.RedStop,
+                NonRegisteredBusinessName = applicant.NonRegisteredBusinessName,
+                NonRegOrgName = applicant.NonRegOrgName,
+                OrganizationSize = applicant.OrganizationSize,
+                Sector = applicant.Sector,
+                SubSector = applicant.SubSector,
+                ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees,
+                IndigenousOrgInd = applicant.IndigenousOrgInd,
+                SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc,
+                FiscalMonth = applicant.FiscalMonth,
+                BusinessNumber = applicant.BusinessNumber,
+                FiscalDay = applicant.FiscalDay,
+                StartedOperatingDate = applicant.StartedOperatingDate.HasValue 
+                    ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue) 
+                    : null,
+                SupplierId = applicant.SupplierId?.ToString(),
+                SiteId = applicant.SiteId,
+                MatchPercentage = applicant.MatchPercentage,
+                IsDuplicated = applicant.IsDuplicated,
+                ElectoralDistrict = applicant.ElectoralDistrict,
+                CreationTime = applicant.CreationTime,
+                LastModificationTime = applicant.LastModificationTime
+            }).ToList();
+
+        return new PagedResultDto<ApplicantListDto>(totalCount, items);
     }
 }

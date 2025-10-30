@@ -66,6 +66,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? OrganizationType { get; set; }
     public GrantApplicationAssigneeDto Owner { get; set; } = new();
     public string? OrgStatus  { get; set; } = string.Empty;
+    public string? BusinessNumber { get; set; } = string.Empty;
     public string? OrganizationSize { get; set; } = string.Empty;
     public string? OrgNumber { get; set; } = string.Empty;
     public string? SectorSubSectorIndustryDesc { get; set; } = string.Empty;
@@ -79,4 +80,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? Place {  get; set; }
     public string? RiskRanking  { get; set;}
     public PaymentInfoDto? PaymentInfo { get; set; }
+    public string? UnityApplicationId { get; set; }
 }

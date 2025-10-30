@@ -27,7 +27,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             IdentityPermissions.UserLookup.Default,
             IdentityConsts.ITAdminPermissionName
         );
-
+     
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
            IList<UserTenantAccountDto> userTenantAccounts,
            string? idp)

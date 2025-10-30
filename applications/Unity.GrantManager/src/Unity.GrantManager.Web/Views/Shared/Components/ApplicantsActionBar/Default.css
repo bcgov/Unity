@@ -1,0 +1,27 @@
+/* ApplicantsActionBar Styles - Matching GrantApplications pattern */
+.action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #dee2e6;
+    min-height: 56px;
+}
+
+.search-action-bar {
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.search-action-bar_search-wrapper {
+    flex: 1;
+}
+
+.action-bar-btn-unavailable {
+    display: none;
+}
+
+.margin-left-auto {
+    margin-left: auto;
+}

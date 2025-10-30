@@ -5,36 +5,25 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Integration.Chefs;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Domain.Entities;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using Unity.GrantManager.Integrations.Chefs;
 
 namespace Unity.GrantManager.Controllers
 {
     [Route("/api/app")]
-    public partial class FormController : AbpController
+    public partial class FormController(
+        IApplicationFormRepository applicationFormRepository,
+        IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
+        IApplicationFormVersionAppService applicationFormVersionAppService,
+        IFormsApiService formsApiService) : AbpController
     {
-        private readonly IApplicationFormRepository _applicationFormRepository;
-        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
-        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
-        private readonly IFormsApiService _formsApiService;
-
-       protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
-
-        public FormController(
-            IApplicationFormRepository applicationFormRepository,
-            IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-            IApplicationFormVersionAppService applicationFormVersionAppService,
-            IFormsApiService formsApiService)
-        {
-            _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
-            _applicationFormRepository = applicationFormRepository;
-            _applicationFormVersionAppService = applicationFormVersionAppService;
-            _formsApiService = formsApiService;
-        }
+        private readonly IApplicationFormRepository _applicationFormRepository = applicationFormRepository;
+        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService = applicationFormVersionAppService;
+        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
+        private readonly IFormsApiService _formsApiService = formsApiService;
 
         [HttpPost("form/{formId}/version/{formVersionId}")]
         public async Task<IActionResult> SynchronizeChefsAvailableFields(string formId, string formVersionId)
@@ -62,11 +51,13 @@ namespace Unity.GrantManager.Controllers
                     throw new BusinessException("Application Form API Key is Required");
                 }
 
-                var chefsFormVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
-                
+                var chefsFormVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId)
+                    ?? throw new BusinessException("Chefs Form Version data could not be retrieved.");
+
+
                 var result = await _applicationFormVersionAppService
-                    .UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);                                
-                
+                    .UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);
+
                 return Ok(result);
             }
             catch (EntityNotFoundException ex)
@@ -80,7 +71,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "FormController->SynchronizeChefsAvailableFields: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "FormController->SynchronizeChefsAvailableFields: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
@@ -99,7 +90,7 @@ namespace Unity.GrantManager.Controllers
         {
             if (!ModelState.IsValid)
             {
-                logger.LogWarning("Invalid model state for StoreSubmissionHtml");
+                Logger.LogWarning("Invalid model state for StoreSubmissionHtml");
                 return BadRequest(ModelState);
             }
 
@@ -121,7 +112,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "FormController->StoreSubmissionHtml: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "FormController->StoreSubmissionHtml: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }

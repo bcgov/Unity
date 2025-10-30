@@ -1,7 +1,8 @@
 ﻿using System.Threading.Tasks;
+using Unity.GrantManager.Integration.Geocoder;
 using Volo.Abp.Application.Services;
 
-namespace Unity.GrantManager.Integration.Geocoder
+namespace Unity.GrantManager.Integrations.Geocoder
 {
     public interface IGeocoderApiService : IApplicationService
     {

@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using RestSharp;
-using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +14,9 @@ using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Unity.Modules.Shared.Http;
+using System.Net.Http;
+using Unity.GrantManager.Integrations;
 
 namespace Unity.GrantManager.Intakes;
 
@@ -23,14 +24,15 @@ namespace Unity.GrantManager.Intakes;
 public class SubmissionAppService(
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IRepository<ApplicationForm, Guid> applicationFormRepository,
-        RestClient restClient,
+        IEndpointManagementAppService endpointManagementAppService,
+        IResilientHttpRequest resilientRestClient,
         IStringEncryptionService stringEncryptionService,
         IApplicationRepository applicationRepository,
         ITenantRepository tenantRepository
         ) : GrantManagerAppService, ISubmissionAppService
 {
 
-    protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
+    protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     public async Task<object?> GetSubmission(Guid? formSubmissionId)
     {
@@ -94,20 +96,28 @@ public class SubmissionAppService(
             throw new ApiException(400, "Missing CHEFS Api Key");
         }
 
-        var request = new RestRequest($"/files/{chefsFileAttachmentId}", Method.Get)
-        {
-            Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
-        };
+        string chefsApi = await endpointManagementAppService.GetChefsApiBaseUrlAsync();
+        string url = $"{chefsApi}/files/{chefsFileAttachmentId}";
+        var decryptedApiKey = stringEncryptionService.Decrypt(applicationForm.ApiKey!);
 
-        var response = await restClient.GetAsync(request);
-
+        var response = await resilientRestClient.HttpAsync(
+            HttpMethod.Get,
+            url,
+            null,
+            null,
+            basicAuth: (applicationForm.ChefsApplicationFormGuid!, decryptedApiKey ?? string.Empty)
+        );
 
         if (((int)response.StatusCode) != 200)
         {
-            throw new ApiException((int)response.StatusCode, "Error calling GetChefsFileAttachment: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
-        }        
+            var errorContent = response.Content != null ? await response.Content.ReadAsStringAsync() : string.Empty;
+            throw new ApiException((int)response.StatusCode, "Error calling GetChefsFileAttachment: " + errorContent, response.ReasonPhrase ?? $"{response.StatusCode}");
+        }
 
-        return new BlobDto { Name = name, Content = response.RawBytes ?? Array.Empty<byte>(), ContentType = response.ContentType ?? "application/octet-stream" };
+        var contentBytes = response.Content != null ? await response.Content.ReadAsByteArrayAsync() : Array.Empty<byte>();
+        var contentType = response.Content?.Headers?.ContentType?.MediaType ?? "application/octet-stream";
+
+        return new BlobDto { Name = name, Content = contentBytes, ContentType = contentType };
     }
 
 
@@ -143,81 +153,114 @@ public class SubmissionAppService(
     public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(bool allSubmissions)
     {
         var chefsSubmissions = new List<FormSubmissionSummaryDto>();
-        var serializerOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
+        var serializerOptions = CreateJsonSerializerOptions();
         var tenants = await tenantRepository.GetListAsync();
         var unityRefNos = new HashSet<string>();
         var checkedForms = new HashSet<string>();
+
         foreach (var tenant in tenants)
         {
             using (CurrentTenant.Change(tenant.Id))
             {
-                var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, int.MaxValue);
-                var appDtos = new List<GrantApplicationDto>();
-                var rowCounter = 0;
-
-                foreach (var grouping in groupedResult)
-                {
-                    var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
-                    appDto.RowCount = rowCounter++;
-                    appDtos.Add(appDto);
-
-                    // Chef's API call to get submissions
-                    var formGuid = appDto.ApplicationForm.ChefsApplicationFormGuid ?? string.Empty;
-                    if (!checkedForms.Add(formGuid)) continue;   // already queried this form
-
-
-                    var apiKey = stringEncryptionService.Decrypt(appDto.ApplicationForm.ApiKey!);
-                    var request = new RestRequest($"/forms/{formGuid}/submissions", Method.Get)
-                                    .AddParameter("fields", "applicantAgent.name");
-                    request.Authenticator = new HttpBasicAuthenticator(formGuid, apiKey ?? string.Empty);
-
-                    try
-                    {
-                        var response = await restClient.GetAsync(request);
-                        var submissions = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(
-                                              response.Content ?? "[]",
-                                              serializerOptions) ?? [];
-
-                        foreach (var s in submissions)
-                        {
-                            s.tenant = tenant.Name;
-                            s.form = appDto.ApplicationForm.ApplicationFormName ?? string.Empty;
-                            s.category = appDto.ApplicationForm.Category ?? string.Empty;
-                        }
-
-                        chefsSubmissions.AddRange(submissions);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "GetSubmissionsList Exception: {Message}", ex.Message);
-                    }
-                }
-
-                unityRefNos.UnionWith(appDtos
-                                  .Select(a => a.ReferenceNo)
-                                  .Where(r => !string.IsNullOrWhiteSpace(r))
-                                  .ToHashSet(StringComparer.OrdinalIgnoreCase)); 
+                await ProcessTenantSubmissions(tenant, chefsSubmissions, serializerOptions, checkedForms, unityRefNos);
             }
         }
 
-        // Set inUnity flag
-        foreach (var submission in chefsSubmissions)
-        {
-            submission.inUnity = unityRefNos.Contains(submission.ConfirmationId.ToString());
-        }
+        UpdateSubmissionsWithUnityFlags(chefsSubmissions, unityRefNos);
 
-        // Remove duplicates unless caller asked for *all* submissions
         if (!allSubmissions)
         {
             chefsSubmissions.RemoveAll(s => unityRefNos.Contains(s.ConfirmationId.ToString()));
         }
 
         return new PagedResultDto<FormSubmissionSummaryDto>(chefsSubmissions.Count, chefsSubmissions);
+    }
+
+    private static JsonSerializerOptions CreateJsonSerializerOptions()
+    {
+        return new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+    }
+
+    private async Task ProcessTenantSubmissions(
+        Tenant tenant,
+        List<FormSubmissionSummaryDto> chefsSubmissions,
+        JsonSerializerOptions serializerOptions,
+        HashSet<string> checkedForms,
+        HashSet<string> unityRefNos)
+    {
+        var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, int.MaxValue);
+        var appDtos = new List<GrantApplicationDto>();
+        var rowCounter = 0;
+
+        foreach (var grouping in groupedResult)
+        {
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
+            appDto.RowCount = rowCounter++;
+            appDtos.Add(appDto);
+
+            await FetchChefsSubmissions(tenant, appDto, chefsSubmissions, serializerOptions, checkedForms);
+        }
+
+        unityRefNos.UnionWith(appDtos
+                          .Select(a => a.ReferenceNo)
+                          .Where(r => !string.IsNullOrWhiteSpace(r))
+                          .ToHashSet(StringComparer.OrdinalIgnoreCase));
+    }
+
+    private async Task FetchChefsSubmissions(
+        Tenant tenant,
+        GrantApplicationDto appDto,
+        List<FormSubmissionSummaryDto> chefsSubmissions,
+        JsonSerializerOptions serializerOptions,
+        HashSet<string> checkedForms)
+    {
+        var formGuid = appDto.ApplicationForm.ChefsApplicationFormGuid ?? string.Empty;
+        if (!checkedForms.Add(formGuid)) return;
+
+        var apiKey = stringEncryptionService.Decrypt(appDto.ApplicationForm.ApiKey!);
+
+        try
+        {
+            var chefsApi = await endpointManagementAppService.GetChefsApiBaseUrlAsync();
+            var url = $"{chefsApi}/forms/{formGuid}/submissions?fields=applicantAgent.name";
+            var response = await resilientRestClient.HttpAsync(
+                HttpMethod.Get,
+                url,
+                null,
+                null,
+                basicAuth: (formGuid, apiKey ?? string.Empty)
+            );
+
+            var contentString = response.Content != null ? await response.Content.ReadAsStringAsync() : "[]";
+            var submissions = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(
+                                  contentString,
+                                  serializerOptions) ?? [];
+
+            foreach (var s in submissions)
+            {
+                s.tenant = tenant.Name;
+                s.form = appDto.ApplicationForm.ApplicationFormName ?? string.Empty;
+                s.category = appDto.ApplicationForm.Category ?? string.Empty;
+            }
+
+            chefsSubmissions.AddRange(submissions);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "GetSubmissionsList Exception: {Message}", ex.Message);
+        }
+    }
+
+    private static void UpdateSubmissionsWithUnityFlags(List<FormSubmissionSummaryDto> chefsSubmissions, HashSet<string> unityRefNos)
+    {
+        foreach (var submission in chefsSubmissions)
+        {
+            submission.inUnity = unityRefNos.Contains(submission.ConfirmationId.ToString());
+        }
     }
 }

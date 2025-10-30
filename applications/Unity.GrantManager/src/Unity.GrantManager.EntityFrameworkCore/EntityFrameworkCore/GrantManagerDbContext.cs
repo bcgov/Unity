@@ -17,6 +17,7 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using AppAny.Quartz.EntityFrameworkCore.Migrations;
 using AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL;
+using Unity.GrantManager.Integrations;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
 
@@ -30,6 +31,7 @@ public class GrantManagerDbContext :
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
 
+    public DbSet<DynamicUrl> DynamicUrls { get; set; }
     public DbSet<Sector> Sectors { get; set; }
     public DbSet<SubSector> SubSectors { get; set; }
     public DbSet<EconomicRegion> EconomicRegion { get; set; }
@@ -90,6 +92,16 @@ public class GrantManagerDbContext :
         modelBuilder.AddQuartz(builder => builder.UsePostgreSql("qrtz_", null));
 
         /* Configure your own tables/entities inside here */
+        modelBuilder.Entity<DynamicUrl>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "DynamicUrls",
+                GrantManagerConsts.DbSchema);
+            b.HasKey(x => x.Id);
+            b.Property(x => x.KeyName).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Url).IsRequired();
+            b.Property(x => x.Description).HasMaxLength(256);
+            b.ConfigureByConvention();            
+        });
 
         modelBuilder.Entity<Sector>(b =>
         {

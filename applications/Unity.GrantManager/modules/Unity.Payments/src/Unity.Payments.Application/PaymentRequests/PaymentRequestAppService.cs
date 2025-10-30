@@ -143,7 +143,7 @@ namespace Unity.Payments.PaymentRequests
 
         private static string GenerateSequenceNumberAsync(int sequenceNumber, int index)
         {
-            sequenceNumber = sequenceNumber + index;
+            sequenceNumber += index;
             return sequenceNumber.ToString("D4");
         }
 
@@ -282,13 +282,7 @@ namespace Unity.Payments.PaymentRequests
         {
             var application = await (await applicationRepository.GetQueryableAsync())
             .Include(a => a.ApplicationForm)
-            .FirstOrDefaultAsync(a => a.Id == applicationId);
-
-            if (application == null)
-            {
-                throw new BusinessException($"Application with Id {applicationId} not found.");
-            }
-
+            .FirstOrDefaultAsync(a => a.Id == applicationId) ?? throw new BusinessException($"Application with Id {applicationId} not found.");
             var appForm = application.ApplicationForm ?? 
             (application.ApplicationFormId != Guid.Empty 
                 ? await applicationFormRepository.GetAsync(application.ApplicationFormId) 
@@ -306,13 +300,13 @@ namespace Unity.Payments.PaymentRequests
     
         private async Task<bool> CanPerformLevel1ActionAsync(PaymentRequestStatus status)
         {
-            List<PaymentRequestStatus> level1Approvals = new() { PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined };
+            List<PaymentRequestStatus> level1Approvals = [PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined];
             return await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L1ApproveOrDecline) && level1Approvals.Contains(status);
         }
 
         private async Task<bool> CanPerformLevel2ActionAsync(PaymentRequest payment, bool IsApprove)
         {
-            List<PaymentRequestStatus> level2Approvals = new() { PaymentRequestStatus.L2Pending, PaymentRequestStatus.L2Declined };
+            List<PaymentRequestStatus> level2Approvals = [PaymentRequestStatus.L2Pending, PaymentRequestStatus.L2Declined];
 
             // Rule AB#26693: Reject Payment Request update if violates L1 and L2 separation of duties
             var IsSameApprover = CurrentUser.Id == payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId;
@@ -327,7 +321,7 @@ namespace Unity.Payments.PaymentRequests
 
         private async Task<bool> CanPerformLevel3ActionAsync(PaymentRequestStatus status)
         {
-            List<PaymentRequestStatus> level3Approvals = new() { PaymentRequestStatus.L3Pending, PaymentRequestStatus.L3Declined };
+            List<PaymentRequestStatus> level3Approvals = [PaymentRequestStatus.L3Pending, PaymentRequestStatus.L3Declined];
             return await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && level3Approvals.Contains(status);
         }
 
@@ -395,19 +389,17 @@ namespace Unity.Payments.PaymentRequests
             var paymentDtos = ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(paymentsList);
 
             // Flatten all DecisionUserIds from ExpenseApprovals across all PaymentRequestDtos
-            List<Guid> paymentRequesterIds = paymentDtos
+            List<Guid> paymentRequesterIds = [.. paymentDtos
                 .Select(payment => payment.CreatorId)
                 .OfType<Guid>()
-                .Distinct()
-                .ToList();
+                .Distinct()];
 
-            List<Guid> expenseApprovalCreatorIds = paymentDtos
+            List<Guid> expenseApprovalCreatorIds = [.. paymentDtos
                 .SelectMany(payment => payment.ExpenseApprovals)
                 .Where(expenseApproval => expenseApproval.Status != ExpenseApprovalStatus.Requested)
                 .Select(expenseApproval => expenseApproval.DecisionUserId)
                 .OfType<Guid>()
-                .Distinct()
-                .ToList();
+                .Distinct()];
 
             // Call external lookup for each distinct User Id and store in a dictionary.
             var userDictionary = new Dictionary<Guid, PaymentUserDto>();

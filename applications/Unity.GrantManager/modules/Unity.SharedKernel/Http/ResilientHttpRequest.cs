@@ -4,110 +4,192 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Newtonsoft.Json;
 
 namespace Unity.Modules.Shared.Http
 {
     [IntegrationService]
-    public class ResilientHttpRequest : IResilientHttpRequest
+    public class ResilientHttpRequest(HttpClient httpClient) : IResilientHttpRequest
     {
-        private readonly IHttpClientFactory _httpClientFactory;
         private static int _maxRetryAttempts = 3;
-        private const int OneMinuteInSeconds = 60;       
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
-        private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(OneMinuteInSeconds);
+        private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(60);
+        private const string AuthorizationHeader = "Authorization";
+        private static ResiliencePipeline<HttpResponseMessage> _pipeline = BuildPipeline();
+        private string? _baseUrl;
+        private readonly HttpClient _httpClient = httpClient;
 
-        public ResilientHttpRequest(IHttpClientFactory httpClientFactory)
+        private static readonly HttpStatusCode[] RetryableStatusCodes = new[]
         {
-            _httpClientFactory = httpClientFactory;
-        }
+            HttpStatusCode.TooManyRequests,
+            HttpStatusCode.InternalServerError,
+            HttpStatusCode.BadGateway,
+            HttpStatusCode.ServiceUnavailable,
+            HttpStatusCode.GatewayTimeout
+        };
 
         public static void SetPipelineOptions(
-            int maxRetryAttempts, 
+            int maxRetryAttempts,
             TimeSpan pauseBetweenFailures,
-            TimeSpan httpRequestTimeout
-            )
+            TimeSpan httpRequestTimeout)
         {
             _maxRetryAttempts = maxRetryAttempts;
             _pauseBetweenFailures = pauseBetweenFailures;
             _httpRequestTimeout = httpRequestTimeout;
+            _pipeline = BuildPipeline(); // rebuild with new settings
         }
 
-        private static bool ReprocessBasedOnStatusCode(HttpStatusCode statusCode)
+        private static ResiliencePipeline<HttpResponseMessage> BuildPipeline()
         {
-            HttpStatusCode[] reprocessStatusCodes = {
-                 HttpStatusCode.TooManyRequests,
-                 HttpStatusCode.InternalServerError,
-                 HttpStatusCode.BadGateway,
-                 HttpStatusCode.ServiceUnavailable,
-                 HttpStatusCode.GatewayTimeout,
+            return new ResiliencePipelineBuilder<HttpResponseMessage>()
+                .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
+                {
+                    ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                        .Handle<HttpRequestException>()
+                        .HandleResult(result => ShouldRetry(result.StatusCode)),
+                    Delay = _pauseBetweenFailures,
+                    MaxRetryAttempts = _maxRetryAttempts,
+                    UseJitter = true,
+                    BackoffType = DelayBackoffType.Exponential
+                })
+                .AddTimeout(_httpRequestTimeout)
+                .Build();
+        }
+
+        public void SetBaseUrl(string baseUrl)
+        {
+            if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out _))
+            {
+                throw new ArgumentException("Base URL is not a valid absolute URI.", nameof(baseUrl));
+            }
+            _baseUrl = baseUrl.TrimEnd('/');
+        }
+
+        private static bool ShouldRetry(HttpStatusCode statusCode) => RetryableStatusCodes.Contains(statusCode);
+
+        /// <summary>
+        /// Send an HTTP request with resilience policies applied.
+        /// </summary>
+        public async Task<HttpResponseMessage> HttpAsync(
+            HttpMethod httpVerb,
+            string resource,
+            object? body = null,
+            string? authToken = null,
+            (string username, string password)? basicAuth = null,
+            CancellationToken cancellationToken = default)
+        {
+            return await SendWithClientAsync(_httpClient, httpVerb, resource, body, authToken, basicAuth, cancellationToken);
+        }
+
+        /// <summary>
+        /// HTTP request with mutual TLS (client certificate).
+        /// </summary>
+        public Task<HttpResponseMessage> HttpAsyncSecured(
+            HttpMethod httpVerb,
+            string resource,
+            string certPath,
+            string? certPassword = null,
+            object? body = null,
+            string? authToken = null,
+            (string username, string password)? basicAuth = null,
+            CancellationToken cancellationToken = default)
+        {
+            var handler = new HttpClientHandler
+            {
+                ClientCertificateOptions = ClientCertificateOption.Manual
             };
 
-            return reprocessStatusCodes.Contains(statusCode);
+            X509Certificate2 clientCert = LoadCertificate(certPath, certPassword);
+            handler.ClientCertificates.Add(clientCert);
+
+            using var securedHttpClient = new HttpClient(handler);
+            return SendWithClientAsync(securedHttpClient, httpVerb, resource, body, authToken, basicAuth, cancellationToken);
         }
 
-        private static ResiliencePipeline<HttpResponseMessage> _pipeline =
-                new ResiliencePipelineBuilder<HttpResponseMessage>()
-                   .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
-                   {
-                       ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-                           .Handle<HttpRequestException>()
-                           .HandleResult(result => ReprocessBasedOnStatusCode(result.StatusCode)),
-                       Delay = _pauseBetweenFailures,
-                       MaxRetryAttempts = _maxRetryAttempts,
-                       UseJitter = true,
-                       BackoffType = DelayBackoffType.Exponential,
-                       OnRetry = args =>
-                       {
-                           return default;
-                       }
-                   })
-                   .AddTimeout(_httpRequestTimeout)
-                   .Build();
-
-        public async Task<HttpResponseMessage> HttpAsync(HttpMethod httpVerb, string resource, string? authToken = null)
+        private static X509Certificate2 LoadCertificate(string certPath, string? certPassword = null)
         {
-            return await ExecuteRequestAsync(httpVerb, resource, null, authToken);
+            if (string.IsNullOrWhiteSpace(certPassword))
+            {
+                // Load PEM or DER certificates
+                return X509CertificateLoader.LoadCertificateFromFile(certPath);
+            }
+            else
+            {
+                // Load PFX/PKCS12 certificates with password
+                return X509CertificateLoader.LoadPkcs12FromFile(certPath, certPassword);
+            }
         }
 
-        public async Task<HttpResponseMessage> HttpAsyncWithBody(HttpMethod httpVerb, string resource, string? body = null, string? authToken = null)
-        {
-            return await ExecuteRequestAsync(httpVerb, resource, body, authToken);
-        }
-
-        public static string ContentToString(HttpContent httpContent)
-        {
-            var readAsStringAsync = httpContent.ReadAsStringAsync();
-            return readAsStringAsync.Result;
-        }
-
-        private async Task<HttpResponseMessage> ExecuteRequestAsync(
-            HttpMethod httpVerb, 
+        private async Task<HttpResponseMessage> SendWithClientAsync(
+            HttpClient client,
+            HttpMethod httpVerb,
             string resource,
-            string? body,
-            string? authToken)
+            object? body,
+            string? authToken,
+            (string username, string password)? basicAuth,
+            CancellationToken cancellationToken)
         {
-            // HttpClient uses the system default TLS settings; no need to set ServicePointManager.SecurityProtocol.
-            HttpRequestMessage requestMessage = new HttpRequestMessage(httpVerb, resource) { Version = new Version(3, 0) };
-            using HttpClient httpClient = _httpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.Accept.Clear();
-            httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.ConnectionClose = true;
-
-            if (!authToken.IsNullOrEmpty())
+            // Determine final URL
+            if (!Uri.TryCreate(resource, UriKind.Absolute, out Uri? fullUrl))
             {
-                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {authToken}");
+                if (string.IsNullOrWhiteSpace(_baseUrl))
+                {
+                    throw new InvalidOperationException("Base URL must be set for relative paths.");
+                }
+                fullUrl = new Uri(new Uri(_baseUrl, UriKind.Absolute), resource);
             }
 
-            if (httpVerb != HttpMethod.Get && body != null)
+            return await _pipeline.ExecuteAsync(async ct =>
             {
-                requestMessage.Content = new StringContent(body, Encoding.UTF8, "application/json");
+                using var requestMessage = BuildRequestMessage(httpVerb, fullUrl, body, authToken, basicAuth);
+                return await client.SendAsync(requestMessage, ct);
+            }, cancellationToken);
+        }
+
+        private static HttpRequestMessage BuildRequestMessage(
+            HttpMethod httpVerb,
+            Uri fullUrl,
+            object? body,
+            string? authToken,
+            (string username, string password)? basicAuth)
+        {
+            var requestMessage = new HttpRequestMessage(httpVerb, fullUrl);
+            requestMessage.Headers.Accept.Clear();
+            requestMessage.Headers.ConnectionClose = true;
+
+            if (!string.IsNullOrWhiteSpace(authToken))
+            {
+                requestMessage.Headers.Remove(AuthorizationHeader);
+                requestMessage.Headers.Add(AuthorizationHeader, $"Bearer {authToken}");
+            }
+            else if (basicAuth.HasValue)
+            {
+                var credentials = Convert.ToBase64String(
+                    Encoding.ASCII.GetBytes($"{basicAuth.Value.username}:{basicAuth.Value.password}")
+                );
+                requestMessage.Headers.Remove(AuthorizationHeader);
+                requestMessage.Headers.Add(AuthorizationHeader, $"Basic {credentials}");
             }
 
-            HttpResponseMessage restResponse = await _pipeline.ExecuteAsync(async ct => await httpClient.SendAsync(requestMessage, ct));
-            return await Task.FromResult(restResponse);
+            if (body != null)
+            {
+                string bodyString = body is string s ? s : JsonConvert.SerializeObject(body);
+                requestMessage.Content = new StringContent(
+                    bodyString, Encoding.UTF8, "application/json"
+                );
+            }
+
+            return requestMessage;
+        }
+
+        public static async Task<string> ContentToStringAsync(HttpContent httpContent)
+        {
+            return await httpContent.ReadAsStringAsync();
         }
     }
 }

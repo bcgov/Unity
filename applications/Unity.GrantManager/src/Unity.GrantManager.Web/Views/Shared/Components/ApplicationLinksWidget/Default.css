@@ -1,15 +1,60 @@
-﻿
-.links-table-row {
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    font-size: var(--bc-font-size-sm);
+﻿/* Fix for DataTables alignment with scrollX enabled */
+#ApplicationLinksTable_wrapper {
+    width: 100%;
 }
 
-.links-table-row.header {
-    background: var(--bc-colors-grey-pressed);
-    font-weight: bold;
+#ApplicationLinksTable_wrapper .dataTables_scroll {
+    overflow: visible;
 }
 
-.links-table-record {
-    border-bottom: 1px solid var(--bc-colors-grey-dividers);
+#ApplicationLinksTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner,
+#ApplicationLinksTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner table {
+    width: 100% !important;
+}
+
+#ApplicationLinksTable_wrapper .dataTables_scrollBody {
+    overflow: visible !important;
+}
+
+#ApplicationLinksTable_wrapper .dataTables_scrollBody table {
+    width: 100% !important;
+}
+
+/* Ensure table uses full width */
+#ApplicationLinksTable {
+    width: 100% !important;
+}
+
+/* Column alignment */
+.links-table th,
+.links-table td {
+    text-align: left;
+    vertical-align: middle;
+}
+
+/* Delete button column */
+.links-table th:last-child,
+.links-table td:last-child {
+    text-align: center;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+}
+
+/* Delete button styling */
+.links-table .delete-link-btn {
+    font-size: 1.2rem;
+    padding: 0.25rem 0.5rem;
+    text-decoration: none !important;
+}
+
+.links-table .delete-link-btn:hover {
+    opacity: 0.7;
+    text-decoration: none !important;
+}
+
+/* Ensure proper text wrapping in category column */
+.links-table td:first-child {
+    white-space: normal;
+    word-wrap: break-word;
 }

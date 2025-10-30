@@ -16,4 +16,6 @@ public static class GrantManagerConsts
     public const string DefaultTenantConnectionStringName = "Tenant";
 
     public const string DefaultConnectionStringName = "Default";
+
+    public const string UnknownValue = "Unknown";
 }

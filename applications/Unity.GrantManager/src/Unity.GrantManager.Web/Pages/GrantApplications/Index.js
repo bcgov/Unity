@@ -247,6 +247,7 @@
             getProjectSummaryColumn(columnIndex++),
             getOrganizationTypeColumn(columnIndex++),
             getOrganizationNameColumn(columnIndex++),
+            getBusinessNumberColumn(columnIndex++),
             getDueDiligenceStatusColumn(columnIndex++),
             getDeclineRationaleColumn(columnIndex++),
             getContactFullNameColumn(columnIndex++),
@@ -270,6 +271,7 @@
             getApplicantIdColumn(columnIndex++),
             getPayoutColumn(columnIndex++),
             getNonRegisteredOrganizationNameColumn(columnIndex++),
+            getUnityApplicationIdColumn(columnIndex++),
         ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
             .sort((a, b) => a.index - b.index);
         return sortedColumns;
@@ -865,11 +867,37 @@
         }
     }
 
+    function getBusinessNumberColumn(columnIndex) {
+        return {
+            title: l('Summary:Application.BusinessNumber'),
+            name: 'businessNumber',
+            data: 'applicant.businessNumber',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
     function getNonRegisteredOrganizationNameColumn(columnIndex) {
         return {
             title: l('Summary:Application.NonRegOrgName'),
             name: 'nonRegOrgName',
             data: 'nonRegOrgName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getUnityApplicationIdColumn(columnIndex) {
+        return {
+            title: 'Unity Application Id',
+            name: 'unityApplicationId',
+            data: 'unityApplicationId',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';

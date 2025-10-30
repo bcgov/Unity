@@ -13,27 +13,45 @@ using Unity.Payments.Suppliers;
 using Unity.Modules.Shared.Correlation;
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Unity.GrantManager.Integrations;
 
 namespace Unity.Payments.Integrations.Cas
 {
     [IntegrationService]
     [ExposeServices(typeof(SupplierService), typeof(ISupplierService))]
-    public class SupplierService(ILocalEventBus localEventBus,
-                                IResilientHttpRequest resilientHttpRequest,
-                                IOptions<CasClientOptions> casClientOptions,
-                                ICasTokenService iTokenService) : ApplicationService, ISupplierService
+    public class SupplierService : ApplicationService, ISupplierService
     {
         protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
-
         private const string CFS_SUPPLIER = "cfs/supplier";
+        private readonly Task<string> casBaseApiTask;
+        private readonly ILocalEventBus localEventBus;
+        private readonly IResilientHttpRequest resilientHttpRequest;
+        private readonly ICasTokenService iTokenService;
+        public SupplierService(ILocalEventBus localEventBus,
+                                IEndpointManagementAppService endpointManagementAppService,
+                                IResilientHttpRequest resilientHttpRequest,
+                                ICasTokenService iTokenService)
+        {
+            this.localEventBus = localEventBus;
+            this.resilientHttpRequest = resilientHttpRequest;
+            this.iTokenService = iTokenService;
+
+            // Initialize the base API URL once during construction
+            casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
+        }
+
+        private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
+        {
+            var url = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
+            return url ?? throw new UserFriendlyException("Payment API base URL is not configured.");
+        }
 
         public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
         {
             Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
-            
+
             // Integrate with payments module to update / insert supplier
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
                 && !string.IsNullOrEmpty(supplierNumber))
@@ -69,7 +87,7 @@ namespace Unity.Payments.Integrations.Cas
             catch (Exception ex)
             {
                 Logger.LogError(ex, "An exception occurred updating the supplier for BN9: {ExceptionMessage}", ex.Message);
-                casSupplierResponse  = "An exception occurred updating the supplier for BN9: " + ex.Message;
+                casSupplierResponse = "An exception occurred updating the supplier for BN9: " + ex.Message;
             }
 
             return casSupplierResponse;
@@ -77,36 +95,52 @@ namespace Unity.Payments.Integrations.Cas
 
         private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
         {
-            try {
-                UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
+            try
+            {
+                var casSupplierJson = casSupplierResponse is string str ? str : casSupplierResponse.ToString();
+                using var doc = JsonDocument.Parse(casSupplierJson);
+                var rootElement = doc.RootElement;
+                if (rootElement.TryGetProperty("code", out JsonElement codeProp) && codeProp.GetString() == "Unauthorized")
+                    throw new UserFriendlyException("Unauthorized access to CAS supplier information.");
+                UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(rootElement);
                 supplierEto.CorrelationId = applicantId;
                 supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
                 await localEventBus.PublishAsync(supplierEto);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Logger.LogError(ex, "An exception occurred updating the supplier: {ExceptionMessage}", ex.Message);
-                throw new UserFriendlyException("An exception occurred updating the supplier.");
+                throw new UserFriendlyException("An exception occurred updating the supplier: " + ex.Message);
             }
         }
 
-        protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
+        protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(JsonElement casSupplierResponse)
         {
-            string lastUpdated = casSupplierResponse.GetProperty("lastupdated").ToString();
-            string suppliernumber = casSupplierResponse.GetProperty("suppliernumber").ToString();
-            string suppliername = casSupplierResponse.GetProperty("suppliername").ToString();
-            string subcategory = casSupplierResponse.GetProperty("subcategory").ToString();
-            string providerid = casSupplierResponse.GetProperty("providerid").ToString();
-            string businessnumber = casSupplierResponse.GetProperty("businessnumber").ToString();
-            string status = casSupplierResponse.GetProperty("status").ToString();
-            string supplierprotected = casSupplierResponse.GetProperty("supplierprotected").ToString();
-            string standardindustryclassification = casSupplierResponse.GetProperty("standardindustryclassification").ToString();
+            string GetProp(string name) =>
+                casSupplierResponse.TryGetProperty(name, out var prop) && prop.ValueKind != JsonValueKind.Null
+                    ? prop.ToString()
+                    : string.Empty;
+
+            string lastUpdated = GetProp("lastupdated");
+            string suppliernumber = GetProp("suppliernumber");
+            string suppliername = GetProp("suppliername");
+            string subcategory = GetProp("subcategory");
+            string providerid = GetProp("providerid");
+            string businessnumber = GetProp("businessnumber");
+            string status = GetProp("status");
+            string supplierprotected = GetProp("supplierprotected");
+            string standardindustryclassification = GetProp("standardindustryclassification");
 
             _ = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime lastUpdatedDate);
-            List<SiteEto> siteEtos = new List<SiteEto>();
-            JArray siteArray = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(casSupplierResponse.GetProperty("supplieraddress").ToString());
-            foreach (dynamic site in siteArray)
+
+            var siteEtos = new List<SiteEto>();
+            if (casSupplierResponse.TryGetProperty("supplieraddress", out var sitesJson) &&
+                sitesJson.ValueKind == JsonValueKind.Array)
             {
-                siteEtos.Add(GetSiteEto(site));
+                foreach (var site in sitesJson.EnumerateArray())
+                {
+                    siteEtos.Add(GetSiteEto(site));
+                }
             }
 
             return new UpsertSupplierEto
@@ -124,52 +158,49 @@ namespace Unity.Payments.Integrations.Cas
             };
         }
 
-        protected static SiteEto GetSiteEto(dynamic site)
+
+        protected static SiteEto GetSiteEto(JsonElement site)
         {
-            string supplierSiteCode = site["suppliersitecode"].ToString();
-            string addressLine1 = site["addressline1"].ToString();
-            string addressLine2 = site["addressline2"].ToString();
-            string city = site["city"].ToString();
-            string province = site["province"].ToString();
-            string country = site["country"].ToString();
-            string postalCode = site["postalcode"].ToString();
-            string emailAddress = site["emailaddress"].ToString();
-            string eftAdvicePref = site["eftadvicepref"].ToString();
-            string accountNumber = site["accountnumber"].ToString();
+            string accountNumber = GetJsonProperty("accountnumber", site);
             string maskedAccountNumber = accountNumber.Length > 4
                 ? new string('*', accountNumber.Length - 4) + accountNumber[^4..]
                 : accountNumber;
-            string bankAccount = maskedAccountNumber;
-            string providerId = site["providerid"].ToString();
-            string siteStatus = site["status"].ToString();
-            string siteProtected = site["siteprotected"].ToString();
-            string siteLastUpdated = site["lastupdated"].ToString();
-
+            string siteLastUpdated = GetJsonProperty("lastupdated", site);
             _ = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime siteLastUpdatedDate);
+
             return new SiteEto
             {
-                SupplierSiteCode = supplierSiteCode,
-                AddressLine1 = addressLine1,
-                AddressLine2 = addressLine2,
-                AddressLine3 = addressLine2,
-                City = city,
-                Province = province,
-                Country = country,
-                PostalCode = postalCode,
-                EmailAddress = emailAddress,
-                EFTAdvicePref = eftAdvicePref,
-                BankAccount = bankAccount,
-                ProviderId = providerId,
-                Status = siteStatus,
-                SiteProtected = siteProtected,
+                SupplierSiteCode = GetJsonProperty("suppliersitecode", site),
+                AddressLine1 = GetJsonProperty("addressline1", site),
+                AddressLine2 = GetJsonProperty("addressline2", site),
+                AddressLine3 = GetJsonProperty("addressline2", site),
+                City = GetJsonProperty("city", site),
+                Province = GetJsonProperty("province", site),
+                Country = GetJsonProperty("country", site),
+                PostalCode = GetJsonProperty("postalcode", site),
+                EmailAddress = GetJsonProperty("emailaddress", site),
+                EFTAdvicePref = GetJsonProperty("eftadvicepref", site),
+                BankAccount = maskedAccountNumber,
+                ProviderId = GetJsonProperty("providerid", site),
+                Status = GetJsonProperty("status", site),
+                SiteProtected = GetJsonProperty("siteprotected", site),
                 LastUpdated = siteLastUpdatedDate
             };
         }
+
+        private static string GetJsonProperty(string name, JsonElement jsonElement)
+        {
+            return jsonElement.TryGetProperty(name, out var prop) && prop.ValueKind != JsonValueKind.Null
+                ? prop.ToString()
+                : string.Empty;
+        }
+
         public async Task<dynamic> GetCasSupplierInformationAsync(string? supplierNumber)
         {
             if (!string.IsNullOrEmpty(supplierNumber))
             {
-                var resource = $"{casClientOptions.Value.CasBaseUrl}/{CFS_SUPPLIER}/{supplierNumber}";
+                var casBaseApi = await casBaseApiTask;
+                var resource = $"{casBaseApi}/{CFS_SUPPLIER}/{supplierNumber}";
                 return await GetCasSupplierInformationByResourceAsync(resource);
             }
             else
@@ -182,7 +213,8 @@ namespace Unity.Payments.Integrations.Cas
         {
             if (!string.IsNullOrEmpty(bn9))
             {
-                var resource = $"{casClientOptions.Value.CasBaseUrl}/{CFS_SUPPLIER}/{bn9}/businessnumber";
+                var casBaseApi = await casBaseApiTask;
+                var resource = $"{casBaseApi}/{CFS_SUPPLIER}/{bn9}/businessnumber";
                 return await GetCasSupplierInformationByResourceAsync(resource);
             }
             else
@@ -199,33 +231,32 @@ namespace Unity.Payments.Integrations.Cas
                 var authToken = await iTokenService.GetAuthTokenAsync();
                 try
                 {
-                    using (var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken)) {
-                        if (response != null)
+                    using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);
+                    if (response != null)
+                    {
+                        if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                         {
-                            if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
-                            {
-                                var contentString = await response.Content.ReadAsStringAsync();
-                                var result = JsonSerializer.Deserialize<dynamic>(contentString)
-                                    ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
-                                return result;
-                            }
-                            else if (response.StatusCode == HttpStatusCode.NotFound)
-                            {
-                                throw new UserFriendlyException("Supplier not Found.");
-                            }
-                            else if (response.StatusCode != HttpStatusCode.OK)
-                            {
-                                throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);
-                            }
-                            else
-                            {
-                                throw new UserFriendlyException("The CAS Supplier Number was not found.");
-                            }
+                            var contentString = await response.Content.ReadAsStringAsync();
+                            var result = JsonSerializer.Deserialize<dynamic>(contentString)
+                                ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
+                            return result;
+                        }
+                        else if (response.StatusCode == HttpStatusCode.NotFound)
+                        {
+                            throw new UserFriendlyException("Supplier not Found.");
+                        }
+                        else if (response.StatusCode != HttpStatusCode.OK)
+                        {
+                            throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);
                         }
                         else
                         {
-                            throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: Null response");
+                            throw new UserFriendlyException("The CAS Supplier Number was not found.");
                         }
+                    }
+                    else
+                    {
+                        throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: Null response");
                     }
                 }
                 catch (Exception ex)

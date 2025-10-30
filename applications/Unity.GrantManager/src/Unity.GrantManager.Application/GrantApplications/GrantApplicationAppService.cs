@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
@@ -107,7 +108,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-        List<PaymentDetailsDto> paymentRequests = new List<PaymentDetailsDto>();
+        List<PaymentDetailsDto> paymentRequests = [];
         if (paymentsFeatureEnabled)
         {
             paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
@@ -124,7 +125,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
             appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? new List<ApplicationTags>());
+            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? []);
             appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
             appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
             appDto.NonRegOrgName = firstApplication.Applicant?.NonRegOrgName ?? string.Empty;
@@ -248,6 +249,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.OrgNumber = application.Applicant.OrgNumber;
             appDto.OrganizationSize = application.Applicant.OrganizationSize;
             appDto.OrgStatus = application.Applicant.OrgStatus;
+            appDto.BusinessNumber = application.Applicant.BusinessNumber;
             appDto.NonRegOrgName = application.Applicant.NonRegOrgName;
             appDto.Sector = application.Applicant.Sector;
             appDto.OrganizationType = application.Applicant.OrganizationType;
@@ -292,7 +294,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                         Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
                         OwnerId = application.OwnerId,
-
+                        UnityApplicationId = application.UnityApplicationId
                     };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
@@ -1094,7 +1096,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDtos.Add(appDto);
         }
 
-        return new List<GrantApplicationDto>(appDtos);
+        return [.. appDtos];
     }
 
     public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)
@@ -1277,12 +1279,18 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
     {
 
-        var query = from applications in await _applicationRepository.GetQueryableAsync()
+        var applicationsQuery = await _applicationRepository.GetQueryableAsync();
+        var applicantsQuery = await _applicantRepository.GetQueryableAsync();
+        
+        var query = from applications in applicationsQuery
+                    join applicant in applicantsQuery on applications.ApplicantId equals applicant.Id into applicantGroup
+                    from applicant in applicantGroup.DefaultIfEmpty()
                     select new GrantApplicationLiteDto
                     {
                         Id = applications.Id,
                         ProjectName = applications.ProjectName,
-                        ReferenceNo = applications.ReferenceNo
+                        ReferenceNo = applications.ReferenceNo,
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue
                     };
 
         return await query.ToListAsync();

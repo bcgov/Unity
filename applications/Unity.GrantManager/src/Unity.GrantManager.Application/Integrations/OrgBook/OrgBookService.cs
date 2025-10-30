@@ -1,85 +1,95 @@
 ﻿using Newtonsoft.Json;
-using RestSharp;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.GrantManager.Integration.Orgbook;
 using Unity.GrantManager.Integrations.Exceptions;
-using Unity.GrantManager.Integrations.Http;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using System.Net.Http;
+using Unity.Modules.Shared.Http;
+using System;
 
 namespace Unity.GrantManager.Integrations.Orgbook
 {
-
     [ExposeServices(typeof(OrgBookService), typeof(IOrgBookService))]
-    public class OrgBookService : ApplicationService, IOrgBookService
+    public class OrgBookService(
+        IResilientHttpRequest resilientRestClient,
+        IEndpointManagementAppService endpointManagementAppService) : ApplicationService, IOrgBookService
     {
-        private readonly IResilientHttpRequest _resilientRestClient;
 
-        private readonly string orgbook_base_api = "https://orgbook.gov.bc.ca/api";
-        private readonly string orgbook_query_match = "inactive=any&latest=any&revoked=any&ordering=-score";
+        private readonly Task<string> _orgbookBaseApiTask = GetBaseApiUrlAsync(endpointManagementAppService);
 
-        public OrgBookService(IResilientHttpRequest resilientRestClient) {
-            _resilientRestClient = resilientRestClient;
+        private const string OrgbookQueryMatch = "inactive=any&latest=any&revoked=any&ordering=-score";
+
+        private static async Task<string> GetBaseApiUrlAsync(IEndpointManagementAppService endpointManagementAppService)
+        {
+            var url = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.ORGBOOK_API_BASE);
+            if (string.IsNullOrEmpty(url))
+            {
+                throw new IntegrationServiceException("OrgBook API base URL is not configured.");
+            }
+
+            return url;
         }
 
         public async Task<dynamic?> GetOrgBookQueryAsync(string orgBookQuery)
         {
-            var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/v4/search/topic?q={orgBookQuery}&{orgbook_query_match}");
+            if (string.IsNullOrWhiteSpace(orgBookQuery))
+            {
+                throw new ArgumentException("Query cannot be empty.", nameof(orgBookQuery));
+            }
 
-            if (response != null && response.Content != null)
+            var baseApi = await _orgbookBaseApiTask;
+            var queryParams = $"q={Uri.EscapeDataString(orgBookQuery)}&{OrgbookQueryMatch}";
+            var response = await resilientRestClient.HttpAsync(
+                HttpMethod.Get,
+                $"{baseApi}/v4/search/topic?{queryParams}",
+                null, null, null);
+
+            if (response?.Content == null)
             {
-                string content = response.Content;
-                return JsonConvert.DeserializeObject<dynamic>(content)!;
+                throw new IntegrationServiceException("OrgBook query request returned no response.");
             }
-            else
-            {
-                throw new IntegrationServiceException("GetOrgBookByNumberAsync -> No Response");
-            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<dynamic>(content)!;
         }
 
         public async Task<JsonDocument> GetOrgBookAutocompleteQueryAsync(string? orgBookQuery)
         {
-            if (orgBookQuery == null)
+            if (string.IsNullOrWhiteSpace(orgBookQuery))
             {
                 return JsonDocument.Parse("{}");
             }
 
-            var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/v3/search/autocomplete?q={orgBookQuery}&revoked=false&inactive=");
+            var baseApi = await _orgbookBaseApiTask;
+            var url = $"{baseApi}/v3/search/autocomplete?q={Uri.EscapeDataString(orgBookQuery)}&revoked=false&inactive=";
+            var response = await resilientRestClient.HttpAsync(HttpMethod.Get, url, null, null, null);
 
-            if (response != null && response.Content != null)
+            if (response?.Content == null)
             {
+                throw new IntegrationServiceException("OrgBook autocomplete request returned no response.");
+            }
 
-                return JsonDocument.Parse(response.Content);
-            }
-            else
-            {
-                throw new IntegrationServiceException("Failed to connect to Org Book");
-            }
+            return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         }
 
         public async Task<JsonDocument> GetOrgBookDetailsQueryAsync(string? orgBookId)
         {
-            if (orgBookId == null)
+            if (string.IsNullOrWhiteSpace(orgBookId))
             {
                 return JsonDocument.Parse("{}");
             }
 
-            var response = await _resilientRestClient
-                .HttpAsync(Method.Get, $"{orgbook_base_api}/v2/topic/ident/registration.registries.ca/{orgBookId}/formatted");
+            var response = await GetOrgBookQueryAsync(orgBookId);
 
-            if (response != null && response.Content != null)
+            var results = response?.results as Newtonsoft.Json.Linq.JArray;
+            if (results is { Count: > 0 })
             {
+                var firstResultJson = JsonConvert.SerializeObject(results[0]);
+                return JsonDocument.Parse(firstResultJson);
+            }
 
-                return JsonDocument.Parse(response.Content);
-            }
-            else
-            {
-                throw new IntegrationServiceException("Failed to connect to Org Book");
-            }
+            return JsonDocument.Parse("{}");
         }
     }
 }
-

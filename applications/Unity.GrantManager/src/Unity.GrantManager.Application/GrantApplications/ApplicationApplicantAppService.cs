@@ -114,6 +114,7 @@ public class ApplicationApplicantAppService(
             OrganizationType = applicantInfo.Applicant?.OrganizationType ?? string.Empty,
             OrgNumber = applicantInfo.Applicant?.OrgNumber ?? string.Empty,
             OrgStatus = applicantInfo.Applicant?.OrgStatus ?? string.Empty,
+            BusinessNumber = applicantInfo.Applicant?.BusinessNumber ?? string.Empty,
             NonRegOrgName = applicantInfo.Applicant?.NonRegOrgName ?? string.Empty,
 
             Sector = applicantInfo.Applicant?.Sector ?? string.Empty,

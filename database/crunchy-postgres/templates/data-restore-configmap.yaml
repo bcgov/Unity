@@ -21,9 +21,9 @@ data:
     repo{{ .Values.dataRestore.repo.name | replace "repo" "" }}-type=s3
     repo{{ .Values.dataRestore.repo.name | replace "repo" "" }}-s3-bucket={{ .Values.dataRestore.repo.bucket }}
     repo{{ .Values.dataRestore.repo.name | replace "repo" "" }}-s3-endpoint={{ .Values.dataRestore.repo.endpoint }}
-    repo{{ .Values.dataRestore.repo.name | replace "repo" "" }}-s3-region={{ .Values.dataRestore.repo.region | default "not-used" }}
+    repo{{ .Values.dataRestore.repo.name | replace "repo" "" }}-s3-region={{ .Values.dataRestore.repo.s3.region | default "not-used" }}
     repo{{ .Values.dataRestore.repo.name | replace "repo" "" }}-path={{ .Values.dataRestore.repo.path }}
-    repo{{ .Values.dataRestore.repo.name | replace "repo" "" }}-s3-uri-style={{ .Values.dataRestore.repo.uriStyle | default "path" }}
+    repo{{ .Values.dataRestore.repo.name | replace "repo" "" }}-s3-uri-style={{ .Values.dataRestore.repo.s3.uriStyle | default "path" }}
     log-level-console=info
     log-level-file=debug
     

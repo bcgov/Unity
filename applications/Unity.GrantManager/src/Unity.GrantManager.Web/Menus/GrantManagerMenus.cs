@@ -16,4 +16,6 @@ public static class GrantManagerMenus
     public const string Welcome = Prefix + ".Welcome";
     public const string Intakes = Prefix + ".Intakes";
     public const string ApplicationForms = Prefix + ".ApplicationForms";
+    public const string EndpointManagement = Prefix + ".EndpointManagement";
+    public const string Applicants = Prefix + ".Applicants";
 }

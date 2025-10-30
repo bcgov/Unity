@@ -12,7 +12,6 @@ using Volo.Abp.DependencyInjection;
 using Xunit;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using System.Collections.Generic;
 
 namespace Unity.GrantManager.Components
 {
@@ -53,9 +52,9 @@ namespace Unity.GrantManager.Components
                 ApplicationFormId = Guid.NewGuid(),
                 ContactInfo = contactInfo,
                 SigningAuthority = signingAuthority,
-                ApplicantAddresses = new List<ApplicantAddressDto>
+                ApplicantAddresses = new()
                 {
-                    new() 
+                    new ApplicantAddressDto
                     { 
                         AddressType = AddressType.MailingAddress,
                         Street = "some street",
@@ -64,7 +63,7 @@ namespace Unity.GrantManager.Components
                         Province = "some province",
                         Postal = "some postal"                        
                     },
-                    new() 
+                    new ApplicantAddressDto
                     {
                         AddressType = AddressType.PhysicalAddress,
                         Street = "some street",
@@ -72,7 +71,7 @@ namespace Unity.GrantManager.Components
                         City = "some city",
                         Province = "some province",
                         Postal = "some postal"
-                    },
+                    }
                 }
             };
 
@@ -126,12 +125,10 @@ namespace Unity.GrantManager.Components
             var expectedPhysicalAddressUnit = "some unit";
             var expectedPhysicalAddressCity = "some city";
             var expectedPhysicalAddressProvince = "some province";
-            var expectedPhysicalAddressPostalCode = "some postal";
             var expectedMailingAddressStreet = "some street";
             var expectedMailingAddressUnit = "some unit";
             var expectedMailingAddressCity = "some city";
             var expectedMailingAddressProvince = "some province";
-            var expectedMailingAddressPostalCode = "some postal";
 
             // Updated assertions to match the new structure with nested objects
             resultModel!.ContactInfo.Name.ShouldBe(expectedFullName);
