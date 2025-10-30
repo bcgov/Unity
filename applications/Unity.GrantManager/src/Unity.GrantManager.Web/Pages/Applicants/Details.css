@@ -55,11 +55,11 @@
 }
 
 #main-left {
-    width: 50%;
+    width: 60%;
 }
 
 #main-right {
-    width: 50%;
+    width: 40%;
 }
 
 #main-divider {
@@ -85,7 +85,7 @@
 
 .switch-container {
     margin-top: 27px;
-    margin-left: 15px;
+    margin-left: 5px;
     padding-top: 5px;
 }
 
