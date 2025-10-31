@@ -13,7 +13,6 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
-
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationInfo
 {
     [Widget(
@@ -153,8 +152,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            context.Files
-                .AddIfNotContains("/Views/Shared/Components/ApplicantOrganizationInfo/Default.js");
+            context.Files.AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
+            context.Files.AddIfNotContains("/Views/Shared/Components/ApplicantOrganizationInfo/Default.js");
         }
     }
 }

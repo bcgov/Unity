@@ -14,6 +14,20 @@
 /* Payment info container styles */
 .payment-info-container {
     margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.payment-info-container .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    position: sticky;
+    top: 72px;
+    padding-right: 24px;
+    z-index: 999;
+}
+
+.payment-info-container .save-button-container .floating-save-btn {
+    position: static;
 }
 
 .payment-info-supplier {

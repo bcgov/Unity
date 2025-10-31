@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -10,9 +11,11 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
+using Unity.GrantManager.Permissions;
 using Unity.Payments.Events;
 using Volo.Abp;
 using Unity.GrantManager.Integrations.Orgbook;
+using Unity.Modules.Shared;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Integrations.Cas;
@@ -156,6 +159,42 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             // This fires a detached process event which may update the supplier if it finds it in CAS via the BN9
             await supplierService.UpdateApplicantSupplierInfoByBn9(applicant.BusinessNumber, applicant.Id);
         }
+    }
+
+    [Authorize(UnitySelector.Applicant.Summary.Update)]
+    public async Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input)
+    {
+        if (applicantId == Guid.Empty)
+        {
+            throw new ArgumentException("ApplicantId cannot be empty.", nameof(applicantId));
+        }
+
+        if (input == null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        if (input.Data == null)
+        {
+            throw new ArgumentNullException(nameof(input.Data));
+        }
+
+        var applicant = await applicantRepository.GetAsync(applicantId);
+
+        ObjectMapper.Map(input.Data, applicant);
+
+        List<string> modifiedSummaryFields = input.ModifiedFields?
+            .Where(field => !string.IsNullOrWhiteSpace(field))
+            .Select(field => field.Split('.', StringSplitOptions.RemoveEmptyEntries).Last())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? [];
+
+        if (modifiedSummaryFields.Count > 0)
+        {
+            PropertyHelper.ApplyNullValuesFromDto(input.Data, applicant, modifiedSummaryFields);
+        }
+
+        return await applicantRepository.UpdateAsync(applicant);
     }
 
     [RemoteService(true)]

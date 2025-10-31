@@ -10,16 +10,27 @@
     @Html.Raw(Json.Serialize(Model.Sectors))
 </div>
 
-<input type="hidden" id="ApplicantOrganizationInfo_ApplicantId" value="@Model.ApplicantId" />
-
 @if (Model.ApplicantId != Guid.Empty)
 {
     <abp-row class="px-1 pb-2 mb-4 payment-info-container">
-        @* Applicant Info *@
-        <abp-row id="organization-info-widget" class="m-0 p-0 payment-info-supplier">
-            <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 px-0">
-                <abp-row class="m-0 org-info-summary">
-                    <abp-row class="m-0 p-0">
+        <div class="save-button-container">
+            <abp-button text="Save"
+                        id="saveApplicantOrganizationInfoBtn"
+                        class="floating-save-btn"
+                        icon-type="Other"
+                        icon="fl fl-save"
+                        button-type="Primary"
+                        disabled="true" />
+        </div>
+
+        <form id="ApplicantOrganizationInfoForm" autocomplete="off">
+            <input type="hidden" id="ApplicantOrganizationInfo_ApplicantId" value="@Model.ApplicantId" />
+
+            @* Applicant Info *@
+            <abp-row id="organization-info-widget" class="m-0 p-0 payment-info-supplier">
+                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 px-0">
+                    <abp-row class="m-0 org-info-summary">
+                        <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
                             <div id="OrganizationInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
                                 <h6 class="fw-bold">Applicant Information</h6>
@@ -152,7 +163,7 @@
                 </abp-row>
             </abp-column>
         </abp-row>
-
+        </form>
     </abp-row>
 }
 else
