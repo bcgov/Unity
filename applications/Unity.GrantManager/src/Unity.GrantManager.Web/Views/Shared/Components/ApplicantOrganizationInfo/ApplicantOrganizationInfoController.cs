@@ -11,7 +11,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
     {
         [HttpGet]
         [Route("Refresh")]
-        public async Task<IActionResult> Refresh(Guid applicantId)
+        public IActionResult Refresh(Guid applicantId)
         {
             return ViewComponent("ApplicantOrganizationInfo", new { applicantId });
         }

@@ -11,7 +11,6 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
-using Unity.GrantManager.Permissions;
 using Unity.Payments.Events;
 using Volo.Abp;
 using Unity.GrantManager.Integrations.Orgbook;
@@ -169,15 +168,9 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             throw new ArgumentException("ApplicantId cannot be empty.", nameof(applicantId));
         }
 
-        if (input == null)
-        {
-            throw new ArgumentNullException(nameof(input));
-        }
+        ArgumentNullException.ThrowIfNull(input);
 
-        if (input.Data == null)
-        {
-            throw new ArgumentNullException(nameof(input.Data));
-        }
+        ArgumentNullException.ThrowIfNull(input.Data);
 
         var applicant = await applicantRepository.GetAsync(applicantId);
 
@@ -185,7 +178,16 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         List<string> modifiedSummaryFields = input.ModifiedFields?
             .Where(field => !string.IsNullOrWhiteSpace(field))
-            .Select(field => field.Split('.', StringSplitOptions.RemoveEmptyEntries).Last())
+            .Select(field =>
+            {
+                var segments = field.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length == 0)
+                {
+                    throw new InvalidOperationException("Modified field path cannot be empty.");
+                }
+
+                return segments[^1];
+            })
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? [];
 
@@ -196,11 +198,12 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase))
         {
-            applicant.IndigenousOrgInd = input.Data.IndigenousOrgInd == true
-                ? "Yes"
-                : input.Data.IndigenousOrgInd == false
-                    ? "No"
-                    : null;
+            applicant.IndigenousOrgInd = input.Data.IndigenousOrgInd switch
+            {
+                true => "Yes",
+                false => "No",
+                _ => null
+            };
         }
 
         if (modifiedSummaryFields.Count > 0)
