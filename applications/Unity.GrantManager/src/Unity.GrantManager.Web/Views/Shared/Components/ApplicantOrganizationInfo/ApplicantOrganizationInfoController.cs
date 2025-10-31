@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationInfo
