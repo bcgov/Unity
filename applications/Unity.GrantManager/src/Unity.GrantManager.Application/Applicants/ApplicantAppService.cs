@@ -189,6 +189,20 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? [];
 
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase))
+        {
+            applicant.RedStop = input.Data.RedStop;
+        }
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase))
+        {
+            applicant.IndigenousOrgInd = input.Data.IndigenousOrgInd == true
+                ? "Yes"
+                : input.Data.IndigenousOrgInd == false
+                    ? "No"
+                    : null;
+        }
+
         if (modifiedSummaryFields.Count > 0)
         {
             PropertyHelper.ApplyNullValuesFromDto(input.Data, applicant, modifiedSummaryFields);
