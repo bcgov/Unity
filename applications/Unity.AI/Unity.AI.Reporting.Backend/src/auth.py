@@ -3,10 +3,14 @@ Authentication module for JWT token validation and user management.
 """
 import os
 import jwt
+import logging
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import request, jsonify
 from typing import Optional, Dict, Any, Callable
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class AuthManager:
@@ -18,7 +22,7 @@ class AuthManager:
             raise ValueError("JWT_SECRET environment variable is required")
         self.jwt_algorithm = 'HS256'
     
-    def create_token(self, user_id: str, tenant_id: str, mb_url: str, 
+    def create_token(self, user_id: str, tenant_id: str, 
                     expires_in_hours: int = 24) -> str:
         """
         Create a JWT token with user information
@@ -26,7 +30,6 @@ class AuthManager:
         Args:
             user_id: Unique user identifier
             tenant_id: Tenant/organization identifier
-            mb_url: Metabase URL for this user's context
             expires_in_hours: Token expiration time in hours
             
         Returns:
@@ -35,7 +38,6 @@ class AuthManager:
         payload = {
             'user_id': user_id,
             'tenant': tenant_id,
-            'mb_url': mb_url,
             'iat': datetime.now(tz=timezone.utc),
             'exp': datetime.now(tz=timezone.utc) + timedelta(hours=expires_in_hours),
             'jti': f"{user_id}_{int(datetime.now(tz=timezone.utc).timestamp())}"  # Unique token ID
@@ -63,10 +65,10 @@ class AuthManager:
             )
             return payload
         except jwt.ExpiredSignatureError:
-            print("Token has expired")
+            logger.warning("Token has expired")
             return None
         except jwt.InvalidTokenError as e:
-            print(f"Invalid token: {e}")
+            logger.warning(f"Invalid token: {e}")
             return None
     
     def extract_token_from_request(self) -> Optional[str]:
@@ -128,7 +130,7 @@ def require_auth(f: Callable) -> Callable:
             required_fields = ['user_id', 'tenant']
             missing_fields = [field for field in required_fields if field not in user_data]
             if missing_fields:
-                print(f"Token missing required fields: {missing_fields}")
+                logger.warning(f"Token missing required fields: {missing_fields}")
                 return jsonify({
                     'error': 'Invalid token',
                     'message': f'Token missing required fields: {", ".join(missing_fields)}'
@@ -137,9 +139,9 @@ def require_auth(f: Callable) -> Callable:
             # Make user data available to the route
             request.current_user = user_data
             return f(*args, **kwargs)
-            
+
         except Exception as e:
-            print(f"Authentication error: {e}")
+            logger.error(f"Authentication error: {e}", exc_info=True)
             return jsonify({
                 'error': 'Authentication failed',
                 'message': 'An error occurred during authentication'

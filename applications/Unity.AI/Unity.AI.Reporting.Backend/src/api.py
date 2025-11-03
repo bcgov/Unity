@@ -214,7 +214,7 @@ def get_metabase_url():
     Get the Metabase URL from server configuration
     Returns the configured Metabase embed URL for the user's tenant
     """
-    user_data = get_user_from_token()
+
     metabase_url = config.metabase.url
 
     if not metabase_url:
@@ -489,7 +489,6 @@ def explain_sql():
 @require_auth
 def get_chats():
     """Get all chats for a user"""
-    data = request.get_json()
     user_data = get_user_from_token()
     
     try:
@@ -514,7 +513,6 @@ def get_chat(chat_id):
     try:
         # Extract user ID from JWT token
         user_id = user_data["user_id"]
-        
         chat_data = chat_manager.get_chat_with_card_validation(chat_id, user_id)
         
         if not chat_data:
@@ -561,7 +559,6 @@ def save_chat():
 @require_auth
 def delete_chat(chat_id):
     """Delete a chat"""
-    data = request.get_json()
     user_data = get_user_from_token()
     
     try:
@@ -634,12 +631,12 @@ def submit_feedback():
             message=message,
             user_agent=user_agent,
             metadata=metadata,
-            current_question=data.get("current_question"),
-            current_sql=data.get("current_sql"),
-            current_sql_explanation=data.get("current_sql_explanation"),
-            previous_question=data.get("previous_question"),
-            previous_sql=data.get("previous_sql"),
-            previous_sql_explanation=data.get("previous_sql_explanation")
+            current_question=current_question,
+            current_sql=current_sql,
+            current_sql_explanation=current_sql_explanation,
+            previous_question=previous_question,
+            previous_sql=previous_sql,
+            previous_sql_explanation=previous_sql_explanation
         )
 
         logger.info(f"Feedback submitted: {feedback_id} for chat {chat_id} by user {user_id}")
@@ -658,44 +655,27 @@ def submit_feedback():
 @app.route("/api/feedback/<feedback_id>", methods=["GET"])
 @require_auth
 def get_feedback(feedback_id):
-    """Get a specific feedback entry (for admin use)"""
+    """
+    Get a specific feedback entry (admin only)
+    Requires admin privileges
+    """
     user_data = get_user_from_token()
-    
+
+    # Check if user is admin
+    is_admin = user_data.get("is_it_admin", False)
+    if not is_admin:
+        return jsonify({"error": "Admin privileges required"}), 403
+
     try:
         feedback_data = feedback_repository.get_feedback(feedback_id)
-        
+
         if not feedback_data:
             return abort(404, "Feedback not found")
-        
-        # Only allow users to see their own feedback
-        if feedback_data["user_id"] != user_data["user_id"]:
-            return abort(403, "Access denied")
 
         return jsonify(feedback_data), 200
 
     except Exception as e:
         logger.error(f"Error getting feedback: {e}", exc_info=True)
-        return abort(500, "Internal server error")
-
-
-@app.route("/api/chats/<chat_id>/feedback", methods=["GET"])
-@require_auth
-def get_chat_feedback(chat_id):
-    """Get all feedback for a specific chat"""
-    user_data = get_user_from_token()
-
-    try:
-        # Validate that the chat exists and belongs to the user
-        user_id = user_data["user_id"]
-        chat_data = chat_repository.get_chat(chat_id, user_id)
-        if not chat_data:
-            return abort(404, "Chat not found")
-
-        feedback_list = feedback_repository.get_feedback_by_chat(chat_id)
-        return jsonify(feedback_list), 200
-
-    except Exception as e:
-        logger.error(f"Error getting chat feedback: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 

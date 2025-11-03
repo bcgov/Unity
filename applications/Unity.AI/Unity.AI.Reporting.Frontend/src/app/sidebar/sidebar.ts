@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { ToastService } from '../services/toast.service';
+import { LoggerService } from '../services/logger.service';
 import { AlertComponent } from '../alert/alert';
 import { Turn } from '../turn';
 
@@ -45,7 +46,8 @@ export class SidebarComponent {
 
   constructor(
     private apiService: ApiService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private logger: LoggerService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -171,17 +173,17 @@ export class SidebarComponent {
         )
       );
 
-      console.log('Feedback submitted successfully:', response.feedback_id);
+      this.logger.info('Feedback submitted successfully:', response.feedback_id);
       this.closeFeedbackModal();
-      
+
       // Show success toast
-      const messageText = this.feedbackMessage.trim() 
+      const messageText = this.feedbackMessage.trim()
         ? 'Bug report submitted with your feedback, thank you'
         : 'Bug report submitted successfully, thank you';
       this.toastService.success(messageText);
-      
+
     } catch (error: any) {
-      console.error('Failed to submit feedback:', error);
+      this.logger.error('Failed to submit feedback:', error);
       
       // Show error toast with specific message
       let errorMessage = 'Failed to submit bug report. Please try again.';

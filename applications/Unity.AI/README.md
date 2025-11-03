@@ -1,320 +1,90 @@
-# Unity AI Platform
+# Unity AI Platform - Applications
 
-A comprehensive AI-powered platform featuring reporting and assessment capabilities with advanced data insights and intelligent automation.
+AI-powered reporting platform with natural language to SQL conversion and Metabase integration.
 
-## Platform Components
+## Quick Start
 
-### 📊 Unity.AI.Reporting
-- 🤖 **Natural Language to SQL**: Convert plain English questions into SQL queries
-- 📊 **Metabase Integration**: Automatic card creation and visualization
-- 🏢 **Multi-Tenant Support**: Database isolation per tenant with db_id filtering
-- 💬 **Conversation Management**: Save and restore chat histories
-- 🔍 **Smart Schema Search**: Vector embeddings for relevant table discovery
-- 🎯 **Majority Voting**: Multiple LLM samples for robust SQL generation
+### Prerequisites
+- Docker and Docker Compose
+- `.env` file with required configuration
 
-### 🔍 Unity.AI.Assessment (Coming Soon)
-- 🎯 **Intelligent Assessment**: AI-powered evaluation and scoring
-- 📋 **Automated Analysis**: Smart content assessment and feedback
-- 🔌 **Extensible Architecture**: Modular design for easy customization
+### Development
+```bash
+docker-compose -f docker-compose.dev.yml up
+```
+
+### Production
+```bash
+docker-compose up -d
+```
+
+## Services
+
+- **Frontend**: http://localhost:80 (Angular 20)
+- **Backend API**: http://localhost:5000 (Flask + Azure OpenAI)
+- **Database**: PostgreSQL with pgvector
+- **pgAdmin** (dev only): http://localhost:8080
+
+## Configuration
+
+Copy `.env.example` to `.env` and configure:
+
+```env
+# Azure OpenAI
+AZURE_OPENAI_ENDPOINT=your_endpoint
+AZURE_OPENAI_API_KEY=your_key
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
+
+# JWT
+JWT_SECRET=your_secret_key
+
+# Metabase
+METABASE_KEY=your_api_key
+MB_EMBED_SECRET=your_embed_secret
+MB_URL=https://your-metabase-url.com
+
+# Database (Docker defaults)
+POSTGRES_DB=unity_ai
+POSTGRES_USER=unity_user
+POSTGRES_PASSWORD=secure_password
+```
 
 ## Project Structure
 
 ```
 applications/
-├── Unity.AI.Reporting.Backend/        # Python Flask backend (Active)
-│   ├── src/                           # Modular Python backend
-│   │   ├── config.py                 # Configuration management
-│   │   ├── database.py               # Database operations
-│   │   ├── metabase.py               # Metabase API client
-│   │   ├── embeddings.py             # Vector embeddings
-│   │   ├── chat.py                   # Chat management
-│   │   ├── sql_generator.py          # NL to SQL conversion
-│   │   ├── api.py                    # Flask API routes
-│   │   ├── app.py                    # Main entry point
-│   │   ├── custom_fields.py          # Custom field utilities
-│   │   └── daily_job.py              # Scheduled tasks
-│   ├── requirements.txt              # Python dependencies
-│   ├── Dockerfile                    # Backend container definition
-│   └── README.md                     # Backend documentation
-├── Unity.AI.Reporting.Frontend/       # Angular frontend (Active)
-│   ├── src/                          # Angular application
-│   ├── angular.json                  # Angular configuration
-│   ├── package.json                  # Node.js dependencies
-│   ├── Dockerfile                    # Frontend container definition
-│   └── README.md                     # Frontend documentation
-├── Unity.AI.Assessment.Backend/      # Assessment backend (Placeholder)
-│   ├── src/                          # Flask application placeholder
-│   ├── requirements.txt              # Python dependencies
-│   ├── Dockerfile                    # Backend container definition
-│   └── README.md                     # Backend documentation
-├── Unity.AI.Assessment.Frontend/     # Assessment frontend (Placeholder)
-│   ├── dist/                         # Built application placeholder
-│   ├── package.json                  # Node.js dependencies
-│   ├── Dockerfile                    # Frontend container definition
-│   └── README.md                     # Frontend documentation
-├── .env.example                      # Environment configuration template
-├── docker-compose.yml                # Production orchestration
-├── docker-compose.dev.yml            # Development orchestration
-└── README.md                         # This file
+├── Unity.AI.Reporting.Backend/    # Flask API + AI SQL generation
+├── Unity.AI.Reporting.Frontend/   # Angular chat interface
+├── Unity.AI.Assessment.*/         # Future: assessment features
+├── docker-compose.yml             # Production setup
+├── docker-compose.dev.yml         # Development setup
+└── .env.example                   # Configuration template
 ```
 
-## Quick Start
+## Features
 
-### Local Development
+- Natural language to SQL conversion
+- AI-powered query explanations
+- Chat history management
+- Admin feedback dashboard
+- Multi-tenant support
+- JWT authentication with roles
 
-1. **Clone the repository**
+## Documentation
+
+- [Backend README](./Unity.AI.Reporting.Backend/README.md)
+- [Frontend README](./Unity.AI.Reporting.Frontend/README.md)
+
+## Common Commands
+
 ```bash
-git clone <repository-url>
-cd unity-ai
-```
-
-2. **Set up environment variables**
-```bash
-# Create .env file in the project root
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-3. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-4. **Initialize database**
-```bash
-cd applications/Unity.AI.Reporting.Backend/src
-python app.py
-# The database tables will be created automatically
-```
-
-5. **Embed database schemas**
-```bash
-cd applications/Unity.AI.Reporting.Backend/src
-python app.py embed
-# Or for a specific database:
-python app.py embed 3
-```
-
-### Docker Deployment
-
-#### Production
-```bash
-# Build and run all services
-docker-compose up --build
-
-# Embed schemas in the backend container
-docker-compose exec backend python app.py embed
-```
-
-#### Development
-```bash
-# Run with development configuration
+# Rebuild after dependency changes
 docker-compose -f docker-compose.dev.yml up --build
 
-# If you encounter dependency issues, force rebuild without cache:
-docker-compose -f docker-compose.dev.yml build --no-cache
-docker-compose -f docker-compose.dev.yml up
+# View logs
+docker-compose logs -f backend
 
-# Access services:
-# - Backend: http://localhost:5000
-# - pgAdmin: http://localhost:8080 (admin@example.com / admin)
+# Embed database schemas (after first run)
+docker-compose exec reporting-backend python app.py embed
 ```
-
-## Configuration
-
-### Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-# Metabase Configuration
-METABASE_KEY=mb_your-metabase-api-key
-MB_EMBED_SECRET=your-embed-secret
-MB_URL=https://your-metabase-instance.com
-
-# JWT Authentication
-JWT_SECRET="your-super-secret-key-here"
-
-# Azure OpenAI Configuration
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
-AZURE_OPENAI_API_KEY=your-azure-openai-key
-AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
-AZURE_OPENAI_API_VERSION=2024-02-01
-
-# Database Configuration (for Docker)
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=unity_ai
-DB_USER=unity_user
-DB_PASSWORD=unity_pass
-
-# Application Settings
-FLASK_ENV=development
-EMBED_WORKSHEETS=true
-```
-
-### Tenant Configuration
-
-Add new tenants in `applications/Unity.AI.Reporting.Backend/src/config.py`:
-
-```python
-def _load_tenant_mappings(self):
-    return {
-        "YourOrg": {
-            "db_id": 5,
-            "collection_id": 100,
-            "schema_types": ["public", "custom"]
-        }
-    }
-```
-
-## API Endpoints
-
-### Query Processing
-- `POST /api/ask` - Convert natural language to SQL and create Metabase card
-  ```json
-  {
-    "question": "How many users signed up last month?",
-    "conversation": [],
-    "metabase_url": "https://metabase.example.com",
-    "tenant_id": "YourOrg"
-  }
-  ```
-
-### Visualization Management
-- `POST /api/change_display` - Update card visualization type
-- `POST /api/delete` - Delete a Metabase card
-
-### Chat Management
-- `POST /api/chats` - Get all chats for a user
-- `POST /api/chats/<id>` - Get specific chat with card validation
-- `POST /api/chats/save` - Save or update chat
-- `DELETE /api/chats/<id>` - Delete chat
-
-## CLI Commands
-
-### Backend Commands
-```bash
-# Run the Flask server
-cd applications/Unity.AI.Reporting.Backend/src
-python app.py
-
-# Embed database schemas
-cd applications/Unity.AI.Reporting.Backend/src
-python app.py embed [db_id]
-
-# Show help
-cd applications/Unity.AI.Reporting.Backend/src
-python app.py help
-```
-
-## Extending the Application
-
-### Adding New Use Cases
-
-1. **Configure the tenant** in `applications/Unity.AI.Reporting.Backend/src/config.py`
-2. **Customize schema extraction** in `applications/Unity.AI.Reporting.Backend/src/embeddings.py`
-3. **Add domain-specific examples** to `QDECOMP_examples.json`
-4. **Extend API endpoints** in `applications/Unity.AI.Reporting.Backend/src/api.py`
-
-### Replacing Components
-
-The modular architecture allows easy replacement of:
-- **LLM Provider**: Modify `sql_generator.py`
-- **BI Tool**: Replace `metabase.py` with your BI tool's API
-- **Database**: Update `database.py` for different backends
-- **Embeddings**: Change vector store in `embeddings.py`
-
-## Development
-
-### Running Tests
-```bash
-cd applications/Unity.AI.Reporting.Backend/src
-python -m pytest tests/
-```
-
-### Code Structure
-
-Each module is independent and focused:
-- `config.py` - All configuration in one place
-- `database.py` - Database operations only
-- `metabase.py` - Metabase API interactions
-- `embeddings.py` - Vector operations
-- `chat.py` - Conversation logic
-- `sql_generator.py` - NL to SQL logic
-- `api.py` - HTTP endpoints
-- `app.py` - Application bootstrap
-
-## Production Deployment
-
-### Using Docker
-
-The application includes both backend and frontend containers:
-
-```bash
-# Production deployment
-docker-compose up --build -d
-
-# Backend only (for API development)
-docker build -t metabase-reporter-backend .
-docker run -p 5000:5000 --env-file .env metabase-reporter-backend
-
-# Development with hot reload
-docker-compose -f docker-compose.dev.yml up --build
-```
-
-### Health Checks
-
-- Health endpoint: `GET /`
-- Returns: "Backend is working!"
-
-### Scaling Considerations
-
-- Use PostgreSQL connection pooling
-- Deploy multiple Flask workers with Gunicorn
-- Cache embeddings for frequently accessed schemas
-- Use Redis for session management (if needed)
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Environment variables not loaded**
-   - Ensure `.env` file is in project root
-   - Verify all required environment variables are set
-   - Check Azure OpenAI configuration if using Azure
-
-2. **Module import errors (e.g., "ModuleNotFoundError: No module named 'dotenv'")**
-   - Force rebuild without cache: `docker-compose -f docker-compose.dev.yml build --no-cache`
-   - This ensures the latest requirements.txt is used
-   - Then run: `docker-compose -f docker-compose.dev.yml up`
-
-3. **SQL generation fails**
-   - Verify Azure OpenAI configuration in `.env`
-   - Check QDECOMP_examples.json exists in project root
-   - Review container logs: `docker-compose logs backend`
-
-4. **Metabase cards not created**
-   - Verify METABASE_KEY has sufficient permissions
-   - Check collection_id exists in Metabase
-   - Ensure MB_EMBED_SECRET is correct in `.env`
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-[Your License Here]
-
-## Support
-
-For issues and questions:
-- Create an issue on GitHub
-- Contact the development team
-- Check the documentation

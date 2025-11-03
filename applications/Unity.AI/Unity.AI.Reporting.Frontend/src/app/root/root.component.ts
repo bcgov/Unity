@@ -4,6 +4,7 @@ import { Router, RouterOutlet } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
+import { LoggerService } from '../services/logger.service';
 
 @Component({
   selector: 'app-root',
@@ -53,14 +54,15 @@ export class RootComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private readonly apiService: ApiService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly logger: LoggerService
   ) {}
 
   async ngOnInit(): Promise<void> {
     try {
       // Check if user is authenticated
       if (!await this.authService.isAuthenticated()) {
-        console.log('User not authenticated, redirecting to main app');
+        this.logger.info('User not authenticated, redirecting to main app');
         this.isLoading = false;
         this.router.navigate(['/app']);
         return;
@@ -72,15 +74,15 @@ export class RootComponent implements OnInit {
       );
 
       if (adminResponse.is_admin) {
-        console.log('Admin user detected, redirecting to admin page');
+        this.logger.info('Admin user detected, redirecting to admin page');
         this.router.navigate(['/admin']);
       } else {
-        console.log('Regular user, redirecting to main app');
+        this.logger.info('Regular user, redirecting to main app');
         this.router.navigate(['/app']);
       }
 
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      this.logger.error('Error checking admin status:', error);
       // On error, default to main app
       this.router.navigate(['/app']);
     } finally {

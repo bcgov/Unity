@@ -1,104 +1,125 @@
-# Unity AI Frontend
+# Unity AI Reporting - Frontend
 
-Angular frontend application for the Unity AI Reporting system. Provides an intuitive chat interface for natural language data queries.
+Angular frontend providing an intuitive chat interface for natural language data queries with AI-powered SQL generation.
 
 ## Features
 
-- Modern Angular 20 application
 - Real-time chat interface for data queries
-- SQL query visualization and explanation
+- Interactive SQL query visualization
+- SQL explanation and editing
+- Chat history management
+- Admin panel for feedback review
+- User feedback and bug reporting
+- JWT authentication with role-based access
 - Responsive design with BC Government styling
-- JWT authentication integration
-- Service-worker ready for offline capabilities
 
 ## Tech Stack
 
 - **Framework**: Angular 20.0.0
-- **UI Components**: BC Sans typography, custom styling
-- **HTTP Client**: Angular HttpClient with RxJS
-- **Build Tools**: Angular CLI 20.0.3
-- **Testing**: Jasmine, Karma
+- **UI**: BC Sans typography, custom CSS
+- **HTTP**: Angular HttpClient with RxJS
+- **Build**: Angular CLI 20.0.3
 
-## Development Setup
+## Quick Start
+
+### Using Docker Compose (Recommended)
+
+From the `applications` directory:
+
+```bash
+# Development
+docker-compose -f docker-compose.dev.yml up
+
+# Production
+docker-compose up -d
+```
 
 ### Local Development
 
-1. Navigate to frontend directory:
-```bash
-cd src/unity-ai.ReportingAI.Frontend
-```
-
-2. Install dependencies:
+1. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Start development server:
+2. Start development server:
 ```bash
 npm start
 ```
 
-The application will be available at http://localhost:4200
-
-### Docker Development
-
-From the application root directory:
-```bash
-docker-compose -f docker-compose.dev.yml up frontend
-```
+Application runs on `http://localhost:4200`
 
 ## Available Scripts
 
-- `npm start` - Start development server
-- `npm run build` - Build for production
+- `npm start` - Start development server (port 4200)
+- `npm run build` - Production build
 - `npm run watch` - Build and watch for changes
-- `npm test` - Run unit tests
-- `npm run ng` - Run Angular CLI commands
+- `npm test` - Run unit tests with Karma
 
 ## Key Components
 
-- `app.component.ts` - Main application component
-- `sidebar.component.ts` - Navigation sidebar
-- `sql-loader.component.ts` - SQL query loading interface
-- `sql-explanation.component.ts` - SQL query explanation display
-- `alert.component.ts` - Alert notifications
-- `services/api.service.ts` - Backend API communication
-- `services/auth.service.ts` - Authentication management
+### Main Application
+- `app.ts` - Main chat interface component
+- `root.component.ts` - Route guard and authentication check
+
+### Features
+- `sidebar/sidebar.ts` - Chat history and navigation
+- `admin/admin.component.ts` - Admin feedback dashboard
+- `sql-explanation/sql-explanation.ts` - SQL query display
+- `sql-loader/sql-loader.ts` - Loading animation
+- `toast/toast.component.ts` - Toast notifications
+- `alert/alert.ts` - Confirmation dialogs
+
+### Services
+- `api.service.ts` - Backend API communication
+- `auth.service.ts` - JWT authentication and token management
+- `toast.service.ts` - Toast notification management
+- `logger.service.ts` - Centralized logging service
+
+## Routes
+
+- `/` - Root route (redirects based on auth/admin status)
+- `/app` - Main chat interface
+- `/admin` - Admin feedback dashboard (admin only)
 
 ## Environment Configuration
 
-The frontend uses Angular environments for configuration. JWT secrets and API endpoints are configured at build time.
+The application uses Angular environments:
+
+- `environment.ts` - Development configuration
+- `environment.prod.ts` - Production configuration
+
+Configuration includes:
+- API URL
+- Production flag for logging
+
+## Authentication
+
+The frontend uses JWT tokens for authentication:
+- Tokens are passed via URL parameter or stored in localStorage
+- Token validation and refresh handled by `auth.service.ts`
+- Admin status checked via JWT payload (`is_it_admin` claim)
+
+## Logging
+
+The application uses a custom `LoggerService` with proper log levels:
+- `DEBUG` - Development only (stripped in production)
+- `INFO` - General information
+- `WARN` - Warning messages
+- `ERROR` - Error messages with stack traces
+
+Production builds automatically set log level to `WARN` or higher.
 
 ## Styling
 
-The application uses:
-- BC Government design system (@bcgov/bc-sans)
-- Custom CSS for component styling
-- Responsive design principles
+- BC Government Design System (@bcgov/bc-sans font)
+- Custom CSS with responsive design
 - Accessible color schemes and typography
+- BC Government brand colors
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Testing
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Building for Production
 
 ```bash
-ng test
+ng build --configuration production
 ```
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Output is generated in `dist/` directory, optimized for performance.

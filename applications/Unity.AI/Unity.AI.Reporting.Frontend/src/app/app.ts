@@ -10,6 +10,7 @@ import { ToastComponent } from './toast/toast.component';
 import { AuthService } from './services/auth.service';
 import { ApiService } from './services/api.service';
 import { ToastService } from './services/toast.service';
+import { LoggerService } from './services/logger.service';
 import { IframeDetectorService } from './iframe-detector.service';
 import { SidebarComponent, Chat } from './sidebar/sidebar';
 import { environment } from '../environments/environment';
@@ -36,6 +37,7 @@ export class App implements OnInit, OnDestroy {
     private readonly authService: AuthService,
     private readonly apiService: ApiService,
     private readonly toastService: ToastService,
+    private readonly logger: LoggerService,
     private readonly iframeDetector: IframeDetectorService
   ) {}
 
@@ -146,7 +148,7 @@ export class App implements OnInit, OnDestroy {
           turn.embed.tokens.total_tokens += explanationResponse.tokens.total_tokens;
         }
       } catch (error: any) {
-        console.error('Failed to generate SQL explanation:', error);
+        this.logger.error('Failed to generate SQL explanation:', error);
 
         // Provide user feedback about the failure
         let errorMessage = 'Failed to generate SQL explanation. ';
@@ -263,14 +265,14 @@ export class App implements OnInit, OnDestroy {
 
       // Check if we have a valid Metabase URL
       if (!metabaseUrl) {
-        console.error('Invalid or missing Metabase URL');
+        this.logger.error('Invalid or missing Metabase URL');
         this.toastService.error('Unable to open Metabase - invalid configuration');
         return null;
       }
 
       // Validate card ID
       if (!cardId || !this.isValidCardId(cardId)) {
-        console.error('Invalid card ID');
+        this.logger.error('Invalid card ID');
         this.toastService.error('Unable to open Metabase - invalid card ID');
         return null;
       }
@@ -280,14 +282,14 @@ export class App implements OnInit, OnDestroy {
 
       // Additional validation to ensure the constructed URL is still safe
       if (!this.isValidRedirectUrl(fullUrl, metabaseUrl)) {
-        console.error('Invalid redirect URL constructed');
+        this.logger.error('Invalid redirect URL constructed');
         this.toastService.error('Unable to open Metabase - security validation failed');
         return null;
       }
 
       return window.open(fullUrl, '_blank');
     } catch (error) {
-      console.error('Error redirecting to Metabase:', error);
+      this.logger.error('Error redirecting to Metabase:', error);
       this.toastService.error('Unable to open Metabase');
       return null;
     }
@@ -350,7 +352,7 @@ export class App implements OnInit, OnDestroy {
           // Show success toast for entire chat deletion
           this.toastService.success('Report deleted successfully');
         } catch (deleteError) {
-          console.error('Error deleting empty chat:', deleteError);
+          this.logger.error('Error deleting empty chat:', deleteError);
           this.toastService.error('Failed to delete report. Please try again.');
         }
         return; // Exit early since there's nothing left to update
@@ -374,7 +376,7 @@ export class App implements OnInit, OnDestroy {
       
     } catch (error) {
       // Show error toast
-      console.error('Error deleting question:', error);
+      this.logger.error('Error deleting question:', error);
       this.toastService.error('Failed to delete question. Please try again.');
     }
   }

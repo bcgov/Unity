@@ -187,8 +187,4 @@ JOIN "public"."Applications" AS app
   ON app."Id" = wi."CorrelationId"
 WHERE a."leadApplicant" = 'Local Government';
 
-
-May be impossible to programmatically convert virtual table to required SQL 
-Talk to Andre about this, maybe create views/tables for each worksheet?
-
 '''

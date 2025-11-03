@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { LoggerService } from './logger.service';
 
 export interface JwtPayload {
   user_id?: string;
@@ -18,7 +19,7 @@ export class AuthService {
   private tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();
 
-  constructor() {
+  constructor(private logger: LoggerService) {
     this.initializeFromUrl();
   }
 
@@ -119,7 +120,7 @@ export class AuthService {
       
       return false;
     } catch (error) {
-      console.error('Token validation error:', error);
+      this.logger.error('Token validation error:', error);
       return false;
     }
   }
@@ -156,7 +157,7 @@ export class AuthService {
       
       return decodedPayload as JwtPayload;
     } catch (error) {
-      console.error('Token decode error:', error);
+      this.logger.error('Token decode error:', error);
       return null;
     }
   }

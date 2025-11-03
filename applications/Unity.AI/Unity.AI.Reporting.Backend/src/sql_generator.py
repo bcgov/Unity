@@ -113,7 +113,7 @@ class SQLGenerator:
             
             json_data = {
                 "messages": [
-                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "system", "content": "You are a professional SQL programmer."},
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": self.config.temperature
@@ -130,7 +130,7 @@ class SQLGenerator:
             json_data = {
                 "model": self.config.model,
                 "messages": [
-                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "system", "content": "You are a professional SQL programmer."},
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": self.config.temperature

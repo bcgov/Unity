@@ -1,117 +1,145 @@
-# Unity AI Backend
+# Unity AI Reporting - Backend
 
-Python Flask backend service for the Unity AI Reporting system. Provides AI-powered SQL query generation and integration with Metabase.
+Python Flask backend service providing AI-powered SQL query generation and Metabase integration for natural language data queries.
 
 ## Features
 
-- Natural language to SQL conversion using OpenAI
-- Metabase API integration for dashboard management
-- PostgreSQL database with pgvector for embeddings
-- JWT authentication
-- CORS support for frontend integration
-- Schema embeddings for intelligent query generation
+- Natural language to SQL conversion using Azure OpenAI
+- Metabase API integration for visualization
+- PostgreSQL with pgvector for schema embeddings
+- JWT authentication with admin roles
+- Chat conversation management
+- User feedback and bug reporting system
 
 ## Tech Stack
 
 - **Framework**: Flask 3.1.1
-- **Database**: PostgreSQL with psycopg[binary]
-- **AI/ML**: OpenAI API, LangChain, Hugging Face
-- **Authentication**: Flask-JWT-Extended
-- **Environment**: Python-dotenv
+- **Database**: PostgreSQL with psycopg (binary)
+- **AI/ML**: Azure OpenAI (GPT-4o-mini), LangChain
+- **Authentication**: JWT (PyJWT)
+- **Logging**: Python logging module
 
-## API Endpoints
+## Quick Start
 
-- `GET /` - Health check
-- `POST /chat` - Natural language query processing
-- `POST /generate-sql` - Direct SQL generation
-- `GET /metabase/*` - Metabase API proxy endpoints
+### Using Docker Compose (Recommended)
 
-## Development Setup
+From the `applications` directory:
+
+```bash
+# Development
+docker-compose -f docker-compose.dev.yml up
+
+# Production
+docker-compose up -d
+```
 
 ### Local Development
 
-1. Navigate to backend directory:
-```bash
-cd src/unity-ai.ReportingAI.Backend
-```
-
-2. Create virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
+1. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Set environment variables (see .env file in application root)
+2. Set environment variables (see .env.example in applications directory)
 
-5. Run development server:
+3. Run the application:
 ```bash
 python app.py
 ```
 
-### Docker Development
-
-From the application root directory:
-```bash
-docker-compose -f docker-compose.dev.yml up backend
-```
+Server runs on `http://localhost:5000`
 
 ## Environment Variables
 
-Required environment variables (set via build args or environment):
+Required variables (see `applications/.env.example`):
 
 ```env
-# OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key
+# Azure OpenAI
+AZURE_OPENAI_ENDPOINT=your_endpoint_here
+AZURE_OPENAI_API_KEY=your_key_here
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
+AZURE_OPENAI_API_VERSION=2024-02-01
 
-# JWT Configuration
-JWT_SECRET=your_jwt_secret
+# JWT Authentication
+JWT_SECRET=your_secure_secret_key
 
-# Metabase Integration
-METABASE_URL=your_metabase_url
-METABASE_USERNAME=your_metabase_username
-METABASE_PASSWORD=your_metabase_password
+# Metabase
+METABASE_KEY=your_metabase_api_key
+MB_EMBED_SECRET=your_metabase_embed_secret
+MB_URL=https://your-metabase-url.com
+DEFAULT_EMBED_DB_ID=1
 
-# Database Configuration (defaults provided)
+# Database (defaults provided for Docker)
 DB_HOST=postgres
 DB_PORT=5432
 DB_NAME=unity_ai
 DB_USER=unity_user
-DB_PASSWORD=unity_pass
+DB_PASSWORD=your_secure_password
 ```
 
-### Using Build Args
+**Security Note**: Never pass secrets as Docker build arguments. Use runtime environment variables only.
 
-The Docker setup now uses build arguments to pass environment variables:
+## Key API Endpoints
 
-```bash
-docker build --build-arg OPENAI_API_KEY="your_key" \
-             --build-arg JWT_SECRET="your_secret" \
-             --build-arg METABASE_URL="your_url" \
-             .
-```
+### Public
+- `GET /` - Health check
+- `GET /health` - Service health status
+- `GET /ready` - Readiness check with dependencies
 
-Or with docker-compose (which reads from environment variables or .env file):
+### Authenticated
+- `POST /api/ask` - Generate SQL from natural language
+- `POST /api/explain_sql` - Get SQL explanation
+- `POST /api/change_display` - Update visualization
+- `POST /api/chats` - Get user's chats
+- `GET /api/chats/<chat_id>` - Get specific chat
+- `POST /api/chats/save` - Save/update chat
+- `DELETE /api/chats/<chat_id>` - Delete chat
+- `POST /api/feedback` - Submit bug report/feedback
 
-```bash
-export OPENAI_API_KEY="your_key"
-docker-compose up --build
-```
+### Admin Only
+- `GET /api/admin/feedback` - Get all feedback entries
+- `GET /api/feedback/<feedback_id>` - Get specific feedback
+- `PUT /api/admin/feedback/<feedback_id>/status` - Update feedback status
 
-## Key Components
+## Key Files
 
-- `app.py` - Main Flask application
-- `chat.py` - Chat and query processing logic
-- `sql_generator.py` - SQL generation from natural language
-- `metabase.py` - Metabase API integration
-- `database.py` - Database connection and operations
-- `embeddings.py` - Schema embeddings management
+- `app.py` - Application entry point
+- `api.py` - Flask routes and endpoints
+- `auth.py` - JWT authentication
 - `config.py` - Configuration management
+- `database.py` - Database operations and repositories
+- `sql_generator.py` - AI-powered SQL generation
+- `metabase.py` - Metabase API client
+- `embeddings.py` - Schema embedding management
+- `chat.py` - Chat conversation management
 
-## Database Schema
+## Database Tables
 
-The backend manages schema embeddings and query history in PostgreSQL with the pgvector extension for similarity search.
+- `chats` - User conversation history
+- `feedback` - User feedback and bug reports
+- `langchain_pg_collection` - Vector store collections
+- `langchain_pg_embedding` - Schema embeddings
+
+## Commands
+
+```bash
+# Run server
+python app.py
+
+# Embed database schemas
+python app.py embed [db_id]
+
+# Show help
+python app.py help
+```
+
+## Logging
+
+The application uses Python's built-in logging module with proper log levels:
+- `DEBUG` - Development mode only
+- `INFO` - General information
+- `WARNING` - Warning messages
+- `ERROR` - Error messages with stack traces
+
+Log format: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`

@@ -3,59 +3,63 @@ Main application entry point.
 Handles initialization and command-line interface.
 """
 import sys
+import logging
 from config import config
 from database import db_manager
 from embeddings import embedding_manager
 from api import app
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 def embed_schemas_command(db_id: int = None):
     """Command to embed database schemas"""
     if db_id is None:
         db_id = config.metabase.default_db_id
-    
-    print(f"Beginning schema embedding process for db_id: {db_id}...")
-    
+
+    logger.info(f"Beginning schema embedding process for db_id: {db_id}...")
+
     # Get schema types for this database from config
     tenant_config = None
     for tenant_id, cfg in config.tenant_mappings.items():
         if cfg["db_id"] == db_id:
             tenant_config = cfg
             break
-    
+
     if tenant_config:
         schema_types = tenant_config.get("schema_types", ["public"])
     else:
         schema_types = ["public", "custom"] if config.app.embed_worksheets else ["public"]
-    
+
     embedding_manager.embed_schemas(db_id, schema_types)
-    print("Finished embedding process.")
+    logger.info("Finished embedding process.")
 
 
 def run_server():
     """Run the Flask development server"""
     import os
-    
-    print(f"Starting Flask app in {config.app.flask_env} mode with debug={config.app.debug}")
-    
+
+    logger.info(f"Starting Flask app in {config.app.flask_env} mode with debug={config.app.debug}")
+
     # Only run initialization in the main process (not the reloader process)
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         # Initialize database tables
-        print("Initializing database schema...")
+        logger.info("Initializing database schema...")
         try:
             db_manager.init_tables()
-            print("Database schema initialized successfully")
+            logger.info("Database schema initialized successfully")
         except Exception as e:
-            print(f"Error initializing schema: {e}")
+            logger.error(f"Error initializing schema: {e}", exc_info=True)
             sys.exit(1)
-        
+
         # Embed schemas on startup (optional)
-        print("Embedding database schemas...")
+        logger.info("Embedding database schemas...")
         try:
             embed_schemas_command()
-            print("Schema embedding completed successfully")
+            logger.info("Schema embedding completed successfully")
         except Exception as e:
-            print(f"Warning: Schema embedding failed: {e}")
+            logger.warning(f"Schema embedding failed: {e}", exc_info=True)
             # Don't exit - app can still run without embeddings
     
     app.run(
