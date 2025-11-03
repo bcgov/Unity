@@ -26,7 +26,7 @@ public class ApplicationLinksAppService : CrudAppService<
     private const string ERROR_TARGET_CHILD_CANNOT_BE_PARENT = "Error: The selected submission is already a child of another application. An application cannot be both a parent and a child.";
     private const string ERROR_TARGET_ALREADY_HAS_PARENT = "Error: The selected submission already has a parent. A submission cannot have multiple parents.";
     private const string ERROR_TARGET_IS_PARENT_TO_OTHERS = "Error: The selected submission is already a parent to other applications. An application cannot be both a parent and a child.";
-    private const string ERROR_CURRENT_APP_IS_CHILD = "Error: This application is already a child of another application. An application cannot be both a parent and a child.";
+    private const string ERROR_CURRENT_APP_IS_CHILD = "Error: This application is already a child of an application. An application cannot be both a parent and a child.";
 
     public IApplicationLinksRepository ApplicationLinksRepository { get; set; } = null!;
     public IApplicationRepository ApplicationRepository { get; set; } = null!;
