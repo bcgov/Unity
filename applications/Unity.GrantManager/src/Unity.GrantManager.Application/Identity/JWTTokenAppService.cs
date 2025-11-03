@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.IdentityModel.Tokens;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp;
 using Volo.Abp.MultiTenancy;
@@ -12,15 +13,17 @@ using Volo.Abp.Users;
 namespace Unity.GrantManager.Identity
 {
     [RemoteService]
-    public class JWTTokenAppService : GrantManagerAppService
+    public class JwtTokenAppService : GrantManagerAppService
     {
         private readonly ICurrentTenant _currentTenant;
         private readonly ICurrentUser _currentUser;
+        private readonly IConfiguration _configuration;
 
-        public JWTTokenAppService(ICurrentTenant currentTenant, ICurrentUser currentUser)
+        public JwtTokenAppService(ICurrentTenant currentTenant, ICurrentUser currentUser, IConfiguration configuration)
         {
             _currentTenant = currentTenant;
             _currentUser = currentUser;
+            _configuration = configuration;
         }
 
         public async Task<string> GenerateJWTTokenAsync()
@@ -35,13 +38,12 @@ namespace Unity.GrantManager.Identity
             {
                 new Claim("user_id", userId ?? "unknown"),
                 new Claim("tenant", tenant),
-                new Claim("mb_url", "https://test-unity-reporting.apps.silver.devops.gov.bc.ca"), // TODO: change based on env in OpenShift
                 new Claim("is_it_admin", isITAdmin.ToString().ToLower()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
             // Secret key (keep secure in production, e.g., in appsettings or Azure Key Vault)
-            var secretKey = "INSERT SUPER SECRET KEY HERE FILLER FILLER"; // TODO: replace with secure key
+            var secretKey = _configuration["ReportingAI:JWTSecret"];
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
