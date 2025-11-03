@@ -46,9 +46,17 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
     [Authorize(UnitySelector.Payment.Supplier.Update)]
     public async Task UpdateApplicantSupplierNumberAsync(Guid applicantId, string supplierNumber)
     {
-        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && !string.IsNullOrEmpty(supplierNumber))
+        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
         {
             await applicantRepository.EnsureExistsAsync(applicantId);
+
+            // Handle clearing supplier information
+            if (string.IsNullOrEmpty(supplierNumber))
+            {
+                await ClearApplicantSupplierAsync(applicantId);
+                return;
+            }
+        
             var supplier = await GetSupplierByApplicantIdAsync(applicantId);
 
             if (supplier != null && string.Compare(supplierNumber, supplier?.Number, true) == 0)
@@ -57,6 +65,28 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
             }
 
             await supplierService.UpdateApplicantSupplierInfo(supplierNumber, applicantId);
+        }
+    }
+
+    [Authorize(UnitySelector.Payment.Supplier.Update)]
+    public async Task ClearApplicantSupplierAsync(Guid applicantId)
+    {
+        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
+        {
+            await applicantRepository.EnsureExistsAsync(applicantId);
+
+            var applicant = await applicantRepository.GetAsync(applicantId);
+            var supplierId = applicant.SupplierId; // Store the supplier ID before clearing
+            
+            // Clear the applicant references first
+            applicant.SupplierId = null;
+            applicant.SiteId = null;
+            await applicantRepository.UpdateAsync(applicant);
+
+             if (supplierId.HasValue)
+            {
+                await supplierAppService.DeleteAsync(supplierId.Value);
+            }
         }
     }
 
