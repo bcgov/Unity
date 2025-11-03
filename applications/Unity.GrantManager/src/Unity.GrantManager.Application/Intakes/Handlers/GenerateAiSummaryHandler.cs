@@ -7,10 +7,8 @@ using Unity.GrantManager.AI;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Events;
-using Unity.Modules.Shared.Features;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
-using Volo.Abp.Features;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Scoresheets;
@@ -26,7 +24,6 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly ILogger<GenerateAiSummaryHandler> _logger;
-        private readonly IFeatureChecker _featureChecker;
         private readonly IScoresheetRepository _scoresheetRepository;
         private readonly IScoresheetInstanceRepository _scoresheetInstanceRepository;
         private readonly IApplicationFormRepository _applicationFormRepository;
@@ -38,7 +35,6 @@ namespace Unity.GrantManager.Intakes.Handlers
             IApplicationRepository applicationRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
             ILogger<GenerateAiSummaryHandler> logger,
-            IFeatureChecker featureChecker,
             IScoresheetRepository scoresheetRepository,
             IScoresheetInstanceRepository scoresheetInstanceRepository,
             IApplicationFormRepository applicationFormRepository)
@@ -49,7 +45,6 @@ namespace Unity.GrantManager.Intakes.Handlers
             _applicationRepository = applicationRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _logger = logger;
-            _featureChecker = featureChecker;
             _scoresheetRepository = scoresheetRepository;
             _scoresheetInstanceRepository = scoresheetInstanceRepository;
             _applicationFormRepository = applicationFormRepository;
@@ -65,13 +60,6 @@ namespace Unity.GrantManager.Intakes.Handlers
             if (eventData?.Application == null)
             {
                 _logger.LogWarning("Event data or application is null in GenerateAiSummaryHandler.");
-                return;
-            }
-
-            // Check if AI Reporting feature is enabled
-            if (!await _featureChecker.IsEnabledAsync(FeatureConsts.AIReporting))
-            {
-                _logger.LogDebug("AI Reporting feature is disabled, skipping AI summary generation for application {ApplicationId}.", eventData.Application.Id);
                 return;
             }
 
