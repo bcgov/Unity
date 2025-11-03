@@ -51,6 +51,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicant.NonRegOrgName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegOrgName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
             applicant.OrgNumber = intakeMap.OrgNumber ?? applicant.OrgNumber;
+            applicant.BusinessNumber = intakeMap.BusinessNumber ?? applicant.BusinessNumber;
             applicant.OrganizationType = intakeMap.OrganizationType ?? applicant.OrganizationType;
             applicant.Sector = intakeMap.Sector ?? applicant.Sector;
             applicant.SubSector = intakeMap.SubSector ?? applicant.SubSector;
@@ -289,6 +290,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             NonRegOrgName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
             OrgNumber = intakeMap.OrgNumber,
+            BusinessNumber = intakeMap.BusinessNumber,
             OrganizationType = intakeMap.OrganizationType,
             Sector = intakeMap.Sector,
             SubSector = intakeMap.SubSector,
