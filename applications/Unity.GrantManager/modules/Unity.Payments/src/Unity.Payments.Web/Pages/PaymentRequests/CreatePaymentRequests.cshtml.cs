@@ -11,6 +11,8 @@ using System.Text.Json;
 using Unity.Payments.Domain.Suppliers;
 using System.Linq;
 using Unity.GrantManager.Payments;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.ApplicationForms;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -20,7 +22,10 @@ namespace Unity.Payments.Web.Pages.Payments
         IPaymentConfigurationAppService paymentConfigurationAppService,
         ISupplierAppService iSupplierAppService,
         ISiteRepository siteRepository,
-        IPaymentSettingsAppService paymentSettingsAppService
+        IPaymentSettingsAppService paymentSettingsAppService,
+        IApplicationLinksService applicationLinksService,
+        IApplicationFormRepository applicationFormRepository,
+        IApplicationFormAppService applicationFormAppService
     ) : AbpPageModel
     {
 
@@ -69,8 +74,11 @@ namespace Unity.Payments.Web.Pages.Payments
                 decimal remainingAmount = await GetRemainingAmountAllowedByApplicationAsync(application);
 
                 // Grabs the Account Coding ID from the Application Form and if there is none then the Payment Configuration
-                // If neither exist then an error on the payment request will be shown 
+                // If neither exist then an error on the payment request will be shown
                 Guid? accountCodingId = await paymentSettingsAppService.GetAccountCodingIdByApplicationIdAsync(application.Id);
+
+                // Load ApplicationForm with hierarchy information
+                var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationForm.Id);
 
                 PaymentsModel request = new()
                 {
@@ -100,7 +108,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 request.SupplierName = supplier?.Name;
                 request.SupplierNumber = supplierNumber;
 
-                request.ErrorList = GetErrorlist(supplier, site, application, remainingAmount, accountCodingId);
+                request.ErrorList = await GetErrorlist(supplier, site, application, applicationForm, remainingAmount, accountCodingId);
 
                 if (request.ErrorList != null && request.ErrorList.Count > 0)
                 {
@@ -115,7 +123,7 @@ namespace Unity.Payments.Web.Pages.Payments
             TotalAmount = ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
         }
 
-        private static List<string> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, decimal remainingAmount, Guid? accountCodingId)
+        private async Task<List<string>> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, ApplicationForm applicationForm, decimal remainingAmount, Guid? accountCodingId)
         {
             bool missingFields = false;
 
@@ -149,6 +157,10 @@ namespace Unity.Payments.Web.Pages.Payments
             {
                 errorList.Add("The selected application form does not have an Account Coding or no default Account Coding is set.");
             }
+
+            // Add form hierarchy and parent link validation
+            var hierarchyErrors = await ValidateFormHierarchyAndParentLink(application, applicationForm);
+            errorList.AddRange(hierarchyErrors);
 
             return errorList;
         }
@@ -190,6 +202,55 @@ namespace Unity.Payments.Web.Pages.Payments
                 CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicantCorrelationProvider,
                 IncludeDetails = true
             });
+        }
+
+        private async Task<List<string>> ValidateFormHierarchyAndParentLink(
+            GrantApplicationDto application,
+            ApplicationForm applicationForm)
+        {
+            List<string> errors = [];
+
+            // Only validate if form is payable and has Child hierarchy
+            if (!applicationForm.Payable ||
+                !applicationForm.FormHierarchy.HasValue ||
+                applicationForm.FormHierarchy.Value != FormHierarchyType.Child)
+            {
+                return errors; // No validation needed
+            }
+
+            // Check if ParentFormId and ParentFormVersionId are set
+            if (!applicationForm.ParentFormId.HasValue ||
+                !applicationForm.ParentFormVersionId.HasValue)
+            {
+                // Configuration issue - should not happen if validation works
+                return errors;
+            }
+
+            // Get parent links for this application
+            var allLinks = await applicationLinksService.GetListByApplicationAsync(application.Id);
+            var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent);
+
+            // Rule 2: No parent link exists
+            if (parentLink == null)
+            {
+                errors.Add("Payment Configuration for this form requires a valid parent application link before payments can be processed.");
+                return errors;
+            }
+
+            // Rule 1: Parent link exists but doesn't match Payment Configuration      
+            // Get the parent application's form version details
+            var parentFormDetails = await applicationFormAppService.GetFormDetailsByApplicationIdAsync(parentLink.ApplicationId);
+
+            // Validate both ParentFormId and ParentFormVersionId
+            bool formIdMatches = parentFormDetails.ApplicationFormId == applicationForm.ParentFormId.Value;
+            bool versionIdMatches = parentFormDetails.ApplicationFormVersionId == applicationForm.ParentFormVersionId.Value;
+
+            if (!formIdMatches || !versionIdMatches)
+            {
+                errors.Add("The selected parent form in Payment Configuration does not match the application's linked parent. Please verify and try again.");
+            }
+
+            return errors;
         }
 
         public async Task<IActionResult> OnPostAsync()
