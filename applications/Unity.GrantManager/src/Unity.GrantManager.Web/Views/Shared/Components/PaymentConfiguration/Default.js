@@ -94,7 +94,7 @@
         });
 
         UIElements.parentFormSelect.on('select2:select', function (e) {
-            const data = e.params && e.params.data ? e.params.data : {};
+            const data = e.params?.data ?? {};
             setParentFormId(data.parentFormId);
             enableSaveButton();
         });

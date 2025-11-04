@@ -233,6 +233,9 @@ public class ApplicationFormAppService
         appForm.Payable = dto.Payable;
         appForm.PreventPayment = dto.PreventPayment;
         appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
+        appForm.FormHierarchy = dto.FormHierarchy;
+        appForm.ParentFormId = dto.ParentFormId;
+        appForm.ParentFormVersionId = dto.ParentFormVersionId;
         await Repository.UpdateAsync(appForm);
     }
 

@@ -22,7 +22,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
         AutoInitialize = true)]
     public class PaymentConfigurationViewComponent(
         IAccountCodingRepository accountCodingRepository,
-        IApplicationFormRepository applicationFormRepository, 
+        IApplicationFormRepository applicationFormRepository,
+        IApplicationFormVersionRepository applicationFormVersionRepository,
         IPermissionChecker permissionChecker,
         PaymentConfigurationAppService paymentConfigurationAppService) : AbpViewComponent
     {
@@ -39,6 +40,22 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
             model.PaymentApprovalThreshold = applicationForm?.PaymentApprovalThreshold;
             model.PreventAutomaticPaymentToCAS = applicationForm?.PreventPayment ?? false;
             model.AccountCode = applicationForm?.AccountCodingId;
+            model.FormHierarchy = applicationForm?.FormHierarchy;
+            model.ParentFormId = applicationForm?.ParentFormId;
+            model.ParentFormVersionId = applicationForm?.ParentFormVersionId;
+
+            // Load parent form display name if parent form is selected
+            if (model.ParentFormId.HasValue && model.ParentFormVersionId.HasValue)
+            {
+                var parentForm = await applicationFormRepository.FindAsync(model.ParentFormId.Value);
+                var parentFormVersion = await applicationFormVersionRepository.FindAsync(model.ParentFormVersionId.Value);
+
+                if (parentForm != null && parentFormVersion != null)
+                {
+                    model.ParentFormDisplayName = $"{parentForm.ApplicationFormName} V{parentFormVersion.Version}.0";
+                }
+            }
+
             model.FormHierarchyList = new()
             {
                 new SelectListItem { Value = ((int)FormHierarchyType.Parent).ToString(), Text = "Parent Form" },
