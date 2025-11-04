@@ -6,9 +6,9 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_DB: unity_ai
-      POSTGRES_USER: unity_user
-      POSTGRES_PASSWORD: unity_pass
+      POSTGRES_DB: ${POSTGRES_DB:-unity_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-unity_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -16,7 +16,7 @@ services:
     networks:
       - unity-ai-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U unity_user -d unity_ai"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-unity_user} -d ${POSTGRES_DB:-unity_ai}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,12 +34,12 @@ services:
         - JWT_SECRET=${JWT_SECRET}
         - METABASE_KEY=${METABASE_KEY}
         - MB_EMBED_SECRET=${MB_EMBED_SECRET}
-        - MB_EMBED_URL=${MB_EMBED_URL}
+        - MB_URL=${MB_URL}
         - DB_HOST=postgres
         - DB_PORT=5432
-        - DB_NAME=unity_ai
-        - DB_USER=unity_user
-        - DB_PASSWORD=unity_pass
+        - DB_NAME=${POSTGRES_DB:-unity_ai}
+        - DB_USER=${POSTGRES_USER:-unity_user}
+        - DB_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5000:5000"
     environment:
@@ -52,12 +52,12 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - METABASE_KEY=${METABASE_KEY}
       - MB_EMBED_SECRET=${MB_EMBED_SECRET}
-      - MB_EMBED_URL=${MB_EMBED_URL}
+      - MB_URL=${MB_URL}
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAME=unity_ai
-      - DB_USER=unity_user
-      - DB_PASSWORD=unity_pass
+      - DB_NAME=${POSTGRES_DB:-unity_ai}
+      - DB_USER=${POSTGRES_USER:-unity_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ./Unity.AI.Reporting.Backend/src:/app
     networks:
@@ -87,6 +87,11 @@ services:
       - unity-ai-network
     depends_on:
       - reporting-backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   pgadmin:
     image: dpage/pgadmin4:latest

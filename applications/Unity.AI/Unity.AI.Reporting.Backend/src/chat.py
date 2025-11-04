@@ -2,10 +2,14 @@
 Chat management module.
 Handles conversation state and Metabase card recreation.
 """
+import logging
 from typing import List, Dict, Any, Optional
 from database import chat_repository
 from metabase import metabase_client
 from config import config
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class ChatManager:
@@ -101,18 +105,18 @@ class ChatManager:
                                         new_card_id, viz_type, x_fields, y_fields
                                     )
                                 except Exception as e:
-                                    print(f"Error updating visualization: {e}")
-                            
+                                    logger.error(f"Error updating visualization: {e}", exc_info=True)
+
                             # Generate new embed URL
                             new_embed_url = self.metabase.generate_embed_url(new_card_id)
-                            
+
                             # Update turn with new card info
                             turn['embed']['card_id'] = new_card_id
                             turn['embed']['url'] = new_embed_url
-                            
-                            print(f"Recreated card {card_id} as {new_card_id}")
+
+                            logger.info(f"Recreated card {card_id} as {new_card_id}")
                         except Exception as e:
-                            print(f"Error recreating card {card_id}: {e}")
+                            logger.error(f"Error recreating card {card_id}: {e}", exc_info=True)
             
             updated_conversation.append(turn)
         

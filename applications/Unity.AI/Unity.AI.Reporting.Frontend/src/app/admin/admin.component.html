@@ -91,6 +91,12 @@
               <div class="feedback-context" *ngIf="feedback.current_question || feedback.previous_question">
                 <details open>
                   <summary>Question & SQL Context</summary>
+
+                  <!-- Token Usage (Admin Only) -->
+                  <div class="token-info" *ngIf="getTokenInfo(feedback)">
+                    <strong>🪙 Token Usage:</strong> {{formatTokens(getTokenInfo(feedback))}}
+                  </div>
+
                   <div class="context-info">
                     <!-- Current Question -->
                     <div class="context-section" *ngIf="feedback.current_question">

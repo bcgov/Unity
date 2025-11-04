@@ -4,6 +4,7 @@ API module with Flask routes for the application.
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 import asyncio
+import logging
 from config import config
 from database import db_manager, chat_repository, feedback_repository
 from metabase import metabase_client
@@ -11,6 +12,13 @@ from chat import chat_manager
 from sql_generator import sql_generator
 from auth import require_auth, get_user_from_token
 import re
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO if config.app.flask_env == "production" else logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
 def _sanitize_field_array(field_array):
@@ -178,7 +186,6 @@ def validate_token():
         "valid": True,
         "user_id": user_data["user_id"],
         "tenant_id": user_data["tenant"],
-        "metabase_url": user_data["mb_url"],
         "expires": user_data["exp"]
     }), 200
 
@@ -197,6 +204,24 @@ def check_admin():
     return jsonify({
         "is_admin": bool(is_admin),
         "user_id": user_data["user_id"]
+    }), 200
+
+
+@app.route("/api/metabase-url", methods=["GET"])
+@require_auth
+def get_metabase_url():
+    """
+    Get the Metabase URL from server configuration
+    Returns the configured Metabase embed URL for the user's tenant
+    """
+
+    metabase_url = config.metabase.url
+
+    if not metabase_url:
+        return jsonify({"error": "Metabase URL not configured"}), 404
+
+    return jsonify({
+        "metabase_url": metabase_url
     }), 200
 
 
@@ -236,7 +261,7 @@ def get_feedback_for_admin():
         }), 200
 
     except Exception as e:
-        print(f"Error retrieving feedback: {e}")
+        logger.error(f"Error retrieving feedback: {e}", exc_info=True)
         return jsonify({"error": "Failed to retrieve feedback"}), 500
 
 @app.route("/api/ask", methods=["POST"])
@@ -254,7 +279,6 @@ def ask():
         conversation = data.get("conversation", [])
         
         # Extract user context from JWT token
-        metabase_url = user_data["mb_url"]
         tenant_id = user_data["tenant"]
         
         if not question:
@@ -264,82 +288,83 @@ def ask():
         tenant_config = config.get_tenant_config(tenant_id)
         db_id = tenant_config["db_id"]
         collection_id = tenant_config["collection_id"]
-        
-        print(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
-        
+
+        logger.info(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
+
         try:
             # Extract past questions from conversation
             past_questions = chat_manager.extract_past_questions(conversation)
-            print(f"Extracted {len(past_questions)} past questions")
-            
+            logger.debug(f"Extracted {len(past_questions)} past questions")
+
             # Generate SQL from natural language
-            print("Starting SQL generation...")
+            logger.info("Starting SQL generation...")
             try:
-                sql, metadata = await sql_generator.generate_sql(
+                sql, metadata, sql_tokens = await sql_generator.generate_sql(
                     question, past_questions, db_id
                 )
-                print(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
+                logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
+                logger.debug(f"SQL generation tokens: {sql_tokens}")
             except Exception as sql_error:
-                print(f"SQL generation failed with error: {sql_error}")
-                print(f"Error type: {type(sql_error)}")
+                logger.error(f"SQL generation failed with error: {sql_error}", exc_info=True)
+                logger.debug(f"Error type: {type(sql_error)}")
                 # Check if it's a rate limit or connection error
                 if "429" in str(sql_error) or "rate limit" in str(sql_error).lower():
-                    print("Azure OpenAI rate limit exceeded")
+                    logger.warning("Azure OpenAI rate limit exceeded")
                     return jsonify({
                         "error": "Rate limit exceeded", 
                         "message": "Azure OpenAI rate limit exceeded. Please try again in a few moments.",
                         "url": "rate_limit"
                     }), 429
                 elif "Connection aborted" in str(sql_error) or "RemoteDisconnected" in str(sql_error):
-                    print("Connection error during SQL generation")
+                    logger.error("Connection error during SQL generation")
                     return jsonify({
                         "error": "Connection error",
                         "message": "Connection error during SQL generation. Please try again.",
                         "url": "connection_error"
                     }), 503
                 else:
-                    print("Unknown error during SQL generation")
+                    logger.error("Unknown error during SQL generation")
                     return jsonify({
                         "error": "SQL generation failed",
                         "message": "Unable to generate SQL query. Please try again.",
                         "url": "fail"
                     }), 500
-            
+
             if not sql or not metadata:
-                print("SQL generation failed - returning fail response")
+                logger.warning("SQL generation failed - returning fail response")
                 return {"url": "fail", "card_id": 0, "x_field": "", "y_field": ""}, 200
-            
-            print(f"SQL: {sql}")
-            print(f"Metadata: {metadata}")
-            print("About to create Metabase card...")
-            print(f"Metabase client type: {type(metabase_client)}")
-            
+
+            logger.debug(f"SQL: {sql}")
+            logger.debug(f"Metadata: {metadata}")
+            logger.info("About to create Metabase card...")
+            logger.debug(f"Metabase client type: {type(metabase_client)}")
+
             # Create Metabase card
-            print(f"Creating Metabase card with SQL length: {len(sql)}")
+            logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
             try:
-                print("Calling metabase_client.create_card...")
+                logger.debug("Calling metabase_client.create_card...")
                 card_id = metabase_client.create_card(
                     sql, db_id, collection_id, metadata['title']
                 )
-                print(f"Card created successfully with ID: {card_id}")
+                logger.info(f"Card created successfully with ID: {card_id}")
             except Exception as card_error:
-                print(f"Error during card creation: {card_error}")
-                print(f"Card error type: {type(card_error)}")
+                logger.error(f"Error during card creation: {card_error}", exc_info=True)
+                logger.debug(f"Card error type: {type(card_error)}")
                 raise card_error
-            
+
             # Generate embed URL
-            print("Generating embed URL...")
+            logger.info("Generating embed URL...")
             try:
-                print("Calling metabase_client.generate_embed_url...")
+                logger.debug("Calling metabase_client.generate_embed_url...")
                 embed_url = metabase_client.generate_embed_url(card_id)
-                print(f"Embed URL generated successfully: {embed_url[:50]}...")
+                logger.info(f"Embed URL generated successfully: {embed_url[:50]}...")
             except Exception as embed_error:
-                print(f"Error during embed URL generation: {embed_error}")
-                print(f"Embed error type: {type(embed_error)}")
+                logger.error(f"Error during embed URL generation: {embed_error}", exc_info=True)
+                logger.debug(f"Embed error type: {type(embed_error)}")
                 raise embed_error
-            
+
         except Exception as step_error:
-            print(f"Error in specific step: {step_error}")
+            logger.error(f"Error in specific step: {step_error}", exc_info=True)
             raise step_error
         
         return {
@@ -349,13 +374,14 @@ def ask():
             "y_field": metadata.get('y_axis', []),
             "title": metadata.get("title", "Untitled"),
             "visualization_options": metadata.get('visualization_options', []),
-            "SQL": sql
+            "SQL": sql,
+            "tokens": sql_tokens  # Include token usage from SQL generation
         }, 200
     
     try:
         return asyncio.run(async_ask())
     except Exception as e:
-        print(f"Error in /api/ask: {e}")
+        logger.error(f"Error in /api/ask: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 
@@ -402,9 +428,9 @@ def change_display():
             "y_field": safe_y_field,
             "visualization_options": safe_visualization_options
         }), 200
-        
+
     except Exception as e:
-        print(f"Error in /api/change_display: {e}")
+        logger.error(f"Error in /api/change_display: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 
@@ -422,9 +448,9 @@ def delete_question():
         
         success = metabase_client.delete_card(card_id)
         return {"success": success}
-        
+
     except Exception as e:
-        print(f"Error in /api/delete: {e}")
+        logger.error(f"Error in /api/delete: {e}", exc_info=True)
         return {"success": False}
 
 
@@ -441,16 +467,17 @@ def explain_sql():
             return abort(400, "sql is required")
         
         # Generate explanation using the sql_generator
-        explanation = await sql_generator.explain_sql(sql)
-        
+        explanation, explanation_tokens = await sql_generator.explain_sql(sql)
+
         return {
-            "explanation": explanation
+            "explanation": explanation,
+            "tokens": explanation_tokens  # Include token usage from explanation
         }, 200
     
     try:
         return asyncio.run(async_explain_sql())
     except Exception as e:
-        print(f"Error in /api/explain_sql: {e}")
+        logger.error(f"Error in /api/explain_sql: {e}", exc_info=True)
         return {
             "explanation": "This query retrieves and analyzes your data."
         }, 200
@@ -462,7 +489,6 @@ def explain_sql():
 @require_auth
 def get_chats():
     """Get all chats for a user"""
-    data = request.get_json()
     user_data = get_user_from_token()
     
     try:
@@ -472,9 +498,9 @@ def get_chats():
         
         chats = chat_manager.get_user_chats(user_id, tenant_id)
         return jsonify(chats), 200
-        
+
     except Exception as e:
-        print(f"Error getting chats: {e}")
+        logger.error(f"Error getting chats: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 
@@ -487,16 +513,15 @@ def get_chat(chat_id):
     try:
         # Extract user ID from JWT token
         user_id = user_data["user_id"]
-        
         chat_data = chat_manager.get_chat_with_card_validation(chat_id, user_id)
         
         if not chat_data:
             return abort(404, "Chat not found")
-        
+
         return jsonify(chat_data), 200
-        
+
     except Exception as e:
-        print(f"Error getting chat: {e}")
+        logger.error(f"Error getting chat: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 
@@ -511,7 +536,6 @@ def save_chat():
         # Extract user context from JWT token
         user_id = user_data["user_id"]
         tenant_id = user_data["tenant"]
-        metabase_url = user_data["mb_url"]
         
         chat_id = data.get("chat_id")
         title = data.get("title")
@@ -521,13 +545,13 @@ def save_chat():
             return abort(400, "title and conversation are required")
         
         result_chat_id = chat_manager.save_chat(
-            user_id, tenant_id, metabase_url, title, conversation, chat_id
+            user_id, tenant_id, config.metabase.url, title, conversation, chat_id
         )
-        
+
         return {"chat_id": result_chat_id}, 200
-        
+
     except Exception as e:
-        print(f"Error saving chat: {e}")
+        logger.error(f"Error saving chat: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 
@@ -535,7 +559,6 @@ def save_chat():
 @require_auth
 def delete_chat(chat_id):
     """Delete a chat"""
-    data = request.get_json()
     user_data = get_user_from_token()
     
     try:
@@ -543,14 +566,14 @@ def delete_chat(chat_id):
         user_id = user_data["user_id"]
         
         success = chat_manager.delete_chat(chat_id, user_id)
-        
+
         if not success:
             return abort(404, "Chat not found")
-        
+
         return {"success": True}, 200
-        
+
     except Exception as e:
-        print(f"Error deleting chat: {e}")
+        logger.error(f"Error deleting chat: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 
@@ -608,68 +631,51 @@ def submit_feedback():
             message=message,
             user_agent=user_agent,
             metadata=metadata,
-            current_question=data.get("current_question"),
-            current_sql=data.get("current_sql"),
-            current_sql_explanation=data.get("current_sql_explanation"),
-            previous_question=data.get("previous_question"),
-            previous_sql=data.get("previous_sql"),
-            previous_sql_explanation=data.get("previous_sql_explanation")
+            current_question=current_question,
+            current_sql=current_sql,
+            current_sql_explanation=current_sql_explanation,
+            previous_question=previous_question,
+            previous_sql=previous_sql,
+            previous_sql_explanation=previous_sql_explanation
         )
-        
-        print(f"Feedback submitted: {feedback_id} for chat {chat_id} by user {user_id}")
-        
+
+        logger.info(f"Feedback submitted: {feedback_id} for chat {chat_id} by user {user_id}")
+
         return {
             "success": True,
             "feedback_id": feedback_id,
             "message": "Feedback submitted successfully"
         }, 200
-        
+
     except Exception as e:
-        print(f"Error submitting feedback: {e}")
+        logger.error(f"Error submitting feedback: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 
 @app.route("/api/feedback/<feedback_id>", methods=["GET"])
 @require_auth
 def get_feedback(feedback_id):
-    """Get a specific feedback entry (for admin use)"""
+    """
+    Get a specific feedback entry (admin only)
+    Requires admin privileges
+    """
     user_data = get_user_from_token()
-    
+
+    # Check if user is admin
+    is_admin = user_data.get("is_it_admin", False)
+    if not is_admin:
+        return jsonify({"error": "Admin privileges required"}), 403
+
     try:
         feedback_data = feedback_repository.get_feedback(feedback_id)
-        
+
         if not feedback_data:
             return abort(404, "Feedback not found")
-        
-        # Only allow users to see their own feedback
-        if feedback_data["user_id"] != user_data["user_id"]:
-            return abort(403, "Access denied")
-        
+
         return jsonify(feedback_data), 200
-        
-    except Exception as e:
-        print(f"Error getting feedback: {e}")
-        return abort(500, "Internal server error")
-
-
-@app.route("/api/chats/<chat_id>/feedback", methods=["GET"])
-@require_auth
-def get_chat_feedback(chat_id):
-    """Get all feedback for a specific chat"""
-    user_data = get_user_from_token()
-
-    try:
-        # Validate that the chat exists and belongs to the user
-        user_id = user_data["user_id"]
-        chat_data = chat_repository.get_chat(chat_id, user_id)
-        if not chat_data:
-            return abort(404, "Chat not found")
-
-        feedback_list = feedback_repository.get_feedback_by_chat(chat_id)
-        return jsonify(feedback_list), 200
 
     except Exception as e:
-        print(f"Error getting chat feedback: {e}")
+        logger.error(f"Error getting feedback: {e}", exc_info=True)
         return abort(500, "Internal server error")
 
 
@@ -712,6 +718,6 @@ def update_feedback_status(feedback_id):
         }), 200
 
     except Exception as e:
-        print(f"Error updating feedback status: {e}")
+        logger.error(f"Error updating feedback status: {e}", exc_info=True)
         return jsonify({"error": "Failed to update feedback status"}), 500
 

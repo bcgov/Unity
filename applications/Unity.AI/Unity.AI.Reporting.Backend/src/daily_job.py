@@ -1,5 +1,13 @@
 import os
+import logging
 import requests
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 metabase_url = "https://test-unity-reporting.apps.silver.devops.gov.bc.ca"
 headers = {"x-api-key": os.getenv("METABASE_KEY")}
@@ -9,27 +17,27 @@ def list_card_creators():
     try:
         # Get all cards/questions from Metabase
         response = requests.get(f"{metabase_url}/api/card", headers=headers)
-        
+
         if response.status_code != 200:
-            print(f"Error fetching cards: HTTP {response.status_code} - {response.text}")
+            logger.error(f"Error fetching cards: HTTP {response.status_code} - {response.text}")
             return
-        
+
         cards = response.json()
-        
-        print(f"\nMetabase Cards - Created/Updated By Report")
-        print(f"Total cards: {len(cards)}")
-        print(f"{'='*80}\n")
-        
+
+        logger.info(f"\nMetabase Cards - Created/Updated By Report")
+        logger.info(f"Total cards: {len(cards)}")
+        logger.info(f"{'='*80}\n")
+
         for card in cards:
-            print(f"Card ID: {card.get('id')} - {card.get('name', 'Untitled')}")
-            print(f"  Created by: User ID {card.get('creator_id')}")
-            print(f"  Created at: {card.get('created_at')}")
-            print(f"  Last edited by: User ID {card.get('last-edit-info', {}).get('id', 'Unknown')}")
-            print(f"  Updated at: {card.get('updated_at')}")
-            print()
-        
+            logger.info(f"Card ID: {card.get('id')} - {card.get('name', 'Untitled')}")
+            logger.info(f"  Created by: User ID {card.get('creator_id')}")
+            logger.info(f"  Created at: {card.get('created_at')}")
+            logger.info(f"  Last edited by: User ID {card.get('last-edit-info', {}).get('id', 'Unknown')}")
+            logger.info(f"  Updated at: {card.get('updated_at')}")
+            logger.info("")
+
     except Exception as e:
-        print(f"Error listing cards: {e}")
+        logger.error(f"Error listing cards: {e}", exc_info=True)
 
 if __name__ == "__main__":
     list_card_creators()

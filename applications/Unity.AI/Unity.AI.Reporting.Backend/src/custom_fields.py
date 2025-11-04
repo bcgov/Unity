@@ -3,8 +3,12 @@ import json
 import dotenv
 import textwrap
 import requests
+import logging
 
 dotenv.load_dotenv()
+
+# Configure logging
+logger = logging.getLogger(__name__)
 headers = {"x-api-key": os.getenv("METABASE_KEY")}
 
 def get_sql(sql, db_id, metabase_url):
@@ -23,12 +27,12 @@ def get_sql(sql, db_id, metabase_url):
 
 def get_worksheets():
     sql = f'SELECT "Worksheets"."Name", "Worksheets"."Id" FROM "Flex"."Worksheets"'
-    data = get_sql(sql, 3, os.getenv("MB_EMBED_URL"))
+    data = get_sql(sql, 3, os.getenv("MB_URL"))
     return [{"name": r[0], "id": r[1]} for r in data["rows"]]
 
 def get_worksheet_instances(worksheetId):
     sql = f'SELECT "WorksheetInstances"."CurrentValue", "WorksheetInstances"."WorksheetCorrelationId" FROM "Flex"."WorksheetInstances" WHERE "WorksheetInstances"."WorksheetId" = \'{worksheetId}\''
-    data = get_sql(sql, 3, os.getenv("MB_EMBED_URL"))
+    data = get_sql(sql, 3, os.getenv("MB_URL"))
     return data
 
 def get_custom_labels():
@@ -88,7 +92,7 @@ _(none)_
 
 def get_column_example(table, column):
     sql = f"SELECT \"{column}\" FROM \"Reporting\".\"{table}\" WHERE \"{column}\" IS NOT null and \"{column}\" <> ''"
-    instance = get_sql(sql, 3, os.getenv("MB_EMBED_URL"))
+    instance = get_sql(sql, 3, os.getenv("MB_URL"))
     try:
         return instance["rows"][0][0]
     except:
@@ -96,7 +100,7 @@ def get_column_example(table, column):
 
 def get_views_schemas():
     schema = requests.get(
-        f"{os.getenv('MB_EMBED_URL')}/api/database/{os.getenv('MB_EMBED_ID')}/metadata",
+        f"{os.getenv('MB_URL')}/api/database/{os.getenv('MB_EMBED_ID')}/metadata",
         headers=headers
     ).json()
 
@@ -119,7 +123,7 @@ def get_views_schemas():
 
         # Find out if there are non-blank rows 
         sql = f"SELECT * FROM \"Reporting\".\"{tbl['name']}\" "
-        instance = get_sql(sql, 3, os.getenv("MB_EMBED_URL"))
+        instance = get_sql(sql, 3, os.getenv("MB_URL"))
         rows = [r for r in instance["rows"] if set(r[3:]) != set([''])]
         if len(rows) > 0:
 
@@ -130,7 +134,7 @@ def get_views_schemas():
                 if example is not None:
                     page += f"\n - {c}: '{example[:50]}{'...' if len(example) > 50 else ''}'"
             docs.append(page)
-            print(page)
+            logger.debug(page)
 
     return docs
 
@@ -182,9 +186,5 @@ JOIN applicant AS a
 JOIN "public"."Applications" AS app
   ON app."Id" = wi."CorrelationId"
 WHERE a."leadApplicant" = 'Local Government';
-
-
-May be impossible to programmatically convert virtual table to required SQL 
-Talk to Andre about this, maybe create views/tables for each worksheet?
 
 '''

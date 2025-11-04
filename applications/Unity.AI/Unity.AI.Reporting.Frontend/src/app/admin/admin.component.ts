@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { ApiService } from '../services/api.service';
+import { LoggerService } from '../services/logger.service';
 
 interface FeedbackItem {
   feedback_id: string;
@@ -59,7 +60,8 @@ export class AdminComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private readonly authService: AuthService,
-    private readonly apiService: ApiService
+    private readonly apiService: ApiService,
+    private readonly logger: LoggerService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -81,7 +83,7 @@ export class AdminComponent implements OnInit {
       this.filterFeedback();
 
     } catch (error) {
-      console.error('Error loading feedback:', error);
+      this.logger.error('Error loading feedback:', error);
       this.errorMessage = 'Failed to load feedback. Please try again.';
     } finally {
       this.isLoading = false;
@@ -123,10 +125,10 @@ export class AdminComponent implements OnInit {
 
       // Call API to update status in backend
       await firstValueFrom(this.apiService.updateFeedbackStatus(feedbackId, newStatus));
-      console.log(`Feedback ${feedbackId} status updated to ${newStatus}`);
+      this.logger.info(`Feedback ${feedbackId} status updated to ${newStatus}`);
 
     } catch (error) {
-      console.error('Error updating feedback status:', error);
+      this.logger.error('Error updating feedback status:', error);
       // Revert the change on error
       if (feedback && originalStatus) {
         feedback.status = originalStatus;
@@ -145,6 +147,32 @@ export class AdminComponent implements OnInit {
   formatMetadata(metadata: any): string {
     if (!metadata) return '';
     return JSON.stringify(metadata, null, 2);
+  }
+
+  /**
+   * Extract token information from feedback
+   * Returns token counts if available
+   */
+  getTokenInfo(feedback: FeedbackItem): { prompt: number; completion: number; total: number } | null {
+    // Token information is extracted from the conversation by the backend
+    // and included directly in the feedback object
+    const feedbackWithTokens = feedback as any;
+    if (feedbackWithTokens.tokens) {
+      return {
+        prompt: feedbackWithTokens.tokens.prompt_tokens || 0,
+        completion: feedbackWithTokens.tokens.completion_tokens || 0,
+        total: feedbackWithTokens.tokens.total_tokens || 0
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Format token info for display
+   */
+  formatTokens(tokens: { prompt: number; completion: number; total: number } | null): string {
+    if (!tokens) return 'N/A';
+    return `${tokens.total} (${tokens.prompt} in / ${tokens.completion} out)`;
   }
 
   goToMainApp(): void {

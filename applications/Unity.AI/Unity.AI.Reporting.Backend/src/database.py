@@ -2,9 +2,13 @@
 Database module for managing PostgreSQL connections and operations.
 """
 import psycopg
+import logging
 from typing import Any, List, Dict, Optional
 import json
 from config import config
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
@@ -87,19 +91,19 @@ class DatabaseManager:
             collection_name: Name of the collection to purge
         """
         if db_id:
-            print(f"Purging existing embeddings for db_id: {db_id}...")
+            logger.info(f"Purging existing embeddings for db_id: {db_id}...")
         else:
-            print("Purging all existing embeddings...")
-        
+            logger.info("Purging all existing embeddings...")
+
         try:
             with self.get_connection() as conn:
                 with conn.cursor() as cur:
                     if db_id:
                         # Delete only embeddings for specific db_id
                         cur.execute("""
-                            DELETE FROM langchain_pg_embedding 
+                            DELETE FROM langchain_pg_embedding
                             WHERE collection_id IN (
-                                SELECT uuid FROM langchain_pg_collection 
+                                SELECT uuid FROM langchain_pg_collection
                                 WHERE name = %s
                             )
                             AND cmetadata->>'db_id' = %s
@@ -107,18 +111,18 @@ class DatabaseManager:
                     else:
                         # Delete all embeddings
                         cur.execute("""
-                            DELETE FROM langchain_pg_embedding 
+                            DELETE FROM langchain_pg_embedding
                             WHERE collection_id IN (
-                                SELECT uuid FROM langchain_pg_collection 
+                                SELECT uuid FROM langchain_pg_collection
                                 WHERE name = %s
                             )
                         """, (collection_name,))
-                    
+
                     deleted_count = cur.rowcount
                     conn.commit()
-                    print(f"Purged {deleted_count} existing embeddings")
+                    logger.info(f"Purged {deleted_count} existing embeddings")
         except Exception as e:
-            print(f"Error purging embeddings: {e}")
+            logger.error(f"Error purging embeddings: {e}", exc_info=True)
             raise
 
 
@@ -343,7 +347,8 @@ class FeedbackRepository:
                            f.message, f.user_agent, f.metadata, f.status, f.created_at, f.updated_at,
                            f.current_question, f.current_sql, f.current_sql_explanation,
                            f.previous_question, f.previous_sql, f.previous_sql_explanation,
-                           c.title as chat_title
+                           c.title as chat_title,
+                           c.conversation->0->'embed'->'tokens' as tokens
                     FROM feedback f
                     LEFT JOIN chats c ON f.chat_id = c.chat_id
                     ORDER BY f.created_at DESC
@@ -352,7 +357,7 @@ class FeedbackRepository:
 
                 feedback_list = []
                 for row in cur.fetchall():
-                    feedback_list.append({
+                    feedback_item = {
                         "feedback_id": str(row[0]),
                         "chat_id": str(row[1]),
                         "user_id": row[2],
@@ -371,7 +376,13 @@ class FeedbackRepository:
                         "previous_sql": row[15],
                         "previous_sql_explanation": row[16],
                         "chat_title": row[17]
-                    })
+                    }
+
+                    # Add token information if available
+                    if row[18]:
+                        feedback_item["tokens"] = row[18]
+
+                    feedback_list.append(feedback_item)
 
                 return feedback_list
 

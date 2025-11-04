@@ -5,8 +5,12 @@ Handles all interactions with Metabase including queries, cards, and embeddings.
 import requests
 import jwt
 import time
+import logging
 from typing import Dict, Any, List, Optional, Tuple
 from config import config
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class MetabaseClient:
@@ -125,47 +129,47 @@ class MetabaseClient:
             },
             "display": "table"
         }
-        
-        print(f"Metabase create_card - URL: {url}")
-        print(f"Metabase create_card - Headers: {self.headers}")
-        print(f"Metabase create_card - Payload keys: {list(payload.keys())}")
-        print(f"Metabase create_card - SQL length: {len(sql)}")
-        
+
+        logger.debug(f"Metabase create_card - URL: {url}")
+        logger.debug(f"Metabase create_card - Headers: {self.headers}")
+        logger.debug(f"Metabase create_card - Payload keys: {list(payload.keys())}")
+        logger.debug(f"Metabase create_card - SQL length: {len(sql)}")
+
         try:
-            print("Making POST request to Metabase API...")
+            logger.info("Making POST request to Metabase API...")
             r = requests.post(
                 url,
                 headers=self.headers,
                 json=payload,
                 timeout=30  # Add timeout
             )
-            print(f"POST request completed - Status: {r.status_code}")
-            
+            logger.info(f"POST request completed - Status: {r.status_code}")
+
         except requests.exceptions.Timeout:
-            print("Metabase request timed out after 30 seconds")
+            logger.error("Metabase request timed out after 30 seconds")
             raise requests.exceptions.Timeout("Metabase API request timed out")
         except requests.exceptions.ConnectionError as e:
-            print(f"Connection error to Metabase: {e}")
+            logger.error(f"Connection error to Metabase: {e}", exc_info=True)
             raise requests.exceptions.ConnectionError(f"Connection error to Metabase: {e}")
         except Exception as e:
-            print(f"Unexpected error during Metabase request: {e}")
+            logger.error(f"Unexpected error during Metabase request: {e}", exc_info=True)
             raise requests.exceptions.RequestException(f"Unexpected error during Metabase request: {e}")
         
         if r.status_code != 200:
-            print(f"Metabase API error - Status: {r.status_code}, Response: {r.text}")
+            logger.error(f"Metabase API error - Status: {r.status_code}, Response: {r.text}")
             raise Exception(f"HTTP {r.status_code}: {r.text}")
-        
+
         try:
             response_json = r.json()
             card_id = response_json["id"]
-            print(f"Card created successfully with ID: {card_id}")
+            logger.info(f"Card created successfully with ID: {card_id}")
         except Exception as e:
-            print(f"Error parsing Metabase response: {e}")
-            print(f"Response text: {r.text}")
+            logger.error(f"Error parsing Metabase response: {e}", exc_info=True)
+            logger.error(f"Response text: {r.text}")
             raise ValueError(f"Error parsing Metabase response: {e}")
         
         # Enable embedding
-        print(f"Enabling embedding for card {card_id}...")
+        logger.info(f"Enabling embedding for card {card_id}...")
         try:
             r2 = requests.put(
                 f"{self.config.url}/api/card/{card_id}",
@@ -173,20 +177,20 @@ class MetabaseClient:
                 json={"enable_embedding": True},
                 timeout=30
             )
-            print(f"Embedding enable request completed - Status: {r2.status_code}")
-            
+            logger.info(f"Embedding enable request completed - Status: {r2.status_code}")
+
         except requests.exceptions.Timeout:
-            print("Metabase embedding enable request timed out")
+            logger.error("Metabase embedding enable request timed out")
             raise requests.exceptions.Timeout("Metabase embedding enable request timed out")
         except requests.exceptions.ConnectionError as e:
-            print(f"Connection error enabling embedding: {e}")
+            logger.error(f"Connection error enabling embedding: {e}", exc_info=True)
             raise requests.exceptions.ConnectionError(f"Connection error enabling embedding: {e}")
-        
+
         if r2.status_code != 200:
-            print(f"Error enabling embedding - Status: {r2.status_code}, Response: {r2.text}")
+            logger.error(f"Error enabling embedding - Status: {r2.status_code}, Response: {r2.text}")
             raise Exception(f"HTTP {r2.status_code}: {r2.text}")
-        
-        print(f"Card {card_id} embedding enabled successfully")
+
+        logger.info(f"Card {card_id} embedding enabled successfully")
         return card_id
     
     def update_card_visualization(self, card_id: int, display_mode: str,
@@ -247,37 +251,37 @@ class MetabaseClient:
             cards = r.json()
             return [card["id"] for card in cards]
         except Exception as e:
-            print(f"Error getting cards from Metabase: {e}")
+            logger.error(f"Error getting cards from Metabase: {e}", exc_info=True)
             return []
     
     def generate_embed_url(self, card_id: int) -> str:
         """Generate an embed URL for a card"""
-        print(f"Generating embed URL for card {card_id}")
-        
+        logger.info(f"Generating embed URL for card {card_id}")
+
         try:
             payload = {
                 "resource": {"question": card_id},
                 "params": {}
             }
-            print(f"JWT payload created: {payload}")
-            
+            logger.debug(f"JWT payload created: {payload}")
+
             if not self.config.embed_secret:
                 raise ValueError("Metabase embed_secret not configured")
-            
+
             token = jwt.encode(
                 payload,
                 self.config.embed_secret,
                 algorithm="HS256"
             )
-            print(f"JWT token generated successfully (length: {len(token)})")
-            
+            logger.debug(f"JWT token generated successfully (length: {len(token)})")
+
             embed_url = f"{self.config.url}/embed/question/{token}?bordered=true&titled=false"
-            print(f"Embed URL generated: {embed_url[:100]}...")  # Truncate for logging
-            
+            logger.info(f"Embed URL generated: {embed_url[:100]}...")
+
             return embed_url
-            
+
         except Exception as e:
-            print(f"Error generating embed URL: {e}")
+            logger.error(f"Error generating embed URL: {e}", exc_info=True)
             raise requests.exceptions.ConnectionError(f"Error generating embed URL: {e}")
     
     def check_card_exists(self, card_id: int) -> bool:
