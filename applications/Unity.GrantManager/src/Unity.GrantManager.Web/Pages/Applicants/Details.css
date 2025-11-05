@@ -1,15 +1,94 @@
 /* Applicant Details Page Styles */
+
+/* Main container */
 .applicant-details-container {
-    padding: 20px;
+    width: 100%;
 }
 
-.detail-item {
-    margin-bottom: 15px;
+/* Navigation tabs */
+.nav-tabs .nav-item .nav-link.active {
+    color: #003366;
+    border-bottom: 3px solid #003366;
 }
 
-.detail-label {
-    font-weight: 600;
-    margin-right: 10px;
+.details-nav .nav-link {
+    display: flex;
 }
 
-/* Placeholder for future styling */
+.details-nav .nav-link .fl {
+    margin-right: 4px;
+}
+
+/* Left panel tabs scrolling */
+#detailsTab .tab-content {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height: calc(100vh - 250px);
+}
+
+#detailsTab .nav-item .nav-link {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Right panel scrolling */
+.details-scrollable {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height: calc(100vh - 250px);
+    margin-right: -6px;
+}
+
+/* Utility classes */
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}
+
+/* Split-screen layout */
+#main-container {
+    display: flex;
+}
+
+#main-left {
+    width: 55%;
+}
+
+#main-right {
+    width: 45%;
+}
+
+#main-divider {
+    width: 10px;
+    background-color: #ccc;
+    cursor: col-resize;
+    border-radius: 10px;
+}
+
+#main-divider:hover {
+    background-color: #aaa;
+}
+
+/* Fade-in animations */
+.fade-in-load {
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.fade-in-load.visible {
+    opacity: 1;
+}
+
+.switch-container {
+    margin-top: 27px;
+    margin-left: 5px;
+    padding-top: 5px;
+}
+
+.form-check {
+    margin-bottom: 0;
+}

@@ -26,6 +26,7 @@ public class GetSummaryDto
     public string? Batch { get; set; }
     public string? RegionalDistrict { get; set; }
     public Guid? OwnerId { get; set; }
+    public string? UnityApplicationId { get; set; }
     public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
     public GrantApplicationAssigneeDto Owner { get; set; } = new();
 }

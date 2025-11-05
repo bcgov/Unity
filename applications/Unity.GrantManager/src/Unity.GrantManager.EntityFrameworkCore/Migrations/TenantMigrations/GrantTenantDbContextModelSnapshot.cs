@@ -1294,6 +1294,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<int?>("TotalScore")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UnityApplicationId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicantId");
@@ -1621,6 +1624,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<int?>("FormHierarchy")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("IntakeId")
                         .HasColumnType("uuid");
 
@@ -1641,11 +1647,20 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<Guid?>("ParentFormId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ParentFormVersionId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("Payable")
                         .HasColumnType("boolean");
 
                     b.Property<decimal?>("PaymentApprovalThreshold")
                         .HasColumnType("numeric");
+
+                    b.Property<string>("Prefix")
+                        .HasColumnType("text");
 
                     b.Property<bool>("PreventPayment")
                         .HasColumnType("boolean");
@@ -1655,6 +1670,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<Guid?>("ScoresheetId")
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("SuffixType")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -1666,6 +1684,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("IntakeId");
+
+                    b.HasIndex("ParentFormId");
+
+                    b.HasIndex("ParentFormVersionId");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -3931,6 +3953,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasForeignKey("IntakeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
+                        .WithMany()
+                        .HasForeignKey("ParentFormId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationFormVersion", null)
+                        .WithMany()
+                        .HasForeignKey("ParentFormVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormSubmission", b =>

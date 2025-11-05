@@ -21,5 +21,7 @@ namespace Unity.GrantManager.ApplicationForms
         Task<decimal?> GetFormPaymentApprovalThresholdByApplicationIdAsync(Guid applicationId);
         Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId);
         Task<ApplicationFormDetailsDto> GetFormDetailsByApplicationIdAsync(Guid applicationId);
+        Task SavePaymentConfiguration(FormPaymentConfigurationDto dto);
+        Task<PagedResultDto<ParentFormLookupDto>> GetParentFormLookupAsync(ParentFormLookupRequestDto input);
     }
 }

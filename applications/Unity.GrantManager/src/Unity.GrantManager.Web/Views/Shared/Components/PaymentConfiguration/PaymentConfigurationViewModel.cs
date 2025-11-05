@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
+using Unity.GrantManager.ApplicationForms;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
 {
@@ -18,6 +19,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
         [Display(Name = "Account Code")]
         [SelectItems(nameof(AccountCodeList))]
         public Guid? AccountCode { get; set; }
+
+        public List<SelectListItem> FormHierarchyList { get; set; } = new List<SelectListItem>();
+
+        [Display(Name = "Form Hierarchy")]
+        [SelectItems(nameof(FormHierarchyList))]
+        public FormHierarchyType? FormHierarchy { get; set; }
+
+        public Guid? ParentFormId { get; set; }
+        public Guid? ParentFormVersionId { get; set; }
+        public string ParentFormDisplayName { get; set; } = string.Empty;
 
         public decimal? PaymentApprovalThreshold { get; set; }
 

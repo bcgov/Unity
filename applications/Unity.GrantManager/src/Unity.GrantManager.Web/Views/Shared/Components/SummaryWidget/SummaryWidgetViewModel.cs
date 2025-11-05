@@ -86,5 +86,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
         [HiddenInput]
         public Boolean IsReadOnly { get; set; } = false;
 
+        [Display(Name = "Summary:Application.UnityApplicationId")]
+        public string? UnityApplicationId { get; set; }
+
     }
 }
