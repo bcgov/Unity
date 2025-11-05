@@ -75,7 +75,6 @@ public class PaymentsApplicationModule : AbpModule
 
         // Register email recipient strategies as singletons for background job usage
         // Singletons are preferred for background jobs since they are stateless and reused across job executions
-        context.Services.AddSingleton<IEmailRecipientStrategy, FinancialAnalystEmailStrategy>();
         context.Services.AddSingleton<IEmailRecipientStrategy, PaymentsEmailGroupStrategy>();
 
         context.Services.AddAbpDbContext<PaymentsDbContext>(options =>
