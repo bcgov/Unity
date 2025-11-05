@@ -1,3 +1,4 @@
+@using Unity.GrantManager.ApplicationForms
 @using Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration;
 @model PaymentConfigurationViewModel
 
@@ -7,14 +8,17 @@
 
 @{
     Layout = null;
+    var showParentForm = Model.FormHierarchy == FormHierarchyType.Child;
 }
 
 <abp-input asp-for="@Model.HasEditFormPaymentConfiguration" type="hidden" />
 
-<form id="PaymentThresholdForm" class="px-3 pb-2">
-    <fieldset name="Unity_GrantManager_ApplicationForms_Mapping_PaymentConfiguration" 
-        class="unity-zone" @(Model.HasEditFormPaymentConfiguration ? string.Empty : "disabled")>
-        <legend class="h6 ps-1 pb-2 pt-2 mt-3 fw-bold">Payment Configuration</legend>
+<form id="PaymentThresholdForm" class="payment-configuration-container px-3 pb-2">
+    <input type="hidden" id="ParentFormId" value="@(Model.ParentFormId?.ToString() ?? string.Empty)" />
+    <div class="payment-configuration-scroll flex-grow-1">
+        <fieldset name="Unity_GrantManager_ApplicationForms_Mapping_PaymentConfiguration" 
+            class="unity-zone" @(Model.HasEditFormPaymentConfiguration ? string.Empty : "disabled")>
+            <legend class="h6 ps-1 pb-2 pt-2 mt-3 fw-bold">Payment Configuration</legend>
     <div>
         <abp-row class="m-0 payment-configuration-form">
             <abp-column size="_12" class="px-0">
@@ -77,17 +81,49 @@
                     </div>
                 </abp-column>
             </abp-row>
+            <hr class="mt-4 mb-4" />
+            <div id="form-hierarchy-section" class="mt-4 @(Model.Payable ? string.Empty : "d-none")">
+                <div>
+                    <h6 class="fw-bold">Form Hierarchy</h6>
+                </div>
+                <abp-row class="m-0 p-0">
+                    <abp-column size-lg="_6" size-sm="_12" class="px-1">
+                        <label class="form-label text-nowrap" for="FormHierarchy">Form Hierarchy</label>
+                        <select id="FormHierarchy" class="form-select">
+                            <option value="">Please choose...(Child Form / Parent Form)</option>
+                            @foreach (var item in Model.FormHierarchyList)
+                            {
+                                var isSelected = Model.FormHierarchy.HasValue && ((int)Model.FormHierarchy.Value).ToString() == item.Value;
+                                <option value="@item.Value" selected="@(isSelected ? "selected" : null)">@item.Text</option>
+                            }
+                        </select>
+                    </abp-column>
+                    <abp-column size-lg="_6" size-sm="_12" class="px-1 @(showParentForm ? string.Empty : "d-none")" id="parent-form-column">
+                        <label class="form-label text-nowrap" for="ParentForm">Parent Form</label>
+                        <select id="ParentForm" class="form-select" data-placeholder="Please choose...(Form Name V1.0)">
+                            <option value="">Please choose...(Form Name V1.0)</option>
+                            @if (Model.ParentFormVersionId.HasValue)
+                            {
+                                <option value="@Model.ParentFormVersionId" selected data-parent-form-id="@Model.ParentFormId">@Model.ParentFormDisplayName</option>
+                            }
+                        </select>
+                    </abp-column>
+                </abp-row>
+                <div class="mt-2">
+                    <p class="alert alert-light border-0 border-4 border-start rounded-0 text-body mb-0">
+                        <strong>Note:</strong> When the Hierarchy Type is "Child form," the payment request amount is always calculated against the approved amount of the parent application.
+                    </p>
+                </div>
+            </div>
         </abp-row>
     </div>
-    </fieldset>
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-end">
-                <abp-button id="btn-save-payment-configuration" button-type="Primary" text="Save" icon-type="Other" icon="fl fl-save"
-                    class="btn unt-btn-primary btn-primary"></abp-button>
-                <abp-button id="btn-back-payment-configuration" class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                    abp-tooltip="Navigate back to the Forms">Back</abp-button>
-            </div>
+        </fieldset>
+        <div class="d-flex justify-content-end">
+            <abp-button id="btn-save-payment-configuration" button-type="Primary" text="Save" icon-type="Other" icon="fl fl-save"
+                class="btn unt-btn-primary btn-primary"></abp-button>
+            <abp-button id="btn-back-payment-configuration" class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                abp-tooltip="Navigate back to the Forms">Back</abp-button>
         </div>
     </div>
+    
 </form>
