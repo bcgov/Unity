@@ -43,17 +43,27 @@
 
                     <abp-row class="m-0 p-0" id="supplierSearch">
                         <abp-column size="_4" class="px-1">
-                            @if (Model.HasEditSupplierInfo)
-                            {
-                                <abp-input id="SupplierNumber"
-                                    asp-for="@Model.SupplierNumber"
-                                    onchange="enablePaymentInfoSaveBtn()" />
-                            } else
-                            {
-                                <abp-input id="SupplierNumber"
-                                    asp-for="@Model.SupplierNumber"
-                                    readonly="true" disabled />
-                            }
+                            <div class="input-with-clear-btn">
+                                @if (Model.HasEditSupplierInfo)
+                                {
+                                    <abp-input id="SupplierNumber"
+                                        asp-for="@Model.SupplierNumber"
+                                        onchange="enablePaymentInfoSaveBtn()" />
+                                    <abp-button button-type="Default"
+                                                id="btnClearSupplierNo"
+                                                title="Remove supplier number"
+                                                type="button"
+                                                icon="xmark"
+                                                class="clear-btn">
+                                        <i class="fa fa-xmark"></i>
+                                    </abp-button>
+                                } else
+                                {
+                                    <abp-input id="SupplierNumber"
+                                        asp-for="@Model.SupplierNumber"
+                                        readonly="true" disabled />
+                                }
+                            </div>
                         </abp-column>
                         <abp-column size="_4" class="px-1">
                             <abp-input asp-for="@Model.SupplierName" id="SupplierName" />

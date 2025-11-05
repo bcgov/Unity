@@ -4,8 +4,8 @@
 }
 
 .spinner-text {
-    display: none; 
-    position:relative;
+    display: none;
+    position: relative;
     padding-left: 10px;
     color: rgb(109, 109, 109);
 }
@@ -31,4 +31,28 @@ input[readonly] {
     opacity: var(--bs-btn-disabled-opacity);
     background-blend-mode: difference;
     border: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.input-with-clear-btn {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.clear-btn {
+    position: absolute;
+    right: 0px;
+    top: 60%;
+    transform: translateY(-50%);
+    border: none !important;
+    background: transparent !important;
+    padding: 4px !important;
+    min-width: auto !important;
+    height: auto !important;
+    z-index: 10;
+    display: block;
+}
+
+.input-with-clear-btn input {
+    padding-right: 35px !important;
 }

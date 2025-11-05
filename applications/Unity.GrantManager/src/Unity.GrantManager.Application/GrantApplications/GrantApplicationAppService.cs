@@ -721,20 +721,28 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     /// Update the supplier number for the applicant associated with the application.
     /// </summary>
     [Authorize(UnitySelector.Payment.Supplier.Update)]
-    public async Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber)
+    public async Task UpdateSupplierNumberAsync(Guid applicationId, string? supplierNumber)
     {
         // Could be moved to payments module but dependency on ApplicationId
         // Integrate with payments module to update / insert supplier
         var application = await _applicationRepository.GetAsync(applicationId);
-        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && application != null && !string.IsNullOrEmpty(supplierNumber))
+        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && application != null)
         {
             var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(applicationId);
             if (pendingPayments != null && pendingPayments.Count > 0)
             {
                 throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
             }
-
-            await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber);
+            // Handle both clearing (null/empty) and updating supplier number
+            if (string.IsNullOrWhiteSpace(supplierNumber))
+            {
+                await _applicantSupplierService.ClearApplicantSupplierAsync(application.ApplicantId);
+            }
+            else
+            {
+                // Update supplier number
+                await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber);
+            }
         }
     }
 
