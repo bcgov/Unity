@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,6 +14,7 @@ using Unity.GrantManager.Intakes.Mapping;
 using Unity.Payments.Events;
 using Volo.Abp;
 using Unity.GrantManager.Integrations.Orgbook;
+using Unity.Modules.Shared;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Integrations.Cas;
@@ -156,6 +158,60 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             // This fires a detached process event which may update the supplier if it finds it in CAS via the BN9
             await supplierService.UpdateApplicantSupplierInfoByBn9(applicant.BusinessNumber, applicant.Id);
         }
+    }
+
+    [Authorize(UnitySelector.Applicant.Summary.Update)]
+    public async Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input)
+    {
+        if (applicantId == Guid.Empty)
+        {
+            throw new ArgumentException("ApplicantId cannot be empty.", nameof(applicantId));
+        }
+
+        ArgumentNullException.ThrowIfNull(input);
+
+        ArgumentNullException.ThrowIfNull(input.Data);
+
+        var applicant = await applicantRepository.GetAsync(applicantId);
+
+        ObjectMapper.Map(input.Data, applicant);
+
+        List<string> modifiedSummaryFields = input.ModifiedFields?
+            .Where(field => !string.IsNullOrWhiteSpace(field))
+            .Select(field =>
+            {
+                var segments = field.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length == 0)
+                {
+                    throw new InvalidOperationException("Modified field path cannot be empty.");
+                }
+
+                return segments[^1];
+            })
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? [];
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase))
+        {
+            applicant.RedStop = input.Data.RedStop;
+        }
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase))
+        {
+            applicant.IndigenousOrgInd = input.Data.IndigenousOrgInd switch
+            {
+                true => "Yes",
+                false => "No",
+                _ => null
+            };
+        }
+
+        if (modifiedSummaryFields.Count > 0)
+        {
+            PropertyHelper.ApplyNullValuesFromDto(input.Data, applicant, modifiedSummaryFields);
+        }
+
+        return await applicantRepository.UpdateAsync(applicant);
     }
 
     [RemoteService(true)]
