@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251104184306_AB29680_NonRegBusinessName_Datafix")]
+    partial class AB29680_NonRegBusinessName_Datafix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1624,9 +1627,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<int?>("FormHierarchy")
-                        .HasColumnType("integer");
-
                     b.Property<Guid>("IntakeId")
                         .HasColumnType("uuid");
 
@@ -1646,12 +1646,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("ParentFormId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ParentFormVersionId")
-                        .HasColumnType("uuid");
 
                     b.Property<bool>("Payable")
                         .HasColumnType("boolean");
@@ -1684,10 +1678,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("IntakeId");
-
-                    b.HasIndex("ParentFormId");
-
-                    b.HasIndex("ParentFormVersionId");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -3953,16 +3943,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasForeignKey("IntakeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
-                        .WithMany()
-                        .HasForeignKey("ParentFormId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationFormVersion", null)
-                        .WithMany()
-                        .HasForeignKey("ParentFormVersionId")
-                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormSubmission", b =>

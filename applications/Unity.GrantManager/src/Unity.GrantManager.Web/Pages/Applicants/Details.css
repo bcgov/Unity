@@ -23,7 +23,7 @@
 #detailsTab .tab-content {
     overflow-y: scroll;
     overflow-x: hidden;
-    height: calc(100vh - 300px);
+    height: calc(100vh - 250px);
 }
 
 #detailsTab .nav-item .nav-link {
@@ -36,7 +36,7 @@
 .details-scrollable {
     overflow-y: scroll;
     overflow-x: hidden;
-    height: calc(100vh - 276px);
+    height: calc(100vh - 250px);
     margin-right: -6px;
 }
 
@@ -55,11 +55,11 @@
 }
 
 #main-left {
-    width: 50%;
+    width: 55%;
 }
 
 #main-right {
-    width: 50%;
+    width: 45%;
 }
 
 #main-divider {
@@ -85,7 +85,7 @@
 
 .switch-container {
     margin-top: 27px;
-    margin-left: 15px;
+    margin-left: 5px;
     padding-top: 5px;
 }
 

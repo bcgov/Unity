@@ -16,4 +16,11 @@ public static class GrantManagerDomainErrorCodes
     public const string CantCreateAssessmentForClosedApplication = "GrantManager:CantCreateAssessmentForClosedApplication";
     public const string CantUpdateAssessmentForClosedApplication = "GrantManager:CantUpdateAssessmentForClosedApplication";
     public const string CantCreateAssessmentForFinalStateApplication = "GrantManager:CantCreateAssessmentForFinalStateApplication";
+
+    /* PAYMENT CONFIGURATION */
+    public const string PayableFormRequiresHierarchy = "GrantManager:PayableFormRequiresHierarchy";
+    public const string ChildFormRequiresParentForm = "GrantManager:ChildFormRequiresParentForm";
+    public const string ChildFormRequiresParentFormVersion = "GrantManager:ChildFormRequiresParentFormVersion";
+    public const string ParentFormVersionMismatch = "GrantManager:ParentFormVersionMismatch";
+    public const string ChildFormCannotReferenceSelf = "GrantManager:ChildFormCannotReferenceSelf";
 }

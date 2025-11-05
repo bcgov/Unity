@@ -1,4 +1,17 @@
-﻿﻿.currencyinput {
+﻿﻿.payment-configuration-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.payment-configuration-scroll {
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px;
+    padding-bottom: 20px;
+}
+
+.currencyinput {
 	float: left;
     width: 300px;
 }
@@ -11,4 +24,13 @@
 
 .currency-label {
     margin-bottom: 9px;
+}
+
+#form-hierarchy-section .select2-container {
+    width: 100% !important;
+}
+
+#form-hierarchy-section .select2-selection {
+    min-height: 38px;
+    padding-top: 4px;
 }
