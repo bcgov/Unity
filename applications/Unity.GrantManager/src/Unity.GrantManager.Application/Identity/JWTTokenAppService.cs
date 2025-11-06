@@ -36,7 +36,7 @@ namespace Unity.GrantManager.Identity
             // Build claims
             var claims = new[]
             {
-                new Claim("user_id", userId ?? "unknown"),
+                new Claim("user_id", userId),
                 new Claim("tenant", tenant),
                 new Claim("is_it_admin", isITAdmin.ToString().ToLower()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
@@ -63,7 +63,7 @@ namespace Unity.GrantManager.Identity
 
             // Return encoded JWT
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return await Task.FromResult(jwt);
+            return await jwt;
         }
     }
 }
