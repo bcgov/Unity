@@ -42,8 +42,13 @@ namespace Unity.GrantManager.Identity
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            // Secret key (keep secure in production, e.g., in appsettings or Azure Key Vault)
+            // Ensure secretKey is not null or empty
             var secretKey = _configuration["ReportingAI:JWTSecret"];
+            if (string.IsNullOrWhiteSpace(secretKey))
+            {
+                throw new AbpException("JWT secret key is not configured.");
+            }
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
