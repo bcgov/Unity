@@ -432,7 +432,7 @@ $(function () {
 
     function getCreationTimeColumn(columnIndex) {
         return {
-            title: 'Creation Time',
+            title: 'Creation Date',
             data: 'creationTime',
             name: 'creationTime',
             className: 'data-table-header',
