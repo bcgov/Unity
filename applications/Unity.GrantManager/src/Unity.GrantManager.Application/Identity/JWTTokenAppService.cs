@@ -49,7 +49,7 @@ namespace Unity.GrantManager.Identity
                 throw new AbpException("JWT secret key is not configured.");
             }
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             // Create token
@@ -63,7 +63,7 @@ namespace Unity.GrantManager.Identity
 
             // Return encoded JWT
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return await jwt;
+            return jwt;
         }
     }
 }
