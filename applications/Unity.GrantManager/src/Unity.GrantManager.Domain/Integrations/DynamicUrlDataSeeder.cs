@@ -30,6 +30,7 @@ namespace Unity.GrantManager.Integrations
             public const string CSS_TOKEN_API_BASE_URL = $"{PROTOCOL}//loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token";
             public const string GEOCODER_BASE_URL = $"{PROTOCOL}//openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=";
             public const string GEOCODER_LOCATION_BASE_URL = $"{PROTOCOL}//geocoder.api.gov.bc.ca";
+            public const string REPORTING_AI = $"{PROTOCOL}//reporting.grants.gov.bc.ca";
         }
 
         private async Task SeedDynamicUrlAsync()
@@ -48,6 +49,7 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = DynamicUrlKeyNames.ORGBOOK_API_BASE, Url = DynamicUrls.ORGBOOK_PROD_URL, Description = "OrgBook Services API" },
                     new() { KeyName = DynamicUrlKeyNames.INTAKE_API_BASE, Url = DynamicUrls.CHEFS_PROD_URL, Description = "Common Hosted Forms Service API" },
                     new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_API_BASE, Url = DynamicUrls.CHES_PROD_URL, Description = "Common Hosted Email Service API" },
+                    new() { KeyName = DynamicUrlKeyNames.REPORTING_AI, Url = DynamicUrls.REPORTING_AI, Description = "Reporting AI iFrame Source" },
                     new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_AUTH, Url = DynamicUrls.CHES_PROD_AUTH, Description = "Common Hosted Email Service OAUTH" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
