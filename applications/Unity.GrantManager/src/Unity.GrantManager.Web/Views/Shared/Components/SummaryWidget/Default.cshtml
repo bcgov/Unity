@@ -12,8 +12,9 @@
 <input type="hidden" id="SummaryWidgetApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="SummaryWidgetIsReadOnly" value="@Model.IsReadOnly" />
 
-<abp-row class="px-1 pb-2 mb-4 summary-container">
-    <h6 class="ps-2 fw-bold">@L["Summary:ApplicationSummaryTitle"].Value</h6>
+<abp-row class="px-1 pb-2 mb-4 summary-container">    
+    <h6 class="ps-2 fw-bold">@L["Summary:Application.UnityApplicationId"].Value</h6>
+    <div class="px-3 pt-1 pb-2">@Model.UnityApplicationId</div>
     <table aria-describedby="Submission" class="summary-table">
         <tr>
             <th></th>

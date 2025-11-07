@@ -108,7 +108,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-        List<PaymentDetailsDto> paymentRequests = new List<PaymentDetailsDto>();
+        List<PaymentDetailsDto> paymentRequests = [];
         if (paymentsFeatureEnabled)
         {
             paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
@@ -125,7 +125,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
             appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? new List<ApplicationTags>());
+            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? []);
             appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
             appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
             appDto.NonRegOrgName = firstApplication.Applicant?.NonRegOrgName ?? string.Empty;
@@ -294,7 +294,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                         Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
                         OwnerId = application.OwnerId,
-
+                        UnityApplicationId = application.UnityApplicationId
                     };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
@@ -721,20 +721,28 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     /// Update the supplier number for the applicant associated with the application.
     /// </summary>
     [Authorize(UnitySelector.Payment.Supplier.Update)]
-    public async Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber)
+    public async Task UpdateSupplierNumberAsync(Guid applicationId, string? supplierNumber)
     {
         // Could be moved to payments module but dependency on ApplicationId
         // Integrate with payments module to update / insert supplier
         var application = await _applicationRepository.GetAsync(applicationId);
-        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && application != null && !string.IsNullOrEmpty(supplierNumber))
+        if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && application != null)
         {
             var pendingPayments = await _paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(applicationId);
             if (pendingPayments != null && pendingPayments.Count > 0)
             {
                 throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
             }
-
-            await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber);
+            // Handle both clearing (null/empty) and updating supplier number
+            if (string.IsNullOrWhiteSpace(supplierNumber))
+            {
+                await _applicantSupplierService.ClearApplicantSupplierAsync(application.ApplicantId);
+            }
+            else
+            {
+                // Update supplier number
+                await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber);
+            }
         }
     }
 
@@ -1096,7 +1104,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDtos.Add(appDto);
         }
 
-        return new List<GrantApplicationDto>(appDtos);
+        return [.. appDtos];
     }
 
     public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)

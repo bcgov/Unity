@@ -6,22 +6,22 @@
     let actionButtons = [...commonTableActionButtons('Payment History')];
 
     let responseCallback = function (result) {
-        if (result + "" == "undefined") {
+        if (result + '' == 'undefined') {
             return {
                 recordsTotal: 0,
                 recordsFiltered: 0,
-                data: {}
+                data: {},
             };
         }
         return {
             recordsTotal: result.length,
             recordsFiltered: result.length,
-            data: formatItems(result)
+            data: formatItems(result),
         };
     };
 
     let inputAction = function () {
-        return document.getElementById('paymentId').value
+        return document.getElementById('paymentId').value;
     };
 
     dataTable = initializeDataTable({
@@ -29,7 +29,8 @@
         listColumns,
         maxRowsPerPage: 20,
         defaultSortColumn: 0,
-        dataEndpoint: unity.grantManager.history.paymentHistory.getPaymentHistoryList,
+        dataEndpoint:
+            unity.grantManager.history.paymentHistory.getPaymentHistoryList,
         data: inputAction,
         responseCallback,
         actionButtons,
@@ -49,8 +50,12 @@
             getOriginalValueColumn(),
             getNewValueColumn(),
             getChangeTimeColumn(),
-            getUserNameColumn()
-        ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
+            getUserNameColumn(),
+        ].map((column) => ({
+            ...column,
+            targets: [column.index],
+            orderData: [column.index, 0],
+        }));
     }
 
     function getEntityNameColumn() {
@@ -59,8 +64,8 @@
             data: 'entityName',
             name: 'entityName',
             className: 'data-table-header',
-            index: 0
-        }
+            index: 0,
+        };
     }
 
     function getPropertyNameColumn() {
@@ -69,8 +74,8 @@
             data: 'propertyName',
             name: 'propertyName',
             className: 'data-table-header',
-            index: 1
-        }
+            index: 1,
+        };
     }
 
     function getOriginalValueColumn() {
@@ -79,8 +84,8 @@
             data: 'originalValue',
             name: 'originalValue',
             className: 'data-table-header',
-            index: 2
-        }
+            index: 2,
+        };
     }
 
     function getNewValueColumn() {
@@ -89,8 +94,8 @@
             data: 'newValue',
             name: 'newValue',
             className: 'data-table-header',
-            index: 3
-        }
+            index: 3,
+        };
     }
 
     function getChangeTimeColumn() {
@@ -102,51 +107,49 @@
             index: 4,
             render: function (data) {
                 return formatLuxonDate(data);
-            }
-        }
+            },
+        };
     }
-    
+
     function getUserNameColumn() {
         return {
             title: 'User Name',
             data: 'userName',
             name: 'userName',
             className: 'data-table-header',
-            index: 5
-        }
+            index: 5,
+        };
     }
 
     function formatLuxonDate(data) {
-        return data != null ? luxon.DateTime.fromISO(data, {
-            locale: abp.localization.currentCulture.name,
-        }).toLocaleString({
-            day: "numeric",
-            year: "numeric",
-            month: "numeric",
-            hour: "numeric",
-            minute: "numeric",
-            second: "numeric"
-        }) : '';
+        return data != null
+            ? luxon.DateTime.fromISO(data, {
+                  locale: abp.localization.currentCulture.name,
+              }).toLocaleString({
+                  day: 'numeric',
+                  year: 'numeric',
+                  month: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric',
+                  second: 'numeric',
+              })
+            : '';
     }
     let formatItems = function (items) {
         const newData = items.map((item, index) => {
             return {
                 ...item,
-                rowCount: index
+                rowCount: index,
             };
         });
         return newData;
-    }
+    };
 
-    window.addEventListener('resize', () => {
+    window.addEventListener('resize', () => {});
+
+    PubSub.subscribe('refresh_application_list', (msg, data) => {
+        dataTable.ajax.reload(null, false);
+        $('.select-all-applications').prop('checked', false);
+        PubSub.publish('clear_selected_application');
     });
-
-    PubSub.subscribe(
-        'refresh_application_list',
-        (msg, data) => {
-            dataTable.ajax.reload(null, false);
-            $(".select-all-applications").prop("checked", false);
-            PubSub.publish('clear_selected_application');
-        }
-    );
 });

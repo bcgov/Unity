@@ -28,5 +28,7 @@ namespace Unity.GrantManager.ApplicationForms
         public Guid? TenantId { get; set; }
         public bool IsDirectApproval { get; set; }
         public AddressType? ElectoralDistrictAddressType { get; set; }
+        public string? Prefix { get; set; }
+        public SuffixConfigType? SuffixType { get; set; }
     }
 }

@@ -16,6 +16,7 @@ public class ApplicationLinksInfoDto : EntityDto<Guid>
     public string ProjectName { get; set; } = string.Empty;
     public string ApplicantName { get; set; } = string.Empty;
     public ApplicationLinkType LinkType { get; set; } = ApplicationLinkType.Related;
+    public int? FormVersion { get; set; }
 }
 
 [Serializable]

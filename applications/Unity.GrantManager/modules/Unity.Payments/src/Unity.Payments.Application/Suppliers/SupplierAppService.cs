@@ -144,5 +144,10 @@ namespace Unity.Payments.Suppliers
 
             return ObjectMapper.Map<Site, SiteDto>(updateSupplier.Sites.First(s => s.Id == siteId));
         }
+
+        public virtual async Task DeleteAsync(Guid id)
+        {
+            await supplierRepository.DeleteAsync(id);
+        }
     }
 }

@@ -1,6 +1,7 @@
 $(function () {
     let selectedReviewDetails = null;
-    let renderFormIoToHtml = document.getElementById('RenderFormIoToHtml').value;
+    let renderFormIoToHtml =
+        document.getElementById('RenderFormIoToHtml').value;
     let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
@@ -24,14 +25,14 @@ $(function () {
         initCommentsWidget();
         initEmailsWidget();
         updateLinksCounters();
-        renderSubmission();        
+        renderSubmission();
         applyTabHeightOffset();
     }
 
     initializeDetailsPage();
 
     function setStoredDividerWidth() {
-        // Check if there's a saved width in localStorage 
+        // Check if there's a saved width in localStorage
         if (localStorage.getItem('leftWidth')) {
             const leftWidth = localStorage.getItem('leftWidth');
             const rightWidth = container.clientWidth - leftWidth;
@@ -44,7 +45,7 @@ $(function () {
     }
 
     function renderSubmission() {
-        if (renderFormIoToHtml == "False" || hasRenderedHtml == "False") {
+        if (renderFormIoToHtml == 'False' || hasRenderedHtml == 'False') {
             getSubmission();
         } else {
             $('.spinner-grow').hide();
@@ -53,11 +54,10 @@ $(function () {
     }
 
     function waitFor(conditionFunction) {
-
-        const poll = resolve => {
+        const poll = (resolve) => {
             if (conditionFunction()) resolve();
-            else setTimeout(_ => poll(resolve), 400);
-        }
+            else setTimeout((_) => poll(resolve), 400);
+        };
 
         return new Promise(poll);
     }
@@ -65,18 +65,28 @@ $(function () {
     async function getSubmission() {
         try {
             $('.spinner-grow').hide();
-            let submissionDataString = document.getElementById('ApplicationFormSubmissionData').value;
-            let formSchemaString = document.getElementById('ApplicationFormSchema').value;
+            let submissionDataString = document.getElementById(
+                'ApplicationFormSubmissionData'
+            ).value;
+            let formSchemaString = document.getElementById(
+                'ApplicationFormSchema'
+            ).value;
             let submissionJson = JSON.parse(submissionDataString);
             let formSchema;
             let submissionData;
 
             // Check if the submission data is pure data or the entire form
-            if (submissionJson.version !== undefined && submissionJson.submission !== undefined) {
+            if (
+                submissionJson.version !== undefined &&
+                submissionJson.submission !== undefined
+            ) {
                 // The submission data is in the form of a version and submission object
                 formSchema = submissionJson.version.schema;
                 submissionData = submissionJson.submission.submission;
-            } else if (formSchemaString !== undefined && formSchemaString !== "") {
+            } else if (
+                formSchemaString !== undefined &&
+                formSchemaString !== ''
+            ) {
                 formSchema = JSON.parse(formSchemaString);
                 submissionData = submissionJson.submission;
             }
@@ -94,7 +104,6 @@ $(function () {
             ).then(function (form) {
                 handleForm(form, submissionData);
             });
-
         } catch (error) {
             console.error(error);
         }
@@ -111,31 +120,33 @@ $(function () {
         });
     }
 
-
     function isFormChanging(form) {
         return form.changing === false;
     }
 
     async function storeRenderedHtml() {
-        if (renderFormIoToHtml == "False") {
+        if (renderFormIoToHtml == 'False') {
             return;
         }
         let innerHTML = document.getElementById('formio').innerHTML;
-        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-        $.ajax(
-            {
-                url: "/api/app/submission",
-                data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
-                contentType: "application/json",
-                type: "POST",
-                success: function (data) {
-                    console.log(data);
-                },
-                error: function () {
-                    console.log('error');
-                }
+        let submissionId = document.getElementById(
+            'ApplicationFormSubmissionId'
+        ).value;
+        $.ajax({
+            url: '/api/app/submission',
+            data: JSON.stringify({
+                SubmissionId: submissionId,
+                InnerHTML: innerHTML,
+            }),
+            contentType: 'application/json',
+            type: 'POST',
+            success: function (data) {
+                console.log(data);
             },
-        );
+            error: function () {
+                console.log('error');
+            },
+        });
     }
 
     // Wait for the DOM to be fully loaded
@@ -148,24 +159,30 @@ $(function () {
         hideAllCardBodies(cardBodies);
 
         // Add event listeners to headers
-        cardHeaders.forEach(header => {
-            header.addEventListener('click', () => onCardHeaderClick(header, cardHeaders));
+        cardHeaders.forEach((header) => {
+            header.addEventListener('click', () =>
+                onCardHeaderClick(header, cardHeaders)
+            );
         });
     }
 
     // Get all card headers
     function getCardHeaders() {
-        return document.querySelectorAll('.card-header:not(.card-body .card-header)');
+        return document.querySelectorAll(
+            '.card-header:not(.card-body .card-header)'
+        );
     }
 
     // Get all card bodies
     function getCardBodies() {
-        return document.querySelectorAll('.card-body:not(.card-body .card-body)');
+        return document.querySelectorAll(
+            '.card-body:not(.card-body .card-body)'
+        );
     }
 
     // Hide all card bodies initially
     function hideAllCardBodies(cardBodies) {
-        cardBodies.forEach(body => body.classList.add('hidden'));
+        cardBodies.forEach((body) => body.classList.add('hidden'));
     }
 
     // Handle the card header click event
@@ -193,7 +210,7 @@ $(function () {
 
     // Hide all other card bodies
     function hideOtherCardBodies(currentHeader, cardHeaders) {
-        cardHeaders.forEach(otherHeader => {
+        cardHeaders.forEach((otherHeader) => {
             if (otherHeader !== currentHeader) {
                 const otherCardBody = getNextCardBody(otherHeader);
                 hideCardBody(otherCardBody);
@@ -212,9 +229,13 @@ $(function () {
         header.classList.remove('custom-active');
     }
 
-    $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
+    $('#assessment_upload_btn').click(function () {
+        $('#assessment_upload').trigger('click');
+    });
 
-    $('#application_attachment_upload_btn').click(function () { $('#application_attachment_upload').trigger('click'); });
+    $('#application_attachment_upload_btn').click(function () {
+        $('#application_attachment_upload').trigger('click');
+    });
 
     function debounce(func, wait) {
         let timeout;
@@ -228,9 +249,11 @@ $(function () {
     const $recommendationSelect = $('#recommendation_select');
     const $recommendationResetBtn = $('#recommendation_reset_btn');
 
-    $recommendationResetBtn.click(debounce(function () {
-        $recommendationSelect.prop('selectedIndex', 0).trigger('change');
-    }, 400));
+    $recommendationResetBtn.click(
+        debounce(function () {
+            $recommendationSelect.prop('selectedIndex', 0).trigger('change');
+        }, 400)
+    );
 
     $recommendationSelect.change(function () {
         let value = $(this).val();
@@ -249,21 +272,18 @@ $(function () {
             // Disable the select and reset button during update
             disableRecommendationControls(true);
 
-            let data = { "approvalRecommended": value, "assessmentId": id }
-            unity.grantManager.assessments.assessment.updateAssessmentRecommendation(data)
+            let data = { approvalRecommended: value, assessmentId: id };
+            unity.grantManager.assessments.assessment
+                .updateAssessmentRecommendation(data)
                 .done(function () {
-                    abp.notify.success(
-                        'The recommendation has been updated.'
-                    );
+                    abp.notify.success('The recommendation has been updated.');
                     PubSub.publish('refresh_review_list_without_sidepanel', id);
                 })
                 .always(function () {
                     // Re-enable the select and reset button
                     disableRecommendationControls(false);
                 });
-
-        }
-        catch (error) {
+        } catch (error) {
             console.log(error);
             // Re-enable the select and reset button in case of error
             disableRecommendationControls(false);
@@ -274,61 +294,54 @@ $(function () {
         wrapper: '#assessmentUserDetailsWidget',
         filterCallback: function () {
             return {
-                'displayName': selectedReviewDetails.assessorDisplayName,
-                'badge': selectedReviewDetails.assessorBadge,
-                'title': 'Title, Role'
+                displayName: selectedReviewDetails.assessorDisplayName,
+                badge: selectedReviewDetails.assessorBadge,
+                title: 'Title, Role',
             };
-        }
+        },
     });
 
     let assessmentScoresWidgetManager = new abp.WidgetManager({
         wrapper: '#assessmentScoresWidgetArea',
         filterCallback: function () {
             return {
-                'assessmentId': decodeURIComponent($("#AssessmentId").val()),
-                'currentUserId': decodeURIComponent(abp.currentUser.id),
-            }
+                assessmentId: decodeURIComponent($('#AssessmentId').val()),
+                currentUserId: decodeURIComponent(abp.currentUser.id),
+            };
+        },
+    });
+
+    PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
+        assessmentScoresWidgetManager.refresh();
+        updateSubtotal();
+    });
+
+    PubSub.subscribe('select_application_review', (msg, data) => {
+        if (data) {
+            selectedReviewDetails = data;
+            setDetailsContext('assessment');
+            let selectElement = document.getElementById(
+                'recommendation_select'
+            );
+            selectElement.value = data.approvalRecommended;
+            PubSub.publish('AssessmentComment_refresh', {
+                review: selectedReviewDetails,
+            });
+            assessmentUserDetailsWidgetManager.refresh();
+            assessmentScoresWidgetManager.refresh();
+            updateSubtotal();
+            checkCurrentUser(data);
+        } else {
+            setDetailsContext('application');
         }
     });
 
-    PubSub.subscribe(
-        'refresh_assessment_scores',
-        (msg, data) => {
-            assessmentScoresWidgetManager.refresh();
-            updateSubtotal();
-        }
-    );
-
-    PubSub.subscribe(
-        'select_application_review',
-        (msg, data) => {
-            if (data) {
-                selectedReviewDetails = data;
-                setDetailsContext('assessment');
-                let selectElement = document.getElementById("recommendation_select");
-                selectElement.value = data.approvalRecommended;
-                PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
-                assessmentUserDetailsWidgetManager.refresh();
-                assessmentScoresWidgetManager.refresh();
-                updateSubtotal();
-                checkCurrentUser(data);
-            }
-            else {
-                setDetailsContext('application');
-            }
-        }
-    );
-
-    PubSub.subscribe(
-        'deselect_application_review',
-        (msg, data) => {
-            setDetailsContext('application');
-        }
-    );
+    PubSub.subscribe('deselect_application_review', (msg, data) => {
+        setDetailsContext('application');
+    });
 
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        $($.fn.dataTable.tables(true)).DataTable()
-            .columns.adjust();
+        $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
     });
 
     $('#printAssessmentPdf').click(function () {
@@ -337,8 +350,12 @@ $(function () {
 
     $('#printPdf').click(function () {
         let submissionId = document.getElementById('ChefsSubmissionId').value;
-        let submissionDataString = document.getElementById('ApplicationFormSubmissionData').value;
-        let formSchemaString = document.getElementById('ApplicationFormSchema').value;
+        let submissionDataString = document.getElementById(
+            'ApplicationFormSubmissionData'
+        ).value;
+        let formSchemaString = document.getElementById(
+            'ApplicationFormSchema'
+        ).value;
         let submissionJson = JSON.parse(submissionDataString);
         let formSchema;
         let submissionData;
@@ -346,18 +363,21 @@ $(function () {
         // Initialize data with correct structure
         let data = {
             version: {
-                schema: null
+                schema: null,
             },
             submission: {
-                submission: null
-            }
+                submission: null,
+            },
         };
 
         // Determine how to extract form schema and submission
-        if (submissionJson.version !== undefined && submissionJson.submission !== undefined) {
+        if (
+            submissionJson.version !== undefined &&
+            submissionJson.submission !== undefined
+        ) {
             formSchema = submissionJson.version.schema;
             submissionData = submissionJson.submission.submission;
-        } else if (formSchemaString !== undefined && formSchemaString !== "") {
+        } else if (formSchemaString !== undefined && formSchemaString !== '') {
             formSchema = JSON.parse(formSchemaString);
             submissionData = submissionJson.submission;
         }
@@ -372,7 +392,7 @@ $(function () {
         const doc = newTab.document;
 
         // Set title
-        doc.title = "Print";
+        doc.title = 'Print';
 
         // HEAD
         const head = doc.head;
@@ -424,13 +444,16 @@ $(function () {
         };
     });
 
-
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
         let newTab = window.open('', '_blank');
         newTab.document.write('<html><head><title>Print</title>');
         newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
-        newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
-        newTab.document.write('<link rel="stylesheet" href="/Pages/GrantApplications/ScoresheetPrint.css">');
+        newTab.document.write(
+            '<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">'
+        );
+        newTab.document.write(
+            '<link rel="stylesheet" href="/Pages/GrantApplications/ScoresheetPrint.css">'
+        );
         newTab.document.write('</head><body>');
         newTab.document.write(assessmentScoresheet);
         newTab.document.write('</body></html>');
@@ -451,42 +474,47 @@ $(function () {
         wrapper: '#applicationBreadcrumbWidget',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val()
+                applicationId: $('#DetailsViewApplicationId').val(),
             };
-        }
+        },
     });
 
     let applicationStatusWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationStatusWidget',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val()
+                applicationId: $('#DetailsViewApplicationId').val(),
             };
-        }
+        },
     });
 
     let applicationActionWidgetManager = new abp.WidgetManager({
-        wrapper: '.abp-widget-wrapper[data-widget-name="ApplicationActionWidget"]',
+        wrapper:
+            '.abp-widget-wrapper[data-widget-name="ApplicationActionWidget"]',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val()
+                applicationId: $('#DetailsViewApplicationId').val(),
             };
-        }
+        },
     });
 
-    const assessmentResultWidgetDiv = "assessmentResultWidget";
+    const assessmentResultWidgetDiv = 'assessmentResultWidget';
 
     let assessmentResultWidgetManager = new abp.WidgetManager({
         wrapper: '#' + assessmentResultWidgetDiv,
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val(),
-                'applicationFormVersionId': $('#AssessmentResultViewApplicationFormVersionId').val()
+                applicationId: $('#DetailsViewApplicationId').val(),
+                applicationFormVersionId: $(
+                    '#AssessmentResultViewApplicationFormVersionId'
+                ).val(),
             };
-        }
+        },
     });
 
-    const assessmentResultTargetNode = document.querySelector('#' + assessmentResultWidgetDiv);
+    const assessmentResultTargetNode = document.querySelector(
+        '#' + assessmentResultWidgetDiv
+    );
     const widgetConfig = { attributes: true, childList: true, subtree: true };
     const widgetCallback = function (mutationsList, observer) {
         for (const mutation of mutationsList) {
@@ -500,141 +528,146 @@ $(function () {
     const assessmentResultObserver = new MutationObserver(widgetCallback);
 
     if (assessmentResultTargetNode) {
-        assessmentResultObserver.observe(assessmentResultTargetNode, widgetConfig);
+        assessmentResultObserver.observe(
+            assessmentResultTargetNode,
+            widgetConfig
+        );
     }
 
-    PubSub.subscribe(
-        'application_status_changed',
-        (msg, data) => {
-            applicationBreadcrumbWidgetManager.refresh();
-            applicationStatusWidgetManager.refresh();
-            assessmentResultWidgetManager.refresh();
-            applicationActionWidgetManager.refresh();
-        }
-    );
+    PubSub.subscribe('application_status_changed', (msg, data) => {
+        applicationBreadcrumbWidgetManager.refresh();
+        applicationStatusWidgetManager.refresh();
+        assessmentResultWidgetManager.refresh();
+        applicationActionWidgetManager.refresh();
+    });
 
     function initCustomFieldCurrencies() {
-        $('.custom-currency-input').maskMoney({
-            thousands: ',',
-            decimal: '.'
-        }).maskMoney('mask');
+        $('.custom-currency-input')
+            .maskMoney({
+                thousands: ',',
+                decimal: '.',
+            })
+            .maskMoney('mask');
     }
 
-    PubSub.subscribe('application_assessment_results_saved',
-        (msg, data) => {
-            assessmentResultWidgetManager.refresh();
-        }
-    );
+    PubSub.subscribe('application_assessment_results_saved', (msg, data) => {
+        assessmentResultWidgetManager.refresh();
+    });
 
-    const summaryWidgetDiv = "summaryWidgetArea";
+    const summaryWidgetDiv = 'summaryWidgetArea';
 
     let summaryWidgetManager = new abp.WidgetManager({
         wrapper: '#' + summaryWidgetDiv,
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val() ?? "00000000-0000-0000-0000-000000000000"
-            }
-        }
+                applicationId:
+                    $('#DetailsViewApplicationId').val() ??
+                    '00000000-0000-0000-0000-000000000000',
+            };
+        },
     });
 
-    const summaryWidgetTargetNode = document.querySelector('#' + summaryWidgetDiv);
+    const summaryWidgetTargetNode = document.querySelector(
+        '#' + summaryWidgetDiv
+    );
     const summaryWidgetObserver = new MutationObserver(widgetCallback);
     summaryWidgetObserver.observe(summaryWidgetTargetNode, widgetConfig);
 
-
-    PubSub.subscribe('refresh_detail_panel_summary',
-        (msg, data) => {
-            summaryWidgetManager.refresh();
-        }
-    );
-
+    PubSub.subscribe('refresh_detail_panel_summary', (msg, data) => {
+        summaryWidgetManager.refresh();
+    });
 
     let tabCounters = {
         files: 0,
         chefs: 0,
-        emails: 0
+        emails: 0,
     };
 
-    PubSub.subscribe(
-        'update_application_attachment_count',
-        (msg, data) => {
-            if (data.files || data.files === 0) {
-                tabCounters.files = data.files;
-            }
-            if (data.chefs || data.chefs === 0) {
-                tabCounters.chefs = data.chefs;
-            }
-            $('#application_attachment_count').html(tabCounters.files + tabCounters.chefs);
+    PubSub.subscribe('update_application_attachment_count', (msg, data) => {
+        if (data.files || data.files === 0) {
+            tabCounters.files = data.files;
         }
-    );
+        if (data.chefs || data.chefs === 0) {
+            tabCounters.chefs = data.chefs;
+        }
+        $('#application_attachment_count').html(
+            tabCounters.files + tabCounters.chefs
+        );
+    });
 
-    PubSub.subscribe(
-        'update_application_emails_count',
-        (msg, data) => {
-            if (data.itemCount || data.itemCount === 0) {
-                tabCounters.emails = data.itemCount;
-            }
-            $('#application_emails_count').html(tabCounters.emails);
+    PubSub.subscribe('update_application_emails_count', (msg, data) => {
+        if (data.itemCount || data.itemCount === 0) {
+            tabCounters.emails = data.itemCount;
         }
-    );
+        $('#application_emails_count').html(tabCounters.emails);
+    });
 
     let applicationRecordsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationRecordsWidget',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val(),
-            }
-        }
+                applicationId: $('#DetailsViewApplicationId').val(),
+            };
+        },
     });
 
-    PubSub.subscribe('ApplicationLinks_refresh',
-        (msg, data) => {
-            applicationRecordsWidgetManager.refresh();
-            updateLinksCounters();
-        }
-    );
+    PubSub.subscribe('ApplicationLinks_refresh', (msg, data) => {
+        applicationRecordsWidgetManager.refresh();
+        updateLinksCounters();
+    });
 
     // custom fields
     $('body').on('click', '.custom-tab-save', function (event) {
         let id = $(this).attr('id');
         let uiAnchor = $(this).attr('data-ui-anchor');
         let worksheetId = $(this).attr('data-ui-worksheetId');
-        let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
-        let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
+        let formDataName =
+            id.replace('save_', '').replace('_btn', '') + '_form';
+        let applicationId = decodeURIComponent(
+            $('#DetailsViewApplicationId').val()
+        );
         let formData = $(`#${formDataName}`).serializeArray();
         let customFormObj = {};
-        let formVersionId = $("#ApplicationFormVersionId").val();
+        let formVersionId = $('#ApplicationFormVersionId').val();
 
         $.each(formData, function (_, input) {
             customFormObj[input.name] = input.value;
         });
 
         $(`#${formDataName} input:checkbox`).each(function () {
-            customFormObj[this.name] = (this.checked).toString();
+            customFormObj[this.name] = this.checked.toString();
         });
 
-        updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, id, formDataName, worksheetId);
+        updateCustomForm(
+            applicationId,
+            formVersionId,
+            customFormObj,
+            uiAnchor,
+            id,
+            formDataName,
+            worksheetId
+        );
     });
 
-    PubSub.subscribe(
-        'fields_tab',
-        (_, data) => {
-            let formDataName = data.worksheet + '_form';
-            let formValid = $(`form#${formDataName}`).valid();
-            let saveBtn = $(`#save_${data.worksheet}_btn`);
-            if (formValid && !formHasInvalidCurrencyCustomFields(`${formDataName}`)) {
-                saveBtn.prop('disabled', false);
-            } else {
-                saveBtn.prop('disabled', true);
-            }
+    PubSub.subscribe('fields_tab', (_, data) => {
+        let formDataName = data.worksheet + '_form';
+        let formValid = $(`form#${formDataName}`).valid();
+        let saveBtn = $(`#save_${data.worksheet}_btn`);
+        if (
+            formValid &&
+            !formHasInvalidCurrencyCustomFields(`${formDataName}`)
+        ) {
+            saveBtn.prop('disabled', false);
+        } else {
+            saveBtn.prop('disabled', true);
         }
-    );
+    });
 
-    divider.addEventListener("mousedown", function (e) {
+    divider.addEventListener('mousedown', function (e) {
         e.preventDefault();
 
-        document.addEventListener("mousemove", resize);
-        document.addEventListener("mouseup", stopResize);
+        document.addEventListener('mousemove', resize);
+        document.addEventListener('mouseup', stopResize);
     });
 
     function resize(e) {
@@ -648,16 +681,16 @@ $(function () {
         // Apply the height offset depending on tabs height
         applyTabHeightOffset();
 
-        // Resize DataTables 
+        // Resize DataTables
         debouncedResizeAwareDataTables();
 
         // Save the left width to localStorage
-        localStorage.setItem("leftWidth", leftWidth);
+        localStorage.setItem('leftWidth', leftWidth);
     }
 
     function applyTabHeightOffset() {
         const detailsTabHeight = 235 + detailsTabs[0].clientHeight;
-        detailsTabContent.style.height = `calc(100vh - ${detailsTabHeight}px)`
+        detailsTabContent.style.height = `calc(100vh - ${detailsTabHeight}px)`;
     }
 
     // Debounced DataTable resizing function
@@ -666,9 +699,11 @@ $(function () {
             const table = $(this).DataTable();
             try {
                 table.columns.adjust().draw();
-            }
-            catch {
-                console.error(`Adjust width failed for table ${$(this).id}:`, error);
+            } catch {
+                console.error(
+                    `Adjust width failed for table ${$(this).id}:`,
+                    error
+                );
             }
         });
     }, 15); // Adjust the delay as needed
@@ -683,13 +718,13 @@ $(function () {
     });
 
     function stopResize() {
-        document.removeEventListener("mousemove", resize);
-        document.removeEventListener("mouseup", stopResize);
+        document.removeEventListener('mousemove', resize);
+        document.removeEventListener('mouseup', stopResize);
     }
 
     function recalcAndAdjustSplit() {
         const containerWidth = container.clientWidth;
-        const savedLeftWidth = localStorage.getItem("leftWidth");
+        const savedLeftWidth = localStorage.getItem('leftWidth');
 
         if (savedLeftWidth) {
             const savedPercentage = savedLeftWidth / containerWidth;
@@ -702,7 +737,7 @@ $(function () {
             mainRightDiv.style.width = `${newRightWidth}px`;
 
             // Save the new left width to localStorage
-            localStorage.setItem("leftWidth", newLeftWidth);
+            localStorage.setItem('leftWidth', newLeftWidth);
         }
     }
 
@@ -710,14 +745,19 @@ $(function () {
 
     function adjustVisibleTablesInContainer(containerId) {
         const activeTab = $(`#${containerId} div.active`);
-        activeTab.find('table[data-resize-aware="true"]:visible').each(function () {
-            const table = $(this).DataTable();
-            try {
-                table.columns.adjust().draw();
-            } catch (error) {
-                console.error(`Adjust width failed for table in container ${containerId}:`, error);
-            }
-        });
+        activeTab
+            .find('table[data-resize-aware="true"]:visible')
+            .each(function () {
+                const table = $(this).DataTable();
+                try {
+                    table.columns.adjust().draw();
+                } catch (error) {
+                    console.error(
+                        `Adjust width failed for table in container ${containerId}:`,
+                        error
+                    );
+                }
+            });
     }
 
     function windowResize() {
@@ -727,7 +767,22 @@ $(function () {
     window.addEventListener('resize', windowResize);
 });
 
-function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, saveId, formDataName, worksheetId) {
+// $(document).on('click', '#btnClearSupplierNo', function (e) {
+//     e.preventDefault();
+
+//     console.log('clicked');
+//     $('#SupplierNumber').val(null).trigger('change');
+// });
+
+function updateCustomForm(
+    applicationId,
+    formVersionId,
+    customFormObj,
+    uiAnchor,
+    saveId,
+    formDataName,
+    worksheetId
+) {
     let customFormUpdate = {
         instanceCorrelationId: applicationId,
         instanceCorrelationProvider: 'Application',
@@ -736,15 +791,14 @@ function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor,
         uiAnchor: uiAnchor,
         customFields: customFormObj,
         formDataName: formDataName,
-        worksheetId: worksheetId
-    }
+        worksheetId: worksheetId,
+    };
 
     $(`#${saveId}`).prop('disabled', true);
-    unity.flex.worksheetInstances.worksheetInstance.update(customFormUpdate)
+    unity.flex.worksheetInstances.worksheetInstance
+        .update(customFormUpdate)
         .done(function () {
-            abp.notify.success(
-                'Information has been updated.'
-            );
+            abp.notify.success('Information has been updated.');
         });
 }
 
@@ -756,17 +810,22 @@ function notifyFieldChange(worksheet, uianchor, field) {
         if (isKnownAnchor(anchor)) {
             PubSub.publish('fields_' + anchor, value);
         } else {
-            PubSub.publish('fields_tab', { worksheet: worksheet, fieldId: field.id });
+            PubSub.publish('fields_tab', {
+                worksheet: worksheet,
+                fieldId: field.id,
+            });
         }
     }
 }
 
 function isKnownAnchor(anchor) {
-    if (anchor === 'projectinfo'
-        || anchor === 'applicantinfo'
-        || anchor === 'assessmentinfo'
-        || anchor === 'paymentinfo'
-        || anchor === 'fundingagreementinfo') {
+    if (
+        anchor === 'projectinfo' ||
+        anchor === 'applicantinfo' ||
+        anchor === 'assessmentinfo' ||
+        anchor === 'paymentinfo' ||
+        anchor === 'fundingagreementinfo'
+    ) {
         return true;
     }
 }
@@ -786,26 +845,43 @@ const Flex = class {
 
     static setCustomFields(customFieldsObj) {
         for (const key in customFieldsObj) {
-            if (customFieldsObj.hasOwnProperty(key) && key.startsWith('custom_')) {
+            if (
+                customFieldsObj.hasOwnProperty(key) &&
+                key.startsWith('custom_')
+            ) {
                 customFieldsObj.CustomFields[key] = customFieldsObj[key];
             }
         }
     }
-}
+};
 
 function uploadApplicationFiles(inputId) {
-    let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
-    let currentUserId = decodeURIComponent($("#CurrentUserId").val());
-    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    let url = "/api/app/attachment/application/" + applicationId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
+    let applicationId = decodeURIComponent(
+        $('#DetailsViewApplicationId').val()
+    );
+    let currentUserId = decodeURIComponent($('#CurrentUserId').val());
+    let currentUserName = decodeURIComponent($('#CurrentUserName').val());
+    let url =
+        '/api/app/attachment/application/' +
+        applicationId +
+        '/upload?userId=' +
+        currentUserId +
+        '&userName=' +
+        currentUserName;
     uploadFiles(inputId, url, 'refresh_application_attachment_list');
 }
 
 function uploadAssessmentFiles(inputId) {
-    let assessmentId = decodeURIComponent($("#AssessmentId").val());
-    let currentUserId = decodeURIComponent($("#CurrentUserId").val());
-    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    let url = "/api/app/attachment/assessment/" + assessmentId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
+    let assessmentId = decodeURIComponent($('#AssessmentId').val());
+    let currentUserId = decodeURIComponent($('#CurrentUserId').val());
+    let currentUserName = decodeURIComponent($('#CurrentUserName').val());
+    let url =
+        '/api/app/attachment/assessment/' +
+        assessmentId +
+        '/upload?userId=' +
+        currentUserId +
+        '&userName=' +
+        currentUserName;
     uploadFiles(inputId, url, 'refresh_assessment_attachment_list');
 }
 
@@ -813,8 +889,10 @@ function uploadFiles(inputId, urlStr, channel) {
     let input = document.getElementById(inputId);
     let files = input.files;
     let formData = new FormData();
-    const disallowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val()));
-    const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
+    const disallowedTypes = JSON.parse(
+        decodeURIComponent($('#Extensions').val())
+    );
+    const maxFileSize = decodeURIComponent($('#MaxFileSize').val());
 
     let isAllowedTypeError = false;
     let isMaxFileSizeError = false;
@@ -823,22 +901,25 @@ function uploadFiles(inputId, urlStr, channel) {
     }
 
     for (let file of files) {
-        if (disallowedTypes.includes(file.name.slice(file.name.lastIndexOf(".") + 1, file.name.length).toLowerCase())) {
+        if (
+            disallowedTypes.includes(
+                file.name
+                    .slice(file.name.lastIndexOf('.') + 1, file.name.length)
+                    .toLowerCase()
+            )
+        ) {
             isAllowedTypeError = true;
         }
-        if ((file.size * 0.000001) > maxFileSize) {
+        if (file.size * 0.000001 > maxFileSize) {
             isMaxFileSizeError = true;
         }
 
-        formData.append("files", file);
+        formData.append('files', file);
     }
 
     if (isAllowedTypeError) {
         input.value = null;
-        return abp.notify.error(
-            'Error',
-            'File type not supported'
-        );
+        return abp.notify.error('Error', 'File type not supported');
     }
     if (isMaxFileSizeError) {
         input.value = null;
@@ -848,32 +929,23 @@ function uploadFiles(inputId, urlStr, channel) {
         );
     }
 
-    $.ajax(
-        {
-            url: urlStr,
-            data: formData,
-            processData: false,
-            contentType: false,
-            type: "POST",
-            success: function (data) {
-                abp.notify.success(
-                    data.responseText,
-                    'File Upload Is Successful'
-
-                );
-                PubSub.publish(channel);
-                input.value = null;
-            },
-            error: function (data) {
-                abp.notify.error(
-                    data.responseText,
-                    'File Upload Not Successful'
-                );
-                PubSub.publish(channel);
-                input.value = null;
-            }
-        }
-    );
+    $.ajax({
+        url: urlStr,
+        data: formData,
+        processData: false,
+        contentType: false,
+        type: 'POST',
+        success: function (data) {
+            abp.notify.success(data.responseText, 'File Upload Is Successful');
+            PubSub.publish(channel);
+            input.value = null;
+        },
+        error: function (data) {
+            abp.notify.error(data.responseText, 'File Upload Not Successful');
+            PubSub.publish(channel);
+            input.value = null;
+        },
+    });
 }
 
 function getCurrentUser() {
@@ -881,159 +953,161 @@ function getCurrentUser() {
 }
 
 const checkCurrentUser = function (data) {
-    if (getCurrentUser() == data.assessorId && data.status == "IN_PROGRESS") {
+    if (getCurrentUser() == data.assessorId && data.status == 'IN_PROGRESS') {
         $('#recommendation_select').prop('disabled', false);
         $('#assessment_upload_btn').prop('disabled', false);
         $('#recommendation_reset_btn')
             .prop('disabled', !$('#recommendation_select').val())
             .toggleClass('d-none', !$('#recommendation_select').val());
-    }
-    else {
+    } else {
         $('#recommendation_select').prop('disabled', 'disabled');
         $('#assessment_upload_btn').prop('disabled', 'disabled');
-        $('#recommendation_reset_btn').prop('disabled', 'disabled').toggleClass('d-none', true);
+        $('#recommendation_reset_btn')
+            .prop('disabled', 'disabled')
+            .toggleClass('d-none', true);
     }
 };
 
 function updateEmailsCounters() {
     setTimeout(() => {
-        $('.emails-container').map(function () {
-            $('#' + $(this).data('emailscounttag')).html($(this).data('count'));
-        }).get();
+        $('.emails-container')
+            .map(function () {
+                $('#' + $(this).data('emailscounttag')).html(
+                    $(this).data('count')
+                );
+            })
+            .get();
     }, 100);
 }
 
 function updateCommentsCounters() {
     setTimeout(() => {
-        $('.comments-container').map(function () {
-            $('#' + $(this).data('counttag')).html($(this).data('count'));
-        }).get();
+        $('.comments-container')
+            .map(function () {
+                $('#' + $(this).data('counttag')).html($(this).data('count'));
+            })
+            .get();
     }, 100);
 }
 
 function updateLinksCounters() {
     setTimeout(() => {
-        $('.links-container').map(function () {
-            const tag = $(this).data('linkscounttag');
-            const count = $(this).attr('data-count');
-            $('#' + tag).text(count);
-        }).get();
+        $('.links-container')
+            .map(function () {
+                const tag = $(this).data('linkscounttag');
+                const count = $(this).attr('data-count');
+                $('#' + tag).text(count);
+            })
+            .get();
     }, 100);
 }
 
 function initEmailsWidget() {
-    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
+    const currentUserId = decodeURIComponent($('#CurrentUserId').val());
 
     let applicationEmailsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationEmailsWidget',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val(),
-                'currentUserId': currentUserId,
+                applicationId: $('#DetailsViewApplicationId').val(),
+                currentUserId: currentUserId,
             };
-        }
+        },
     });
 
-    PubSub.subscribe(
-        'ApplicationEmail_refresh',
-        () => {
-            applicationEmailsWidgetManager.refresh();
-            updateEmailsCounters();
-        }
-    );
+    PubSub.subscribe('ApplicationEmail_refresh', () => {
+        applicationEmailsWidgetManager.refresh();
+        updateEmailsCounters();
+    });
 
     updateEmailsCounters();
     let tagsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationTagsWidget',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val() ?? "00000000-0000-0000-0000-000000000000"
-            }
-        }
+                applicationId:
+                    $('#DetailsViewApplicationId').val() ??
+                    '00000000-0000-0000-0000-000000000000',
+            };
+        },
     });
 
-    PubSub.subscribe(
-        'ApplicationTags_refresh',
-        () => {
-            tagsWidgetManager.refresh();
-        }
-    );
+    PubSub.subscribe('ApplicationTags_refresh', () => {
+        tagsWidgetManager.refresh();
+    });
 }
 
-
-
 function initCommentsWidget() {
-    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
+    const currentUserId = decodeURIComponent($('#CurrentUserId').val());
     let selectedReviewDetails;
     let applicationCommentsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationCommentsWidget',
         filterCallback: function () {
             return {
-                'ownerId': $('#DetailsViewApplicationId').val(),
-                'commentType': 0,
-                'currentUserId': currentUserId,
+                ownerId: $('#DetailsViewApplicationId').val(),
+                commentType: 0,
+                currentUserId: currentUserId,
             };
-        }
+        },
     });
 
     let assessmentCommentsWidgetManager = new abp.WidgetManager({
         wrapper: '#assessmentCommentsWidget',
         filterCallback: function () {
             return {
-                'ownerId': selectedReviewDetails.id,
-                'commentType': 1,
-                'currentUserId': currentUserId,
+                ownerId: selectedReviewDetails.id,
+                commentType: 1,
+                currentUserId: currentUserId,
             };
-        }
+        },
     });
 
-    PubSub.subscribe(
-        'ApplicationComment_refresh',
-        () => {
-            applicationCommentsWidgetManager.refresh();
-            updateCommentsCounters();
-        }
-    );
+    PubSub.subscribe('ApplicationComment_refresh', () => {
+        applicationCommentsWidgetManager.refresh();
+        updateCommentsCounters();
+    });
 
-    PubSub.subscribe(
-        'AssessmentComment_refresh',
-        (_, data) => {
-            if (data?.review) {
-                selectedReviewDetails = data.review;
-            }
-            assessmentCommentsWidgetManager.refresh();
-            updateCommentsCounters();
+    PubSub.subscribe('AssessmentComment_refresh', (_, data) => {
+        if (data?.review) {
+            selectedReviewDetails = data.review;
         }
-    );
+        assessmentCommentsWidgetManager.refresh();
+        updateCommentsCounters();
+    });
 
     updateCommentsCounters();
     let tagsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationTagsWidget',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val() ?? "00000000-0000-0000-0000-000000000000"
-            }
-        }
+                applicationId:
+                    $('#DetailsViewApplicationId').val() ??
+                    '00000000-0000-0000-0000-000000000000',
+            };
+        },
     });
 
-    PubSub.subscribe(
-        'ApplicationTags_refresh',
-        () => {
-            tagsWidgetManager.refresh();
-        }
-    );
+    PubSub.subscribe('ApplicationTags_refresh', () => {
+        tagsWidgetManager.refresh();
+    });
 }
 
 function setDetailsContext(context) {
     switch (context) {
-        case 'assessment': $('#reviewDetails').show(); $('#applicationDetails').hide(); break;
-        case 'application': $('#reviewDetails').hide(); $('#applicationDetails').show(); break;
+        case 'assessment':
+            $('#reviewDetails').show();
+            $('#applicationDetails').hide();
+            break;
+        case 'application':
+            $('#reviewDetails').hide();
+            $('#applicationDetails').show();
+            break;
     }
 }
 
 function formHasInvalidCurrencyCustomFields(formId) {
     let invalidFieldsFound = false;
-    $("#" + formId + " input[id^='custom']:visible").each(function (i, el) {
+    $('#' + formId + " input[id^='custom']:visible").each(function (i, el) {
         let $field = $(this);
         if ($field.hasClass('custom-currency-input')) {
             if (!isValidCurrencyCustomField($field)) {
@@ -1056,26 +1130,31 @@ function isValidCurrencyCustomField(input) {
         showCurrencyError(input, 'Please enter a valid number.');
         return false;
     } else if (numericValue < minValue) {
-        showCurrencyError(input, `Please enter a value greater than or equal to ${minValue}.`);
+        showCurrencyError(
+            input,
+            `Please enter a value greater than or equal to ${minValue}.`
+        );
         return false;
     } else if (numericValue > maxValue) {
-        showCurrencyError(input, `Please enter a value less than or equal to ${maxValue}.`);
+        showCurrencyError(
+            input,
+            `Please enter a value less than or equal to ${maxValue}.`
+        );
         return false;
     } else {
         clearCurrencyError(input);
         return true;
     }
-
 }
 
 function showCurrencyError(input, message) {
-    let errorSpan = input.attr('id') + "-error";
+    let errorSpan = input.attr('id') + '-error';
     document.getElementById(errorSpan).textContent = message;
     input.attr('aria-invalid', 'true');
 }
 
 function clearCurrencyError(input) {
-    let errorSpan = input.attr('id') + "-error";
+    let errorSpan = input.attr('id') + '-error';
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
 }

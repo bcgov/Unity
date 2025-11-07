@@ -17,6 +17,7 @@
     "Menu:ApplicationForms": "Forms",
     "Menu:TenantManagement": "Tenants",
     "Menu:EndpointManagement": "Endpoints",
+    "Menu:Applicants": "Applicants",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
@@ -68,6 +69,7 @@
     "ProposalDate": "Proposal Date",
     "SubmissionDate": "Submission Date",
     "GrantApplications": "Grant Applications",
+    "Applicants": "Applicants",
     "Multiple": "Multiple",
 
     "ApplicationList:OpenButton": "Open",
@@ -127,6 +129,7 @@
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
+    "Permission:GrantApplicationManagement.Applicants.ViewList": "View Applicant List",
     "Permission:GrantApplicationManagement.Applicants.AssignApplicant": "Assign Applicant to an Application",
     "Permission:GrantApplicationManagement.Assignments.Default": "Assignment",
     "Permission:GrantApplicationManagement.Assignments.AssignInitial": "Initial Assignment",
@@ -236,6 +239,11 @@
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
+    "GrantManager:PayableFormRequiresHierarchy": "Please select a form hierarchy before saving a payable form.",
+    "GrantManager:ChildFormRequiresParentForm": "Please select a parent form when the form hierarchy is set to Child.",
+    "GrantManager:ChildFormRequiresParentFormVersion": "Please select a parent form version when the form hierarchy is set to Child.",
+    "GrantManager:ParentFormVersionMismatch": "The selected parent form version does not belong to the chosen parent form.",
+    "GrantManager:ChildFormCannotReferenceSelf": "A form cannot reference itself as the parent.",
 
     "AssessmentResultsView:ApprovalTitle": "Approval",
     "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",
@@ -327,6 +335,7 @@
     "Summary:Application.SubmissionDate": "Submission Date",
     "Summary:Application.OrganizationName": "Registered Organization Name",
     "Summary:Application.OrganizationNumber": "Registered Organization Number",
+    "Summary:Application.BusinessNumber": "Business Number",
     "Summary:Application.NonRegOrgName": "Non-Registered Organization Name",
     "Summary:Application.City": "City",
     "Summary:Application.Community": "Community",
@@ -334,6 +343,7 @@
     "Summary:Application.ProjectBudget": "Total Project Budget",
     "Summary:Application.Sector": "Sector",
     "Summary:Application.Owner": "Owner",
+    "Summary:Application.UnityApplicationId": "Unity Application Id",
     "Summary:Application.Assignees": "Assignees",
     "Summary:Assessment.Status": "Status",
     "Summary:Assessment.LikelihoodOfFunding": "Likelihood Of Funding",

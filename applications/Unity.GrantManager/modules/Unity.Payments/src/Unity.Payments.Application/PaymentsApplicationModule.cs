@@ -8,13 +8,13 @@ using Unity.Payments.EntityFrameworkCore;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers.Quartz;
-
 using Volo.Abp.TenantManagement;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.AspNetCore.ExceptionHandling;
+using Unity.Payments.PaymentRequests.Notifications;
 
 namespace Unity.Payments;
 
@@ -72,6 +72,10 @@ public class PaymentsApplicationModule : AbpModule
         });
 
         context.Services.AddAssemblyOf<PaymentsApplicationModule>();
+
+        // Register email recipient strategies as singletons for background job usage
+        // Singletons are preferred for background jobs since they are stateless and reused across job executions
+        context.Services.AddSingleton<IEmailRecipientStrategy, PaymentsEmailGroupStrategy>();
 
         context.Services.AddAbpDbContext<PaymentsDbContext>(options =>
         {

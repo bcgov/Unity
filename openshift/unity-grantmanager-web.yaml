@@ -447,8 +447,8 @@ objects:
             - name: Redis__Password
               valueFrom:
                 secretKeyRef:
-                  name: ${Redis__HostName}
-                  key: database-password
+                  name: ${Redis__HostName}-ha
+                  key: redis-password
           envFrom:
             - configMapRef:
                 name: ${APPLICATION_NAME}

@@ -31,6 +31,11 @@ namespace Unity.GrantManager.Intakes
         [Browsable(true)]
         public string? ApproxNumberOfEmployees { get; set; }
 
+        [DisplayName("Business Number")]
+        [MapFieldType("String")]
+        [Browsable(true)]
+        public string? BusinessNumber { get; set; }
+
         [DisplayName("Community")]
         [MapFieldType("String")]
         [Browsable(true)]
