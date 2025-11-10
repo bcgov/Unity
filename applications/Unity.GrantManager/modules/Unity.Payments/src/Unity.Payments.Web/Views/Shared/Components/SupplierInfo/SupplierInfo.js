@@ -59,7 +59,23 @@ $(function () {
             loadSiteInfoTable();
             bindUIEvents();
             validateMatchingSupplierToOrgInfo();
+            enableDisableRefreshSitesButton();
         });
+    }
+
+    function enableDisableRefreshSitesButton() {
+        const supplierNumber = UIElements.supplierNumber.val();
+        const originalSupplierNumber =
+            UIElements.originalSupplierNumber.val();
+
+
+        if (originalSupplierNumber != '' && supplierNumber && supplierNumber.trim() !== '' && supplierNumber === originalSupplierNumber) {
+            UIElements.refreshSitesBtn.removeAttr('disabled');
+        } else {
+            UIElements.refreshSitesBtn.attr('disabled', 'disabled');
+        }
+
+
     }
 
     init();
@@ -124,6 +140,8 @@ $(function () {
             }
         });
 
+        UIElements.supplierNumber.on('change', enableDisableRefreshSitesButton);
+        UIElements.supplierNumber.on('keyup', enableDisableRefreshSitesButton);
         UIElements.supplierName.on('change', validateMatchingSupplierToOrgInfo);
         UIElements.orgName.on('change', validateMatchingSupplierToOrgInfo);
         UIElements.nonRegisteredOrgName.on(
@@ -136,8 +154,9 @@ $(function () {
         UIElements.refreshSitesBtn.on('click', function () {
             let originalSupplierNumber =
                 UIElements.originalSupplierNumber.val();
+            let supplierNumber = UIElements.supplierNumber.val();
             // Check if supplier Number matches the original supplier number
-            if (originalSupplierNumber == '') {
+            if (originalSupplierNumber == '' || supplierNumber !== originalSupplierNumber) {
                 Swal.fire({
                     title: 'Action Complete',
                     text: 'The Supplier # must be saved before refreshing the site list',
@@ -149,31 +168,52 @@ $(function () {
                 return;
             }
 
+            const applicantId = UIElements.paymentApplicantId.val();
             $.ajax({
-                url: `/api/app/supplier/sites-by-supplier-number?supplierNumber=${originalSupplierNumber}`,
+                url: `/api/app/supplier/sites-by-supplier-number/${applicantId}?supplierNumber=${originalSupplierNumber}`,
                 method: 'GET',
                 success: function (response) {
-                    let dt = $('#SiteInfoTable').DataTable();
-                    if (dt) {
-                        dt.clear();
-                        dt.rows.add(response);
-                        dt.draw();
-                        dt.columns.adjust();
-                        let message =
-                            'The site list has been updated. Please re-select your default site';
 
-                        if (response.length == 0) {
-                            message = 'No sites were found for the supplier';
+
+                    if (!response.hasChanges) {
+                            let message = "The site list is already up to date.";
+                            Swal.fire({
+                                title: 'Action Complete',
+                                text: message,
+                                confirmButtonText: 'Ok',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary',
+                                },
+                            });
+                    } else {
+                        let dt = $('#SiteInfoTable').DataTable();
+                        if (dt) {
+                            dt.clear();
+                            dt.rows.add(response.sites);
+                            dt.draw();
+                            dt.columns.adjust();
+                            let message = "The site list has been updated. Please re-select your default site";
+                            if (response.length == 0) {
+                                message = "No sites were found for the supplier";
+                            } else if (response.length > 1) {
+                                $('input[name="default-site"]').prop('checked', false);
+                            } else if (response.length == 1) {
+                                // Auto select the only site as default
+                                let onlySiteId = response[0].id;
+                                $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
+                                message = "The site list has been updated. Only one site was returned and has been defaulted.";
+                                saveSiteDefault(onlySiteId);
+                            }
+
+                            Swal.fire({
+                                title: 'Action Complete',
+                                text: message,
+                                confirmButtonText: 'Ok',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary',
+                                },
+                            });
                         }
-
-                        Swal.fire({
-                            title: 'Action Complete',
-                            text: message,
-                            confirmButtonText: 'Ok',
-                            customClass: {
-                                confirmButton: 'btn btn-primary',
-                            },
-                        });
                     }
                 },
                 error: function (xhr, status, error) {
@@ -191,8 +231,14 @@ $(function () {
         const supplierOrgInfoErrorDiv = $('#supplier-error-div');
 
         // Clear supplier fields
-        supplierNumber.val('').trigger('change');
+        supplierNumber.value = '';
+        supplierNumber.val('');
+        supplierNumber.attr('value', '');
+        supplierNumber.trigger('change');
+        supplierNumber.trigger('keyup');
+
         supplierName.val('');
+        supplierName.trigger('change');
         $('#Status').val('');
 
         // Clear hidden fields
@@ -250,7 +296,7 @@ $(function () {
                 text: 'Filter',
                 className: 'custom-table-btn flex-none btn btn-secondary',
                 id: 'btn-toggle-filter',
-                action: function (e, dt, node, config) {},
+                action: function (e, dt, node, config) { },
                 attr: {
                     id: 'btn-toggle-filter',
                 },
@@ -395,7 +441,7 @@ $(function () {
                         'Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update'
                     )
                 ) {
-                    return `<input type="radio" class="site-radio" name="default-site" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
+                    return `<input type="radio" class="site-radio" name="default-site" value="${data}" onclick="saveSiteDefault('${data}')" ${checked} ${disabled}/>`;
                 }
 
                 return `<input type="radio" class="site-radio" name="default-site" ${checked} ${disabled}/>`;
