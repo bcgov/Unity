@@ -1,6 +1,6 @@
 ﻿(async () => {
 
-    const token = unity.grantManager.identity.jwtToken.generateJWTToken();
+    const token = await unity.grantManager.identity.jwtToken.generateJWTToken();
     const iframe = document.createElement('iframe');
     iframe.src = `${window.reportingAiUrl}?token=${token}`;
     iframe.style.width = '100%';
