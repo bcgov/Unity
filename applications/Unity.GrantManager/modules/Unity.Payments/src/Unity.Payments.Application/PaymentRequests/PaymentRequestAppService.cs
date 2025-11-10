@@ -21,6 +21,8 @@ using Volo.Abp.Users;
 using Unity.Payments.Domain.PaymentThresholds;
 using Volo.Abp.Domain.Repositories;
 using Unity.GrantManager.Applications;
+using Unity.Payments.Domain.Suppliers;
+using Unity.Payments.Suppliers;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -37,7 +39,9 @@ namespace Unity.Payments.PaymentRequests
                 IPaymentsManager paymentsManager,
                 IPaymentRequestRepository paymentRequestsRepository,
                 IPaymentThresholdRepository paymentThresholdRepository,
-                IPermissionChecker permissionChecker) : PaymentsAppService, IPaymentRequestAppService
+                IPermissionChecker permissionChecker,
+                ISiteRepository siteRepository,
+                CasPaymentRequestCoordinator casPaymentRequestCoordinator) : PaymentsAppService, IPaymentRequestAppService
     #pragma warning restore S107
 
     {
@@ -427,12 +431,15 @@ namespace Unity.Payments.PaymentRequests
                     paymentRequestDto.AccountCodingDisplay = await GetAccountDistributionCode(paymentRequestDto.AccountCoding);
                 }
                 
-                foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
+                if (paymentRequestDto != null && paymentRequestDto.ExpenseApprovals != null)
                 {
-                    if (expenseApproval.DecisionUserId.HasValue
-                        && userDictionary.TryGetValue(expenseApproval.DecisionUserId.Value, out var expenseApprovalUserDto))
+                    foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
                     {
-                        expenseApproval.DecisionUser = expenseApprovalUserDto;
+                        if (expenseApproval.DecisionUserId.HasValue
+                            && userDictionary.TryGetValue(expenseApproval.DecisionUserId.Value, out var expenseApprovalUserDto))
+                        {
+                            expenseApproval.DecisionUser = expenseApprovalUserDto;
+                        }
                     }
                 }
             }
@@ -524,6 +531,23 @@ namespace Unity.Payments.PaymentRequests
             return null;
         }
 
+        public async Task ManuallyAddPaymentRequestsToReconciliationQueue(List<Guid> paymentRequestIds)
+        {
+            List<PaymentRequestDto> paymentRequestDtos = [];
+            foreach (var paymentRequestId in paymentRequestIds)
+            {
+                var paymentRequest = await paymentRequestsRepository.GetAsync(paymentRequestId);
+                if (paymentRequest != null)
+                {
+                    var paymentRequestDto = ObjectMapper.Map<PaymentRequest, PaymentRequestDto>(paymentRequest);
+                    Site site = await siteRepository.GetAsync(paymentRequest.SiteId);
+                    paymentRequestDto.Site = ObjectMapper.Map<Site, SiteDto>(site);
+                    paymentRequestDtos.Add(paymentRequestDto);
+                }
+            }
+            await casPaymentRequestCoordinator.ManuallyAddPaymentRequestsToReconciliationQueue(paymentRequestDtos);
+        }
+        
         private async Task<int> GetNextSequenceNumberAsync(int currentYear)
         {
             // Retrieve all payment requests
