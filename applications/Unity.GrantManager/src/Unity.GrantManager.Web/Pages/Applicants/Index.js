@@ -59,9 +59,6 @@ $(function () {
             getBusinessNumberColumn(columnIndex++),
             getFiscalDayColumn(columnIndex++),
             getStartedOperatingDateColumn(columnIndex++),
-            getSupplierIdColumn(columnIndex++),
-            getSiteIdColumn(columnIndex++),
-            getMatchPercentageColumn(columnIndex++),
             getIsDuplicatedColumn(columnIndex++),
             getElectoralDistrictColumn(columnIndex++),
             getCreationTimeColumn(columnIndex++),
@@ -357,51 +354,6 @@ $(function () {
         }
     }
 
-    function getSupplierIdColumn(columnIndex) {
-        return {
-            title: 'Supplier ID',
-            data: 'supplierId',
-            name: 'supplierId',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getSiteIdColumn(columnIndex) {
-        return {
-            title: 'Site ID',
-            data: 'siteId',
-            name: 'siteId',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getMatchPercentageColumn(columnIndex) {
-        return {
-            title: 'Match Percentage',
-            data: 'matchPercentage',
-            name: 'matchPercentage',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                if (data != null) {
-                    return data + '%';
-                }
-                return '';
-            },
-            index: columnIndex
-        }
-    }
-
     function getIsDuplicatedColumn(columnIndex) {
         return {
             title: 'Is Duplicated',
@@ -432,7 +384,7 @@ $(function () {
 
     function getCreationTimeColumn(columnIndex) {
         return {
-            title: 'Creation Time',
+            title: 'Creation Date',
             data: 'creationTime',
             name: 'creationTime',
             className: 'data-table-header',
@@ -539,7 +491,7 @@ $(function () {
                         $('#search, .custom-filter-input').val('');
                         dt.columns().search('');
                         dt.search('');
-                        dt.order([26, 'desc']).draw(); // Sort by creationTime descending
+                        dt.order([23, 'desc']).draw(); // Sort by creationTime descending
 
                         // Rebuild the COLUMNS button to reflect new visibility state
                         const colvisBtn = dt.button('customColvis:name');
@@ -581,7 +533,7 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 26, // Sort by creationTime (column 26) descending
+        defaultSortColumn: 23, // Sort by creationTime (column 23) descending
         dataEndpoint: unity.grantManager.applicants.applicant.getList,
         data: {},
         responseCallback,
