@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Identity
             _configuration = configuration;
         }
 
-        public async Task<string> GenerateJWTTokenAsync()
+        public Task<string> GenerateJWTTokenAsync()
         {
             // Get user & tenant info
             var userId = _currentUser.GetId().ToString();
@@ -63,7 +63,7 @@ namespace Unity.GrantManager.Identity
 
             // Return encoded JWT
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return jwt;
+            return Task.FromResult(jwt);
         }
     }
 }
