@@ -3,15 +3,18 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
+using Unity.Payments.Integrations.Cas;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.Suppliers
 {
     [RequiresFeature("Unity.Payments")]
     public class SupplierAppService(ISupplierRepository supplierRepository,
+                                    ISupplierService supplierService,
                                     ISiteAppService siteAppService) : PaymentsAppService, ISupplierAppService
     {
         protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
@@ -99,12 +102,81 @@ namespace Unity.Payments.Suppliers
             return ObjectMapper.Map<Supplier, SupplierDto?>(result);
         }
 
-        public async Task<List<SiteDto>> GetSitesBySupplierNumberAsync(string? supplierNumber)
+        public async Task<dynamic> GetSitesBySupplierNumberAsync(string? supplierNumber, Guid applicantId)
         {
+            // Change this code to get the supplier list of sites - from the datatabase which it is currently doing
+            // Then go to CAS and get the list of sites again
+            // Compare and update the database if there are any new sites
+            dynamic casSupplierResponse = await supplierService.GetCasSupplierInformationAsync(supplierNumber);
+            var casSiteDtos = new List<SiteDto>();
+            if (casSupplierResponse.TryGetProperty("supplieraddress", out JsonElement sitesJson) &&
+                            sitesJson.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var site in sitesJson.EnumerateArray())
+                {
+                    SiteEto siteEto = SupplierService.GetSiteEto(site);
+                    SiteDto siteDto = GetSiteDtoFromSiteEto(siteEto, Guid.Empty);
+                    casSiteDtos.Add(siteDto);
+                }
+            }
+
             var supplier = await GetBySupplierNumberAsync(supplierNumber);
             if (supplier == null) return new List<SiteDto>();
             List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(supplier.Id);
-            return sites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
+            List<SiteDto> existingSiteDtos = sites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
+
+            bool hasChanges = false;
+            // If the list of CAS sites is different from the existing sites
+            if (existingSiteDtos.Count != casSiteDtos.Count)
+            {
+                // Update the supplier and sites
+               hasChanges = true;
+            } 
+            else if (existingSiteDtos.Count == casSiteDtos.Count)
+            {
+                // Go through each site and compare
+                hasChanges = false;
+
+                // based on the matching number, check if any other fields are different
+                foreach (var casSite in casSiteDtos)   
+                {
+                    var existingSite = existingSiteDtos.FirstOrDefault(s => s.Number == casSite.Number);
+                    if (existingSite != null)
+                    {
+                        // Compare fields and update if necessary
+                        if (existingSite.Country != casSite.Country ||
+                            existingSite.EFTAdvicePref != casSite.EFTAdvicePref ||
+                            existingSite.EmailAddress != casSite.EmailAddress ||
+                            existingSite.PostalCode != casSite.PostalCode ||
+                            existingSite.ProviderId != casSite.ProviderId ||
+                            existingSite.Province != casSite.Province ||
+                            existingSite.SiteProtected != casSite.SiteProtected ||
+                            existingSite.City != casSite.City ||
+                            existingSite.AddressLine1 != casSite.AddressLine1 ||
+                            existingSite.AddressLine2 != casSite.AddressLine2 ||
+                            existingSite.BankAccount != casSite.BankAccount ||
+                            existingSite.Status != casSite.Status)
+                        {
+                            hasChanges = true;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        hasChanges = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasChanges)
+            {
+                await supplierService.UpdateSupplierInfo(casSupplierResponse, applicantId);
+                existingSiteDtos = casSiteDtos;
+            }
+            
+
+            return new { sites = existingSiteDtos, hasChanges };
         }
 
         public virtual async Task<SiteDto> CreateSiteAsync(Guid id, CreateSiteDto createSiteDto)
@@ -148,6 +220,30 @@ namespace Unity.Payments.Suppliers
         public virtual async Task DeleteAsync(Guid id)
         {
             await supplierRepository.DeleteAsync(id);
+        }
+
+        public SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId)
+        {
+            return new()
+                {
+                    Number = siteEto.SupplierSiteCode,
+                    PaymentGroup = Enums.PaymentGroup.EFT, // Defaulting to EFT based on conversations with CGG/CAS
+                    AddressLine1 = siteEto.AddressLine1,
+                    AddressLine2 = siteEto.AddressLine2,
+                    AddressLine3 = siteEto.AddressLine3,
+                    City = siteEto.City,
+                    Province = siteEto.Province,
+                    PostalCode = siteEto.PostalCode,
+                    SupplierId = supplierId,
+                    Country = siteEto.Country,
+                    EmailAddress = siteEto.EmailAddress,
+                    EFTAdvicePref = siteEto.EFTAdvicePref,
+                    BankAccount = siteEto.BankAccount,
+                    ProviderId = siteEto.ProviderId,
+                    Status = siteEto.Status,
+                    SiteProtected = siteEto.SiteProtected,
+                    LastUpdatedInCas = siteEto.LastUpdated
+                };
         }
     }
 }
