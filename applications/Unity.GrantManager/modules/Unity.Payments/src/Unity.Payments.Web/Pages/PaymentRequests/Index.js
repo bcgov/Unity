@@ -41,6 +41,20 @@ $(function () {
 
     let actionButtons = [
         {
+            text: 'Check Status',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-check-status',
+            action: function (e, dt, node, config) {
+                $.ajax({
+                    url: '/api/app/payment-request/manually-add-payment-requests-to-reconciliation-queue',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(selectedPaymentIds)
+                })
+                .done(() => abp.notify.info(l('Successfully Added To Reconciliation Queue')))
+                .fail(() => abp.notify.error(l('Failed To Add To Reconciliation Queue')));
+            }
+        },
+        {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
@@ -146,9 +160,11 @@ $(function () {
     });
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
+    let payment_check_status_buttons = dataTable.buttons(['.payment-check-status']);
     let history_button = dataTable.buttons(['.history']);
 
     payment_approve_buttons.disable();
+    payment_check_status_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
 
     function checkAllRowsHaveState(state) {
@@ -220,6 +236,11 @@ $(function () {
 
     function checkActionButtons() {
         let isOnlySubmittedToCas = checkAllRowsHaveState('Submitted');
+        if (isOnlySubmittedToCas) {
+            payment_check_status_buttons.enable();
+        } else {
+            payment_check_status_buttons.disable();
+        }
         if (dataTable.rows({ selected: true }).indexes().length > 0 && !isOnlySubmittedToCas) {
             if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
@@ -466,7 +487,7 @@ $(function () {
             data: 'paymentDate',
             className: 'data-table-header',
             index: columnIndex,
-            render: function(data) {
+            render: function (data) {
                 if (!data) return null;
                 // Check if date is in DD-MMM-YYYY format
                 if (/^\d{2}-[A-Z]{3}-\d{4}$/.test(data)) {
@@ -476,7 +497,7 @@ $(function () {
                 }
                 // Use default render for other formats
                 return DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)(data);
-            }        
+            }
         };
     }
 
@@ -613,7 +634,7 @@ $(function () {
             index: columnIndex,
             render: function (data) {
                 let tagNames = data
-                    .filter(x =>x?.tag?.name)     
+                    .filter(x => x?.tag?.name)
                     .map(x => x.tag.name);
                 return tagNames.join(', ') ?? '';
             }
