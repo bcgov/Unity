@@ -23,7 +23,7 @@
 #detailsTab .tab-content {
     overflow-y: scroll;
     overflow-x: hidden;
-    height: calc(100vh - 250px);
+    height: calc(100vh - 220px);
 }
 
 #detailsTab .nav-item .nav-link {
@@ -36,7 +36,7 @@
 .details-scrollable {
     overflow-y: scroll;
     overflow-x: hidden;
-    height: calc(100vh - 250px);
+    height: calc(100vh - 220px);
     margin-right: -6px;
 }
 
@@ -64,6 +64,7 @@
 
 #main-divider {
     width: 10px;
+    flex: 0 0 10px;
     background-color: #ccc;
     cursor: col-resize;
     border-radius: 10px;

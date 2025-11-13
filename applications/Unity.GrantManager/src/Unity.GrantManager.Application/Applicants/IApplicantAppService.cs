@@ -24,4 +24,5 @@ public interface IApplicantAppService : IApplicationService
     Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery);
     Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input);
     Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input);
+    Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input);
 }

@@ -9,8 +9,17 @@ $(document).ready(function () {
 
     // Handle tab switching animations
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-        let targetTab = $(e.target).attr('data-bs-target');
-        $(document).find(targetTab).addClass('fade-in-load visible');
+        var targetTab = $(e.target).attr('data-bs-target');
+        $(targetTab).addClass('fade-in-load visible');
+    });
+
+    // Add event listeners for tab clicks to adjust DataTables
+    $('#detailsTab li').on('click', function () {
+        debouncedAdjustTables('detailsTab');
+    });
+
+    $('#myTabContent li').on('click', function () {
+        debouncedAdjustTables('myTabContent');
     });
 
     // Handle resizable divider
@@ -24,6 +33,53 @@ function initializeApplicantDetailsPage() {
             $('.fade-in-load').addClass('visible');
         });
     }, 500);
+
+    // Initialize tooltips if any
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+// Debounce utility function
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
+// Debounced DataTable resizing function (called during panel resize)
+const debouncedResizeAwareDataTables = debounce(() => {
+    $('table[data-resize-aware="true"]:visible').each(function () {
+        try {
+            const table = $(this).DataTable();
+            table.columns.adjust().draw();
+        }
+        catch (error) {
+            console.error('Failed to adjust DataTable columns:', error);
+        }
+    });
+}, 15);
+
+// Debounced function for adjusting tables in specific container when tab is clicked
+const debouncedAdjustTables = debounce(adjustVisibleTablesInContainer, 15);
+
+function adjustVisibleTablesInContainer(containerId) {
+    const activeTab = $(`#${containerId} div.active`);
+    const tables = activeTab.find('table[data-resize-aware="true"]:visible');
+
+    tables.each(function () {
+        try {
+            const table = $(this).DataTable();
+            table.columns.adjust().draw();
+        }
+        catch (error) {
+            console.error('Failed to adjust DataTable in tab:', error);
+        }
+    });
 }
 
 function initializeResizableDivider() {
@@ -61,6 +117,9 @@ function initializeResizableDivider() {
         if (leftPercentage >= 20 && leftPercentage <= 80) {
             leftPanel.style.width = leftPercentage + '%';
             rightPanel.style.width = rightPercentage + '%';
+
+            // Resize DataTables during panel resize
+            debouncedResizeAwareDataTables();
         }
     }
 

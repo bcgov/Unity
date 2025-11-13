@@ -21,7 +21,7 @@ namespace Unity.Payments.PaymentRequests
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
         private readonly PaymentQueueService _paymentQueueService;
-        private static int FiveMinutes = 5;
+        private static int TenMinutes = 10;
 
         public CasPaymentRequestCoordinator(
             PaymentQueueService paymentQueueService,
@@ -63,7 +63,7 @@ namespace Unity.Payments.PaymentRequests
                 {                    
                     InvoiceMessages message = new InvoiceMessages
                     {
-                        TimeToLive = TimeSpan.FromMinutes(FiveMinutes),
+                        TimeToLive = TimeSpan.FromMinutes(TenMinutes),
                         PaymentRequestId = paymentRequest.Id,
                         InvoiceNumber = paymentRequest.InvoiceNumber,
                         SupplierNumber = paymentRequest.SupplierNumber,
@@ -81,6 +81,24 @@ namespace Unity.Payments.PaymentRequests
             }
         }
 
+        public async Task ManuallyAddPaymentRequestsToReconciliationQueue(List<PaymentRequestDto>paymentRequests)
+        {
+            foreach (PaymentRequestDto paymentRequest in paymentRequests)
+            {
+                ReconcilePaymentMessages reconcilePaymentMessage = new ReconcilePaymentMessages
+                {
+                    TimeToLive = TimeSpan.FromMinutes(TenMinutes),
+                    PaymentRequestId = paymentRequest.Id,
+                    InvoiceNumber = paymentRequest.InvoiceNumber,
+                    SupplierNumber = paymentRequest.SupplierNumber,
+                    SiteNumber = paymentRequest.Site?.Number ?? string.Empty,
+                    TenantId = _currentTenant.Id!.Value
+                };
+
+                await _paymentQueueService.SendPaymentToReconciliationQueueAsync(reconcilePaymentMessage);
+            }
+        }
+
         public async Task AddPaymentRequestsToReconciliationQueue()
         {
             var tenants = await _tenantRepository.GetListAsync();
@@ -93,7 +111,7 @@ namespace Unity.Payments.PaymentRequests
                     {
                         ReconcilePaymentMessages reconcilePaymentMessage = new ReconcilePaymentMessages
                         {
-                            TimeToLive = TimeSpan.FromMinutes(FiveMinutes),
+                            TimeToLive = TimeSpan.FromMinutes(TenMinutes),
                             PaymentRequestId = paymentRequest.Id,
                             InvoiceNumber = paymentRequest.InvoiceNumber,
                             SupplierNumber = paymentRequest.SupplierNumber,

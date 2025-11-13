@@ -1,0 +1,113 @@
+/* ApplicantAddresses Component Styles */
+
+.applicant-addresses-widget {
+    position: relative;
+}
+
+.applicant-info-container {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.applicant-info-container .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    position: sticky;
+    top: 50px;
+    padding-right: 24px;
+    z-index: 999;
+}
+
+.applicant-info-container .floating-save-btn {
+    min-width: 120px;
+    position: static;
+}
+
+.applicant-organization-info {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.primary-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.primary-section {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.primary-section:last-child {
+    border-bottom: none;
+}
+
+.primary-section__title {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #1f2933;
+}
+
+.contacts-addresses-tables {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.table-card {
+    background-color: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(1, 51, 102, 0.05);
+}
+
+.table-card__header {
+    border-bottom: 1px solid #e0e6ed;
+    padding: 0.75rem 1.25rem;
+}
+
+.table-card__body {
+    padding: 1.25rem;
+}
+
+.addresses-table,
+.contacts-table {
+    width: 100%;
+}
+
+#ApplicantAddressesTable_wrapper,
+#ApplicantContactsTable_wrapper {
+    width: 100%;
+}
+
+#ApplicantAddressesTable_wrapper .dataTables_scroll,
+#ApplicantContactsTable_wrapper .dataTables_scroll {
+    overflow: visible;
+}
+
+#ApplicantAddressesTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner,
+#ApplicantContactsTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner,
+#ApplicantAddressesTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner table,
+#ApplicantContactsTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner table {
+    width: 100% !important;
+}
+
+#ApplicantAddressesTable_wrapper .dataTables_scrollBody,
+#ApplicantContactsTable_wrapper .dataTables_scrollBody {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-height: none !important;
+}
+
+#ApplicantAddressesTable_wrapper .dataTables_scrollBody table,
+#ApplicantContactsTable_wrapper .dataTables_scrollBody table {
+    width: 100% !important;
+}
+
+#ApplicantAddressesTable,
+#ApplicantContactsTable {
+    width: 100% !important;
+}

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
@@ -24,6 +26,15 @@ namespace Unity.GrantManager.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.ApplicantAgents.FirstOrDefaultAsync(x => x.ApplicantId == applicantId);
+        }
+
+        public async Task<List<ApplicantAgent>> GetListByApplicantIdAsync(Guid applicantId)
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.ApplicantAgents
+                .Where(agent => agent.ApplicantId == applicantId)
+                .OrderByDescending(agent => agent.LastModificationTime ?? agent.CreationTime)
+                .ToListAsync();
         }
 
     }

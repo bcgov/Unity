@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Volo.Abp.Application.Services;
-using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
 using Unity.Modules.Shared.Http;
@@ -93,7 +92,7 @@ namespace Unity.Payments.Integrations.Cas
             return casSupplierResponse;
         }
 
-        private async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
+        public async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
         {
             try
             {
@@ -159,7 +158,7 @@ namespace Unity.Payments.Integrations.Cas
         }
 
 
-        protected static SiteEto GetSiteEto(JsonElement site)
+        public static SiteEto GetSiteEto(JsonElement site)
         {
             string accountNumber = GetJsonProperty("accountnumber", site);
             string maskedAccountNumber = accountNumber.Length > 4

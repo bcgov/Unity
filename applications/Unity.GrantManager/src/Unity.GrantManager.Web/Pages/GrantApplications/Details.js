@@ -340,7 +340,7 @@ $(function () {
         setDetailsContext('application');
     });
 
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
         $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
     });
 
