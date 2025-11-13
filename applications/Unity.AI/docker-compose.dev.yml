@@ -26,20 +26,8 @@ services:
     build: 
       context: ./Unity.AI.Reporting.Backend
       args:
-        - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-        - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-        - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
-        - AZURE_OPENAI_EMBEDDING_DEPLOYMENT=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT}
-        - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
-        - JWT_SECRET=${JWT_SECRET}
-        - METABASE_KEY=${METABASE_KEY}
-        - MB_EMBED_SECRET=${MB_EMBED_SECRET}
-        - MB_URL=${MB_URL}
-        - DB_HOST=postgres
-        - DB_PORT=5432
-        - DB_NAME=${POSTGRES_DB:-unity_ai}
-        - DB_USER=${POSTGRES_USER:-unity_user}
-        - DB_PASSWORD=${POSTGRES_PASSWORD}
+        - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
+        - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
     ports:
       - "5000:5000"
     environment:
@@ -72,7 +60,8 @@ services:
       context: ./Unity.AI.Reporting.Frontend
       dockerfile: Dockerfile
       args:
-        - JWT_SECRET=${JWT_SECRET}
+        - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
+        - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
     ports:
       - "80:80"
     volumes:

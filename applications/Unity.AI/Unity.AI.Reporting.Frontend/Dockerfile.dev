@@ -1,7 +1,5 @@
 FROM node:22-alpine
 
-# Accept build arguments
-ARG JWT_SECRET
 
 WORKDIR /app
 
@@ -14,8 +12,6 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Replace JWT_SECRET placeholder in environment files
-RUN sed -i "s/__JWT_SECRET_PLACEHOLDER__/${JWT_SECRET}/g" src/environments/environment.ts
 
 # Expose port 80 for dev server
 EXPOSE 80
