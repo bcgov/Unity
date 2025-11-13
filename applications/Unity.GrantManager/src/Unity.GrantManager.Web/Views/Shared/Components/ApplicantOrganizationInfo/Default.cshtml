@@ -12,7 +12,7 @@
 
 @if (Model.ApplicantId != Guid.Empty)
 {
-    <abp-row class="px-1 pb-2 mb-4 payment-info-container">
+    <abp-row class="px-1 pb-2 mb-4 applicant-info-container">
         <div class="save-button-container">
             <abp-button text="Save"
                         id="saveApplicantOrganizationInfoBtn"
@@ -23,11 +23,11 @@
                         disabled="true" />
         </div>
 
-        <form id="ApplicantOrganizationInfoForm" autocomplete="off">
+        <form id="ApplicantOrganizationInfoForm" autocomplete="off" class="applicant-organization-info">
             <input type="hidden" id="ApplicantOrganizationInfo_ApplicantId" value="@Model.ApplicantId" />
 
             @* Applicant Info *@
-            <abp-row id="organization-info-widget" class="m-0 p-0 payment-info-supplier">
+            <abp-row id="organization-info-widget" class="m-0 p-0 applicant-organization-info__section">
                 <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 px-0">
                     <abp-row class="m-0 org-info-summary">
                         <abp-row class="m-0 p-0">
@@ -37,7 +37,7 @@
                             </div>
                         </abp-column>
                     </abp-row>
-                    <abp-row class="m-0 p-0">
+                    <abp-row class="m-0 p-0 applicant-organization-info__divider_line">
                         <abp-column size="_12" class="px-1 mb-4">                            
                             <abp-row class="m-0 p-0">
                                 <abp-column size="_3" class="px-1">
@@ -63,7 +63,7 @@
                             </abp-row>
                         </abp-column>
                     </abp-row>
-                    <abp-row class="m-0 p-0">
+                    <abp-row class="m-0 p-0 mt-3">
                         <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
                             <div id="OrganizationInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
                                 <h6 class="fw-bold">Organization Information</h6>

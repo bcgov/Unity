@@ -1,0 +1,201 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
+@using System.Text.Json
+
+@model ApplicantAddressesViewModel
+
+@{
+    Layout = null;
+    var canEditPrimaryContact = Model.PrimaryContact.IsEditable && Model.CanEditContact;
+    var canEditPrimaryPhysical = Model.PrimaryPhysicalAddress.IsEditable && Model.CanEditAddress;
+    var canEditPrimaryMailing = Model.PrimaryMailingAddress.IsEditable && Model.CanEditAddress;
+}
+
+<div class="applicant-addresses-widget applicant-info-container px-1 pb-2 mb-4">
+    @if (Model.ApplicantId == Guid.Empty)
+    {
+        <div class="alert alert-warning m-3">
+            Applicant information not found.
+        </div>
+    }
+    else
+    {
+        @if (Model.CanSave)
+        {
+            <div class="save-button-container">
+                <abp-button text="Save"
+                            id="saveApplicantAddressesBtn"
+                            class="floating-save-btn"
+                            icon-type="Other"
+                            icon="fl fl-save"
+                            button-type="Primary"
+                            disabled="true" />
+            </div>
+        }
+
+        <form id="ApplicantAddressesForm" autocomplete="off" class="applicant-organization-info">
+            <input type="hidden" id="ApplicantAddresses_ApplicantId" value="@Model.ApplicantId" />
+            <input type="hidden" id="ApplicantAddresses_PrimaryContactId" value="@Model.PrimaryContact.Id" />
+            <input type="hidden" id="ApplicantAddresses_PrimaryPhysicalAddressId" value="@Model.PrimaryPhysicalAddress.Id" />
+            <input type="hidden" id="ApplicantAddresses_PrimaryMailingAddressId" value="@Model.PrimaryMailingAddress.Id" />
+
+            <div class="primary-sections">
+                <section class="primary-section">
+                    <div class="primary-section__title fw-bold">Primary Contact</div>
+                    <div class="primary-section__body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <abp-input asp-for="PrimaryContact.FullName"
+                                           id="PrimaryContact_FullName"
+                                           disabled="@(!canEditPrimaryContact)" />
+                            </div>
+                            <div class="col-md-4">
+                                <abp-input asp-for="PrimaryContact.Title"
+                                           id="PrimaryContact_Title"
+                                           disabled="@(!canEditPrimaryContact)" />
+                            </div>
+                            <div class="col-md-4">
+                                <abp-input asp-for="PrimaryContact.Email"
+                                           type="email"
+                                           id="PrimaryContact_Email"
+                                           disabled="@(!canEditPrimaryContact)" />
+                            </div>
+                            <div class="col-md-4">
+                                <abp-input asp-for="PrimaryContact.BusinessPhone"
+                                           id="PrimaryContact_BusinessPhone"
+                                           disabled="@(!canEditPrimaryContact)" />
+                            </div>
+                            <div class="col-md-4">
+                                <abp-input asp-for="PrimaryContact.CellPhone"
+                                           id="PrimaryContact_CellPhone"
+                                           disabled="@(!canEditPrimaryContact)" />
+                            </div>
+                        </div>
+                        @if (!Model.PrimaryContact.IsEditable)
+                        {
+                            <div class="text-muted mt-3 small">No primary contact on record.</div>
+                        }
+                    </div>
+                </section>
+
+                <section class="primary-section">
+                    <div class="primary-section__title fw-bold">Primary Physical Address</div>
+                    <div class="primary-section__body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <abp-input asp-for="PrimaryPhysicalAddress.Street"
+                                           id="PrimaryPhysicalAddress_Street"
+                                           disabled="@(!canEditPrimaryPhysical)" />
+                            </div>
+                            <div class="col-md-6">
+                                <abp-input asp-for="PrimaryPhysicalAddress.Street2"
+                                           id="PrimaryPhysicalAddress_Street2"
+                                           disabled="@(!canEditPrimaryPhysical)" />
+                            </div>
+                            <div class="col-md-3">
+                                <abp-input asp-for="PrimaryPhysicalAddress.Unit"
+                                           id="PrimaryPhysicalAddress_Unit"
+                                           disabled="@(!canEditPrimaryPhysical)" />
+                            </div>
+                            <div class="col-md-3">
+                                <abp-input asp-for="PrimaryPhysicalAddress.City"
+                                           id="PrimaryPhysicalAddress_City"
+                                           disabled="@(!canEditPrimaryPhysical)" />
+                            </div>
+                            <div class="col-md-3">
+                                <abp-input asp-for="PrimaryPhysicalAddress.Province"
+                                           id="PrimaryPhysicalAddress_Province"
+                                           disabled="@(!canEditPrimaryPhysical)" />
+                            </div>
+                            <div class="col-md-3">
+                                <abp-input asp-for="PrimaryPhysicalAddress.PostalCode"
+                                           id="PrimaryPhysicalAddress_PostalCode"
+                                           disabled="@(!canEditPrimaryPhysical)" />
+                            </div>
+                        </div>
+                        @if (!Model.PrimaryPhysicalAddress.IsEditable)
+                        {
+                            <div class="text-muted mt-3 small">No primary physical address on record.</div>
+                        }
+                    </div>
+                </section>
+
+                <section class="primary-section">
+                    <div class="primary-section__title fw-bold">Primary Mailing Address</div>
+                    <div class="primary-section__body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <abp-input asp-for="PrimaryMailingAddress.Street"
+                                           id="PrimaryMailingAddress_Street"
+                                           disabled="@(!canEditPrimaryMailing)" />
+                            </div>
+                            <div class="col-md-6">
+                                <abp-input asp-for="PrimaryMailingAddress.Street2"
+                                           id="PrimaryMailingAddress_Street2"
+                                           disabled="@(!canEditPrimaryMailing)" />
+                            </div>
+                            <div class="col-md-3">
+                                <abp-input asp-for="PrimaryMailingAddress.Unit"
+                                           id="PrimaryMailingAddress_Unit"
+                                           disabled="@(!canEditPrimaryMailing)" />
+                            </div>
+                            <div class="col-md-3">
+                                <abp-input asp-for="PrimaryMailingAddress.City"
+                                           id="PrimaryMailingAddress_City"
+                                           disabled="@(!canEditPrimaryMailing)" />
+                            </div>
+                            <div class="col-md-3">
+                                <abp-input asp-for="PrimaryMailingAddress.Province"
+                                           id="PrimaryMailingAddress_Province"
+                                           disabled="@(!canEditPrimaryMailing)" />
+                            </div>
+                            <div class="col-md-3">
+                                <abp-input asp-for="PrimaryMailingAddress.PostalCode"
+                                           id="PrimaryMailingAddress_PostalCode"
+                                           disabled="@(!canEditPrimaryMailing)" />
+                            </div>
+                        </div>
+                        @if (!Model.PrimaryMailingAddress.IsEditable)
+                        {
+                            <div class="text-muted mt-3 small">No primary mailing address on record.</div>
+                        }
+                    </div>
+                </section>
+            </div>
+        </form>
+
+        <div class="contacts-addresses-tables">
+            <div class="table-card">
+                <div class="table-card__header">
+                    <h6 class="fw-bold mb-0">Contacts</h6>
+                </div>
+                <div class="table-card__body">
+                    <abp-table id="ApplicantContactsTable"
+                               hoverable-rows="true"
+                               data-resize-aware="true"
+                               class="contacts-table">
+                    </abp-table>
+                </div>
+            </div>
+            <div class="table-card">
+                <div class="table-card__header">
+                    <h6 class="fw-bold mb-0">Addresses</h6>
+                </div>
+                <div class="table-card__body">
+                    <abp-table id="ApplicantAddressesTable"
+                               hoverable-rows="true"
+                               data-resize-aware="true"
+                               class="addresses-table">
+                    </abp-table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<input type="hidden"
+       id="ApplicantContacts_Data"
+       value='@Json.Serialize(Model.Contacts)' />
+
+<input type="hidden"
+       id="ApplicantAddresses_Data"
+       value='@Json.Serialize(Model.Addresses)' />
