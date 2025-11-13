@@ -39,8 +39,12 @@
                         <div id="@($"{Model.ApplicationPaymentRequestForm[i].CorrelationId}_container")" class="single-payment payment-item">
                             <abp-row class="m-0 p-2">
                                 <abp-column size="_12" class="d-flex justify-content-between align-items-center px-1">
-                                    <h6 class="single-payment-card-application-name fw-bold mb-0">
-                                        @Model.ApplicationPaymentRequestForm[i].ApplicantName/@Model.ApplicationPaymentRequestForm[i].InvoiceNumber
+                                    <h6 class="single-payment-card-application-name mb-0">
+                                        <span class="fw-bold">@Model.ApplicationPaymentRequestForm[i].ApplicantName/@Model.ApplicationPaymentRequestForm[i].InvoiceNumber</span>
+                                        @if (!string.IsNullOrEmpty(Model.ApplicationPaymentRequestForm[i].ParentReferenceNo))
+                                        {
+                                            <span>&nbsp;&nbsp;(Parent Id: <strong>@Model.ApplicationPaymentRequestForm[i].ParentReferenceNo</strong>)</span>
+                                        }
                                     </h6>
                                     <abp-button onclick='removeApplicationPaymentRequest("@Model.ApplicationPaymentRequestForm[i].CorrelationId" + "_container")'
                                                 size="Small"

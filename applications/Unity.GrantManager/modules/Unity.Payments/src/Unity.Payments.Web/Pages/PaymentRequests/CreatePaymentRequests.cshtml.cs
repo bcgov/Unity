@@ -68,6 +68,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
             SelectedApplicationIds = JsonSerializer.Deserialize<List<Guid>>(applicationIds) ?? [];
             var applications = await applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
+            applications = applications.OrderBy(a => a.ApplicationForm.Id).ThenBy(a => a.Id).ToList();
 
             foreach (var application in applications)
             {
@@ -108,7 +109,9 @@ namespace Unity.Payments.Web.Pages.Payments
                 request.SupplierName = supplier?.Name;
                 request.SupplierNumber = supplierNumber;
 
-                request.ErrorList = await GetErrorlist(supplier, site, application, applicationForm, remainingAmount, accountCodingId);
+                var (errorList, parentReferenceNo) = await GetErrorlist(supplier, site, application, applicationForm, remainingAmount, accountCodingId);
+                request.ErrorList = errorList;
+                request.ParentReferenceNo = parentReferenceNo;
 
                 if (request.ErrorList != null && request.ErrorList.Count > 0)
                 {
@@ -123,7 +126,7 @@ namespace Unity.Payments.Web.Pages.Payments
             TotalAmount = ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
         }
 
-        private async Task<List<string>> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, ApplicationForm applicationForm, decimal remainingAmount, Guid? accountCodingId)
+        private async Task<(List<string> ErrorList, string? ParentReferenceNo)> GetErrorlist(SupplierDto? supplier, Site? site, GrantApplicationDto application, ApplicationForm applicationForm, decimal remainingAmount, Guid? accountCodingId)
         {
             bool missingFields = false;
 
@@ -159,10 +162,10 @@ namespace Unity.Payments.Web.Pages.Payments
             }
 
             // Add form hierarchy and parent link validation
-            var hierarchyErrors = await ValidateFormHierarchyAndParentLink(application, applicationForm);
+            var (hierarchyErrors, parentReferenceNo) = await ValidateFormHierarchyAndParentLink(application, applicationForm);
             errorList.AddRange(hierarchyErrors);
 
-            return errorList;
+            return (errorList, parentReferenceNo);
         }
 
         private async Task<decimal> GetRemainingAmountAllowedByApplicationAsync(GrantApplicationDto application)
@@ -204,18 +207,19 @@ namespace Unity.Payments.Web.Pages.Payments
             });
         }
 
-        private async Task<List<string>> ValidateFormHierarchyAndParentLink(
+        private async Task<(List<string> Errors, string? ParentReferenceNo)> ValidateFormHierarchyAndParentLink(
             GrantApplicationDto application,
             ApplicationForm applicationForm)
         {
             List<string> errors = [];
+            string? parentReferenceNo = null;
 
             // Only validate if form is payable and has Child hierarchy
             if (!applicationForm.Payable ||
                 !applicationForm.FormHierarchy.HasValue ||
                 applicationForm.FormHierarchy.Value != FormHierarchyType.Child)
             {
-                return errors; // No validation needed
+                return (errors, parentReferenceNo); // No validation needed
             }
 
             // Check if ParentFormId and ParentFormVersionId are set
@@ -223,7 +227,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 !applicationForm.ParentFormVersionId.HasValue)
             {
                 // Configuration issue - should not happen if validation works
-                return errors;
+                return (errors, parentReferenceNo);
             }
 
             // Get parent links for this application
@@ -234,12 +238,16 @@ namespace Unity.Payments.Web.Pages.Payments
             if (parentLink == null)
             {
                 errors.Add("Payment Configuration for this form requires a valid parent application link before payments can be processed.");
-                return errors;
+                return (errors, parentReferenceNo);
             }
 
-            // Rule 1: Parent link exists but doesn't match Payment Configuration      
+            // Rule 1: Parent link exists but doesn't match Payment Configuration
             // Get the parent application's form version details
             var parentFormDetails = await applicationFormAppService.GetFormDetailsByApplicationIdAsync(parentLink.ApplicationId);
+
+            // If validation passed, get the parent application's reference number
+            var parentApplication = await applicationService.GetAsync(parentLink.ApplicationId);
+            parentReferenceNo = parentApplication.ReferenceNo;
 
             // Validate both ParentFormId and ParentFormVersionId
             bool formIdMatches = parentFormDetails.ApplicationFormId == applicationForm.ParentFormId.Value;
@@ -248,9 +256,10 @@ namespace Unity.Payments.Web.Pages.Payments
             if (!formIdMatches || !versionIdMatches)
             {
                 errors.Add("The selected parent form in Payment Configuration does not match the application's linked parent. Please verify and try again.");
-            }
+                return (errors, parentReferenceNo);
+            }            
 
-            return errors;
+            return (errors, parentReferenceNo);
         }
 
         public async Task<IActionResult> OnPostAsync()
