@@ -1,8 +1,9 @@
 # Multi-stage build for Angular application
-FROM node:22-alpine as build
+FROM node:22-alpine AS build
 
-# Accept build arguments
-ARG JWT_SECRET
+# Platform build metadata (safe to bake into image)
+ARG UAI_BUILD_VERSION=0.0.0
+ARG UAI_BUILD_REVISION=0000000
 
 WORKDIR /app
 
@@ -15,11 +16,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Replace JWT_SECRET placeholder in environment files
-RUN sed -i "s/__JWT_SECRET_PLACEHOLDER__/${JWT_SECRET}/g" src/environments/environment.prod.ts
-
-# Build the application for Docker
+# Build the application for Docker first
 RUN npm run build -- --configuration=production
+
+# Create build info file with version and revision in the root of the built output
+RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > dist/recap/build-info.json
 
 # Production stage
 FROM nginx:alpine
