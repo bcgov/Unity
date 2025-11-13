@@ -26,7 +26,53 @@
     display: flex;
 }
 
-#ChefsAttachmentsTable_paginate { 
+#ChefsAttachmentsTable_paginate {
     display: block !important;
     padding-top:35px;
+}
+
+/* AI Summary Row Styles */
+.ai-summary-row {
+    background-color: #f8f9fa;
+    padding: 15px 20px;
+    border-left: 4px solid #0d6efd;
+    margin: 5px 0;
+}
+
+.ai-summary-content {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ai-summary-content strong {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.ai-summary-content p {
+    margin-bottom: 0;
+    color: #495057;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+#ChefsAttachmentsTable tr.shown {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Disabled state for AI summary toggle button */
+#toggleAllAISummaries:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+#toggleAllAISummaries:disabled i {
+    opacity: 0.5;
+}
+
+/* Fix double scrollbar issue when AI summaries are expanded */
+#ChefsAttachmentsTable_wrapper .dataTables_scrollBody {
+    max-height: none !important;
+    overflow-y: visible !important;
 }
