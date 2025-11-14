@@ -267,7 +267,7 @@ $(function () {
                     if (error.status === 403) {
 
                         const message = "Please check that the CHEFS checkbox is enabled for: " +
-                        "'Allow this API key to access submitted files in the related CHEFS form'";
+                        "'Allow this API key to access submitted files' in the related CHEFS form";
 
                         Swal.fire({
                                 title: 'CHEFS is not allowing Unity access to the File Download',
