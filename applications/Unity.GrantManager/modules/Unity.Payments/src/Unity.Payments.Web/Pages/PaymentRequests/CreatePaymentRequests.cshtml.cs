@@ -68,7 +68,6 @@ namespace Unity.Payments.Web.Pages.Payments
 
             SelectedApplicationIds = JsonSerializer.Deserialize<List<Guid>>(applicationIds) ?? [];
             var applications = await applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
-            applications = applications.OrderBy(a => a.ApplicationForm.Id).ThenBy(a => a.Id).ToList();
 
             foreach (var application in applications)
             {
@@ -120,6 +119,8 @@ namespace Unity.Payments.Web.Pages.Payments
 
                 ApplicationPaymentRequestForm!.Add(request);
             }
+
+            ApplicationPaymentRequestForm = SortPaymentRequestsByHierarchy(ApplicationPaymentRequestForm);
 
             var batchName = await paymentRequestAppService.GetNextBatchInfoAsync();
             BatchNumberDisplay = batchName;
@@ -299,6 +300,50 @@ namespace Unity.Payments.Web.Pages.Payments
             }
 
             return payments;
+        }
+
+        private List<PaymentsModel> SortPaymentRequestsByHierarchy(List<PaymentsModel> paymentRequests)
+        {
+            var sortedList = new List<PaymentsModel>();
+            var processed = new HashSet<string>();
+
+            // Step 1: Find all parent-child groups and process them
+            var parentGroups = paymentRequests
+                .Where(x => !string.IsNullOrEmpty(x.ParentReferenceNo))
+                .GroupBy(x => x.ParentReferenceNo)
+                .ToList();
+
+            foreach (var group in parentGroups.OrderBy(g => g.Key))
+            {
+                string parentRefNo = group.Key!;
+
+                // Add children first (sorted by InvoiceNumber)
+                var children = group.OrderBy(x => x.InvoiceNumber).ToList();
+                sortedList.AddRange(children);
+                foreach (var child in children)
+                {
+                    processed.Add(child.InvoiceNumber);
+                }
+
+                // Add parent after children (if it exists in the list)
+                var parent = paymentRequests
+                    .FirstOrDefault(x => x.InvoiceNumber == parentRefNo && string.IsNullOrEmpty(x.ParentReferenceNo));
+
+                if (parent != null)
+                {
+                    sortedList.Add(parent);
+                    processed.Add(parent.InvoiceNumber);
+                }
+            }
+
+            // Step 2: Add standalone items at the end
+            var standaloneItems = paymentRequests
+                .Where(x => !processed.Contains(x.InvoiceNumber))
+                .OrderBy(x => x.InvoiceNumber)
+                .ToList();
+            sortedList.AddRange(standaloneItems);
+
+            return sortedList;
         }
     }
 }
