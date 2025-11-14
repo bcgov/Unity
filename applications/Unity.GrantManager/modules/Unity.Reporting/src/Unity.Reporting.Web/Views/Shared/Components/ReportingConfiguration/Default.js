@@ -1,7 +1,9 @@
 $(function () {
     let hasUnsavedChanges = false;    
     let dataTable = null;
-    let currentProvider = 'formversion'; // Default provider
+    
+    // Initialize provider from the hidden input
+    let currentProvider = $('#reportingProvider').val() || 'formversion';
 
     // Provider configuration object
     const PROVIDERS = {
@@ -82,6 +84,69 @@ $(function () {
         ]
     };
 
+    // Back button handler - navigate back to Forms list
+    $('#btn-back-report-configuration').on('click', function () {
+        // Check for unsaved changes
+        if (hasUnsavedChanges) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You have unsaved changes.",
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    location.href = '/ApplicationForms';
+                }
+            });
+        } else {
+            location.href = '/ApplicationForms';
+        }
+    });
+
+    // Undo/Cancel button handler - reset changes
+    $('#btn-undo-report-configuration').on('click', function () {
+        if (hasUnsavedChanges) {
+            // Reload the DataTable to reset all changes
+            if (dataTable) {
+                dataTable.ajax.reload();
+            }
+            
+            // Reset changes state
+            resetChangesState();
+            
+            abp.message.info('Changes have been reset');
+        }
+    });
+
+    // Function to set loading state for control buttons
+    function setControlButtonsLoadingState(isLoading) {
+        const $saveButton = $('#btn-save-report-configuration');
+        const $generateViewButton = $('#btn-generate-view-report-configuration');
+        const $deleteButton = $('#btn-delete-report-configuration');
+        const $undoButton = $('#btn-undo-report-configuration');
+        const $generateUniqueNamesButton = $('#btn-generate-unique-column-names');
+        
+        if (isLoading) {
+            // Disable all buttons and show loading state
+            $saveButton.prop('disabled', true);
+            $generateViewButton.prop('disabled', true);
+            $deleteButton.prop('disabled', true);
+            $undoButton.prop('disabled', true);
+            $generateUniqueNamesButton.prop('disabled', true);
+        } else {
+            // Re-enable buttons
+            $saveButton.prop('disabled', false);
+            $generateViewButton.prop('disabled', false);
+            $deleteButton.prop('disabled', false);
+            $undoButton.prop('disabled', false);
+            $generateUniqueNamesButton.prop('disabled', false);
+        }
+    }
+
     // Function to get current provider configuration
     function getCurrentProviderConfig() {
         return PROVIDERS[currentProvider] || PROVIDERS.formversion;
@@ -90,6 +155,33 @@ $(function () {
     // Function to get current correlation provider
     function getCorrelationProvider() {
         return getCurrentProviderConfig().correlationProvider;
+    }
+
+    // Function to get current correlation ID based on provider
+    function getCurrentCorrelationId() {
+        if (currentProvider === 'scoresheet') {
+            // For scoresheets, use form ID
+            return $('#reportingFormId').val();
+        } else {
+            // For form versions and worksheets, use version ID
+            return $('#versionSelector').val() || $('#reportingVersionId').val();
+        }
+    }
+
+    // Function to show/hide version selector based on provider
+    function updateVersionSelectorVisibility() {
+        const $versionSelectorContainer = $('#versionSelector').closest('div');
+        const $formInfoDisplay = $('.form-info-display');
+        
+        if (currentProvider === 'scoresheet') {
+            // Hide version selector and show form info for scoresheets
+            $versionSelectorContainer.hide();
+            $formInfoDisplay.show();
+        } else {
+            // Show version selector and hide form info for other providers
+            $versionSelectorContainer.show();
+            $formInfoDisplay.hide();
+        }
     }
 
     // Function to handle provider change
@@ -110,6 +202,9 @@ $(function () {
         // Update current provider
         currentProvider = newProvider;
         
+        // Update version selector visibility
+        updateVersionSelectorVisibility();
+        
         // Reset changes state since we're switching providers
         resetChangesState();
         
@@ -117,15 +212,15 @@ $(function () {
         updateDataTableColumnHeaders();
         
         // Check if configuration exists for the new provider and update button visibility
-        const versionId = $('#versionSelector').val();
-        if (versionId) {
-            checkConfigurationExists(versionId, function(exists) {
+        const correlationId = getCurrentCorrelationId();
+        if (correlationId) {
+            checkConfigurationExists(correlationId, function(exists) {
                 updateGenerateViewButtonVisibility(exists);
                 updateDeleteButtonVisibility(exists);
             });
             
             // Refresh the view status widget for the new provider
-            refreshViewStatusWidget(versionId, getCorrelationProvider());
+            refreshViewStatusWidget(correlationId, getCorrelationProvider());
         } else {
             updateGenerateViewButtonVisibility(false);
             updateDeleteButtonVisibility(false);
@@ -225,22 +320,22 @@ $(function () {
     }
 
     // Function to refresh the view status widget
-    function refreshViewStatusWidget(versionId, provider) {
-        if (!versionId) return;
+    function refreshViewStatusWidget(correlationId, provider) {
+        if (!correlationId) return;
         
         const currentCorrelationProvider = provider || getCorrelationProvider();
         
         let $viewStatusWidget = $('[data-widget-name="ReportingConfigurationViewStatus"]');
         if ($viewStatusWidget.length > 0) {
             // Update the data attributes on the widget wrapper
-            $viewStatusWidget.attr('data-version-id', versionId);
+            $viewStatusWidget.attr('data-version-id', correlationId);
             $viewStatusWidget.attr('data-provider', currentCorrelationProvider);
             
             let widgetManager = new abp.WidgetManager({
                 wrapper: $viewStatusWidget,
                 filterCallback: function () {
                     return {
-                        versionId: versionId,
+                        versionId: correlationId,
                         provider: currentCorrelationProvider
                     };
                 }
@@ -262,8 +357,13 @@ $(function () {
         abp.message.warn(alertMessage, 'Schema Changes Detected');
     }
 
-    // Handle version selector change
+    // Handle version selector change (only for non-scoresheet providers)
     $('#versionSelector').on('change', function () {
+        // Skip version selector handling for scoresheet provider
+        if (currentProvider === 'scoresheet') {
+            return;
+        }
+        
         const newVersionId = $(this).val();        
         console.log('Selected version ID:', newVersionId);
         
@@ -289,8 +389,8 @@ $(function () {
     });
 
     // Function to check if configuration exists
-    function checkConfigurationExists(versionId, callback) {
-        if (!versionId) {
+    function checkConfigurationExists(correlationId, callback) {
+        if (!correlationId) {
             callback(false);
             return;
         }
@@ -299,7 +399,7 @@ $(function () {
             url: abp.appPath + 'ReportingConfiguration/Exists',
             type: 'GET',
             data: { 
-                correlationId: versionId, 
+                correlationId: correlationId, 
                 correlationProvider: getCorrelationProvider()
             }
         }).done(function(exists) {
@@ -395,9 +495,9 @@ $(function () {
 
         // Create data endpoint function that handles the exists check and fallback logic
         const dataEndpoint = function(requestData) {
-            const versionId = $('#versionSelector').val();
-            if (!versionId) {
-                // Return empty result for invalid version
+            const correlationId = getCurrentCorrelationId();
+            if (!correlationId) {
+                // Return empty result for invalid correlation ID
                 return Promise.resolve({ items: [], totalCount: 0 });
             }
             
@@ -408,7 +508,7 @@ $(function () {
                 url: abp.appPath + 'ReportingConfiguration/Exists',
                 type: 'GET',
                 data: { 
-                    correlationId: versionId, 
+                    correlationId: correlationId, 
                     correlationProvider: correlationProvider 
                 }
             }).then(function (exists) {
@@ -422,7 +522,7 @@ $(function () {
                         url: abp.appPath + 'ReportingConfiguration/GetConfiguration',
                         type: 'GET',
                         data: { 
-                            correlationId: versionId, 
+                            correlationId: correlationId, 
                             correlationProvider: correlationProvider 
                         }
                     }).then(function (result) {
@@ -455,7 +555,7 @@ $(function () {
                         url: abp.appPath + 'ReportingConfiguration/GetFieldsMetadata',
                         type: 'GET',
                         data: { 
-                            correlationId: versionId, 
+                            correlationId: correlationId, 
                             correlationProvider: correlationProvider 
                         }
                     }).then(function (fieldsMetadata) {
@@ -569,9 +669,9 @@ $(function () {
         });
 
         // Initial check for button visibility on page load
-        const initialVersionId = $('#versionSelector').val();
-        if (initialVersionId) {
-            checkConfigurationExists(initialVersionId, function(exists) {
+        const initialCorrelationId = getCurrentCorrelationId();
+        if (initialCorrelationId) {
+            checkConfigurationExists(initialCorrelationId, function(exists) {
                 updateGenerateViewButtonVisibility(exists);
                 updateDeleteButtonVisibility(exists);
             });
@@ -586,8 +686,8 @@ $(function () {
 
         // Refresh view status widget after initial load
         setTimeout(function() {
-            if (initialVersionId) {
-                refreshViewStatusWidget(initialVersionId, getCorrelationProvider());
+            if (initialCorrelationId) {
+                refreshViewStatusWidget(initialCorrelationId, getCorrelationProvider());
             }
         }, 100);
     }
@@ -858,6 +958,759 @@ $(function () {
         };
     }
 
+    // View name sanitization function
+    function sanitizeViewName(name) {
+        if (!name || typeof name !== 'string') return '';
+        
+        // Convert to lowercase and trim
+        let sanitized = name.toLowerCase().trim();
+        
+        // Replace multiple spaces/hyphens with single underscore
+        sanitized = sanitized.replace(/[\s\-]+/g, '_');
+        
+        // Remove all non-alphanumeric characters except underscores
+        sanitized = sanitized.replace(/[^a-z0-9_]/g, '');
+        
+        // Remove leading/trailing underscores
+        sanitized = sanitized.replace(/^_+|_+$/g, '');
+        
+        // If starts with number, prefix with 'view_'
+        if (sanitized && /^[0-9]/.test(sanitized)) {
+            sanitized = 'view_' + sanitized;
+        }
+        
+        // If empty after sanitization, return empty string
+        if (!sanitized) {
+            return '';
+        }
+        
+        // Truncate to max length
+        if (sanitized.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
+            sanitized = sanitized.substring(0, VIEW_NAME_VALIDATION.MAX_LENGTH);
+            // Remove trailing underscore if truncation created one
+            sanitized = sanitized.replace(/_+$/, '');
+        }
+        
+        return sanitized;
+    }
+
+    // View name validation function
+    function validateViewName(viewName) {
+        const errors = [];
+        
+        if (!viewName || viewName.trim() === '') {
+            errors.push('View name is required');
+            return { isValid: false, errors: errors };
+        }
+        
+        const name = viewName.trim();
+        
+        // Check length
+        if (name.length < VIEW_NAME_VALIDATION.MIN_LENGTH) {
+            errors.push(`View name must be at least ${VIEW_NAME_VALIDATION.MIN_LENGTH} character(s)`);
+        }
+        
+        if (name.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
+            errors.push(`View name exceeds maximum length of ${VIEW_NAME_VALIDATION.MAX_LENGTH} characters`);
+        }
+        
+        // Check format (should be alphanumeric + underscores, not starting with number)
+        if (!/^[a-z_][a-z0-9_]*$/i.test(name)) {
+            errors.push('View name must start with a letter or underscore and contain only letters, numbers, and underscores');
+        }
+        
+        // Check reserved words
+        if (VIEW_NAME_VALIDATION.RESERVED_WORDS.includes(name.toLowerCase())) {
+            errors.push('View name is a PostgreSQL reserved word and cannot be used');
+        }
+        
+        return {
+            isValid: errors.length === 0,
+            errors: errors
+        };
+    }
+
+    // Handle view name input validation and real-time feedback
+    $(document).on('input', '#viewNameInput', function() {
+        const $input = $(this);
+        const rawValue = $input.val();
+        const $confirmButton = $('#confirmGenerateView');
+        const $feedback = $('#viewNameFeedback');
+        const originalViewName = $input.data('original-view-name');
+        const $modalBody = $('.modal-body');
+        
+        // Clear previous validation state
+        $input.removeClass('is-valid is-invalid');
+        $feedback.text('');
+        
+        // Remove any existing rename warnings
+        $modalBody.find('.alert-warning').remove();
+        
+        if (!rawValue || rawValue.trim() === '') {
+            $confirmButton.prop('disabled', true);
+            return;
+        }
+        
+        // Check if user is renaming the view
+        if (originalViewName && rawValue.trim() !== originalViewName) {
+            const $renameAlert = $(`
+                <div class="alert alert-warning mb-3" role="alert">
+                    <div class="d-flex align-items-start">
+                        <i class="fa fa-exclamation-triangle me-2 mt-1"></i>
+                        <div>
+                            <strong>View Rename Detected:</strong>
+                            <p class="mb-1">You are changing the view name from "<strong>${originalViewName}</strong>" to "<strong>${rawValue.trim()}</strong>".</p>
+                            <p class="mb-0"><strong>This will:</strong></p>
+                            <ul class="mb-0 mt-1">
+                                <li>Delete the existing view "<strong>${originalViewName}</strong>"</li>
+                                <li>Create a new view "<strong>${rawValue.trim()}</strong>"</li>
+                                <li>Update all references to use the new view name</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // Insert the warning after the info alert
+            const $infoAlert = $modalBody.find('.alert-info');
+            if ($infoAlert.length > 0) {
+                $infoAlert.after($renameAlert);
+            } else {
+                $modalBody.find('form').before($renameAlert);
+            }
+        }
+        
+        // Validate format first
+        const validation = validateViewName(rawValue);
+        if (!validation.isValid) {
+            $input.addClass('is-invalid');
+            $feedback.text(validation.errors.join(', '));
+            $confirmButton.prop('disabled', true);
+            return;
+        }
+        
+        // If format is valid, check availability
+        checkViewNameAvailability(rawValue, function(isValid, errors) {
+            if (isValid) {
+                $input.addClass('is-valid');
+                $confirmButton.prop('disabled', false);
+            } else {
+                $input.addClass('is-invalid');
+                $feedback.text(errors.join(', '));
+                $confirmButton.prop('disabled', true);
+            }
+        });
+    });
+
+    // Track changes in the data grid
+    function markAsChanged() {
+        hasUnsavedChanges = true;
+        updateUndoButtonVisibility();
+    }
+
+    // Function to update undo button visibility and text based on changes
+    function updateUndoButtonVisibility() {
+        const $undoBtn = $('#btn-undo-report-configuration');
+        
+        if (hasUnsavedChanges) {
+            // Show button with Cancel text but keep the undo icon
+            $undoBtn.show();
+            
+            // Update text while preserving the icon
+            const $icon = $undoBtn.find('i');
+            if ($icon.length > 0) {
+                // If icon exists, replace text but keep icon
+                $undoBtn.html($icon.prop('outerHTML') + ' Cancel');
+            } else {
+                // If no icon, add one with the text
+                $undoBtn.html('<i class="fl fl-undo"></i> Cancel');
+            }
+        } else {
+            $undoBtn.hide();
+        }
+    }
+
+    // Reset changes state and update UI
+    function resetChangesState() {
+        hasUnsavedChanges = false;
+        updateUndoButtonVisibility();
+    }
+
+    // Get current table data including edits
+    function getCurrentTableData() {
+        const rows = [];
+        dataTable.rows().every(function () {
+            const data = this.data();
+            const node = this.node();
+            const input = $(node).find('.column-name-input');
+            const columnName = input.length > 0 ? input.val().trim() : (data.columnName || '').trim();           
+
+            rows.push({
+                propertyName: data.key,
+                columnName: columnName,
+                path: data.path
+            });
+        });
+        return rows;
+    }
+
+    // Save report configuration with validation
+    $('#btn-save-report-configuration').on('click', function () {
+        const correlationId = getCurrentCorrelationId();
+
+        if (!correlationId) {
+            abp.message.error('Please ensure a valid form or version is selected first');
+            return;
+        }
+
+        // Validate all column names before saving
+        const validation = validateAllColumnNames();
+        if (!validation.isValid) {
+            const errorMessage = 'Please fix the following validation errors before saving:\n\n' + 
+                               validation.errors.join('\n');
+            abp.message.error(errorMessage);
+            return;
+        }
+        
+        // Disable all control buttons during save
+        setControlButtonsLoadingState(true);
+
+        const configData = {
+            correlationId: correlationId,
+            correlationProvider: getCorrelationProvider(),
+            mapping: {
+                rows: getCurrentTableData()
+            }
+        };
+
+        // Check if configuration exists to determine whether to create or update
+        abp.ajax({
+            url: abp.appPath + 'ReportingConfiguration/Exists',
+            type: 'GET',
+            data: { 
+                correlationId: correlationId, 
+                correlationProvider: getCorrelationProvider()
+            }
+        }).then(function (exists) {
+            if (exists) {
+                // Update existing configuration
+                return abp.ajax({
+                    url: abp.appPath + 'ReportingConfiguration/Update',
+                    type: 'PUT',
+                    data: JSON.stringify(configData),
+                    contentType: 'application/json'
+                });
+            } else {
+                // Create new configuration
+                return abp.ajax({
+                    url: abp.appPath + 'ReportingConfiguration/Create',
+                    type: 'POST',
+                    data: JSON.stringify(configData),
+                    contentType: 'application/json'
+                });
+            }
+        }).then(function (result) {
+            abp.message.success('Configuration saved successfully');
+            resetChangesState();
+            
+            // Show the Generate View button since we now have a saved configuration
+            updateGenerateViewButtonVisibility(true);
+            updateDeleteButtonVisibility(true);
+            
+            // Reload the DataTable to get the saved state
+            if (dataTable) {
+                dataTable.ajax.reload();
+            }
+            
+            // Refresh view status widget to get updated status
+            refreshViewStatusWidget(correlationId, getCorrelationProvider());
+            
+        }).catch(function (error) {            
+            let errorMessage = 'Failed to save configuration';
+            if (error?.responseJSON?.error?.message) {
+                errorMessage = error.responseJSON.error.message;
+            }
+            abp.message.error(errorMessage);
+        }).always(function() {
+            // Re-enable all control buttons after save completes (success or error)
+            setControlButtonsLoadingState(false);
+        });
+    });
+
+    // Generate view button
+    $('#btn-generate-view-report-configuration').on('click', function () {
+        const correlationId = getCurrentCorrelationId();
+
+        if (!correlationId) {
+            abp.message.error('Please ensure a valid form or version is selected first');
+            return;
+        }
+
+        // Reset modal state
+        const modal = new bootstrap.Modal(document.getElementById('generateViewModal'));
+        const $viewNameInput = $('#viewNameInput');
+        const $confirmButton = $('#confirmGenerateView');
+        const $feedback = $('#viewNameFeedback');
+        const $modalBody = $('.modal-body');
+        
+        // Clear previous state
+        $viewNameInput.val('').removeClass('is-valid is-invalid');
+        $confirmButton.prop('disabled', true);
+        $feedback.text('');
+        
+        // Remove any existing alert messages
+        $modalBody.find('.alert-info, .alert-warning').remove();
+        
+        // Check if there's an existing configuration with a view name
+        checkConfigurationExists(correlationId, function(exists) {
+            if (exists) {
+                // Configuration exists - load the view name
+                abp.ajax({
+                    url: abp.appPath + 'ReportingConfiguration/GetConfiguration',
+                    type: 'GET',
+                    data: { 
+                        correlationId: correlationId, 
+                        correlationProvider: getCorrelationProvider()
+                    }
+                }).done(function(result) {
+                    const existingViewName = result.viewName || '';
+                    $viewNameInput.val(existingViewName);
+                    
+                    // Store the original view name for rename detection
+                    $viewNameInput.data('original-view-name', existingViewName);
+                    
+                    // Enable the confirm button if the view name is valid
+                    if (existingViewName) {
+                        checkViewNameAvailability(existingViewName, function(isValid, errors) {
+                            if (isValid) {
+                                $viewNameInput.addClass('is-valid');
+                                $confirmButton.prop('disabled', false);
+                            } else {
+                                $viewNameInput.addClass('is-invalid');
+                                $feedback.text(errors.join(', '));
+                                $confirmButton.prop('disabled', true);
+                            }
+                        });
+                    }
+                });
+            } else {
+                // No existing view name, clear the stored original
+                $viewNameInput.removeData('original-view-name');
+            }
+        });
+        
+        // Show modal
+        modal.show();
+    });
+
+    // Debounced function for checking view name availability
+    let viewNameCheckTimeout;
+    function checkViewNameAvailability(viewName, callback) {
+        clearTimeout(viewNameCheckTimeout);
+        viewNameCheckTimeout = setTimeout(function() {
+            if (!viewName || viewName.trim() === '') {
+                callback(true, []); // Empty name is valid but not available
+                return;
+            }
+            
+            // First validate the format
+            const validation = validateViewName(viewName);
+            if (!validation.isValid) {
+                callback(false, validation.errors);
+                return;
+            }
+            
+            const correlationId = getCurrentCorrelationId();
+            
+            // Check availability with server, including correlation parameters
+            abp.ajax({
+                url: abp.appPath + 'ReportingConfiguration/IsViewNameAvailable',
+                type: 'GET',
+                data: { 
+                    viewName: viewName,
+                    correlationId: correlationId,
+                    correlationProvider: getCorrelationProvider()
+                }
+            }).done(function(isAvailable) {
+                if (!isAvailable) {
+                    callback(false, ['View name is already in use by another reporting configuration']);
+                } else {
+                    callback(true, []);
+                }
+            }).fail(function(error) {
+                console.error('Error checking view name availability:', error);
+                callback(false, ['Error checking view name availability']);
+            });
+        }, 500); // 500ms debounce
+    }
+
+    // Enhanced view name input handler with rename detection
+    $(document).on('input', '#viewNameInput', function() {
+        const $input = $(this);
+        const rawValue = $input.val();
+        const $confirmButton = $('#confirmGenerateView');
+        const $feedback = $('#viewNameFeedback');
+        const originalViewName = $input.data('original-view-name');
+        const $modalBody = $('.modal-body');
+        
+        // Clear previous validation state
+        $input.removeClass('is-valid is-invalid');
+        $feedback.text('');
+        
+        // Remove any existing rename warnings
+        $modalBody.find('.alert-warning').remove();
+        
+        if (!rawValue || rawValue.trim() === '') {
+            $confirmButton.prop('disabled', true);
+            return;
+        }
+        
+        // Check if user is renaming the view
+        if (originalViewName && rawValue.trim() !== originalViewName) {
+            const $renameAlert = $(`
+                <div class="alert alert-warning mb-3" role="alert">
+                    <div class="d-flex align-items-start">
+                        <i class="fa fa-exclamation-triangle me-2 mt-1"></i>
+                        <div>
+                            <strong>View Rename Detected:</strong>
+                            <p class="mb-1">You are changing the view name from "<strong>${originalViewName}</strong>" to "<strong>${rawValue.trim()}</strong>".</p>
+                            <p class="mb-0"><strong>This will:</strong></p>
+                            <ul class="mb-0 mt-1">
+                                <li>Delete the existing view "<strong>${originalViewName}</strong>"</li>
+                                <li>Create a new view "<strong>${rawValue.trim()}</strong>"</li>
+                                <li>Update all references to use the new view name</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // Insert the warning after the info alert
+            const $infoAlert = $modalBody.find('.alert-info');
+            if ($infoAlert.length > 0) {
+                $infoAlert.after($renameAlert);
+            } else {
+                $modalBody.find('form').before($renameAlert);
+            }
+        }
+        
+        // Validate format first
+        const validation = validateViewName(rawValue);
+        if (!validation.isValid) {
+            $input.addClass('is-invalid');
+            $feedback.text(validation.errors.join(', '));
+            $confirmButton.prop('disabled', true);
+            return;
+        }
+        
+        // If format is valid, check availability
+        checkViewNameAvailability(rawValue, function(isValid, errors) {
+            if (isValid) {
+                $input.addClass('is-valid');
+                $confirmButton.prop('disabled', false);
+            } else {
+                $input.addClass('is-invalid');
+                $feedback.text(errors.join(', '));
+                $confirmButton.prop('disabled', true);
+            }
+        });
+    });
+
+    // Handle view generation confirmation
+    $(document).on('click', '#confirmGenerateView', function() {
+        const correlationId = getCurrentCorrelationId();
+        const rawViewName = $('#viewNameInput').val().trim();
+        const viewName = sanitizeViewName(rawViewName); // Ensure it's sanitized
+        const $button = $(this);
+        const $cancelButton = $('.modal-footer .btn-secondary');
+        
+        if (!viewName || !correlationId) {
+            return;
+        }
+        
+        // Disable modal buttons and show loading state
+        $button.prop('disabled', true).text('Generating...');
+        $cancelButton.prop('disabled', true);
+        
+        // Also disable main control buttons during view generation
+        setControlButtonsLoadingState(true);
+        
+        // Call the GenerateView endpoint
+        $.ajax({
+            url: abp.appPath + 'ReportingConfiguration/GenerateView',
+            type: 'POST',
+            data: JSON.stringify({
+                correlationId: correlationId,
+                correlationProvider: getCorrelationProvider(),
+                viewName: viewName
+            }),
+            contentType: 'application/json',
+            dataType: 'json', // Expect JSON response
+            success: function(result, textStatus, xhr) {
+                // Handle successful response (both 200 OK and 202 Accepted)
+                if (xhr.status === 202 || xhr.status === 200) {
+                    let message = 'Database view generation has been initiated successfully';
+                    
+                    // Use the structured response if available
+                    if (result?.message) {
+                        message = result.message;
+                    }                   
+                    
+                    abp.message.success(message);
+                } else {
+                    // Fallback for other success status codes
+                    abp.message.success('Database view generation has been initiated successfully');
+                }
+                
+                // Refresh view status widget to show generating status
+                refreshViewStatusWidget(correlationId, getCorrelationProvider());
+                
+                // Publish event to start auto-refresh polling
+                PubSub.publish('view_generation_started', { versionId: correlationId });
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('generateViewModal'));
+                modal.hide();
+            },
+            error: function(xhr, status, error) {
+                console.error('Error generating view - Status:', status);
+                console.error('Error generating view - Error:', error);
+                console.error('Error generating view - XHR:', xhr);
+                
+                let errorMessage = 'Failed to generate database view';
+                
+                // Handle different error scenarios
+                if (xhr.status === 0) {
+                    errorMessage = 'Network error: Could not connect to the server';
+                } else if (xhr.status === 400) {
+                    // Try to extract detailed error message from response
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse?.error?.message) {
+                            errorMessage = errorResponse.error.message;
+                        } else if (typeof errorResponse === 'string') {
+                            errorMessage = errorResponse;
+                        } else {
+                            errorMessage = 'Bad request: Please check your input and try again';
+                        }
+                    } catch (parseError) {
+                        console.error(parseError);
+                        errorMessage = xhr.responseText || 'Bad request: Please check your input and try again';
+                    }
+                } else if (xhr.status === 401) {
+                    errorMessage = 'Unauthorized: Please log in and try again';
+                } else if (xhr.status === 403) {
+                    errorMessage = 'Forbidden: You do not have permission to perform this action';
+                } else if (xhr.status === 404) {
+                    errorMessage = 'Configuration not found: Please ensure the configuration exists and try again';
+                } else if (xhr.status === 500) {
+                    errorMessage = 'Server error: Please try again later or contact support';
+                } else if (xhr.responseText) {
+                    try {
+                        const parsedError = JSON.parse(xhr.responseText);
+                        if (parsedError?.error?.message) {
+                            errorMessage = parsedError.error.message;
+                        } else if (parsedError.message) {
+                            errorMessage = parsedError.message;
+                        } else {
+                            errorMessage = xhr.responseText;
+                        }
+                    } catch (parseError) {
+                        console.error('Failed to parse error response:', parseError);
+                        errorMessage = xhr.responseText;
+                    }
+                } else if (error && error !== 'parsererror') {
+                    errorMessage = error;
+                }
+                
+                abp.message.error(errorMessage);
+            },
+            complete: function() {
+                // Reset modal button states
+                $button.prop('disabled', false).text('Generate View');
+                $cancelButton.prop('disabled', false);
+                
+                // Re-enable main control buttons
+                setControlButtonsLoadingState(false);
+            }
+        });
+    });
+
+    // Delete configuration button
+    $('#btn-delete-report-configuration').on('click', function () {
+        const correlationId = getCurrentCorrelationId();
+
+        if (!correlationId) {
+            abp.message.error('Please ensure a valid form or version is selected first');
+            return;
+        }
+
+        // Show delete confirmation modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfigurationModal'));
+        modal.show();
+    });
+
+    // Handle delete confirmation
+    $(document).on('click', '#confirmDeleteConfiguration', function() {
+        const correlationId = getCurrentCorrelationId();
+        const deleteView = $('#deleteViewCheckbox').is(':checked');
+        const correlationProvider = getCorrelationProvider();
+        const $button = $(this);
+        const $cancelButton = $('.modal-footer .btn-secondary');
+        
+        if (!correlationId) {
+            return;
+        }
+        
+        // Disable modal buttons and show loading state
+        $button.prop('disabled', true).text('Deleting...');
+        $cancelButton.prop('disabled', true);
+        
+        // Also disable main control buttons during deletion
+        setControlButtonsLoadingState(true);
+        
+        // Call the Delete endpoint
+        abp.ajax({
+            url: abp.appPath + 'ReportingConfiguration/Delete',
+            type: 'DELETE',
+            data: JSON.stringify({
+                correlationId: correlationId,
+                correlationProvider: correlationProvider,
+                deleteView: deleteView
+            }),
+        }).done(function(result) {
+            let message = result?.message || 'Configuration deleted successfully';
+            abp.message.success(message);
+            
+            // Hide the delete and generate view buttons since configuration no longer exists
+            updateGenerateViewButtonVisibility(false);
+            updateDeleteButtonVisibility(false);
+            
+            // Reload the DataTable to get the fields metadata (since no configuration exists)
+            if (dataTable) {
+                dataTable.ajax.reload();
+            }
+            
+            // Refresh view status widget
+            refreshViewStatusWidget(correlationId, getCorrelationProvider());
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfigurationModal'));
+            modal.hide();
+            
+        }).fail(function(xhr, status, error) {
+            console.error('Error deleting configuration - Status:', status);
+            console.error('Error deleting configuration - Error:', error);
+            console.error('Error deleting configuration - XHR:', xhr);
+            
+            let errorMessage = 'Failed to delete configuration';
+            
+            // Handle different error scenarios
+            if (xhr.status === 0) {
+                errorMessage = 'Network error: Could not connect to the server';
+            } else if (xhr.status === 400) {
+                // Try to extract detailed error message from response
+                try {
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    if (errorResponse?.error?.message) {
+                        errorMessage = errorResponse.error.message;
+                    } else if (typeof errorResponse === 'string') {
+                        errorMessage = errorResponse;
+                    } else {
+                        errorMessage = 'Bad request: Please check your input and try again';
+                    }
+                } catch (parseError) {
+                    console.error(parseError);
+                    errorMessage = xhr.responseText || 'Bad request: Please check your input and try again';
+                }
+            } else if (xhr.status === 401) {
+                errorMessage = 'Unauthorized: Please log in and try again';
+            } else if (xhr.status === 403) {
+                errorMessage = 'Forbidden: You do not have permission to perform this action';
+            } else if (xhr.status === 404) {
+                errorMessage = 'Configuration not found: The configuration may have already been deleted';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Server error: Please try again later or contact support';
+            } else if (xhr.responseText) {
+                try {
+                    const parsedError = JSON.parse(xhr.responseText);
+                    if (parsedError?.error?.message) {
+                        errorMessage = parsedError.error.message;
+                    } else if (parsedError.message) {
+                        errorMessage = parsedError.message;
+                    } else {
+                        errorMessage = xhr.responseText;
+                    }
+                } catch (parseError) {
+                    console.error('Failed to parse error response:', parseError);
+                    errorMessage = xhr.responseText;
+                }
+            } else if (error && error !== 'parsererror') {
+                errorMessage = error;
+            }
+            
+            abp.message.error(errorMessage);
+        }).always(function() {
+            // Reset modal button states
+            $button.prop('disabled', false).text('Delete Configuration');
+            $cancelButton.prop('disabled', false);
+            
+            // Re-enable main control buttons
+            setControlButtonsLoadingState(false);
+        });
+    });
+
+    // Update the function to handle both generate and delete button visibility
+    // This function was modified earlier to support both buttons
+    function updateButtonsVisibility(hasConfiguration) {
+        updateGenerateViewButtonVisibility(hasConfiguration);
+        updateDeleteButtonVisibility(hasConfiguration);
+    }
+
+    // Update existing function calls to use the new combined function
+    function updateCheckConfigurationExistsCallbacks() {
+        // Update all places where checkConfigurationExists is called
+        const $versionSelector = $('#versionSelector');
+        
+        // Handle version selector change
+        $versionSelector.off('change.deleteButton').on('change.deleteButton', function () {
+            const newVersionId = $(this).val();
+            
+            // Check if configuration exists for the new version and current provider
+            checkConfigurationExists(newVersionId, function(exists) {
+                updateButtonsVisibility(exists);
+            });
+        });
+
+        // Handle provider change
+        $(document).off('change.deleteButton', 'input[name="provider-toggle"]').on('change.deleteButton', 'input[name="provider-toggle"]', function() {
+            const versionId = $versionSelector.val();
+            if (versionId) {
+                checkConfigurationExists(versionId, function(exists) {
+                    updateButtonsVisibility(exists);
+                });
+            } else {
+                updateButtonsVisibility(false);
+            }
+        });
+
+        // Update initial check
+        const initialVersionId = $versionSelector.val();
+        if (initialVersionId) {
+            checkConfigurationExists(initialVersionId, function(exists) {
+                updateButtonsVisibility(exists);
+            });
+        } else {
+            updateButtonsVisibility(false);
+        }
+    }
+
+    // Initialize the delete button functionality
+    updateCheckConfigurationExistsCallbacks();
+
+    // Initialize version selector visibility based on provider
+    updateVersionSelectorVisibility();
+
     // Function to adjust table layout dynamically
     function adjustTableLayout() {
         if (dataTable && dataTable.settings().length > 0) {
@@ -1008,733 +1861,4 @@ $(function () {
         }
     });
 
-    // Track changes in the data grid
-    function markAsChanged() {
-        hasUnsavedChanges = true;
-        updateUndoButtonVisibility();
-    }
-
-    // Function to update undo button visibility and text based on changes
-    function updateUndoButtonVisibility() {
-        const $undoBtn = $('#btn-undo-report-configuration');
-        
-        if (hasUnsavedChanges) {
-            // Show button with Cancel text but keep the undo icon
-            $undoBtn.show();
-            
-            // Update text while preserving the icon
-            const $icon = $undoBtn.find('i');
-            if ($icon.length > 0) {
-                // If icon exists, replace text but keep icon
-                $undoBtn.html($icon.prop('outerHTML') + ' Cancel');
-            } else {
-                // If no icon, add one with the text
-                $undoBtn.html('<i class="fl fl-undo"></i> Cancel');
-            }
-        } else {
-            $undoBtn.hide();
-        }
-    }
-
-    // Reset changes state and update UI
-    function resetChangesState() {
-        hasUnsavedChanges = false;
-        updateUndoButtonVisibility();
-    }
-
-    // Get current table data including edits
-    function getCurrentTableData() {
-        const rows = [];
-        dataTable.rows().every(function () {
-            const data = this.data();
-            const node = this.node();
-            const input = $(node).find('.column-name-input');
-            const columnName = input.length > 0 ? input.val().trim() : (data.columnName || '').trim();           
-
-            rows.push({
-                propertyName: data.key,
-                columnName: columnName,
-                path: data.path
-            });
-        });
-        return rows;
-    }
-
-    // Save report configuration with validation
-    $('#btn-save-report-configuration').on('click', function () {
-        const versionId = $('#versionSelector').val();        
-
-        // Validate all column names before saving
-        const validation = validateAllColumnNames();
-        if (!validation.isValid) {
-            const errorMessage = 'Please fix the following validation errors before saving:\n\n' + 
-                               validation.errors.join('\n');
-            abp.message.error(errorMessage);
-            return;
-        }
-        
-        // Disable all control buttons during save
-        setControlButtonsLoadingState(true);
-
-        const configData = {
-            correlationId: versionId,
-            correlationProvider: getCorrelationProvider(),
-            mapping: {
-                rows: getCurrentTableData()
-            }
-        };
-
-        // Check if configuration exists to determine whether to create or update
-        abp.ajax({
-            url: abp.appPath + 'ReportingConfiguration/Exists',
-            type: 'GET',
-            data: { 
-                correlationId: versionId, 
-                correlationProvider: getCorrelationProvider()
-            }
-        }).then(function (exists) {
-            if (exists) {
-                // Update existing configuration
-                return abp.ajax({
-                    url: abp.appPath + 'ReportingConfiguration/Update',
-                    type: 'PUT',
-                    data: JSON.stringify(configData),
-                    contentType: 'application/json'
-                });
-            } else {
-                // Create new configuration
-                return abp.ajax({
-                    url: abp.appPath + 'ReportingConfiguration/Create',
-                    type: 'POST',
-                    data: JSON.stringify(configData),
-                    contentType: 'application/json'
-                });
-            }
-        }).then(function (result) {
-            abp.message.success('Configuration saved successfully');
-            resetChangesState();
-            
-            // Show the Generate View button since we now have a saved configuration
-            updateGenerateViewButtonVisibility(true);
-            
-            // Reload the DataTable to get the saved state
-            if (dataTable) {
-                dataTable.ajax.reload();
-            }
-            
-            // Refresh view status widget to get updated status
-            refreshViewStatusWidget(versionId, getCorrelationProvider());
-            
-        }).catch(function (error) {            
-            let errorMessage = 'Failed to save configuration';
-            if (error?.responseJSON?.error?.message) {
-                errorMessage = error.responseJSON.error.message;
-            }
-            abp.message.error(errorMessage);
-        }).always(function() {
-            // Re-enable all control buttons after save completes (success or error)
-            setControlButtonsLoadingState(false);
-        });
-    });
-
-    // Function to set loading state for all control buttons
-    function setControlButtonsLoadingState(isLoading) {
-        const $controlButtons = $('#btn-save-report-configuration, #btn-generate-view-report-configuration, #btn-undo-report-configuration, #btn-back-report-configuration, #versionSelector');
-        
-        if (isLoading) {
-            // Disable buttons and show loading state
-            $controlButtons.prop('disabled', true);
-            
-            // Update save button text and icon to show saving state
-            const $saveBtn = $('#btn-save-report-configuration');
-            $saveBtn.data('original-html', $saveBtn.html()); // Store original HTML instead of just text
-            
-            // Set loading state with spinner icon and text
-            $saveBtn.html('<i class="fa fa-spinner fa-spin"></i> Saving...');
-        } else {
-            // Re-enable buttons and restore normal state
-            $controlButtons.prop('disabled', false);
-            
-            // Restore save button original content
-            const $saveBtn = $('#btn-save-report-configuration');
-            const originalHtml = $saveBtn.data('original-html');
-            if (originalHtml) {
-                $saveBtn.html(originalHtml);
-            }
-        }
-    }
-
-    // Cancel/Undo changes
-    $('#btn-undo-report-configuration').on('click', function () {
-        if (hasUnsavedChanges) {
-            // Cancel changes without confirmation
-            resetChangesState();
-            // Reload the DataTable to get the original state
-            if (dataTable) {
-                dataTable.ajax.reload();
-            }
-        }
-    });
-
-    // Back button
-    $('#btn-back-report-configuration').on('click', function () {
-        if (hasUnsavedChanges) {
-            if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
-                return;
-            }
-        }
-
-        // Navigate back
-        window.history.back();
-    });
-
-    // Generate view button
-    $('#btn-generate-view-report-configuration').on('click', function () {
-        const versionId = $('#versionSelector').val();
-
-        if (!versionId) {
-            abp.message.error('Please select a version first');
-            return;
-        }
-
-        // Reset modal state
-        const modal = new bootstrap.Modal(document.getElementById('generateViewModal'));
-        const $viewNameInput = $('#viewNameInput');
-        const $confirmButton = $('#confirmGenerateView');
-        const $feedback = $('#viewNameFeedback');
-        
-        // Clear previous state
-        $viewNameInput.val('').removeClass('is-valid is-invalid');
-        $confirmButton.prop('disabled', true);
-        $feedback.text('');
-        
-        // Check if there's an existing configuration with a view name
-        checkForExistingViewName(versionId, function(existingViewName) {
-            if (existingViewName) {
-                // Populate the existing view name
-                $viewNameInput.val(existingViewName);
-                
-                // Store the original view name for comparison
-                $viewNameInput.data('original-view-name', existingViewName);
-                
-                // Validate the existing name to enable the button
-                checkViewNameAvailability(existingViewName, function(isValid, errors) {
-                    if (isValid) {
-                        $viewNameInput.addClass('is-valid');
-                        $confirmButton.prop('disabled', false);
-                    } else {
-                        $viewNameInput.addClass('is-invalid');
-                        $feedback.text(errors.join(', '));
-                        $confirmButton.prop('disabled', true);
-                    }
-                });
-            } else {
-                // No existing view name, clear the stored original
-                $viewNameInput.removeData('original-view-name');
-            }
-        });
-        
-        // Show modal
-        modal.show();
-    });
-
-    // Function to check for existing view name in configuration
-    function checkForExistingViewName(versionId, callback) {
-        abp.ajax({
-            url: abp.appPath + 'ReportingConfiguration/Exists',
-            type: 'GET',
-            data: { 
-                correlationId: versionId, 
-                correlationProvider: getCorrelationProvider()
-            }
-        }).then(function(exists) {
-            if (exists) {
-                // Configuration exists - get the view name
-                return abp.ajax({
-                    url: abp.appPath + 'ReportingConfiguration/GetConfiguration',
-                    type: 'GET',
-                    data: { 
-                        correlationId: versionId, 
-                        correlationProvider: getCorrelationProvider()
-                    }
-                }).then(function(result) {
-                    callback(result.viewName || '');
-                });
-            } else {
-                callback('');
-            }
-        }).catch(function(error) {
-            console.error('Error checking for existing view name:', error);
-            callback('');
-        });
-    }
-
-    // Handle view name input validation in modal
-    $(document).on('input', '#viewNameInput', function() {
-        const $input = $(this);
-        const rawValue = $input.val();
-        const $confirmButton = $('#confirmGenerateView');
-        const $feedback = $('#viewNameFeedback');
-        const originalViewName = $input.data('original-view-name');
-        
-        // Sanitize the view name (lowercase, trim, replace invalid chars)
-        const viewName = sanitizeViewName(rawValue);
-        
-        // Update the input with sanitized value if different
-        if (viewName !== rawValue) {
-            const cursorPosition = $input[0].selectionStart;
-            $input.val(viewName);
-            $input[0].setSelectionRange(cursorPosition, cursorPosition);
-        }
-        
-        // Reset state
-        $input.removeClass('is-valid is-invalid');
-        $confirmButton.prop('disabled', true);
-        $feedback.text('').removeClass('text-warning text-danger');
-        
-        if (!viewName.trim()) {
-            return;
-        }
-        
-        // Check if user is changing an existing view name
-        if (originalViewName && viewName !== originalViewName.toLowerCase() && originalViewName.trim() !== '') {
-            // Show warning about deleting existing view
-            $feedback.html(`
-                <div class="alert alert-warning mt-2 mb-0 p-2">
-                    <i class="fa fa-exclamation-triangle me-2"></i>
-                    <strong>Warning:</strong> Changing the view name will <strong>delete the existing view "${originalViewName}"</strong> and create a new view "${viewName}". 
-                    <br><small>This action cannot be undone. Are you sure you want to proceed?</small>
-                </div>
-            `);
-        }
-        
-        // Check availability with debouncing
-        checkViewNameAvailability(viewName, function(isValid, errors) {
-            if (isValid) {
-                $input.addClass('is-valid');
-                $confirmButton.prop('disabled', false);
-            } else {
-                $input.addClass('is-invalid');
-                // Clear warning and show validation errors
-                if (!originalViewName || viewName === originalViewName.toLowerCase() || originalViewName.trim() === '') {
-                    $feedback.html('');
-                }
-                $feedback.append(`<div class="invalid-feedback d-block">${errors.join(', ')}</div>`);
-                $confirmButton.prop('disabled', true);
-            }
-        });
-    });
-
-    // Handle view generation confirmation
-    $(document).on('click', '#confirmGenerateView', function() {
-        const versionId = $('#versionSelector').val();
-        const rawViewName = $('#viewNameInput').val().trim();
-        const viewName = sanitizeViewName(rawViewName); // Ensure it's sanitized
-        const $button = $(this);
-        const $cancelButton = $('.modal-footer .btn-secondary');
-        
-        if (!viewName || !versionId) {
-            return;
-        }
-        
-        // Disable modal buttons and show loading state
-        $button.prop('disabled', true).text('Generating...');
-        $cancelButton.prop('disabled', true);
-        
-        // Also disable main control buttons during view generation
-        setControlButtonsLoadingState(true);
-        
-        // Call the GenerateView endpoint
-        $.ajax({
-            url: abp.appPath + 'ReportingConfiguration/GenerateView',
-            type: 'POST',
-            data: JSON.stringify({
-                correlationId: versionId,
-                correlationProvider: getCorrelationProvider(),
-                viewName: viewName
-            }),
-            contentType: 'application/json',
-            dataType: 'json', // Expect JSON response
-            success: function(result, textStatus, xhr) {
-                // Handle successful response (both 200 OK and 202 Accepted)
-                if (xhr.status === 202 || xhr.status === 200) {
-                    let message = 'Database view generation has been initiated successfully';
-                    
-                    // Use the structured response if available
-                    if (result?.message) {
-                        message = result.message;
-                    }                   
-                    
-                    abp.message.success(message);
-                } else {
-                    // Fallback for other success status codes
-                    abp.message.success('Database view generation has been initiated successfully');
-                }
-                
-                // Refresh view status widget to show generating status
-                refreshViewStatusWidget(versionId, getCorrelationProvider());
-                
-                // Publish event to start auto-refresh polling
-                PubSub.publish('view_generation_started', { versionId: versionId });
-                
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('generateViewModal'));
-                modal.hide();
-            },
-            error: function(xhr, status, error) {
-                console.error('Error generating view - Status:', status);
-                console.error('Error generating view - Error:', error);
-                console.error('Error generating view - XHR:', xhr);
-                
-                let errorMessage = 'Failed to generate database view';
-                
-                // Handle different error scenarios
-                if (xhr.status === 0) {
-                    errorMessage = 'Network error: Could not connect to the server';
-                } else if (xhr.status === 400) {
-                    // Try to extract detailed error message from response
-                    try {
-                        const errorResponse = JSON.parse(xhr.responseText);
-                        if (errorResponse?.error?.message) {
-                            errorMessage = errorResponse.error.message;
-                        } else if (typeof errorResponse === 'string') {
-                            errorMessage = errorResponse;
-                        } else {
-                            errorMessage = 'Bad request: Please check your input and try again';
-                        }
-                    } catch (parseError) {
-                        console.error(parseError);
-                        errorMessage = xhr.responseText || 'Bad request: Please check your input and try again';
-                    }
-                } else if (xhr.status === 401) {
-                    errorMessage = 'Unauthorized: Please log in and try again';
-                } else if (xhr.status === 403) {
-                    errorMessage = 'Forbidden: You do not have permission to perform this action';
-                } else if (xhr.status === 404) {
-                    errorMessage = 'Configuration not found: Please ensure the configuration exists and try again';
-                } else if (xhr.status === 500) {
-                    errorMessage = 'Server error: Please try again later or contact support';
-                } else if (xhr.responseText) {
-                    try {
-                        const parsedError = JSON.parse(xhr.responseText);
-                        if (parsedError?.error?.message) {
-                            errorMessage = parsedError.error.message;
-                        } else if (parsedError.message) {
-                            errorMessage = parsedError.message;
-                        } else {
-                            errorMessage = xhr.responseText;
-                        }
-                    } catch (parseError) {
-                        console.error('Failed to parse error response:', parseError);
-                        errorMessage = xhr.responseText;
-                    }
-                } else if (error && error !== 'parsererror') {
-                    errorMessage = error;
-                }
-                
-                abp.message.error(errorMessage);
-            },
-            complete: function() {
-                // Reset modal button states
-                $button.prop('disabled', false).text('Generate View');
-                $cancelButton.prop('disabled', false);
-                
-                // Re-enable main control buttons
-                setControlButtonsLoadingState(false);
-            }
-        });
-    });
-
-    // Subscribe to PubSub events to refresh the view status widget when needed
-    PubSub.subscribe('refresh_view_status', function (msg, data) {
-        const versionId = data?.versionId || $('#versionSelector').val();
-        if (versionId) {
-            refreshViewStatusWidget(versionId, data?.provider || getCorrelationProvider());
-        }
-    });
-
-    // View name validation function
-    function validateViewName(viewName) {
-        const errors = [];
-        
-        if (!viewName || viewName.trim() === '') {
-            errors.push('View name is required');
-            return { isValid: false, errors: errors };
-        }
-        
-        // Always convert to lowercase and trim
-        const name = viewName.trim().toLowerCase();
-        
-        // Check length
-        if (name.length < VIEW_NAME_VALIDATION.MIN_LENGTH) {
-            errors.push(`View name must be at least ${VIEW_NAME_VALIDATION.MIN_LENGTH} character long`);
-        }
-        
-        if (name.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
-            errors.push(`View name exceeds maximum length of ${VIEW_NAME_VALIDATION.MAX_LENGTH} characters`);
-        }
-        
-        // Check format (should be alphanumeric + underscores, not starting with number)
-        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/i.test(name)) {
-            errors.push('View name must start with a letter or underscore and contain only letters, numbers, and underscores');
-        }
-        
-        // Check reserved words
-        if (VIEW_NAME_VALIDATION.RESERVED_WORDS.includes(name.toLowerCase())) {
-            errors.push('View name is a PostgreSQL reserved word');
-        }
-        
-        return {
-            isValid: errors.length === 0,
-            errors: errors
-        };
-    }
-
-    // Debounced function for checking view name availability
-    let viewNameCheckTimeout;
-    function checkViewNameAvailability(viewName, callback) {
-        clearTimeout(viewNameCheckTimeout);
-        viewNameCheckTimeout = setTimeout(function() {
-            if (!viewName || viewName.trim() === '') {
-                callback(true, []); // Empty name is valid but not available
-                return;
-            }
-            
-            // First validate the format
-            const validation = validateViewName(viewName);
-            if (!validation.isValid) {
-                callback(false, validation.errors);
-                return;
-            }
-            
-            const versionId = $('#versionSelector').val();
-            
-            // Check availability with server, including correlation parameters
-            abp.ajax({
-                url: abp.appPath + 'ReportingConfiguration/IsViewNameAvailable',
-                type: 'GET',
-                data: { 
-                    viewName: viewName,
-                    correlationId: versionId,
-                    correlationProvider: getCorrelationProvider()
-                }
-            }).done(function(isAvailable) {
-                if (!isAvailable) {
-                    callback(false, ['View name is already in use by another reporting configuration']);
-                } else {
-                    callback(true, []);
-                }
-            }).fail(function(error) {
-                console.error('Error checking view name availability:', error);
-                callback(false, ['Error checking view name availability']);
-            });
-        }, 500); // 500ms debounce
-    }
-
-    // Function to sanitize view name
-    function sanitizeViewName(viewName) {
-        if (!viewName || typeof viewName !== 'string') return '';
-        
-        let sanitized = viewName.toLowerCase().trim();
-        
-        // Replace spaces and hyphens with underscores
-        sanitized = sanitized.replace(/[\s\-]+/g, '_');
-        
-        // Remove all non-alphanumeric characters except underscores
-        sanitized = sanitized.replace(/[^a-z0-9_]/g, '');
-        
-        // Remove leading/trailing underscores
-        sanitized = sanitized.replace(/^_+|_+$/g, '');
-        
-        // If starts with number, prefix with 'v_'
-        if (sanitized && /^[0-9]/.test(sanitized)) {
-            sanitized = 'v_' + sanitized;
-        }
-        
-        // If empty after sanitization, return empty string
-        if (!sanitized) {
-            return '';
-        }
-        
-        // Truncate to max length
-        if (sanitized.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
-            sanitized = sanitized.substring(0, VIEW_NAME_VALIDATION.MAX_LENGTH);
-            // Remove trailing underscore if truncation created one
-            sanitized = sanitized.replace(/_+$/, '');
-        }
-        
-        return sanitized;
-    }
-
-    // Delete configuration button
-    $('#btn-delete-report-configuration').on('click', function () {
-        const versionId = $('#versionSelector').val();
-
-        if (!versionId) {
-            abp.message.error('Please select a version first');
-            return;
-        }
-
-        // Show delete confirmation modal
-        const modal = new bootstrap.Modal(document.getElementById('deleteConfigurationModal'));
-        modal.show();
-    });
-
-    // Handle delete confirmation
-    $(document).on('click', '#confirmDeleteConfiguration', function() {
-        const versionId = $('#versionSelector').val();
-        const deleteView = $('#deleteViewCheckbox').is(':checked');
-        const correlationProvider = getCorrelationProvider();
-        const $button = $(this);
-        const $cancelButton = $('.modal-footer .btn-secondary');
-        
-        if (!versionId) {
-            return;
-        }
-        
-        // Disable modal buttons and show loading state
-        $button.prop('disabled', true).text('Deleting...');
-        $cancelButton.prop('disabled', true);
-        
-        // Also disable main control buttons during deletion
-        setControlButtonsLoadingState(true);
-        
-        // Call the Delete endpoint
-        abp.ajax({
-            url: abp.appPath + 'ReportingConfiguration/Delete',
-            type: 'DELETE',
-            data: JSON.stringify({
-                correlationId: versionId,
-                correlationProvider: correlationProvider,
-                deleteView: deleteView
-            }),
-        }).done(function(result) {
-            let message = result?.message || 'Configuration deleted successfully';
-            abp.message.success(message);
-            
-            // Hide the delete and generate view buttons since configuration no longer exists
-            updateGenerateViewButtonVisibility(false);
-            updateDeleteButtonVisibility(false);
-            
-            // Reload the DataTable to get the fields metadata (since no configuration exists)
-            if (dataTable) {
-                dataTable.ajax.reload();
-            }
-            
-            // Refresh view status widget
-            refreshViewStatusWidget(versionId, getCorrelationProvider());
-            
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfigurationModal'));
-            modal.hide();
-            
-        }).fail(function(xhr, status, error) {
-            console.error('Error deleting configuration - Status:', status);
-            console.error('Error deleting configuration - Error:', error);
-            console.error('Error deleting configuration - XHR:', xhr);
-            
-            let errorMessage = 'Failed to delete configuration';
-            
-            // Handle different error scenarios
-            if (xhr.status === 0) {
-                errorMessage = 'Network error: Could not connect to the server';
-            } else if (xhr.status === 400) {
-                // Try to extract detailed error message from response
-                try {
-                    const errorResponse = JSON.parse(xhr.responseText);
-                    if (errorResponse?.error?.message) {
-                        errorMessage = errorResponse.error.message;
-                    } else if (typeof errorResponse === 'string') {
-                        errorMessage = errorResponse;
-                    } else {
-                        errorMessage = 'Bad request: Please check your input and try again';
-                    }
-                } catch (parseError) {
-                    console.error(parseError);
-                    errorMessage = xhr.responseText || 'Bad request: Please check your input and try again';
-                }
-            } else if (xhr.status === 401) {
-                errorMessage = 'Unauthorized: Please log in and try again';
-            } else if (xhr.status === 403) {
-                errorMessage = 'Forbidden: You do not have permission to perform this action';
-            } else if (xhr.status === 404) {
-                errorMessage = 'Configuration not found: The configuration may have already been deleted';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Server error: Please try again later or contact support';
-            } else if (xhr.responseText) {
-                try {
-                    const parsedError = JSON.parse(xhr.responseText);
-                    if (parsedError?.error?.message) {
-                        errorMessage = parsedError.error.message;
-                    } else if (parsedError.message) {
-                        errorMessage = parsedError.message;
-                    } else {
-                        errorMessage = xhr.responseText;
-                    }
-                } catch (parseError) {
-                    console.error('Failed to parse error response:', parseError);
-                    errorMessage = xhr.responseText;
-                }
-            } else if (error && error !== 'parsererror') {
-                errorMessage = error;
-            }
-            
-            abp.message.error(errorMessage);
-        }).always(function() {
-            // Reset modal button states
-            $button.prop('disabled', false).text('Delete Configuration');
-            $cancelButton.prop('disabled', false);
-            
-            // Re-enable main control buttons
-            setControlButtonsLoadingState(false);
-        });
-    });
-
-    // Update the function to handle both generate and delete button visibility
-    // This function was modified earlier to support both buttons
-    function updateButtonsVisibility(hasConfiguration) {
-        updateGenerateViewButtonVisibility(hasConfiguration);
-        updateDeleteButtonVisibility(hasConfiguration);
-    }
-
-    // Update existing function calls to use the new combined function
-    function updateCheckConfigurationExistsCallbacks() {
-        // Update all places where checkConfigurationExists is called
-        const $versionSelector = $('#versionSelector');
-        
-        // Handle version selector change
-        $versionSelector.off('change.deleteButton').on('change.deleteButton', function () {
-            const newVersionId = $(this).val();
-            
-            // Check if configuration exists for the new version and current provider
-            checkConfigurationExists(newVersionId, function(exists) {
-                updateButtonsVisibility(exists);
-            });
-        });
-
-        // Handle provider change
-        $(document).off('change.deleteButton', 'input[name="provider-toggle"]').on('change.deleteButton', 'input[name="provider-toggle"]', function() {
-            const versionId = $versionSelector.val();
-            if (versionId) {
-                checkConfigurationExists(versionId, function(exists) {
-                    updateButtonsVisibility(exists);
-                });
-            } else {
-                updateButtonsVisibility(false);
-            }
-        });
-
-        // Update initial check
-        const initialVersionId = $versionSelector.val();
-        if (initialVersionId) {
-            checkConfigurationExists(initialVersionId, function(exists) {
-                updateButtonsVisibility(exists);
-            });
-        } else {
-            updateButtonsVisibility(false);
-        }
-    }
-
-    // Initialize the delete button functionality
-    updateCheckConfigurationExistsCallbacks();
 });

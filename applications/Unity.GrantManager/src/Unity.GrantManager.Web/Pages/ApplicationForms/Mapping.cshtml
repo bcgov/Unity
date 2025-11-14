@@ -1,5 +1,6 @@
 ﻿@page
 @using Unity.GrantManager.ApplicationForms
+@using Unity.Reporting.Permissions
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
 @using Unity.GrantManager.Permissions;
@@ -12,6 +13,7 @@
 @inject IPageLayout PageLayout
 @inject IPermissionChecker PermissionChecker
 @inject IFeatureChecker FeatureChecker
+
 @{
     PageLayout.Content.MenuItemName = "GrantManager.ApplicationForms";
     PageLayout.Content.Title = "Application Mapping";
@@ -56,7 +58,8 @@
             {
                 <button class="nav-link" id="nav-payment-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-configuration" type="button" role="tab">Payment Configuration</button>
             }
-            @if (await FeatureChecker.IsEnabledAsync("Unity.Reporting"))
+            @if (await FeatureChecker.IsEnabledAsync("Unity.Reporting")
+                        && await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Default))
             {
                 <button class="nav-link" id="nav-reporting-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-reporting-configuration" type="button" role="tab">Reporting Configuration</button>
             }

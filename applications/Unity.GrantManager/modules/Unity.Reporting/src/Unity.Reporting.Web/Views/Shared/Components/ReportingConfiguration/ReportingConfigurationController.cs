@@ -1,27 +1,23 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Reporting.Configuration;
+using Unity.Reporting.Permissions;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 {
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("ReportingConfiguration")]
-    public class ReportingConfigurationController : AbpController
+    [Authorize(ReportingPermissions.Configuration.Default)]
+    public class ReportingConfigurationController(IReportMappingService reportMappingService) : AbpController
     {
-        private readonly IReportMappingService _reportMappingService;
-
-        public ReportingConfigurationController(IReportMappingService reportMappingService)
-        {
-            _reportMappingService = reportMappingService;
-        }
-
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult Refresh(Guid formId, Guid? selectedVersionId = null)
+        public IActionResult Refresh(Guid formId, Guid? selectedVersionId = null, string? provider = null)
         {
             if (!ModelState.IsValid)
             {
@@ -29,7 +25,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                 return ViewComponent(typeof(ReportingConfigurationViewComponent));
             }
             
-            return ViewComponent(typeof(ReportingConfigurationViewComponent), new { formId, selectedVersionId });
+            return ViewComponent(typeof(ReportingConfigurationViewComponent), new { formId, selectedVersionId, provider });
         }
 
         [HttpGet]
@@ -38,7 +34,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         {
             try
             {
-                var result = await _reportMappingService.GetByCorrelationAsync(correlationId, correlationProvider);
+                var result = await reportMappingService.GetByCorrelationAsync(correlationId, correlationProvider);
                 return Ok(result);
             }
             catch (Volo.Abp.Domain.Entities.EntityNotFoundException)
@@ -54,7 +50,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         {
             try
             {
-                var exists = await _reportMappingService.ExistsAsync(correlationId, correlationProvider);
+                var exists = await reportMappingService.ExistsAsync(correlationId, correlationProvider);
                 return Ok(exists);
             }
             catch (ArgumentException ex)
@@ -69,7 +65,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         {
             try
             {
-                var result = await _reportMappingService.GetFieldsMetadataAsync(correlationId, correlationProvider);
+                var result = await reportMappingService.GetFieldsMetadataAsync(correlationId, correlationProvider);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -80,11 +76,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 
         [HttpPost]
         [Route("Create")]
+        [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<IActionResult> Create([FromBody] UpsertReportColumnsMapDto configuration)
         {
             try
             {
-                var result = await _reportMappingService.CreateAsync(configuration);
+                var result = await reportMappingService.CreateAsync(configuration);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -95,11 +92,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 
         [HttpPut]
         [Route("Update")]
+        [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<IActionResult> Update([FromBody] UpsertReportColumnsMapDto configuration)
         {
             try
             {
-                var result = await _reportMappingService.UpdateAsync(configuration);
+                var result = await reportMappingService.UpdateAsync(configuration);
                 return Ok(result);
             }
             catch (Volo.Abp.Domain.Entities.EntityNotFoundException ex)
@@ -123,12 +121,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                 if (correlationId.HasValue && !string.IsNullOrWhiteSpace(correlationProvider))
                 {
                     // Use correlation-aware availability check
-                    isAvailable = await _reportMappingService.IsViewNameAvailableAsync(viewName, correlationId.Value, correlationProvider);
+                    isAvailable = await reportMappingService.IsViewNameAvailableAsync(viewName, correlationId.Value, correlationProvider);
                 }
                 else
                 {
                     // Use basic availability check (backward compatibility)
-                    isAvailable = await _reportMappingService.IsViewNameAvailableAsync(viewName);
+                    isAvailable = await reportMappingService.IsViewNameAvailableAsync(viewName);
                 }
                 
                 return Ok(isAvailable);
@@ -141,11 +139,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 
         [HttpPost]
         [Route("GenerateView")]
+        [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<IActionResult> GenerateView([FromBody] GenerateViewRequest request)
         {
             try
             {
-                var result = await _reportMappingService.GenerateViewAsync(
+                var result = await reportMappingService.GenerateViewAsync(
                     request.CorrelationId, 
                     request.CorrelationProvider, 
                     request.ViewName);
@@ -165,11 +164,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 
         [HttpPost]
         [Route("GenerateColumnNames")]
+        [Authorize(ReportingPermissions.Configuration.Update)]
         public IActionResult GenerateColumnNames([FromBody] GenerateColumnNamesRequest request)
         {
             try
             {
-                var result = _reportMappingService.GenerateColumnNames(request.PathColumns);
+                var result = reportMappingService.GenerateColumnNames(request.PathColumns);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -192,7 +192,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                     OrderBy = orderBy
                 };
 
-                var result = await _reportMappingService.GetViewPreviewDataAsync(viewName, request);
+                var result = await reportMappingService.GetViewPreviewDataAsync(viewName, request);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -203,11 +203,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 
         [HttpDelete]
         [Route("Delete")]
+        [Authorize(ReportingPermissions.Configuration.Delete)]
         public async Task<IActionResult> Delete([FromBody] DeleteViewRequest deleteViewRequest)
         {
             try
             {
-                await _reportMappingService.DeleteAsync(deleteViewRequest.CorrelationId, deleteViewRequest.CorrelationProvider, deleteViewRequest.DeleteView);
+                await reportMappingService.DeleteAsync(deleteViewRequest.CorrelationId, deleteViewRequest.CorrelationProvider, deleteViewRequest.DeleteView);
                 return Ok(new { message = "Configuration and view deleted successfully" });
             }
             catch (Volo.Abp.Domain.Entities.EntityNotFoundException ex)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes.Mapping;
@@ -13,7 +14,8 @@ namespace Unity.GrantManager.Reporting.Configuration
 {
     [RemoteService(false)]
     public class FormMetadataService(IApplicationFormVersionRepository formVersionRepository,
-        IFormsApiService formsApiService) : IFormMetadataService, ITransientDependency
+        IFormsApiService formsApiService,
+        ILogger<FormMetadataService> logger) : IFormMetadataService, ITransientDependency
     {
 
         /// <summary>
@@ -197,17 +199,16 @@ namespace Unity.GrantManager.Reporting.Configuration
         {
             foreach (var component in componentsList)
             {
-                component.DataPath = CreateDataPath(component.Path, component.Type);
+                component.DataPath = CreateDataPath(component.Path);
             }
         }
 
         /// <summary>
         /// Creates a data-centric path from a component path by removing container elements that don't appear in the data structure
         /// </summary>
-        /// <param name="path">The original component path</param>
-        /// <param name="componentType">The type of the component</param>
+        /// <param name="path">The original component path</param>        
         /// <returns>The data-centric path</returns>
-        private static string CreateDataPath(string path, string componentType)
+        private static string CreateDataPath(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return string.Empty;
@@ -218,7 +219,7 @@ namespace Unity.GrantManager.Reporting.Configuration
 
             if (path.StartsWith("(DK") && path.Contains(")"))
             {
-                int endIndex = path.IndexOf(")");
+                int endIndex = path.IndexOf(')');
                 duplicatePrefix = path.Substring(0, endIndex + 1);
                 workingPath = path.Substring(endIndex + 1);
             }
@@ -302,7 +303,8 @@ namespace Unity.GrantManager.Reporting.Configuration
 
             if (formVersion.ChefsApplicationFormGuid == null || formVersion.ChefsFormVersionGuid == null)
             {
-                throw new UserFriendlyException("Error with Form configuration");
+                logger.LogError("Form version {FormVersionId} is missing CHEFS configuration", formVersionId);
+                return null;
             }
 
             // Call off to CHEFS to get the schema
@@ -312,7 +314,8 @@ namespace Unity.GrantManager.Reporting.Configuration
 
             if (formSchemaResponse == null || formSchemaResponse?.schema == null)
             {
-                throw new UserFriendlyException("Error with Form configuration");
+                logger.LogError("Failed to retrieve form schema from CHEFS for form version {FormVersionId}", formVersionId);
+                return null;
             }
 
             JObject schema = (JObject)(formSchemaResponse!.schema);

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Unity.Reporting.BackgroundJobs;
 using Unity.Reporting.Configuration.FieldsProviders;
 using Unity.Reporting.Domain.Configuration;
+using Unity.Reporting.Permissions;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.MultiTenancy;
@@ -16,8 +17,8 @@ namespace Unity.Reporting.Configuration
     /// <summary>
     /// Service for managing report mappings between source fields and database columns for reporting.
     /// Provides operations for creating, updating, and retrieving column name mappings with automatic sanitization and validation.
-    /// </summary>
-    [Authorize]
+    /// </summary>    
+    [Authorize(ReportingPermissions.Configuration.Default)]
     public class ReportMappingService(IReportColumnsMapRepository reportColumnsMapRepository,
         IEnumerable<IFieldsProvider> fieldsProviders,
         IBackgroundJobManager backgroundJobManager,
@@ -38,8 +39,9 @@ namespace Unity.Reporting.Configuration
         /// - Column names do not conform to PostgreSQL naming restrictions
         /// - Unknown or invalid correlation provider is specified
         /// </exception>
+        [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<ReportColumnsMapDto> CreateAsync(UpsertReportColumnsMapDto createReportColumnsMap)
-        {
+        {            
             var existing = await reportColumnsMapRepository
                 .FindByCorrelationAsync(createReportColumnsMap.CorrelationId, createReportColumnsMap.CorrelationProvider);
 
@@ -74,6 +76,7 @@ namespace Unity.Reporting.Configuration
         /// - Column names do not conform to PostgreSQL naming restrictions
         /// - Unknown or invalid correlation provider is specified
         /// </exception>
+        [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<ReportColumnsMapDto> UpdateAsync(UpsertReportColumnsMapDto updateReportColumnsMap)
         {
             var existing = await reportColumnsMapRepository
@@ -98,6 +101,7 @@ namespace Unity.Reporting.Configuration
         /// </summary>
         /// <param name="keyColumns">Dictionary mapping field keys to their human-readable display labels.</param>
         /// <returns>Dictionary mapping the same field keys to their corresponding generated PostgreSQL-compatible column names.</returns>
+        [Authorize(ReportingPermissions.Configuration.Update)]
         public Dictionary<string, string> GenerateColumnNames(Dictionary<string, string> keyColumns)
         {
             return ReportMappingUtils.GenerateColumnNames(keyColumns);
@@ -320,6 +324,7 @@ namespace Unity.Reporting.Configuration
         /// - View name is already in use by another reporting configuration
         /// </exception>
         /// <exception cref="EntityNotFoundException">Thrown when no mapping exists for the specified correlation.</exception>
+        [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<ViewGenerationResult> GenerateViewAsync(Guid correlationId, string correlationProvider, string viewName)
         {
             var providerKey = correlationProvider?.ToLowerInvariant() ?? string.Empty;
@@ -512,6 +517,7 @@ namespace Unity.Reporting.Configuration
         /// <returns>A task representing the asynchronous delete operation.</returns>
         /// <exception cref="ArgumentException">Thrown when an unknown or invalid correlation provider is specified.</exception>
         /// <exception cref="EntityNotFoundException">Thrown when no mapping exists for the specified correlation.</exception>
+        [Authorize(ReportingPermissions.Configuration.Delete)]
         public async Task DeleteAsync(Guid correlationId, string correlationProvider, bool deleteView = true)
         {
             var providerKey = correlationProvider?.ToLowerInvariant() ?? string.Empty;

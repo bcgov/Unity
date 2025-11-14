@@ -12,6 +12,9 @@
 	  <None Remove="Scripts\generate_formversion_view.sql" />
 	  <None Remove="Scripts\get_formversion_data.sql" />
 	  <None Remove="Scripts\get_worksheet_data.sql" />
+	  <None Remove="Scripts\get_scoresheet_data.sql" />
+	  <None Remove="Scripts\generate_scoresheet_view.sql" />
+	  <None Remove="Scripts\calculate_scoresheet_total_score.sql" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -21,6 +24,15 @@
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	  <EmbeddedResource Include="Scripts\get_worksheet_data.sql">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\get_scoresheet_data.sql">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_scoresheet_view.sql">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\calculate_scoresheet_total_score.sql">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	</ItemGroup>

@@ -1,50 +1,87 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Unity.Reporting.Configuration;
 using Unity.Reporting.Configuration.FieldsProviders;
 using Unity.Reporting.Domain.Configuration;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
 using Xunit;
 using Xunit.Abstractions;
-using System.Reflection;
 
 namespace Unity.Reporting.Application.Tests.Configuration
 {
     public class ReportMappingServiceTests : ReportingApplicationTestBase<ReportingApplicationTestModule>
     {
-        private readonly ReportMappingService _reportMappingService;
+        private readonly IReportMappingService _reportMappingService;
+
         private readonly IReportColumnsMapRepository _reportColumnsMapRepository;
         private readonly IBackgroundJobManager _backgroundJobManager;
         private readonly ICurrentTenant _currentTenant;
         private readonly IFieldsProvider _mockFieldsProvider;
+        private readonly ILogger<ReportMappingService> _mockLogger;
 
         public ReportMappingServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
-        {
+        {            
             _reportColumnsMapRepository = Substitute.For<IReportColumnsMapRepository>();
             _backgroundJobManager = Substitute.For<IBackgroundJobManager>();
             _currentTenant = Substitute.For<ICurrentTenant>();
-            
+            _mockLogger = Substitute.For<ILogger<ReportMappingService>>();
+
             // Create a mock fields provider for testing
             _mockFieldsProvider = Substitute.For<IFieldsProvider>();
             _mockFieldsProvider.CorrelationProvider.Returns("testProvider");
-            
+
             var fieldsProviders = new List<IFieldsProvider> { _mockFieldsProvider };
 
-            _reportMappingService = new ReportMappingService(_reportColumnsMapRepository, fieldsProviders, _backgroundJobManager, _currentTenant);
-            
-            // Set up the object mapper and logger using the service provider
-            SetupServiceDependencies();
+            _reportMappingService = new ReportMappingService(_reportColumnsMapRepository,
+                fieldsProviders,
+                _backgroundJobManager,
+                _currentTenant);
+
+            // Set up the LazyServiceProvider and Logger using reflection
+            SetupServicePropertiesForTesting(_reportMappingService, _mockLogger);
         }
 
-        private void SetupServiceDependencies()
+        // This workaround allows us to inject these services whilst still mocking the other services
+        // This case we dont make round trips to the MY-sql db for the tests
+        private static void SetupServicePropertiesForTesting(object service, ILogger logger)
         {
-            // The ReportMappingService inherits from ReportingAppService which needs these dependencies
-            // They will be provided by the test base class setup
+            // Create a mock LazyServiceProvider that returns our mock logger
+            var mockLazyServiceProvider = Substitute.For<IAbpLazyServiceProvider>();
+            mockLazyServiceProvider.LazyGetService<ILogger>(Arg.Any<Func<IServiceProvider, ILogger>>())
+                .Returns(logger);
+
+            // Set the LazyServiceProvider property using reflection
+            var lazyServiceProviderProperty = typeof(ReportMappingService)
+                .GetProperty("LazyServiceProvider", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+            if (lazyServiceProviderProperty == null)
+            {
+                // Try base classes
+                var currentType = typeof(ReportMappingService).BaseType;
+                while (currentType != null && lazyServiceProviderProperty == null)
+                {
+                    lazyServiceProviderProperty = currentType.GetProperty("LazyServiceProvider",
+                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    currentType = currentType.BaseType;
+                }
+            }
+
+            if (lazyServiceProviderProperty != null && lazyServiceProviderProperty.CanWrite)
+            {
+                lazyServiceProviderProperty.SetValue(service, mockLazyServiceProvider);
+            }
+            else
+            {
+                throw new InvalidOperationException("Could not find or set LazyServiceProvider property");
+            }
         }
 
         // Helper method to convert array of field names to Dictionary<string, string>
@@ -60,11 +97,11 @@ namespace Unity.Reporting.Application.Tests.Configuration
         }
 
         // Helper method to call internal ValidateColumnNamesConformance method via reflection
-        private static bool CallValidateColumnNamesConformance(UpsertMapRowDto[] rows)
+        private static bool CallValidateColumnNamesConformance(UpsertMapRowDto[]? rows)
         {
             var type = typeof(ReportMappingUtils);
             var method = type.GetMethod("ValidateColumnNamesConformance", BindingFlags.NonPublic | BindingFlags.Static);
-            return (bool)method!.Invoke(null, new object[] { rows })!;
+            return (bool)method!.Invoke(null, [rows])!;
         }
 
         [Fact]
@@ -460,9 +497,9 @@ namespace Unity.Reporting.Application.Tests.Configuration
             // Setup mocks
             _reportColumnsMapRepository.ViewExistsAsync(viewName).Returns(false);
             _reportColumnsMapRepository.FindByCorrelationAsync(correlationId, correlationProvider)
-                .Returns(new ReportColumnsMap 
-                { 
-                    CorrelationId = correlationId, 
+                .Returns(new ReportColumnsMap
+                {
+                    CorrelationId = correlationId,
                     CorrelationProvider = correlationProvider,
                     Mapping = "{\"Rows\":[]}"
                 });
@@ -489,9 +526,9 @@ namespace Unity.Reporting.Application.Tests.Configuration
             // Setup mocks - simulate view name is available for this correlation
             _reportColumnsMapRepository.FindByViewNameAsync(viewName).Returns((ReportColumnsMap?)null);
             _reportColumnsMapRepository.FindByCorrelationAsync(correlationId, correlationProvider)
-                .Returns(new ReportColumnsMap 
-                { 
-                    CorrelationId = correlationId, 
+                .Returns(new ReportColumnsMap
+                {
+                    CorrelationId = correlationId,
                     CorrelationProvider = correlationProvider,
                     Mapping = "{\"Rows\":[]}"
                 });
@@ -533,7 +570,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
             _reportColumnsMapRepository.ViewExistsAsync(Arg.Any<string>()).Returns(false);
 
             // Act & Assert
-            await Should.ThrowAsync<System.ArgumentException>(async () =>
+            await Should.ThrowAsync<ArgumentException>(async () =>
                 await _reportMappingService.GetViewColumnNamesAsync("nonexistent_view"));
         }
 
@@ -545,7 +582,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
             var request = new ViewDataRequest { Skip = 0, Take = 10 };
 
             // Act & Assert
-            await Should.ThrowAsync<System.ArgumentException>(async () =>
+            await Should.ThrowAsync<ArgumentException>(async () =>
                 await _reportMappingService.GetViewDataAsync("nonexistent_view", request));
         }
 
@@ -555,11 +592,11 @@ namespace Unity.Reporting.Application.Tests.Configuration
             // Arrange
             var viewName = "test_view";
             var request = new ViewDataRequest { Skip = 0, Take = 10 };
-            var expectedResult = new ViewDataResult 
-            { 
-                Data = [], 
-                TotalCount = 0, 
-                ColumnNames = ["col1", "col2"] 
+            var expectedResult = new ViewDataResult
+            {
+                Data = [],
+                TotalCount = 0,
+                ColumnNames = ["col1", "col2"]
             };
 
             _reportColumnsMapRepository.ViewExistsAsync(viewName).Returns(true);
@@ -581,13 +618,13 @@ namespace Unity.Reporting.Application.Tests.Configuration
         public async Task DeleteAsync_Should_Delete_Mapping_And_View()
         {
             // Arrange
-            var correlationId = System.Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
             var correlationProvider = "testProvider";
             var viewName = "test_view";
 
-            var reportColumnsMap = new ReportColumnsMap 
-            { 
-                CorrelationId = correlationId, 
+            var reportColumnsMap = new ReportColumnsMap
+            {
+                CorrelationId = correlationId,
                 CorrelationProvider = correlationProvider,
                 Mapping = "{\"Rows\":}",
 
@@ -596,7 +633,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
 
             _reportColumnsMapRepository.FindByCorrelationAsync(correlationId, correlationProvider)
                 .Returns(reportColumnsMap);
-            
+
             _reportColumnsMapRepository.ViewExistsAsync(viewName).Returns(true);
 
             // Act
@@ -612,13 +649,13 @@ namespace Unity.Reporting.Application.Tests.Configuration
         public async Task DeleteAsync_Should_Delete_Mapping_Without_View_When_DeleteView_False()
         {
             // Arrange
-            var correlationId = System.Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
             var correlationProvider = "testProvider";
             var viewName = "test_view";
 
-            var reportColumnsMap = new ReportColumnsMap 
-            { 
-                CorrelationId = correlationId, 
+            var reportColumnsMap = new ReportColumnsMap
+            {
+                CorrelationId = correlationId,
                 CorrelationProvider = correlationProvider,
                 Mapping = "{\"Rows\":}",
 
@@ -641,13 +678,13 @@ namespace Unity.Reporting.Application.Tests.Configuration
         public async Task DeleteAsync_Should_Continue_When_View_Deletion_Fails()
         {
             // Arrange
-            var correlationId = System.Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
             var correlationProvider = "testProvider";
             var viewName = "test_view";
 
-            var reportColumnsMap = new ReportColumnsMap 
-            { 
-                CorrelationId = correlationId, 
+            var reportColumnsMap = new ReportColumnsMap
+            {
+                CorrelationId = correlationId,
                 CorrelationProvider = correlationProvider,
                 Mapping = "{\"Rows\":[]}",
                 ViewName = viewName
@@ -655,10 +692,10 @@ namespace Unity.Reporting.Application.Tests.Configuration
 
             _reportColumnsMapRepository.FindByCorrelationAsync(correlationId, correlationProvider)
                 .Returns(reportColumnsMap);
-            
+
             _reportColumnsMapRepository.ViewExistsAsync(viewName).Returns(true);
             _reportColumnsMapRepository.When(x => x.DeleteViewAsync(viewName))
-                .Do(x => throw new System.Exception("View deletion failed"));
+                .Do(x => throw new Exception("View deletion failed"));
 
             // Act & Assert - Should not throw exception
             await _reportMappingService.DeleteAsync(correlationId, correlationProvider, true);
@@ -672,7 +709,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
         public async Task DeleteAsync_Should_Throw_EntityNotFoundException_When_Mapping_Not_Found()
         {
             // Arrange
-            var correlationId = System.Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
             var correlationProvider = "testProvider";
 
             _reportColumnsMapRepository.FindByCorrelationAsync(correlationId, correlationProvider)
@@ -687,11 +724,11 @@ namespace Unity.Reporting.Application.Tests.Configuration
         public async Task DeleteAsync_Should_Throw_ArgumentException_For_Invalid_Provider()
         {
             // Arrange
-            var correlationId = System.Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
             var invalidProvider = "invalid_provider";
 
             // Act & Assert
-            await Should.ThrowAsync<System.ArgumentException>(async () =>
+            await Should.ThrowAsync<ArgumentException>(async () =>
                 await _reportMappingService.DeleteAsync(correlationId, invalidProvider, true));
         }
 
@@ -699,12 +736,12 @@ namespace Unity.Reporting.Application.Tests.Configuration
         public async Task DeleteAsync_Should_Skip_View_Deletion_When_ViewName_Is_Empty()
         {
             // Arrange
-            var correlationId = System.Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
             var correlationProvider = "testProvider";
 
-            var reportColumnsMap = new ReportColumnsMap 
-            { 
-                CorrelationId = correlationId, 
+            var reportColumnsMap = new ReportColumnsMap
+            {
+                CorrelationId = correlationId,
                 CorrelationProvider = correlationProvider,
                 Mapping = "{\"Rows\":[]}",
 

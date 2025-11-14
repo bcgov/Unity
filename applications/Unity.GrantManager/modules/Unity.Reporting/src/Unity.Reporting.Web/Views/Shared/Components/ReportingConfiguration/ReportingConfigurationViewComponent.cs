@@ -29,28 +29,48 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
             _reportMappingService = reportMappingService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid formId, Guid? selectedVersionId = null)
+        public async Task<IViewComponentResult> InvokeAsync(Guid formId, Guid? selectedVersionId = null, string? provider = null)
         {
-            var formVersions = await _applicationFormAppService
-                .GetVersionsAsync(formId);
+            // Determine the correlation provider - default to formversion if not specified
+            var correlationProvider = !string.IsNullOrEmpty(provider) ? provider : Providers.FormVersion;
+            
+            // Determine correlation ID based on provider
+            Guid? correlationId = null;
+            if (correlationProvider == Providers.Scoresheet)
+            {
+                // For scoresheets, use the form ID directly
+                correlationId = formId;
+            }
+            else
+            {
+                // For form versions and other providers, use the selected version ID
+                correlationId = selectedVersionId;
+            }
 
-            // Use provided selectedVersionId or fall back to first available
-            var versionId = selectedVersionId ?? formVersions.FirstOrDefault()?.Id;
+            var formVersions = await _applicationFormAppService.GetVersionsAsync(formId);
+
+            // For form version provider, use provided selectedVersionId or fall back to first available
+            if (correlationProvider == Providers.FormVersion)
+            {
+                selectedVersionId = selectedVersionId ?? formVersions.FirstOrDefault()?.Id;
+                correlationId = selectedVersionId;
+            }
+
             string viewName = string.Empty;
             ViewStatus? viewStatus = null;
             bool hasSavedConfiguration = false;
             bool hasDuplicateKeys = false;
 
-            // If there's a selected version, try to get the current mapping data
-            if (versionId.HasValue)
+            // If there's a valid correlation ID, try to get the current mapping data
+            if (correlationId.HasValue)
             {
-                var exists = await _reportMappingService.ExistsAsync(versionId.Value, Providers.FormVersion);
+                var exists = await _reportMappingService.ExistsAsync(correlationId.Value, correlationProvider);
                 hasSavedConfiguration = exists;
 
                 if (exists)
                 {
                     var reportColumnsMap = await _reportMappingService
-                        .GetByCorrelationAsync(versionId.Value, Providers.FormVersion);
+                        .GetByCorrelationAsync(correlationId.Value, correlationProvider);
 
                     viewName = reportColumnsMap.ViewName;
                     viewStatus = reportColumnsMap.ViewStatus;
@@ -62,7 +82,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                 {
                     // Check for duplicate keys in the fields metadata (initial load)
                     var fieldsMetadata = await _reportMappingService
-                        .GetFieldsMetadataAsync(versionId.Value, Providers.FormVersion);
+                        .GetFieldsMetadataAsync(correlationId.Value, correlationProvider);
 
                     hasDuplicateKeys = CheckForDuplicateKeys(fieldsMetadata.Fields);
                 }
@@ -77,11 +97,14 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                         Value = v.Id.ToString(),
                         Text = $"{v.Version} - {v.ChefsFormVersionGuid!.ToString()}"
                     })],
-                SelectedVersionId = versionId,
+                SelectedVersionId = selectedVersionId,
                 ViewName = viewName,
                 ViewStatus = viewStatus,
                 HasSavedConfiguration = hasSavedConfiguration,
-                HasDuplicateKeys = hasDuplicateKeys
+                HasDuplicateKeys = hasDuplicateKeys,
+                Provider = correlationProvider,
+                CorrelationId = correlationId,
+                IsVersionSelectorVisible = correlationProvider == Providers.FormVersion
             };
 
             return View(model);

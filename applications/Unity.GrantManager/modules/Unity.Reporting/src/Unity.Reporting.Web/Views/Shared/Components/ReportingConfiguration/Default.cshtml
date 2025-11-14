@@ -1,49 +1,85 @@
 ﻿@using Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration;
+@using Unity.Reporting.Permissions;
+@using Microsoft.AspNetCore.Authorization;
+@using Volo.Abp.Authorization.Permissions
+@using Volo.Abp.Features;
+@inject IPermissionChecker PermissionChecker
+@inject IFeatureChecker FeatureChecker
 @model ReportingConfigurationViewModel
 
 <div class="report-config-component">
     <input type="hidden" id="reportingFormId" value="@Model.FormId" />
     <input type="hidden" id="reportingVersionId" value="@Model.SelectedVersionId" />
+    <input type="hidden" id="reportingCorrelationId" value="@Model.CorrelationId" />
+    <input type="hidden" id="reportingProvider" value="@Model.Provider" />
     <input type="hidden" id="hasDuplicateKeys" value="@Model.HasDuplicateKeys.ToString().ToLower()" />
 
     <!-- Provider Toggle Section -->
     <div class="provider-toggle-section mb-3">
         <div class="btn-group" role="group" aria-label="Provider toggle">
-            <input type="radio" class="btn-check" name="provider-toggle" id="provider-submissions" value="formversion" checked>
+            <input type="radio" class="btn-check" name="provider-toggle" id="provider-submissions" value="formversion" @(Model.Provider == "formversion" ? "checked" : "")>
             <label class="btn btn-outline-primary" for="provider-submissions">Submissions</label>
-            
-            <input type="radio" class="btn-check" name="provider-toggle" id="provider-worksheets" value="worksheet">
-            <label class="btn btn-outline-primary" for="provider-worksheets">Worksheets</label>
-            
-            <input type="radio" class="btn-check" name="provider-toggle" id="provider-scoresheets" value="scoresheet">
-            <label class="btn btn-outline-primary" for="provider-scoresheets">Scoresheets</label>
+
+            @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+            {
+                <input type="radio" class="btn-check" name="provider-toggle" id="provider-worksheets" value="worksheet" @(Model.Provider == "worksheet" ? "checked" : "")>
+                <label class="btn btn-outline-primary" for="provider-worksheets">Worksheets</label>
+
+                <input type="radio" class="btn-check" name="provider-toggle" id="provider-scoresheets" value="scoresheet" @(Model.Provider == "scoresheet" ? "checked" : "")>
+                <label class="btn btn-outline-primary" for="provider-scoresheets">Scoresheets</label>
+            }
         </div>
     </div>
 
     <div class="report-config-controls">
-        <div>
-            <abp-select asp-for="SelectedVersionId"
-                        asp-items="@Model.FormVersions"
-                        label="Version Selector"
-                        id="versionSelector" />
-        </div>
+        @if (Model.IsVersionSelectorVisible)
+        {
+            <div>
+                <abp-select asp-for="SelectedVersionId"
+                            asp-items="@Model.FormVersions"
+                            label="Version Selector"
+                            id="versionSelector" />
+            </div>
+        }
+        else
+        {
+            <!-- Hidden version selector for scoresheet mode -->
+            <div style="display: none;">
+                <abp-select asp-for="SelectedVersionId"
+                            asp-items="@Model.FormVersions"
+                            label="Version Selector"
+                            id="versionSelector" />
+            </div>
+            <!-- Show form info for scoresheet mode -->
+            <div class="form-info-display">
+                <div class="form-group">
+                    <label class="form-label">Form Configuration</label>
+                    <div class="form-control-static">
+                        <strong>Form ID:</strong> @Model.FormId
+                    </div>
+                </div>
+            </div>
+        }
         <div class="d-flex" style="gap:5px; align-items: center;">
 
-            @if (Model.SelectedVersionId.HasValue)
+            @if (Model.CorrelationId.HasValue)
             {
-                <div data-widget-name="ReportingConfigurationViewStatus" data-version-id="@Model.SelectedVersionId" data-provider="formversion">
-                    @await Component.InvokeAsync("ReportingConfigurationViewStatus", new { versionId = Model.SelectedVersionId.Value, provider = "formversion" })
+                <div data-widget-name="ReportingConfigurationViewStatus" data-version-id="@Model.CorrelationId" data-provider="@Model.Provider">
+                    @await Component.InvokeAsync("ReportingConfigurationViewStatus", new { versionId = Model.CorrelationId.Value, provider = Model.Provider })
                 </div>
             }
 
-            <abp-button id="btn-generate-view-report-configuration"
-                        text="Generate View"
-                        icon-type="Other"
-                        icon="fl fl-datagrid"
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="top"
-                        data-bs-original-title="Generate view"
-                        class="btn unt-btn-primary btn-primary @(Model.HasSavedConfiguration ? "" : "generate-view-btn-hidden")"></abp-button>
+            @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
+            {
+                <abp-button id="btn-generate-view-report-configuration"
+                            text="Generate View"
+                            icon-type="Other"
+                            icon="fl fl-datagrid"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            data-bs-original-title="Generate view"
+                            class="btn unt-btn-primary btn-primary @(Model.HasSavedConfiguration ? "" : "generate-view-btn-hidden")"></abp-button>
+            }
 
             <div id="div-duplicate-keys-warning"
                  class="duplicate-keys-warning report-config-btn-height-fix d-flex align-items-center @(Model.HasDuplicateKeys ? "" : "duplicate-keys-div-hidden")"
@@ -56,22 +92,31 @@
                 </small>
             </div>
 
-            <abp-button id="btn-delete-report-configuration"
-                        text="Delete"
-                        icon-type="Other"
-                        icon="fl fl-delete"
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="top"
-                        data-bs-original-title="Delete this configuration and associated view"
-                        class="btn unt-btn-danger btn-danger report-config-btn-height-fix @(Model.HasSavedConfiguration ? "" : "delete-config-btn-hidden")"></abp-button>
-            <abp-button id="btn-save-report-configuration"
-                        text="Save"
-                        icon-type="Other"
-                        icon="fl fl-save"
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="top"
-                        data-bs-original-title="Save changes"
-                        class="btn unt-btn-primary btn-primary"></abp-button>
+            @if (Model.HasSavedConfiguration &&
+                        await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Delete))
+            {
+                <abp-button id="btn-delete-report-configuration"
+                            text="Delete"
+                            icon-type="Other"
+                            icon="fl fl-delete"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            data-bs-original-title="Delete this configuration and associated view"
+                            class="btn unt-btn-danger btn-danger report-config-btn-height-fix"></abp-button>
+            }
+
+            @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
+            {
+                <abp-button id="btn-save-report-configuration"
+                            text="Save"
+                            icon-type="Other"
+                            icon="fl fl-save"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            data-bs-original-title="Save changes"
+                            class="btn unt-btn-primary btn-primary"></abp-button>
+            }
+
             <abp-button id="btn-undo-report-configuration"
                         text="Undo"
                         icon-type="Other"
@@ -81,6 +126,7 @@
                         data-bs-original-title="Cancel changes"
                         class="btn unt-btn-outline-primary btn-outline-primary mx-1"
                         style="display: none;"></abp-button>
+
             <abp-button id="btn-back-report-configuration"
                         text="Back"
                         data-bs-toggle="tooltip"
@@ -97,16 +143,19 @@
             <div class="filter-search-action-bar_search-wrapper">
                 <input type="search" id="search-report-config" placeholder="Search" class="tbl-search">
             </div>
-            <div id="reportConfigDynamicButtons" class="dynamic-buttons-div button-gap-1">
-                <abp-button id="btn-generate-unique-column-names"
-                            text="Column Helper"
-                            icon-type="Other"
-                            icon="fl fl-font"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            data-bs-original-title="Generate unique column names for all fields with duplicate names"
-                            class="btn unt-btn-outline-primary btn-outline-primary"></abp-button>
-            </div>
+            @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
+            {
+                <div id="reportConfigDynamicButtons" class="dynamic-buttons-div button-gap-1">
+                    <abp-button id="btn-generate-unique-column-names"
+                                text="Column Helper"
+                                icon-type="Other"
+                                icon="fl fl-font"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-bs-original-title="Generate unique column names for all fields with duplicate names"
+                                class="btn unt-btn-outline-primary btn-outline-primary"></abp-button>
+                </div>
+            }
         </div>
 
         <!-- Table Container -->
@@ -133,6 +182,12 @@
                         <div class="form-text">
                             View name must start with a letter or underscore, contain only letters, numbers, and underscores,
                             and be between 1-63 characters long.
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fa fa-info-circle me-1"></i>
+                                <strong>Tip:</strong> Use a descriptive name that clearly identifies the data this view will contain.
+                            </small>
                         </div>
                     </div>
                 </form>
