@@ -51,7 +51,6 @@ namespace Unity.GrantManager.AI
 
                 var requestBody = new
                 {
-                    model = Model,
                     messages = new[]
                     {
                         new { role = "system", content = systemPrompt },
@@ -65,7 +64,7 @@ namespace Unity.GrantManager.AI
                 var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
                 _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiKey}");
+                _httpClient.DefaultRequestHeaders.Add("Authorization", ApiKey);
 
                 var response = await _httpClient.PostAsync(ApiUrl, httpContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
