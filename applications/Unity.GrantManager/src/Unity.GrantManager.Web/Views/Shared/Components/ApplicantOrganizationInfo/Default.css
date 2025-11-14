@@ -12,12 +12,12 @@
 }
 
 /* Payment info container styles */
-.payment-info-container {
+.applicant-info-container {
     margin-bottom: 1.5rem;
     position: relative;
 }
 
-.payment-info-container .save-button-container {
+.applicant-info-container .save-button-container {
     display: flex;
     justify-content: flex-end;
     position: sticky;
@@ -26,11 +26,11 @@
     z-index: 999;
 }
 
-.payment-info-container .save-button-container .floating-save-btn {
+.applicant-info-container .save-button-container .floating-save-btn {
     position: static;
 }
 
-.payment-info-supplier {
+.applicant-organization-info {
     background-color: #f8f9fa;
     border-radius: 8px;
     padding: 1rem;
@@ -42,13 +42,18 @@
 }
 
 .project-location {
-    border-bottom: 1px solid #dee2e6;
     margin-bottom: 1rem;
 }
 
 .project-location h6 {
     margin: 0;
     padding-bottom: 0.5rem;
+}
+
+.applicant-organization-info__divider_line {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
 }
 
 /* Form field spacing */

@@ -214,6 +214,99 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         return await applicantRepository.UpdateAsync(applicant);
     }
 
+    public async Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
+    {
+        if (applicantId == Guid.Empty)
+        {
+            throw new ArgumentException("ApplicantId cannot be empty.", nameof(applicantId));
+        }
+
+        ArgumentNullException.ThrowIfNull(input);
+
+        if (input.PrimaryContact == null &&
+            input.PrimaryPhysicalAddress == null &&
+            input.PrimaryMailingAddress == null)
+        {
+            return;
+        }
+
+        if (input.PrimaryContact != null &&
+            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
+        {
+            await UpdatePrimaryContactAsync(applicantId, input.PrimaryContact);
+        }
+
+        if (input.PrimaryPhysicalAddress != null &&
+            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        {
+            await UpdatePrimaryAddressAsync(applicantId, input.PrimaryPhysicalAddress, GrantApplications.AddressType.PhysicalAddress);
+        }
+
+        if (input.PrimaryMailingAddress != null &&
+            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        {
+            await UpdatePrimaryAddressAsync(applicantId, input.PrimaryMailingAddress, GrantApplications.AddressType.MailingAddress);
+        }
+    }
+
+    private async Task UpdatePrimaryContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
+    {
+        if (input.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Contact identifier is required.", nameof(input));
+        }
+
+        var applicantAgent = await applicantAgentRepository.GetAsync(input.Id);
+        if (applicantAgent.ApplicantId != applicantId)
+        {
+            throw new BusinessException("Unity:Applicant:ContactNotFound")
+                .WithData("ApplicantId", applicantId)
+                .WithData("ContactId", input.Id);
+        }
+
+        applicantAgent.Name = input.FullName?.Trim() ?? string.Empty;
+        applicantAgent.Title = input.Title?.Trim() ?? string.Empty;
+        applicantAgent.Email = input.Email?.Trim() ?? string.Empty;
+        applicantAgent.Phone = input.BusinessPhone?.Trim() ?? string.Empty;
+        applicantAgent.Phone2 = input.CellPhone?.Trim() ?? string.Empty;
+
+        await applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    private async Task UpdatePrimaryAddressAsync(Guid applicantId, UpdatePrimaryApplicantAddressDto input, GrantApplications.AddressType expectedType)
+    {
+        if (input.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Address identifier is required.", nameof(input));
+        }
+
+        var applicantAddress = await addressRepository.GetAsync(input.Id);
+
+        if (applicantAddress.ApplicantId != applicantId)
+        {
+            throw new BusinessException("Unity:Applicant:AddressNotFound")
+                .WithData("ApplicantId", applicantId)
+                .WithData("AddressId", input.Id);
+        }
+
+        if (applicantAddress.AddressType != expectedType)
+        {
+            throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
+                .WithData("ApplicantId", applicantId)
+                .WithData("AddressId", input.Id)
+                .WithData("ExpectedType", expectedType.ToString());
+        }
+
+        applicantAddress.Street = input.Street?.Trim() ?? string.Empty;
+        applicantAddress.Street2 = input.Street2?.Trim() ?? string.Empty;
+        applicantAddress.Unit = input.Unit?.Trim() ?? string.Empty;
+        applicantAddress.City = input.City?.Trim() ?? string.Empty;
+        applicantAddress.Province = input.Province?.Trim() ?? string.Empty;
+        applicantAddress.Postal = input.PostalCode?.Trim() ?? string.Empty;
+
+        await addressRepository.UpdateAsync(applicantAddress);
+    }
+
     [RemoteService(true)]
     public async Task MatchApplicantOrgNamesAsync()
     {

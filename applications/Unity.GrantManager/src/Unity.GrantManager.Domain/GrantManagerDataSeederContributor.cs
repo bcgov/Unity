@@ -9,7 +9,7 @@ using Volo.Abp.Domain.Repositories;
 namespace Unity.GrantManager;
 
 public class GrantManagerDataSeederContributor(
-    IApplicationStatusRepository applicationStatusRepository) : IDataSeeder, ITransientDependency
+    IApplicationStatusRepository applicationStatusRepository) : IDataSeedContributor, ITransientDependency
 {
     public static class GrantApplicationStates
     {

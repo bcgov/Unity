@@ -49,7 +49,8 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
         {
             foreach (var template in emailTemplateVariableDtos)
             {
-                var existingVariable = await templateVariablesRepository.FindAsync(tv => tv.Token == template.Token);
+                var allVariables = await templateVariablesRepository.GetListAsync();
+                var existingVariable = allVariables.FirstOrDefault(tv => tv.Token == template.Token);
                 if (existingVariable == null)
                 {
                     await templateVariablesRepository.InsertAsync(
