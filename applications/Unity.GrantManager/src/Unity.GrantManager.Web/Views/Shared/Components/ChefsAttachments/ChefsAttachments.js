@@ -140,7 +140,7 @@ $(function () {
             columnDefs: getColumns(),
             createdRow: function (row, data, dataIndex) {
                 if (data.aiSummary) {
-                    var summaryRow = $('<tr class="ai-summary-row" data-parent-row="' + dataIndex + '" style="background-color: #f8f9fa; display: none;">')
+                    let summaryRow = $('<tr class="ai-summary-row" data-parent-row="' + dataIndex + '" style="background-color: #f8f9fa; display: none;">')
                         .append($('<td>'))
                         .append($('<td colspan="4" style="font-size: 1em; color: #6c757d; font-style: italic;">')
                             .html(data.aiSummary));
