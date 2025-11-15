@@ -137,7 +137,16 @@ $(function () {
                 inputAction,
                 responseCallback
             ),
-            columnDefs: getColumns()
+            columnDefs: getColumns(),
+            createdRow: function (row, data, dataIndex) {
+                if (data.aiSummary) {
+                    var summaryRow = $('<tr class="ai-summary-row" data-parent-row="' + dataIndex + '" style="background-color: #f8f9fa; display: none;">')
+                        .append($('<td>'))
+                        .append($('<td colspan="4" style="font-size: 1em; color: #6c757d; font-style: italic;">')
+                            .html(data.aiSummary));
+                    $(row).after(summaryRow);
+                }
+            }
         })
     );
 
@@ -177,7 +186,7 @@ $(function () {
                         $(row.node()).removeClass('shown');
                     }
                 });
-                $icon.removeClass('fl-chevron-up').addClass('fl-search');
+                $icon.removeClass('fa-chevron-up').addClass('fa-wand-sparkles');
                 allAISummariesExpanded = false;
             } else {
                 // Expand all
@@ -189,7 +198,7 @@ $(function () {
                         $(row.node()).addClass('shown');
                     }
                 });
-                $icon.removeClass('fl-search').addClass('fl-chevron-up');
+                $icon.removeClass('fa-wand-sparkles').addClass('fa-chevron-up');
                 allAISummariesExpanded = true;
             }
         });
@@ -200,7 +209,7 @@ $(function () {
         if (allAISummariesExpanded) {
             const $button = $('#toggleAllAISummaries');
             const $icon = $button.find('i');
-            $icon.removeClass('fl-chevron-up').addClass('fl-search');
+            $icon.removeClass('fl-chevron-up').addClass('fa-wand-sparkles');
             allAISummariesExpanded = false;
         }
     });
