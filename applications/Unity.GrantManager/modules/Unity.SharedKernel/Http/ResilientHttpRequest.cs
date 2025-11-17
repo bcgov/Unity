@@ -4,12 +4,15 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Newtonsoft.Json;
+using System.Security.Authentication;
 
 namespace Unity.Modules.Shared.Http
 {
@@ -19,29 +22,45 @@ namespace Unity.Modules.Shared.Http
         private static int _maxRetryAttempts = 3;
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
         private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(60);
+
         private const string AuthorizationHeader = "Authorization";
-        private static ResiliencePipeline<HttpResponseMessage> _pipeline = BuildPipeline();
+
         private string? _baseUrl;
         private readonly HttpClient _httpClient = httpClient;
 
-        private static readonly HttpStatusCode[] RetryableStatusCodes = new[]
-        {
+        // Keep a cached mutual TLS HttpClient — never create per request
+        private static readonly object _mtlsClientLock = new();
+        private static HttpClient? _mtlsClient;
+
+        /// <summary>
+        /// Status codes that qualify for retry.
+        /// </summary>
+        private static readonly HttpStatusCode[] RetryableStatusCodes =
+        [
             HttpStatusCode.TooManyRequests,
             HttpStatusCode.InternalServerError,
             HttpStatusCode.BadGateway,
             HttpStatusCode.ServiceUnavailable,
             HttpStatusCode.GatewayTimeout
-        };
+        ];
 
-        public static void SetPipelineOptions(
-            int maxRetryAttempts,
-            TimeSpan pauseBetweenFailures,
-            TimeSpan httpRequestTimeout)
+        /// <summary>
+        /// A Polly v8 pipeline for handling retries + timeout.
+        /// </summary>
+        private static ResiliencePipeline<HttpResponseMessage> _pipeline = BuildPipeline();
+
+
+        // -------------------------------
+        // Pipeline Configuration
+        // -------------------------------
+
+        public static void SetPipelineOptions(int maxRetryAttempts, TimeSpan pauseBetweenFailures, TimeSpan httpRequestTimeout)
         {
             _maxRetryAttempts = maxRetryAttempts;
             _pauseBetweenFailures = pauseBetweenFailures;
             _httpRequestTimeout = httpRequestTimeout;
-            _pipeline = BuildPipeline(); // rebuild with new settings
+
+            _pipeline = BuildPipeline();
         }
 
         private static ResiliencePipeline<HttpResponseMessage> BuildPipeline()
@@ -50,16 +69,29 @@ namespace Unity.Modules.Shared.Http
                 .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
                 {
                     ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-                        .Handle<HttpRequestException>()
+                        .Handle<HttpRequestException>()           // most HTTP/network errors
+                        .Handle<IOException>()                    // transport layer failures
+                        .Handle<SocketException>()                // TCP reset / handshake abort
+                        .Handle<AuthenticationException>()        // TLS handshake authentication failures
+                        .Handle<OperationCanceledException>()     // handshake timeout
                         .HandleResult(result => ShouldRetry(result.StatusCode)),
-                    Delay = _pauseBetweenFailures,
+
                     MaxRetryAttempts = _maxRetryAttempts,
-                    UseJitter = true,
-                    BackoffType = DelayBackoffType.Exponential
+                    Delay = _pauseBetweenFailures,
+                    BackoffType = DelayBackoffType.Exponential,
+                    UseJitter = true
                 })
                 .AddTimeout(_httpRequestTimeout)
                 .Build();
         }
+
+        private static bool ShouldRetry(HttpStatusCode statusCode) =>
+            RetryableStatusCodes.Contains(statusCode);
+
+
+        // -------------------------------
+        // URL handling
+        // -------------------------------
 
         public void SetBaseUrl(string baseUrl)
         {
@@ -70,11 +102,11 @@ namespace Unity.Modules.Shared.Http
             _baseUrl = baseUrl.TrimEnd('/');
         }
 
-        private static bool ShouldRetry(HttpStatusCode statusCode) => RetryableStatusCodes.Contains(statusCode);
 
-        /// <summary>
-        /// Send an HTTP request with resilience policies applied.
-        /// </summary>
+        // -------------------------------
+        // HTTP Request Entry Points
+        // -------------------------------
+
         public async Task<HttpResponseMessage> HttpAsync(
             HttpMethod httpVerb,
             string resource,
@@ -83,11 +115,14 @@ namespace Unity.Modules.Shared.Http
             (string username, string password)? basicAuth = null,
             CancellationToken cancellationToken = default)
         {
-            return await SendWithClientAsync(_httpClient, httpVerb, resource, body, authToken, basicAuth, cancellationToken);
+            return await SendWithClientAsync(
+                _httpClient, httpVerb, resource, body, authToken, basicAuth, cancellationToken);
         }
 
+
         /// <summary>
-        /// HTTP request with mutual TLS (client certificate).
+        /// HTTPS + Client Certificate (mTLS)
+        /// This version now *reuses* the mTLS HttpClient safely.
         /// </summary>
         public Task<HttpResponseMessage> HttpAsyncSecured(
             HttpMethod httpVerb,
@@ -99,31 +134,55 @@ namespace Unity.Modules.Shared.Http
             (string username, string password)? basicAuth = null,
             CancellationToken cancellationToken = default)
         {
-            var handler = new HttpClientHandler
-            {
-                ClientCertificateOptions = ClientCertificateOption.Manual
-            };
+            EnsureMutualTlsClient(certPath, certPassword);
 
-            X509Certificate2 clientCert = LoadCertificate(certPath, certPassword);
-            handler.ClientCertificates.Add(clientCert);
-
-            using var securedHttpClient = new HttpClient(handler);
-            return SendWithClientAsync(securedHttpClient, httpVerb, resource, body, authToken, basicAuth, cancellationToken);
+            return SendWithClientAsync(
+                _mtlsClient!, httpVerb, resource, body, authToken, basicAuth, cancellationToken);
         }
 
-        private static X509Certificate2 LoadCertificate(string certPath, string? certPassword = null)
+
+        // -------------------------------
+        // Mutual TLS Client Factory
+        // -------------------------------
+
+        private static void EnsureMutualTlsClient(string certPath, string? certPassword)
+        {
+            if (_mtlsClient != null)
+                return;
+
+            lock (_mtlsClientLock)
+            {
+                if (_mtlsClient != null)
+                    return;
+
+                var handler = new HttpClientHandler
+                {
+                    ClientCertificateOptions = ClientCertificateOption.Manual,
+                    // Prevent handshake failures due to slow TLS negotiation
+                    SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
+                };
+
+                var cert = LoadCertificate(certPath, certPassword);
+                handler.ClientCertificates.Add(cert);
+
+                _mtlsClient = new HttpClient(handler);
+            }
+        }
+
+
+        private static X509Certificate2 LoadCertificate(string certPath, string? certPassword)
         {
             if (string.IsNullOrWhiteSpace(certPassword))
             {
-                // Load PEM or DER certificates
                 return X509CertificateLoader.LoadCertificateFromFile(certPath);
             }
-            else
-            {
-                // Load PFX/PKCS12 certificates with password
-                return X509CertificateLoader.LoadPkcs12FromFile(certPath, certPassword);
-            }
+            return X509CertificateLoader.LoadPkcs12FromFile(certPath, certPassword);
         }
+
+
+        // -------------------------------
+        // Core Send Logic
+        // -------------------------------
 
         private async Task<HttpResponseMessage> SendWithClientAsync(
             HttpClient client,
@@ -134,22 +193,31 @@ namespace Unity.Modules.Shared.Http
             (string username, string password)? basicAuth,
             CancellationToken cancellationToken)
         {
-            // Determine final URL
+            // Build final URL
             if (!Uri.TryCreate(resource, UriKind.Absolute, out Uri? fullUrl))
             {
-                if (string.IsNullOrWhiteSpace(_baseUrl))
+                if (_baseUrl == null)
                 {
                     throw new InvalidOperationException("Base URL must be set for relative paths.");
                 }
-                fullUrl = new Uri(new Uri(_baseUrl, UriKind.Absolute), resource);
+                fullUrl = new Uri(new Uri(_baseUrl), resource);
             }
 
             return await _pipeline.ExecuteAsync(async ct =>
             {
-                using var requestMessage = BuildRequestMessage(httpVerb, fullUrl, body, authToken, basicAuth);
-                return await client.SendAsync(requestMessage, ct);
+                using var requestMessage =
+                    BuildRequestMessage(httpVerb, fullUrl, body, authToken, basicAuth);
+
+                return await client.SendAsync(requestMessage, ct)
+                                   .ConfigureAwait(false);
+
             }, cancellationToken);
         }
+
+
+        // -------------------------------
+        // Build HTTP Request Message
+        // -------------------------------
 
         private static HttpRequestMessage BuildRequestMessage(
             HttpMethod httpVerb,
@@ -160,36 +228,43 @@ namespace Unity.Modules.Shared.Http
         {
             var requestMessage = new HttpRequestMessage(httpVerb, fullUrl);
             requestMessage.Headers.Accept.Clear();
-            requestMessage.Headers.ConnectionClose = true;
 
+            // NO Connection: close — this caused constant TLS renegotiation
+            // requestMessage.Headers.ConnectionClose = true;
+
+            // Bearer Token
             if (!string.IsNullOrWhiteSpace(authToken))
             {
                 requestMessage.Headers.Remove(AuthorizationHeader);
                 requestMessage.Headers.Add(AuthorizationHeader, $"Bearer {authToken}");
             }
+
+            // Basic Auth
             else if (basicAuth.HasValue)
             {
-                var credentials = Convert.ToBase64String(
-                    Encoding.ASCII.GetBytes($"{basicAuth.Value.username}:{basicAuth.Value.password}")
-                );
+                string raw = $"{basicAuth.Value.username}:{basicAuth.Value.password}";
+                string encoded = Convert.ToBase64String(Encoding.ASCII.GetBytes(raw));
+
                 requestMessage.Headers.Remove(AuthorizationHeader);
-                requestMessage.Headers.Add(AuthorizationHeader, $"Basic {credentials}");
+                requestMessage.Headers.Add(AuthorizationHeader, $"Basic {encoded}");
             }
 
+            // Body
             if (body != null)
             {
-                string bodyString = body is string s ? s : JsonConvert.SerializeObject(body);
-                requestMessage.Content = new StringContent(
-                    bodyString, Encoding.UTF8, "application/json"
-                );
+                string payload = body is string s ? s : JsonConvert.SerializeObject(body);
+                requestMessage.Content = new StringContent(payload, Encoding.UTF8, "application/json");
             }
 
             return requestMessage;
         }
 
-        public static async Task<string> ContentToStringAsync(HttpContent httpContent)
-        {
-            return await httpContent.ReadAsStringAsync();
-        }
+
+        // -------------------------------
+        // Misc Helpers
+        // -------------------------------
+
+        public static Task<string> ContentToStringAsync(HttpContent httpContent)
+            => httpContent.ReadAsStringAsync();
     }
 }

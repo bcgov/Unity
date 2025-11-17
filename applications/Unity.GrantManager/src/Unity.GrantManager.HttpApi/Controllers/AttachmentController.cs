@@ -28,6 +28,7 @@ namespace Unity.GrantManager.Controllers
         private const string badRequestFileMsg = "File name must be provided.";
         private const string NotFoundFileMsg = "File not found.";
         private const string errorFileMsg = "An error occurred while downloading the file.";
+        private const string chefsApiAccessError = "You do not have access to this resource";
 
         public AttachmentController(IFileAppService fileAppService, IConfiguration configuration, ISubmissionAppService submissionAppService)
         {
@@ -201,6 +202,11 @@ namespace Unity.GrantManager.Controllers
                 {
                     string ExceptionMessage = ex.Message;
                     logger.LogError(ex, "AttachmentController->DownloadAllChefsAttachment: {ExceptionMessage}", ExceptionMessage);
+                    if (ExceptionMessage.Contains(chefsApiAccessError))
+                    {                        
+                        return StatusCode(403, chefsApiAccessError);
+                    }
+
                     return StatusCode(500, errorFileMsg);
                 }
             }
