@@ -65,7 +65,8 @@
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].RemainingAmount" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].AccountCodingId" />
-                            
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ParentReferenceNo" />
+
                             <abp-row class="m-0 p-3">
                                 <abp-column size="_2" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>

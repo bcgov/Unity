@@ -13,6 +13,7 @@ using System.Linq;
 using Unity.GrantManager.Payments;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationForms;
+using Volo.Abp;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -267,6 +268,13 @@ namespace Unity.Payments.Web.Pages.Payments
         {
             if (ApplicationPaymentRequestForm == null) return NoContent();
 
+            // Validate parent-child payment amounts
+            var validationErrors = await ValidateParentChildPaymentAmounts();
+            if (validationErrors.Count != 0)
+            {
+                throw new UserFriendlyException(string.Join(" ", validationErrors));
+            }
+
             var payments = MapPaymentRequests();
 
             await paymentRequestAppService.CreateAsync(payments);
@@ -327,7 +335,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
                 // Add parent after children (if it exists in the list)
                 var parent = paymentRequests
-                    .FirstOrDefault(x => x.InvoiceNumber == parentRefNo && string.IsNullOrEmpty(x.ParentReferenceNo));
+                    .Find(x => x.SubmissionConfirmationCode == parentRefNo && string.IsNullOrEmpty(x.ParentReferenceNo));
 
                 if (parent != null)
                 {
@@ -344,6 +352,89 @@ namespace Unity.Payments.Web.Pages.Payments
             sortedList.AddRange(standaloneItems);
 
             return sortedList;
+        }
+
+        private async Task<List<string>> ValidateParentChildPaymentAmounts()
+        {
+            List<string> errors = [];
+
+            // Find all child groups in current submission
+            var childGroups = ApplicationPaymentRequestForm
+                .Where(x => !string.IsNullOrEmpty(x.ParentReferenceNo))
+                .GroupBy(x => x.ParentReferenceNo);
+
+            foreach (var childGroup in childGroups)
+            {
+                string parentRefNo = childGroup.Key!;
+                var children = childGroup.ToList();
+
+                // Find parent in current submission
+                var parentInSubmission = ApplicationPaymentRequestForm
+                    .Find(x => x.SubmissionConfirmationCode == parentRefNo &&
+                                         string.IsNullOrEmpty(x.ParentReferenceNo));
+
+                // Get parent application details
+                Guid parentApplicationId;
+                decimal currentParentAmount = 0;
+
+                if (parentInSubmission != null)
+                {
+                    parentApplicationId = parentInSubmission.CorrelationId;
+                    currentParentAmount = parentInSubmission.Amount;
+                }
+                else
+                {
+                    // Parent not in submission, get from first child's link
+                    var firstChild = await applicationService.GetAsync(children[0].CorrelationId);
+                    var allLinks = await applicationLinksService.GetListByApplicationAsync(firstChild.Id);
+                    var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent);
+
+                    if (parentLink == null)
+                    {
+                        errors.Add($"Parent application link not found for reference {parentRefNo}.");
+                        continue;
+                    }
+                    parentApplicationId = parentLink.ApplicationId;
+                }
+
+                // Get parent application
+                var parentApplication = await applicationService.GetAsync(parentApplicationId);
+                decimal approvedAmount = parentApplication.ApprovedAmount;
+
+                // Get parent's total paid + pending
+                decimal parentTotalPaidPending = await paymentRequestAppService
+                    .GetTotalPaymentRequestAmountByCorrelationIdAsync(parentApplicationId);
+
+                // Get ALL children of this parent and their total paid + pending
+                var parentLinks = await applicationLinksService.GetListByApplicationAsync(parentApplicationId);
+                var allChildLinks = parentLinks.Where(link => link.LinkType == ApplicationLinkType.Child).ToList();
+
+                decimal childrenTotalPaidPending = 0;
+                foreach (var childLink in allChildLinks)
+                {
+                    decimal childTotal = await paymentRequestAppService
+                        .GetTotalPaymentRequestAmountByCorrelationIdAsync(childLink.ApplicationId);
+                    childrenTotalPaidPending += childTotal;
+                }
+
+                // Calculate maximum allowed
+                decimal maximumPaymentAmount = approvedAmount - (parentTotalPaidPending + childrenTotalPaidPending);
+
+                // Calculate current submission total
+                decimal currentChildrenAmount = children.Sum(x => x.Amount);
+                decimal currentSubmissionTotal = currentParentAmount + currentChildrenAmount;
+
+                // Validate
+                if (currentSubmissionTotal > maximumPaymentAmount)
+                {
+                    errors.Add($"Payment request for parent application {parentRefNo} and its children exceeds the maximum allowed amount. " +
+                              $"Maximum: ${maximumPaymentAmount:N2}, Requested: ${currentSubmissionTotal:N2}. " +
+                              $"(Parent Approved Amount: ${approvedAmount:N2}, Already Paid/Pending for Parent: ${parentTotalPaidPending:N2}, " +
+                              $"Already Paid/Pending for All Children: ${childrenTotalPaidPending:N2})");
+                }
+            }
+
+            return errors;
         }
     }
 }
