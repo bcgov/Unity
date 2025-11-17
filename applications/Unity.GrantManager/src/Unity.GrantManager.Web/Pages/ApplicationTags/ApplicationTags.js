@@ -247,7 +247,7 @@ $(function () {
 
     function initEvents(tags) {
         // Capture keystrokes anywhere in the wrapper and focus input
-        var tagApplicationsModalElem = $("#tagApplicationsModal")[0];
+        let tagApplicationsModalElem = $("#tagApplicationsModal")[0];
         if (tagApplicationsModalElem) {
             tagApplicationsModalElem.addEventListener('keydown', function (e) {
                 // Skip if input is already focused or if it's a special key
