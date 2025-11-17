@@ -25,6 +25,18 @@ $(function () {
             if (result.length === 0 || selectedAtttachments.length === 0) {
                 $(downloadAll).prop("disabled", true);
             }
+
+            // Check if any attachments have AI summaries and enable/disable toggle button
+            const hasAISummaries = result.some(item => item.aiSummary && item.aiSummary.trim() !== '');
+            const $toggleButton = $('#toggleAllAISummaries');
+            if ($toggleButton.length > 0) {
+                $toggleButton.prop("disabled", !hasAISummaries);
+                if (!hasAISummaries) {
+                    $toggleButton.attr('title', 'No AI summaries available');
+                } else {
+                    $toggleButton.attr('title', 'Toggle AI Summaries');
+                }
+            }
         }
         return {
             data: formatItems(result)
@@ -113,12 +125,12 @@ $(function () {
             iDisplayLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
-            scrollCollapse: true,
+            scrollCollapse: false,
             processing: true,
             autoWidth: true,
             select: {
                 style: 'multiple',
-                selector: 'td:not(:nth-child(8))',
+                selector: 'td:not(:nth-child(4))',
             },
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments,
@@ -141,6 +153,66 @@ $(function () {
         let rowData = chefsDataTable.row(event.target.closest('tr')).data();
         updateAttachmentMetadata('CHEFS', rowData.id);
     });
+
+    // Toggle all AI summaries (only if feature is enabled)
+    const $toggleAllAISummariesButton = $('#toggleAllAISummaries');
+    let allAISummariesExpanded = false;
+
+    if ($toggleAllAISummariesButton.length > 0) {
+        $toggleAllAISummariesButton.on('click', function () {
+            const $button = $(this);
+            const $icon = $button.find('i');
+
+            // Don't do anything if button is disabled
+            if ($button.prop('disabled')) {
+                return;
+            }
+
+            if (allAISummariesExpanded) {
+                // Collapse all
+                chefsDataTable.rows().every(function () {
+                    const row = this;
+                    if (row.child.isShown()) {
+                        row.child.hide();
+                        $(row.node()).removeClass('shown');
+                    }
+                });
+                $icon.removeClass('fl-chevron-up').addClass('fl-search');
+                allAISummariesExpanded = false;
+            } else {
+                // Expand all
+                chefsDataTable.rows().every(function () {
+                    const row = this;
+                    const rowData = row.data();
+                    if (rowData.aiSummary && rowData.aiSummary.trim() !== '') {
+                        row.child(formatAISummary(rowData)).show();
+                        $(row.node()).addClass('shown');
+                    }
+                });
+                $icon.removeClass('fl-search').addClass('fl-chevron-up');
+                allAISummariesExpanded = true;
+            }
+        });
+    }
+
+    // Reset AI summary expansion state when table is reloaded
+    chefsDataTable.on('draw.dt', function () {
+        if (allAISummariesExpanded) {
+            const $button = $('#toggleAllAISummaries');
+            const $icon = $button.find('i');
+            $icon.removeClass('fl-chevron-up').addClass('fl-search');
+            allAISummariesExpanded = false;
+        }
+    });
+
+    function formatAISummary(data) {
+        return '<div class="ai-summary-row">' +
+               '<div class="ai-summary-content">' +
+               '<strong>AI Summary:</strong> ' +
+               '<p class="mt-2">' + (data.aiSummary || 'No summary available') + '</p>' +
+               '</div>' +
+               '</div>';
+    }
 
     chefsDataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
