@@ -12,6 +12,13 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 {
+    /// <summary>
+    /// ASP.NET Core view component for comprehensive reporting configuration management interface.
+    /// Provides dynamic form-based interface for creating and managing report field mappings with support for multiple
+    /// correlation providers (form versions, scoresheets, worksheets). Handles form version selection, field metadata analysis,
+    /// duplicate key detection, and configuration state management with provider-specific UI customization and intelligent
+    /// correlation handling based on the selected provider type.
+    /// </summary>
     [Widget(
         ScriptTypes = new[] { typeof(ReportingConfigurationScriptBundleContributor) },
         StyleTypes = new[] { typeof(ReportingConfigurationStyleBundleContributor) },
@@ -21,6 +28,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         private readonly IApplicationFormAppService _applicationFormAppService;
         private readonly IReportMappingService _reportMappingService;
 
+        /// <summary>
+        /// Initializes a new instance of the ReportingConfigurationViewComponent with required dependency injection services.
+        /// Sets up application form service for form version management and report mapping service for configuration operations.
+        /// </summary>
+        /// <param name="applicationFormAppService">The service for managing application forms and version data.</param>
+        /// <param name="reportMappingService">The service for managing report mappings and field configurations.</param>
         public ReportingConfigurationViewComponent(
             IApplicationFormAppService applicationFormAppService,
             IReportMappingService reportMappingService)
@@ -29,6 +42,16 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
             _reportMappingService = reportMappingService;
         }
 
+        /// <summary>
+        /// Renders the reporting configuration view component with form version selection and configuration state analysis.
+        /// Determines correlation provider strategy, retrieves form versions for selection, analyzes existing configuration state,
+        /// detects duplicate keys in field metadata, and configures provider-specific UI elements. Handles different correlation
+        /// strategies based on provider type with intelligent fallbacks and comprehensive error handling.
+        /// </summary>
+        /// <param name="formId">The form identifier associated with this reporting configuration for form version retrieval and correlation operations.</param>
+        /// <param name="selectedVersionId">The optional selected form version identifier for correlation when using form version provider.</param>
+        /// <param name="provider">The optional correlation provider type (defaults to "formversion" if not specified) that determines correlation strategy.</param>
+        /// <returns>A view component result containing the configuration interface with populated view model and provider-specific settings.</returns>
         public async Task<IViewComponentResult> InvokeAsync(Guid formId, Guid? selectedVersionId = null, string? provider = null)
         {
             // Determine the correlation provider - default to formversion if not specified
@@ -111,10 +134,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         }
 
         /// <summary>
-        /// Checks for duplicate keys by looking for (DKx) prefixes in paths
+        /// Checks for duplicate keys in mapping row collections by analyzing field paths for duplicate key prefixes.
+        /// Scans through mapping rows to detect automatically generated duplicate key markers (e.g., "(DK1)", "(DK2)")
+        /// that indicate field naming conflicts requiring manual resolution in the configuration interface.
         /// </summary>
-        /// <param name="rows">Collection of mapping rows to check</param>
-        /// <returns>True if duplicate keys are detected, false otherwise</returns>
+        /// <param name="rows">Collection of mapping row DTOs to analyze for duplicate key indicators.</param>
+        /// <returns>True if duplicate keys are detected in any field paths, false otherwise or if collection is null/empty.</returns>
         private static bool CheckForDuplicateKeys(IEnumerable<MapRowDto>? rows)
         {
             if (rows == null) return false;
@@ -125,10 +150,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         }
 
         /// <summary>
-        /// Checks for duplicate keys by looking for (DKx) prefixes in field paths
+        /// Checks for duplicate keys in field metadata collections by analyzing field paths for duplicate key prefixes.
+        /// Scans through field metadata to detect automatically generated duplicate key markers that indicate
+        /// field naming conflicts in the source schema requiring user attention and manual resolution.
         /// </summary>
-        /// <param name="fields">Collection of field metadata to check</param>
-        /// <returns>True if duplicate keys are detected, false otherwise</returns>
+        /// <param name="fields">Collection of field metadata DTOs to analyze for duplicate key indicators.</param>
+        /// <returns>True if duplicate keys are detected in any field paths, false otherwise or if collection is null/empty.</returns>
         private static bool CheckForDuplicateKeys(FieldPathTypeDto[]? fields)
         {
             if (fields == null) return false;
@@ -139,10 +166,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         }
 
         /// <summary>
-        /// Checks if a path contains a duplicate key prefix like (DK1), (DK2), etc.
+        /// Checks if a field path contains a duplicate key prefix pattern indicating field naming conflicts.
+        /// Uses regular expression matching to detect automatically generated duplicate key markers like "(DK1)", "(DK2)"
+        /// at the beginning of field paths, which signal that field keys were duplicated in the source schema.
         /// </summary>
-        /// <param name="path">The path to check</param>
-        /// <returns>True if the path contains a duplicate key prefix, false otherwise</returns>
+        /// <param name="path">The field path string to analyze for duplicate key prefix patterns.</param>
+        /// <returns>True if the path starts with a duplicate key prefix pattern, false if path is valid or null/empty.</returns>
         private static bool HasDuplicateKeyPrefix(string? path)
         {
             if (string.IsNullOrEmpty(path)) return false;
@@ -151,8 +180,19 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
             return System.Text.RegularExpressions.Regex.IsMatch(path, @"^\(DK\d+\)");
         }
 
+        /// <summary>
+        /// Bundle contributor for CSS styles required by the ReportingConfiguration view component.
+        /// Ensures the component's stylesheet is included in the page bundle for proper visual rendering
+        /// of the configuration interface, form elements, status indicators, and interactive components.
+        /// </summary>
         public class ReportingConfigurationStyleBundleContributor : BundleContributor
         {
+            /// <summary>
+            /// Configures the CSS bundle by adding the view component's stylesheet to the page bundle.
+            /// Includes the Default.css file containing styles for the reporting configuration interface
+            /// to ensure proper layout, visual feedback, and user experience consistency.
+            /// </summary>
+            /// <param name="context">The bundle configuration context for adding CSS files to the page bundle.</param>
             public override void ConfigureBundle(BundleConfigurationContext context)
             {
                 context.Files
@@ -160,8 +200,19 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
             }
         }
 
+        /// <summary>
+        /// Bundle contributor for JavaScript files required by the ReportingConfiguration view component.
+        /// Ensures required JavaScript libraries and component-specific scripts are included in the page bundle
+        /// for proper functionality including PubSub messaging, table utilities, and configuration management.
+        /// </summary>
         public class ReportingConfigurationScriptBundleContributor : BundleContributor
         {
+            /// <summary>
+            /// Configures the JavaScript bundle by adding required libraries and component scripts to the page bundle.
+            /// Includes PubSub library for inter-component communication, table utilities for data manipulation,
+            /// and the component's main JavaScript file for configuration interface functionality and user interactions.
+            /// </summary>
+            /// <param name="context">The bundle configuration context for adding JavaScript files to the page bundle.</param>
             public override void ConfigureBundle(BundleConfigurationContext context)
             {
                 context.Files

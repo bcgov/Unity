@@ -12,9 +12,10 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.Reporting.Configuration.FieldProviders
 {
     /// <summary>
-    /// Fields provider for scoresheet-based reporting. This provider handles the retrieval
-    /// and conversion of scoresheet field metadata for use in reporting configurations.
-    /// It supports complex field types that may contain multiple sub-components.
+    /// Fields provider implementation for Unity.Flex scoresheets that extracts field metadata from scoresheet configurations.
+    /// Retrieves component schemas from scoresheets associated with application forms, handles complex field types
+    /// with multiple sub-components, and provides comprehensive change detection for scoresheet-based reporting configurations.
+    /// Supports scoresheet linking through application forms and tracks scoresheet configuration changes over time.
     /// </summary>
     public class ScoresheetFieldsProvider(IScoresheetsMetadataService scoresheetsMetadataService,
           IApplicationFormAppService applicationFormAppService)
@@ -224,10 +225,16 @@ namespace Unity.Reporting.Configuration.FieldProviders
     }
 
     /// <summary>
-    /// Simplified mapping class to match the structure expected by JSON deserialization
+    /// Simplified internal mapping class structure for JSON deserialization compatibility.
+    /// Used specifically for parsing stored mapping metadata to extract scoresheet information
+    /// during change detection operations without requiring the full mapping object structure.
     /// </summary>
     internal class Mapping
     {
+        /// <summary>
+        /// Gets or sets the metadata information associated with the mapping.
+        /// Contains contextual information about scoresheets and other correlation-specific details.
+        /// </summary>
         public MapMetadataDto? Metadata { get; set; }
     }
 }

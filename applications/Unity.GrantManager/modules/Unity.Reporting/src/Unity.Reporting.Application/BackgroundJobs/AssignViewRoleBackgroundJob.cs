@@ -10,6 +10,12 @@ using Volo.Abp.Settings;
 
 namespace Unity.Reporting.BackgroundJobs
 {
+    /// <summary>
+    /// Background job for asynchronously assigning database roles to generated reporting views for access control.
+    /// Validates view existence, retrieves the configured role from settings, verifies role existence,
+    /// and applies the role permissions to the view within the specified tenant context.
+    /// Handles error cases by updating the mapping status appropriately.
+    /// </summary>
     public class AssignViewRoleBackgroundJob(
         ICurrentTenant currentTenant,
         IReportColumnsMapRepository reportColumnsMapRepository,

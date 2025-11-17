@@ -49,15 +49,12 @@ $(function () {
             clearInterval(refreshInterval);
         }
         
-        console.log('Starting auto-refresh for view status (every 5 seconds)...');
         refreshInterval = setInterval(function() {
             // Only refresh if we're still in generating state
             if (isGeneratingStatus()) {
-                console.log('Auto-refreshing view status (generating state)...');
                 refreshViewStatusWidget();
             } else {
                 // Stop polling if no longer generating
-                console.log('View generation completed, stopping auto-refresh');
                 stopGeneratingPoll();
                 
                 // Publish completion event
@@ -73,7 +70,6 @@ $(function () {
         if (refreshInterval) {
             clearInterval(refreshInterval);
             refreshInterval = null;
-            console.log('Stopped auto-refresh for view status');
         }
     }
 
@@ -83,13 +79,11 @@ $(function () {
         
         // If status changed from non-generating to generating, start polling
         if (currentStatus === 'GENERATING' && !refreshInterval) {
-            console.log('Detected generating status, starting auto-refresh...');
             lastKnownStatus = currentStatus;
             startGeneratingPoll();
         } 
         // If status changed from generating to something else, stop polling
         else if (lastKnownStatus === 'GENERATING' && currentStatus !== 'GENERATING' && refreshInterval) {
-            console.log('Status changed from generating to', currentStatus, ', stopping auto-refresh');
             stopGeneratingPoll();
             
             // Publish completion event
@@ -130,7 +124,6 @@ $(function () {
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Error loading view data:', error);
                     abp.notify.error('Error loading view data: ' + error);
                 },
                 complete: function() {
@@ -153,7 +146,7 @@ $(function () {
         // Build table HTML
         let tableHtml = '<div class="table-responsive">';
         
-        if (response.data && response.data.length > 0) {
+        if (response?.data?.length > 0) {
             tableHtml += `
                 <div class="mb-3">
                     <div class="alert alert-info">
@@ -205,14 +198,12 @@ $(function () {
         modalInstance.show();
     }
 
-    // Initialize tooltips for status elements
-    $(document).ready(function() {
-        $('[data-bs-toggle="tooltip"]').tooltip();
-        bindPreviewEvents();
-        
-        // Initial check for generating status
-        setTimeout(checkStatusAndManagePolling, 1000);
-    });
+    // Initialize tooltips for status elements on DOM ready
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    bindPreviewEvents();
+    
+    // Initial check for generating status
+    setTimeout(checkStatusAndManagePolling, 1000);
 
     // Monitor for changes in the widget content using MutationObserver
     if (window.MutationObserver) {

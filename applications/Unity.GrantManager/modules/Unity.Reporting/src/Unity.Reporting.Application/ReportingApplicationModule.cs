@@ -7,15 +7,22 @@ using Volo.Abp.VirtualFileSystem;
 using Unity.Reporting.EntityFrameworkCore;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.SettingManagement;
+using Volo.Abp.TenantManagement;
 
 namespace Unity.Reporting;
 
+/// <summary>
+/// ABP Framework module for Unity.Reporting Application layer configuration and dependency injection.
+/// Configures AutoMapper profiles, multi-tenancy options, HTTP client proxies, virtual file systems,
+/// and conventional MVC controllers for the Unity Reporting module functionality.
+/// </summary>
 [DependsOn(
     typeof(ReportingApplicationContractsModule),
     typeof(ReportingEntityFrameworkCoreModule),
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
-    typeof(AbpSettingManagementApplicationModule)
+    typeof(AbpSettingManagementApplicationModule),
+    typeof(AbpTenantManagementDomainModule)
     )]
 public class ReportingApplicationModule : AbpModule
 {

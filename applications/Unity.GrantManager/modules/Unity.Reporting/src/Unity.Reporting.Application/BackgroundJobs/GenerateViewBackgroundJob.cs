@@ -8,6 +8,12 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.Reporting.BackgroundJobs
 {
+    /// <summary>
+    /// Background job for asynchronously generating database views from report mapping configurations.
+    /// Handles view creation within tenant contexts, manages view name changes by cleaning up old views,
+    /// updates mapping status during processing, and automatically queues role assignment upon successful completion.
+    /// Provides comprehensive error handling and status tracking throughout the view generation process.
+    /// </summary>
     public class GenerateViewBackgroundJob(
         ICurrentTenant currentTenant,
         IReportColumnsMapRepository reportColumnsMapRepository,
@@ -62,7 +68,9 @@ namespace Unity.Reporting.BackgroundJobs
         }
 
         /// <summary>
-        /// Handles view name renaming by deleting the old view if the name has changed
+        /// Handles view name renaming by deleting the old view if the name has changed.
+        /// Compares the original view name from job arguments with the current view name in the mapping,
+        /// and safely removes the old view if they differ, with proper error handling and logging.
         /// </summary>
         /// <param name="args">The background job arguments containing the original view name</param>
         /// <param name="reportColumnsMap">The current report columns map from the database</param>

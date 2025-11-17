@@ -11,6 +11,12 @@ using System.Text.Json;
 
 namespace Unity.Reporting.Configuration.FieldProviders
 {
+    /// <summary>
+    /// Fields provider implementation for Unity.Flex worksheets that extracts field metadata from linked worksheets.
+    /// Discovers worksheet links associated with form versions, retrieves component schemas from the Flex module,
+    /// and provides comprehensive field analysis with change detection for worksheet-based reporting configurations.
+    /// Handles worksheet additions/removals and provides detailed change tracking for dynamic report mapping.
+    /// </summary>
     public class WorksheetFieldsProvider(IWorksheetsMetadataService worksheetsMetadataService,
         IWorksheetLinkAppService worksheetLinkAppService)
         : IFieldsProvider, ITransientDependency

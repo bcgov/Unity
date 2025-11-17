@@ -1,0 +1,52 @@
+﻿@page
+@model Unity.Reporting.Web.Pages.ReportingAdmin.IndexModel
+@{
+    ViewData["Title"] = "Reporting Configuration";
+}
+
+@section styles
+{
+    <abp-style src="/Pages/ReportingAdmin/Configuration/Index.css" />
+}
+@section scripts
+{
+    <abp-script src="/Pages/ReportingAdmin/Configuration/Index.js" />
+}
+
+<div class="container-fluid px-0">
+    <div class="unity-page-titlebar">
+        <h4 class="m-0">Reporting Configuration</h4>
+    </div>
+    <div class="p-3">
+        <form id="ReportingConfigurationForm" method="post">
+            <div class="reporting-configuration-section">
+                <h5>View Role Assignment</h5>
+                <p class="text-muted">Configure the database role that will be assigned to generated reporting views.</p>
+                
+                <abp-row>
+                    <abp-column size-md="_12" class="mx-2">
+                        <abp-input asp-for="Configuration.ViewRole" />
+                        <div class="form-text">
+                            The database role name that will be granted SELECT permissions on dynamically generated reporting views.
+                        </div>
+                    </abp-column>
+                </abp-row>
+
+                <div class="mt-3 d-flex gap-2">
+                    <abp-button id="saveConfigButton" 
+                               button-type="Primary" 
+                               type="submit"
+                               text="Save Configuration" />
+                    
+                    <abp-button id="assignRoleToViewsButton" 
+                               button-type="Secondary" 
+                               type="button"
+                               text="Assign Role to Existing Views" />
+                </div>
+            </div>
+        </form>
+
+        <hr />
+    </div>
+</div>
+

@@ -5,6 +5,11 @@ using Unity.Reporting.Domain.Configuration;
 
 namespace Unity.Reporting;
 
+/// <summary>
+/// AutoMapper configuration profile for Unity.Reporting module defining mappings between domain entities and DTOs.
+/// Handles complex object transformations including JSON deserialization of mapping configuration data
+/// and proper conversion between ReportColumnsMap entities and their corresponding data transfer objects.
+/// </summary>
 public class ReportingApplicationAutoMapperProfile : Profile
 {
     public ReportingApplicationAutoMapperProfile()
@@ -18,6 +23,11 @@ public class ReportingApplicationAutoMapperProfile : Profile
         CreateMap<MapRow, MapRowDto>();
     }
     
+    /// <summary>
+    /// Custom AutoMapper value converter for deserializing JSON mapping strings into MappingDto objects.
+    /// Provides safe JSON deserialization with error handling and fallback to empty mapping objects
+    /// when source data is invalid or malformed.
+    /// </summary>
     private class MappingJsonConverter : IValueConverter<string, MappingDto>
     {
         public MappingDto Convert(string sourceMember, ResolutionContext context)

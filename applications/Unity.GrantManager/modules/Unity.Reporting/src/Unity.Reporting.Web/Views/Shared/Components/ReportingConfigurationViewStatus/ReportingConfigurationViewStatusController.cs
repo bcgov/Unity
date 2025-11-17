@@ -7,17 +7,36 @@ using Microsoft.Extensions.Logging;
 
 namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationViewStatus
 {
+    /// <summary>
+    /// ASP.NET Core MVC controller for the ReportingConfigurationViewStatus view component providing AJAX endpoints.
+    /// Handles widget refresh operations and view data preview functionality for the reporting configuration status display.
+    /// Supports dynamic status updates through AJAX calls and provides preview data access for generated reporting views
+    /// with proper error handling and JSON response formatting for client-side consumption.
+    /// </summary>
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("ApplicationForms/ReportingConfigurationViewStatus")]
     public class ReportingConfigurationViewStatusController : AbpController
     {
         private readonly IReportMappingService _reportMappingService;
 
+        /// <summary>
+        /// Initializes a new instance of the ReportingConfigurationViewStatusController with required dependencies.
+        /// Sets up the report mapping service for accessing view status and preview data functionality.
+        /// </summary>
+        /// <param name="reportMappingService">The service for managing report mappings and view operations.</param>
         public ReportingConfigurationViewStatusController(IReportMappingService reportMappingService)
         {
             _reportMappingService = reportMappingService;
         }
 
+        /// <summary>
+        /// Handles AJAX requests to refresh the ReportingConfigurationViewStatus view component with updated status information.
+        /// Validates the request parameters and returns the refreshed view component for dynamic status updates
+        /// without requiring a full page reload. Used for real-time status monitoring during view generation.
+        /// </summary>
+        /// <param name="versionId">The correlation version identifier for the mapping configuration.</param>
+        /// <param name="provider">The correlation provider type (e.g., "formversion", "scoresheet").</param>
+        /// <returns>A ViewComponent result containing the updated status display or a default component on validation failure.</returns>
         [HttpGet]
         [Route("Refresh")]
         public IActionResult Refresh(Guid versionId, string provider)
@@ -31,6 +50,15 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationView
             return ViewComponent("ReportingConfigurationViewStatus", new { versionId, provider });
         }
 
+        /// <summary>
+        /// Handles AJAX requests to retrieve preview data from generated reporting views for display in modal dialogs.
+        /// Fetches sample data from the top application record in the view and returns formatted JSON response
+        /// with view metadata including column names and record counts. Provides error handling with user-friendly
+        /// messages for various failure scenarios such as missing views or data access issues.
+        /// </summary>
+        /// <param name="versionId">The correlation version identifier for locating the associated view mapping.</param>
+        /// <param name="provider">The correlation provider type that determines the mapping lookup strategy.</param>
+        /// <returns>A JSON result containing preview data with success status, view information, and sample records, or error details on failure.</returns>
         [HttpGet]
         [Route("PreviewData")]
         public async Task<IActionResult> PreviewData(Guid versionId, string provider)

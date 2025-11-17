@@ -7,9 +7,22 @@ using Microsoft.Extensions.Logging;
 
 namespace Unity.Reporting.Domain;
 
+/// <summary>
+/// Data seed contributor for initializing default Unity.Reporting module settings during application startup.
+/// Configures host-level settings such as the default database role for accessing generated reporting views,
+/// ensuring proper access control configuration without overriding existing custom values.
+/// Executes only in the host database context to avoid tenant-level setting pollution.
+/// </summary>
 public class ReportingDataSeedContributor(ISettingManager settingManager, ILogger<ReportingDataSeedContributor> logger) 
     : IDataSeedContributor, ITransientDependency
 {
+    /// <summary>
+    /// Seeds default reporting settings during application initialization.
+    /// Sets the default view role to "reportviewer" for database access control,
+    /// but only when no custom setting value has been previously configured.
+    /// Operates exclusively in host database context to maintain proper setting scope.
+    /// </summary>
+    /// <param name="context">The data seed context containing tenant information and seeding configuration.</param>
     public async Task SeedAsync(DataSeedContext context)
     {
         // This is a host-level setting, so only seed when TenantId is null (host database)

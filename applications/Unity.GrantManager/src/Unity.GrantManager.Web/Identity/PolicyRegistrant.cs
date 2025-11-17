@@ -238,7 +238,7 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Update,
             policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Update));
         authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Delete,
-            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Delete));
+            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Delete));        
     }
 }
 
