@@ -191,7 +191,18 @@ $(function () {
         tags.input.addEventListener('input', function () {
             const inputValue = tags.input.value.trim().toLowerCase();
 
-            if (inputValue.length > 1) {
+            if (inputValue.length === 1) {
+                // Filter by first character only
+                const suggestions = suggestionsArray.filter(tag =>
+                    tag.name.toLowerCase().startsWith(inputValue));
+
+                if (suggestions.length) {
+                    displaySuggestions(tags, suggestions);
+                } else {
+                    removeSuggestions(tags);
+                }
+            } else if (inputValue.length > 1) {
+                // Filter by checking if input appears anywhere in tag name
                 const suggestions = suggestionsArray.filter(tag =>
                     (tag.name.toLowerCase()).includes(inputValue));
 
