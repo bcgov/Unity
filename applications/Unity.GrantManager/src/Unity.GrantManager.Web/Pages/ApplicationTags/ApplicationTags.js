@@ -76,14 +76,15 @@ $(function () {
 
         this.wrapper.insertBefore(tag, this.input);
         this.orignal_input.value = JSON.stringify(this.arr);
-        updateSelectedTagsInput(this.arr)
+        updateSelectedTagsInput(this.arr);
+
         return this;
     }
 
     TagsInput.prototype.deleteTag = function (tag, i) {
         let self = this;
 
-        if (this.arr[i] && this.arr[i].name === 'Uncommon Tags') {
+        if (this.arr[i] && this.arr[i].Name === 'Uncommon Tags') {
             abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
                 .then(function (confirmed) {
                     if (confirmed) {
@@ -91,6 +92,12 @@ $(function () {
                         self.arr.splice(i, 1);
                         self.orignal_input.value = JSON.stringify(self.arr);
                         updateSelectedTagsInput(self.arr);
+                        
+                        // Expand input if no tags remain
+                        if (self.arr.length === 0) {
+                            self.input.classList.add('expanded');
+                        }
+                        
                         return self;
                     }
                 });
@@ -99,6 +106,12 @@ $(function () {
             this.arr.splice(i, 1);
             this.orignal_input.value = JSON.stringify(this.arr);
             updateSelectedTagsInput(this.arr);
+            
+            // Expand input if no tags remain
+            if (this.arr.length === 0) {
+                this.input.classList.add('expanded');
+            }
+            
             return this;
         }
     }
@@ -155,10 +168,26 @@ $(function () {
     }
 
     function init(tags) {
+        // Create and append the add tag button
+        tags.addButton = document.createElement('button');
+        tags.addButton.type = 'button';
+        tags.addButton.className = 'tags-add-button';
+        tags.addButton.innerHTML = '+';
+        tags.addButton.title = 'Add a tag';
+        
+        // Disable button if user doesn't have create permission
+        if (!abp.auth.isGranted('Unity.Applications.Tags.Create')) {
+            tags.addButton.disabled = true;
+            tags.addButton.style.display = 'none';
+        }
+        
         tags.wrapper.append(tags.input);
+        tags.wrapper.append(tags.addButton);
         tags.wrapper.classList.add(tags.options.wrapperClass);
         tags.orignal_input.setAttribute('hidden', 'true');
         tags.orignal_input.parentNode.insertBefore(tags.wrapper, tags.orignal_input);
+        tags.input.setAttribute('placeholder', 'Add a tag...');
+
         tags.input.addEventListener('input', function () {
             const inputValue = tags.input.value.trim().toLowerCase();
 
@@ -174,6 +203,11 @@ $(function () {
             } else {
                 removeSuggestions(tags);
             }
+        });
+        
+        // Expand input on focus
+        tags.input.addEventListener('focus', function () {
+            tags.input.classList.add('expanded');
         });
     }
 
@@ -195,6 +229,7 @@ $(function () {
                 tags.addTag(suggestion);
                 removeSuggestions(tags);
                 tags.input.value = "";
+                tags.wrapper.focus();
             });
 
             suggestionContainer.appendChild(suggestionElement);
@@ -211,9 +246,50 @@ $(function () {
     }
 
     function initEvents(tags) {
-        tags.wrapper.addEventListener('click', function () {
-            tags.input.focus();
-        });
+        // Capture keystrokes anywhere in the wrapper and focus input
+        var tagApplicationsModalElem = $("#tagApplicationsModal")[0];
+        if (tagApplicationsModalElem) {
+            tagApplicationsModalElem.addEventListener('keydown', function (e) {
+                // Skip if input is already focused or if it's a special key
+                if (document.activeElement === tags.input) {
+                    return;
+                }
+
+                // Check if it's a printable character (letters, numbers, etc.)
+                const isPrintableKey = e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey;
+                if (isPrintableKey && abp.auth.isGranted('Unity.Applications.Tags.Create')) {
+                    // Expand and focus the input
+                    tags.input.classList.add('expanded');
+                    tags.input.focus();
+                    // The character will be automatically added to the input
+                    // because we're not preventing default
+                }
+            });
+        }
+
+
+        // Add button click event - show all tags
+        if (tags.addButton) {
+            tags.addButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Toggle suggestions display
+                const existingSuggestions = tags.wrapper.querySelector('.tags-suggestion-container');
+                if (existingSuggestions) {
+                    removeSuggestions(tags);
+                } else {
+                    // Expand input and show all suggestions sorted alphabetically
+                    tags.input.classList.add('expanded');
+                    const sortedSuggestions = [...suggestionsArray].sort((a, b) => 
+                        a.name.localeCompare(b.name)
+                    );
+                    displaySuggestions(tags, sortedSuggestions);
+                    // Focus the input field so user can type to filter
+                    tags.input.focus();
+                }
+            });
+        }
 
         tags.input.addEventListener('focusout', function () {
             $('#assignTagsModelSaveBtn').click(function () {

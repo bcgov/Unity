@@ -590,16 +590,59 @@ abp-date-picker .btn {
     border-radius: 4px;
     border: 1px solid #ccc;
     min-height: 3em;
+    position: relative;
 }
 
     .tags-input-wrapper input {
         border: none;
         background: transparent;
         outline: none;
-        width: 140px;
-        margin-left: 8px;
+        width: 0;
+        margin-left: 0;
+        margin-bottom: 5px;
+        padding-left: 0;
         display: inline-block;
+        line-height: 2.4;
+        border-radius: 0.2rem;
+        transition: width 0.3s ease, margin-left 0.3s ease, padding-left 0.3s ease, background-color 0.3s ease;
+        overflow: hidden;
+        vertical-align: middle;
     }
+
+    .tags-input-wrapper input.expanded {
+        width: 240px;
+        margin-left: 8px;
+        padding-left: 8px;
+        background: #e9eff5;
+    }
+
+    .tags-input-wrapper .tags-add-button {
+        background-color: transparent;
+        border: 1px dashed #B5B5C3;
+        color: #013366;
+        padding: 0.25rem 0.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        line-height: 1;
+        cursor: pointer;
+        margin-left: 5px;
+        margin-bottom: 5px;
+        display: inline-block;
+        border-radius: 4px;
+        vertical-align: middle;
+    }
+
+        .tags-input-wrapper .tags-add-button:hover:not(:disabled) {
+            border-color: #69b3ff;
+            color: #69b3ff;
+            background-color: #F3F6F9;
+        }
+
+        .tags-input-wrapper .tags-add-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
     .tags-input-wrapper .tag {
         display: inline-block;
@@ -607,6 +650,7 @@ abp-date-picker .btn {
         padding: 3px 12px 3px 12px;
         margin-right: 5px;
         margin-bottom: 5px;
+        vertical-align: middle;
     }
 
 .tags-input-disabled {
