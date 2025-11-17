@@ -197,7 +197,7 @@ $(function () {
                     tag.name.toLowerCase().startsWith(inputValue));
 
                 if (suggestions.length) {
-                    displaySuggestions(tags, suggestions);
+                    displaySuggestions(tags, suggestions, true);
                 } else {
                     removeSuggestions(tags);
                 }
@@ -207,7 +207,7 @@ $(function () {
                     (tag.name.toLowerCase()).includes(inputValue));
 
                 if (suggestions.length) {
-                    displaySuggestions(tags, suggestions);
+                    displaySuggestions(tags, suggestions, true);
                 } else {
                     removeSuggestions(tags);
                 }
@@ -222,7 +222,7 @@ $(function () {
         });
     }
 
-    function displaySuggestions(tags, suggestions) {
+    function displaySuggestions(tags, suggestions, isFiltered) {
 
         removeSuggestions(tags);
 
@@ -230,7 +230,7 @@ $(function () {
         suggestionContainer.classList.add('tags-suggestion-container');
         const suggestionTitleElement = document.createElement('div');
         suggestionTitleElement.className = 'tags-suggestion-title';
-        suggestionTitleElement.innerText = 'ALL TAGS';
+        suggestionTitleElement.innerText = isFiltered ? 'FILTERED TAGS' : 'ALL TAGS';
         suggestionContainer.appendChild(suggestionTitleElement);
         suggestions.forEach(suggestion => {
             const suggestionElement = document.createElement('div');
@@ -295,7 +295,7 @@ $(function () {
                     const sortedSuggestions = [...suggestionsArray].sort((a, b) => 
                         a.name.localeCompare(b.name)
                     );
-                    displaySuggestions(tags, sortedSuggestions);
+                    displaySuggestions(tags, sortedSuggestions, false);
                     // Focus the input field so user can type to filter
                     tags.input.focus();
                 }
