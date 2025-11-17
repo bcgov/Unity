@@ -5,26 +5,16 @@ using Unity.Flex.Domain.Scoresheets;
 
 namespace Unity.Flex.Reporting.Configuration
 {
-    public static class ScoresheetFieldSchemaParser
+    public static partial class ScoresheetFieldSchemaParser
     {
         public static List<ScoresheetComponentMetaDataItemDto> ParseScoresheet(Scoresheet scoresheet)
         {
-            if (scoresheet?.Sections == null)
-                return new List<ScoresheetComponentMetaDataItemDto>();
+            if (scoresheet?.Sections == null) return [];
 
-            var allComponents = new List<ScoresheetComponentMetaDataItemDto>();
-
-            foreach (var section in scoresheet.Sections)
-            {
-                if (section.Fields == null) continue;
-
-                foreach (var question in section.Fields)
-                {
-                    allComponents.AddRange(ParseQuestion(question, scoresheet));
-                }
-            }
-
-            return allComponents;
+            return [.. scoresheet.Sections
+                .Where(section => section.Fields != null)
+                .SelectMany(section => section.Fields)
+                .SelectMany(question => ParseQuestion(question, scoresheet))];
         }
 
         /// <summary>
@@ -36,10 +26,8 @@ namespace Unity.Flex.Reporting.Configuration
         /// <returns>List of component metadata items</returns>
         private static List<ScoresheetComponentMetaDataItemDto> ParseQuestion(Question question, Scoresheet scoresheet)
         {
-            if (question == null)
-                return new List<ScoresheetComponentMetaDataItemDto>();
-
-            var components = new List<ScoresheetComponentMetaDataItemDto>();
+            if (question == null) return [];
+            List<ScoresheetComponentMetaDataItemDto> components = [];
 
             // For all question types (Number, Text, YesNo, SelectList, TextArea), return a single component
             // SelectList will contain the selected option value, not individual option components
@@ -86,10 +74,11 @@ namespace Unity.Flex.Reporting.Configuration
 
             // Keep alphanumeric characters, underscores, and hyphens
             // Replace spaces with underscores
-            return Regex.Replace(
-                name.Trim().Replace(" ", "_"), 
-                @"[^a-zA-Z0-9_\-]", 
-                "");
+            return SantizedNameExpression()
+                .Replace(name.Trim().Replace(" ", "_"), "");
         }
+
+        [GeneratedRegex(@"[^a-zA-Z0-9_\-]")]
+        private static partial Regex SantizedNameExpression();
     }
 }

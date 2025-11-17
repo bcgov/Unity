@@ -155,10 +155,10 @@ namespace Unity.Reporting.Configuration
             if (rows == null || rows.Length == 0)
                 return true;
 
-            var propertyNames = rows.Select(r => r.PropertyName).ToList();
-            var uniquePropertyNames = propertyNames.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var propertyNames = rows.Select(r => r.PropertyName);
+            var uniquePropertyNames = propertyNames.Distinct(StringComparer.OrdinalIgnoreCase);
 
-            return propertyNames.Count == uniquePropertyNames.Count;
+            return propertyNames.Count() == uniquePropertyNames.Count();
         }
 
         /// <summary>
@@ -174,10 +174,10 @@ namespace Unity.Reporting.Configuration
             if (rows == null || rows.Length == 0)
                 return true;
 
-            var columnNames = rows.Select(r => r.ColumnName).ToList();
-            var uniqueColumnNames = columnNames.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var columnNames = rows.Select(r => r.ColumnName);
+            var uniqueColumnNames = columnNames.Distinct(StringComparer.OrdinalIgnoreCase);
 
-            return columnNames.Count == uniqueColumnNames.Count;
+            return columnNames.Count() == uniqueColumnNames.Count();
         }
 
         /// <summary>
@@ -193,10 +193,10 @@ namespace Unity.Reporting.Configuration
             if (rows == null || rows.Length == 0)
                 return true;
 
-            var paths = rows.Select(r => r.Path).ToList();
-            var uniquePaths = paths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var paths = rows.Select(r => r.Path);
+            var uniquePaths = paths.Distinct(StringComparer.OrdinalIgnoreCase);
 
-            return paths.Count == uniquePaths.Count;
+            return paths.Count() == uniquePaths.Count();
         }
 
         /// <summary>
@@ -236,31 +236,14 @@ namespace Unity.Reporting.Configuration
             if (rows == null || rows.Length == 0)
                 return true;
 
-            foreach (var row in rows)
-            {
-                if (string.IsNullOrWhiteSpace(row.ColumnName))
-                    continue; // Empty column names are allowed
-
-                var columnName = row.ColumnName.Trim();
-
-                // Check length
-                if (columnName.Length > MaxColumnNameLength)
-                    return false;
-
-                // Check if it starts with a digit
-                if (char.IsDigit(columnName[0]))
-                    return false;
-
-                // Check if it contains only valid characters (letters, numbers, underscores)
-                if (!IsValidColumnName(columnName))
-                    return false;
-
-                // Check if it's a PostgreSQL reserved word
-                if (PostgreSqlReservedWords.Contains(columnName))
-                    return false;
-            }
-
-            return true;
+            return rows
+                .Where(row => !string.IsNullOrWhiteSpace(row.ColumnName))
+                .Select(row => row.ColumnName.Trim())
+                .All(columnName => 
+                    columnName.Length <= MaxColumnNameLength &&
+                    !char.IsDigit(columnName[0]) &&
+                    IsValidColumnName(columnName) &&
+                    !PostgreSqlReservedWords.Contains(columnName));
         }
 
         /// <summary>
@@ -307,31 +290,14 @@ namespace Unity.Reporting.Configuration
             var userProvidedMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (upsertReportColmnsMapDto.Mapping?.Rows != null)
             {
-                foreach (var row in upsertReportColmnsMapDto.Mapping.Rows)
-                {
-                    if (!string.IsNullOrWhiteSpace(row.Path) && !string.IsNullOrWhiteSpace(row.ColumnName))
-                    {
-                        userProvidedMappings[row.Path] = row.ColumnName;
-                    }
-                }
+                userProvidedMappings = upsertReportColmnsMapDto.Mapping.Rows
+                    .Where(row => !string.IsNullOrWhiteSpace(row.Path) && !string.IsNullOrWhiteSpace(row.ColumnName))
+                    .ToDictionary(row => row.Path, row => row.ColumnName, StringComparer.OrdinalIgnoreCase);
             }
 
             // Track used column names to ensure uniqueness
-            var usedColumnNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // First pass: add all user-provided column names to the used set
-            foreach (var columnName in userProvidedMappings.Values)
-            {
-                usedColumnNames.Add(columnName);
-            }
-
-            // Generate a dictionary from field keys and labels for auto-generation
-            var keyToLabelMap = new Dictionary<string, string>();
-            foreach (var field in fieldsMap.Fields)
-            {
-                keyToLabelMap[field.Path] = field.Label ?? string.Empty;
-            }
-
+            var usedColumnNames = new HashSet<string>(userProvidedMappings.Values, StringComparer.OrdinalIgnoreCase);
+           
             // Generate column names for fields without user-provided mappings
             var autoGeneratedColumnNames = new Dictionary<string, string>();
             foreach (var field in fieldsMap.Fields)
@@ -346,15 +312,14 @@ namespace Unity.Reporting.Configuration
             }
 
             // Create mapping rows
-            var mapRows = new List<MapRow>();
-            foreach (var field in fieldsMap.Fields)
+            var mapRows = fieldsMap.Fields.Select(field =>
             {
                 // Use user-provided column name if available, otherwise use auto-generated
                 var columnName = userProvidedMappings.TryGetValue(field.Path, out var userColumnName)
                     ? userColumnName
                     : autoGeneratedColumnNames[field.Path];
 
-                mapRows.Add(new MapRow
+                return new MapRow
                 {
                     Label = field.Label ?? string.Empty,
                     PropertyName = field.Key,
@@ -364,14 +329,14 @@ namespace Unity.Reporting.Configuration
                     DataPath = field.DataPath,
                     TypePath = field.TypePath,
                     Id = field.Id
-                });
-            }
+                };
+            }).ToList();
 
             // Create mapping object
             var mapping = new Mapping
             {
                 Rows = [.. mapRows],
-                Metadata = new MapMetadata() { Info = fieldsMap?.Metadata?.Info }
+                Metadata = new MapMetadata() { Info = fieldsMap.Metadata?.Info }
             };
 
             // Create and return the map entity
@@ -415,37 +380,24 @@ namespace Unity.Reporting.Configuration
             var userProvidedMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (updateReportColumnsMapDto.Mapping?.Rows != null)
             {
-                foreach (var row in updateReportColumnsMapDto.Mapping.Rows)
-                {
-                    if (!string.IsNullOrWhiteSpace(row.Path) && !string.IsNullOrWhiteSpace(row.ColumnName))
-                    {
-                        userProvidedMappings[row.Path] = row.ColumnName;
-                    }
-                }
+                userProvidedMappings = updateReportColumnsMapDto.Mapping.Rows
+                    .Where(row => !string.IsNullOrWhiteSpace(row.Path) && !string.IsNullOrWhiteSpace(row.ColumnName))
+                    .ToDictionary(row => row.Path, row => row.ColumnName, StringComparer.OrdinalIgnoreCase);
             }
 
             // Track used column names to avoid duplicates
             var usedColumnNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             // First pass: add all user-provided column names to the used set
-            foreach (var columnName in userProvidedMappings.Values)
-            {
-                usedColumnNames.Add(columnName);
-            }
+            usedColumnNames.UnionWith(userProvidedMappings.Values);
 
             // Second pass: add existing column names that won't be overwritten by user input
-            foreach (var field in fieldsMap.Fields)
-            {
-                if (!userProvidedMappings.ContainsKey(field.Path) &&
-                    existingMappings.TryGetValue(field.Path, out var existingRow))
-                {
-                    usedColumnNames.Add(existingRow.ColumnName);
-                }
-            }
+            usedColumnNames.UnionWith(fieldsMap.Fields
+                .Where(field => !userProvidedMappings.ContainsKey(field.Path) && 
+                               existingMappings.TryGetValue(field.Path, out var _))
+                .Select(field => existingMappings[field.Path].ColumnName));
 
-            var mapRows = new List<MapRow>();
-
-            foreach (var field in fieldsMap.Fields)
+            var mapRows = fieldsMap.Fields.Select(field =>
             {
                 string columnName;
 
@@ -467,7 +419,7 @@ namespace Unity.Reporting.Configuration
                     usedColumnNames.Add(columnName);
                 }
 
-                mapRows.Add(new MapRow
+                return new MapRow
                 {
                     Label = field.Label ?? string.Empty,
                     PropertyName = field.Key,
@@ -477,14 +429,14 @@ namespace Unity.Reporting.Configuration
                     DataPath = field.DataPath,
                     TypePath = field.TypePath,
                     Id = field.Id
-                });
-            }
+                };
+            }).ToList();
 
             // Create new mapping object and serialize it
             var updatedMapping = new Mapping 
             { 
                 Rows = [.. mapRows],
-                Metadata = new MapMetadata() { Info = fieldsMap?.Metadata?.Info }
+                Metadata = new MapMetadata() { Info = fieldsMap.Metadata?.Info }
             };
             existing.Mapping = JsonSerializer.Serialize(updatedMapping);
 

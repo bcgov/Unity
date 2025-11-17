@@ -86,7 +86,7 @@ namespace Unity.Reporting.Configuration.FieldProviders
             // Compare current vs stored scoresheet info
             var changes = DetectScoresheetChanges(storedScoresheetInfo, currentScoresheetInfo);
 
-            return changes.Any() ? string.Join("; ", changes) : null;
+            return changes.Count > 0 ? string.Join("; ", changes) : null;
         }
 
         /// <summary>

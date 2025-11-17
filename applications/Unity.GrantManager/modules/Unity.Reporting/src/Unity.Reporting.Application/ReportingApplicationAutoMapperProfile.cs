@@ -28,7 +28,7 @@ public class ReportingApplicationAutoMapperProfile : Profile
     /// Provides safe JSON deserialization with error handling and fallback to empty mapping objects
     /// when source data is invalid or malformed.
     /// </summary>
-    private class MappingJsonConverter : IValueConverter<string, MappingDto>
+    private sealed class MappingJsonConverter : IValueConverter<string, MappingDto>
     {
         public MappingDto Convert(string sourceMember, ResolutionContext context)
         {

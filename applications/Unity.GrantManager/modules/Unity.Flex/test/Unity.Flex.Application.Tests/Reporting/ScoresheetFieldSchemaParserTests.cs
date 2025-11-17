@@ -22,10 +22,12 @@ namespace Unity.Flex.Tests.Reporting
         public void ParseScoresheet_WithNullScoresheet_ReturnsEmptyList()
         {
             // Arrange
-            ScoresheetEntity scoresheet = null;
+            ScoresheetEntity? scoresheet = null;
 
             // Act
+#pragma warning disable CS8604 // Possible null reference argument.
             var result = ScoresheetFieldSchemaParser.ParseScoresheet(scoresheet);
+#pragma warning restore CS8604 // Possible null reference argument.
 
             // Assert
             result.ShouldNotBeNull();
@@ -81,7 +83,7 @@ namespace Unity.Flex.Tests.Reporting
             result.Count.ShouldBe(4);
 
             // Check number question
-            var numberComponent = result.FirstOrDefault(c => c.Key == "age");
+            var numberComponent = result.Find(c => c.Key == "age");
             numberComponent.ShouldNotBeNull();
             numberComponent.Type.ShouldBe("Number");
             numberComponent.Label.ShouldBe("Age");
@@ -90,18 +92,18 @@ namespace Unity.Flex.Tests.Reporting
             numberComponent.DataPath.ShouldBe("age");
 
             // Check text question
-            var textComponent = result.FirstOrDefault(c => c.Key == "name");
+            var textComponent = result.Find(c => c.Key == "name");
             textComponent.ShouldNotBeNull();
             textComponent.Type.ShouldBe("Text");
             textComponent.Label.ShouldBe("Full Name");
 
             // Check yes/no question
-            var yesNoComponent = result.FirstOrDefault(c => c.Key == "eligible");
+            var yesNoComponent = result.Find(c => c.Key == "eligible");
             yesNoComponent.ShouldNotBeNull();
             yesNoComponent.Type.ShouldBe("YesNo");
 
             // Check textarea question
-            var textAreaComponent = result.FirstOrDefault(c => c.Key == "comments");
+            var textAreaComponent = result.Find(c => c.Key == "comments");
             textAreaComponent.ShouldNotBeNull();
             textAreaComponent.Type.ShouldBe("TextArea");
         }

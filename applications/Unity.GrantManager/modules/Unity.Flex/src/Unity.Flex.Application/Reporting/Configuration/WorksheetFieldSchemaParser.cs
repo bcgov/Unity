@@ -13,8 +13,10 @@ namespace Unity.Flex.Reporting.Configuration
     /// Utility class for parsing worksheet field schemas and generating metadata components,
     /// especially for complex types like DataGrid that can contain multiple sub-components.
     /// </summary>
-    public static class WorksheetFieldSchemaParser
+    public static partial class WorksheetFieldSchemaParser
     {
+        private const string UnknownSectionName = "unknown_section";
+
         /// <summary>
         /// Parses a custom field and returns component metadata items.
         /// For simple fields, returns a single item. For complex fields like DataGrid, 
@@ -63,19 +65,10 @@ namespace Unity.Flex.Reporting.Configuration
             if (worksheet?.Sections == null)
                 return [];
 
-            var allComponents = new List<WorksheetComponentMetaDataItemDto>();
-
-            foreach (var section in worksheet.Sections)
-            {
-                if (section.Fields == null) continue;
-
-                foreach (var field in section.Fields)
-                {
-                    allComponents.AddRange(ParseField(field, worksheet));
-                }
-            }
-
-            return allComponents;
+            return [..worksheet.Sections
+                .Where(section => section.Fields != null)
+                .SelectMany(section => section.Fields)
+                .SelectMany(field => ParseField(field, worksheet))];                
         }
 
         /// <summary>
@@ -102,7 +95,7 @@ namespace Unity.Flex.Reporting.Configuration
 
                 // Get section name for path construction
                 var section = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId);
-                var sectionName = SanitizeName(section?.Name ?? "unknown_section");
+                var sectionName = SanitizeName(section?.Name ?? UnknownSectionName);
                 var worksheetName = SanitizeName(worksheet.Name);
                 var dataGridName = SanitizeName(field.Key);
 
@@ -124,7 +117,7 @@ namespace Unity.Flex.Reporting.Configuration
                 }
 
                 // Process additional defined columns (if any)
-                if (dataGridDefinition.Columns != null && dataGridDefinition.Columns.Any())
+                if (dataGridDefinition.Columns != null && dataGridDefinition.Columns.Count > 0)
                 {
                     // Create a component for each column in the DataGrid
                     foreach (var column in dataGridDefinition.Columns)
@@ -152,7 +145,7 @@ namespace Unity.Flex.Reporting.Configuration
                 }
 
                 // Return at least one component (either dynamic placeholder or defined columns or both)
-                return components.Any() ? components : [CreateSimpleComponent(field, worksheet)];
+                return components.Count > 0 ? components : [CreateSimpleComponent(field, worksheet)];
             }
             catch (JsonException)
             {
@@ -176,7 +169,7 @@ namespace Unity.Flex.Reporting.Configuration
                 // Parse the CheckboxGroup definition from the field's Definition JSON
                 var checkboxGroupDefinition = JsonSerializer.Deserialize<CheckboxGroupDefinition>(field.Definition);
                 
-                if (checkboxGroupDefinition?.Options == null || !checkboxGroupDefinition.Options.Any())
+                if (checkboxGroupDefinition?.Options == null || checkboxGroupDefinition.Options.Count <= 0)
                 {
                     // If no options defined, return the CheckboxGroup itself as a component
                     return [CreateSimpleComponent(field, worksheet)];
@@ -184,7 +177,7 @@ namespace Unity.Flex.Reporting.Configuration
 
                 // Get section name for path construction
                 var section = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId);
-                var sectionName = SanitizeName(section?.Name ?? "unknown_section");
+                var sectionName = SanitizeName(section?.Name ?? UnknownSectionName);
                 var worksheetName = SanitizeName(worksheet.Name);
                 var checkboxGroupName = SanitizeName(field.Key);
 
@@ -231,7 +224,7 @@ namespace Unity.Flex.Reporting.Configuration
                 // Parse the Radio definition from the field's Definition JSON
                 var radioDefinition = JsonSerializer.Deserialize<RadioDefinition>(field.Definition);
                 
-                if (radioDefinition?.Options == null || !radioDefinition.Options.Any())
+                if (radioDefinition?.Options == null || radioDefinition.Options.Count <= 0)
                 {
                     // If no options defined, return the Radio field itself as a component
                     return [CreateSimpleComponent(field, worksheet)];
@@ -239,7 +232,7 @@ namespace Unity.Flex.Reporting.Configuration
 
                 // Get section name for path construction
                 var section = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId);
-                var sectionName = SanitizeName(section?.Name ?? "unknown_section");
+                var sectionName = SanitizeName(section?.Name ?? UnknownSectionName);
                 var worksheetName = SanitizeName(worksheet.Name);
                 var radioGroupName = SanitizeName(field.Key);
 
@@ -280,7 +273,7 @@ namespace Unity.Flex.Reporting.Configuration
         private static WorksheetComponentMetaDataItemDto CreateSimpleComponent(CustomField field, Worksheet worksheet)
         {
             var section = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId);
-            var sectionName = SanitizeName(section?.Name ?? "unknown_section");
+            var sectionName = SanitizeName(section?.Name ?? UnknownSectionName);
             var worksheetName = SanitizeName(worksheet.Name);
             var fieldName = SanitizeName(field.Key);
 
@@ -327,10 +320,10 @@ namespace Unity.Flex.Reporting.Configuration
 
             // Keep alphanumeric characters, underscores, and hyphens
             // Replace spaces with underscores
-            return Regex.Replace(
-                name.Trim().Replace(" ", "_"), 
-                @"[^a-zA-Z0-9_\-]", 
-                "");
+            return SantizedNameExpression().Replace(name.Trim().Replace(" ", "_"), "");
         }
+
+        [GeneratedRegex(@"[^a-zA-Z0-9_\-]")]
+        private static partial Regex SantizedNameExpression();
     }
 }

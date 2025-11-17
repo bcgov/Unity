@@ -18,6 +18,10 @@ namespace Unity.GrantManager.Reporting.Configuration
         ILogger<FormMetadataService> logger) : IFormMetadataService, ITransientDependency
     {
 
+        private const string COMPONENTS = "components";
+        private const string COLUMNS = "columns";
+        private static readonly string[] separator = ["->"];
+
         /// <summary>
         /// Retrieves comprehensive metadata for all form components in a specific form version.
         /// This method analyzes the form schema and extracts component information including paths, types, and labels.
@@ -90,7 +94,7 @@ namespace Unity.GrantManager.Reporting.Configuration
             try
             {
                 var schema = JObject.Parse(formSchemaString);
-                var components = schema["components"] as JArray;
+                var components = schema[COMPONENTS] as JArray;
 
                 if (components == null)
                 {
@@ -133,7 +137,7 @@ namespace Unity.GrantManager.Reporting.Configuration
                 "table",
                 "tabs",
                 "simpletabs",
-                "columns",
+                COLUMNS,
                 "simplecols2",
                 "simplecols3",
                 "simplecols4",
@@ -161,23 +165,18 @@ namespace Unity.GrantManager.Reporting.Configuration
         private static void UniqueifyPaths(List<FormComponentMetaDataItemDto> componentsList, out bool hasDuplicates)
         {
             // Track path occurrences and their duplicate counters
-            var pathCounts = new Dictionary<string, int>();
+            var pathCounts = componentsList
+                .Where(component => !string.IsNullOrEmpty(component.Path))
+                .GroupBy(component => component.Path)
+                .ToDictionary(group => group.Key, group => group.Count());
+
             var pathCounters = new Dictionary<string, int>();
             hasDuplicates = false;
-
-            // First pass: count occurrences of each path
-            foreach (var component in componentsList)
-            {
-                if (!string.IsNullOrEmpty(component.Path))
-                {
-                    pathCounts[component.Path] = pathCounts.GetValueOrDefault(component.Path, 0) + 1;
-                }
-            }
 
             // Second pass: prefix duplicate paths with (DKx)
             foreach (var component in componentsList)
             {
-                if (!string.IsNullOrEmpty(component.Path) && pathCounts[component.Path] > 1)
+                if (!string.IsNullOrEmpty(component.Path) && pathCounts.GetValueOrDefault(component.Path, 0) > 1)
                 {
                     // Get the current counter for this path
                     pathCounters[component.Path] = pathCounters.GetValueOrDefault(component.Path, 0) + 1;
@@ -217,7 +216,7 @@ namespace Unity.GrantManager.Reporting.Configuration
             string duplicatePrefix = string.Empty;
             string workingPath = path;
 
-            if (path.StartsWith("(DK") && path.Contains(")"))
+            if (path.StartsWith("(DK") && path.Contains(')'))
             {
                 int endIndex = path.IndexOf(')');
                 duplicatePrefix = path.Substring(0, endIndex + 1);
@@ -225,16 +224,8 @@ namespace Unity.GrantManager.Reporting.Configuration
             }
 
             // Split the path into segments
-            var segments = workingPath.Split(new[] { "->" }, StringSplitOptions.RemoveEmptyEntries);
+            var segments = workingPath.Split(separator, StringSplitOptions.RemoveEmptyEntries);
             var dataPathSegments = new List<string>();
-
-            // Container types that should be filtered out from data paths
-            var containerTypes = new HashSet<string>
-            {
-                "panel", "well", "fieldset", "container", "tabs", "simpletabs",
-                "columns", "simplecols2", "simplecols3", "simplecols4",
-                "form", "wizard"
-            };
 
             // Process each segment to determine if it should be included in the data path
             foreach (var segment in segments)
@@ -249,7 +240,7 @@ namespace Unity.GrantManager.Reporting.Configuration
             // If we filtered out everything, preserve the last segment as it's likely the data key
             if (dataPathSegments.Count == 0 && segments.Length > 0)
             {
-                dataPathSegments.Add(segments.Last());
+                dataPathSegments.Add(segments[^1]);
             }
 
             // Reconstruct the data path
@@ -278,7 +269,7 @@ namespace Unity.GrantManager.Reporting.Configuration
             var containerPatterns = new[]
             {
                 "panel", "tab", "tabs", "section", "group", "container", "wrapper",
-                "fieldset", "well", "columns", "cols", "layout", "form"
+                "fieldset", "well", COLUMNS, "cols", "layout", "form"
             };
 
             var lowerSegment = segment.ToLowerInvariant();
@@ -403,7 +394,7 @@ namespace Unity.GrantManager.Reporting.Configuration
                     ProcessTableComponent(component, componentsList, currentPath, currentTypePath);
                     break;
 
-                case "columns":
+                case COLUMNS:
                 case "simplecols2":
                 case "simplecols3":
                 case "simplecols4":
@@ -452,12 +443,12 @@ namespace Unity.GrantManager.Reporting.Configuration
         private static void ProcessColumnsComponent(JObject component, List<FormComponentMetaDataItemDto> componentsList,
             string currentPath, string currentTypePath)
         {
-            var columns = component["columns"] as JArray;
+            var columns = component[COLUMNS] as JArray;
             if (columns != null)
             {
                 foreach (var column in columns.OfType<JObject>())
                 {
-                    var columnComponents = column["components"] as JArray;
+                    var columnComponents = column[COMPONENTS] as JArray;
                     if (columnComponents != null)
                     {
                         ScanComponentsRecursively(columnComponents, componentsList, currentPath, currentTypePath);
@@ -476,12 +467,12 @@ namespace Unity.GrantManager.Reporting.Configuration
         private static void ProcessTabsComponent(JObject component, List<FormComponentMetaDataItemDto> componentsList,
             string currentPath, string currentTypePath)
         {
-            var components = component["components"] as JArray;
+            var components = component[COMPONENTS] as JArray;
             if (components != null)
             {
                 foreach (var tab in components.OfType<JObject>())
                 {
-                    var tabComponents = tab["components"] as JArray;
+                    var tabComponents = tab[COMPONENTS] as JArray;
                     if (tabComponents != null)
                     {
                         ScanComponentsRecursively(tabComponents, componentsList, currentPath, currentTypePath);
@@ -500,7 +491,7 @@ namespace Unity.GrantManager.Reporting.Configuration
         private static void ProcessStandardNestedComponents(JObject component, List<FormComponentMetaDataItemDto> componentsList,
             string currentPath, string currentTypePath)
         {
-            var nestedComponents = component["components"] as JArray;
+            var nestedComponents = component[COMPONENTS] as JArray;
             if (nestedComponents != null)
             {
                 ScanComponentsRecursively(nestedComponents, componentsList, currentPath, currentTypePath);

@@ -10,6 +10,31 @@ namespace Unity.Reporting.Configuration
     /// </summary>
     public static class FormsIoMappingUtils
     {
+        private const string TEXTFIELD = "textfield";
+        private const string TEXTAREA = "textarea";
+        private const string EMAIL = "email";
+        private const string PASSWORD = "password";
+        private const string URL = "url";
+        private const string SELECT = "select";
+        private const string PHONENUMBER = "phonenumber";
+        private const string NUMBER = "number";
+        private const string CURRENCY = "currency";
+        private const string DATETIME = "datetime";
+        private const string DAY = "day";
+        private const string OPTION = "option";
+        private const string CHECKBOX = "checkbox";
+        private const string RADIO = "radio";
+        private const string FILE = "file";
+        private const string SIGNATURE = "signature";
+        private const string HIDDEN = "hidden";
+        private const string TAGS = "tags";
+        private const string PANEL = "panel";
+        private const string FIELDSET = "fieldset";
+        private const string WELL = "well";
+        private const string COLUMNS = "columns";
+        private const string TABS = "tabs";
+        private const string CONTAINER = "container";
+
         /// <summary>
         /// Maps Forms.io field types to PostgreSQL data types.
         /// </summary>
@@ -19,15 +44,15 @@ namespace Unity.Reporting.Configuration
         {
             return formsIoType?.ToLowerInvariant() switch
             {
-                "textfield" or "textarea" or "email" or "password" or "url" or "select" => "TEXT",
-                "phonenumber" => "TEXT", // Store phone numbers as text to preserve formatting
-                "number" or "currency" => "NUMERIC",
-                "datetime" or "day" => "TIMESTAMP",
-                "option" or "checkbox" or "radio" => "BOOLEAN",
-                "file" => "TEXT", // File paths/URLs as text
-                "signature" => "TEXT", // Signature data as text
-                "hidden" => "TEXT", // Hidden fields as text
-                "tags" => "TEXT", // Tags as comma-separated text
+                TEXTFIELD or TEXTAREA or EMAIL or PASSWORD or URL or SELECT => "TEXT",
+                PHONENUMBER => "TEXT", // Store phone numbers as text to preserve formatting
+                NUMBER or CURRENCY => "NUMERIC",
+                DATETIME or DAY => "TIMESTAMP",
+                OPTION or CHECKBOX or RADIO => "BOOLEAN",
+                FILE => "TEXT", // File paths/URLs as text
+                SIGNATURE => "TEXT", // Signature data as text
+                HIDDEN => "TEXT", // Hidden fields as text
+                TAGS => "TEXT", // Tags as comma-separated text
                 _ => "TEXT" // Default to TEXT for unknown types
             };
         }
@@ -42,22 +67,22 @@ namespace Unity.Reporting.Configuration
         {
             return formsIoType?.ToLowerInvariant() switch
             {
-                "textfield" => $"'Sample {fieldName}'",
-                "textarea" => $"'This is sample text for {fieldName} field.'",
-                "email" => "'sample@example.com'",
-                "password" => "'********'",
-                "url" => "'https://example.com'",
-                "phonenumber" => "'(555) 123-4567'",
-                "number" => "123.45",
-                "currency" => "1234.56",
-                "datetime" => "'2024-01-01 12:00:00'",
-                "day" => "'2024-01-01'",
-                "option" or "checkbox" or "radio" => "true",
-                "select" => $"'Option 1 for {fieldName}'",
-                "file" => "'/uploads/sample-file.pdf'",
-                "signature" => "'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='",
-                "hidden" => $"'hidden_{fieldName}_value'",
-                "tags" => "'tag1,tag2,tag3'",
+                TEXTFIELD => $"'Sample {fieldName}'",
+                TEXTAREA => $"'This is sample text for {fieldName} field.'",
+                EMAIL => "'sample@example.com'",
+                PASSWORD => "'********'",
+                URL => "'https://example.com'",
+                PHONENUMBER => "'(555) 123-4567'",
+                NUMBER => "123.45",
+                CURRENCY => "1234.56",
+                DATETIME => "'2024-01-01 12:00:00'",
+                DAY => "'2024-01-01'",
+                OPTION or CHECKBOX or RADIO => "true",
+                SELECT => $"'Option 1 for {fieldName}'",
+                FILE => "'/uploads/sample-file.pdf'",
+                SIGNATURE => "'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='",
+                HIDDEN => $"'hidden_{fieldName}_value'",
+                TAGS => "'tag1,tag2,tag3'",
                 _ => $"'Sample {fieldName}'" // Default mock data
             };
         }
@@ -71,7 +96,7 @@ namespace Unity.Reporting.Configuration
         {
             return formsIoType?.ToLowerInvariant() switch
             {
-                "panel" or "fieldset" or "well" or "columns" or "tabs" or "container" => true,
+                PANEL or FIELDSET or WELL or COLUMNS or TABS or CONTAINER => true,
                 _ => false
             };
         }
@@ -109,9 +134,9 @@ namespace Unity.Reporting.Configuration
         {
             var supportedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "textfield", "textarea", "email", "password", "url", "select",
-                "phonenumber", "number", "currency", "datetime", "day",
-                "option", "checkbox", "radio", "file", "signature", "hidden", "tags"
+                TEXTFIELD, TEXTAREA, EMAIL, PASSWORD, URL, SELECT,
+                PHONENUMBER, NUMBER, CURRENCY, DATETIME, DAY,
+                OPTION, CHECKBOX, RADIO, FILE, SIGNATURE, HIDDEN, TAGS
             };
 
             return supportedTypes.Contains(formsIoType ?? string.Empty);
@@ -126,30 +151,30 @@ namespace Unity.Reporting.Configuration
         {
             return formsIoType?.ToLowerInvariant() switch
             {
-                "textfield" => "Single-line text input",
-                "textarea" => "Multi-line text input",
-                "email" => "Email address input",
-                "password" => "Password input (hidden text)",
-                "url" => "URL/web address input",
-                "phonenumber" => "Phone number input",
-                "number" => "Numeric input",
-                "currency" => "Currency/monetary value input",
-                "datetime" => "Date and time picker",
-                "day" => "Date picker (day only)",
-                "option" => "Single option from a group",
-                "checkbox" => "True/false checkbox",
-                "radio" => "Single selection from radio buttons",
-                "select" => "Dropdown selection list",
-                "file" => "File upload field",
-                "signature" => "Digital signature capture",
-                "hidden" => "Hidden field (not visible to user)",
-                "tags" => "Tag input field",
-                "panel" => "Container panel (parent field)",
-                "fieldset" => "Field grouping container (parent field)",
-                "well" => "Well container (parent field)",
-                "columns" => "Column layout container (parent field)",
-                "tabs" => "Tabbed container (parent field)",
-                "container" => "Generic container (parent field)",
+                TEXTFIELD => "Single-line text input",
+                TEXTAREA => "Multi-line text input",
+                EMAIL => "Email address input",
+                PASSWORD => "Password input (hidden text)",
+                URL => "URL/web address input",
+                PHONENUMBER => "Phone number input",
+                NUMBER => "Numeric input",
+                CURRENCY => "Currency/monetary value input",
+                DATETIME => "Date and time picker",
+                DAY => "Date picker (day only)",
+                OPTION => "Single option from a group",
+                CHECKBOX => "True/false checkbox",
+                RADIO => "Single selection from radio buttons",
+                SELECT => "Dropdown selection list",
+                FILE => "File upload field",
+                SIGNATURE => "Digital signature capture",
+                HIDDEN => "Hidden field (not visible to user)",
+                TAGS => "Tag input field",
+                PANEL => "Container panel (parent field)",
+                FIELDSET => "Field grouping container (parent field)",
+                WELL => "Well container (parent field)",
+                COLUMNS => "Column layout container (parent field)",
+                TABS => "Tabbed container (parent field)",
+                CONTAINER => "Generic container (parent field)",
                 _ => "Unknown field type"
             };
         }

@@ -265,8 +265,22 @@ $(function () {
 
     // Function to check if a path has duplicate key prefix (DKx)
     function hasDuplicateKeyPrefix(path) {
-        if (!path) return false;
-        return /^\(DK\d+\)/.test(path);
+        if (!path || typeof path !== 'string') return false;
+        
+        // Limit input length to prevent potential ReDoS attacks
+        if (path.length > 1000) {
+            console.warn('Path length exceeds safety limit for regex check');
+            return false;
+        }
+        
+        try {
+            // Use a more specific pattern that's less prone to backtracking
+            // This pattern is more explicit and should execute efficiently
+            return /^\(DK\d{1,10}\)/.test(path);
+        } catch (error) {
+            console.warn('Error in duplicate key prefix check:', error);
+            return false;
+        }
     }
 
     // Function to check for duplicate keys in current table data
@@ -467,7 +481,7 @@ $(function () {
                     return data;
                 }
             }
-        ];
+        );
 
         const actionButtons = [
             ...commonTableActionButtons('Report Configuration')
@@ -816,17 +830,22 @@ $(function () {
         let sanitized = name.toLowerCase().trim();
 
         // Replace multiple spaces/hyphens with single underscore
-        sanitized = sanitized.replace(/[\s\-]+/g, '_');
+        sanitized = sanitized.replace(/[\s-]+/g, '_');
 
         // Remove all non-alphanumeric characters except underscores
         sanitized = sanitized.replace(/[^a-z0-9_]/g, '');
 
-        // Remove leading/trailing underscores
-        sanitized = sanitized.replace(/^_+|_+$/g, '');
+        // Remove leading/trailing underscores safely without vulnerable regex
+        while (sanitized.startsWith('_')) {
+            sanitized = sanitized.slice(1);
+        }
+        while (sanitized.endsWith('_')) {
+            sanitized = sanitized.slice(0, -1);
+        }
 
-        // If starts with number, prefix with 'col_'
-        if (sanitized && /^[0-9]/.test(sanitized)) {
-            sanitized = 'col_' + sanitized;
+        // If starts with number, prefix with 'view_'
+        if (sanitized && /^\d/.test(sanitized)) {
+            sanitized = 'view_' + sanitized;
         }
 
         // If empty after sanitization, return empty string
@@ -835,10 +854,12 @@ $(function () {
         }
 
         // Truncate to max length
-        if (sanitized.length > COLUMN_VALIDATION.MAX_LENGTH) {
-            sanitized = sanitized.substring(0, COLUMN_VALIDATION.MAX_LENGTH);
+        if (sanitized.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
+            sanitized = sanitized.substring(0, VIEW_NAME_VALIDATION.MAX_LENGTH);
             // Remove trailing underscore if truncation created one
-            sanitized = sanitized.replace(/_+$/, '');
+            while (sanitized.endsWith('_')) {
+                sanitized = sanitized.slice(0, -1);
+            }
         }
 
         return sanitized;
@@ -964,16 +985,21 @@ $(function () {
         let sanitized = name.toLowerCase().trim();
 
         // Replace multiple spaces/hyphens with single underscore
-        sanitized = sanitized.replace(/[\s\-]+/g, '_');
+        sanitized = sanitized.replace(/[\s-]+/g, '_');
 
         // Remove all non-alphanumeric characters except underscores
         sanitized = sanitized.replace(/[^a-z0-9_]/g, '');
 
-        // Remove leading/trailing underscores
-        sanitized = sanitized.replace(/^_+|_+$/g, '');
+        // Remove leading/trailing underscores safely without vulnerable regex
+        while (sanitized.startsWith('_')) {
+            sanitized = sanitized.slice(1);
+        }
+        while (sanitized.endsWith('_')) {
+            sanitized = sanitized.slice(0, -1);
+        }
 
         // If starts with number, prefix with 'view_'
-        if (sanitized && /^[0-9]/.test(sanitized)) {
+        if (sanitized && /^\d/.test(sanitized)) {
             sanitized = 'view_' + sanitized;
         }
 
@@ -986,7 +1012,9 @@ $(function () {
         if (sanitized.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
             sanitized = sanitized.substring(0, VIEW_NAME_VALIDATION.MAX_LENGTH);
             // Remove trailing underscore if truncation created one
-            sanitized = sanitized.replace(/_+$/, '');
+            while (sanitized.endsWith('_')) {
+                sanitized = sanitized.slice(0, -1);
+            }
         }
 
         return sanitized;

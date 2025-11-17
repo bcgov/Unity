@@ -94,7 +94,7 @@ namespace Unity.Reporting.Configuration.FieldProviders
             // Compare current vs stored worksheet info
             var changes = DetectWorksheetChanges(storedWorksheetInfo, currentWorksheetInfo);
 
-            return changes.Any() ? string.Join("; ", changes) : null;
+            return changes.Count > 0 ? string.Join("; ", changes) : null;
         }
 
         /// <summary>

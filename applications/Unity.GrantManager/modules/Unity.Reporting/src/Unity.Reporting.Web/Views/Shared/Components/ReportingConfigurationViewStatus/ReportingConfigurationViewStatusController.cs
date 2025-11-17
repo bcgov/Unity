@@ -13,22 +13,15 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationView
     /// Supports dynamic status updates through AJAX calls and provides preview data access for generated reporting views
     /// with proper error handling and JSON response formatting for client-side consumption.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the ReportingConfigurationViewStatusController with required dependencies.
+    /// Sets up the report mapping service for accessing view status and preview data functionality.
+    /// </remarks>
+    /// <param name="reportMappingService">The service for managing report mappings and view operations.</param>
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("ApplicationForms/ReportingConfigurationViewStatus")]
-    public class ReportingConfigurationViewStatusController : AbpController
+    public class ReportingConfigurationViewStatusController(IReportMappingService reportMappingService) : AbpController
     {
-        private readonly IReportMappingService _reportMappingService;
-
-        /// <summary>
-        /// Initializes a new instance of the ReportingConfigurationViewStatusController with required dependencies.
-        /// Sets up the report mapping service for accessing view status and preview data functionality.
-        /// </summary>
-        /// <param name="reportMappingService">The service for managing report mappings and view operations.</param>
-        public ReportingConfigurationViewStatusController(IReportMappingService reportMappingService)
-        {
-            _reportMappingService = reportMappingService;
-        }
-
         /// <summary>
         /// Handles AJAX requests to refresh the ReportingConfigurationViewStatus view component with updated status information.
         /// Validates the request parameters and returns the refreshed view component for dynamic status updates
@@ -63,9 +56,15 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationView
         [Route("PreviewData")]
         public async Task<IActionResult> PreviewData(Guid versionId, string provider)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationViewStatusController: PreviewData");
+                return ViewComponent("ReportingConfigurationViewStatus");
+            }
+
             try
             {
-                var reportColumnsMap = await _reportMappingService.GetByCorrelationAsync(versionId, provider);
+                var reportColumnsMap = await reportMappingService.GetByCorrelationAsync(versionId, provider);
                 
                 if (reportColumnsMap?.ViewName == null)
                 {
@@ -81,7 +80,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationView
                     Filter = null
                 };
 
-                var viewData = await _reportMappingService.GetViewPreviewDataAsync(reportColumnsMap.ViewName, request);
+                var viewData = await reportMappingService.GetViewPreviewDataAsync(reportColumnsMap.ViewName, request);
                 
                 return Json(new { 
                     success = true, 

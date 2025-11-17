@@ -92,8 +92,8 @@ namespace Unity.Reporting.Configuration
 
                 foreach (var viewName in input.ViewNames)
                 {
-                    var map = reportColumnsMaps.FirstOrDefault(m =>
-                        m.ViewName.Trim().ToLowerInvariant() == viewName.ToLowerInvariant());
+                    var map = reportColumnsMaps.Find(m =>
+                        m.ViewName.Trim().Equals(viewName, StringComparison.InvariantCultureIgnoreCase));
 
                     if (map != null)
                     {

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.Reporting.Configuration;
@@ -176,8 +177,18 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         {
             if (string.IsNullOrEmpty(path)) return false;
 
-            // Check for pattern like (DK1), (DK2), etc. at the beginning of the path
-            return System.Text.RegularExpressions.Regex.IsMatch(path, @"^\(DK\d+\)");
+            try
+            {
+                // Check for pattern like (DK1), (DK2), etc. at the beginning of the path
+                // Use timeout to prevent potential ReDoS attacks
+                return Regex.IsMatch(path, @"^\(DK\d+\)", 
+                    RegexOptions.None, TimeSpan.FromMilliseconds(100));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // If regex times out, assume no duplicate key prefix for safety
+                return false;
+            }
         }
 
         /// <summary>

@@ -19,8 +19,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
 {
     public class ReportMappingServiceTests : ReportingApplicationTestBase<ReportingApplicationTestModule>
     {
-        private readonly IReportMappingService _reportMappingService;
-
+        private readonly ReportMappingService _reportMappingService;
         private readonly IReportColumnsMapRepository _reportColumnsMapRepository;
         private readonly IBackgroundJobManager _backgroundJobManager;
         private readonly ICurrentTenant _currentTenant;
@@ -406,7 +405,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
             var rows = new[]
             {
                 new UpsertMapRowDto { PropertyName = "field1", ColumnName = "" },
-                new UpsertMapRowDto { PropertyName = "field2", ColumnName = null },
+                new UpsertMapRowDto { PropertyName = "field2", ColumnName = " " },
                 new UpsertMapRowDto { PropertyName = "field3", ColumnName = "   " }
             };
 
@@ -436,7 +435,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
         {
             // Act & Assert
             CallValidateColumnNamesConformance(null).ShouldBeTrue();
-            CallValidateColumnNamesConformance(new UpsertMapRowDto[0]).ShouldBeTrue();
+            CallValidateColumnNamesConformance([]).ShouldBeTrue();
         }
 
         #endregion

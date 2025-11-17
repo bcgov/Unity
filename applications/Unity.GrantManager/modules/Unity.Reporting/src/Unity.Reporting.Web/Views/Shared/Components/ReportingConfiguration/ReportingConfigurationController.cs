@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Unity.Reporting.Configuration;
 using Unity.Reporting.Permissions;
@@ -56,6 +57,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Route("GetConfiguration")]
         public async Task<IActionResult> GetConfiguration(Guid correlationId, string correlationProvider)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:GetConfiguration");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 var result = await reportMappingService.GetByCorrelationAsync(correlationId, correlationProvider);
@@ -80,6 +87,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Route("Exists")]
         public async Task<IActionResult> Exists(Guid correlationId, string correlationProvider)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:Exists");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 var exists = await reportMappingService.ExistsAsync(correlationId, correlationProvider);
@@ -103,6 +116,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Route("GetFieldsMetadata")]
         public async Task<IActionResult> GetFieldsMetadata(Guid correlationId, string correlationProvider)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:GetFieldsMetadata");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 var result = await reportMappingService.GetFieldsMetadataAsync(correlationId, correlationProvider);
@@ -127,6 +146,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<IActionResult> Create([FromBody] UpsertReportColumnsMapDto configuration)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:Create");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 var result = await reportMappingService.CreateAsync(configuration);
@@ -151,6 +176,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<IActionResult> Update([FromBody] UpsertReportColumnsMapDto configuration)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:Update");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 var result = await reportMappingService.UpdateAsync(configuration);
@@ -179,6 +210,13 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Route("IsViewNameAvailable")]
         public async Task<IActionResult> IsViewNameAvailable(string viewName, Guid? correlationId = null, string? correlationProvider = null)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:IsViewNameAvailable");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
+
             try
             {
                 bool isAvailable;
@@ -215,6 +253,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Authorize(ReportingPermissions.Configuration.Update)]
         public async Task<IActionResult> GenerateView([FromBody] GenerateViewRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:GenerateView");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 var result = await reportMappingService.GenerateViewAsync(
@@ -248,6 +292,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Authorize(ReportingPermissions.Configuration.Update)]
         public IActionResult GenerateColumnNames([FromBody] GenerateColumnNamesRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:GenerateColumnNames");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 var result = reportMappingService.GenerateColumnNames(request.PathColumns);
@@ -274,6 +324,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Route("GetViewPreviewData")]
         public async Task<IActionResult> GetViewPreviewData(string viewName, int skip = 0, int take = 100, string? filter = null, string? orderBy = null)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:GetViewPreviewData");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 var request = new Unity.Reporting.Configuration.ViewDataRequest
@@ -306,6 +362,12 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         [Authorize(ReportingPermissions.Configuration.Delete)]
         public async Task<IActionResult> Delete([FromBody] DeleteViewRequest deleteViewRequest)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for ReportingConfigurationController:Delete");
+                return ViewComponent(typeof(ReportingConfigurationViewComponent));
+            }
+
             try
             {
                 await reportMappingService.DeleteAsync(deleteViewRequest.CorrelationId, deleteViewRequest.CorrelationProvider, deleteViewRequest.DeleteView);
@@ -333,18 +395,20 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// Gets or sets the unique identifier of the correlated entity whose mapping defines the view structure.
         /// References the source entity (form version, scoresheet, etc.) that the view should be generated from.
         /// </summary>
+        [JsonRequired]
         public Guid CorrelationId { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the correlation provider identifier (e.g., "formversion", "scoresheet", "chefs").
         /// Determines the mapping lookup strategy and field provider for view generation operations.
         /// </summary>
+        [JsonRequired]
         public string CorrelationProvider { get; set; } = string.Empty;
-        
+
         /// <summary>
         /// Gets or sets the desired name for the generated database view (will be normalized to lowercase).
         /// Must be unique within the Reporting schema and conform to PostgreSQL identifier naming restrictions.
-        /// </summary>
+        /// </summary>        
         public string ViewName { get; set; } = string.Empty;
     }
 
@@ -405,12 +469,14 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// Gets or sets the unique identifier of the correlated entity whose mapping should be deleted.
         /// References the source entity that the mapping configuration was created for.
         /// </summary>
+        [JsonRequired]
         public Guid CorrelationId { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the correlation provider identifier (e.g., "formversion", "scoresheet", "chefs").
         /// Determines the mapping lookup strategy for locating the configuration to delete.
         /// </summary>
+        [JsonRequired]
         public string CorrelationProvider { get; set; } = string.Empty;
         
         /// <summary>
