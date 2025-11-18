@@ -12,8 +12,8 @@
 
 @inject IPermissionChecker PermissionChecker
 
-<form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="paymentTagForm">
-    <abp-modal id="tagPaymentsModal">
+<form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="paymentTagForm" autocomplete="off">
+    <abp-modal id="tagPaymentsModal" size="Large">
         <abp-modal-header title="Tags"></abp-modal-header>
         <abp-modal-body>
             <div>
