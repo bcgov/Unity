@@ -8,7 +8,7 @@
     "axios": "^1.4.0",
     "bootstrap-4": "npm:bootstrap@^4.4.1",
     "bootstrap-select": "^1.13.18",
-    "datatables.net-bs5": "^2.3.4",
+    "datatables.net-bs5": "^2.3.5",
     "datatables.net-buttons-bs5": "^3.2.5",
     "datatables.net-colreorder": "^2.1.1",
     "datatables.net-colreorder-bs5": "^2.1.1",

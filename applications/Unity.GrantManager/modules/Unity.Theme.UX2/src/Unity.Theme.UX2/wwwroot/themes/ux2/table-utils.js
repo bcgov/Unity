@@ -241,26 +241,22 @@ function initializeDataTable(options) {
 
     let iDt = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            fixedHeader: {
-                header: true,
-                footer: false,
-                headerOffset: 0
-            },
             serverSide: serverSideEnabled,
             paging: pagingEnabled,
             order: [[defaultSortColumn, 'desc']],
             searching: true,
             externalSearchInputId: `#${externalSearchId}`,
-            iDisplayLength: 25,
+            pageLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
             scrollCollapse: true,
+            deferRender: false,
             ajax: abp.libs.datatables.createAjax(
                 dataEndpoint,
                 data,
                 responseCallback ?? function (result) {
                     if (result.totalCount <= maxRowsPerPage) {
-                        $('.dataTables_paginate').hide();
+                        $('.dt-paging').hide();
                     }
                     return {
                         recordsTotal: result.totalCount,
@@ -275,9 +271,14 @@ function initializeDataTable(options) {
             },
             colReorder: reorderEnabled,
             orderCellsTop: true,
-            //fixedHeader: true,
-            oLanguage: languageSetValues,
-            dom: 'Blfrtip',
+            language: languageSetValues,
+            layout: {
+                topStart: null,
+                topEnd: null,
+                bottomStart: 'info',
+                bottom: 'paging',
+                bottomEnd: 'pageLength'
+            },
             buttons: updatedActionButtons,
             drawCallback: function () {
                 $(`#${dt[0].id}_previous a`).text('<');
@@ -356,14 +357,27 @@ function initializeDataTable(options) {
         }
     }
 
-    // Move buttons to designated container
-    iDt.buttons().container().prependTo(`#${dynamicButtonContainerId}`);
+    // Move buttons to designated container (if buttons exist)
+    // Note: In DT 2.x, buttons need to be explicitly created via buttons() API
+    if (updatedActionButtons && updatedActionButtons.length > 0) {
+        const buttonsContainer = iDt.buttons().container();
+        if (buttonsContainer.length && $(`#${dynamicButtonContainerId}`).length) {
+            buttonsContainer.prependTo(`#${dynamicButtonContainerId}`);
+        } else if (!buttonsContainer.length) {
+            console.warn('Buttons container not found. Ensure Buttons extension is loaded and buttons are configured.');
+        }
+    }
 
-    // Setup length menu in footer
-    $(`#${dataTableName}_wrapper`).append(
-        `<div class="length-menu-footer ${dataTableName}"></div>`
-    );
-    $(`#${dataTableName}_length`).appendTo(`.${dataTableName}`);
+    // Setup length menu in footer (using dt-container for DT 2.x)
+    // Note: layout bottom: [...] creates elements in a flex row, so we don't need manual repositioning
+    // Commenting out this section as the layout config now handles positioning
+    // const dtContainer = $(`#${dataTableName}`).closest('.dt-container');
+    // if (dtContainer.length) {
+    //     dtContainer.append(
+    //         `<div class="length-menu-footer ${dataTableName}"></div>`
+    //     );
+    //     $('.dt-length').appendTo(`.${dataTableName}`);
+    // }
 
     // Initialize table (clear default styles, reset search)
     init(iDt);
@@ -466,16 +480,19 @@ function getVisibleColumnIndexes(columns, visibleColumnsArray) {
  * @param {string} tableName - ID of the DataTable element (without wrapper suffix)
  */
 function setTableHeighDynamic(tableName) {
-    let tableHeight = $(`#${tableName}_wrapper`)[0].clientHeight;
+    const dtContainer = $(`#${tableName}`).closest('.dt-container');
+    if (!dtContainer.length) return;
+    
+    let tableHeight = dtContainer[0].clientHeight;
     let docHeight = document.body.clientHeight;
     let tableOffset = 425;
 
     if (tableHeight + tableOffset > docHeight) {
-        $(`#${tableName}_wrapper .dataTables_scrollBody`).css({
+        dtContainer.find('.dt-scroll-body').css({
             height: docHeight - tableOffset,
         });
     } else {
-        $(`#${tableName}_wrapper .dataTables_scrollBody`).css({
+        dtContainer.find('.dt-scroll-body').css({
             height: tableHeight + 10,
         });
     }

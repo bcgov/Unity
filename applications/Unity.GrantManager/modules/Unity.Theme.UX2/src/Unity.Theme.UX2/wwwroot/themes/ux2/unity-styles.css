@@ -39,6 +39,11 @@
     --bc-layout-margin-xsmall: 4px;
     --bc-layout-margin-small: 8px;
     --bc-layout-margin-large: 24px;
+
+    /* DataTables override */
+    --dt-row-selected: 230, 239, 247, 0.95;
+    --dt-row-selected-text: 0, 51, 102;
+    --dt-row-selected-link: 9, 10, 11;
 }
 
 .unity-app-container {
@@ -506,6 +511,8 @@ th #btn-toggle-filter-heading {
 
 .tr-toggle-filter {
     display: none;
+    background-color: var(--bc-colors-white-background);
+    border-bottom: 1px solid var(--bc-colors-grey-dividers);
 }
 
 .button-gap-1 > .dt-buttons {
@@ -529,7 +536,7 @@ div.dt-buttons div.dropdown-menu {
     text-align: right;
 }
 
-.dataTables_filter {
+.dt-search {
     margin-bottom: .5rem;
     display: none;
 }
@@ -546,15 +553,15 @@ div.dt-buttons div.dropdown-menu {
         border: 2px solid;
     }
 
-.dataTables_scrollHeadInner {
+.dt-scroll-headInner {
     padding-right: 0 !important;
 }
 
-.dataTables_scrollHead {
+.dt-scroll-head {
     border-radius: 10px 10px 0px 0px;
 }
 
-.dataTables_scrollBody {
+.dt-scroll-body {
     border-radius: 0px 0px 20px;
 }
 
@@ -584,7 +591,7 @@ ul.pagination {
 }
 
 
-div.dataTables_filter > label > input {
+div.dt-search > label > input {
     width: 518px !important;
     height: 37px;
     padding: 2px 24px 0px 24px;
@@ -630,7 +637,7 @@ input[type="radio"] {
     background-color: var(--bs-nav-pills-link-active-bg) !important;
 }
 
-div.dataTables_wrapper div.dataTables_filter {
+div.dt-container div.dt-search {
     text-align: left;
 }
 

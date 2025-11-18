@@ -29,28 +29,29 @@
  *   });
  */
 
- (function(factory) {
-     if (typeof define === 'function' && define.amd) {
-         // AMD
-         define(['jquery', 'datatables.net'], function($) {
-             return factory($, window, document);
-         });
-     } else if (typeof exports === 'object') {
-         // CommonJS
-         module.exports = function(root, $) {
-             if (!root) {
-                 root = window;
-             }
-             if (!$ || !$.fn.dataTable) {
-                 $ = require('datatables.net')(root, $).$;
-             }
-             return factory($, root, root.document);
-         };
-     } else {
-         // Browser
-         factory(jQuery, window, document);
-     }
- }(function($, window, document) {
+ //(function(factory) {
+ //    if (typeof define === 'function' && define.amd) {
+ //        // AMD
+ //        define(['jquery', 'datatables.net'], function($) {
+ //            return factory($, window, document);
+ //        });
+ //    } else if (typeof exports === 'object') {
+ //        // CommonJS
+ //        module.exports = function(root, $) {
+ //            if (!root) {
+ //                root = window;
+ //            }
+ //            if (!$ || !$.fn.dataTable) {
+ //                $ = require('datatables.net')(root, $).$;
+ //            }
+ //            return factory($, root, root.document);
+ //        };
+ //    } else {
+ //        // Browser
+ //        factory(jQuery, window, document);
+ //    }
+ //}
+(function ($, window, document) {
     'use strict';
 
     let DataTable = $.fn.dataTable;
@@ -65,7 +66,7 @@
      * @param {object} settings - DataTables settings object
      * @param {object} opts - Configuration options
      */
-    DataTable.FilterRow = function(settings, opts) {
+    DataTable.FilterRow = function (settings, opts) {
         // Sanity check
         if (!(this instanceof DataTable.FilterRow)) {
             throw new Error("FilterRow must be initialized with 'new' keyword.");
@@ -110,7 +111,7 @@
          * Initialize the filter row feature
          * @private
          */
-        _constructor: function() {
+        _constructor: function () {
             let that = this;
             let dt = this.s.dt;
 
@@ -126,16 +127,16 @@
             this._restoreFilterState();
 
             // Listen for column visibility and reorder events
-            dt.on('column-reorder' + this.s.namespace, function() {
+            dt.on('column-reorder' + this.s.namespace, function () {
                 that._rebuildFilterRow();
             });
 
-            dt.on('column-visibility' + this.s.namespace, function() {
+            dt.on('column-visibility' + this.s.namespace, function () {
                 that._rebuildFilterRow();
             });
 
             // Listen for destroy event to cleanup
-            dt.on('destroy' + this.s.namespace, function() {
+            dt.on('destroy' + this.s.namespace, function () {
                 that._destroy();
             });
 
@@ -152,22 +153,22 @@
          * Build the filter row and append to table
          * @private
          */
-        _buildFilterRow: function() {
+        _buildFilterRow: function () {
             let dt = this.s.dt;
             let that = this;
             let filterRow = $('<tr class="tr-toggle-filter" id="tr-filter">').hide();
 
-            dt.columns().every(function() {
+            dt.columns().every(function () {
                 let column = this;
                 // Only create filter cells for visible columns
                 if (column.visible()) {
                     let title = $(column.header()).text();
-                    
+
                     if (title && title !== 'Actions' && title !== 'Action' && title !== 'Default') {
-                        let placeholder = that.s.opts.placeholderPrefix ? 
-                            that.s.opts.placeholderPrefix + ' ' + title : 
+                        let placeholder = that.s.opts.placeholderPrefix ?
+                            that.s.opts.placeholderPrefix + ' ' + title :
                             title;
-                        
+
                         let input = $('<input>', {
                             type: 'text',
                             class: 'form-control input-sm custom-filter-input',
@@ -183,7 +184,7 @@
                         }
 
                         // Bind keyup event for filtering
-                        input.on('keyup' + that.s.namespace, function() {
+                        input.on('keyup' + that.s.namespace, function () {
                             let val = this.value;
                             if (column.search() !== val) {
                                 column.search(val).draw();
@@ -212,7 +213,7 @@
          * Rebuild the filter row (on column reorder/visibility change)
          * @private
          */
-        _rebuildFilterRow: function() {
+        _rebuildFilterRow: function () {
             let wasVisible = this.dom.filterRow && this.dom.filterRow.is(':visible');
             this._buildFilterRow();
             if (wasVisible) {
@@ -225,7 +226,7 @@
          * Initialize Bootstrap popover for filter controls
          * @private
          */
-        _initializePopover: function() {
+        _initializePopover: function () {
             let that = this;
             let btnSelector = '#' + this.s.opts.buttonId;
             let $btn = $(btnSelector);
@@ -236,7 +237,7 @@
 
             this.dom.button = $btn;
 
-            $btn.on('click' + this.s.namespace, function() {
+            $btn.on('click' + this.s.namespace, function () {
                 $btn.popover('toggle');
             });
 
@@ -250,7 +251,7 @@
                         <div class="popover-body"></div>
                     </div>
                 `,
-                content: function() {
+                content: function () {
                     let isChecked = that.dom.filterRow.is(':visible');
                     return `
                         <div class="form-check form-switch">
@@ -264,30 +265,30 @@
             });
 
             // Handle popover shown event
-            $btn.on('shown.bs.popover' + this.s.namespace, function() {
+            $btn.on('shown.bs.popover' + this.s.namespace, function () {
                 let $popover = $('.popover.custom-popover');
-                
+
                 // Toggle filter row visibility
-                $popover.find('#showFilter').on('click', function() {
+                $popover.find('#showFilter').on('click', function () {
                     that.dom.filterRow.toggle();
                 });
 
                 // Clear all filters
-                $popover.find('#btnClearFilter').on('click', function() {
+                $popover.find('#btnClearFilter').on('click', function () {
                     that.clearFilters();
                     $btn.popover('hide');
                 });
 
                 // Close popover on outside click/hover
-                $(document).on('click.popover' + that.s.namespace, function(e) {
-                    if (!$(e.target).closest(btnSelector).length && 
+                $(document).on('click.popover' + that.s.namespace, function (e) {
+                    if (!$(e.target).closest(btnSelector).length &&
                         !$(e.target).closest('.popover').length) {
                         $btn.popover('hide');
                     }
                 });
 
-                $(document).on('mouseenter.popover' + that.s.namespace, function(e) {
-                    if (!$(e.target).closest(btnSelector).length && 
+                $(document).on('mouseenter.popover' + that.s.namespace, function (e) {
+                    if (!$(e.target).closest(btnSelector).length &&
                         !$(e.target).closest('.popover').length) {
                         $btn.popover('hide');
                     }
@@ -295,7 +296,7 @@
             });
 
             // Cleanup popover events on hide
-            $btn.on('hide.bs.popover' + this.s.namespace, function() {
+            $btn.on('hide.bs.popover' + this.s.namespace, function () {
                 let $popover = $('.popover.custom-popover');
                 $popover.find('#showFilter').off('click');
                 $popover.find('#btnClearFilter').off('click');
@@ -308,12 +309,12 @@
          * Update button text based on filter state
          * @private
          */
-        _updateButtonState: function() {
+        _updateButtonState: function () {
             let dt = this.s.dt;
             let hasFilters = false;
 
             // Check column filters
-            dt.columns().every(function() {
+            dt.columns().every(function () {
                 if (this.search()) {
                     hasFilters = true;
                     return false;
@@ -331,8 +332,8 @@
 
             // Update button text
             if (this.dom.button) {
-                this.dom.button.text(hasFilters ? 
-                    this.s.opts.buttonTextActive : 
+                this.dom.button.text(hasFilters ?
+                    this.s.opts.buttonTextActive :
                     this.s.opts.buttonText
                 );
             }
@@ -342,15 +343,15 @@
          * Restore filter state from DataTables state
          * @private
          */
-        _restoreFilterState: function() {
+        _restoreFilterState: function () {
             let dt = this.s.dt;
             let that = this;
 
-            dt.columns().every(function(i) {
+            dt.columns().every(function (i) {
                 let column = this;
                 let title = $(column.header()).text();
                 let searchVal = column.search();
-                
+
                 if (searchVal) {
                     that.s.filterData[title] = searchVal;
                 }
@@ -360,7 +361,7 @@
             let externalSearchId = dt.init().externalSearchInputId;
             let searchVal = externalSearchId ? $(externalSearchId).val() : '';
             let hasFilters = Object.keys(this.s.filterData).length > 0 || searchVal !== '';
-            
+
             if (hasFilters) {
                 this.dom.filterRow.show();
             }
@@ -370,7 +371,7 @@
          * Clear all column and global filters
          * @public
          */
-        clearFilters: function() {
+        clearFilters: function () {
             let dt = this.s.dt;
             let externalSearchId = dt.init().externalSearchInputId;
 
@@ -402,7 +403,7 @@
          * Show the filter row
          * @public
          */
-        show: function() {
+        show: function () {
             this.dom.filterRow.show();
             return this;
         },
@@ -411,7 +412,7 @@
          * Hide the filter row
          * @public
          */
-        hide: function() {
+        hide: function () {
             this.dom.filterRow.hide();
             return this;
         },
@@ -420,7 +421,7 @@
          * Toggle the filter row visibility
          * @public
          */
-        toggle: function() {
+        toggle: function () {
             this.dom.filterRow.toggle();
             return this;
         },
@@ -429,7 +430,7 @@
          * Destroy the filter row feature
          * @private
          */
-        _destroy: function() {
+        _destroy: function () {
             let dt = this.s.dt;
 
             // Remove event listeners
@@ -459,7 +460,7 @@
      * For DataTables 1.x, this will be ignored but the constructor can still be used manually
      */
     if (DataTable.feature) {
-        DataTable.feature.register('filterRow', function(settings, opts) {
+        DataTable.feature.register('filterRow', function (settings, opts) {
             return new DataTable.FilterRow(settings, opts).dom.container || document.createElement('div');
         });
     }
@@ -467,7 +468,7 @@
     /**
      * API method to access FilterRow instance
      */
-    DataTable.Api.register('filterRow()', function() {
+    DataTable.Api.register('filterRow()', function () {
         let ctx = this.context[0];
         return ctx._filterRow || null;
     });
