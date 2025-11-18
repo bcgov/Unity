@@ -1,9 +1,24 @@
+/**
+ * Placeholder string displayed for null or undefined values in table cells.
+ * @constant {string}
+ */
 const nullPlaceholder = '—';
+
+/**
+ * Filter button text descriptions indicating filter state.
+ * @constant {Object}
+ * @property {string} Default - Text when no filters are applied
+ * @property {string} With_Filter - Text when filters are active
+ */
 const FilterDesc = {
     Default: 'Filter',
     With_Filter: 'Filter*',
 };
 
+/**
+ * Creates a number formatter for Canadian currency (CAD).
+ * @returns {Intl.NumberFormat} Configured number formatter instance
+ */
 function createNumberFormatter() {
     return new Intl.NumberFormat('en-CA', {
         style: 'currency',
@@ -13,6 +28,14 @@ function createNumberFormatter() {
     });
 }
 
+/**
+ * Removes null placeholders from CSV export buttons by adding a format function.
+ * When exporting to CSV, replaces placeholder characters with empty strings.
+ * @param {Array<Object>} actionButtons - Array of DataTables button configurations
+ * @param {boolean} useNullPlaceholder - Whether to apply placeholder removal
+ * @param {string} nullPlaceholder - The placeholder string to remove
+ * @returns {Array<Object>} Modified button configurations
+ */
 function removePlaceholderFromCvsExportButton(actionButtons, useNullPlaceholder, nullPlaceholder) {
     if (!useNullPlaceholder) {
         return actionButtons;
@@ -35,6 +58,31 @@ function removePlaceholderFromCvsExportButton(actionButtons, useNullPlaceholder,
     });
 }
 
+/**
+ * Initializes a DataTable with comprehensive configuration including filtering, column management,
+ * state persistence, and custom button controls.
+ * @param {Object} options - Configuration options for the DataTable
+ * @param {jQuery} options.dt - jQuery element to initialize as DataTable
+ * @param {Array<string>} [options.defaultVisibleColumns=[]] - Column names visible by default
+ * @param {Array<Object>} options.listColumns - Column definitions with name, data, title, render, etc.
+ * @param {number} options.maxRowsPerPage - Maximum rows before hiding pagination controls
+ * @param {number} options.defaultSortColumn - Index of column to sort by default
+ * @param {string} options.dataEndpoint - API endpoint URL for fetching table data
+ * @param {Function|Object} options.data - Data source or function returning request parameters
+ * @param {Function} [options.responseCallback] - Custom callback to transform API response
+ * @param {Array<Object>} options.actionButtons - DataTables button configurations
+ * @param {boolean} options.serverSideEnabled - Enable server-side processing
+ * @param {boolean} options.pagingEnabled - Enable pagination
+ * @param {boolean} options.reorderEnabled - Enable column reordering
+ * @param {Object} options.languageSetValues - DataTables language/localization settings
+ * @param {string} options.dataTableName - Unique identifier for the table
+ * @param {string} options.dynamicButtonContainerId - DOM ID where buttons are rendered
+ * @param {boolean} [options.useNullPlaceholder=false] - Replace nulls with placeholder character
+ * @param {string} [options.externalSearchId='search'] - ID of external search input element
+ * @param {boolean} [options.disableColumnSelect=false] - Disable column visibility toggle
+ * @param {Array<Object>} [options.listColumnDefs] - Additional columnDefs configurations
+ * @returns {DataTable} Initialized DataTable API instance
+ */
 function initializeDataTable(options) {
     const {
         dt,
@@ -353,6 +401,12 @@ function initializeDataTable(options) {
     return iDt;
 }
 
+/**
+ * Assigns sequential index values to columns that don't have one.
+ * Preserves existing indices and continues numbering from the highest existing index.
+ * @param {Array<Object>} columnsArray - Array of column definition objects
+ * @returns {Array<Object>} Column array with all indices assigned
+ */
 function assignColumnIndices(columnsArray) {
     if (!Array.isArray(columnsArray) || columnsArray.length === 0) {
         return [];
@@ -385,6 +439,13 @@ function assignColumnIndices(columnsArray) {
     });
 }
 
+/**
+ * Determines which column indices should be visible based on column names.
+ * Always includes index 0 (typically the select column).
+ * @param {Array<Object>} columns - Array of column definitions with name/data/index properties
+ * @param {Array<string>} visibleColumnsArray - Names of columns that should be visible
+ * @returns {Array<number>} Sorted array of column indices to show
+ */
 function getVisibleColumnIndexes(columns, visibleColumnsArray) {
     let indexes = [];
 
@@ -413,6 +474,11 @@ function getVisibleColumnIndexes(columns, visibleColumnsArray) {
     return indexes.sort();
 }
 
+/**
+ * Dynamically adjusts the table scroll body height based on viewport size.
+ * Prevents tables from exceeding viewport height while maintaining usability.
+ * @param {string} tableName - ID of the DataTable element (without wrapper suffix)
+ */
 function setTableHeighDynamic(tableName) {
     let tableHeight = $(`#${tableName}_wrapper`)[0].clientHeight;
     let docHeight = document.body.clientHeight;
@@ -429,6 +495,14 @@ function setTableHeighDynamic(tableName) {
     }
 }
 
+/**
+ * Creates a column definition for a checkbox selection column.
+ * Typically used as the first column (index 0) for row selection.
+ * @param {string} title - Tooltip text for individual row checkboxes
+ * @param {string} dataField - Data property to bind for checkbox IDs
+ * @param {string} uniqueTableId - Unique identifier for the table instance
+ * @returns {Object} DataTables column definition object
+ */
 function getSelectColumn(title, dataField, uniqueTableId) {
     return {
         title: `<input class="checkbox-select select-all-${uniqueTableId}"  type="checkbox">`,
@@ -444,11 +518,20 @@ function getSelectColumn(title, dataField, uniqueTableId) {
     };
 }
 
+/**
+ * Initializes the DataTable by clearing default button classes and resetting search state.
+ * @param {DataTable} iDt - DataTable API instance
+ */
 function init(iDt) {
     $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
     iDt.search('').columns().search('').draw();
 }
 
+/**
+ * Initializes the filter button popover with toggle and clear functionality.
+ * Creates a Bootstrap popover containing filter visibility toggle and clear filter button.
+ * @param {DataTable} iDt - DataTable API instance
+ */
 function initializeFilterButtonPopover(iDt) {
     const UIElements = {
         search: $(iDt.init().externalSearchInputId),
@@ -536,11 +619,21 @@ function initializeFilterButtonPopover(iDt) {
     });
 }
 
+/**
+ * Toggles the visibility of the filter row in the DataTable.
+ * @deprecated This function appears unused in the current codebase
+ */
 function toggleFilterRow() {
     $(this).popover('toggle');
     $('#dtFilterRow').toggleClass('hidden');
 }
 
+/**
+ * Finds a DataTable column by its header title text.
+ * @param {string} title - Text content of the column header
+ * @param {DataTable} dataTable - DataTable API instance
+ * @returns {Object} DataTable column API object
+ */
 function findColumnByTitle(title, dataTable) {
     let columnIndex = dataTable
         .columns()
@@ -552,20 +645,45 @@ function findColumnByTitle(title, dataTable) {
     return res;
 }
 
+/**
+ * Retrieves a column definition object by its name property.
+ * @param {string} name - Name of the column to find
+ * @param {Array<Object>} columns - Array of column definition objects
+ * @returns {Object|undefined} Column definition or undefined if not found
+ */
 function getColumnByName(name, columns) {
     return columns.find((obj) => obj.name === name);
 }
 
+/**
+ * Checks if a column is currently visible and returns the appropriate CSS class.
+ * @param {string} title - Title text of the column header
+ * @param {DataTable} dataTable - DataTable API instance
+ * @returns {string|null} CSS class string if visible, null otherwise
+ */
 function isColumnVisToggled(title, dataTable) {
     let column = findColumnByTitle(title, dataTable);
     if (column.visible()) return ' dt-button-active';
     else return null;
 }
 
+/**
+ * Toggles the visibility of a column based on button configuration.
+ * @param {Object} config - Button configuration object containing text property
+ * @param {DataTable} dataTable - DataTable API instance
+ */
 function toggleManageColumnButton(config, dataTable) {
     let column = findColumnByTitle(config.text, dataTable);
     column.visible(!column.visible());
 }
+
+/**
+ * Generates sorted column visibility toggle buttons for the column management dropdown.
+ * Excludes the select column (index 0) and Actions column, sorts alphabetically by title.
+ * @param {Array<Object>} displayListColumns - Array of column definitions
+ * @param {DataTable} dataTable - DataTable API instance
+ * @returns {Array<Object>} Array of DataTables button configuration objects
+ */
 function getColumnToggleButtonsSorted(displayListColumns, dataTable) {
     let exludeIndxs = [0];
     const res = displayListColumns
@@ -598,6 +716,11 @@ function getColumnToggleButtonsSorted(displayListColumns, dataTable) {
     return res;
 }
 
+/**
+ * Binds an external search input to the DataTable's search functionality.
+ * Skips binding for default search inputs with custom logic.
+ * @param {DataTable} dataTableInstance - DataTable API instance
+ */
 function setExternalSearchFilter(dataTableInstance) {
     let searchId = dataTableInstance.init().externalSearchInputId;
 
@@ -613,6 +736,13 @@ function setExternalSearchFilter(dataTableInstance) {
     }
 }
 
+/**
+ * Updates the filter row in the DataTable header with input fields for each visible column.
+ * Preserves existing filter values and applies them to the DataTable search.
+ * @param {DataTable} dt - DataTable API instance
+ * @param {string} dtName - ID of the DataTable element
+ * @param {Object} filterData - Object mapping column titles to their filter values
+ */
 function updateFilter(dt, dtName, filterData) {
     let optionsOpen = false;
     $('#tr-filter').each(function () {
@@ -666,6 +796,11 @@ function updateFilter(dt, dtName, filterData) {
     }
 }
 
+/**
+ * Applies the external search filter value and shows filter row if filters are active.
+ * Called during DataTable initialization to restore search state.
+ * @param {DataTable} iDt - DataTable API instance
+ */
 function searchFilter(iDt) {
     let searchValue = $(iDt.init().externalSearchInputId).val();
     if (searchValue) {
@@ -677,6 +812,11 @@ function searchFilter(iDt) {
     }
 }
 
+/**
+ * Updates the filter button text to indicate whether any filters are currently applied.
+ * Checks both column-specific filters and the global search value.
+ * @param {DataTable} dt - DataTable API instance
+ */
 function updateFilterButton(dt) {
     let searchValue = $(dt.init().externalSearchInputId).val();
     let columnFiltersApplied = false;
@@ -693,6 +833,10 @@ function updateFilterButton(dt) {
     );
 }
 
+/**
+ * Event handler for the select-all checkbox in DataTables.
+ * Publishes PubSub events to notify subscribers of select/deselect all actions.
+ */
 $('.data-table-select-all').click(function () {
     if ($('.data-table-select-all').is(':checked')) {
         PubSub.publish('datatable_select_all', true);
@@ -701,6 +845,12 @@ $('.data-table-select-all').click(function () {
     }
 });
 
+/**
+ * Returns common action button configurations for DataTables including Filter and Export.
+ * Export button is hidden by default and can be toggled with Ctrl+Alt+Shift+E.
+ * @param {string} exportTitle - Title text for the exported CSV file
+ * @returns {Array<Object>} Array of DataTables button configuration objects
+ */
 function commonTableActionButtons(exportTitle) {
     return [
         {
@@ -731,7 +881,11 @@ function commonTableActionButtons(exportTitle) {
     ];
 }
 
-// Toggle hidden export buttons for Ctrl+Alt+Shift+E globally
+/**
+ * Global keyboard shortcut handler to toggle visibility of hidden export buttons.
+ * Listens for Ctrl+Alt+Shift+E and toggles the d-none class on .hidden-export-btn elements.
+ * @listens document#keydown
+ */
 $(document).keydown(function (e) {
     if (e.ctrlKey && e.altKey && e.shiftKey && e.key === 'E') {
         // Toggle d-none class on elements with hidden-export class
