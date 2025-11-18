@@ -5,12 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.AI;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Unity.Flex.Domain.Scoresheets;
-using Unity.Flex.Scoresheets;
 using System.Text.Json;
 using Volo.Abp.Features;
 
@@ -107,9 +105,9 @@ namespace Unity.GrantManager.Intakes.Handlers
                         {
                             // Get the file content from CHEFS (now accessible via [AllowAnonymous])
                             var fileDto = await _submissionAppService.GetChefsFileAttachment(
-                                Guid.Parse(attachment.ChefsSumbissionId),
-                                Guid.Parse(attachment.ChefsFileId),
-                                attachment.FileName);
+                                Guid.Parse(attachment.ChefsSumbissionId ?? ""),
+                                Guid.Parse(attachment.ChefsFileId ?? ""),
+                                attachment.FileName ?? "");
 
                             if (fileDto?.Content != null)
                             {
@@ -118,7 +116,7 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                                 // Generate AI summary with text extraction and file content analysis
                                 var summary = await _aiService.GenerateAttachmentSummaryAsync(
-                                    attachment.FileName,
+                                    attachment.FileName ?? "",
                                     fileDto.Content,
                                     fileDto.ContentType);
 
@@ -126,8 +124,12 @@ namespace Unity.GrantManager.Intakes.Handlers
                                 attachment.AISummary = summary;
                                 await _attachmentRepository.UpdateAsync(attachment);
 
-                                _logger.LogDebug("Successfully generated AI summary for attachment {FileName}: {SummaryPreview}",
-                                    attachment.FileName, summary?.Substring(0, Math.Min(100, summary?.Length ?? 0)) + "...");
+                                    var preview = summary is { Length: > 0 } s
+                                    ? string.Concat(s.AsSpan(0, Math.Min(100, s.Length)), "...")
+                                    : "...";
+
+                                    _logger.LogDebug("Successfully generated AI summary for attachment {FileName}: {SummaryPreview}",
+                                    attachment.FileName, preview);
                             }
                             else
                             {
@@ -135,8 +137,8 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                                 // Generate summary from filename only as fallback
                                 var summary = await _aiService.GenerateAttachmentSummaryAsync(
-                                    attachment.FileName,
-                                    new byte[0],
+                                    attachment.FileName ?? "",
+                                    Array.Empty<byte>(),
                                     "application/octet-stream");
 
                                 attachment.AISummary = summary;
@@ -149,8 +151,8 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                             // Fallback: Generate summary from filename only
                             var summary = await _aiService.GenerateAttachmentSummaryAsync(
-                                attachment.FileName,
-                                new byte[0],
+                                attachment.FileName ?? "",
+                                Array.Empty<byte>(),
                                 "application/octet-stream");
 
                             attachment.AISummary = summary;
@@ -212,23 +214,24 @@ namespace Unity.GrantManager.Intakes.Handlers
                     .GetByApplicationAsync(application.Id);
 
                 // Get application content including the full form submission
+                var notSpecified = "Not specified";
                 var applicationContent = $@"
 Project Name: {application.ProjectName}
 Reference Number: {application.ReferenceNo}
 Requested Amount: ${application.RequestedAmount:N2}
 Total Project Budget: ${application.TotalProjectBudget:N2}
 Project Summary: {application.ProjectSummary ?? "Not provided"}
-City: {application.City ?? "Not specified"}
-Economic Region: {application.EconomicRegion ?? "Not specified"}
-Community: {application.Community ?? "Not specified"}
-Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? "Not specified"}
-Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? "Not specified"}
+City: {application.City ?? notSpecified}
+Economic Region: {application.EconomicRegion ?? notSpecified}
+Community: {application.Community ?? notSpecified}
+Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? notSpecified}
+Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecified}
 Submission Date: {application.SubmissionDate.ToShortDateString()}
 
 FULL APPLICATION FORM SUBMISSION:
 {formSubmission?.RenderedHTML ?? "Form submission content not available"}
 ";
-                _logger.LogInformation("Generating analysis for following application:", applicationContent);
+                _logger.LogInformation("Generating analysis for following application: {Application}", applicationContent);
 
                 // Hardcoded rubric for now
                 var rubric = @"
@@ -280,7 +283,6 @@ EVALUATION CRITERIA:
                 trackedApplication.AIAnalysis = analysis;
                 await _applicationRepository.UpdateAsync(trackedApplication);
 
-                _logger.LogInformation("Successfully generated AI analysis: {AIAnalysis}", trackedApplication.AIAnalysis);
                 _logger.LogInformation("Successfully generated AI analysis for application {ApplicationId}", application.Id);
             }
             catch (Exception ex)
@@ -348,17 +350,18 @@ EVALUATION CRITERIA:
                 var formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(application.Id);
 
                 // Get application content including the full form submission
+                var notSpecified = "Not specified";
                 var applicationContent = $@"
 Project Name: {application.ProjectName}
 Reference Number: {application.ReferenceNo}
 Requested Amount: ${application.RequestedAmount:N2}
 Total Project Budget: ${application.TotalProjectBudget:N2}
 Project Summary: {application.ProjectSummary ?? "Not provided"}
-City: {application.City ?? "Not specified"}
-Economic Region: {application.EconomicRegion ?? "Not specified"}
-Community: {application.Community ?? "Not specified"}
-Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? "Not specified"}
-Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? "Not specified"}
+City: {application.City ?? notSpecified}
+Economic Region: {application.EconomicRegion ?? notSpecified}
+Community: {application.Community ?? notSpecified}
+Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? notSpecified}
+Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecified}
 Submission Date: {application.SubmissionDate.ToShortDateString()}
 
 FULL APPLICATION FORM SUBMISSION:
@@ -377,6 +380,15 @@ FULL APPLICATION FORM SUBMISSION:
                 }
 
                 // Process each section individually
+                JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                JsonSerializerOptions jsonOptionsIndented = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
                 foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
                 {
                     try
@@ -400,11 +412,7 @@ FULL APPLICATION FORM SUBMISSION:
                             sectionQuestionsData.Add(questionData);
                         }
 
-                        var sectionJson = JsonSerializer.Serialize(sectionQuestionsData, new JsonSerializerOptions
-                        {
-                            WriteIndented = true,
-                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                        });
+                        var sectionJson = JsonSerializer.Serialize(sectionQuestionsData, jsonOptions);
 
                         // Generate AI answers for this section
                         var sectionAnswers = await _aiService.GenerateScoresheetSectionAnswersAsync(
@@ -444,10 +452,7 @@ FULL APPLICATION FORM SUBMISSION:
                 }
 
                 // Combine all section results into final JSON
-                var combinedResults = JsonSerializer.Serialize(allSectionResults, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
+                var combinedResults = JsonSerializer.Serialize(allSectionResults, jsonOptionsIndented);
 
                 var scoresheetAnswers = combinedResults;
 
@@ -497,17 +502,8 @@ FULL APPLICATION FORM SUBMISSION:
             var cleaned = response.Trim();
 
             // Handle ```json opening tag
-            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase))
+            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase) || cleaned.StartsWith("```"))
             {
-                var startIndex = cleaned.IndexOf('\n');
-                if (startIndex >= 0)
-                {
-                    cleaned = cleaned.Substring(startIndex + 1);
-                }
-            }
-            else if (cleaned.StartsWith("```"))
-            {
-                // Handle generic ``` opening tag
                 var startIndex = cleaned.IndexOf('\n');
                 if (startIndex >= 0)
                 {
@@ -528,7 +524,7 @@ FULL APPLICATION FORM SUBMISSION:
             return cleaned.Trim();
         }
 
-        private static object? ExtractSelectListOptions(Unity.Flex.Domain.Scoresheets.Question field)
+        private static (int number, string value, long numericValue)[]? ExtractSelectListOptions(Unity.Flex.Domain.Scoresheets.Question field)
         {
             if (field.Type != Unity.Flex.Scoresheets.Enums.QuestionType.SelectList || string.IsNullOrEmpty(field.Definition))
                 return null;
@@ -536,14 +532,14 @@ FULL APPLICATION FORM SUBMISSION:
             try
             {
                 var definition = JsonSerializer.Deserialize<Unity.Flex.Worksheets.Definitions.QuestionSelectListDefinition>(field.Definition);
-                if (definition?.Options != null && definition.Options.Any())
+                if (definition?.Options != null && definition.Options.Count() > 0)
                 {
-                    return definition.Options.Select((option, index) => new
-                    {
-                        number = index,
-                        value = option.Value,
-                        numericValue = option.NumericValue
-                    }).ToArray();
+                    return definition.Options
+                        .Select((option, index) =>
+                            (number: index,
+                             value: option.Value,
+                             numericValue: option.NumericValue))
+                        .ToArray();
                 }
             }
             catch (JsonException)

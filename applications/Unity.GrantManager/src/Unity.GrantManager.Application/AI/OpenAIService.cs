@@ -20,7 +20,7 @@ namespace Unity.GrantManager.AI
 
         private string? ApiKey => _configuration["AI:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
-        private string Model => _configuration["AI:OpenAI:Model"] ?? "gpt-4o-mini";
+        private string NoKeyError = "OpenAI API key is not configured";
 
         public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService)
         {
@@ -30,20 +30,20 @@ namespace Unity.GrantManager.AI
             _textExtractionService = textExtractionService;
         }
 
-        public async Task<bool> IsAvailableAsync()
+        public Task<bool> IsAvailableAsync()
         {
-            return !string.IsNullOrEmpty(ApiKey);
+            return Task.FromResult(!string.IsNullOrEmpty(ApiKey));
         }
 
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("OpenAI API key is not configured");
+                _logger.LogWarning(NoKeyError);
                 return "AI analysis not available - service not configured.";
             }
 
-            _logger.LogDebug("Calling OpenAI with prompt: {prompt}", content);
+            _logger.LogDebug("Calling OpenAI with prompt: {Prompt}", content);
 
             try
             {
@@ -69,7 +69,7 @@ namespace Unity.GrantManager.AI
                 var response = await _httpClient.PostAsync(ApiUrl, httpContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
-                _logger.LogDebug("\nResponse: {response}", responseContent);
+                _logger.LogDebug("\nResponse: {Response}", responseContent);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -134,13 +134,13 @@ namespace Unity.GrantManager.AI
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("OpenAI API key is not configured");
+                _logger.LogWarning(NoKeyError);
                 return "AI analysis not available - service not configured.";
             }
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Any() == true
+                var attachmentSummariesText = attachmentSummaries?.Count() > 0
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 
@@ -193,13 +193,13 @@ Respond only with valid JSON in the exact format requested.";
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("OpenAI API key is not configured");
+                _logger.LogWarning(NoKeyError); 
                 return "{}";
             }
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Any() == true
+                var attachmentSummariesText = attachmentSummaries?.Count() > 0 == true
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 
@@ -247,13 +247,13 @@ Respond only with valid JSON in the exact format requested.";
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("OpenAI API key is not configured");
+                _logger.LogWarning(NoKeyError);
                 return "{}";
             }
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Any() == true
+                var attachmentSummariesText = attachmentSummaries?.Count() > 0 == true
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 

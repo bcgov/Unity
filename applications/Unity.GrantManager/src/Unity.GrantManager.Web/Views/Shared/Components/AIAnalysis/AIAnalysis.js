@@ -40,7 +40,6 @@ $(function () {
                     formatted += '</ul>';
                     inList = false;
                 }
-                currentSection = trimmedLine;
                 formatted += `<h6 class="ai-section-header">${escapeHtml(trimmedLine)}</h6>`;
                 return;
             }
