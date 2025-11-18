@@ -110,8 +110,9 @@ namespace Unity.GrantManager.Reporting.Configuration
 
                 return ([.. componentsList], hasDuplicates);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogError(ex, "Error occurred while getting fields metadata items");
                 return ([], false);
             }
         }

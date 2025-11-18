@@ -824,38 +824,11 @@ $(function () {
 
     // Column name sanitization function
     function sanitizeColumnName(name) {
-        if (!name || typeof name !== 'string') return '';
-
-        // Convert to lowercase and trim
-        let sanitized = name.toLowerCase().trim();
-
-        // Replace multiple spaces/hyphens with single underscore
-        sanitized = sanitized.replace(/[\s-]+/g, '_');
-
-        // Remove all non-alphanumeric characters except underscores
-        sanitized = sanitized.replace(/[^a-z0-9_]/g, '');
-
-        // Remove leading/trailing underscores safely without vulnerable regex
-        while (sanitized.startsWith('_')) {
-            sanitized = sanitized.slice(1);
-        }
-        while (sanitized.endsWith('_')) {
-            sanitized = sanitized.slice(0, -1);
-        }
-
-        // If starts with number, prefix with 'view_'
-        if (sanitized && /^\d/.test(sanitized)) {
-            sanitized = 'view_' + sanitized;
-        }
-
-        // If empty after sanitization, return empty string
-        if (!sanitized) {
-            return '';
-        }
-
+        let sanitized = sanitizeSqlNames(name);
+       
         // Truncate to max length
-        if (sanitized.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
-            sanitized = sanitized.substring(0, VIEW_NAME_VALIDATION.MAX_LENGTH);
+        if (sanitized.length > COLUMN_VALIDATION.MAX_LENGTH) {
+            sanitized = sanitized.substring(0, COLUMN_VALIDATION.MAX_LENGTH);
             // Remove trailing underscore if truncation created one
             while (sanitized.endsWith('_')) {
                 sanitized = sanitized.slice(0, -1);
@@ -977,8 +950,7 @@ $(function () {
         };
     }
 
-    // View name sanitization function
-    function sanitizeViewName(name) {
+    function sanitizeSqlNames(name) {
         if (!name || typeof name !== 'string') return '';
 
         // Convert to lowercase and trim
@@ -1007,6 +979,13 @@ $(function () {
         if (!sanitized) {
             return '';
         }
+
+        return sanitized;
+    }
+
+    // View name sanitization function
+    function sanitizeViewName(name) {
+        let sanitized = sanitizeSqlNames(name);
 
         // Truncate to max length
         if (sanitized.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
