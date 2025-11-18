@@ -15,7 +15,6 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.Remove("/libs/abp/aspnetcore-mvc-ui-theme-shared/datatables/datatables-extensions.js");
 
         context.Files.Add("/themes/ux2/layout.js");
-        context.Files.Add("/themes/ux2/table-utils.js");
 
         context.Files.AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
         context.Files.AddIfNotContains("/themes/ux2/zone-extensions.js");
@@ -59,5 +58,7 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/tinymce/plugins/code/plugin.min.js");
         context.Files.AddIfNotContains("/libs/handlebars/dist/handlebars.min.js");
 
+        context.Files.Add("/themes/ux2/plugins/filterRow.js");
+        context.Files.Add("/themes/ux2/table-utils.js");
     }
 }
