@@ -6,13 +6,23 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.VirtualFileSystem;
 using Unity.Reporting.EntityFrameworkCore;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.SettingManagement;
+using Volo.Abp.TenantManagement;
 
 namespace Unity.Reporting;
 
+/// <summary>
+/// ABP Framework module for Unity.Reporting Application layer configuration and dependency injection.
+/// Configures AutoMapper profiles, multi-tenancy options, HTTP client proxies, virtual file systems,
+/// and conventional MVC controllers for the Unity Reporting module functionality.
+/// </summary>
 [DependsOn(
     typeof(ReportingApplicationContractsModule),
+    typeof(ReportingEntityFrameworkCoreModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule)    
+    typeof(AbpAutoMapperModule),
+    typeof(AbpSettingManagementApplicationModule),
+    typeof(AbpTenantManagementDomainModule)
     )]
 public class ReportingApplicationModule : AbpModule
 {
@@ -42,16 +52,16 @@ public class ReportingApplicationModule : AbpModule
             options.AddMaps<ReportingApplicationModule>(validate: true);
         });
 
+        context.Services.AddHttpClientProxies(
+            typeof(ReportingApplicationContractsModule).Assembly,
+            ReportingRemoteServiceConsts.RemoteServiceName
+        );
+
         Configure<AbpAspNetCoreMvcOptions>(options =>
         {
             options.ConventionalControllers.Create(typeof(ReportingApplicationModule).Assembly);
         });
 
         context.Services.AddAssemblyOf<ReportingApplicationModule>();
-
-        context.Services.AddAbpDbContext<ReportingDbContext>(options =>
-        {
-            /* Add custom repositories here. */
-        });
     }
 }

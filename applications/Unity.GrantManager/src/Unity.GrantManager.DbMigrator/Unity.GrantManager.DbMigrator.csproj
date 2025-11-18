@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Autofac" Version="9.1.3" />
+    <ProjectReference Include="..\..\modules\Unity.Reporting\src\Unity.Reporting.Application\Unity.Reporting.Application.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.EntityFrameworkCore\Unity.GrantManager.EntityFrameworkCore.csproj" />
   </ItemGroup>

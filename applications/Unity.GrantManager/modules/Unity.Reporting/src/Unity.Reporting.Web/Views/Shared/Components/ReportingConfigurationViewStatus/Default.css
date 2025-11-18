@@ -1,0 +1,86 @@
+/* View Status Component Styles */
+.view-status-compact {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.view-name-text {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.status-text-only {
+    font-weight: 500;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Tooltip customizations for status icons */
+.view-status-compact [data-bs-toggle="tooltip"] {
+    cursor: help;
+}
+
+/* Preview button styles */
+.preview-view-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+}
+
+.preview-view-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.preview-view-btn:disabled {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Modal content styles */
+#viewDataPreviewModal .modal-xl {
+    max-width: 90vw;
+}
+
+#viewDataPreviewModal .table-responsive {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+#viewDataPreviewModal .table {
+    margin-bottom: 0;
+}
+
+#viewDataPreviewModal .table th {
+    position: sticky;
+    top: 0;
+    background-color: var(--bs-dark);
+    z-index: 10;
+}
+
+#viewDataPreviewModal .table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+#viewDataPreviewModal .table td:hover {
+    overflow: visible;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+@keyframes pulse {
+    0% { 
+        opacity: 1; 
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.4; 
+        transform: scale(1.02);
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1);
+    }
+}

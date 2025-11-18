@@ -1,4 +1,5 @@
 ﻿using Volo.Abp.Modularity;
+using Xunit.Abstractions;
 
 namespace Unity.Reporting;
 
@@ -8,4 +9,7 @@ namespace Unity.Reporting;
 public abstract class ReportingApplicationTestBase<TStartupModule> : ReportingTestBase<TStartupModule>
     where TStartupModule : IAbpModule
 {
+    protected ReportingApplicationTestBase(ITestOutputHelper _)
+    {
+    }
 }
