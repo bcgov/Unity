@@ -16,18 +16,28 @@
 
     <!-- Provider Toggle Section -->
     <div class="provider-toggle-section mb-3">
-        <div class="btn-group" role="group" aria-label="Provider toggle">
-            <input type="radio" class="btn-check" name="provider-toggle" id="provider-submissions" value="formversion" @(Model.Provider == "formversion" ? "checked" : "")>
-            <label class="btn btn-outline-primary" for="provider-submissions">Submissions</label>
+        <div class="d-flex align-items-center gap-3">
+            <div class="btn-group" role="group" aria-label="Provider toggle">
+                <input type="radio" class="btn-check" name="provider-toggle" id="provider-submissions" value="formversion" @(Model.Provider == "formversion" ? "checked" : "")>
+                <label class="btn btn-outline-primary" for="provider-submissions">Submissions</label>
 
-            @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-            {
-                <input type="radio" class="btn-check" name="provider-toggle" id="provider-worksheets" value="worksheet" @(Model.Provider == "worksheet" ? "checked" : "")>
-                <label class="btn btn-outline-primary" for="provider-worksheets">Worksheets</label>
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                {
+                    <input type="radio" class="btn-check" name="provider-toggle" id="provider-worksheets" value="worksheet" @(Model.Provider == "worksheet" ? "checked" : "")>
+                    <label class="btn btn-outline-primary" for="provider-worksheets">Worksheets</label>
 
-                <input type="radio" class="btn-check" name="provider-toggle" id="provider-scoresheets" value="scoresheet" @(Model.Provider == "scoresheet" ? "checked" : "")>
-                <label class="btn btn-outline-primary" for="provider-scoresheets">Scoresheets</label>
-            }
+                    <input type="radio" class="btn-check" name="provider-toggle" id="provider-scoresheets" value="scoresheet" @(Model.Provider == "scoresheet" ? "checked" : "")>
+                    <label class="btn btn-outline-primary" for="provider-scoresheets">Scoresheets</label>
+                }
+            </div>
+
+            <!-- Development Banner -->
+            <div class="alert alert-info d-inline-flex align-items-center mb-0 py-2 px-3" role="alert">
+                <i class="fa fa-info-circle me-2" aria-hidden="true"></i>
+                <span class="small">
+                    <strong>Note:</strong> This feature is under development
+                </span>
+            </div>
         </div>
     </div>
 

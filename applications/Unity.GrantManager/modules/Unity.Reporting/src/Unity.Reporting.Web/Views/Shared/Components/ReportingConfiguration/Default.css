@@ -22,7 +22,6 @@
 }
 
 .provider-toggle-section .btn-group {
-    width: 100%;
     display: flex;
     justify-content: flex-start;
 }

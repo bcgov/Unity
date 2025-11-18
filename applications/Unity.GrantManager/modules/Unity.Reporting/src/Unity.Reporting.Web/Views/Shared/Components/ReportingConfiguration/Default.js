@@ -481,7 +481,7 @@ $(function () {
                     return data;
                 }
             }
-        );
+        ];
 
         const actionButtons = [
             ...commonTableActionButtons('Report Configuration')
