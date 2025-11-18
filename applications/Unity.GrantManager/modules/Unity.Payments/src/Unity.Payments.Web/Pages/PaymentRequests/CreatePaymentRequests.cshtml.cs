@@ -123,6 +123,9 @@ namespace Unity.Payments.Web.Pages.Payments
 
             ApplicationPaymentRequestForm = SortPaymentRequestsByHierarchy(ApplicationPaymentRequestForm);
 
+            // Populate parent-child validation data for frontend
+            await PopulateParentChildValidationData();
+
             var batchName = await paymentRequestAppService.GetNextBatchInfoAsync();
             BatchNumberDisplay = batchName;
             TotalAmount = ApplicationPaymentRequestForm?.Sum(x => x.Amount) ?? 0m;
@@ -352,6 +355,84 @@ namespace Unity.Payments.Web.Pages.Payments
             sortedList.AddRange(standaloneItems);
 
             return sortedList;
+        }
+
+        private async Task PopulateParentChildValidationData()
+        {
+            // Find all child groups in current submission
+            var childGroups = ApplicationPaymentRequestForm
+                .Where(x => !string.IsNullOrEmpty(x.ParentReferenceNo))
+                .GroupBy(x => x.ParentReferenceNo);
+
+            foreach (var childGroup in childGroups)
+            {
+                string parentRefNo = childGroup.Key!;
+                var children = childGroup.ToList();
+
+                // Find parent in current submission
+                var parentInSubmission = ApplicationPaymentRequestForm
+                    .Find(x => x.SubmissionConfirmationCode == parentRefNo &&
+                                         string.IsNullOrEmpty(x.ParentReferenceNo));
+
+                // Get parent application details
+                Guid parentApplicationId;
+
+                if (parentInSubmission != null)
+                {
+                    parentApplicationId = parentInSubmission.CorrelationId;
+                }
+                else
+                {
+                    // Parent not in submission, get from first child's link
+                    var firstChild = await applicationService.GetAsync(children[0].CorrelationId);
+                    var allLinks = await applicationLinksService.GetListByApplicationAsync(firstChild.Id);
+                    var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent);
+
+                    if (parentLink == null)
+                    {
+                        // Skip this group if parent link not found
+                        continue;
+                    }
+                    parentApplicationId = parentLink.ApplicationId;
+                }
+
+                // Get parent application
+                var parentApplication = await applicationService.GetAsync(parentApplicationId);
+                decimal approvedAmount = parentApplication.ApprovedAmount;
+
+                // Get parent's total paid + pending
+                decimal parentTotalPaidPending = await paymentRequestAppService
+                    .GetTotalPaymentRequestAmountByCorrelationIdAsync(parentApplicationId);
+
+                // Get ALL children of this parent and their total paid + pending
+                var parentLinks = await applicationLinksService.GetListByApplicationAsync(parentApplicationId);
+                var allChildLinks = parentLinks.Where(link => link.LinkType == ApplicationLinkType.Child).ToList();
+
+                decimal childrenTotalPaidPending = 0;
+                foreach (var childLink in allChildLinks)
+                {
+                    decimal childTotal = await paymentRequestAppService
+                        .GetTotalPaymentRequestAmountByCorrelationIdAsync(childLink.ApplicationId);
+                    childrenTotalPaidPending += childTotal;
+                }
+
+                // Calculate maximum allowed
+                decimal maximumPaymentAmount = approvedAmount - (parentTotalPaidPending + childrenTotalPaidPending);
+
+                // Apply validation data to all children in this group
+                foreach (var child in children)
+                {
+                    child.MaximumAllowedAmount = maximumPaymentAmount;
+                    child.IsPartOfParentChildGroup = true;
+                }
+
+                // Apply validation data to parent if in submission
+                if (parentInSubmission != null)
+                {
+                    parentInSubmission.MaximumAllowedAmount = maximumPaymentAmount;
+                    parentInSubmission.IsPartOfParentChildGroup = true;
+                }
+            }
         }
 
         private async Task<List<string>> ValidateParentChildPaymentAmounts()

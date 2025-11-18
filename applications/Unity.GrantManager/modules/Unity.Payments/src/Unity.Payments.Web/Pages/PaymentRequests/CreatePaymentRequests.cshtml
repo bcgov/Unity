@@ -66,6 +66,8 @@
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].AccountCodingId" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ParentReferenceNo" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].MaximumAllowedAmount" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].IsPartOfParentChildGroup" />
 
                             <abp-row class="m-0 p-3">
                                 <abp-column size="_2" class="px-1">
@@ -86,6 +88,10 @@
 
                                 <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_remaining_error")" style="display: none;">
                                     <span><b>Note: </b>@L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @Model.ApplicationPaymentRequestForm[i].RemainingAmount</span>
+                                </abp-column>
+
+                                <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_parent_child_error")" style="display: none;">
+                                    <span><b>Note: </b><span id="@($"parent_child_error_message_{Model.ApplicationPaymentRequestForm[i].CorrelationId}")"></span></span>
                                 </abp-column>
 
                                 @for (var j = 0; j < Model.ApplicationPaymentRequestForm[i].ErrorList?.Count; j++)
