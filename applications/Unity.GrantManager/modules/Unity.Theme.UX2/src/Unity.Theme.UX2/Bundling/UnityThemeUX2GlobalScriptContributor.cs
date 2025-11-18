@@ -7,21 +7,7 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
 {
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
-        // .NET 9 upgrade wants datatable 2 as a default which has an effect on the file dependencies
-        // but we are using the old datatable 1.x version for now - update these removes when move to 
-        // datatable 2.x version
-        context.Files.Remove("/libs/datatables.net/js/dataTables.min.js");
-        context.Files.Remove("/libs/datatables.net-bs5/js/dataTables.bootstrap5.js");
-        context.Files.Remove("/libs/abp/aspnetcore-mvc-ui-theme-shared/datatables/datatables-extensions.js");
-
-        context.Files.Add("/themes/ux2/layout.js");
-
         context.Files.AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
-        context.Files.AddIfNotContains("/themes/ux2/zone-extensions.js");
-
-        context.Files.AddIfNotContains("/libs/datatables.net/js/jquery.dataTables.js");
-        context.Files.AddIfNotContains("/libs/datatables.net-bs5/js/dataTables.bootstrap5.min.js");
-        context.Files.AddIfNotContains("/libs/abp/aspnetcore-mvc-ui-theme-shared/datatables/datatables-extensions.js");
 
         context.Files.AddIfNotContains("/libs/jszip/dist/jszip.min.js");
 
@@ -58,6 +44,8 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/tinymce/plugins/code/plugin.min.js");
         context.Files.AddIfNotContains("/libs/handlebars/dist/handlebars.min.js");
 
+        context.Files.AddIfNotContains("/themes/ux2/zone-extensions.js");
+        context.Files.Add("/themes/ux2/layout.js");
         context.Files.Add("/themes/ux2/plugins/filterRow.js");
         context.Files.Add("/themes/ux2/table-utils.js");
     }
