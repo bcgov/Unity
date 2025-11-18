@@ -35,5 +35,8 @@ namespace Unity.Payments.Web.Pages.Payments
         public string? SupplierName { get; set; }
         public decimal RemainingAmount { get; set; }
         public Guid? AccountCodingId { get; set; }
+        public string? ParentReferenceNo { get; set; }
+        public decimal? MaximumAllowedAmount { get; set; }
+        public bool IsPartOfParentChildGroup { get; set; }
     }
 }
