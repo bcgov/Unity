@@ -216,7 +216,8 @@
         </div>
         }
 
-        @if (await FeatureChecker.IsEnabledAsync("Unity.Reporting"))
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Reporting")
+                && await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Default))
         {
             <!--Tab Content: Reporting Configuration-->
             <div class="tab-pane fade" 
