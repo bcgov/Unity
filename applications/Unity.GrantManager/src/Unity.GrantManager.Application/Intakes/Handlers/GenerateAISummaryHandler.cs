@@ -533,7 +533,7 @@ FULL APPLICATION FORM SUBMISSION:
             try
             {
                 var definition = JsonSerializer.Deserialize<Unity.Flex.Worksheets.Definitions.QuestionSelectListDefinition>(field.Definition);
-                if (definition?.Options != null && definition.Options.Any())
+                if (definition?.Options != null && definition.Options.Count > 0)
                 {
                     return definition.Options
                         .Select((option, index) =>
