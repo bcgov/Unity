@@ -15,13 +15,13 @@ public class ReportingSettingDefinitionProvider : SettingDefinitionProvider
 {
     /// <summary>
     /// Defines all Unity.Reporting module settings and registers them with the ABP settings system.
-    /// Configures the ViewRole setting as a host-level global setting with localized display name and description,
-    /// ensuring it cannot be overridden at tenant level for consistent security policy enforcement across the system.
+    /// Configures the TenantViewRole setting as the primary tenant-level setting for database role assignment.
+    /// The global ViewRole setting is kept for backward compatibility but is deprecated.
     /// </summary>
     /// <param name="context">The setting definition context for registering setting definitions with the ABP settings framework.</param>
     public override void Define(ISettingDefinitionContext context)
     {
-        // Add the ViewRole setting as a host-level global setting for database role assignment
+        // [DEPRECATED] Global ViewRole setting - kept for backward compatibility only
         context.Add(
             new SettingDefinition(
                 ReportingSettings.ViewRole,
@@ -32,6 +32,19 @@ public class ReportingSettingDefinitionProvider : SettingDefinitionProvider
                 isInherited: false,
                 isEncrypted: false
             ).WithProviders(GlobalSettingValueProvider.ProviderName) // Host-level only
+        );
+
+        // Primary tenant-level setting for database role assignment
+        context.Add(
+            new SettingDefinition(
+                ReportingSettings.TenantViewRole,
+                defaultValue: string.Empty,
+                L("Setting:GrantManager.Reporting.TenantViewRole.DisplayName"),
+                L("Setting:GrantManager.Reporting.TenantViewRole.Description"),
+                isVisibleToClients: false,
+                isInherited: false,
+                isEncrypted: false
+            ).WithProviders("T") // Tenant-level only
         );
     }
 

@@ -12,7 +12,7 @@ namespace Unity.Reporting.BackgroundJobs
 {
     /// <summary>
     /// Background job for asynchronously assigning database roles to generated reporting views for access control.
-    /// Validates view existence, retrieves the configured role from settings, verifies role existence,
+    /// Validates view existence, retrieves the configured role from tenant-specific settings, verifies role existence,
     /// and applies the role permissions to the view within the specified tenant context.
     /// Handles error cases by updating the mapping status appropriately.
     /// </summary>
@@ -48,12 +48,12 @@ namespace Unity.Reporting.BackgroundJobs
                         return;
                     }
 
-                    // Read the role from host-level settings
-                    var role = await settingProvider.GetOrNullAsync(ReportingSettings.ViewRole);
+                    // Get tenant-specific role - no global fallback since we're tenant-specific now
+                    var role = await settingProvider.GetOrNullAsync(ReportingSettings.TenantViewRole);
 
                     if (string.IsNullOrEmpty(role))
                     {
-                        logger.LogWarning("No role specified in settings ({SettingName}) for : {CorrelationId} and {CorrelationProvider}", ReportingSettings.ViewRole, args.CorrelationId, args.CorrelationProvider);
+                        logger.LogWarning("No tenant-specific role configured for tenant {TenantId} for : {CorrelationId} and {CorrelationProvider}. Role assignment will be skipped.", args.TenantId, args.CorrelationId, args.CorrelationProvider);
                         return;
                     }
 
