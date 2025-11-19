@@ -20,7 +20,7 @@ namespace Unity.GrantManager.AI
 
         private string? ApiKey => _configuration["AI:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
-        private string NoKeyError = "OpenAI API key is not configured";
+        private readonly string NoKeyError = "OpenAI API key is not configured";
 
         public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService)
         {
@@ -32,14 +32,20 @@ namespace Unity.GrantManager.AI
 
         public Task<bool> IsAvailableAsync()
         {
-            return Task.FromResult(!string.IsNullOrEmpty(ApiKey));
+            if (string.IsNullOrEmpty(ApiKey))
+            {
+                _logger.LogWarning("{Message}", NoKeyError);
+                return Task.FromResult(false);
+            }
+
+            return Task.FromResult(true);
         }
 
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning(NoKeyError);
+                _logger.LogWarning("{Message}", NoKeyError);
                 return "AI analysis not available - service not configured.";
             }
 
@@ -53,9 +59,9 @@ namespace Unity.GrantManager.AI
                 {
                     messages = new[]
                     {
-                        new { role = "system", content = systemPrompt },
-                        new { role = "user", content = content }
-                    },
+                       new { role = "system", content = systemPrompt },
+                       new { role = "user", content = content }
+                   },
                     max_tokens = maxTokens,
                     temperature = 0.3
                 };
@@ -69,7 +75,7 @@ namespace Unity.GrantManager.AI
                 var response = await _httpClient.PostAsync(ApiUrl, httpContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
-                _logger.LogDebug("\nResponse: {Response}", responseContent);
+                _logger.LogDebug("Response: {Response}", responseContent);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -98,7 +104,6 @@ namespace Unity.GrantManager.AI
         {
             try
             {
-                // Try to extract text from the file
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
 
                 string contentToAnalyze;
@@ -106,7 +111,6 @@ namespace Unity.GrantManager.AI
 
                 if (!string.IsNullOrWhiteSpace(extractedText))
                 {
-                    // We have extracted text - analyze the actual content
                     _logger.LogDebug("Extracted {TextLength} characters from {FileName}", extractedText.Length, fileName);
 
                     contentToAnalyze = $"Document: {fileName}\nType: {contentType}\nContent:\n{extractedText}";
@@ -114,7 +118,6 @@ namespace Unity.GrantManager.AI
                 }
                 else
                 {
-                    // Fall back to filename and metadata analysis
                     _logger.LogDebug("No text extracted from {FileName}, analyzing metadata only", fileName);
 
                     contentToAnalyze = $"File: {fileName}, Type: {contentType}, Size: {fileContent.Length} bytes";
@@ -134,13 +137,13 @@ namespace Unity.GrantManager.AI
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning(NoKeyError);
+                _logger.LogWarning("{Message}", NoKeyError);
                 return "AI analysis not available - service not configured.";
             }
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Count() > 0
+                var attachmentSummariesText = attachmentSummaries?.Count > 0
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 
@@ -193,13 +196,13 @@ Respond only with valid JSON in the exact format requested.";
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning(NoKeyError); 
+                _logger.LogWarning("{Message}", NoKeyError); 
                 return "{}";
             }
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Count() > 0 == true
+                var attachmentSummariesText = attachmentSummaries?.Count > 0 == true
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 
@@ -247,13 +250,13 @@ Respond only with valid JSON in the exact format requested.";
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning(NoKeyError);
+                _logger.LogWarning("{Message}", NoKeyError);
                 return "{}";
             }
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Count() > 0 == true
+                var attachmentSummariesText = attachmentSummaries?.Count > 0 == true
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 

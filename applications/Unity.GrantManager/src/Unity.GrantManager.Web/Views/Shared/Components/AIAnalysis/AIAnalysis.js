@@ -18,7 +18,7 @@ $(function () {
         // Split into lines
         const lines = text.split('\n');
         let formatted = '';
-        let currentSection = '';
+        //let currentSection = ''; //Remove unused variable for SQ
         let inList = false;
 
         lines.forEach((line, index) => {
