@@ -1,0 +1,23 @@
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+
+@inject IStringLocalizer<GrantManagerResource> L
+
+<div class="ai-analysis-container">
+    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">AI Application Analysis</h6>
+
+    <div class="px-3">
+        @if (!string.IsNullOrEmpty(ViewBag.AIAnalysis))
+        {
+            <div id="aiAnalysisContent" class="ai-analysis-content">
+                @Html.Raw(ViewBag.AIAnalysis)
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info m-3">
+                <i class="fl fl-info-circle"></i> No AI analysis available for this application yet.
+            </div>
+        }
+    </div>
+</div>

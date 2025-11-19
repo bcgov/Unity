@@ -1,0 +1,85 @@
+/* AI Analysis Container */
+.ai-analysis-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.ai-analysis-content {
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 4px;
+    line-height: 1.6;
+}
+
+/* Section Headers */
+.ai-section-header {
+    color: #0d6efd;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #0d6efd;
+    font-size: 1.1rem;
+}
+
+.ai-subsection-header {
+    color: #495057;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+/* Paragraphs */
+.ai-paragraph {
+    margin-bottom: 0.75rem;
+    color: #212529;
+}
+
+/* Lists */
+.ai-bullet-list {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+    list-style-type: disc;
+}
+
+.ai-bullet-list li {
+    margin-bottom: 0.5rem;
+    color: #212529;
+}
+
+/* Color-coded highlights */
+.ai-highlight-positive {
+    color: #198754;
+    font-weight: 600;
+    background-color: rgba(25, 135, 84, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+}
+
+.ai-highlight-moderate {
+    color: #fd7e14;
+    font-weight: 600;
+    background-color: rgba(253, 126, 20, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+}
+
+.ai-highlight-negative {
+    color: #dc3545;
+    font-weight: 600;
+    background-color: rgba(220, 53, 69, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+}
+
+/* Numbers and amounts */
+.ai-amount,
+.ai-percentage {
+    color: #6f42c1;
+    font-weight: 600;
+}
+
+/* No analysis message */
+.ai-analysis-content .alert {
+    margin: 0;
+}

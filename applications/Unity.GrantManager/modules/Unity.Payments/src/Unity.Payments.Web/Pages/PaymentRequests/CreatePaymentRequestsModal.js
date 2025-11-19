@@ -131,8 +131,14 @@ function isPartOfParentChildGroup(correlationId) {
     return input.val() === 'True';
 }
 
+const cadFormatter = createNumberFormatter(); // wraps Intl.NumberFormat('en-CA', …)
+
 function formatCurrency(value) {
-    return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    const numericValue =
+        typeof value === 'number'
+            ? value
+            : parseFloat(String(value ?? '').replace(/,/g, ''));
+    return cadFormatter.format(Number.isFinite(numericValue) ? numericValue : 0);
 }
 
 function validateParentChildAmounts(correlationId) {
@@ -183,7 +189,7 @@ function validateParentChildAmounts(correlationId) {
         let errorMessage = $(`#parent_child_error_message_${memberId}`);
 
         if (hasError) {
-            let message = `Parent-child total ($${formatCurrency(groupTotal)}) exceeds maximum allowed by parent ($${formatCurrency(maximumAllowed)})`;
+            let message = `Parent-child total (${formatCurrency(groupTotal)}) exceeds maximum allowed by parent (${formatCurrency(maximumAllowed)})`;
             errorMessage.text(message);
             errorDiv.css("display", "block");
         } else {

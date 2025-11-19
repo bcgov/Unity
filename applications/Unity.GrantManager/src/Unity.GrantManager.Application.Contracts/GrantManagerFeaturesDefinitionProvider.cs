@@ -39,6 +39,18 @@ namespace Unity.GrantManager
                                     .Create<GrantManagerResource>("Reporting"),
                 valueType: new ToggleStringValueType());
 
+            myGroup.AddFeature("Unity.AI.AttachmentSummaries",
+                defaultValue: defaultValue,
+                    displayName: LocalizableString
+                                    .Create<GrantManagerResource>("AI Attachment Summaries"),
+                valueType: new ToggleStringValueType());
+
+            myGroup.AddFeature("Unity.AI.ApplicationAnalysis",
+                defaultValue: defaultValue,
+                    displayName: LocalizableString
+                                    .Create<GrantManagerResource>("AI Application Analysis"),
+                valueType: new ToggleStringValueType());
+
             myGroup.AddFeature("Unity.AIReporting",
                 defaultValue: defaultValue,
                     displayName: LocalizableString
