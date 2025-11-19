@@ -313,7 +313,7 @@ namespace Unity.Payments.Web.Pages.Payments
             return payments;
         }
 
-        private List<PaymentsModel> SortPaymentRequestsByHierarchy(List<PaymentsModel> paymentRequests)
+        private static List<PaymentsModel> SortPaymentRequestsByHierarchy(List<PaymentsModel> paymentRequests)
         {
             var sortedList = new List<PaymentsModel>();
             var processed = new HashSet<string>();
