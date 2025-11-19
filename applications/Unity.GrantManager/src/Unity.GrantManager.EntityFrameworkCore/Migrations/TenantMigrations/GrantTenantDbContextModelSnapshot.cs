@@ -1284,6 +1284,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime>("SubmissionDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("AIAnalysis")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AIScoresheetAnswers")
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -1461,6 +1467,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("DisplayName")
                         .HasMaxLength(1024)
                         .HasColumnType("character varying(1024)");
+
+                    b.Property<string>("AISummary")
+                        .HasColumnType("text");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -3735,6 +3744,58 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.ToTable("Suppliers", "Payments");
+                });
+
+            modelBuilder.Entity("Unity.Reporting.Domain.Configuration.ReportColumnsMap", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrelationProvider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Mapping")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("RoleStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("ViewName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ViewStatus")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ReportColumnsMaps", "Reporting");
                 });
 
             modelBuilder.Entity("Unity.Flex.Domain.ScoresheetInstances.ScoresheetInstance", b =>

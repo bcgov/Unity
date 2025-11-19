@@ -28,6 +28,7 @@ namespace Unity.GrantManager.History
                     string origninalValue = CleanValue(propertyChange.OriginalValue);
                     string newValue = CleanValue(propertyChange.NewValue);
                     string displayNewValue = MapFsbToDisplayText(newValue);
+                    int changeType = (int)entityChange.EntityChange.ChangeType; 
                     DateTime utcDateTime = DateTime.SpecifyKind(entityChange.EntityChange.ChangeTime, DateTimeKind.Utc);
                     HistoryDto historyDto = new()
                     {
@@ -36,7 +37,8 @@ namespace Unity.GrantManager.History
                         OriginalValue = origninalValue,
                         NewValue = displayNewValue,
                         ChangeTime = utcDateTime.ToLocalTime(),
-                        UserName = entityChange.UserName
+                        UserName = entityChange.UserName,
+                        ChangeType = changeType 
                     };
                     historyList.Add(historyDto);
                 }

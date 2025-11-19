@@ -134,6 +134,11 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
     public string? UnityApplicationId { get; set; }
 
+    public string? AIAnalysis { get; set; }
+
+    [Column(TypeName = "jsonb")]
+    public string? AIScoresheetAnswers { get; set; }
+
     public bool IsInFinalDecisionState()
     {
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);

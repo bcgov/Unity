@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Integrations.Exceptions;
 using Volo.Abp;
 using Volo.Abp.Security.Encryption;
 using Microsoft.Extensions.Logging;

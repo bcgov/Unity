@@ -26,7 +26,7 @@ namespace Unity.GrantManager.EntityFrameworkCore;
     typeof(AbpAuditLoggingEntityFrameworkCoreModule),
     typeof(AbpTenantManagementEntityFrameworkCoreModule),
     typeof(AbpFeatureManagementEntityFrameworkCoreModule),
-    typeof(NotificationsEntityFrameworkCoreModule)
+    typeof(NotificationsEntityFrameworkCoreModule)   
     )]
 public class GrantManagerEntityFrameworkCoreModule : AbpModule
 {
