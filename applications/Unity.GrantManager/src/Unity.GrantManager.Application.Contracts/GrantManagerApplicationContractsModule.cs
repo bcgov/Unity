@@ -18,7 +18,7 @@ namespace Unity.GrantManager;
     typeof(AbpSettingManagementApplicationContractsModule),
     typeof(UnityTenantManagementApplicationContractsModule),
     typeof(AbpObjectExtendingModule),
-    typeof(NotificationsApplicationContractsModule)    
+    typeof(NotificationsApplicationContractsModule)
 )]
 [DependsOn(typeof(ReportingApplicationContractsModule))]
     public class GrantManagerApplicationContractsModule : AbpModule

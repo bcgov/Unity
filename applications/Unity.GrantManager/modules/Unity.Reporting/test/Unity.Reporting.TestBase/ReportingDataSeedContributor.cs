@@ -5,7 +5,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.Reporting;
 
-public class ReportingDataSeedContributor(ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
+public class ReportingTestDataSeedContributor(ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
 {
     public Task SeedAsync(DataSeedContext context)
     {
