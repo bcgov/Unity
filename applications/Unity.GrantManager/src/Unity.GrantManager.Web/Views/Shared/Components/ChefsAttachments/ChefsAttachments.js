@@ -335,11 +335,28 @@ $(function () {
                     //show original HTML and enable
                     $(_this).html(existingHTML).prop('disabled', false);
                 },
-                error: function () {
-                    abp.notify.error(
-                        '',
-                        'The selected files exceed more than 80MB download limit. Please deselect some files and try again.'
-                    );
+                error: function (error) {
+                    if (error.status === 403) {
+
+                        const message = "Please check that the CHEFS checkbox is enabled for: " +
+                        "'Allow this API key to access submitted files' in the related CHEFS form";
+
+                        Swal.fire({
+                                title: 'CHEFS is not allowing Unity access to the File Download',
+                                text: message,
+                                confirmButtonText: 'Ok',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary',
+                                },
+                            });
+                        
+                    } else {
+                        abp.notify.error(
+                            '',
+                            'The selected files exceed more than 80MB download limit. Please deselect some files and try again.'
+                        );
+                    }
+
                     $(_this).html(existingHTML).prop('disabled', false);
                 }
             });
