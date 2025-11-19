@@ -26,6 +26,16 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IFeatureChecker _featureChecker;
 
+        readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        readonly JsonSerializerOptions jsonOptionsIndented = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+
         public GenerateAiSummaryHandler(
             IAIService aiService,
             ISubmissionAppService submissionAppService,
@@ -380,15 +390,6 @@ FULL APPLICATION FORM SUBMISSION:
                 }
 
                 // Process each section individually
-                JsonSerializerOptions jsonOptions = new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-                JsonSerializerOptions jsonOptionsIndented = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
                 foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
                 {
                     try
@@ -532,7 +533,7 @@ FULL APPLICATION FORM SUBMISSION:
             try
             {
                 var definition = JsonSerializer.Deserialize<Unity.Flex.Worksheets.Definitions.QuestionSelectListDefinition>(field.Definition);
-                if (definition?.Options != null && definition.Options.Count() > 0)
+                if (definition?.Options != null && definition.Options.Any())
                 {
                     return definition.Options
                         .Select((option, index) =>

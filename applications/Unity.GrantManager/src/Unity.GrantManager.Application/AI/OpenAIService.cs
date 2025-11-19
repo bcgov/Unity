@@ -34,7 +34,7 @@ namespace Unity.GrantManager.AI
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("{Message}", NoKeyError);
+                _logger.LogWarning("Error: {Message}", NoKeyError);
                 return Task.FromResult(false);
             }
 
@@ -45,7 +45,7 @@ namespace Unity.GrantManager.AI
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("{Message}", NoKeyError);
+                _logger.LogWarning("Error: {Message}", NoKeyError);
                 return "AI analysis not available - service not configured.";
             }
 
@@ -202,7 +202,7 @@ Respond only with valid JSON in the exact format requested.";
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Count > 0 == true
+                var attachmentSummariesText = attachmentSummaries?.Count > 0
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 
@@ -256,7 +256,7 @@ Respond only with valid JSON in the exact format requested.";
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Count > 0 == true
+                var attachmentSummariesText = attachmentSummaries?.Count > 0
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 
