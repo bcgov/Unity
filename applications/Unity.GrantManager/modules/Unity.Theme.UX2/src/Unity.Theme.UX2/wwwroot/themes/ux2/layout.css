@@ -116,6 +116,10 @@ body {
     width: auto !important;
 }
 
+.dt-orderable-none .dt-column-order {
+    display: none;
+}
+
 .table-action-icons {
     margin: 0.7rem;
     cursor: pointer;

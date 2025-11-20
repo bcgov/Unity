@@ -169,8 +169,8 @@ $(function () {
 
         // Exclude default search inputs that have custom logic
         if (searchId !== false && searchId !== '#search') {
-            $('.dataTables_filter input').attr("placeholder", "Search");
-            $('.dataTables_filter label')[0].childNodes[0].remove();
+            $('.dt-search input').attr("placeholder", "Search");
+            $('.dt-search label')[0].childNodes[0].remove();
 
             $(searchId).on('input', function () {
                 let filter = dataTableInstance.search($(this).val()).draw();

@@ -239,15 +239,16 @@ function initializeDataTable(options) {
         });
     }
 
-    let iDt = dt.DataTable(
-        abp.libs.datatables.normalizeConfiguration({
+    DataTable.type('num', 'className', 'dt-head-left dt-body-right');
+    DataTable.type('num-fmt', 'className', 'dt-head-left');
+    DataTable.type('date', 'className', 'dt-head-left');
+
+    let iDt = new DataTable(dt, {
             serverSide: serverSideEnabled,
             paging: pagingEnabled,
             order: [[defaultSortColumn, 'desc']],
             searching: true,
             externalSearchInputId: `#${externalSearchId}`,
-            pageLength: 25,
-            lengthMenu: [10, 25, 50, 100],
             scrollX: true,
             scrollCollapse: true,
             deferRender: false,
@@ -255,9 +256,6 @@ function initializeDataTable(options) {
                 dataEndpoint,
                 data,
                 responseCallback ?? function (result) {
-                    if (result.totalCount <= maxRowsPerPage) {
-                        $('.dt-paging').hide();
-                    }
                     return {
                         recordsTotal: result.totalCount,
                         recordsFiltered: result.totalCount,
@@ -271,24 +269,34 @@ function initializeDataTable(options) {
             },
             colReorder: reorderEnabled,
             orderCellsTop: true,
-            language: languageSetValues,
-            layout: {
-                topStart: null,
-                topEnd: null,
-                bottomStart: 'info',
-                bottom: 'paging',
-                bottomEnd: 'pageLength'
+            language: {
+                ...languageSetValues,
+                lengthMenu: 'Show _MENU_ _ENTRIES_'
             },
-            buttons: updatedActionButtons,
-            drawCallback: function () {
-                $(`#${dt[0].id}_previous a`).text('<');
-                $(`#${dt[0].id}_next a`).text('>');
-                $(`#${dt[0].id}_info`).text(function (index, text) {
-                    return text
-                        .replace('Showing ', '')
-                        .replace(' to ', '-')
-                        .replace(' entries', '');
-                });
+            layout: {
+                topStart: {
+                    search: {
+                        placeholder: 'Search'
+                    }
+                },
+                topEnd: {
+                    buttons: updatedActionButtons
+                },
+                bottomStart: null,
+                bottomEnd: null,
+                bottom1: {
+                    info: {
+                        text: '_START_-_END_ of _TOTAL_'
+                    },
+                    paging: {
+                        buttons: 3,
+                        boundaryNumbers: true,
+                        firstLast: false
+                    },
+                    pageLength: {
+                        menu: [1, 10, 25, 50, 100],
+                    }
+                }
             },
             initComplete: function () {
                 const api = this.api();
@@ -340,7 +348,7 @@ function initializeDataTable(options) {
                     }
                 }
             },
-        })
+        }
     );
 
     // Initialize FilterRow plugin if filter button exists
@@ -367,17 +375,6 @@ function initializeDataTable(options) {
             console.warn('Buttons container not found. Ensure Buttons extension is loaded and buttons are configured.');
         }
     }
-
-    // Setup length menu in footer (using dt-container for DT 2.x)
-    // Note: layout bottom: [...] creates elements in a flex row, so we don't need manual repositioning
-    // Commenting out this section as the layout config now handles positioning
-    // const dtContainer = $(`#${dataTableName}`).closest('.dt-container');
-    // if (dtContainer.length) {
-    //     dtContainer.append(
-    //         `<div class="length-menu-footer ${dataTableName}"></div>`
-    //     );
-    //     $('.dt-length').appendTo(`.${dataTableName}`);
-    // }
 
     // Initialize table (clear default styles, reset search)
     init(iDt);
@@ -420,7 +417,7 @@ function assignColumnIndices(columnsArray) {
                     col.index !== undefined &&
                     col.index !== ''
             )
-            .map((col) => parseInt(col.index))
+            .map((col) => Number.parseInt(col.index))
             .concat(-1)
     );
 

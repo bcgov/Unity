@@ -39,9 +39,11 @@
     --bc-layout-margin-xsmall: 4px;
     --bc-layout-margin-small: 8px;
     --bc-layout-margin-large: 24px;
+}
 
+table.dataTable {
     /* DataTables override */
-    --dt-row-selected: 230, 239, 247, 0.95;
+    --dt-row-selected: 230, 239, 247;
     --dt-row-selected-text: 0, 51, 102;
     --dt-row-selected-link: 9, 10, 11;
 }
@@ -519,9 +521,17 @@ th #btn-toggle-filter-heading {
     gap: 0.25rem !important;
 }
 
-div.dt-buttons div.dropdown-menu {
+div.dt-buttons div.dt-button-collection {
     max-height: 35rem !important;
     overflow-y: auto !important;
+}
+
+.dt-button .dropdown-item:focus {
+    background-color: transparent !important;
+}
+
+.dt-button-active-a .dropdown-item:focus {
+    background-color: #ccdef9 !important;
 }
 
 .cln-visible {
@@ -549,8 +559,7 @@ div.dt-buttons div.dropdown-menu {
 
     .custom-table-btn:hover {
         box-shadow: none;
-        border-color: var(--bc-colors-blue-primary);
-        border: 2px solid;
+        border: 2px solid var(--bc-colors-blue-primary);
     }
 
 .dt-scroll-headInner {
@@ -565,7 +574,7 @@ div.dt-buttons div.dropdown-menu {
     border-radius: 0px 0px 20px;
 }
 
-.dt-button-active {
+.dt-button-active, .dt-button-active-a {
     background-color: #ccdef9 !important;
 }
 
@@ -583,7 +592,6 @@ div.dt-buttons div.dropdown-menu {
 
 ul.pagination {
     justify-content: center !important;
-    margin-top: -20px !important;
 }
 
 .flex-none {
