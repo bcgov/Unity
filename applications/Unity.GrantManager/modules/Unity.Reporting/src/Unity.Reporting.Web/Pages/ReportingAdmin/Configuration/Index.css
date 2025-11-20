@@ -1,0 +1,219 @@
+.run-sync-jobs {
+    padding: 1rem;
+}
+
+.reporting-configuration-section {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.reporting-configuration-section h5 {
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.unity-page-titlebar {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+/* Tenant View Role Management Styles */
+.view-role-input {
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    min-width: 200px;
+    max-width: 300px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.view-role-input:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.action-buttons-cell .btn {
+    min-width: 80px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.default-role-indicator {
+    flex-shrink: 0;
+    cursor: help;
+    font-size: 1rem;
+}
+
+.default-role-indicator:hover {
+    color: #ff6b35 !important;
+}
+
+.view-role-cell .d-flex {
+    align-items: center;
+}
+
+/* Table header styling - match the user config pattern */
+#TenantViewRoleTable thead th {
+    background-color: #859ab9 !important;
+    color: white !important;
+    font-weight: 500 !important;
+    font-size: 18px !important;
+    text-align: left !important;
+    border: none;
+}
+
+#TenantViewRoleTable thead th:hover {
+    background-color: #6c7b95 !important;
+    color: white !important;
+}
+
+/* Sort arrow styling for headers */
+#TenantViewRoleTable table.dataTable thead th.sorting:before,
+#TenantViewRoleTable table.dataTable thead th.sorting:after,
+#TenantViewRoleTable table.dataTable thead th.sorting_asc:before,
+#TenantViewRoleTable table.dataTable thead th.sorting_asc:after,
+#TenantViewRoleTable table.dataTable thead th.sorting_desc:before,
+#TenantViewRoleTable table.dataTable thead th.sorting_desc:after {
+    color: white !important;
+}
+
+#TenantViewRoleTable {
+    margin-top: 1rem;
+}
+
+#TenantViewRoleTable tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* DataTables wrapper styling - match general pattern */
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 1rem;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    width: 100%;
+    margin-left: 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.table-responsive {
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+}
+
+/* Tooltip styling */
+.tooltip {
+    font-size: 0.875rem;
+}
+
+.tooltip-inner {
+    max-width: 300px;
+    padding: 0.5rem 0.75rem;
+    background-color: #343a40;
+    border-radius: 0.375rem;
+}
+
+/* Action bar styling - add consistency */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-search-action-bar_search-wrapper {
+    flex: 1;
+    max-width: 400px;
+}
+
+.tbl-search {
+    width: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    .action-buttons-cell .btn {
+        min-width: auto;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .view-role-input {
+        min-width: auto;
+        max-width: none;
+        width: 100%;
+    }
+
+    .view-role-cell .d-flex {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .default-role-indicator {
+        align-self: flex-end;
+    }
+
+    .action-bar {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .action-bar .btn {
+        width: 100%;
+    }
+
+    /* Table header responsive adjustments */
+    #TenantViewRoleTable thead th {
+        font-size: 16px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .view-role-input {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    #TenantViewRoleTable thead th {
+        font-size: 14px !important;
+        padding: 0.5rem 0.25rem;
+    }
+}

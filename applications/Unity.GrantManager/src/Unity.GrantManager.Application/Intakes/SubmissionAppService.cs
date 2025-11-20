@@ -67,6 +67,7 @@ public class SubmissionAppService(
         return applicationFormSubmisssion.Submission;
     }
 
+    [AllowAnonymous]
     public async Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name)
     {
         if (formSubmissionId == null)
