@@ -11,10 +11,9 @@ using Volo.Abp.Settings;
 namespace Unity.Reporting.BackgroundJobs
 {
     /// <summary>
-    /// Background job for asynchronously assigning database roles to generated reporting views for access control.
-    /// Validates view existence, retrieves the configured role from settings, verifies role existence,
-    /// and applies the role permissions to the view within the specified tenant context.
-    /// Handles error cases by updating the mapping status appropriately.
+    /// Background job for asynchronously assigning database roles to all generated reporting views for access control.
+    /// Retrieves the configured role from tenant-specific settings, verifies role existence,
+    /// and applies the role permissions to all views in the reporting schema within the specified tenant context.
     /// </summary>
     public class AssignViewRoleBackgroundJob(
         ICurrentTenant currentTenant,
@@ -24,36 +23,18 @@ namespace Unity.Reporting.BackgroundJobs
     {
         public override async Task ExecuteAsync(AssignViewRoleBackgroundJobArgs args)
         {
-            logger.LogInformation("Assigning role to view for : {CorrelationId} and {CorrelationType}", args.CorrelationId, args.CorrelationProvider);
+            logger.LogInformation("Assigning role to all views in reporting schema for tenant: {TenantId}", args.TenantId);
 
             using (currentTenant.Change(args.TenantId))
             {
                 try
                 {
-                    var reportColumnsMap = await reportColumnsMapRepository.FindByCorrelationAsync(args.CorrelationId, args.CorrelationProvider);
-
-                    if (reportColumnsMap == null)
-                    {
-                        logger.LogWarning("No ReportColumnsMap found for : {CorrelationId} and {CorrelationProvider}", args.CorrelationId, args.CorrelationProvider);
-                        return;
-                    }
-
-                    // Check if view already exists in the Reporting schema                    
-                    var normalizedViewName = reportColumnsMap.ViewName.Trim().ToLowerInvariant();
-                    var viewExists = await reportColumnsMapRepository.ViewExistsAsync(normalizedViewName);
-
-                    if (!viewExists)
-                    {
-                        logger.LogWarning("View {ViewName} does not exist in Reporting schema for : {CorrelationId} and {CorrelationProvider}", normalizedViewName, args.CorrelationId, args.CorrelationProvider);
-                        return;
-                    }
-
-                    // Read the role from host-level settings
-                    var role = await settingProvider.GetOrNullAsync(ReportingSettings.ViewRole);
+                    // Get tenant-specific role - no global fallback since we're tenant-specific now
+                    var role = await settingProvider.GetOrNullAsync(ReportingSettings.TenantViewRole);
 
                     if (string.IsNullOrEmpty(role))
                     {
-                        logger.LogWarning("No role specified in settings ({SettingName}) for : {CorrelationId} and {CorrelationProvider}", ReportingSettings.ViewRole, args.CorrelationId, args.CorrelationProvider);
+                        logger.LogWarning("No tenant-specific role configured for tenant {TenantId}. Role assignment will be skipped.", args.TenantId);
                         return;
                     }
 
@@ -61,27 +42,26 @@ namespace Unity.Reporting.BackgroundJobs
 
                     if (!roleExists)
                     {
-                        logger.LogWarning("Role {RoleName} does not exist in the database for : {CorrelationId} and {CorrelationProvider}", role, args.CorrelationId, args.CorrelationProvider);
+                        logger.LogWarning("Role {RoleName} does not exist in the database for tenant {TenantId}", role, args.TenantId);
                         return;
                     }
 
-                    await reportColumnsMapRepository.AssignViewRoleAsync(normalizedViewName, role);
-                    reportColumnsMap.RoleStatus = Configuration.RoleStatus.ASSIGNED;
-
-                    await reportColumnsMapRepository.UpdateAsync(reportColumnsMap);
-
-                    logger.LogInformation("Successfully assigned role {RoleName} to view {ViewName} for : {CorrelationId} and {CorrelationProvider}", role, normalizedViewName, args.CorrelationId, args.CorrelationProvider);
+                    if (!string.IsNullOrEmpty(args.ViewName))
+                    {
+                        // Assign role to a specific view in the reporting schema for this tenant
+                        await reportColumnsMapRepository.AssignRoleToViewAsync(role, args.ViewName);
+                        logger.LogInformation("Successfully assigned role {RoleName} to view {ViewName} in reporting schema for tenant {TenantId}", role, args.ViewName, args.TenantId);
+                    }
+                    else
+                    {
+                        // Assign role to all views in the reporting schema for this tenant
+                        await reportColumnsMapRepository.AssignRoleToAllViewsAsync(role);
+                        logger.LogInformation("Successfully assigned role {RoleName} to all views in reporting schema for tenant {TenantId}", role, args.TenantId);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    var reportColumnsMap = await reportColumnsMapRepository.FindByCorrelationAsync(args.CorrelationId, args.CorrelationProvider);
-                    if (reportColumnsMap != null)
-                    {
-                        reportColumnsMap.RoleStatus = Configuration.RoleStatus.FAILED;
-                        await reportColumnsMapRepository.UpdateAsync(reportColumnsMap);
-                    }
-
-                    logger.LogError(ex, "Error executing view role assignment for : {CorrelationId} and {CorrelationProvider}", args.CorrelationId, args.CorrelationProvider);
+                    logger.LogError(ex, "Error executing role assignment to all views for tenant {TenantId}", args.TenantId);
                 }
             }
         }

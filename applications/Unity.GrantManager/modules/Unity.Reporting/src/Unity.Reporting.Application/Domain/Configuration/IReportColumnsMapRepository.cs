@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Reporting.Configuration;
 using Volo.Abp.Domain.Repositories;
@@ -67,12 +68,11 @@ namespace Unity.Reporting.Domain.Configuration
         Task<string[]> GetViewColumnNamesAsync(string viewName);
 
         /// <summary>
-        /// Assigns a database role to the generated view for access control.
+        /// Assigns a database role to all views in the reporting schema for access control.
         /// </summary>
-        /// <param name="viewName"></param>        
-        /// <param name="role"></param>
+        /// <param name="role">The database role name to assign to all views.</param>
         /// <returns></returns>
-        Task AssignViewRoleAsync(string viewName, string role);
+        Task AssignRoleToAllViewsAsync(string role);
 
         /// <summary>
         /// Does the specified role exist in the database?
@@ -80,5 +80,31 @@ namespace Unity.Reporting.Domain.Configuration
         /// <param name="roleName"></param>
         /// <returns></returns>
         Task<bool> RoleExistsAsync(string roleName);
+
+        /// <summary>
+        /// Assigns a database role to a specific view in the reporting schema for access control.
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="viewName"></param>
+        /// <returns></returns>
+        Task AssignRoleToViewAsync(string role, string viewName);
+
+        /// <summary>
+        /// Retrieves all non-system database roles with their type information.
+        /// </summary>
+        /// <returns>A list of database role names with type indicators.</returns>
+        Task<List<string>> GetDatabaseRolesAsync();
+
+        /// <summary>
+        /// Retrieves role membership information showing which roles inherit from other roles.
+        /// </summary>
+        /// <returns>A list of role membership relationships.</returns>
+        Task<List<string>> GetRoleMembershipsAsync();
+
+        /// <summary>
+        /// Retrieves all view names in the Reporting schema.
+        /// </summary>
+        /// <returns>A list of reporting view names.</returns>
+        Task<List<string>> GetReportingViewsAsync();
     }
 }
