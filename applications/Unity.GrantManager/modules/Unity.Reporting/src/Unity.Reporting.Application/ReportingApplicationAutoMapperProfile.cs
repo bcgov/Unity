@@ -20,14 +20,7 @@ public class ReportingApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.DetectedChanges, opt => opt.Ignore());
 
         CreateMap<Mapping, MappingDto>();  
-        CreateMap<MapRow, MapRowDto>();
-
-        // Tenant view role mappings (if needed for future use)
-        CreateMap<UpdateTenantViewRoleDto, TenantViewRoleDto>()
-            .ForMember(dest => dest.TenantId, opt => opt.Ignore())
-            .ForMember(dest => dest.TenantName, opt => opt.Ignore())
-            .ForMember(dest => dest.ViewRole, opt => opt.MapFrom(src => src.ViewRole))
-            .ForMember(dest => dest.IsDefaultInferred, opt => opt.Ignore());
+        CreateMap<MapRow, MapRowDto>();       
     }
     
     /// <summary>

@@ -10,7 +10,7 @@ $(function () {
     }
 
     // Initialize DataTable for tenant view role management
-    let _dataTable = $('#TenantViewRoleTable').DataTable({
+    $('#TenantViewRoleTable').DataTable({
         order: [[0, 'asc']], // Sort by tenant name
         processing: false,
         serverSide: false,
@@ -56,7 +56,7 @@ $(function () {
         button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
 
         _tenantViewRoleAppService.update(tenantId, { viewRole: viewRole })
-            .done(function (result) {
+            .done(function (_) {
                 // Remove the default indicator since it's now saved
                 const indicator = row.find('.default-role-indicator');
                 if (indicator.length) {
@@ -162,14 +162,6 @@ $(function () {
                 button.prop('disabled', false).html('<i class="fa fa-cogs"></i> Assign to Views');
             });
     }
-
-    // Auto-save on Enter key in view role inputs
-    $(document).on('keypress', '.view-role-input', function (e) {
-        if (e.which === 13) { // Enter key
-            const row = $(this).closest('tr');
-            row.find('.save-role-btn').click();
-        }
-    });
 
     // Add refresh functionality
     window.refreshTenantTable = function() {

@@ -17,7 +17,7 @@ namespace Unity.Reporting.BackgroundJobs
 
 
         /// <summary>
-        /// Optional View name to Assign View Role to for the tenant
+        /// Gets or sets the optional view name to assign the view role to for the tenant.
         /// </summary>
         public string? ViewName { get; set; } = null;
     }
