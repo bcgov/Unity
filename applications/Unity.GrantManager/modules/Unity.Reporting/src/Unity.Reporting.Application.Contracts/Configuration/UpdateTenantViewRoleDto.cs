@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Reporting.TenantViewRole;
+namespace Unity.Reporting.Configuration;
 
 /// <summary>
 /// Input DTO for updating the view role configuration for a specific tenant.

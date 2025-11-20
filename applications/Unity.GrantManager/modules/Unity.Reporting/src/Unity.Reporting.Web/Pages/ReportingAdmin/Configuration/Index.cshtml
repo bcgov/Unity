@@ -29,7 +29,6 @@
                         <tr>
                             <th>Tenant Name</th>
                             <th>View Role</th>
-                            <th>Assignment Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -39,21 +38,21 @@
                             <tr data-tenant-id="@tenantRole.TenantId">
                                 <td>@tenantRole.TenantName</td>
                                 <td class="view-role-cell">
-                                    <input type="text" 
-                                           class="form-control view-role-input" 
-                                           value="@tenantRole.ViewRole" 
-                                           data-tenant-id="@tenantRole.TenantId"
-                                           placeholder="@($"{tenantRole.TenantName.ToLowerInvariant()}_readonly")" />
-                                </td>
-                                <td class="assignment-status-cell">
-                                    @if (tenantRole.IsAssigned)
-                                    {
-                                        <span class="badge bg-success">Assigned</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-warning">Pending</span>
-                                    }
+                                    <div class="d-flex align-items-center">
+                                        <input type="text" 
+                                               class="form-control view-role-input" 
+                                               value="@tenantRole.ViewRole" 
+                                               data-tenant-id="@tenantRole.TenantId"
+                                               data-is-default="@tenantRole.IsDefaultInferred"
+                                               placeholder="@($"{tenantRole.TenantName.ToLowerInvariant()}_readonly")" />
+                                        @if (tenantRole.IsDefaultInferred)
+                                        {
+                                            <i class="fa fa-exclamation-triangle text-warning ms-2 default-role-indicator" 
+                                               title="This is an inferred default role name. Save to persist this setting in the database."
+                                               data-bs-toggle="tooltip"
+                                               data-bs-placement="top"></i>
+                                        }
+                                    </div>
                                 </td>
                                 <td class="action-buttons-cell">
                                     <div class="d-flex gap-2">
@@ -69,6 +68,13 @@
                                                 data-tenant-name="@tenantRole.TenantName"
                                                 title="Assign Role to All Views">
                                             <i class="fa fa-cogs"></i> Assign to Views
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-info view-database-info-btn"
+                                                data-tenant-id="@tenantRole.TenantId"
+                                                data-tenant-name="@tenantRole.TenantName"
+                                                title="View Database Info">
+                                            <i class="fa fa-database"></i> View DB Info
                                         </button>
                                     </div>
                                 </td>

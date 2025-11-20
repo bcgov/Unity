@@ -2,7 +2,6 @@
 using System.Text.Json;
 using Unity.Reporting.Configuration;
 using Unity.Reporting.Domain.Configuration;
-using Unity.Reporting.TenantViewRole;
 
 namespace Unity.Reporting;
 
@@ -27,7 +26,8 @@ public class ReportingApplicationAutoMapperProfile : Profile
         CreateMap<UpdateTenantViewRoleDto, TenantViewRoleDto>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore())
             .ForMember(dest => dest.TenantName, opt => opt.Ignore())
-            .ForMember(dest => dest.IsAssigned, opt => opt.Ignore());
+            .ForMember(dest => dest.ViewRole, opt => opt.MapFrom(src => src.ViewRole))
+            .ForMember(dest => dest.IsDefaultInferred, opt => opt.Ignore());
     }
     
     /// <summary>

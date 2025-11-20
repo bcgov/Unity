@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Reporting.TenantViewRole;
+namespace Unity.Reporting.Configuration;
 
 /// <summary>
 /// Data transfer object representing the view role configuration for a tenant.
@@ -25,7 +25,10 @@ public class TenantViewRoleDto
     public string ViewRole { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the role has been successfully assigned to existing views.
+    /// Gets or sets a value indicating whether the current ViewRole value is an inferred default
+    /// that has not been explicitly saved to the database. When true, indicates the role name
+    /// follows the default pattern (e.g., {tenantname}_readonly) and requires explicit saving
+    /// to persist as a tenant-specific setting.
     /// </summary>
-    public bool IsAssigned { get; set; }
+    public bool IsDefaultInferred { get; set; }
 }

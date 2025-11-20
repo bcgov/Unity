@@ -46,9 +46,8 @@ namespace Unity.Reporting.BackgroundJobs
 
                     // Queue background job to assign view role asynchronously
                     await backgroundJobManager.EnqueueAsync(new AssignViewRoleBackgroundJobArgs
-                    {
-                        CorrelationId = args.CorrelationId,
-                        CorrelationProvider = args.CorrelationProvider,
+                    {                        
+                        ViewName = reportColumnsMap.ViewName,
                         TenantId = currentTenant.Id
                     },
                     BackgroundJobPriority.Normal);

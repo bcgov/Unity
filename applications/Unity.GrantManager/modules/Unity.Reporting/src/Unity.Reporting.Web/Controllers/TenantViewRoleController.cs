@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Reporting.TenantViewRole;
+using Unity.Reporting.Configuration;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Reporting.Web.Controllers;

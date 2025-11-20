@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Modules.Shared.Permissions;
-using Unity.Reporting.TenantViewRole;
+using Unity.Reporting.Configuration;
 
 namespace Unity.Reporting.Web.Pages.ReportingAdmin
 {
@@ -43,6 +44,24 @@ namespace Unity.Reporting.Web.Pages.ReportingAdmin
         public async Task OnGetAsync()
         {
             TenantViewRoles = await _tenantViewRoleAppService.GetAllAsync();
+        }
+
+        /// <summary>
+        /// AJAX handler to get tenant database information including roles and views.
+        /// </summary>
+        /// <param name="tenantId">The tenant ID to get database information for.</param>
+        /// <returns>JSON result containing tenant database information.</returns>
+        public async Task<JsonResult> OnGetTenantDatabaseInfoAsync(Guid tenantId)
+        {
+            try
+            {
+                var databaseInfo = await _tenantViewRoleAppService.GetTenantDatabaseInfoAsync(tenantId);
+                return new JsonResult(new { success = true, data = databaseInfo });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, error = ex.Message });
+            }
         }
     }
 }
