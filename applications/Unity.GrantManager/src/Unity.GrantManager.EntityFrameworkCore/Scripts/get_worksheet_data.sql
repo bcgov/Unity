@@ -55,7 +55,7 @@ BEGIN
         END IF;
         
         column_name := row_data->>'ColumnName';
-        column_type := row_data->>'Type';
+        column_type := lower(row_data->>'Type'); -- Convert to lowercase for case-insensitive comparison
         type_path := row_data->>'TypePath';
         data_path_raw := row_data->>'DataPath';
         datagrid_id := row_data->>'Id';
@@ -159,16 +159,16 @@ BEGIN
     
     -- Create root query if we have root fields
     IF has_root_fields THEN
-        -- Initialize base select clause with common fields for root query
-        base_select_clause := 'wi."Id" AS worksheet_instance_id, wi."CorrelationId" AS application_id, ''root'' AS row_identifier';
+        -- Initialize base select clause with common fields for root query, including worksheet name
+        base_select_clause := 'wi."Id" AS worksheet_instance_id, wi."CorrelationId" AS application_id, COALESCE(w."Name", ''Unknown'') AS worksheet_name, ''root'' AS row_identifier';
         
         -- Add all columns as placeholders first
         IF column_list != '' THEN
             base_select_clause := base_select_clause || ', ' || column_list;
         END IF;
         
-        -- Initialize FROM clause for worksheet instances
-        current_from_clause := '"Flex"."WorksheetInstances" wi';
+        -- Initialize FROM clause for worksheet instances with JOIN to get worksheet name
+        current_from_clause := '"Flex"."WorksheetInstances" wi LEFT JOIN "Flex"."Worksheets" w ON wi."WorksheetId" = w."Id"';
         
         -- Initialize select clause
         current_select_clause := base_select_clause;
@@ -184,7 +184,7 @@ BEGIN
             END IF;
             
             column_name := row_data->>'ColumnName';
-            column_type := row_data->>'Type';
+            column_type := lower(row_data->>'Type'); -- Convert to lowercase for case-insensitive comparison
             property_name := row_data->>'PropertyName';
             data_path_raw := row_data->>'DataPath';
             
@@ -214,7 +214,7 @@ BEGIN
             ELSE
                 -- Use original types (no conflicts)
                 CASE column_type
-                    WHEN 'textfield', 'textarea', 'email', 'select', 'phoneNumber' THEN
+                    WHEN 'textfield', 'textarea', 'email', 'select', 'phonenumber' THEN
                         data_path := format('(%s)', current_source_prefix);
                         
                     WHEN 'number' THEN
@@ -298,8 +298,8 @@ BEGIN
             -- Create a safe alias by replacing hyphens with underscores
             datagrid_alias := replace(datagrid_id, '-', '_');
             
-            -- Initialize base select clause with common fields for this datagrid
-            base_select_clause := format('wi."Id" AS worksheet_instance_id, wi."CorrelationId" AS application_id, %L || ''_r'' || %I.%I AS row_identifier',
+            -- Initialize base select clause with common fields for this datagrid, including worksheet name
+            base_select_clause := format('wi."Id" AS worksheet_instance_id, wi."CorrelationId" AS application_id, COALESCE(w."Name", ''Unknown'') AS worksheet_name, %L || ''_r'' || %I.%I AS row_identifier',
                 datagrid_name, 'dg_' || datagrid_alias || '_tbl', 'dg_' || datagrid_alias || '_row_num');
             
             -- Add all columns as placeholders first
@@ -307,8 +307,10 @@ BEGIN
                 base_select_clause := base_select_clause || ', ' || column_list;
             END IF;
             
-            -- Initialize FROM clause with CROSS JOIN LATERAL for this specific datagrid
-            current_from_clause := format('"Flex"."WorksheetInstances" wi CROSS JOIN LATERAL (
+            -- Initialize FROM clause with CROSS JOIN LATERAL for this specific datagrid, including JOIN to get worksheet name
+            current_from_clause := format('"Flex"."WorksheetInstances" wi 
+                LEFT JOIN "Flex"."Worksheets" w ON wi."WorksheetId" = w."Id"
+                CROSS JOIN LATERAL (
                 SELECT 
                     row_elem AS %I, 
                     row_number() OVER() AS %I
@@ -336,7 +338,7 @@ BEGIN
                 END IF;
                 
                 column_name := row_data->>'ColumnName';
-                column_type := row_data->>'Type';
+                column_type := lower(row_data->>'Type'); -- Convert to lowercase for case-insensitive comparison
                 data_path_raw := row_data->>'DataPath';
                 
                 -- Check if this field belongs to the current datagrid
@@ -373,7 +375,7 @@ BEGIN
                 ELSE
                     -- Use original type logic (same as root fields)
                     CASE column_type
-                        WHEN 'textfield', 'textarea', 'email', 'select', 'phoneNumber' THEN
+                        WHEN 'textfield', 'textarea', 'email', 'select', 'phonenumber' THEN
                             data_path := format('(%s)', current_source_prefix);
                             
                             current_select_clause := replace(current_select_clause,
@@ -445,7 +447,7 @@ BEGIN
         END LOOP;
     END IF;
     
-    -- Combine all queries with UNION ALL
+    -- Combine all queries with UNION ALL and add ORDER BY clause
     final_query := '';
     
     IF has_root_fields THEN
@@ -459,6 +461,11 @@ BEGIN
             END IF;
             final_query := final_query || datagrid_queries[i];
         END LOOP;
+    END IF;
+    
+    -- Add ORDER BY clause to sort by worksheet_name, then row_identifier
+    IF final_query != '' THEN
+        final_query := final_query || ' ORDER BY worksheet_name, row_identifier';
     END IF;
     
     RETURN final_query;
