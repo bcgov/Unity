@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -110,7 +109,7 @@ namespace Unity.Flex.Reporting.Configuration
                         Type = "Dynamic",
                         Path = $"{worksheetName}->{sectionName}->{dataGridName}->dynamic_columns",
                         TypePath = $"worksheet->section->datagrid->Dynamic",
-                        DataPath = $"{dataGridName}->dynamic_columns"
+                        DataPath = $"({worksheetName}){dataGridName}->dynamic_columns"
                     };
                     
                     components.Add(dynamicComponent);
@@ -132,7 +131,7 @@ namespace Unity.Flex.Reporting.Configuration
                             Type = MapDataGridColumnType(column.Type),
                             Path = $"{worksheetName}->{sectionName}->{dataGridName}->{column.Name}",
                             TypePath = $"worksheet->section->datagrid->{MapDataGridColumnType(column.Type)}",
-                            DataPath = $"{dataGridName}->{column.Name}"
+                            DataPath = $"({worksheetName}){dataGridName}->{column.Name}"
                         };
                         
                         components.Add(component);
@@ -194,7 +193,7 @@ namespace Unity.Flex.Reporting.Configuration
                         Type = "Checkbox", // Each option is essentially a checkbox
                         Path = $"{worksheetName}->{sectionName}->{checkboxGroupName}->{option.Key}",
                         TypePath = $"worksheet->section->checkboxgroup->Checkbox",
-                        DataPath = $"{checkboxGroupName}->{option.Key}"
+                        DataPath = $"({worksheetName}){checkboxGroupName}->{option.Key}"
                     };
                     
                     components.Add(component);
@@ -210,18 +209,17 @@ namespace Unity.Flex.Reporting.Configuration
         }
 
         /// <summary>
-        /// Parses a Radio field and returns metadata for each radio option defined in the Radio definition.
+        /// Parses a Radio field and returns metadata as a single component since radio fields
+        /// represent a single choice from multiple options.
         /// </summary>
         /// <param name="field">The Radio field to parse</param>
         /// <param name="worksheet">The worksheet containing the field</param>
-        /// <returns>List of component metadata items for each radio option</returns>
+        /// <returns>Single component metadata item for the radio field</returns>
         private static List<WorksheetComponentMetaDataItemDto> ParseRadioField(CustomField field, Worksheet worksheet)
         {
-            var components = new List<WorksheetComponentMetaDataItemDto>();
-
             try
             {
-                // Parse the Radio definition from the field's Definition JSON
+                // Parse the Radio definition from the field's Definition JSON to validate it
                 var radioDefinition = JsonSerializer.Deserialize<RadioDefinition>(field.Definition);
                 
                 if (radioDefinition?.Options == null || radioDefinition.Options.Count <= 0)
@@ -230,38 +228,15 @@ namespace Unity.Flex.Reporting.Configuration
                     return [CreateSimpleComponent(field, worksheet)];
                 }
 
-                // Get section name for path construction
-                var section = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId);
-                var sectionName = SanitizeName(section?.Name ?? UnknownSectionName);
-                var worksheetName = SanitizeName(worksheet.Name);
-                var radioGroupName = SanitizeName(field.Key);
-
-                // Create a component for each option in the Radio group
-                foreach (var option in radioDefinition.Options)
-                {
-                    var optionValue = SanitizeName(option.Value);
-                    
-                    var component = new WorksheetComponentMetaDataItemDto
-                    {
-                        Id = $"{field.Id}_{optionValue}",
-                        Key = option.Value,
-                        Label = option.Label,
-                        Type = "Radio", // Each option is a radio button
-                        Path = $"{worksheetName}->{sectionName}->{radioGroupName}->{option.Value}",
-                        TypePath = $"worksheet->section->radio->Radio",
-                        DataPath = $"{radioGroupName}->{option.Value}"
-                    };
-                    
-                    components.Add(component);
-                }
+                // Radio fields should be treated as a single component since only one option can be selected
+                // This creates one reporting column for the entire radio group
+                return [CreateSimpleComponent(field, worksheet)];
             }
             catch (JsonException)
             {
                 // If JSON parsing fails, return the field as a simple component
                 return [CreateSimpleComponent(field, worksheet)];
             }
-
-            return components;
         }
 
         /// <summary>
@@ -285,7 +260,7 @@ namespace Unity.Flex.Reporting.Configuration
                 Type = field.Type.ToString(),
                 Path = $"{worksheetName}->{sectionName}->{fieldName}",
                 TypePath = $"worksheet->section->{field.Type.ToString().ToLowerInvariant()}",
-                DataPath = $"{fieldName}"
+                DataPath = $"({worksheetName}){fieldName}"
             };
         }
 
