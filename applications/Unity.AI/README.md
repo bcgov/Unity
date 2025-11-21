@@ -30,6 +30,10 @@ docker-compose up -d
 Copy `.env.example` to `.env` and configure:
 
 ```env
+# Platform Settings
+UAI_BUILD_VERSION=0.0.0
+UAI_BUILD_REVISION=0000000
+
 # Azure OpenAI
 AZURE_OPENAI_ENDPOINT=your_endpoint
 AZURE_OPENAI_API_KEY=your_key

@@ -1,20 +1,12 @@
 FROM python:3.11-slim
 
-# Accept build arguments
-ARG AZURE_OPENAI_ENDPOINT
-ARG AZURE_OPENAI_API_KEY
-ARG AZURE_OPENAI_DEPLOYMENT
-ARG AZURE_OPENAI_EMBEDDING_DEPLOYMENT
-ARG AZURE_OPENAI_API_VERSION
-ARG JWT_SECRET
-ARG METABASE_KEY
-ARG MB_EMBED_SECRET
-ARG MB_URL
-ARG DB_HOST=postgres
-ARG DB_PORT=5432
-ARG DB_NAME=unity_ai
-ARG DB_USER=unity_user
-ARG DB_PASSWORD=unity_pass
+# Platform build metadata (safe to bake into image)
+ARG UAI_BUILD_VERSION=0.0.0
+ARG UAI_BUILD_REVISION=0000000
+
+# NOTE: No ARG statements for secrets/configuration
+# All configuration is handled at runtime via environment variables
+# This allows OpenShift StatefulSet to inject secrets and config without rebuilding images
 
 WORKDIR /app
 
@@ -42,22 +34,17 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
-# Set environment variables from build args
+# Set Python environment variables (non-sensitive configuration)
 ENV PYTHONUNBUFFERED=1
-ENV AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-ENV AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-ENV AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
-ENV AZURE_OPENAI_EMBEDDING_DEPLOYMENT=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT}
-ENV AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
-ENV JWT_SECRET=${JWT_SECRET}
-ENV METABASE_KEY=${METABASE_KEY}
-ENV MB_EMBED_SECRET=${MB_EMBED_SECRET}
-ENV MB_URL=${MB_URL}
-ENV DB_HOST=${DB_HOST}
-ENV DB_PORT=${DB_PORT}
-ENV DB_NAME=${DB_NAME}
-ENV DB_USER=${DB_USER}
-ENV DB_PASSWORD=${DB_PASSWORD}
+
+# Set platform build metadata environment variables
+ENV UNITY_BUILD_VERSION=${UAI_BUILD_VERSION}
+ENV UAI_BUILD_REVISION=${UAI_BUILD_REVISION}
+
+# NOTE: All application configuration (secrets, database, API keys) is provided at runtime
+# via environment variables from OpenShift StatefulSet, Docker Compose, or other orchestrators.
+# This prevents secrets from being baked into the container image and allows the same image
+# to be deployed across dev/test/prod with different configurations.
 
 # Run the modular backend
 CMD ["python", "app.py"]
