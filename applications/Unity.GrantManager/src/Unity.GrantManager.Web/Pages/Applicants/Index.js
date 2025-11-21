@@ -88,12 +88,13 @@ $(function () {
 
     function getUnityApplicantIdColumn(columnIndex) {
         return {
-            title: 'Unity Applicant ID',
+            title: 'Applicant ID',
             data: 'unityApplicantId',
             name: 'unityApplicantId',
             className: 'data-table-header text-nowrap',
             render: function (data, type, row) {
-                return `<a href="/GrantApplicants/Details?ApplicantId=${row.id}">${data}</a>`;
+                const displayValue = (data && String(data).trim() !== '') ? data : 'null';
+                return `<a href="/GrantApplicants/Details?ApplicantId=${row.id}">${displayValue}</a>`;
             },
             index: columnIndex
         }
