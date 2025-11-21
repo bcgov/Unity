@@ -105,17 +105,17 @@
                                 </abp-column>
 
                                 <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_remaining_error")" style="display: none;">
-                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp;&nbsp; @L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @Model.ApplicationPaymentRequestForm[i].RemainingAmount</span>
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @Model.ApplicationPaymentRequestForm[i].RemainingAmount</span>
                                 </abp-column>
 
                                 <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_parent_child_error")" style="display: none;">
-                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp;&nbsp; <span id="@($"parent_child_error_message_{Model.ApplicationPaymentRequestForm[i].CorrelationId}")"></span></span>
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; <span id="@($"parent_child_error_message_{Model.ApplicationPaymentRequestForm[i].CorrelationId}")"></span></span>
                                 </abp-column>
 
                                 @for (var j = 0; j < Model.ApplicationPaymentRequestForm[i].ErrorList?.Count; j++)
                                 {
                                 <abp-column size="_12" class="payment-error-column">
-                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp;&nbsp; @Model.ApplicationPaymentRequestForm[i].ErrorList[j]</span>
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @Model.ApplicationPaymentRequestForm[i].ErrorList[j]</span>
                                 </abp-column>
                                 }
 
