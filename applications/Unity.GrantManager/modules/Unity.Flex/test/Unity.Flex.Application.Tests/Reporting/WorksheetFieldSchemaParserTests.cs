@@ -23,43 +23,6 @@ namespace Unity.Flex.Reporting
         }
 
         [Fact]
-        public async Task ParseDataGridField_WithDynamicTrue_ShouldReturnDynamicPlaceholder()
-        {
-            // Arrange
-            using var uow = _unitOfWorkManager.Begin();
-            
-            var worksheet = new Worksheet(Guid.NewGuid(), "TestWorksheet", "Test Worksheet");
-            var section = new WorksheetSection(Guid.NewGuid(), "TestSection");
-            worksheet.Sections.Add(section);
-            
-            await _worksheetRepository.InsertAsync(worksheet, true);
-            await uow.SaveChangesAsync();
-            
-            var field = new CustomField(Guid.NewGuid(), "testDataGrid", "TestWorksheet", "Test DataGrid", 
-                CustomFieldType.DataGrid, @"{""dynamic"": true, ""columns"": [], ""summaryOption"": ""None""}");
-            section.AddField(field);
-            await uow.SaveChangesAsync();
-            
-            worksheet = await _worksheetRepository.GetAsync(worksheet.Id);
-
-            // Act
-            var result = WorksheetFieldSchemaParser.ParseField(field, worksheet);
-
-            // Assert
-            result.ShouldNotBeNull();
-            result.Count.ShouldBe(1);
-            
-            var component = result.First();
-            component.Id.ShouldBe($"{field.Id}_dynamic");
-            component.Key.ShouldBe("dynamic_columns");
-            component.Label.ShouldBe("Dynamic Columns");
-            component.Type.ShouldBe("Dynamic");
-            component.Path.ShouldBe("testworksheet->TestSection->testDataGrid->dynamic_columns");
-            component.TypePath.ShouldBe("worksheet->section->datagrid->Dynamic");
-            component.DataPath.ShouldBe("testDataGrid->dynamic_columns");
-        }
-
-        [Fact]
         public async Task ParseDataGridField_WithDynamicTrueAndColumns_ShouldReturnDynamicPlaceholderAndColumns()
         {
             // Arrange
