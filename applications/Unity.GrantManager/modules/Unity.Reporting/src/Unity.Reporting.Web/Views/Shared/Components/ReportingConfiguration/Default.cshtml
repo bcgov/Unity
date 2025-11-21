@@ -102,8 +102,7 @@
                 </small>
             </div>
 
-            @if (Model.HasSavedConfiguration &&
-                        await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Delete))
+            @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Delete))
             {
                 <abp-button id="btn-delete-report-configuration"
                             text="Delete"
@@ -112,7 +111,7 @@
                             data-bs-toggle="tooltip"
                             data-bs-placement="top"
                             data-bs-original-title="Delete this configuration and associated view"
-                            class="btn unt-btn-danger btn-danger report-config-btn-height-fix"></abp-button>
+                            class="btn unt-btn-danger btn-danger report-config-btn-height-fix @(Model.HasSavedConfiguration ? "" : "delete-config-btn-hidden")"></abp-button>
             }
 
             @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
