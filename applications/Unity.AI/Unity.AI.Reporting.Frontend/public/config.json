@@ -1,0 +1,5 @@
+{
+  "apiUrl": "http://localhost:6000/api",
+  "environment": "development",
+  "version": "dev"
+}

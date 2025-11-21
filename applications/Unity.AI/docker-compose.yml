@@ -75,6 +75,8 @@ services:
       context: ./Unity.AI.Reporting.Frontend
       args:
         - JWT_SECRET=${JWT_SECRET}
+    environment:
+      - API_URL=http://reporting-backend:5000/api
     ports:
       - "80:80"
     depends_on:
