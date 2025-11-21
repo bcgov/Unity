@@ -401,7 +401,7 @@ namespace Unity.GrantManager.Reporting.Configuration
                     break;
 
                 case "panel":
-                    ProcessPanelComponent(component, componentsList, currentPath, currentTypePath);
+                    ProcessStandardNestedComponents(component, componentsList, currentPath, currentTypePath);
                     break;
 
                 default:
@@ -412,13 +412,13 @@ namespace Unity.GrantManager.Reporting.Configuration
         }
 
         /// <summary>
-        /// Processes panel components which may contain nested components
+        /// Processes components with standard nested components property
         /// </summary>
-        /// <param name="component">The panel component</param>
+        /// <param name="component">The parent component</param>
         /// <param name="componentsList">The list to populate with found components</param>
         /// <param name="currentPath">The current path using keys</param>
         /// <param name="currentTypePath">The current path using types</param>
-        private static void ProcessPanelComponent(JObject component, List<FormComponentMetaDataItemDto> componentsList, 
+        private static void ProcessStandardNestedComponents(JObject component, List<FormComponentMetaDataItemDto> componentsList,
             string currentPath, string currentTypePath)
         {
             var nestedComponents = component[COMPONENTS] as JArray;
@@ -486,23 +486,6 @@ namespace Unity.GrantManager.Reporting.Configuration
                         ScanComponentsRecursively(tabComponents, componentsList, currentPath, currentTypePath);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// Processes components with standard nested components property
-        /// </summary>
-        /// <param name="component">The parent component</param>
-        /// <param name="componentsList">The list to populate with found components</param>
-        /// <param name="currentPath">The current path using keys</param>
-        /// <param name="currentTypePath">The current path using types</param>
-        private static void ProcessStandardNestedComponents(JObject component, List<FormComponentMetaDataItemDto> componentsList,
-            string currentPath, string currentTypePath)
-        {
-            var nestedComponents = component[COMPONENTS] as JArray;
-            if (nestedComponents != null)
-            {
-                ScanComponentsRecursively(nestedComponents, componentsList, currentPath, currentTypePath);
             }
         }
 
