@@ -140,24 +140,29 @@
                 // Only create filter cells for visible columns
                 if (column.visible()) {
                     let title = $(column.header()).text();
+                    let colName = dt.settings()[0].aoColumns[column.index()].name || title;
 
                     if (title && title !== 'Actions' && title !== 'Action' && title !== 'Default') {
                         let placeholder = that.s.opts.placeholderPrefix ?
                             that.s.opts.placeholderPrefix + ' ' + title :
                             title;
 
+                        // Get filter value by column name (not title) for persistence across reorders
+                        let filterValue = that.s.filterData[colName] || column.search() || '';
+
                         let input = $('<input>', {
                             type: 'text',
                             class: 'form-control input-sm custom-filter-input',
                             placeholder: placeholder,
-                            value: that.s.filterData[title] || ''
+                            value: filterValue,
+                            'data-column-name': colName
                         });
 
                         let cell = $('<td>').append(input);
 
-                        // Set initial search value if exists
-                        if (column.search() !== (that.s.filterData[title] || '')) {
-                            column.search(that.s.filterData[title] || '');
+                        // Apply search value if it differs from current column search
+                        if (column.search() !== filterValue) {
+                            column.search(filterValue);
                         }
 
                         // Bind keyup event for filtering
@@ -165,6 +170,8 @@
                             let val = this.value;
                             if (column.search() !== val) {
                                 column.search(val).draw();
+                                // Store by column name for persistence
+                                that.s.filterData[colName] = val;
                                 that._updateButtonState();
                             }
                         });
@@ -191,6 +198,18 @@
          * @private
          */
         _rebuildFilterRow: function () {
+            let dt = this.s.dt;
+            let that = this;
+            
+            // Preserve current filter values before rebuilding
+            this.dom.filterRow?.find('.custom-filter-input').each(function() {
+                let colName = $(this).data('column-name');
+                let val = $(this).val();
+                if (colName && val) {
+                    that.s.filterData[colName] = val;
+                }
+            });
+            
             let wasVisible = this.dom.filterRow?.is(':visible');
             this._buildFilterRow();
             if (wasVisible) {
@@ -326,11 +345,14 @@
 
             dt.columns().every(function (i) {
                 let column = this;
+                let colName = dt.settings()[0].aoColumns[i].name;
                 let title = $(column.header()).text();
                 let searchVal = column.search();
 
+                // Store by column name (preferred) or fallback to title
+                let key = colName || title;
                 if (searchVal) {
-                    that.s.filterData[title] = searchVal;
+                    that.s.filterData[key] = searchVal;
                 }
             });
 
