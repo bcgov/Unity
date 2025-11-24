@@ -1,7 +1,13 @@
 {
   "culture": "en",
   "texts": {
-    "MyAccount":  "My account",
-    "SamplePageMessage": "A sample page for the Reporting module"
+    "Permission:Reporting": "Reporting",
+    "Permission:Reporting.Configuration.Default": "Reporting Configurations - Default (View)",
+    "Permission:Reporting.Configuration.Update": "Update Reporting Configurations",
+    "Permission:Reporting.Configuration.Delete": "Delete Reporting Configurations",
+    "Setting:GrantManager.Reporting.ViewRole.DisplayName": "[DEPRECATED] Global View Role",
+    "Setting:GrantManager.Reporting.ViewRole.Description": "[DEPRECATED] This global setting is deprecated. Use tenant-specific view role configuration instead.",
+    "Setting:GrantManager.Reporting.TenantViewRole.DisplayName": "Tenant View Role",
+    "Setting:GrantManager.Reporting.TenantViewRole.Description": "The database role to assign to generated reporting views for this specific tenant"
   }
 }

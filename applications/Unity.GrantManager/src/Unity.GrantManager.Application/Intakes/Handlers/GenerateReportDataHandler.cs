@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         /// <param name="eventData"></param>
         /// <returns></returns>
         public async Task HandleEventAsync(ApplicationProcessEvent eventData)
-        {
+        {            
             if (eventData == null)
             {
                 logger.LogWarning("Event data is null in GenerateReportDataHandler.");

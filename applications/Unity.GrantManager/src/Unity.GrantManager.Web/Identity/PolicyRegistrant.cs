@@ -2,6 +2,7 @@
 using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Permissions;
+using Unity.Reporting.Permissions;
 using Unity.TenantManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -229,6 +230,15 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.Default));
         authorizationBuilder.AddPolicy(UnitySelector.Project.Location.Update.UpdateFinalStateFields,
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Project.Location.Update.UpdateFinalStateFields));
+
+
+        // Reporting Configuration
+        authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Default,
+            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Default));
+        authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Update,
+            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Update));
+        authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Delete,
+            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Delete));        
     }
 }
 
