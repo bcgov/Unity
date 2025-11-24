@@ -48,6 +48,11 @@ table.dataTable {
     --dt-row-selected-link: 9, 10, 11;
 }
 
+.dt-bootstrap5 > div.row:first-child,
+.dt-bootstrap5 > div.dt-layout-table {
+    margin-top: 0px !important;
+}
+
 .unity-app-container {
     background: var(--bc-colors-white-background);
     height: 100%; /* confirm this */
