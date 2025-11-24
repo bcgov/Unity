@@ -2,465 +2,241 @@
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
-DECLARE
-    mapping_rows JSONB;
-    row_data JSONB;
-    column_name TEXT;
-    column_type TEXT;
-    property_name TEXT;
-    data_path_raw TEXT;
-    type_path TEXT;
-    datagrid_name TEXT;
-    datagrid_id TEXT;
-    datagrid_alias TEXT;
-    base_select_clause TEXT;
-    current_select_clause TEXT;
-    current_from_clause TEXT;
-    data_path TEXT;
-    json_path TEXT;
-    path_parts TEXT[];
-    field_name TEXT;
-    has_datagrids BOOLEAN := false;
-    has_root_fields BOOLEAN := false;
-    unique_datagrids JSONB := '{}';
-    all_columns JSONB := '{}';
-    column_type_conflicts JSONB := '{}';
-    current_source_prefix TEXT;
-    final_query TEXT;
-    datagrid_queries TEXT[];
-    root_query TEXT;
-    column_list TEXT;
-    use_text_fallback BOOLEAN := false;
-    datagrid_existence_check TEXT := '';
-    i INTEGER;
-    j INTEGER;
 BEGIN
-    -- Fetch the mapping data for this report map ID
-    SELECT "Mapping"->'Rows' INTO mapping_rows
-    FROM "Reporting"."ReportColumnsMaps"
-    WHERE "Id" = report_map_id;
-    
-    -- Check if we found the mapping rows
-    IF mapping_rows IS NULL OR jsonb_array_length(mapping_rows) = 0 THEN
-        RAISE EXCEPTION 'No mapping rows found for ReportColumnsMaps ID: %', report_map_id;
-    END IF;
-    
-    -- First pass: collect all unique column names and detect type conflicts
-    FOR i IN 0..(jsonb_array_length(mapping_rows) - 1) LOOP
-        row_data := mapping_rows->i;
-        
-        -- Skip parent rows
-        IF (row_data->>'Parent')::boolean = true THEN
-            CONTINUE;
-        END IF;
-        
-        column_name := row_data->>'ColumnName';
-        column_type := row_data->>'Type';
-        type_path := row_data->>'TypePath';
-        data_path_raw := row_data->>'DataPath';
-        datagrid_id := row_data->>'Id';
-        
-        -- Check for type conflicts with existing columns
-        IF all_columns ? column_name THEN
-            -- Column already exists, check if types match
-            IF (all_columns->column_name->>'type') != column_type THEN
-                -- Type conflict detected - mark for TEXT fallback
-                column_type_conflicts := column_type_conflicts || jsonb_build_object(column_name, true);
-                use_text_fallback := true;
-            END IF;
-        END IF;
-        
-        -- Store column info
-        all_columns := all_columns || jsonb_build_object(column_name, jsonb_build_object(
-            'type', column_type,
-            'type_path', COALESCE(type_path, ''),
-            'data_path', COALESCE(data_path_raw, '')
-        ));
-        
-        -- Check if this is a datagrid field (TypePath contains 'datagrid')
-        IF type_path IS NOT NULL AND type_path LIKE '%datagrid%' THEN
-            has_datagrids := true;
-            
-            -- Extract datagrid name from DataPath field
-            -- Handle both patterns: "(DK1)dataGrid->field" and "dataGridName->field"
-            IF data_path_raw IS NOT NULL THEN
-                IF data_path_raw ~ '^\(DK[0-9]+\)' THEN
-                    -- Remove the DK prefix and extract the datagrid name
-                    datagrid_name := regexp_replace(data_path_raw, '^\(DK[0-9]+\)', '');
-                    datagrid_name := split_part(datagrid_name, '->', 1);
-                ELSE
-                    -- Direct format without DK prefix
-                    datagrid_name := split_part(data_path_raw, '->', 1);
-                END IF;
-                
-                -- Store unique datagrids with their IDs (use first ID found for each datagrid name)
-                IF datagrid_name IS NOT NULL AND datagrid_name != '' AND NOT (unique_datagrids ? datagrid_name) THEN
-                    unique_datagrids := unique_datagrids || jsonb_build_object(datagrid_name, datagrid_id);
-                END IF;
-            END IF;
-        ELSE
-            has_root_fields := true;
-        END IF;
-    END LOOP;
-    
-    -- Build standardized column list with appropriate types
-    column_list := '';
-    FOR column_name IN SELECT jsonb_object_keys(all_columns) ORDER BY jsonb_object_keys(all_columns) LOOP
-        IF column_list != '' THEN
-            column_list := column_list || ', ';
-        END IF;
-        
-        -- Use TEXT only if there's a type conflict for this column
-        IF use_text_fallback AND (column_type_conflicts ? column_name) THEN
-            column_list := column_list || format('NULL::TEXT AS %I', column_name);
-        ELSE
-            -- Use the original type for the column
-            column_type := all_columns->column_name->>'type';
-            CASE column_type
-                WHEN 'number' THEN
-                    column_list := column_list || format('NULL::NUMERIC AS %I', column_name);
-                WHEN 'currency' THEN
-                    column_list := column_list || format('NULL::DECIMAL(10,2) AS %I', column_name);
-                WHEN 'option', 'checkbox', 'radio' THEN
-                    column_list := column_list || format('NULL::BOOLEAN AS %I', column_name);
-                ELSE
-                    column_list := column_list || format('NULL::TEXT AS %I', column_name);
-            END CASE;
-        END IF;
-    END LOOP;
-    
-    -- Build datagrid existence check for root query exclusion
-    IF has_datagrids THEN
-        datagrid_existence_check := ' AND NOT EXISTS (';
-        i := 0;
-        FOR datagrid_name IN SELECT jsonb_object_keys(unique_datagrids) LOOP
-            IF i > 0 THEN
-                datagrid_existence_check := datagrid_existence_check || ' UNION ';
-            END IF;
-            
-            datagrid_existence_check := datagrid_existence_check || format('
-                SELECT 1 FROM jsonb_array_elements(
-                    COALESCE(
-                        (SELECT (v_elem->>''value'')::jsonb->''rows''
-                         FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem
-                         WHERE v_elem->>''key'' = ''%s'')
-                        , ''[]''::jsonb
-                    )
-                ) AS row_elem
-                WHERE row_elem != ''null''::jsonb
-            ', datagrid_name);
-            i := i + 1;
-        END LOOP;
-        datagrid_existence_check := datagrid_existence_check || ')';
-    END IF;
-    
-    -- Initialize arrays for storing queries
-    datagrid_queries := '{}';
-    
-    -- Create root query if we have root fields
-    IF has_root_fields THEN
-        -- Initialize base select clause with common fields for root query
-        base_select_clause := 'wi."Id" AS worksheet_instance_id, wi."CorrelationId" AS application_id, ''root'' AS row_identifier';
-        
-        -- Add all columns as placeholders first
-        IF column_list != '' THEN
-            base_select_clause := base_select_clause || ', ' || column_list;
-        END IF;
-        
-        -- Initialize FROM clause for worksheet instances
-        current_from_clause := '"Flex"."WorksheetInstances" wi';
-        
-        -- Initialize select clause
-        current_select_clause := base_select_clause;
-        
-        -- Process root fields only - replace NULL placeholders with actual values
-        FOR i IN 0..(jsonb_array_length(mapping_rows) - 1) LOOP
-            row_data := mapping_rows->i;
-            
-            -- Skip parent rows and datagrid rows
-            IF (row_data->>'Parent')::boolean = true OR 
-               (row_data->>'TypePath') IS NOT NULL AND (row_data->>'TypePath') LIKE '%datagrid%' THEN
-                CONTINUE;
-            END IF;
-            
-            column_name := row_data->>'ColumnName';
-            column_type := row_data->>'Type';
-            property_name := row_data->>'PropertyName';
-            data_path_raw := row_data->>'DataPath';
-            
-            -- Root field - extract from worksheet CurrentValue JSON
-            IF data_path_raw IS NOT NULL AND trim(data_path_raw) != '' THEN
-                -- Use the DataPath as is for worksheet fields
-                json_path := format('->''values''->0->''value''', data_path_raw);
-                -- For worksheet, we need to find the field by key in the values array
-                current_source_prefix := format('(
-                    SELECT v_elem->>''value''
-                    FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem
-                    WHERE v_elem->>''key'' = ''%s''
-                )', data_path_raw);
-            ELSE
-                -- Fall back to property name
-                current_source_prefix := format('(
-                    SELECT v_elem->>''value''
-                    FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem
-                    WHERE v_elem->>''key'' = ''%s''
-                )', property_name);
-            END IF;
-            
-            -- Apply type-specific extraction - use TEXT fallback only if there's a conflict
-            IF use_text_fallback AND (column_type_conflicts ? column_name) THEN
-                -- Force TEXT for conflicted columns
-                data_path := format('(%s)::TEXT', current_source_prefix);
-            ELSE
-                -- Use original types (no conflicts)
-                CASE column_type
-                    WHEN 'textfield', 'textarea', 'email', 'select', 'phoneNumber' THEN
-                        data_path := format('(%s)', current_source_prefix);
-                        
-                    WHEN 'number' THEN
-                        data_path := format('(CASE 
-                            WHEN (%s) IS NULL THEN NULL
-                            WHEN (%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s)::NUMERIC
-                            ELSE NULL
-                        END)', current_source_prefix, current_source_prefix, current_source_prefix);
-                        
-                    WHEN 'currency' THEN
-                        data_path := format('(CASE 
-                            WHEN (%s) IS NULL THEN NULL
-                            WHEN (%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s)::DECIMAL(10,2)
-                            ELSE NULL
-                        END)', current_source_prefix, current_source_prefix, current_source_prefix);
-                        
-                    WHEN 'option', 'checkbox', 'radio' THEN
-                        data_path := format('(CASE 
-                            WHEN (%s) IS NULL THEN NULL
-                            WHEN (%s) ~ ''^(true|false|t|f|1|0|yes|no)$'' THEN 
-                                CASE 
-                                    WHEN lower((%s)) IN (''true'', ''t'', ''1'', ''yes'') THEN true
-                                    WHEN lower((%s)) IN (''false'', ''f'', ''0'', ''no'') THEN false
-                                    ELSE NULL
-                                END
-                            ELSE NULL
-                        END)', current_source_prefix, current_source_prefix, current_source_prefix, current_source_prefix);
-                        
-                    ELSE
-                        -- Default to text
-                        data_path := format('(%s)', current_source_prefix);
-                END CASE;
-            END IF;
-            
-            -- Replace the NULL placeholder with the actual value
-            IF use_text_fallback AND (column_type_conflicts ? column_name) THEN
-                current_select_clause := replace(current_select_clause,
-                    format('NULL::TEXT AS %I', column_name),
-                    format('%s AS %I', data_path, column_name)
-                );
-            ELSE
-                -- Replace with proper typed placeholder
-                CASE column_type
-                    WHEN 'number' THEN
-                        current_select_clause := replace(current_select_clause,
-                            format('NULL::NUMERIC AS %I', column_name),
-                            format('%s AS %I', data_path, column_name)
-                        );
-                    WHEN 'currency' THEN
-                        current_select_clause := replace(current_select_clause,
-                            format('NULL::DECIMAL(10,2) AS %I', column_name),
-                            format('%s AS %I', data_path, column_name)
-                        );
-                    WHEN 'option', 'checkbox', 'radio' THEN
-                        current_select_clause := replace(current_select_clause,
-                            format('NULL::BOOLEAN AS %I', column_name),
-                            format('%s AS %I', data_path, column_name)
-                        );
-                    ELSE
-                        current_select_clause := replace(current_select_clause,
-                            format('NULL::TEXT AS %I', column_name),
-                            format('%s AS %I', data_path, column_name)
-                        );
-                END CASE;
-            END IF;
-        END LOOP;
-        
-        -- Build root query with datagrid existence check to prevent duplicates
-        root_query := format('SELECT %s FROM %s WHERE wi."WorksheetCorrelationId" = %L%s',
-            current_select_clause,
-            current_from_clause,
-            correlation_id,
-            COALESCE(datagrid_existence_check, '')
-        );
-    END IF;
-    
-    -- Create separate query for each datagrid
-    IF has_datagrids THEN
-        FOR datagrid_name IN SELECT jsonb_object_keys(unique_datagrids) LOOP
-            datagrid_id := unique_datagrids->>datagrid_name;
-            -- Create a safe alias by replacing hyphens with underscores
-            datagrid_alias := replace(datagrid_id, '-', '_');
-            
-            -- Initialize base select clause with common fields for this datagrid
-            base_select_clause := format('wi."Id" AS worksheet_instance_id, wi."CorrelationId" AS application_id, %L || ''_r'' || %I.%I AS row_identifier',
-                datagrid_name, 'dg_' || datagrid_alias || '_tbl', 'dg_' || datagrid_alias || '_row_num');
-            
-            -- Add all columns as placeholders first
-            IF column_list != '' THEN
-                base_select_clause := base_select_clause || ', ' || column_list;
-            END IF;
-            
-            -- Initialize FROM clause with CROSS JOIN LATERAL for this specific datagrid
-            current_from_clause := format('"Flex"."WorksheetInstances" wi CROSS JOIN LATERAL (
+    RETURN (
+        WITH mapping_data AS (
+            SELECT 
+                row_number() OVER() as mapping_index,
+                row_data->>'ColumnName' as column_name,
+                lower(row_data->>'Type') as column_type,
+                row_data->>'DataPath' as data_path_raw,
+                row_data->>'TypePath' as type_path,
+                row_data->>'Path' as field_path,
+                row_data->>'PropertyName' as property_name,
+                row_data->>'Id' as field_id,
+                CASE 
+                    WHEN row_data->>'DataPath' IS NOT NULL AND row_data->>'DataPath' ~ '^\(' 
+                    THEN substring(row_data->>'DataPath' from '^\(([^)]+)\)')
+                    ELSE split_part(row_data->>'Path', '->', 1)
+                END as worksheet_name,
+                CASE 
+                    WHEN row_data->>'DataPath' ~ '^\(' 
+                    THEN regexp_replace(row_data->>'DataPath', '^\([^)]+\)', '')
+                    ELSE row_data->>'DataPath'
+                END as clean_data_path
+            FROM 
+                "Reporting"."ReportColumnsMaps" rcm,
+                jsonb_array_elements(rcm."Mapping"->'Rows') as row_data
+            WHERE 
+                rcm."Id" = report_map_id
+                AND (row_data->>'Parent')::boolean IS NOT TRUE
+        ),
+        -- Use DISTINCT ON to ensure each column gets only one mapping (first occurrence)
+        unique_mappings AS (
+            SELECT DISTINCT ON (column_name) 
+                mapping_index, column_name, column_type, data_path_raw, type_path, 
+                field_path, property_name, field_id, worksheet_name, clean_data_path,
+                split_part(clean_data_path, '->', 1) as datagrid_name,
+                split_part(clean_data_path, '->', 2) as field_name
+            FROM mapping_data 
+            ORDER BY column_name, mapping_index
+        ),
+        -- Get UNIQUE worksheet-datagrid combinations for datagrid fields
+        unique_worksheet_datagrids AS (
+            SELECT DISTINCT worksheet_name, datagrid_name
+            FROM unique_mappings 
+            WHERE type_path LIKE '%datagrid%'
+        ),
+        -- Get UNIQUE worksheets that have root-level fields
+        unique_worksheets_with_root AS (
+            SELECT DISTINCT worksheet_name
+            FROM unique_mappings 
+            WHERE type_path NOT LIKE '%datagrid%' OR type_path IS NULL
+        ),
+        -- Build queries for datagrid fields (existing logic)
+        datagrid_queries AS (
+            SELECT format('
                 SELECT 
-                    row_elem AS %I, 
-                    row_number() OVER() AS %I
-                FROM jsonb_array_elements(
-                    COALESCE(
-                        (SELECT (v_elem->>''value'')::jsonb->''rows''
-                         FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem
-                         WHERE v_elem->>''key'' = ''%s'')
-                        , ''[null]''::jsonb
-                    )
-                ) AS row_elem
-            ) AS %I', 'dg_' || datagrid_alias, 'dg_' || datagrid_alias || '_row_num', datagrid_name, 'dg_' || datagrid_alias || '_tbl');
-            
-            -- Initialize select clause
-            current_select_clause := base_select_clause;
-            
-            -- Process fields for this specific datagrid - replace NULL placeholders with actual values
-            FOR i IN 0..(jsonb_array_length(mapping_rows) - 1) LOOP
-                row_data := mapping_rows->i;
+                    wi."Id" AS worksheet_instance_id,
+                    wi."CorrelationId" AS application_id, 
+                    COALESCE(w."Name", ''Unknown'') AS worksheet_name,
+                    %L || ''_r'' || dg_tbl.row_num AS row_identifier,
+                    %s
+                FROM "Flex"."WorksheetInstances" wi 
+                LEFT JOIN "Flex"."Worksheets" w ON wi."WorksheetId" = w."Id"
+                CROSS JOIN LATERAL (
+                    SELECT 
+                        row_elem as dg_data, 
+                        row_number() OVER() as row_num
+                    FROM jsonb_array_elements(
+                        COALESCE(
+                            (SELECT (v_elem->>''value'')::jsonb->''rows'' 
+                             FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem 
+                             WHERE v_elem->>''key'' = %L), 
+                            ''[null]''::jsonb
+                        )
+                    ) AS row_elem
+                ) AS dg_tbl
+                WHERE wi."WorksheetCorrelationId" = %L 
+                  AND w."Name" = %L 
+                  AND dg_tbl.dg_data != ''null''::jsonb',
                 
-                -- Skip parent rows and non-datagrid rows
-                IF (row_data->>'Parent')::boolean = true OR 
-                   (row_data->>'TypePath') IS NULL OR NOT ((row_data->>'TypePath') LIKE '%datagrid%') THEN
-                    CONTINUE;
-                END IF;
+                uwd.datagrid_name, -- row identifier prefix
                 
-                column_name := row_data->>'ColumnName';
-                column_type := row_data->>'Type';
-                data_path_raw := row_data->>'DataPath';
-                
-                -- Check if this field belongs to the current datagrid
-                IF data_path_raw ~ '^\(DK[0-9]+\)' THEN
-                    -- Remove the DK prefix and extract the datagrid name
-                    IF split_part(regexp_replace(data_path_raw, '^\(DK[0-9]+\)', ''), '->', 1) != datagrid_name THEN
-                        CONTINUE;
-                    END IF;
-                    field_name := split_part(regexp_replace(data_path_raw, '^\(DK[0-9]+\)', ''), '->', 2);
-                ELSE
-                    -- Direct format
-                    IF split_part(data_path_raw, '->', 1) != datagrid_name THEN
-                        CONTINUE;
-                    END IF;
-                    field_name := split_part(data_path_raw, '->', 2);
-                END IF;
-                
-                -- For datagrid fields, extract from the row cells using proper identifier quoting
-                current_source_prefix := format('(
-                    SELECT cell_elem->>''value''
-                    FROM jsonb_array_elements(%I.%I->''cells'') AS cell_elem
-                    WHERE cell_elem->>''key'' = ''%s''
-                )', 'dg_' || datagrid_alias || '_tbl', 'dg_' || datagrid_alias, field_name);
-                
-                -- Apply same type handling logic as root fields
-                IF use_text_fallback AND (column_type_conflicts ? column_name) THEN
-                    data_path := format('(%s)::TEXT', current_source_prefix);
-                    
-                    -- Replace TEXT placeholder
-                    current_select_clause := replace(current_select_clause,
-                        format('NULL::TEXT AS %I', column_name),
-                        format('%s AS %I', data_path, column_name)
-                    );
-                ELSE
-                    -- Use original type logic (same as root fields)
-                    CASE column_type
-                        WHEN 'textfield', 'textarea', 'email', 'select', 'phoneNumber' THEN
-                            data_path := format('(%s)', current_source_prefix);
-                            
-                            current_select_clause := replace(current_select_clause,
-                                format('NULL::TEXT AS %I', column_name),
-                                format('%s AS %I', data_path, column_name)
-                            );
-                            
-                        WHEN 'number' THEN
-                            data_path := format('(CASE 
-                                WHEN (%s) IS NULL THEN NULL
-                                WHEN (%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s)::NUMERIC
-                                ELSE NULL
-                            END)', current_source_prefix, current_source_prefix, current_source_prefix);
-                            
-                            current_select_clause := replace(current_select_clause,
-                                format('NULL::NUMERIC AS %I', column_name),
-                                format('%s AS %I', data_path, column_name)
-                            );
-                            
-                        WHEN 'currency' THEN
-                            data_path := format('(CASE 
-                                WHEN (%s) IS NULL THEN NULL
-                                WHEN (%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s)::DECIMAL(10,2)
-                                ELSE NULL
-                            END)', current_source_prefix, current_source_prefix, current_source_prefix);
-                            
-                            current_select_clause := replace(current_select_clause,
-                                format('NULL::DECIMAL(10,2) AS %I', column_name),
-                                format('%s AS %I', data_path, column_name)
-                            );
-                            
-                        WHEN 'option', 'checkbox', 'radio' THEN
-                            data_path := format('(CASE 
-                                WHEN (%s) IS NULL THEN NULL
-                                WHEN (%s) ~ ''^(true|false|t|f|1|0|yes|no)$'' THEN 
+                -- Build ALL columns with their appropriate field mappings for THIS worksheet-datagrid combination
+                (SELECT string_agg(
+                    CASE 
+                        -- Only populate if this column belongs to this specific worksheet-datagrid
+                        WHEN um.worksheet_name = uwd.worksheet_name AND um.datagrid_name = uwd.datagrid_name THEN
+                            CASE um.column_type
+                                WHEN 'currency' THEN 
+                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::DECIMAL(10,2) ELSE NULL END) AS %I',
+                                        um.field_name, um.field_name, um.field_name, um.column_name)
+                                WHEN 'number' THEN 
+                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::NUMERIC ELSE NULL END) AS %I',
+                                        um.field_name, um.field_name, um.field_name, um.column_name)
+                                WHEN 'date' THEN 
+                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL OR trim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::TIMESTAMP END) AS %I',
+                                        um.field_name, um.field_name, um.field_name, um.column_name)
+                                WHEN 'checkbox' THEN 
+                                    -- Check if this is a checkbox group field by looking at the type_path
                                     CASE 
-                                        WHEN lower((%s)) IN (''true'', ''t'', ''1'', ''yes'') THEN true
-                                        WHEN lower((%s)) IN (''false'', ''f'', ''0'', ''no'') THEN false
-                                        ELSE NULL
+                                        WHEN um.type_path LIKE '%checkboxgroup%' THEN
+                                            -- For checkbox group, parse the JSON array and extract the specific checkbox value
+                                            format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL ELSE (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements(((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::jsonb) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) END) AS %I',
+                                                split_part(um.clean_data_path, '->', 1), -- Field10 equivalent in datagrid
+                                                split_part(um.clean_data_path, '->', 1), -- Field10 equivalent in datagrid
+                                                split_part(um.clean_data_path, '->', 2), -- check1/check2/etc
+                                                um.column_name)
+                                        ELSE
+                                            -- For regular checkbox, use the existing logic
+                                            format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN lower(trim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))) IN (''true'', ''t'', ''1'', ''yes'', ''on'') THEN TRUE WHEN lower(trim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))) IN (''false'', ''f'', ''0'', ''no'', ''off'', '''') THEN FALSE ELSE NULL END) AS %I',
+                                                um.field_name, um.field_name, um.field_name, um.column_name)
                                     END
-                                ELSE NULL
-                            END)', current_source_prefix, current_source_prefix, current_source_prefix, current_source_prefix);
-                            
-                            current_select_clause := replace(current_select_clause,
-                                format('NULL::BOOLEAN AS %I', column_name),
-                                format('%s AS %I', data_path, column_name)
-                            );
-                            
+                                WHEN 'radio' THEN 
+                                    format('((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) AS %I',
+                                        um.field_name, um.column_name)
+                                ELSE 
+                                    format('((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) AS %I',
+                                        um.field_name, um.column_name)
+                            END
+                        -- Leave as NULL if this column doesn't belong to this worksheet-datagrid
                         ELSE
-                            -- Default to text
-                            data_path := format('(%s)', current_source_prefix);
-                            
-                            current_select_clause := replace(current_select_clause,
-                                format('NULL::TEXT AS %I', column_name),
-                                format('%s AS %I', data_path, column_name)
-                            );
-                    END CASE;
-                END IF;
-            END LOOP;
-            
-            -- Build query for this datagrid and add to array
-            datagrid_queries := datagrid_queries || format('SELECT %s FROM %s WHERE wi."WorksheetCorrelationId" = %L AND %I.%I != ''null''::jsonb',
-                current_select_clause,
-                current_from_clause,
-                correlation_id,
-                'dg_' || datagrid_alias || '_tbl',
-                'dg_' || datagrid_alias
-            );
-        END LOOP;
-    END IF;
-    
-    -- Combine all queries with UNION ALL
-    final_query := '';
-    
-    IF has_root_fields THEN
-        final_query := root_query;
-    END IF;
-    
-    IF has_datagrids THEN
-        FOR i IN 1..array_length(datagrid_queries, 1) LOOP
-            IF final_query != '' THEN
-                final_query := final_query || ' UNION ALL ';
-            END IF;
-            final_query := final_query || datagrid_queries[i];
-        END LOOP;
-    END IF;
-    
-    RETURN final_query;
+                            CASE um.column_type
+                                WHEN 'currency' THEN format('NULL::DECIMAL(10,2) AS %I', um.column_name)
+                                WHEN 'number' THEN format('NULL::NUMERIC AS %I', um.column_name)
+                                WHEN 'date' THEN format('NULL::TIMESTAMP AS %I', um.column_name)
+                                WHEN 'checkbox' THEN format('NULL::BOOLEAN AS %I', um.column_name)
+                                WHEN 'radio' THEN format('NULL::TEXT AS %I', um.column_name)
+                                ELSE format('NULL::TEXT AS %I', um.column_name)
+                            END
+                    END, ', ' ORDER BY um.column_name
+                ) FROM unique_mappings um),
+                
+                uwd.datagrid_name, -- for COALESCE clause
+                correlation_id, -- for WHERE clause
+                uwd.worksheet_name -- for WHERE clause
+                
+            ) as query_text
+            FROM unique_worksheet_datagrids uwd
+            ORDER BY uwd.worksheet_name, uwd.datagrid_name
+        ),
+        -- Build queries for root-level fields (NEW)
+        root_queries AS (
+            SELECT format('
+                SELECT 
+                    wi."Id" AS worksheet_instance_id,
+                    wi."CorrelationId" AS application_id, 
+                    COALESCE(w."Name", ''Unknown'') AS worksheet_name,
+                    ''root'' AS row_identifier,
+                    %s
+                FROM "Flex"."WorksheetInstances" wi 
+                LEFT JOIN "Flex"."Worksheets" w ON wi."WorksheetId" = w."Id"
+                WHERE wi."WorksheetCorrelationId" = %L 
+                  AND w."Name" = %L',
+                
+                -- Build ALL columns with their appropriate field mappings for THIS worksheet's root fields
+                (SELECT string_agg(
+                    CASE 
+                        -- Only populate if this column belongs to this worksheet AND is a root field
+                        WHEN um.worksheet_name = uwr.worksheet_name AND (um.type_path NOT LIKE '%datagrid%' OR um.type_path IS NULL) THEN
+                            CASE um.column_type
+                                WHEN 'currency' THEN 
+                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::DECIMAL(10,2) ELSE NULL END) AS %I',
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        um.column_name)
+                                WHEN 'number' THEN 
+                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::NUMERIC ELSE NULL END) AS %I',
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        um.column_name)
+                                WHEN 'date' THEN 
+                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL OR trim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::TIMESTAMP END) AS %I',
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        um.column_name)
+                                WHEN 'checkbox' THEN 
+                                    -- Check if this is a checkbox group field by looking at the type_path
+                                    CASE 
+                                        WHEN um.type_path LIKE '%checkboxgroup%' THEN
+                                            -- For checkbox group, parse the JSON array and extract the specific checkbox value
+                                            format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL ELSE (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements(((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::jsonb) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) END) AS %I',
+                                                split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1), -- Field10
+                                                split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1), -- Field10  
+                                                split_part(COALESCE(um.clean_data_path, um.property_name), '->', 2), -- check1/check2/etc
+                                                um.column_name)
+                                        ELSE
+                                            -- For regular checkbox, use the existing logic
+                                            format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN lower(trim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))) IN (''true'', ''t'', ''1'', ''yes'', ''on'') THEN TRUE WHEN lower(trim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))) IN (''false'', ''f'', ''0'', ''no'', ''off'', '''') THEN FALSE ELSE NULL END) AS %I',
+                                                COALESCE(um.clean_data_path, um.property_name), 
+                                                COALESCE(um.clean_data_path, um.property_name), 
+                                                COALESCE(um.clean_data_path, um.property_name), 
+                                                um.column_name)
+                                    END
+                                WHEN 'radio' THEN 
+                                    format('((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) AS %I',
+                                        COALESCE(um.clean_data_path, um.property_name), um.column_name)
+                                ELSE 
+                                    format('((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) AS %I',
+                                        COALESCE(um.clean_data_path, um.property_name), um.column_name)
+                            END
+                        -- Leave as NULL if this column doesn't belong to this worksheet or isn't a root field
+                        ELSE
+                            CASE um.column_type
+                                WHEN 'currency' THEN format('NULL::DECIMAL(10,2) AS %I', um.column_name)
+                                WHEN 'number' THEN format('NULL::NUMERIC AS %I', um.column_name)
+                                WHEN 'date' THEN format('NULL::TIMESTAMP AS %I', um.column_name)
+                                WHEN 'checkbox' THEN format('NULL::BOOLEAN AS %I', um.column_name)
+                                WHEN 'radio' THEN format('NULL::TEXT AS %I', um.column_name)
+                                ELSE format('NULL::TEXT AS %I', um.column_name)
+                            END
+                    END, ', ' ORDER BY um.column_name
+                ) FROM unique_mappings um),
+                
+                correlation_id, -- for WHERE clause
+                uwr.worksheet_name -- for WHERE clause
+                
+            ) as query_text
+            FROM unique_worksheets_with_root uwr
+            ORDER BY uwr.worksheet_name
+        ),
+        -- Combine all queries
+        all_queries AS (
+            SELECT query_text FROM datagrid_queries
+            UNION ALL
+            SELECT query_text FROM root_queries
+        )
+        SELECT format('
+            WITH worksheet_data AS (
+                %s
+            )
+            SELECT * FROM worksheet_data ORDER BY worksheet_name, row_identifier
+        ', string_agg(query_text, ' UNION ALL '))
+        FROM all_queries
+    );
 END;
 $function$;

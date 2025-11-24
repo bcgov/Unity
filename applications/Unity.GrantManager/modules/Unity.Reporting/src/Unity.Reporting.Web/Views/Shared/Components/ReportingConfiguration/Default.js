@@ -15,7 +15,8 @@ $(function () {
                 key: 'CHEFS Property Name',
                 type: 'CHEFS Type',
                 path: 'Path',
-                columnName: 'Report Column'
+                columnName: 'Report Column',
+                typePath: 'Type Path'
             }
         },
         worksheet: {
@@ -26,7 +27,8 @@ $(function () {
                 key: 'Worksheet Property Name',
                 type: 'Worksheet Type',
                 path: 'Path',
-                columnName: 'Report Column'
+                columnName: 'Report Column',
+                typePath: 'Type Path'
             }
         },
         scoresheet: {
@@ -37,7 +39,8 @@ $(function () {
                 key: 'Scoresheet Property Name',
                 type: 'Scoresheet Type',
                 path: 'Path',
-                columnName: 'Report Column'
+                columnName: 'Report Column',
+                typePath: 'Type Path'
             }
         }
     };
@@ -245,7 +248,8 @@ $(function () {
             { index: 1, title: columns.key },
             { index: 2, title: columns.type },
             { index: 3, title: columns.path },
-            { index: 4, title: columns.columnName }
+            { index: 4, title: columns.columnName },
+            { index: 5, title: columns.typePath}
         ];
 
         columnIndices.forEach(col => {
@@ -480,6 +484,20 @@ $(function () {
                     }
                     return data;
                 }
+            },
+            {
+                title: providerConfig.columns.typePath,
+                data: 'typePath',
+                name: 'typePath',
+                className: 'data-table-header',
+                index: 5,
+                orderable: false,
+                render: function (data, type, _) {
+                    if (type === 'display') {
+                        return data || '';
+                    }
+                    return data;
+                }
             }
         ];
 
@@ -553,7 +571,8 @@ $(function () {
                             type: row.type,
                             path: row.path,
                             dataPath: row.dataPath,
-                            columnName: row.columnName || ''
+                            columnName: row.columnName || '',
+                            typePath: row.typePath
                         }));
 
                         return {
@@ -578,7 +597,8 @@ $(function () {
                             type: field.type,
                             path: field.path,
                             dataPath: field.dataPath,
-                            columnName: field.label || field.key
+                            columnName: field.label || field.key,
+                            typePath: field.typePath
                         }));
 
                         return {

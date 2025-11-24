@@ -24,6 +24,7 @@ DECLARE
     column_list TEXT;
     use_text_fallback BOOLEAN := false;
     i INTEGER;
+    normalized_type TEXT;
 BEGIN
     -- Fetch the mapping data for this report map ID
     SELECT "Mapping"->'Rows' INTO mapping_rows
@@ -45,7 +46,7 @@ BEGIN
         END IF;
         
         column_name := row_data->>'ColumnName';
-        column_type := row_data->>'Type';
+        column_type := lower(row_data->>'Type'); -- Normalize to lowercase for comparison
         type_path := row_data->>'TypePath';
         data_path_raw := row_data->>'DataPath';
         
@@ -59,7 +60,7 @@ BEGIN
             END IF;
         END IF;
         
-        -- Store column info
+        -- Store column info with normalized type
         all_columns := all_columns || jsonb_build_object(column_name, jsonb_build_object(
             'type', column_type,
             'type_path', COALESCE(type_path, ''),
@@ -119,7 +120,7 @@ BEGIN
         END IF;
         
         column_name := row_data->>'ColumnName';
-        column_type := row_data->>'Type';
+        column_type := lower(row_data->>'Type'); -- Normalize to lowercase for comparison
         property_name := row_data->>'PropertyName';
         data_path_raw := row_data->>'DataPath';
         key_name := row_data->>'Key';

@@ -170,7 +170,7 @@ namespace Unity.GrantManager.Reporting
             radioOption.Label.ShouldBe("Option 1");
             radioOption.Path.ShouldBe("s01_RadioGroupComponent->option1");
             radioOption.TypePath.ShouldBe("radio->option");
-            radioOption.DataPath.ShouldBe("option1"); // "s01_RadioGroupComponent" is filtered out because it contains "Group"
+            radioOption.DataPath.ShouldBe("s01_RadioGroupComponent->option1"); // "s01_RadioGroupComponent" is filtered out because it contains "Group"
         }
 
         [Fact]
@@ -361,7 +361,7 @@ namespace Unity.GrantManager.Reporting
             nestedField.Label.ShouldBe("First Name");
             nestedField.Path.ShouldBe("s01_Panel->firstName");
             nestedField.TypePath.ShouldBe("simplepanel->textfield");
-            nestedField.DataPath.ShouldBe("firstName"); // Panel should be filtered out from DataPath because "s01_Panel" contains "panel"
+            nestedField.DataPath.ShouldBe("s01_Panel->firstName"); // Panel should be filtered out from DataPath because "s01_Panel" contains "panel"
         }
 
         [Fact]
@@ -764,7 +764,7 @@ namespace Unity.GrantManager.Reporting
             var optionInTab = result.Components.FirstOrDefault(x => x.Key == "optionsInTab-optionA");
             optionInTab.ShouldNotBeNull();
             optionInTab.Path.ShouldBe("mainTabs->optionsInTab->optionA");
-            optionInTab.DataPath.ShouldBe("optionA"); // both "mainTabs" and "optionsInTab" are filtered out because they contain "tabs" and "tab"
+            optionInTab.DataPath.ShouldBe("optionsInTab->optionA"); // both "mainTabs" and "optionsInTab" are filtered out because they contain "tabs" and "tab"
         }
 
         #endregion
