@@ -24,6 +24,7 @@
         return document.getElementById('paymentId').value;
     };
 
+    console.log('Initializing Payment History DataTable');
     dataTable = initializeDataTable({
         dt,
         listColumns,
@@ -51,6 +52,7 @@
             getNewValueColumn(),
             getChangeTimeColumn(),
             getUserNameColumn(),
+            getChangeTypeColumn(),
         ].map((column) => ({
             ...column,
             targets: [column.index],
@@ -118,6 +120,26 @@
             name: 'userName',
             className: 'data-table-header',
             index: 5,
+        };
+    }
+
+    
+    function getChangeTypeColumn() {
+        return {
+            title: 'Change Type',
+            data: 'changeType',
+            name: 'changeType',
+            className: 'data-table-header',
+            index: 6,
+            render: function (data) {
+                if(data === 0) {
+                    return 'Created';
+                } else if(data === 1) {
+                    return 'Updated';
+                } else if(data === 2) {
+                    return 'Deleted';
+                }
+            },
         };
     }
 

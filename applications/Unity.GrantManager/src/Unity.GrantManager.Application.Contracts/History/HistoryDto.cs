@@ -13,5 +13,6 @@ namespace Unity.GrantManager.History
         public string UserName { get; set; } = string.Empty;        
         public DateTime ChangeTime { get; set; }
         public Guid UserId { get; set; }
+        public int ChangeType { get; set; }
     }
 }
