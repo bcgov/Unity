@@ -77,7 +77,6 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.ext) {
  * 
  * @name externalSearch
  * @summary Link an external input element to DataTable's search
- * @author Unity Grant Manager Team
  * 
  * @param {string|jQuery} selector - jQuery selector or element for the search input
  * @param {object} [options] - Configuration options
@@ -145,8 +144,6 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
         });
     });
 }
-
-// removePlaceholderFromCvsExportButton function removed - replaced by csvNoPlaceholder button extension
 
 /**
  * Initializes a DataTable with comprehensive configuration including filtering, column management,
@@ -242,6 +239,7 @@ function initializeDataTable(options) {
     DataTable.type('num', 'className', 'dt-head-left dt-body-right');
     DataTable.type('num-fmt', 'className', 'dt-head-left');
     DataTable.type('date', 'className', 'dt-head-left');
+    DataTable.type('datetime-YYYY-MM-DD', 'className', 'dt-head-left');
 
     let iDt = new DataTable(dt, {
             serverSide: serverSideEnabled,
@@ -347,14 +345,14 @@ function initializeDataTable(options) {
                         externalSearch.val(data.externalSearch);
                     }
                 }
-            },
+            }
         }
     );
 
     // Initialize FilterRow plugin if filter button exists
     if ($('#btn-toggle-filter').length) {
         if ($.fn.dataTable !== 'undefined' && typeof $.fn.dataTable.FilterRow !== 'undefined') {
-            new $.fn.dataTable.FilterRow(iDt.settings()[0], {
+            let filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
                 buttonId: 'btn-toggle-filter',
                 buttonText: FilterDesc.Default,
                 buttonTextActive: FilterDesc.With_Filter,
@@ -479,7 +477,7 @@ function getVisibleColumnIndexes(columns, visibleColumnsArray) {
 function setTableHeighDynamic(tableName) {
     const dtContainer = $(`#${tableName}`).closest('.dt-container');
     if (!dtContainer.length) return;
-    
+
     let tableHeight = dtContainer[0].clientHeight;
     let docHeight = document.body.clientHeight;
     let tableOffset = 425;

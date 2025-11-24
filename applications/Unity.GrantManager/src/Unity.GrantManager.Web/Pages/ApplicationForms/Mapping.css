@@ -69,7 +69,7 @@ caption {
 }
 
 table.dataTable thead th {
-    background-color: #859ab9;
+    background-color: #859ab9 !important;
     color: white;
     font-weight: 500;
     font-size: 18px;
@@ -109,7 +109,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     margin: auto;
 }
 
-.dataTables_filter {
+.dataTables_filter, .dt-search {
     margin-right: 10px;
 }
 
@@ -174,7 +174,8 @@ div.row:first-child th {
     opacity: 1;
 }
 
-div.dataTables_wrapper div.dataTables_filter {
+div.dataTables_wrapper div.dataTables_filter,
+div.dataTables_wrapper div.dt-search {
     text-align: right;
     z-index: 2;
     position: sticky;

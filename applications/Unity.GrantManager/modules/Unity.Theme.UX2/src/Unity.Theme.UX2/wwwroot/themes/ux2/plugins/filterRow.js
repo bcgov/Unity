@@ -6,7 +6,6 @@
  * and clearing all filters.
  * 
  * @summary Filter row feature for DataTables
- * @author Unity Grant Manager Team
  * @requires jQuery, DataTables 1.13+, Bootstrap (for popover)
  * 
  * @example
@@ -29,28 +28,6 @@
  *   });
  */
 
- //(function(factory) {
- //    if (typeof define === 'function' && define.amd) {
- //        // AMD
- //        define(['jquery', 'datatables.net'], function($) {
- //            return factory($, window, document);
- //        });
- //    } else if (typeof exports === 'object') {
- //        // CommonJS
- //        module.exports = function(root, $) {
- //            if (!root) {
- //                root = window;
- //            }
- //            if (!$ || !$.fn.dataTable) {
- //                $ = require('datatables.net')(root, $).$;
- //            }
- //            return factory($, root, root.document);
- //        };
- //    } else {
- //        // Browser
- //        factory(jQuery, window, document);
- //    }
- //}
 (function ($, window, document) {
     'use strict';
 
