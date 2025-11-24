@@ -169,7 +169,6 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
  * @param {string} [options.externalSearchId='search'] - ID of external search input element
  * @param {boolean} [options.disableColumnSelect=false] - Disable column visibility toggle
  * @param {Array<Object>} [options.listColumnDefs] - Additional columnDefs configurations
- * @param {Object} [options.filterRowOptions] - Options for filter row plugin
  * @returns {DataTable} Initialized DataTable API instance
  * 
  * @example
@@ -202,8 +201,7 @@ function initializeDataTable(options) {
         useNullPlaceholder = false,
         externalSearchId = 'search',
         disableColumnSelect = false,
-        listColumnDefs,
-        filterRowOptions = {}
+        listColumnDefs
     } = options;
 
     // Process columns and visibility
@@ -352,12 +350,14 @@ function initializeDataTable(options) {
     // Initialize FilterRow plugin if filter button exists
     if ($('#btn-toggle-filter').length) {
         if ($.fn.dataTable !== 'undefined' && typeof $.fn.dataTable.FilterRow !== 'undefined') {
-            let filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
+            const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
                 buttonId: 'btn-toggle-filter',
                 buttonText: FilterDesc.Default,
                 buttonTextActive: FilterDesc.With_Filter,
                 enablePopover: $.fn.popover !== 'undefined'
             });
+
+            iDt.settings()[0]._filterRow = filterRow;
         } else {
             console.warn('FilterRow plugin not loaded. Include plugins/filterRow.js before table-utils.js');
         }
@@ -378,7 +378,7 @@ function initializeDataTable(options) {
     init(iDt);
 
     // Setup external search if provided
-    if (externalSearchId && externalSearchId !== false && $('#' + externalSearchId).length) {
+    if (externalSearchId && externalSearchId != false && $('#' + externalSearchId).length) {
         if (typeof iDt.externalSearch === 'function') {
             iDt.externalSearch('#' + externalSearchId, { delay: 300 });
         } else {

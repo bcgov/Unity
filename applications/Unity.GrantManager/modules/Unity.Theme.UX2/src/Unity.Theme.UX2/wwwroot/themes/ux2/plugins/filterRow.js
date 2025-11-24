@@ -191,7 +191,7 @@
          * @private
          */
         _rebuildFilterRow: function () {
-            let wasVisible = this.dom.filterRow && this.dom.filterRow.is(':visible');
+            let wasVisible = this.dom.filterRow?.is(':visible');
             this._buildFilterRow();
             if (wasVisible) {
                 this.dom.filterRow.show();

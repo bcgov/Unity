@@ -473,7 +473,7 @@ custom-event@^1.0.0:
   resolved "https://registry.npmjs.org/custom-event/-/custom-event-1.0.1.tgz"
   integrity sha512-GAj5FOq0Hd+RsCGVJxZuKaIDXDf3h6GQoNEjFgbLLI/trgtavwUbSnZ5pVfg27DVCaWjIohryS0JFwIJyT2cMg==
 
-datatables.net-bs5@^2, datatables.net-bs5@^2.1.8, datatables.net-bs5@^2.3.4:
+datatables.net-bs5@^2, datatables.net-bs5@^2.1.8, datatables.net-bs5@^2.3.5:
   version "2.3.5"
   resolved "https://registry.yarnpkg.com/datatables.net-bs5/-/datatables.net-bs5-2.3.5.tgz#96f76dce12b1554664b06bd85f6b3be8d6da509f"
   integrity sha512-2JA2WZz1tBxdVpYAspiqI8POdqEoAZZzqp7tISKaof2P5ufBJb+OLaahxwuB0sF9qcQh1azlU+JH1zsLBXVwXg==
