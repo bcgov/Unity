@@ -37,6 +37,15 @@
     margin-bottom: 1rem;
 }
 
+.applicant-organization-info .form-label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
 .org-info-summary {
     width: 100%;
 }
