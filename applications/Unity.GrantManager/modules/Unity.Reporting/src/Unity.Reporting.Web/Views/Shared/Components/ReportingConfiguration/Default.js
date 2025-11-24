@@ -1240,8 +1240,9 @@ $(function () {
 
             // Show the Generate View button since we now have a saved configuration
             updateGenerateViewButtonVisibility(true);
+            // Show the Delete button as well
             updateDeleteButtonVisibility(true);
-
+            
             // Reload the DataTable to get the saved state
             if (dataTable) {
                 dataTable.ajax.reload();
