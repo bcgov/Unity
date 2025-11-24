@@ -20,7 +20,7 @@ public class ReportingApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.DetectedChanges, opt => opt.Ignore());
 
         CreateMap<Mapping, MappingDto>();  
-        CreateMap<MapRow, MapRowDto>();
+        CreateMap<MapRow, MapRowDto>();       
     }
     
     /// <summary>

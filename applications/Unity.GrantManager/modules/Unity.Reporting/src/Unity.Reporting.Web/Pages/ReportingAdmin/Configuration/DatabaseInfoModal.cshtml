@@ -1,0 +1,60 @@
+@page
+@model Unity.Reporting.Web.Pages.ReportingAdmin.Configuration.DatabaseInfoModalModel
+@{
+    Layout = null;
+}
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Volo.Abp.AspNetCore.Mvc.UI
+@addTagHelper *, Volo.Abp.AspNetCore.Mvc.UI.Bootstrap
+@addTagHelper *, Volo.Abp.AspNetCore.Mvc.UI.Bundling
+
+<form asp-page="/ReportingAdmin/Configuration/DatabaseInfoModal">
+    <abp-modal size="ExtraLarge">
+        <abp-modal-header title="@($"Database Information - {Model.TenantName}")"></abp-modal-header>
+        <abp-modal-body>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Available Database Roles</h6>
+                    <div id="databaseRolesList" class="border rounded p-3" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.875rem;">
+                        @if (Model.DatabaseInfo?.DatabaseRoles?.Any() == true)
+                        {
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var role in Model.DatabaseInfo.DatabaseRoles)
+                                {
+                                    <li class="py-1" style="border-bottom: 1px solid #e9ecef; padding: 0.5rem;">
+                                        <i class="fa fa-user-circle text-muted me-2"></i>@role
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <div class="text-muted">No custom database roles found.</div>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Reporting Views</h6>
+                    <div id="reportingViewsList" class="border rounded p-3" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.875rem;">
+                        @if (Model.DatabaseInfo?.ReportingViews?.Any() == true)
+                        {
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var view in Model.DatabaseInfo.ReportingViews)
+                                {
+                                    <li class="py-1" style="border-bottom: 1px solid #e9ecef; padding: 0.5rem;">
+                                        <i class="fa fa-table text-muted me-2"></i>@view
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <div class="text-muted">No reporting views found.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="Close"></abp-modal-footer>
+    </abp-modal>
+</form>

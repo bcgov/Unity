@@ -46,7 +46,7 @@ public class ReportingMenuContributor : IMenuContributor
         context.Menu.AddItem(
            new ApplicationMenuItem(
                    ReportingMenus.Prefix,
-                   displayName: "Reporting Configuration",
+                   displayName: "Reporting",
                    "~/ReportingAdmin/Configuration",
                    requiredPermissionName: IdentityConsts.ITAdminPermissionName
        ));

@@ -124,10 +124,10 @@
                                 <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="NonRegOrgName" id="ApplicantOrganizationInfo_NonRegOrgName" />
                                 </abp-column>
-                                <abp-column size="_6" class="px-1">
+                                <abp-column size="_4" class="px-1">
                                     <abp-input class="numeric-mask" inputmode="numeric" asp-for="OrganizationSize" id="ApplicantOrganizationInfo_OrganizationSize" />
                                 </abp-column>
-                                <abp-column size="_2" class="px-1">
+                                <abp-column size="_4" class="px-1">
                                     
                                 </abp-column>
                             </abp-row>
@@ -150,14 +150,10 @@
                                     <abp-select asp-for="SubSector" asp-items="Model.SubSectorList" id="ApplicantOrganizationInfo_SubSector" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    
+                                        <abp-input asp-for="SectorSubSectorIndustryDesc" />
                                 </abp-column>
                             </abp-row>
-                            <abp-row class="m-0 p-0">                                
-                                <abp-column size="_8" class="px-1">
-                                    <abp-input asp-for="SectorSubSectorIndustryDesc" />
-                                </abp-column>
-                            </abp-row>
+                            
                         </abp-column>
                     </abp-row>
                 </abp-row>

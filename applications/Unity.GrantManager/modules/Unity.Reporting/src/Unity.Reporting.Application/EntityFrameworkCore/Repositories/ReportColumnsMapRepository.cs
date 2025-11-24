@@ -182,10 +182,11 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
 
             try
             {
-                ViewDataResult result = new();
-
-                // First, get the column names
-                result.ColumnNames = await GetViewColumnNamesAsync(normalizedViewName);
+                ViewDataResult result = new()
+                {
+                    // First, get the column names
+                    ColumnNames = await GetViewColumnNamesAsync(normalizedViewName)
+                };
 
                 // Build the base query using quoted identifier to handle case correctly
                 var baseQuery = $@"SELECT * FROM ""Reporting"".""{normalizedViewName}""";
@@ -319,7 +320,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             }
         }
 
-        public async Task AssignViewRoleAsync(string viewName, string role)
+        public async Task AssignRoleToViewAsync(string role, string viewName)
         {
             if (string.IsNullOrWhiteSpace(viewName) || string.IsNullOrWhiteSpace(role))
             {
@@ -327,8 +328,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             }
 
             // Normalize view name and role to lowercase for consistency
-            var normalizedViewName = viewName.Trim().ToLowerInvariant();
-            var normalizedRole = role.Trim().ToLowerInvariant();
+            var normalizedViewName = viewName.Trim().ToLowerInvariant();            
 
             // Validate both identifiers to prevent SQL injection
             if (!IsValidPostgreSqlIdentifier(normalizedViewName))
@@ -336,7 +336,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 throw new ArgumentException($"Invalid view name format: {viewName}", nameof(viewName));
             }
 
-            if (!IsValidPostgreSqlIdentifier(normalizedRole))
+            if (!IsValidPostgreSqlIdentifier(role))
             {
                 throw new ArgumentException($"Invalid role name format: {role}", nameof(role));
             }
@@ -347,8 +347,194 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             try
             {
                 // Use ExecuteSqlRaw with properly quoted identifiers - safer than string concatenation
-                var sql = $"GRANT SELECT ON \"Reporting\".\"{normalizedViewName}\" TO \"{normalizedRole}\"";
+                var sql = $"GRANT SELECT ON \"Reporting\".\"{normalizedViewName}\" TO \"{role}\"";
                 await dbContext.Database.ExecuteSqlRawAsync(SafeguardSql(sql));
+            }
+            finally
+            {
+                await dbContext.Database.CloseConnectionAsync();
+            }
+        }
+
+        public async Task AssignRoleToAllViewsAsync(string role)
+        {
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                return;
+            }                        
+
+            // Validate the role identifier to prevent SQL injection
+            if (!IsValidPostgreSqlIdentifier(role))
+            {
+                throw new ArgumentException($"Invalid role name format: {role}", nameof(role));
+            }
+
+            var dbContext = await GetDbContextAsync();
+            var connection = dbContext.Database.GetDbConnection();
+            await dbContext.Database.OpenConnectionAsync();
+            
+            try
+            {
+                // Get all view names in the Reporting schema
+                using var getViewsCommand = connection.CreateCommand();
+                getViewsCommand.CommandText = @"
+                    SELECT viewname 
+                    FROM pg_views 
+                    WHERE schemaname = 'Reporting'";
+
+                var viewNames = new List<string>();
+                using var viewsReader = await getViewsCommand.ExecuteReaderAsync();
+                
+                while (await viewsReader.ReadAsync())
+                {
+                    viewNames.Add(viewsReader.GetString(0));
+                }
+                
+                await viewsReader.CloseAsync();
+
+                // Grant SELECT permission on each view to the role
+                foreach (var viewName in viewNames)
+                {
+                    var sql = $"GRANT SELECT ON \"Reporting\".\"{viewName}\" TO \"{role}\"";
+                    await dbContext.Database.ExecuteSqlRawAsync(SafeguardSql(sql));
+                }
+            }
+            finally
+            {
+                await dbContext.Database.CloseConnectionAsync();
+            }
+        }
+
+        public async Task<bool> RoleExistsAsync(string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(roleName))
+            {
+                return false;
+            }
+            
+            var dbContext = await GetDbContextAsync();
+            var connection = dbContext.Database.GetDbConnection();
+            await dbContext.Database.OpenConnectionAsync();
+            
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = "SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = @roleName) THEN 1 ELSE 0 END";
+                
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = "@roleName";
+                parameter.Value = roleName;
+                command.Parameters.Add(parameter);
+                
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result) == 1;
+            }
+            finally
+            {
+                await dbContext.Database.CloseConnectionAsync();
+            }
+        }
+
+        public async Task<List<string>> GetDatabaseRolesAsync()
+        {
+            var dbContext = await GetDbContextAsync();
+            var connection = dbContext.Database.GetDbConnection();
+            await dbContext.Database.OpenConnectionAsync();
+
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT 
+                        rolname || CASE 
+                            WHEN rolcanlogin THEN ' (Login Role)'
+                            ELSE ' (Group Role)'
+                        END as role_display
+                    FROM pg_roles 
+                    WHERE rolname NOT LIKE 'pg_%' 
+                    AND rolname NOT LIKE 'rds%'
+                    AND rolname NOT IN ('postgres', 'azure_superuser', 'public', 'azure_pg_admin')
+                    ORDER BY rolcanlogin DESC, rolname";
+
+                var roles = new List<string>();
+                using var reader = await command.ExecuteReaderAsync();
+                
+                while (await reader.ReadAsync())
+                {
+                    roles.Add(reader.GetString(0));
+                }
+
+                return roles;
+            }
+            finally
+            {
+                await dbContext.Database.CloseConnectionAsync();
+            }
+        }
+
+        public async Task<List<string>> GetRoleMembershipsAsync()
+        {
+            var dbContext = await GetDbContextAsync();
+            var connection = dbContext.Database.GetDbConnection();
+            await dbContext.Database.OpenConnectionAsync();
+
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT 
+                        member_role.rolname || ' → member of → ' || parent_role.rolname as membership_info
+                    FROM pg_roles member_role
+                    JOIN pg_auth_members m ON member_role.oid = m.member
+                    JOIN pg_roles parent_role ON parent_role.oid = m.roleid
+                    WHERE member_role.rolname NOT LIKE 'pg_%' 
+                    AND member_role.rolname NOT LIKE 'rds%'
+                    AND member_role.rolname NOT IN ('postgres', 'azure_superuser', 'public', 'azure_pg_admin')
+                    AND parent_role.rolname NOT LIKE 'pg_%' 
+                    AND parent_role.rolname NOT LIKE 'rds%'
+                    AND parent_role.rolname NOT IN ('postgres', 'azure_superuser', 'public', 'azure_pg_admin')
+                    ORDER BY member_role.rolname, parent_role.rolname";
+
+                var memberships = new List<string>();
+                using var reader = await command.ExecuteReaderAsync();
+                
+                while (await reader.ReadAsync())
+                {
+                    memberships.Add(reader.GetString(0));
+                }
+
+                return memberships;
+            }
+            finally
+            {
+                await dbContext.Database.CloseConnectionAsync();
+            }
+        }
+
+        public async Task<List<string>> GetReportingViewsAsync()
+        {
+            var dbContext = await GetDbContextAsync();
+            var connection = dbContext.Database.GetDbConnection();
+            await dbContext.Database.OpenConnectionAsync();
+
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT table_name
+                    FROM information_schema.views
+                    WHERE table_schema = 'Reporting'
+                    ORDER BY table_name";
+
+                var views = new List<string>();
+                using var reader = await command.ExecuteReaderAsync();
+                
+                while (await reader.ReadAsync())
+                {
+                    views.Add(reader.GetString(0));
+                }
+
+                return views;
             }
             finally
             {
@@ -399,39 +585,6 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             // The view name and roles have been pre-validated, so we just check the overall structure here
 
             return true;
-        }
-
-        public async Task<bool> RoleExistsAsync(string roleName)
-        {
-            if (string.IsNullOrWhiteSpace(roleName))
-            {
-                return false;
-            }
-
-            // Normalize role name to lowercase for consistency
-            var normalizedRoleName = roleName.Trim().ToLowerInvariant();
-
-            var dbContext = await GetDbContextAsync();
-            var connection = dbContext.Database.GetDbConnection();
-            await dbContext.Database.OpenConnectionAsync();
-            
-            try
-            {
-                using var command = connection.CreateCommand();
-                command.CommandText = "SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = @roleName) THEN 1 ELSE 0 END";
-                
-                var parameter = command.CreateParameter();
-                parameter.ParameterName = "@roleName";
-                parameter.Value = normalizedRoleName;
-                command.Parameters.Add(parameter);
-                
-                var result = await command.ExecuteScalarAsync();
-                return Convert.ToInt32(result) == 1;
-            }
-            finally
-            {
-                await dbContext.Database.CloseConnectionAsync();
-            }
         }
 
         /// <summary>

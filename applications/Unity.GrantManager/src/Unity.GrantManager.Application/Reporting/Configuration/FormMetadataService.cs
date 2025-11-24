@@ -199,7 +199,7 @@ namespace Unity.GrantManager.Reporting.Configuration
         {
             foreach (var component in componentsList)
             {
-                component.DataPath = CreateDataPath(component.Path);
+                component.DataPath = CreateDataPath(component);
             }
         }
 
@@ -208,40 +208,35 @@ namespace Unity.GrantManager.Reporting.Configuration
         /// </summary>
         /// <param name="path">The original component path</param>        
         /// <returns>The data-centric path</returns>
-        private static string CreateDataPath(string path)
+        private static string CreateDataPath(FormComponentMetaDataItemDto component)
         {
-            if (string.IsNullOrEmpty(path))
-                return string.Empty;
-
             // Handle duplicate key prefixes (DKx) - preserve them in data path
             string duplicatePrefix = string.Empty;
-            string workingPath = path;
+            string workingPath = component.Path;
 
-            if (path.StartsWith("(DK") && path.Contains(')'))
+            if (component.Path.StartsWith("(DK") && component.Path.Contains(')'))
             {
-                int endIndex = path.IndexOf(')');
-                duplicatePrefix = path.Substring(0, endIndex + 1);
-                workingPath = path.Substring(endIndex + 1);
+                int endIndex = component.Path.IndexOf(')');
+                duplicatePrefix = component.Path[..(endIndex + 1)];
+                workingPath = component.Path[(endIndex + 1)..];
             }
 
             // Split the path into segments
-            var segments = workingPath.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var pathSegments = workingPath.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var keySegments = component.TypePath.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+
             var dataPathSegments = new List<string>();
+            var index = 0;
 
             // Process each segment to determine if it should be included in the data path
-            foreach (var segment in segments)
+            foreach (var segment in pathSegments)
             {
                 // Always include segments that don't look like container segments
-                if (!IsLikelyContainerSegment(segment))
+                if (!IsContainerSegment(keySegments[index]))
                 {
                     dataPathSegments.Add(segment);
                 }
-            }
-
-            // If we filtered out everything, preserve the last segment as it's likely the data key
-            if (dataPathSegments.Count == 0 && segments.Length > 0)
-            {
-                dataPathSegments.Add(segments[^1]);
+                index++;
             }
 
             // Reconstruct the data path
@@ -257,11 +252,11 @@ namespace Unity.GrantManager.Reporting.Configuration
         }
 
         /// <summary>
-        /// Determines if a path segment is likely a container element that won't appear in the data structure
+        /// Determines if a path segment is a container element that won't appear in the data structure
         /// </summary>
         /// <param name="segment">The path segment to evaluate</param>
-        /// <returns>True if the segment is likely a container</returns>
-        private static bool IsLikelyContainerSegment(string segment)
+        /// <returns>True if the segment is a container</returns>
+        private static bool IsContainerSegment(string segment)
         {
             if (string.IsNullOrEmpty(segment))
                 return false;
@@ -274,9 +269,7 @@ namespace Unity.GrantManager.Reporting.Configuration
             };
 
             var lowerSegment = segment.ToLowerInvariant();
-
-            // Check if the segment contains common container words or is exactly "tabs"
-            return containerPatterns.Any(pattern => lowerSegment.Contains(pattern)) || lowerSegment == "tabs";
+            return containerPatterns.Contains(lowerSegment);
         }
 
         /// <summary>
@@ -407,10 +400,31 @@ namespace Unity.GrantManager.Reporting.Configuration
                     ProcessTabsComponent(component, componentsList, currentPath, currentTypePath);
                     break;
 
+                case "panel":
+                    ProcessStandardNestedComponents(component, componentsList, currentPath, currentTypePath);
+                    break;
+
                 default:
                     // Standard components property
                     ProcessStandardNestedComponents(component, componentsList, currentPath, currentTypePath);
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Processes components with standard nested components property
+        /// </summary>
+        /// <param name="component">The parent component</param>
+        /// <param name="componentsList">The list to populate with found components</param>
+        /// <param name="currentPath">The current path using keys</param>
+        /// <param name="currentTypePath">The current path using types</param>
+        private static void ProcessStandardNestedComponents(JObject component, List<FormComponentMetaDataItemDto> componentsList,
+            string currentPath, string currentTypePath)
+        {
+            var nestedComponents = component[COMPONENTS] as JArray;
+            if (nestedComponents != null)
+            {
+                ScanComponentsRecursively(nestedComponents, componentsList, currentPath, currentTypePath);
             }
         }
 
@@ -424,14 +438,7 @@ namespace Unity.GrantManager.Reporting.Configuration
         private static void ProcessTableComponent(JObject component, List<FormComponentMetaDataItemDto> componentsList,
             string currentPath, string currentTypePath)
         {
-            var rows = component["rows"] as JArray;
-            if (rows != null)
-            {
-                foreach (var row in rows.OfType<JArray>())
-                {
-                    ScanComponentsRecursively(row, componentsList, currentPath, currentTypePath);
-                }
-            }
+            ProcessStandardNestedComponents(component, componentsList, currentPath, currentTypePath);
         }
 
         /// <summary>
@@ -479,23 +486,6 @@ namespace Unity.GrantManager.Reporting.Configuration
                         ScanComponentsRecursively(tabComponents, componentsList, currentPath, currentTypePath);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// Processes components with standard nested components property
-        /// </summary>
-        /// <param name="component">The parent component</param>
-        /// <param name="componentsList">The list to populate with found components</param>
-        /// <param name="currentPath">The current path using keys</param>
-        /// <param name="currentTypePath">The current path using types</param>
-        private static void ProcessStandardNestedComponents(JObject component, List<FormComponentMetaDataItemDto> componentsList,
-            string currentPath, string currentTypePath)
-        {
-            var nestedComponents = component[COMPONENTS] as JArray;
-            if (nestedComponents != null)
-            {
-                ScanComponentsRecursively(nestedComponents, componentsList, currentPath, currentTypePath);
             }
         }
 

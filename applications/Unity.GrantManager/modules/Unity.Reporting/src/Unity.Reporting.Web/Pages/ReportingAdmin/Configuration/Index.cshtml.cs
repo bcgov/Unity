@@ -1,86 +1,67 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Modules.Shared.Permissions;
-using Unity.Reporting.Settings;
-using Volo.Abp.SettingManagement;
+using Unity.Reporting.Configuration;
 
 namespace Unity.Reporting.Web.Pages.ReportingAdmin
 {
     /// <summary>
-    /// Razor Page model for the main Reporting Administration configuration interface.
-    /// Provides functionality for IT administrators to manage global reporting settings including
-    /// database role configuration for view access control. Handles both GET requests for displaying
-    /// current settings and POST requests for updating configuration values with proper validation.
+    /// Razor Page model for the Reporting Administration configuration interface.
+    /// Provides functionality for IT administrators to manage tenant-specific reporting settings including
+    /// database role configuration for view access control per tenant. Displays tenant view role configurations
+    /// in a management table interface for easy administration.
     /// Requires IT Admin permissions for all operations to ensure secure configuration management.
     /// </summary>
     [Authorize(IdentityConsts.ITAdminPermissionName)]
     public class IndexModel : ReportingPageModel
     {
-        private readonly ISettingManager _settingManager;
+        private readonly ITenantViewRoleAppService _tenantViewRoleAppService;
 
         /// <summary>
-        /// Gets or sets the reporting configuration view model containing form data for settings management.
-        /// Bound to the Razor Page form for model binding during POST operations with validation support.
+        /// Gets or sets the list of tenant view role configurations for display in the DataTable.
+        /// Contains all tenants with their current view role assignments for the management interface.
         /// </summary>
-        [BindProperty]
-        public ReportingConfigurationViewModel Configuration { get; set; } = new();
+        public List<TenantViewRoleDto> TenantViewRoles { get; set; } = new();
 
         /// <summary>
         /// Initializes a new instance of the IndexModel with required dependency injection services.
-        /// Sets up the setting manager for reading and writing global reporting configuration settings.
+        /// Sets up the tenant view role service for managing per-tenant configurations.
         /// </summary>
-        /// <param name="settingManager">The ABP Framework setting manager for global setting operations.</param>
-        public IndexModel(ISettingManager settingManager)
+        /// <param name="tenantViewRoleAppService">The application service for tenant-specific view role management.</param>
+        public IndexModel(ITenantViewRoleAppService tenantViewRoleAppService)
         {
-            _settingManager = settingManager;
+            _tenantViewRoleAppService = tenantViewRoleAppService;
         }
 
         /// <summary>
         /// Handles GET requests to display the reporting configuration page with current settings.
-        /// Loads the current ViewRole setting value from global configuration and populates
-        /// the view model for display in the Razor Page form interface.
+        /// Loads all tenant view role configurations for display in the management interface.
         /// </summary>
         /// <returns>A task representing the asynchronous page loading operation.</returns>
         public async Task OnGetAsync()
         {
-            Configuration.ViewRole = await _settingManager.GetOrNullGlobalAsync(ReportingSettings.ViewRole) ?? string.Empty;
+            TenantViewRoles = await _tenantViewRoleAppService.GetAllAsync();
         }
 
         /// <summary>
-        /// Handles POST requests to update reporting configuration settings with validation.
-        /// Validates the submitted form data and updates the global ViewRole setting if validation passes.
-        /// Returns NoContent (204) response for AJAX operations or redisplays the page with validation errors.
+        /// AJAX handler to get tenant database information including roles and views.
         /// </summary>
-        /// <returns>An IActionResult indicating success with NoContent or failure with the current page and validation errors.</returns>
-        public async Task<IActionResult> OnPostAsync()
+        /// <param name="tenantId">The tenant ID to get database information for.</param>
+        /// <returns>JSON result containing tenant database information.</returns>
+        public async Task<JsonResult> OnGetTenantDatabaseInfoAsync(Guid tenantId)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return Page();
+                var databaseInfo = await _tenantViewRoleAppService.GetTenantDatabaseInfoAsync(tenantId);
+                return new JsonResult(new { success = true, data = databaseInfo });
             }
-
-            await _settingManager.SetGlobalAsync(ReportingSettings.ViewRole, Configuration.ViewRole ?? string.Empty);
-
-            return NoContent();
-        }
-
-        /// <summary>
-        /// View model class for reporting configuration form data with validation attributes.
-        /// Encapsulates the configuration properties that can be edited through the administration interface
-        /// with appropriate data annotations for validation and display formatting.
-        /// </summary>
-        public class ReportingConfigurationViewModel
-        {
-            /// <summary>
-            /// Gets or sets the database role name to assign to generated reporting views for access control.
-            /// This role must exist in the PostgreSQL database and will be granted SELECT permissions
-            /// on all generated reporting views. Required field with display name for form rendering.
-            /// </summary>
-            [Display(Name = "View Role")]
-            [Required]
-            public string? ViewRole { get; set; }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, error = ex.Message });
+            }
         }
     }
 }

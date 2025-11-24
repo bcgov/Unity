@@ -16,11 +16,18 @@ public static class ReportingSettings
     public const string GroupName = "GrantManager.Reporting";
 
     /// <summary>
-    /// Host-level setting key for the database role name to assign to generated reporting views.
-    /// This setting defines which PostgreSQL database role should be granted SELECT permissions
-    /// on generated reporting views to control access. The role must exist in the database before
-    /// assignment operations can succeed. This is a host-level setting that applies globally
-    /// across all tenants in the system.
+    /// [DEPRECATED] Host-level setting key for the database role name to assign to generated reporting views.
+    /// This setting is deprecated and should not be used. Use TenantViewRole for tenant-specific configuration instead.
+    /// This setting is maintained for backward compatibility only.
     /// </summary>
     public const string ViewRole = GroupName + ".ViewRole";
+
+    /// <summary>
+    /// Tenant-specific setting key for the database role name to assign to generated reporting views.
+    /// This setting defines which PostgreSQL database role should be granted SELECT permissions
+    /// on generated reporting views for a specific tenant. The role must exist in the database before
+    /// assignment operations can succeed. This is a tenant-level setting that provides per-tenant
+    /// role configuration for better multi-tenancy support.
+    /// </summary>
+    public const string TenantViewRole = GroupName + ".TenantViewRole";
 }
