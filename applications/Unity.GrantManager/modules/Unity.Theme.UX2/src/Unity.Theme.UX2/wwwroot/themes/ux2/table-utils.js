@@ -378,7 +378,7 @@ function initializeDataTable(options) {
     init(iDt);
 
     // Setup external search if provided
-    if (externalSearchId && externalSearchId != false && $('#' + externalSearchId).length) {
+    if (externalSearchId && $('#' + externalSearchId).length) {
         if (typeof iDt.externalSearch === 'function') {
             iDt.externalSearch('#' + externalSearchId, { delay: 300 });
         } else {
