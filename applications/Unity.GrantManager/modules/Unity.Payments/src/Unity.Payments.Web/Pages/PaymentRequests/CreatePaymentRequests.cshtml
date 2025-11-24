@@ -10,6 +10,24 @@
     Layout = null;
 }
 
+<style>
+    .payment-note-prefix {
+        font-weight: 700;
+        color: var(--bc-colors-blue-text-links);
+        text-transform: uppercase;
+        border: 3px solid var(--bc-colors-blue-text-links);
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        padding: 0.025rem 0.5rem;
+        line-height: 1.75rem;
+    }
+
+    .payment-note-error {
+        color: var(--lpx-danger);
+        border-color: var(--lpx-danger);
+    }
+</style>
+
 <form method="post" asp-page-handler="OnPostAsync" id="paymentform">
     <abp-modal size="ExtraLarge" id="payment-modal">
         <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentRequest:Title"].Value"></abp-modal-header>
@@ -87,17 +105,17 @@
                                 </abp-column>
 
                                 <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_remaining_error")" style="display: none;">
-                                    <span><b>Note: </b>@L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @Model.ApplicationPaymentRequestForm[i].RemainingAmount</span>
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @Model.ApplicationPaymentRequestForm[i].RemainingAmount</span>
                                 </abp-column>
 
                                 <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_parent_child_error")" style="display: none;">
-                                    <span><b>Note: </b><span id="@($"parent_child_error_message_{Model.ApplicationPaymentRequestForm[i].CorrelationId}")"></span></span>
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; <span id="@($"parent_child_error_message_{Model.ApplicationPaymentRequestForm[i].CorrelationId}")"></span></span>
                                 </abp-column>
 
                                 @for (var j = 0; j < Model.ApplicationPaymentRequestForm[i].ErrorList?.Count; j++)
                                 {
                                 <abp-column size="_12" class="payment-error-column">
-                                    <span><b>Note: </b>@Model.ApplicationPaymentRequestForm[i].ErrorList[j]</span>
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @Model.ApplicationPaymentRequestForm[i].ErrorList[j]</span>
                                 </abp-column>
                                 }
 
@@ -112,7 +130,8 @@
                     {
                         <abp-row class="m-0 p-1 ">
                             <abp-column size="_12">
-                                <span><b>Note: </b>
+                                <span>
+                                    <span class="payment-note-prefix">Note</span>
                                 A default
                                 <a href="~/PaymentConfigurations" style="text-decoration: none;color: var(--bc-colors-blue-primary);font-weight: 700;text-transform: uppercase;">
                                 Account Coding
