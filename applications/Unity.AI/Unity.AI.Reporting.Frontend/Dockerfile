@@ -35,6 +35,16 @@ COPY --from=build /app/dist/recap /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Create nginx cache directories and set permissions
+RUN mkdir -p /var/cache/nginx/client_temp \
+    /var/cache/nginx/proxy_temp \
+    /var/cache/nginx/fastcgi_temp \
+    /var/cache/nginx/uwsgi_temp \
+    /var/cache/nginx/scgi_temp && \
+    chmod -R 755 /var/cache/nginx && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chmod -R 755 /usr/share/nginx/html
+
 # Expose port 80
 EXPOSE 80
 
