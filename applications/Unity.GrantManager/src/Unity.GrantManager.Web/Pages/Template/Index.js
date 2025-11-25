@@ -40,7 +40,7 @@
         autoWidth: false,
     });
     // Hide main search input
-    $('.dataTables_filter').hide();
+    $('.dt-search').hide();
 
     // Add filter inputs to each column header
     $('#templateList thead tr').clone(false).addClass('filters').appendTo('#templateList thead');

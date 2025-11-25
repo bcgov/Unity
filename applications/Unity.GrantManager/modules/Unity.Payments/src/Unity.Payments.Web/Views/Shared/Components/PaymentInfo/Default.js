@@ -251,8 +251,8 @@
     }
 
     function handleSearch() {
-        let filterValue = $('.dataTables_filter input').val();
-        if (filterValue.length > 0) {
+        let filterValue = $('.dt-search input').val();
+        if (filterValue !== undefined && filterValue?.length > 0) {
             Array.from(document.getElementsByClassName('selected')).forEach(
                 function (element, index, array) {
                     element.classList.toggle('selected');
