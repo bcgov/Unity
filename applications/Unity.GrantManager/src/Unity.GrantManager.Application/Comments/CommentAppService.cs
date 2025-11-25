@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -54,6 +55,18 @@ namespace Unity.GrantManager.Comments
             return comment == null
                 ? throw new InvalidCommentParametersException()
                 : ObjectMapper.Map<CommentBase, CommentDto>(comment);
+        }
+
+        [Authorize(GrantApplicationPermissions.Comments.Add)]
+        public virtual async Task PinAsync(Guid id, PinCommentDto dto)
+        {
+            await _commentsManager.PinCommentAsync(dto.OwnerId, id, dto.CommentType);
+        }
+
+        [Authorize(GrantApplicationPermissions.Comments.Add)]
+        public virtual async Task UnpinAsync(Guid id, PinCommentDto dto)
+        {
+            await _commentsManager.UnpinCommentAsync(dto.OwnerId, id, dto.CommentType);
         }
     }
 }

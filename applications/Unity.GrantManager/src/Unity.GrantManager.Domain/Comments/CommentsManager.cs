@@ -98,7 +98,9 @@ namespace Unity.GrantManager.Comments
                     var applicationCommentsQry = from applicationComment in await _applicationCommentsRepository.GetQueryableAsync()
                                                  join user in await _personRepository.GetQueryableAsync() on applicationComment.CommenterId equals user.Id
                                                  where applicationComment.ApplicationId == ownerId
-                                                 orderby applicationComment.CreationTime descending
+                                                 orderby applicationComment.PinDateTime.HasValue descending,
+                                                         applicationComment.PinDateTime ascending,
+                                                         applicationComment.CreationTime descending
                                                  select new CommentListItem
                                                  {
                                                      Comment = applicationComment.Comment,
@@ -109,13 +111,16 @@ namespace Unity.GrantManager.Comments
                                                      OwnerId = ownerId,
                                                      Id = applicationComment.Id,
                                                      LastModificationTime = applicationComment.LastModificationTime,
+                                                     PinDateTime = applicationComment.PinDateTime,
                                                  };
                     return applicationCommentsQry.ToList();
                 case CommentType.AssessmentComment:
                     var assessmentCommentsQry = from assessmentComment in await _assessmentCommentsRepository.GetQueryableAsync()
                                                 join user in await _personRepository.GetQueryableAsync() on assessmentComment.CommenterId equals user.Id
                                                 where assessmentComment.AssessmentId == ownerId
-                                                orderby assessmentComment.CreationTime descending
+                                                orderby assessmentComment.PinDateTime.HasValue descending,
+                                                        assessmentComment.PinDateTime ascending,
+                                                        assessmentComment.CreationTime descending
                                                 select new CommentListItem
                                                 {
                                                     Comment = assessmentComment.Comment,
@@ -126,10 +131,50 @@ namespace Unity.GrantManager.Comments
                                                     OwnerId = ownerId,
                                                     Id = assessmentComment.Id,
                                                     LastModificationTime = assessmentComment.LastModificationTime,
+                                                    PinDateTime = assessmentComment.PinDateTime,
                                                 };
                     return assessmentCommentsQry.ToList();
                 default:
                     throw new NotImplementedException();
+            }
+        }
+
+        public virtual async Task PinCommentAsync(Guid ownerId, Guid commentId, CommentType type)
+        {
+            var comment = await GetCommentAsync(ownerId, commentId, type);
+            
+            if (comment == null)
+                throw new EntityNotFoundException(typeof(CommentBase), commentId);
+            
+            comment.PinDateTime = Clock.Now;
+            
+            await UpdateCommentInRepositoryAsync(comment, type);
+        }
+
+        public virtual async Task UnpinCommentAsync(Guid ownerId, Guid commentId, CommentType type)
+        {
+            var comment = await GetCommentAsync(ownerId, commentId, type);
+            
+            if (comment == null)
+                throw new EntityNotFoundException(typeof(CommentBase), commentId);
+            
+            comment.PinDateTime = null;
+            
+            await UpdateCommentInRepositoryAsync(comment, type);
+        }
+
+        private async Task UpdateCommentInRepositoryAsync(CommentBase comment, CommentType type)
+        {
+            switch (type)
+            {
+                case CommentType.ApplicationComment:
+                    await _applicationCommentsRepository.UpdateAsync((ApplicationComment)comment, autoSave: true);
+                    break;
+                case CommentType.AssessmentComment:
+                    await _assessmentCommentsRepository.UpdateAsync((AssessmentComment)comment, autoSave: true);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type));
             }
         }
     }
