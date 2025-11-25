@@ -9,6 +9,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         private readonly IConnectionProvider _connectionProvider;
         private IModel? _channel;
         private readonly object _lock = new object();
+        private bool _disposed;
 
         public SharedChannelProvider(IConnectionProvider connectionProvider)
         {
@@ -17,6 +18,8 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         public IModel GetChannel()
         {
+            ObjectDisposedException.ThrowIf(_disposed, nameof(SharedChannelProvider));
+            
             if (_channel == null || !_channel.IsOpen)
             {
                 lock (_lock)
@@ -51,7 +54,39 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         public void Dispose()
         {
-            _channel?.Dispose();
+            if (_disposed) return;
+            
+            lock (_lock)
+            {
+                if (_disposed) return;
+                _disposed = true;
+                
+                if (_channel != null)
+                {
+                    try
+                    {
+                        if (_channel.IsOpen)
+                        {
+                            _channel.Close();
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore errors during close
+                    }
+                    
+                    try
+                    {
+                        _channel.Dispose();
+                    }
+                    catch
+                    {
+                        // Ignore errors during dispose
+                    }
+                    
+                    _channel = null;
+                }
+            }
         }
     }
 }
