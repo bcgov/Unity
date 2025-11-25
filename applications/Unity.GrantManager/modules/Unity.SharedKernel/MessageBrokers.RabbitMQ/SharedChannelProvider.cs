@@ -17,16 +17,21 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         public IModel GetChannel()
         {
-            if (_channel == null || _channel.IsClosed)
+            if (_channel == null || !_channel.IsOpen)
             {
                 lock (_lock)
                 {
-                    if (_channel == null || _channel.IsClosed)
+                    if (_channel == null || !_channel.IsOpen)
                     {
                         var connection = _connectionProvider.GetConnection();
                         if (connection != null)
                         {
-                            _channel = connection.CreateModel();
+                            var newChannel = connection.CreateModel();
+                            if (newChannel == null || !newChannel.IsOpen)
+                            {
+                                throw new InvalidOperationException("Unable to create an open channel.");
+                            }
+                            _channel = newChannel;
                         }
                         else
                         {
