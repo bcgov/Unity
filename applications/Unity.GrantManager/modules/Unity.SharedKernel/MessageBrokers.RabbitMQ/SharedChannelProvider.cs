@@ -18,12 +18,12 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         public IModel GetChannel()
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(SharedChannelProvider));
-            
             if (_channel == null || !_channel.IsOpen)
             {
                 lock (_lock)
                 {
+                    ObjectDisposedException.ThrowIf(_disposed, nameof(SharedChannelProvider));
+                    
                     if (_channel == null || !_channel.IsOpen)
                     {
                         var connection = _connectionProvider.GetConnection();
