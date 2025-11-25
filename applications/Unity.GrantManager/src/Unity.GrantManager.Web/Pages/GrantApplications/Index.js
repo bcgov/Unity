@@ -198,7 +198,7 @@
     }
 
     function handleSearch() {
-        let filter = $('.dataTables_filter input').val();
+        let filter = $('.dt-search input').val();
         console.info(filter);
     }
 

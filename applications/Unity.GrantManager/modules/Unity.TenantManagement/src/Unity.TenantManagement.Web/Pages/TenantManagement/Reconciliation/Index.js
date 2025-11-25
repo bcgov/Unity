@@ -141,20 +141,25 @@ $(function () {
         })
     );
 
-    updateFilter(iDt, dt[0].id, filterData);
-
-    iDt.on('column-reorder.dt', function (e, settings) {
-        updateFilter(iDt, dt[0].id, filterData);
-    });
-    iDt.on('column-visibility.dt', function (e, settings, deselectedcolumn, state) {
-        updateFilter(iDt, dt[0].id, filterData);
-    });
-
-    initializeFilterButtonPopover(iDt);
 
     searchFilter(iDt);
 
     setExternalSearchFilter(iDt);
+
+    if ($('#btn-toggle-filter').length) {
+        if ($.fn.dataTable !== 'undefined' && typeof $.fn.dataTable.FilterRow !== 'undefined') {
+            const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
+                buttonId: 'btn-toggle-filter',
+                buttonText: FilterDesc.Default,
+                buttonTextActive: FilterDesc.With_Filter,
+                enablePopover: $.fn.popover !== 'undefined'
+            });
+
+            iDt.settings()[0]._filterRow = filterRow;
+        } else {
+            console.warn('FilterRow plugin not loaded. Include plugins/filterRow.js before table-utils.js');
+        }
+    }
 
     // Prevent row selection when clicking on a link inside a cell
     iDt.on('user-select', function (e, dt, type, cell, originalEvent) {
@@ -169,68 +174,13 @@ $(function () {
 
         // Exclude default search inputs that have custom logic
         if (searchId !== false && searchId !== '#search') {
-            $('.dataTables_filter input').attr("placeholder", "Search");
-            $('.dataTables_filter label')[0].childNodes[0].remove();
+            $('.dt-search input').attr("placeholder", "Search");
+            $('.dt-search label')[0].childNodes[0].remove();
 
             $(searchId).on('input', function () {
                 let filter = dataTableInstance.search($(this).val()).draw();
                 console.info(`Filter on #${searchId}: ${filter}`);
             });
-        }
-    }
-
-    function updateFilter(dt, dtName, filterData) {
-        let optionsOpen = false;
-        $("#tr-filter").each(function () {
-            if ($(this).is(":visible"))
-                optionsOpen = true;
-        })
-        $('.tr-toggle-filter').remove();
-        let newRow = $("<tr class='tr-toggle-filter' id='tr-filter'>");
-
-        dt.columns().every(function () {
-            let column = this;
-            if (column.visible()) {
-                let title = column.header().textContent;
-                if (title && title !== 'Actions') {
-
-                    let filterValue = filterData[title] ? filterData[title] : '';
-
-                    let input = $("<input>", {
-                        type: 'text',
-                        class: 'form-control input-sm custom-filter-input',
-                        placeholder: title,
-                        value: filterValue
-                    });
-
-                    let newCell = $("<td>").append(input);
-
-                    if (column.search() !== filterValue) {
-                        column.search(filterValue).draw();
-                    }
-
-                    newCell.find("input").on("keyup", function () {
-                        if (column.search() !== this.value) {
-                            column.search(this.value).draw();
-                            updateFilterButton(dt);
-                        }
-                    });
-
-                    newRow.append(newCell);
-                }
-                else {
-                    let newCell = $("<td>");
-                    newRow.append(newCell);
-                }
-            }
-        });
-
-        updateFilterButton(dt);
-
-        $(`#${dtName} thead`).after(newRow);
-
-        if (optionsOpen) {
-            $(".tr-toggle-filter").show();
         }
     }
 
@@ -243,20 +193,6 @@ $(function () {
         if ($('#btn-toggle-filter').text() === FilterDesc.With_Filter) {
             $(".tr-toggle-filter").show();
         }
-    }
-
-    function updateFilterButton(dt) {
-        let searchValue = $(dt.init().externalSearchInputId).val();
-        let columnFiltersApplied = false;
-        dt.columns().every(function () {
-            let search = this.search();
-            if (search) {
-                columnFiltersApplied = true;
-            }
-        });
-
-        let hasFilter = columnFiltersApplied || searchValue !== '';
-        $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
     }
 
     $('.data-table-select-all').click(function () {
