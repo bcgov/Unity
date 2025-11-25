@@ -12,6 +12,8 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         public static void ConfigureRabbitMQ(this IServiceCollection services)
         {
             var configuration = services.GetConfiguration();
+
+            // Connection factory
             services.TryAddSingleton<IAsyncConnectionFactory>(provider =>
             {
                 var factory = new ConnectionFactory
@@ -23,20 +25,26 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     Port = configuration.GetValue<int>("RabbitMQ:Port"),
                     DispatchConsumersAsync = true,
                     AutomaticRecoveryEnabled = true,
-                    // Configure the amount of concurrent consumers within one host
                     ConsumerDispatchConcurrency = QueueingConstants.MAX_RABBIT_CONCURRENT_CONSUMERS,
                 };
                 return factory;
             });
 
             services.TryAddSingleton<IConnectionProvider, ConnectionProvider>();
-            services.TryAddScoped<IChannelProvider, PooledChannelProvider>();
 
-            services.TryAddScoped(typeof(IQueueChannelProvider<>), typeof(PooledQueueChannelProvider<>));
-            services.TryAddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
+            // *** Shared channel provider (NEW) ***
+            services.TryAddSingleton<IChannelProvider, SharedChannelProvider>();
+
+            // Use shared channel for queue providers
+            services.TryAddSingleton(typeof(IQueueChannelProvider<>), typeof(SharedQueueChannelProvider<>));
+
+            // Producers also use the shared channel
+            services.TryAddSingleton(typeof(IQueueProducer<>), typeof(QueueProducer<>));
         }
 
-        public static void AddQueueMessageConsumer<TMessageConsumer, TQueueMessage>(this IServiceCollection services) where TMessageConsumer : IQueueConsumer<TQueueMessage> where TQueueMessage : class, IQueueMessage
+        public static void AddQueueMessageConsumer<TMessageConsumer, TQueueMessage>(this IServiceCollection services)
+            where TMessageConsumer : IQueueConsumer<TQueueMessage>
+            where TQueueMessage : class, IQueueMessage
         {
             services.AddScoped(typeof(TMessageConsumer));
             services.AddScoped<IQueueConsumerHandler<TMessageConsumer, TQueueMessage>, QueueConsumerHandler<TMessageConsumer, TQueueMessage>>();
