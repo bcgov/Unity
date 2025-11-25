@@ -93,7 +93,7 @@ $(function () {
             name: 'unityApplicantId',
             className: 'data-table-header text-nowrap',
             render: function (data, type, row) {
-                const displayValue = (data && String(data).trim() !== '') ? data : 'null';
+                const displayValue = (data && String(data).trim() !== '') ? data : 'blank';
                 return `<a href="/GrantApplicants/Details?ApplicantId=${row.id}">${displayValue}</a>`;
             },
             index: columnIndex
