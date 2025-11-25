@@ -2,13 +2,14 @@
 using System.Threading.Tasks;
 using System;
 
-namespace Unity.GrantManager.Comments
+namespace Unity.GrantManager.Comments;
+
+public interface ICommentAppService
 {
-    public interface ICommentAppService
-    {
-        Task<CommentDto> CreateAsync(CreateCommentByTypeDto dto);
-        Task<IReadOnlyList<CommentDto>> GetListAsync(QueryCommentsByTypeDto dto);        
-        Task<CommentDto> UpdateAsync(UpdateCommentByTypeDto dto);
-        Task<CommentDto> GetAsync(Guid id, QueryCommentsByTypeDto dto);
-    }
+    Task<CommentDto> CreateAsync(CreateCommentByTypeDto dto);
+    Task<IReadOnlyList<CommentDto>> GetListAsync(QueryCommentsByTypeDto dto);        
+    Task<CommentDto> UpdateAsync(UpdateCommentByTypeDto dto);
+    Task<CommentDto> GetAsync(Guid id, QueryCommentsByTypeDto dto);
+    Task PinAsync(Guid id, PinCommentDto dto);
+    Task UnpinAsync(Guid id, PinCommentDto dto);
 }

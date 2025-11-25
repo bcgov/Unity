@@ -1,4 +1,4 @@
-let createPaymentNumberFormatter = createNumberFormatter();
+ï»¿let createPaymentNumberFormatter = createNumberFormatter();
 
 function removeApplicationPaymentRequest(applicationId) {
     let $container = $('#' + applicationId);
@@ -131,7 +131,7 @@ function isPartOfParentChildGroup(correlationId) {
     return input.val() === 'True';
 }
 
-const cadFormatter = createNumberFormatter(); // wraps Intl.NumberFormat('en-CA', …)
+const cadFormatter = createNumberFormatter(); // wraps Intl.NumberFormat('en-CA', ...)
 
 function formatCurrency(value) {
     const numericValue =

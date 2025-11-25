@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Mvc.Localization
+﻿@using Microsoft.AspNetCore.Mvc.Localization
 @using Microsoft.Extensions.Localization
 @using System.Text.Json
 @using Unity.GrantManager.Comments
@@ -18,22 +18,80 @@
     {
         @if (comment != null)
         {
-            <div class="mb-2 comment-read-mode">
+            <div class="mb-2 comment-read-mode @(comment.IsPinned ? "pinned-comment" : "")">
                 <div class="unity-comment-block read-mode" data-id="@comment.Id">
 
                     <div class="d-flex justify-content-between">
-
-                        <div class="fw-bold commenter-name">
-                            @comment.Commenter
-                        </div>
-                        @if (Model.CurrentUserId == comment.CommenterId)
+                        @if (comment.IsPinned && comment.PinDateTime != null)
                         {
-
-                            <div class="comment-edit-btn-wrapper">
-                                <span class="edit-button" data-id="@comment.Id">...</span>
+                            <div class="fw-bold commenter-name icon-link">
+                                <i class="fl fl-pin pinned-icon" title="Pinned on @comment.PinDateTime?.ToString("yyyy-MM-dd h:mm tt")"></i>
+                                Pinned Message
+                            </div>
+                        } else
+                        {
+                            <div class="fw-bold commenter-name icon-link">
+                                @comment.Commenter
                             </div>
                         }
+                        <div class="comment-edit-btn-wrapper">
+                            @if (Model.CurrentUserId == comment.CommenterId || Model.CanPinComments)
+                            {
+                                <div class="dropdown">
+                                    <button class="btn btn-link comment-dropdown-toggle" type="button" id="commentDropdown@(comment.Id)" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <svg aria-hidden="true" focusable="false" class="kebab-horizontal" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" display="inline-block" overflow="visible" style="vertical-align: text-bottom;">
+                                            <path d="M8 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm13 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path>
+                                        </svg>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="commentDropdown@(comment.Id)">
+                                        @if (Model.CurrentUserId == comment.CommenterId)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item edit-button" href="#" data-id="@comment.Id">
+                                                    <i class="fl fl-edit me-2"></i> Edit
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (Model.CanPinComments)
+                                        {
+                                            @if (comment.IsPinned)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item unpin-button" 
+                                                       href="#"
+                                                       data-id="@comment.Id" 
+                                                       data-ownerid="@Model.OwnerId" 
+                                                       data-type="@Model.CommentType">
+                                                        <i class="fl fl-pin-slash me-2"></i>Unpin
+                                                    </a>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item pin-button" 
+                                                       href="#"
+                                                       data-id="@comment.Id" 
+                                                       data-ownerid="@Model.OwnerId" 
+                                                       data-type="@Model.CommentType">
+                                                        <i class="fl fl-pin me-2"></i>Pin
+                                                    </a>
+                                                </li>
+                                            }
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
                     </div>
+                    @if (comment.IsPinned && comment.PinDateTime != null)
+                    {
+                        <div class="d-flex justify-content-between">
+                            <div class="fw-bold commenter-name">
+                                @comment.Commenter
+                            </div>
+                        </div>
+                    }
                     <div class="comment-lbl" data-id="@comment.Id">
                         <div>
                             @comment.Comment
