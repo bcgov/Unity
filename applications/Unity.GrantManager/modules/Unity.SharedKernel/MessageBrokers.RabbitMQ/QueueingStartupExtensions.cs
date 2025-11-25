@@ -39,7 +39,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             services.TryAddSingleton(typeof(IQueueChannelProvider<>), typeof(SharedQueueChannelProvider<>));
 
             // Producers also use the shared channel
-            services.TryAddSingleton(typeof(IQueueProducer<>), typeof(QueueProducer<>));
+            services.TryAddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
         }
 
         public static void AddQueueMessageConsumer<TMessageConsumer, TQueueMessage>(this IServiceCollection services)
