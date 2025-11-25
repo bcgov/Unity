@@ -95,7 +95,13 @@ BEGIN
                                 WHEN 'number' THEN 
                                     format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::NUMERIC ELSE NULL END) AS %I',
                                         um.field_name, um.field_name, um.field_name, um.column_name)
+                                WHEN 'numeric' THEN 
+                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::NUMERIC ELSE NULL END) AS %I',
+                                        um.field_name, um.field_name, um.field_name, um.column_name)
                                 WHEN 'date' THEN 
+                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL OR trim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::DATE END) AS %I',
+                                        um.field_name, um.field_name, um.field_name, um.column_name)
+                                WHEN 'datetime' THEN 
                                     format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL OR trim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::TIMESTAMP END) AS %I',
                                         um.field_name, um.field_name, um.field_name, um.column_name)
                                 WHEN 'checkbox' THEN 
@@ -125,7 +131,9 @@ BEGIN
                             CASE um.column_type
                                 WHEN 'currency' THEN format('NULL::DECIMAL(10,2) AS %I', um.column_name)
                                 WHEN 'number' THEN format('NULL::NUMERIC AS %I', um.column_name)
-                                WHEN 'date' THEN format('NULL::TIMESTAMP AS %I', um.column_name)
+                                WHEN 'numeric' THEN format('NULL::NUMERIC AS %I', um.column_name)
+                                WHEN 'date' THEN format('NULL::DATE AS %I', um.column_name)
+                                WHEN 'datetime' THEN format('NULL::TIMESTAMP AS %I', um.column_name)
                                 WHEN 'checkbox' THEN format('NULL::BOOLEAN AS %I', um.column_name)
                                 WHEN 'radio' THEN format('NULL::TEXT AS %I', um.column_name)
                                 ELSE format('NULL::TEXT AS %I', um.column_name)
@@ -173,7 +181,19 @@ BEGIN
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         um.column_name)
+                                WHEN 'numeric' THEN 
+                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::NUMERIC ELSE NULL END) AS %I',
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        um.column_name)
                                 WHEN 'date' THEN 
+                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL OR trim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::DATE END) AS %I',
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        COALESCE(um.clean_data_path, um.property_name), 
+                                        um.column_name)
+                                WHEN 'datetime' THEN 
                                     format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL OR trim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::TIMESTAMP END) AS %I',
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         COALESCE(um.clean_data_path, um.property_name), 
@@ -209,7 +229,9 @@ BEGIN
                             CASE um.column_type
                                 WHEN 'currency' THEN format('NULL::DECIMAL(10,2) AS %I', um.column_name)
                                 WHEN 'number' THEN format('NULL::NUMERIC AS %I', um.column_name)
-                                WHEN 'date' THEN format('NULL::TIMESTAMP AS %I', um.column_name)
+                                WHEN 'numeric' THEN format('NULL::NUMERIC AS %I', um.column_name)
+                                WHEN 'date' THEN format('NULL::DATE AS %I', um.column_name)
+                                WHEN 'datetime' THEN format('NULL::TIMESTAMP AS %I', um.column_name)
                                 WHEN 'checkbox' THEN format('NULL::BOOLEAN AS %I', um.column_name)
                                 WHEN 'radio' THEN format('NULL::TEXT AS %I', um.column_name)
                                 ELSE format('NULL::TEXT AS %I', um.column_name)
