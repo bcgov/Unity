@@ -9,5 +9,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
         public string Answer { get; set; } = string.Empty;
         public string? YesValue { get; set; }
         public string? NoValue { get; set; }
+        public bool IsHumanConfirmed { get; set; } = true;
+        public string? AICitation { get; set; }
+        public int? AIConfidence { get; set; }
     }
 }
