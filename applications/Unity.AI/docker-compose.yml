@@ -62,11 +62,9 @@ services:
     build:
       context: ./Unity.AI.Reporting.Frontend
       args:
-        - JWT_SECRET=${JWT_SECRET}
-    environment:
-      - API_URL=http://reporting-backend:5000/api
-      - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
-      - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
+        - API_URL=http://localhost:5000/api
+        - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
+        - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
     ports:
       - "80:80"
     depends_on:

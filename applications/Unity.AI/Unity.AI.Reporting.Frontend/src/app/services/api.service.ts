@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { ConfigService } from './config.service';
+import { LoggerService } from './logger.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +13,20 @@ export class ApiService {
   constructor(
     private http: HttpClient,
     private authService: AuthService,
-    private configService: ConfigService
-  ) {}
+    private configService: ConfigService,
+    private logger: LoggerService
+  ) {
+    this.logger.info('ApiService initialized');
+    this.logConnectionDetails();
+  }
+
+  private logConnectionDetails(): void {
+    this.logger.info('=== Backend Connection Details ===');
+    this.logger.info(`API Base URL: ${this.api_url}`);
+    this.logger.info(`Config Service API URL: ${this.configService.apiUrl}`);
+    this.logger.info(`Environment: ${this.configService.environment}`);
+    this.logger.info('==================================');
+  }
 
   private get api_url(): string {
     return this.configService.apiUrl;
@@ -32,31 +46,67 @@ export class ApiService {
     return new HttpHeaders(headers);
   }
 
+  private logRequest(method: string, url: string, body?: any, params?: any): void {
+    this.logger.info(`→ ${method} ${url}`);
+    if (body && Object.keys(body).length > 0) {
+      this.logger.debug('Request body:', body);
+    }
+    if (params && Object.keys(params).length > 0) {
+      this.logger.debug('Request params:', params);
+    }
+  }
+
+  private logResponse<T>(method: string, url: string): any {
+    return tap<T>({
+      next: (response) => {
+        this.logger.info(`✓ ${method} ${url} - Success`);
+        this.logger.debug('Response:', response);
+      },
+      error: (error) => {
+        this.logger.error(`✗ ${method} ${url} - Error`, {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          url: error.url,
+          error: error.error
+        });
+      }
+    });
+  }
+
   // Wrapper methods for common HTTP operations
   post<T>(endpoint: string, body: any = {}): Observable<T> {
-    return this.http.post<T>(`${this.api_url}${endpoint}`, body, {
+    const url = `${this.api_url}${endpoint}`;
+    this.logRequest('POST', url, body);
+    return this.http.post<T>(url, body, {
       headers: this.getHeaders()
-    });
+    }).pipe(this.logResponse<T>('POST', url));
   }
 
   get<T>(endpoint: string, params: any = {}): Observable<T> {
-    return this.http.get<T>(`${this.api_url}${endpoint}`, { 
+    const url = `${this.api_url}${endpoint}`;
+    this.logRequest('GET', url, undefined, params);
+    return this.http.get<T>(url, {
       params: params,
       headers: this.getHeaders()
-    });
+    }).pipe(this.logResponse<T>('GET', url));
   }
 
   put<T>(endpoint: string, body: any = {}): Observable<T> {
-    return this.http.put<T>(`${this.api_url}${endpoint}`, body, {
+    const url = `${this.api_url}${endpoint}`;
+    this.logRequest('PUT', url, body);
+    return this.http.put<T>(url, body, {
       headers: this.getHeaders()
-    });
+    }).pipe(this.logResponse<T>('PUT', url));
   }
 
   delete<T>(endpoint: string, body: any = {}): Observable<T> {
-    return this.http.delete<T>(`${this.api_url}${endpoint}`, { 
+    const url = `${this.api_url}${endpoint}`;
+    this.logRequest('DELETE', url, body);
+    return this.http.delete<T>(url, {
       body: body,
       headers: this.getHeaders()
-    });
+    }).pipe(this.logResponse<T>('DELETE', url));
   }
 
   // Convenience methods for specific endpoints

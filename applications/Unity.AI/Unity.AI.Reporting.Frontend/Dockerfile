@@ -2,6 +2,7 @@
 FROM node:22-alpine AS build
 
 # Platform build metadata (safe to bake into image)
+ARG API_URL=https://localhost:5000/api
 ARG UAI_BUILD_VERSION=0.0.0
 ARG UAI_BUILD_REVISION=0000000
 
@@ -22,47 +23,19 @@ RUN npm run build -- --configuration=production
 # Create build info file with version and revision in the root of the built output
 RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > dist/recap/build-info.json
 
+# Create config.json file with API URL and environment settings
+RUN echo "{\"apiUrl\":\"${API_URL}\",\"environment\":\"production\",\"version\":\"${UAI_BUILD_VERSION}\"}" > dist/recap/browser/config.json
+
 # Production stage
 FROM nginx:alpine
 
-# Copy built application from build stage
+# Copy built application from build stage (includes config.json and build-info.json)
 COPY --from=build /app/dist/recap /usr/share/nginx/html
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy config template to the html directory
-COPY config.template.json /usr/share/nginx/html/browser/config.json
-
-# Create entrypoint script for runtime config replacement
-RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
-    echo 'set -e' >> /docker-entrypoint.sh && \
-    echo '' >> /docker-entrypoint.sh && \
-    echo '# Replace placeholders in config.json with environment variables' >> /docker-entrypoint.sh && \
-    echo 'CONFIG_FILE="/usr/share/nginx/html/browser/config.json"' >> /docker-entrypoint.sh && \
-    echo '' >> /docker-entrypoint.sh && \
-    echo '# Set defaults if not provided' >> /docker-entrypoint.sh && \
-    echo 'API_URL="${API_URL:-http://localhost:5000/api}"' >> /docker-entrypoint.sh && \
-    echo 'ENVIRONMENT="${ENVIRONMENT:-production}"' >> /docker-entrypoint.sh && \
-    echo 'VERSION="${VERSION:-1.0.0}"' >> /docker-entrypoint.sh && \
-    echo '' >> /docker-entrypoint.sh && \
-    echo 'echo "Configuring application with:"' >> /docker-entrypoint.sh && \
-    echo 'echo "  API_URL: $API_URL"' >> /docker-entrypoint.sh && \
-    echo 'echo "  ENVIRONMENT: $ENVIRONMENT"' >> /docker-entrypoint.sh && \
-    echo 'echo "  VERSION: $VERSION"' >> /docker-entrypoint.sh && \
-    echo '' >> /docker-entrypoint.sh && \
-    echo '# Replace placeholders in config.json' >> /docker-entrypoint.sh && \
-    echo 'sed -i "s|__API_URL_PLACEHOLDER__|${API_URL}|g" "$CONFIG_FILE"' >> /docker-entrypoint.sh && \
-    echo 'sed -i "s|__ENVIRONMENT_PLACEHOLDER__|${ENVIRONMENT}|g" "$CONFIG_FILE"' >> /docker-entrypoint.sh && \
-    echo 'sed -i "s|__VERSION_PLACEHOLDER__|${VERSION}|g" "$CONFIG_FILE"' >> /docker-entrypoint.sh && \
-    echo '' >> /docker-entrypoint.sh && \
-    echo 'echo "Configuration complete. Starting nginx..."' >> /docker-entrypoint.sh && \
-    echo '' >> /docker-entrypoint.sh && \
-    echo '# Start nginx' >> /docker-entrypoint.sh && \
-    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
-    chmod +x /docker-entrypoint.sh
-
 # Expose port 80
 EXPOSE 80
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# Use default nginx CMD (starts nginx in foreground)

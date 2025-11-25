@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
+import { ConfigService } from '../services/config.service';
 import { ToastService } from '../services/toast.service';
 import { LoggerService } from '../services/logger.service';
 import { AlertComponent } from '../alert/alert';
@@ -46,6 +47,7 @@ export class SidebarComponent {
 
   constructor(
     private apiService: ApiService,
+    private configService: ConfigService,
     private toastService: ToastService,
     private logger: LoggerService
   ) {}
@@ -204,6 +206,14 @@ export class SidebarComponent {
 
   closeInfoModal(): void {
     this.showInfoModal = false;
+  }
+
+  get version(): string {
+    return this.configService.version;
+  }
+
+  get environment(): string {
+    return this.configService.environment;
   }
 
   private extractConversationContext(): any {
