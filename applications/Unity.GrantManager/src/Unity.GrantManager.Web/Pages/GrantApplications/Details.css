@@ -91,7 +91,7 @@
     display: inline-block;
 }
 
-.dropdown-menu {
+.dropdown-menu, .dt-button-collection {
     position: absolute;
     top: 100%;
     left: 0;
