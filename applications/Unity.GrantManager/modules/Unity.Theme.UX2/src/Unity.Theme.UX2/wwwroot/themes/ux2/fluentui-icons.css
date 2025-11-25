@@ -410,3 +410,11 @@
 .fl-datagrid:before {
     content: '\F579';
 }
+
+.fl-pin:before {
+    content: '\E840';
+}
+
+.fl-pin-slash:before {
+    content: '\E77A';
+}
