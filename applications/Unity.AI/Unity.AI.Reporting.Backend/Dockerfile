@@ -41,6 +41,10 @@ ENV PYTHONUNBUFFERED=1
 ENV UNITY_BUILD_VERSION=${UAI_BUILD_VERSION}
 ENV UAI_BUILD_REVISION=${UAI_BUILD_REVISION}
 
+# Set default application configuration (can be overridden at runtime)
+ENV DEFAULT_EMBED_DB_ID=1
+ENV EMBED_WORKSHEETS=true
+
 # NOTE: All application configuration (secrets, database, API keys) is provided at runtime
 # via environment variables from OpenShift StatefulSet, Docker Compose, or other orchestrators.
 # This prevents secrets from being baked into the container image and allows the same image
