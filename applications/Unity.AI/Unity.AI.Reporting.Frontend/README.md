@@ -34,6 +34,8 @@ docker-compose -f docker-compose.dev.yml up
 docker-compose up -d
 ```
 
+**Note**: This containerized application runs nginx on port 8080 internally but is accessible via http://localhost:80 through container port mapping.
+
 ### Local Development
 
 1. Install dependencies:
