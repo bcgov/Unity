@@ -12,8 +12,6 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         public static void ConfigureRabbitMQ(this IServiceCollection services)
         {
             var configuration = services.GetConfiguration();
-
-            // Connection factory
             services.TryAddSingleton<IAsyncConnectionFactory>(provider =>
             {
                 var factory = new ConnectionFactory
@@ -25,20 +23,16 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     Port = configuration.GetValue<int>("RabbitMQ:Port"),
                     DispatchConsumersAsync = true,
                     AutomaticRecoveryEnabled = true,
+                    // Configure the amount of concurrent consumers within one host
                     ConsumerDispatchConcurrency = QueueingConstants.MAX_RABBIT_CONCURRENT_CONSUMERS,
                 };
                 return factory;
             });
 
             services.TryAddSingleton<IConnectionProvider, ConnectionProvider>();
+            services.TryAddScoped<IChannelProvider, PooledChannelProvider>();
 
-            // *** Shared channel provider (NEW) ***
-            services.TryAddSingleton<IChannelProvider, SharedChannelProvider>();
-
-            // Use shared channel for queue providers
-            services.TryAddSingleton(typeof(IQueueChannelProvider<>), typeof(SharedQueueChannelProvider<>));
-
-            // Producers also use the shared channel
+            services.TryAddScoped(typeof(IQueueChannelProvider<>), typeof(PooledQueueChannelProvider<>));
             services.TryAddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
         }
 
