@@ -41,6 +41,11 @@ services:
       - METABASE_KEY=${METABASE_KEY}
       - MB_EMBED_SECRET=${MB_EMBED_SECRET}
       - MB_URL=${MB_URL}
+      - DEFAULT_EMBED_DB_ID=${DEFAULT_EMBED_DB_ID:-3}
+      - MB_EMBED_ID=${MB_EMBED_ID}
+      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-large}
+      - EMBED_WORKSHEETS=${EMBED_WORKSHEETS:-true}
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=${POSTGRES_DB:-unity_ai}

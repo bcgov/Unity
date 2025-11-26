@@ -90,7 +90,8 @@ class Config:
         self.metabase = MetabaseConfig(
             url=os.getenv("MB_URL", ""),
             api_key=os.getenv("METABASE_KEY", ""),
-            embed_secret=os.getenv("MB_EMBED_SECRET", "")
+            embed_secret=os.getenv("MB_EMBED_SECRET", ""),
+            default_db_id=int(os.getenv("MB_EMBED_ID", "3"))
         )
         
         self.ai = AIConfig(

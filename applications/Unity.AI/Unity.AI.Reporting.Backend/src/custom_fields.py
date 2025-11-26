@@ -27,12 +27,12 @@ def get_sql(sql, db_id, metabase_url):
 
 def get_worksheets():
     sql = f'SELECT "Worksheets"."Name", "Worksheets"."Id" FROM "Flex"."Worksheets"'
-    data = get_sql(sql, 3, os.getenv("MB_URL"))
+    data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     return [{"name": r[0], "id": r[1]} for r in data["rows"]]
 
 def get_worksheet_instances(worksheetId):
     sql = f'SELECT "WorksheetInstances"."CurrentValue", "WorksheetInstances"."WorksheetCorrelationId" FROM "Flex"."WorksheetInstances" WHERE "WorksheetInstances"."WorksheetId" = \'{worksheetId}\''
-    data = get_sql(sql, 3, os.getenv("MB_URL"))
+    data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     return data
 
 def get_custom_labels():
@@ -47,7 +47,7 @@ def get_custom_labels():
         ORDER BY "CustomFields"."Key"
         LIMIT {batch_size} OFFSET {offset}
         '''
-        rows = get_sql(sql, 3, os.getenv("MB_URL"))["rows"]
+        rows = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))["rows"]
 
         if not rows:
             break
@@ -92,7 +92,7 @@ _(none)_
 
 def get_column_example(table, column):
     sql = f"SELECT \"{column}\" FROM \"Reporting\".\"{table}\" WHERE \"{column}\" IS NOT null and \"{column}\" <> ''"
-    instance = get_sql(sql, 3, os.getenv("MB_URL"))
+    instance = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     try:
         return instance["rows"][0][0]
     except:
@@ -123,7 +123,7 @@ def get_views_schemas():
 
         # Find out if there are non-blank rows 
         sql = f"SELECT * FROM \"Reporting\".\"{tbl['name']}\" "
-        instance = get_sql(sql, 3, os.getenv("MB_URL"))
+        instance = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
         rows = [r for r in instance["rows"] if set(r[3:]) != set([''])]
         if len(rows) > 0:
 
