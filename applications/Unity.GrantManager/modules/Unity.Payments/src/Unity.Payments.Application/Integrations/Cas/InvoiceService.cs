@@ -19,10 +19,10 @@ using Unity.Modules.Shared.Http;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.GrantManager.Integrations;
+using Microsoft.EntityFrameworkCore;
 
 namespace Unity.Payments.Integrations.Cas
 {
-
     [IntegrationService]
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
 #pragma warning disable S107 // Methods should not have too many parameters        
@@ -207,7 +207,7 @@ namespace Unity.Payments.Integrations.Cas
         {
             string jsonString = JsonSerializer.Serialize(casAPInvoice);
             var authToken = await iTokenService.GetAuthTokenAsync();
-            string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);  
+            string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/";
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Post, resource, jsonString, authToken);
 
