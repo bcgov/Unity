@@ -137,29 +137,69 @@ namespace Unity.Payments.Integrations.Cas
 
         private async Task UpdatePaymentRequestWithInvoice(Guid paymentRequestId, InvoiceResponse invoiceResponse)
         {
-            try
+            const int maxRetries = 3;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
                 using var uow = unitOfWorkManager.Begin();
-                PaymentRequest? paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
-                paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
-                paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
-                // Set the status - for the payment request
-                if (invoiceResponse.IsSuccess())
+                try
                 {
-                    paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.SentToCas);
-                }
-                else
-                {
-                    paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.ErrorFromCas);
-                }
+                    // Load the payment request with tracking
+                    PaymentRequest? paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
 
-                await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
-                await uow.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string ExceptionMessage = ex.Message;
-                Logger.LogError(ex, "CreateInvoiceByPaymentRequestAsync Exception: {ExceptionMessage}", ExceptionMessage);
+                    if (paymentRequest == null)
+                    {
+                        Logger.LogWarning("PaymentRequest {Id} not found. Skipping update.", paymentRequestId);
+                        return;
+                    }
+
+                    // Idempotency: Skip if already invoiced successfully
+                    if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.SentToCas)
+                    {
+                        Logger.LogInformation("PaymentRequest {Id} already invoiced. Skipping update.", paymentRequestId);
+                        return;
+                    }
+
+                    // Update CAS response
+                    paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
+                    paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
+
+                    // Set invoice status
+                    paymentRequest.SetInvoiceStatus(invoiceResponse.IsSuccess()
+                        ? CasPaymentRequestStatus.SentToCas
+                        : CasPaymentRequestStatus.ErrorFromCas);
+
+                    // Mark for update in repository
+                    await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
+
+                    // Attempt to save changes
+                    await uow.SaveChangesAsync();
+
+                    // Success: break retry loop
+                    Logger.LogInformation("PaymentRequest {Id} updated successfully on attempt {Attempt}.", paymentRequestId, attempt);
+                    return;
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    Logger.LogWarning(ex, "Concurrency conflict when updating PaymentRequest {Id}, attempt {Attempt}", paymentRequestId, attempt);
+
+                    if (attempt == maxRetries)
+                    {
+                        Logger.LogError("Max retries reached for PaymentRequest {Id}. Manual intervention may be required.", paymentRequestId);
+                        throw; // Bubble up after max retries
+                    }
+
+                    // Rollback the current UnitOfWork before retrying
+                    await uow.RollbackAsync();
+
+                    // Small delay before retrying to reduce hot conflicts
+                    await Task.Delay(50);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Unexpected exception updating PaymentRequest {Id}", paymentRequestId);
+                    throw; // Bubble up unexpected exceptions
+                }
             }
         }
 
