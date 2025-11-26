@@ -47,7 +47,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<CommentListItem, CommentDto>()
             .ForMember(dest => dest.Badge, opt => opt.MapFrom(src => src.CommenterBadge))
             .ForMember(dest => dest.Commenter, opt => opt.MapFrom(src => src.CommenterDisplayName))
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.PinDateTime, opt => opt.MapFrom(src => src.PinDateTime));
         CreateMap<Assessment, AssessmentDto>()
             .ForMember(
                 dest => dest.StartDate,
