@@ -121,7 +121,7 @@ BEGIN
                 WHEN 'number' THEN
                     column_list := column_list || format('NULL::NUMERIC AS %I', column_name);
                 WHEN 'currency' THEN
-                    column_list := column_list || format('NULL::DECIMAL(10,2) AS %I', column_name);
+                    column_list := column_list || format('NULL::DECIMAL(18,2) AS %I', column_name);
                 WHEN 'option', 'checkbox', 'radio' THEN
                     column_list := column_list || format('NULL::BOOLEAN AS %I', column_name);
                 ELSE
@@ -221,7 +221,7 @@ BEGIN
                         END IF;
                         data_path := format('(CASE 
                             WHEN (%s%s) IS NULL THEN NULL
-                            WHEN (%s%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s%s)::DECIMAL(10,2)::TEXT
+                            WHEN (%s%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s%s)::DECIMAL(18,2)::TEXT
                             ELSE (%s%s)::TEXT
                         END)', '{}', json_path, '{}', json_path, '{}', json_path, '{}', json_path);
                         
@@ -282,7 +282,7 @@ BEGIN
                         END IF;
                         data_path := format('(CASE 
                             WHEN (%s%s) IS NULL THEN NULL
-                            WHEN (%s%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s%s)::DECIMAL(10,2)
+                            WHEN (%s%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s%s)::DECIMAL(18,2)
                             ELSE NULL
                         END)', '{}', json_path, '{}', json_path, '{}', json_path);
                         
@@ -338,11 +338,11 @@ BEGIN
                         );
                     WHEN 'currency' THEN
                         legacy_select_clause := replace(legacy_select_clause,
-                            format('NULL::DECIMAL(10,2) AS %I', column_name),
+                            format('NULL::DECIMAL(18,2) AS %I', column_name),
                             format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name)
                         );
                         current_select_clause := replace(current_select_clause,
-                            format('NULL::DECIMAL(10,2) AS %I', column_name),
+                            format('NULL::DECIMAL(18,2) AS %I', column_name),
                             format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
                         );
                     WHEN 'option', 'checkbox', 'radio' THEN
@@ -530,16 +530,16 @@ BEGIN
                             END IF;
                             data_path := format('(CASE 
                                 WHEN (%s%s) IS NULL THEN NULL
-                                WHEN (%s%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s%s)::DECIMAL(10,2)
+                                WHEN (%s%s) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN (%s%s)::DECIMAL(18,2)
                                 ELSE NULL
                             END)', '{}', json_path, '{}', json_path, '{}', json_path);
                             
                             legacy_select_clause := replace(legacy_select_clause,
-                                format('NULL::DECIMAL(10,2) AS %I', column_name),
+                                format('NULL::DECIMAL(18,2) AS %I', column_name),
                                 format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name)
                             );
                             current_select_clause := replace(current_select_clause,
-                                format('NULL::DECIMAL(10,2) AS %I', column_name),
+                                format('NULL::DECIMAL(18,2) AS %I', column_name),
                                 format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
                             );
                             
