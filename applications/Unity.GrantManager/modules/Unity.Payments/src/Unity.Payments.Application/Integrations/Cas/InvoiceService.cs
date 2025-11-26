@@ -184,7 +184,7 @@ namespace Unity.Payments.Integrations.Cas
                     if (attempt == maxRetries)
                     {
                         Logger.LogError(ex, "Max retries reached for PaymentRequest {Id}. Manual intervention may be required.", paymentRequestId);
-                        throw new UserFriendlyException($"Failed to update payment request {paymentRequestId} after {maxRetries} attempts due to concurrency conflicts.", ex);
+                        throw new UserFriendlyException($"Failed to update payment request {paymentRequestId} after {maxRetries} attempts due to concurrency conflicts.");
                     }
 
                     // Rollback the current UnitOfWork before retrying
@@ -196,7 +196,7 @@ namespace Unity.Payments.Integrations.Cas
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "Unexpected exception updating PaymentRequest {Id} on attempt {Attempt}", paymentRequestId, attempt);
-                    throw new UserFriendlyException($"Failed to update payment request {paymentRequestId}: {ex.Message}", ex);
+                    throw new UserFriendlyException($"Failed to update payment request {paymentRequestId}: {ex.Message}");
                 }
             }
         }
