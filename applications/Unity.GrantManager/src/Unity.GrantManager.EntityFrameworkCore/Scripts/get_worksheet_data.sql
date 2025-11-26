@@ -1,4 +1,5 @@
-﻿CREATE OR REPLACE FUNCTION "Reporting".get_worksheet_data(correlation_id uuid, report_map_id uuid)
+﻿
+CREATE OR REPLACE FUNCTION "Reporting".get_worksheet_data(correlation_id uuid, report_map_id uuid)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
@@ -90,7 +91,7 @@ BEGIN
                         WHEN um.worksheet_name = uwd.worksheet_name AND um.datagrid_name = uwd.datagrid_name THEN
                             CASE um.column_type
                                 WHEN 'currency' THEN 
-                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::DECIMAL(10,2) ELSE NULL END) AS %I',
+                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::DECIMAL(18,2) ELSE NULL END) AS %I',
                                         um.field_name, um.field_name, um.field_name, um.column_name)
                                 WHEN 'number' THEN 
                                     format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::NUMERIC ELSE NULL END) AS %I',
@@ -129,7 +130,7 @@ BEGIN
                         -- Leave as NULL if this column doesn't belong to this worksheet-datagrid
                         ELSE
                             CASE um.column_type
-                                WHEN 'currency' THEN format('NULL::DECIMAL(10,2) AS %I', um.column_name)
+                                WHEN 'currency' THEN format('NULL::DECIMAL(18,2) AS %I', um.column_name)
                                 WHEN 'number' THEN format('NULL::NUMERIC AS %I', um.column_name)
                                 WHEN 'numeric' THEN format('NULL::NUMERIC AS %I', um.column_name)
                                 WHEN 'date' THEN format('NULL::DATE AS %I', um.column_name)
@@ -170,7 +171,7 @@ BEGIN
                         WHEN um.worksheet_name = uwr.worksheet_name AND (um.type_path NOT LIKE '%datagrid%' OR um.type_path IS NULL) THEN
                             CASE um.column_type
                                 WHEN 'currency' THEN 
-                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::DECIMAL(10,2) ELSE NULL END) AS %I',
+                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::DECIMAL(18,2) ELSE NULL END) AS %I',
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         COALESCE(um.clean_data_path, um.property_name), 
@@ -227,7 +228,7 @@ BEGIN
                         -- Leave as NULL if this column doesn't belong to this worksheet or isn't a root field
                         ELSE
                             CASE um.column_type
-                                WHEN 'currency' THEN format('NULL::DECIMAL(10,2) AS %I', um.column_name)
+                                WHEN 'currency' THEN format('NULL::DECIMAL(18,2) AS %I', um.column_name)
                                 WHEN 'number' THEN format('NULL::NUMERIC AS %I', um.column_name)
                                 WHEN 'numeric' THEN format('NULL::NUMERIC AS %I', um.column_name)
                                 WHEN 'date' THEN format('NULL::DATE AS %I', um.column_name)
