@@ -1,22 +1,36 @@
-﻿abp.widgets.ApplicantInfo = function ($wrapper) {
+﻿// Global variable to store the PubSub subscription token
+// This prevents duplicate subscriptions across widget refreshes
+var applicantInfoMergedSubscriptionToken = null;
+
+abp.widgets.ApplicantInfo = function ($wrapper) {
     let widgetManager = $wrapper.data('abp-widget-manager');
 
     let widgetApi = {
+        applicationId: null, // Cache the applicationId to prevent reading from stale DOM
+        applicationFormVersionId: null, // Cache the formVersionId
+
         getFilters: function () {
+            // Use cached values if available, otherwise read from DOM
+            const appId = this.applicationId || $wrapper.find('#ApplicantInfo_ApplicationId').val();
+            const formVerId = this.applicationFormVersionId || $wrapper.find("#ApplicantInfo_ApplicationFormVersionId").val();
+
             return {
-                applicationId: $wrapper.find('#ApplicantInfo_ApplicationId').val(),
-                applicationFormVersionId: $wrapper.find("#ApplicantInfo_ApplicationFormVersionId").val()
+                applicationId: appId,
+                applicationFormVersionId: formVerId
             };
         },
         init: function (filters) {
             let $widgetForm = $wrapper.find('form');
 
+            // Cache the applicationId and formVersionId from the DOM
+            // This prevents reading from stale DOM during refresh
+            this.applicationId = $wrapper.find('#ApplicantInfo_ApplicationId').val();
+            this.applicationFormVersionId = $wrapper.find("#ApplicantInfo_ApplicationFormVersionId").val();
+
             // Create a new form instance and store it on the widget API
             this.zoneForm = new UnityZoneForm($widgetForm, {
                 saveButtonSelector: '#saveApplicantInfoBtn'
             });
-
-            console.log("Applicant Info Initialized");
 
             this.zoneForm.init();
 
@@ -30,13 +44,26 @@
         },
         refresh: function () {
             const currentFilters = this.getFilters();
-            console.log('[WIDGET REFRESH] Refreshing widget with filters:', currentFilters);
+
+            // Validate applicationId before refreshing
+            if (!currentFilters.applicationId || currentFilters.applicationId === '00000000-0000-0000-0000-000000000000') {
+                return;
+            }
+
             widgetManager.refresh($wrapper, currentFilters);
         },
         setupEventHandlers: function () {
             const self = this;
 
-            PubSub.subscribe(
+            // Unsubscribe from previous subscription if it exists
+            // This prevents duplicate event handlers after widget refresh
+            if (applicantInfoMergedSubscriptionToken) {
+                PubSub.unsubscribe(applicantInfoMergedSubscriptionToken);
+                applicantInfoMergedSubscriptionToken = null;
+            }
+
+            // Subscribe to the applicant_info_merged event and store the token
+            applicantInfoMergedSubscriptionToken = PubSub.subscribe(
                 'applicant_info_merged',
                 () => {
                     self.refresh();
@@ -180,7 +207,6 @@ function initializeApplicantLookup() {
 
     // Check if element exists before initializing
     if (!$lookupSelect.length) {
-        console.warn('Applicant Lookup field not found in DOM');
         return;
     }
 
