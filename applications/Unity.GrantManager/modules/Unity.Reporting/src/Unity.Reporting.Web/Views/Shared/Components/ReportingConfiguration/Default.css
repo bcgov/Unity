@@ -1,83 +1,44 @@
-#ReportConfigurationTable .column-name-input {
-    width: 100%;
-    padding: 0.375rem 0.75rem;
-    font-size: 1rem;
-    line-height: 1.5;
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    padding-right: 2rem;
+.report-config-content {
+    height: calc(97vh - 400px);
+    overflow: scroll;
+    overflow-x: hidden;
 }
 
-#ReportConfigurationTable .column-name-input:focus {
-    border-color: #80bdff;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-/* Provider Toggle Section */
 .provider-toggle-section {
     border-bottom: 1px solid #dee2e6;
     padding-bottom: 1rem;
     margin-bottom: 1rem;
 }
 
-.provider-toggle-section .btn-group {
-    display: flex;
-    justify-content: flex-start;
-}
-
-.provider-toggle-section .btn-group .btn {
-    flex: none;
-    min-width: 120px;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    transition: all 0.15s ease-in-out;
-}
-
-.provider-toggle-section .btn-check:checked + .btn {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: #fff;
-}
-
-.provider-toggle-section .btn-outline-primary {
-    color: #0d6efd;
-    border-color: #0d6efd;
-}
-
-.provider-toggle-section .btn-outline-primary:hover {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: #fff;
-}
-
-/* More comprehensive header styling for DataTables */
-#ReportConfigurationTable table.dataTable thead th,
-#ReportConfigurationTable_wrapper .dataTables_scrollHead table thead th,
-#ReportConfigurationTable thead th {
-    background-color: #859ab9 !important;
-    color: white !important;
-    font-weight: 500 !important;
-    font-size: 18px !important;
-    text-align: left !important;
-}
-
-    /* Ensure header styling persists on sort/hover */
-    #ReportConfigurationTable table.dataTable thead th:hover,
-    #ReportConfigurationTable_wrapper .dataTables_scrollHead table thead th:hover {
-        background-color: #6c7b95 !important;
-        color: white !important;
+    .provider-toggle-section .btn-group {
+        display: flex;
+        justify-content: flex-start;
     }
 
-    /* Sort arrow styling for headers */
-    #ReportConfigurationTable table.dataTable thead th.sorting:before,
-    #ReportConfigurationTable table.dataTable thead th.sorting:after,
-    #ReportConfigurationTable table.dataTable thead th.sorting_asc:before,
-    #ReportConfigurationTable table.dataTable thead th.sorting_asc:after,
-    #ReportConfigurationTable table.dataTable thead th.sorting_desc:before,
-    #ReportConfigurationTable table.dataTable thead th.sorting_desc:after {
-        color: white !important;
+        .provider-toggle-section .btn-group .btn {
+            flex: none;
+            min-width: 120px;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.15s ease-in-out;
+        }
+
+    .provider-toggle-section .btn-check:checked + .btn {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
     }
+
+    .provider-toggle-section .btn-outline-primary {
+        color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+        .provider-toggle-section .btn-outline-primary:hover {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: #fff;
+        }
 
 #reportConfigDynamicButtons {
     display: flex;
@@ -102,33 +63,15 @@
     width: 100%;
 }
 
-.report-config-component {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 250px); /* Adjust for tab container and other UI elements */
-    min-height: 600px; /* Minimum usable height */
-    max-height: calc(100vh - 250px);
-    padding: 1rem;
-    overflow: hidden;
-}
-
 .report-config-header {
     flex-shrink: 0;
     margin-bottom: 1rem;
 }
 
-.report-config-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-height: 0; /* Critical for flex child to shrink */
+.report-config-content .action-bar {
+    flex-shrink: 0;
+    margin-bottom: 1rem;
 }
-
-    .report-config-content .action-bar {
-        flex-shrink: 0;
-        margin-bottom: 1rem;
-    }
 
 .report-config-footer {
     flex-shrink: 0;
@@ -136,33 +79,6 @@
     border-top: 1px solid #dee2e6;
     background-color: #f8f9fa;
     margin-top: 1rem;
-}
-
-/* DataTable specific constraints */
-.report-config-table-container #ReportConfigurationTable_wrapper {
-    height: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    max-height: calc(95vh - 400px);
-}
-
-.report-config-table-container .dataTables_scroll {
-    flex: 1 !important;
-    overflow: hidden !important;
-    padding-bottom: 50px;
-}
-
-.report-config-table-container .dataTables_scrollBody {
-    overflow-y: auto !important;
-    max-height: none !important;
-    height: 100% !important;
-}
-
-/* Ensure table header and pagination don't overflow */
-.report-config-table-container .dataTables_scrollHead,
-.report-config-table-container .dataTables_info,
-.report-config-table-container .dataTables_paginate {
-    flex-shrink: 0;
 }
 
 /* Action buttons styling */
@@ -215,53 +131,6 @@
     font-size: 0.875rem;
     color: #28a745;
     display: block;
-}
-
-/* Table cell adjustments for validation feedback */
-#ReportConfigurationTable td {
-    position: relative;
-    vertical-align: top;
-    padding-bottom: 1.5rem; /* Extra space for validation messages */
-}
-
-/* Tab pane specific adjustments */
-.tab-pane .report-config-component {
-    height: calc(100vh - 250px); /* Extra space for tab navigation */
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .report-config-component {
-        height: calc(100vh - 250px);
-        min-height: 500px;
-    }
-
-    .tab-pane .report-config-component {
-        height: calc(100vh - 250px);
-    }
-
-    .report-config-actions {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-        .report-config-actions .btn {
-            width: 100%;
-        }
-        
-    /* Provider toggle responsive adjustments */
-    .provider-toggle-section .btn-group .btn {
-        min-width: 100px;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-    }
-}
-
-/* Ensure proper spacing in parent containers */
-#nav-reporting-configuration {
-    padding: 0 !important;
-    height: calc(100vh - 250px);
-    overflow: hidden;
 }
 
 /* Validation summary styling */

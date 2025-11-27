@@ -5,7 +5,6 @@ using System.Text.Json;
 using System;
 using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
-using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using Unity.Payments.Enums;
 using Unity.Payments.Domain.Suppliers;
@@ -19,10 +18,10 @@ using Unity.Modules.Shared.Http;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.GrantManager.Integrations;
+using Microsoft.EntityFrameworkCore;
 
 namespace Unity.Payments.Integrations.Cas
 {
-
     [IntegrationService]
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
 #pragma warning disable S107 // Methods should not have too many parameters        
@@ -33,7 +32,6 @@ namespace Unity.Payments.Integrations.Cas
                     PaymentConfigurationAppService paymentConfigurationAppService,
                     IPaymentRequestRepository paymentRequestRepository,
                     IResilientHttpRequest resilientHttpRequest,
-                    IOptions<CasClientOptions> casClientOptions,
                     ISupplierRepository iSupplierRepository,
                     ISiteRepository iSiteRepository,
                     IUnitOfWorkManager unitOfWorkManager) : ApplicationService, IInvoiceService
@@ -137,29 +135,69 @@ namespace Unity.Payments.Integrations.Cas
 
         private async Task UpdatePaymentRequestWithInvoice(Guid paymentRequestId, InvoiceResponse invoiceResponse)
         {
-            try
+            const int maxRetries = 3;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
                 using var uow = unitOfWorkManager.Begin();
-                PaymentRequest? paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
-                paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
-                paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
-                // Set the status - for the payment request
-                if (invoiceResponse.IsSuccess())
+                try
                 {
-                    paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.SentToCas);
-                }
-                else
-                {
-                    paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.ErrorFromCas);
-                }
+                    // Load the payment request with tracking
+                    PaymentRequest? paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
 
-                await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
-                await uow.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string ExceptionMessage = ex.Message;
-                Logger.LogError(ex, "CreateInvoiceByPaymentRequestAsync Exception: {ExceptionMessage}", ExceptionMessage);
+                    if (paymentRequest == null)
+                    {
+                        Logger.LogWarning("PaymentRequest {Id} not found. Skipping update.", paymentRequestId);
+                        return;
+                    }
+
+                    // Idempotency: Skip if already invoiced successfully
+                    if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.SentToCas)
+                    {
+                        Logger.LogInformation("PaymentRequest {Id} already invoiced. Skipping update.", paymentRequestId);
+                        return;
+                    }
+
+                    // Update CAS response
+                    paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
+                    paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
+
+                    // Set invoice status
+                    paymentRequest.SetInvoiceStatus(invoiceResponse.IsSuccess()
+                        ? CasPaymentRequestStatus.SentToCas
+                        : CasPaymentRequestStatus.ErrorFromCas);
+
+                    // Mark for update in repository
+                    await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
+
+                    // Attempt to save changes
+                    await uow.SaveChangesAsync();
+
+                    // Success: break retry loop
+                    Logger.LogInformation("PaymentRequest {Id} updated successfully on attempt {Attempt}.", paymentRequestId, attempt);
+                    return;
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    Logger.LogWarning(ex, "Concurrency conflict when updating PaymentRequest {Id}, attempt {Attempt}", paymentRequestId, attempt);
+
+                    if (attempt == maxRetries)
+                    {
+                        Logger.LogError(ex, "Max retries reached for PaymentRequest {Id}. Manual intervention may be required.", paymentRequestId);
+                        throw new UserFriendlyException($"Failed to update payment request {paymentRequestId} after {maxRetries} attempts due to concurrency conflicts.");
+                    }
+
+                    // Rollback the current UnitOfWork before retrying
+                    await uow.RollbackAsync();
+
+                    // Small delay before retrying to reduce hot conflicts
+                    await Task.Delay(50);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Unexpected exception updating PaymentRequest {Id} on attempt {Attempt}", paymentRequestId, attempt);
+                    throw new UserFriendlyException($"Failed to update payment request {paymentRequestId}: {ex.Message}");
+                }
             }
         }
 
@@ -167,7 +205,7 @@ namespace Unity.Payments.Integrations.Cas
         {
             string jsonString = JsonSerializer.Serialize(casAPInvoice);
             var authToken = await iTokenService.GetAuthTokenAsync();
-            string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);  
+            string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/";
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Post, resource, jsonString, authToken);
 
