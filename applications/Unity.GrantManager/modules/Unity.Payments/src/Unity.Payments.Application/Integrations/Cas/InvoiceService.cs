@@ -260,7 +260,7 @@ namespace Unity.Payments.Integrations.Cas
             var authToken = await iTokenService.GetAuthTokenAsync();
             var casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
-            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, authToken);
+            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);
             CasPaymentSearchResult casPaymentSearchResult = new();
 
             if (response != null
