@@ -222,18 +222,30 @@ $(function () {
                 orthogonal: 'fullName',
             }
         },
+        {
+            id: 'ColumnVisibility',
+            extend: 'colvis',
+            text: 'Columns',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            columns: ':not(.notexport):not(.custom-actions-header)'
+        }
     ];
 
     init();
 
     function init() {
+        DataTable.type('num', 'className', 'dt-head-left dt-body-right');
+        DataTable.type('num-fmt', 'className', 'dt-head-left');
+        DataTable.type('date', 'className', 'dt-head-left');
+        DataTable.type('datetime-YYYY-MM-DD', 'className', 'dt-head-left');
+
         buildDataTables(UIElements.tables);
-        bindUIEvents();
     }
 
     function buildDataTables(tables) {
         tables.each(function () {
             let $element = $(this);
+            let fieldId = $element[0].id;
             let table = $(this).DataTable({
                 paging: false,
                 bInfo: false,
@@ -241,38 +253,36 @@ $(function () {
                 serverside: false,
                 info: false,
                 lengthChange: false,
-                dom: 'Bftip',
-                buttons: configureButtons($element[0].id),
+                deferRender: false, // Required for DOM manipulation in addNewRow and configureTable
+                layout: {
+                    // Use manual button container positioning
+                    topStart: null,
+                    topEnd: null,
+                    bottomStart: null,
+                    bottomEnd: null
+                },
+                buttons: configureButtons(fieldId),
                 order: [[0, 'desc']]
             });
-            configureTable(table, $element[0].id);
+            configureTable(table, fieldId);
+            
+            // Use the externalSearch API for search input binding
+            table.externalSearch(`#table-search-${fieldId}`);
         });
     }
 
     function configureButtons(fieldId) {
         let options = ($(`#table-options-${fieldId}`).val()).split(',');
-        let availableOptions = actionButtons.filter(item => options.includes(item.id));
+        // Always include ColumnVisibility button regardless of options
+        let availableOptions = actionButtons.filter(item => options.includes(item.id) || item.id === 'ColumnVisibility');
         return availableOptions;
     }
 
     function configureTable(table, fieldId) {
+        // Move buttons to custom container
         table.buttons().container().prependTo(`#btn-container-${fieldId}`);
-        let knownColumns = [];
 
-        table.columns().header().to$().each(function (index) {
-            let isActions = $(this).hasClass('custom-actions-header');
-            if ($(this).text() != '' && !isActions) {
-                knownColumns.push({ title: $(this).text(), visible: true, index: index + 1, isActions: isActions });
-            }
-        });
-
-        table.button().add(actionButtons.length + 1, {
-            text: 'Columns',
-            extend: 'collection',
-            buttons: getColumnToggleButtonsSorted(knownColumns, table),
-            className: 'custom-table-btn flex-none btn btn-secondary'
-        });
-
+        // Add edit buttons to the last column (Actions)
         table.columns().every(function (index) {
             if (index === table.columns().count() - 1) { // Check if it is the last column
                 table.column(index).header().innerHTML = 'Actions'; // Update column header if needed
@@ -291,18 +301,6 @@ $(function () {
 
     function getEditRowButtonTemplate() {
         return '<input type="button" class="btn btn-edit row-edit-btn" value="Edit"></input>';
-    }
-
-    function bindUIEvents() {
-        UIElements.tableSearches.on('keyup', function () {
-            let table = $(`#${this.dataset.tableId}`).DataTable();
-            table.search(this.value).draw();
-        });
-
-        UIElements.tableSearches.on('search', function () {
-            let table = $(`#${this.dataset.tableId}`).DataTable();
-            table.search('').draw();
-        });
     }
 
     function editDataRow(button) {
