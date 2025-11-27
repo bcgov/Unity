@@ -24,9 +24,13 @@
             this.setupEventHandlers();
             registerElectoralDistrictControls(this.zoneForm.form);
             registerApplicantInfoSummaryDropdowns(this.zoneForm.form);
+
+            // Initialize Applicant Lookup - this runs on both initial load and after widget refresh
+            initializeApplicantLookup();
         },
-        refresh: function () {            
+        refresh: function () {
             const currentFilters = this.getFilters();
+            console.log('[WIDGET REFRESH] Refreshing widget with filters:', currentFilters);
             widgetManager.refresh($wrapper, currentFilters);
         },
         setupEventHandlers: function () {
@@ -170,54 +174,166 @@
     return widgetApi;
 }
 
-$(function () {
-    // Initialize widget through ABP's widget system instead of global object
-    abp.zones = abp.zones || {};
-    abp.zones.applicantInfo = $('[data-widget-name="ApplicantInfo"]')
-        .data('abp-widget-api') || null;
+// Reusable function to initialize the Applicant Lookup field with Select2
+function initializeApplicantLookup() {
+    const $lookupSelect = $('#applicantLookupSelect');
 
-    $('#applicantLookupSelect').select2({
+    // Check if element exists before initializing
+    if (!$lookupSelect.length) {
+        console.warn('Applicant Lookup field not found in DOM');
+        return;
+    }
+
+    // Clear the value to reset selection state
+    const currentValue = $lookupSelect.val();
+    if (currentValue) {
+        $lookupSelect.val(null);
+    }
+
+    // Clear all options to prevent cached data
+    const initialOptionCount = $lookupSelect.find('option').length;
+    if (initialOptionCount > 0) {
+        $lookupSelect.empty();
+    }
+
+    // Destroy existing Select2 instance if it exists
+    if ($lookupSelect.hasClass('select2-hidden-accessible') || $lookupSelect.data('select2') || $lookupSelect.attr('data-select2-id')) {
+        try {
+            $lookupSelect.select2('destroy');
+        } catch (e) {
+            console.error('Error destroying Select2:', e);
+        }
+    }
+
+    // Clear any existing options
+    $lookupSelect.empty();
+
+    // Clear Select2's internal cache and attributes
+    $lookupSelect.removeData('select2');
+    $lookupSelect.removeAttr('data-select2-id');
+    $lookupSelect.removeAttr('aria-hidden');
+    $lookupSelect.removeAttr('tabindex');
+    $lookupSelect.removeClass('select2-hidden-accessible');
+
+    // Remove any lingering Select2 container elements
+    $('.select2-container').each(function() {
+        const containerId = $(this).attr('id');
+        if (containerId && containerId.includes('applicantLookupSelect')) {
+            $(this).remove();
+        }
+    });
+
+    // Remove any existing event handlers to prevent duplicates
+    $lookupSelect.off('select2:select');
+    $lookupSelect.off('select2:selecting');
+    $lookupSelect.off('select2:unselect');
+    $lookupSelect.off('select2:open');
+    $lookupSelect.off('select2:opening');
+    $lookupSelect.off('focus');
+    $('#mergeDuplicateApplicantsModal').off('hidden.bs.modal');
+
+    // Initialize Select2 with AJAX autocomplete
+    $lookupSelect.select2({
         ajax: {
             url: '/api/app/applicant/applicant-look-up-autocomplete-query',
             dataType: 'json',
             delay: 250,
+            cache: false,
             data: function (params) {
                 return { applicantLookUpQuery: params.term };
             },
             processResults: function (data) {
+                const mappedResults = data.map(function (item) {
+                    return {
+                        id: item.Id,
+                        text: `${item.UnityApplicantId?.trim() ? item.UnityApplicantId : 'None'} / ${item.ApplicantName}`,
+                        ApplicantName: item.ApplicantName,
+                        OrgName: item.OrgName,
+                        OrgNumber: item.OrgNumber,
+                        NonRegOrgName: item.NonRegOrgName,
+                        OrganizationType: item.OrganizationType,
+                        OrganizationSize: item.OrganizationSize,
+                        OrgStatus: item.OrgStatus,
+                        BusinessNumber: item.BusinessNumber,
+                        IndigenousOrgInd: item.IndigenousOrgInd,
+                        Sector: item.Sector,
+                        SubSector: item.SubSector,
+                        SectorSubSectorIndustryDesc: item.SectorSubSectorIndustryDesc,
+                        FiscalDay: item.FiscalDay,
+                        FiscalMonth: item.FiscalMonth,
+                        UnityApplicantId: item.UnityApplicantId
+                    };
+                });
                 return {
-                    results: data.map(function (item) {
-                        const res = {
-                            id: item.Id,
-                            text: `${item.UnityApplicantId?.trim() ? item.UnityApplicantId : 'None'} / ${item.ApplicantName}`,
-                            ApplicantName: item.ApplicantName,
-                            OrgName: item.OrgName,
-                            OrgNumber: item.OrgNumber,
-                            NonRegOrgName: item.NonRegOrgName,
-                            OrganizationType: item.OrganizationType,
-                            OrganizationSize: item.OrganizationSize,
-                            OrgStatus: item.OrgStatus,
-                            BusinessNumber: item.BusinessNumber,
-                            IndigenousOrgInd: item.IndigenousOrgInd,
-                            Sector: item.Sector,
-                            SubSector: item.SubSector,
-                            SectorSubSectorIndustryDesc: item.SectorSubSectorIndustryDesc,
-                            FiscalDay: item.FiscalDay,
-                            FiscalMonth: item.FiscalMonth,
-                            UnityApplicantId: item.UnityApplicantId
-                        };
-                        return res
-                    })
+                    results: mappedResults
                 };
             }
         },
         minimumInputLength: 3,
-        placeholder: 'Start typing applicant name or number to search for applicant...'
+        placeholder: 'Start typing applicant name or number to search for applicant...',
+        templateResult: function(item) {
+            if (item.loading) return item.text;
+            // Hide cached items without full data
+            if (!item.UnityApplicantId && item.id) {
+                return null;
+            }
+            return item.text;
+        },
+        templateSelection: function(item) {
+            return item.text;
+        }
     });
 
-    $('#applicantLookupSelect').on('select2:select', function (e) {
+    // Clear cached results when dropdown opens
+    $lookupSelect.on('select2:open', function (e) {
+        const $select = $(this);
+        const optionCount = $select.find('option').length;
+
+        if (optionCount > 0) {
+            $select.find('option').remove();
+        }
+
+        if ($select.data('select2')) {
+            const select2Instance = $select.data('select2');
+            if (select2Instance.results && typeof select2Instance.results.clear === 'function') {
+                select2Instance.results.clear();
+            }
+            if (select2Instance.$results) {
+                select2Instance.$results.empty();
+            }
+            if (select2Instance.dataAdapter && select2Instance.dataAdapter._cache) {
+                select2Instance.dataAdapter._cache = {};
+            }
+        }
+    });
+
+    // Clear cached options BEFORE selection happens
+    $lookupSelect.on('select2:selecting', function (e) {
+        const $select = $(this);
+        $select.find('option').remove();
+
+        if ($select.data('select2')) {
+            const select2Instance = $select.data('select2');
+            if (select2Instance.results && typeof select2Instance.results.clear === 'function') {
+                select2Instance.results.clear();
+            }
+            if (select2Instance.dataAdapter && select2Instance.dataAdapter._cache) {
+                select2Instance.dataAdapter._cache = {};
+            }
+        }
+    });
+
+    // Clear options when an item is unselected
+    $lookupSelect.on('select2:unselect', function (e) {
+        $(this).find('option').remove();
+    });
+
+    // Attach select2:select event handler
+    $lookupSelect.on('select2:select', function (e) {
         $('#mergeApplicantsMergeBtn').prop('disabled', false);
         let selectedData = e.params.data;
+
+        console.log('[MERGE] Selected applicant:', selectedData.UnityApplicantId, '/', selectedData.ApplicantName);
 
         // Gather existing values from the form
         let getVal = id => $(`#${id}`).val() || '';
@@ -258,6 +374,7 @@ $(function () {
             FiscalDay: selectedData.FiscalDay || '',
             FiscalMonth: selectedData.FiscalMonth || ''
         };
+
 
         $('#existing_ApplicantNameHeader').text(existing.ApplicantName);
         $('#new_ApplicantNameHeader').text(newData.ApplicantName);
@@ -301,6 +418,10 @@ $(function () {
             let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
             let applicationId = $('#ApplicantInfo_ApplicationId').val();
 
+            console.log('[MERGE] Starting merge - ApplicationId:', applicationId);
+            console.log('[MERGE] Principal ApplicantId:', principalApplicantId);
+            console.log('[MERGE] Non-Principal ApplicantId:', nonPrincipalApplicantId);
+
             // Merge and update applicant info
             let mergedApplicantInfo = {};
             if (principalApplicantId) {
@@ -311,7 +432,7 @@ $(function () {
                 let ApplicantInfoObj = {};
                 let formVersionId = $("#ApplicationFormVersionId").val();
                 let worksheetId = $("#WorksheetId").val();
-                
+
                 $.each(formData, function (_, input) {
                     if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                         Flex.includeCustomFieldObj(ApplicantInfoObj, input);
@@ -347,15 +468,16 @@ $(function () {
                 ApplicantInfoObj['ApplicantSummary.OrgStatus'] = orgStatus;
                 const businessNumber = $('#ApplicantSummary_BusinessNumber').val();
                 ApplicantInfoObj['ApplicantSummary.BusinessNumber'] = businessNumber;
-                
+
                 ApplicantInfoObj['correlationId'] = formVersionId;
                 ApplicantInfoObj['worksheetId'] = worksheetId;
                 ApplicantInfoObj.ApplicantId = principalApplicantId;
-              
+
                 try {
                     await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
+                    console.log('[MERGE] Merge completed successfully');
                 } catch (err) {
-                    console.error(err);
+                    console.error('[MERGE ERROR]', err);
                 }
             }
 
@@ -363,27 +485,40 @@ $(function () {
             $('#mergeDuplicateApplicantsModal').modal('hide');
         });
 
-        // On modal close, clear the ApplicantLookUp field
+        // On modal close, clear the ApplicantLookUp field selection
         $('#mergeDuplicateApplicantsModal').on('hidden.bs.modal', function () {
-            $('#applicantLookupSelect').val(null).trigger('change');
+            const $select = $('#applicantLookupSelect');
+            $select.val(null).trigger('change');
+            $select.find('option').remove();
         });
 
         // Show the modal
         $('#mergeDuplicateApplicantsModal').modal('show');
 
     });
+}
 
+$(function () {
+    // Initialize widget through ABP's widget system instead of global object
+    abp.zones = abp.zones || {};
+    abp.zones.applicantInfo = $('[data-widget-name="ApplicantInfo"]')
+        .data('abp-widget-api') || null;
 
-    $('#selectAllExistingBtn').on('click', function () {
-        $('#mergeApplicantsStep1 input[type="radio"][value="existing"]').each(function () {
-            $(this).prop('checked', true);
-        });
+    // Initialize Applicant Lookup on page load
+    // This is needed for the initial page load to work correctly
+    initializeApplicantLookup();
+});
+
+// Use event delegation so these work even after widget refresh
+$(document).on('click', '#selectAllExistingBtn', function () {
+    $('#mergeApplicantsStep1 input[type="radio"][value="existing"]').each(function () {
+        $(this).prop('checked', true);
     });
+});
 
-    $('#selectAllNewBtn').on('click', function () {
-        $('#mergeApplicantsStep1 input[type="radio"][value="new"]').each(function () {
-            $(this).prop('checked', true);
-        });
+$(document).on('click', '#selectAllNewBtn', function () {
+    $('#mergeApplicantsStep1 input[type="radio"][value="new"]').each(function () {
+        $(this).prop('checked', true);
     });
 });
 
