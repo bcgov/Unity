@@ -6,6 +6,7 @@ using System;
 using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
+using Volo.Abp.Data;
 using Unity.Payments.Enums;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentRequests;
@@ -18,7 +19,6 @@ using Unity.Modules.Shared.Http;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.GrantManager.Integrations;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -139,67 +139,95 @@ namespace Unity.Payments.Integrations.Cas
 
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                using var uow = unitOfWorkManager.Begin();
                 try
                 {
-                    // Load the payment request with tracking
-                    PaymentRequest? paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
-
-                    if (paymentRequest == null)
+                    // Each attempt must have a fresh UoW
+                    using (var uow = unitOfWorkManager.Begin())
                     {
-                        Logger.LogWarning("PaymentRequest {Id} not found. Skipping update.", paymentRequestId);
-                        return;
+                        // Load with tracking
+                        var paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
+
+                        if (paymentRequest == null)
+                        {
+                            Logger.LogWarning("PaymentRequest {Id} not found. Skipping update.", paymentRequestId);
+                            return;
+                        }
+
+                        // Idempotency: do not re-process
+                        if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.SentToCas)
+                        {
+                            Logger.LogInformation(
+                                "PaymentRequest {Id} already invoiced. Skipping update.",
+                                paymentRequestId
+                            );
+                            return;
+                        }
+
+                        // Apply CAS response info
+                        paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
+                        paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
+
+                        // Set status
+                        paymentRequest.SetInvoiceStatus(
+                            invoiceResponse.IsSuccess()
+                                ? CasPaymentRequestStatus.SentToCas
+                                : CasPaymentRequestStatus.ErrorFromCas
+                        );
+
+                        await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
+
+                        // Commit this attempt
+                        await uow.CompleteAsync();
+
+                        Logger.LogInformation(
+                            "PaymentRequest {Id} updated successfully on attempt {Attempt}.",
+                            paymentRequestId,
+                            attempt
+                        );
+                        return; // success
                     }
-
-                    // Idempotency: Skip if already invoiced successfully
-                    if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.SentToCas)
-                    {
-                        Logger.LogInformation("PaymentRequest {Id} already invoiced. Skipping update.", paymentRequestId);
-                        return;
-                    }
-
-                    // Update CAS response
-                    paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
-                    paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
-
-                    // Set invoice status
-                    paymentRequest.SetInvoiceStatus(invoiceResponse.IsSuccess()
-                        ? CasPaymentRequestStatus.SentToCas
-                        : CasPaymentRequestStatus.ErrorFromCas);
-
-                    // Mark for update in repository
-                    await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
-
-                    // Attempt to save changes
-                    await uow.SaveChangesAsync();
-
-                    // Success: break retry loop
-                    Logger.LogInformation("PaymentRequest {Id} updated successfully on attempt {Attempt}.", paymentRequestId, attempt);
-                    return;
                 }
-                catch (DbUpdateConcurrencyException ex)
+                catch (AbpDbConcurrencyException ex)
                 {
-                    Logger.LogWarning(ex, "Concurrency conflict when updating PaymentRequest {Id}, attempt {Attempt}", paymentRequestId, attempt);
+                    Logger.LogWarning(
+                        ex,
+                        "Concurrency conflict when updating PaymentRequest {Id}, attempt {Attempt}",
+                        paymentRequestId,
+                        attempt
+                    );
 
                     if (attempt == maxRetries)
                     {
-                        Logger.LogError(ex, "Max retries reached for PaymentRequest {Id}. Manual intervention may be required.", paymentRequestId);
-                        throw new UserFriendlyException($"Failed to update payment request {paymentRequestId} after {maxRetries} attempts due to concurrency conflicts.");
+                        Logger.LogError(
+                            ex,
+                            "Max retries reached for PaymentRequest {Id}. Manual intervention may be required.",
+                            paymentRequestId
+                        );
+
+                        throw new UserFriendlyException(
+                            $"Failed to update payment request {paymentRequestId} after {maxRetries} attempts due to concurrency conflicts."
+                        );
                     }
 
-                    // Rollback the current UnitOfWork before retrying
-                    await uow.RollbackAsync();
-
-                    // Small delay before retrying to reduce hot conflicts
-                    await Task.Delay(50);
+                    // Brief pause before retrying to reduce immediate collision
+                    await Task.Delay(75);
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Unexpected exception updating PaymentRequest {Id} on attempt {Attempt}", paymentRequestId, attempt);
-                    throw new UserFriendlyException($"Failed to update payment request {paymentRequestId}: {ex.Message}");
+                    Logger.LogError(
+                        ex,
+                        "Unexpected exception updating PaymentRequest {Id} on attempt {Attempt}",
+                        paymentRequestId,
+                        attempt
+                    );
+
+                    throw new UserFriendlyException(
+                        $"Failed to update payment request {paymentRequestId}: {ex.Message}"
+                    );
                 }
             }
         }
+
 
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
