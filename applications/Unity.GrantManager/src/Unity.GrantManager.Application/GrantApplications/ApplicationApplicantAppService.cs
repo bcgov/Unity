@@ -191,7 +191,7 @@ public class ApplicationApplicantAppService(
         {
             // This keeps the electoral district in sync
             application.ApplicantElectoralDistrict = input.Data.ElectoralDistrict;
-        }        
+        }
 
         // Custom fields
         if (HasValue(input.Data.CustomFields) && input.Data.CorrelationId != Guid.Empty)

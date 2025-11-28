@@ -34,6 +34,6 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? NonRegOrgName { get; set; }
     public bool? IsDuplicated { get; set; }
     
-    [Obsolete("Stale field going forward, to be remove in a future release, use Application.ApplicantElectoralDistrict instead.")]
+    [Obsolete("Stale field going forward, to be removed in a future release, use Application.ApplicantElectoralDistrict instead.")]
     public string? ElectoralDistrict { get; set; }
 }
