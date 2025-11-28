@@ -1,6 +1,6 @@
 ﻿// Global variable to store the PubSub subscription token
 // This prevents duplicate subscriptions across widget refreshes
-var applicantInfoMergedSubscriptionToken = null;
+let applicantInfoMergedSubscriptionToken = null;
 
 abp.widgets.ApplicantInfo = function ($wrapper) {
     let widgetManager = $wrapper.data('abp-widget-manager');
@@ -201,53 +201,219 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
     return widgetApi;
 }
 
+// Helper function to clean up Select2 instance
+function cleanupSelect2Instance($select) {
+    if ($select.val()) {
+        $select.val(null);
+    }
+
+    if ($select.find('option').length > 0) {
+        $select.empty();
+    }
+
+    if ($select.hasClass('select2-hidden-accessible') || $select.data('select2') || $select.attr('data-select2-id')) {
+        try {
+            $select.select2('destroy');
+        } catch (e) {
+            // Silently handle destroy errors
+        }
+    }
+
+    $select.empty();
+    $select.removeData('select2');
+    $select.removeAttr('data-select2-id');
+    $select.removeAttr('aria-hidden');
+    $select.removeAttr('tabindex');
+    $select.removeClass('select2-hidden-accessible');
+
+    $('.select2-container').each(function() {
+        const containerId = $(this).attr('id');
+        if (containerId?.includes('applicantLookupSelect')) {
+            $(this).remove();
+        }
+    });
+}
+
+// Helper function to clear Select2 cache
+function clearSelect2Cache($select) {
+    $select.find('option').remove();
+
+    if ($select.data('select2')) {
+        const select2Instance = $select.data('select2');
+        if (select2Instance.results && typeof select2Instance.results.clear === 'function') {
+            select2Instance.results.clear();
+        }
+        if (select2Instance.$results) {
+            select2Instance.$results.empty();
+        }
+        if (select2Instance.dataAdapter && select2Instance.dataAdapter._cache) {
+            select2Instance.dataAdapter._cache = {};
+        }
+    }
+}
+
+// Helper function to get existing applicant data from form
+function getExistingApplicantData() {
+    const $activeWidget = $('[data-widget-name="ApplicantInfo"]');
+    let getVal = id => $activeWidget.find(`#${id}`).val() || '';
+
+    return {
+        ApplicantId: getVal('ApplicantInfoViewApplicantId'),
+        UnityApplicantId: getVal('ApplicantSummary_UnityApplicantId'),
+        ApplicantName: getVal('ApplicantSummary_ApplicantName'),
+        OrgName: getVal('ApplicantSummary_OrgName'),
+        OrgNumber: getVal('ApplicantSummary_OrgNumber'),
+        NonRegOrgName: getVal('ApplicantSummary_NonRegOrgName'),
+        OrganizationType: getVal('ApplicantSummary_OrganizationType'),
+        BusinessNumber: getVal('ApplicantSummary_BusinessNumber'),
+        OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
+        OrgStatus: getVal('ApplicantSummary_OrgStatus'),
+        IndigenousOrgInd: $activeWidget.find('#ApplicantSummary_IndigenousOrgInd').is(':checked') ? 'Yes' : 'No',
+        Sector: getVal('ApplicantSummary_Sector'),
+        SubSector: getVal('ApplicantSummary_SubSector'),
+        SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
+        FiscalDay: getVal('ApplicantSummary_FiscalDay'),
+        FiscalMonth: getVal('ApplicantSummary_FiscalMonth')
+    };
+}
+
+// Helper function to create new applicant data object
+function createNewApplicantDataObject(selectedData) {
+    return {
+        ApplicantId: selectedData.id || '',
+        UnityApplicantId: selectedData.UnityApplicantId || '',
+        ApplicantName: selectedData.ApplicantName || '',
+        OrgName: selectedData.OrgName || '',
+        OrgNumber: selectedData.OrgNumber || '',
+        NonRegOrgName: selectedData.NonRegOrgName || '',
+        OrganizationType: selectedData.OrganizationType || '',
+        BusinessNumber: selectedData.BusinessNumber || '',
+        OrganizationSize: selectedData.OrganizationSize || '',
+        OrgStatus: selectedData.OrgStatus || '',
+        IndigenousOrgInd: selectedData.IndigenousOrgInd || '',
+        Sector: selectedData.Sector || '',
+        SubSector: selectedData.SubSector || '',
+        SectorSubSectorIndustryDesc: selectedData.SectorSubSectorIndustryDesc || '',
+        FiscalDay: selectedData.FiscalDay || '',
+        FiscalMonth: selectedData.FiscalMonth || ''
+    };
+}
+
+// Helper function to populate merge modal
+function populateMergeModal(existing, newData) {
+    $('#existing_ApplicantNameHeader').text(existing.ApplicantName);
+    $('#new_ApplicantNameHeader').text(newData.ApplicantName);
+
+    for (const key in existing) {
+        $(`#existing_${key}`).text(existing[key]);
+        $(`#new_${key}`).text(newData[key]);
+        $(`input[name="merge_${key}"][value="existing"]`).prop('checked', true);
+    }
+
+    $('#mergeApplicantsStep1').show();
+    $('#mergeApplicantsStep2').hide();
+}
+
+// Helper function to handle merge button click
+async function executeMerge(existing, newData) {
+    const $activeWidget = $('[data-widget-name="ApplicantInfo"]');
+
+    let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
+    let principalApplicantId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
+    let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
+    let applicationId = $activeWidget.find('#ApplicantInfo_ApplicationId').val();
+
+    if (!principalApplicantId) {
+        return;
+    }
+
+    let mergedApplicantInfo = getMergedApplicantInfo(existing, newData);
+    mergedApplicantInfo.ApplicantId = principalApplicantId;
+
+    let formData = $activeWidget.find("#ApplicantInfoForm").serializeArray();
+    let ApplicantInfoObj = {};
+    let formVersionId = $activeWidget.find("#ApplicationFormVersionId").val();
+    let worksheetId = $activeWidget.find("#WorksheetId").val();
+
+    $.each(formData, function (_, input) {
+        if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+            Flex.includeCustomFieldObj(ApplicantInfoObj, input);
+        } else {
+            ApplicantInfoObj[input.name] = input.value;
+            if (ApplicantInfoObj[input.name] == '') {
+                ApplicantInfoObj[input.name] = null;
+            }
+        }
+    });
+
+    $activeWidget.find(`#ApplicantInfoForm input:checkbox`).each(function () {
+        ApplicantInfoObj[this.name] = (this.checked).toString();
+    });
+
+    if (typeof Flex === 'function') {
+        Flex?.setCustomFields(ApplicantInfoObj);
+    }
+
+    Object.assign(ApplicantInfoObj, mergedApplicantInfo);
+    Object.keys(ApplicantInfoObj).forEach(key => {
+        if (ApplicantInfoObj[key] === "") {
+            ApplicantInfoObj[key] = null;
+        }
+    });
+
+    ApplicantInfoObj['ApplicantSummary.OrgName'] = $activeWidget.find('#ApplicantSummary_OrgName').val();
+    ApplicantInfoObj['ApplicantSummary.OrgNumber'] = $activeWidget.find('#ApplicantSummary_OrgNumber').val();
+    ApplicantInfoObj['ApplicantSummary.OrgStatus'] = $activeWidget.find('#ApplicantSummary_OrgStatus').val();
+    ApplicantInfoObj['ApplicantSummary.BusinessNumber'] = $activeWidget.find('#ApplicantSummary_BusinessNumber').val();
+    ApplicantInfoObj['correlationId'] = formVersionId;
+    ApplicantInfoObj['worksheetId'] = worksheetId;
+    ApplicantInfoObj.ApplicantId = principalApplicantId;
+
+    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
+}
+
+// Helper function to setup merge modal handlers
+function setupMergeModalHandlers(existing, newData) {
+    $('#mergeApplicantsNextBtn').off('click').on('click', function () {
+        $('#mergeApplicantsStep1').hide();
+        $('#mergeApplicantsStep2').show();
+    });
+
+    $('#mergeApplicantsBackBtn').off('click').on('click', function () {
+        $('#mergeApplicantsStep2').hide();
+        $('#mergeApplicantsStep1').show();
+    });
+
+    $('#mergeApplicantsMergeBtn').off('click').on('click', async function () {
+        $('#mergeApplicantsMergeBtn').prop('disabled', true);
+        $('#mergeApplicantsSpinner').show();
+
+        try {
+            await executeMerge(existing, newData);
+        } catch (err) {
+            console.error('[MERGE ERROR]', err);
+        }
+
+        $('#mergeApplicantsSpinner').hide();
+        $('#mergeDuplicateApplicantsModal').modal('hide');
+    });
+
+    $('#mergeDuplicateApplicantsModal').off('hidden.bs.modal').on('hidden.bs.modal', function () {
+        const $select = $('#applicantLookupSelect');
+        $select.val(null).trigger('change');
+        $select.find('option').remove();
+    });
+}
+
 // Reusable function to initialize the Applicant Lookup field with Select2
 function initializeApplicantLookup() {
     const $lookupSelect = $('#applicantLookupSelect');
 
-    // Check if element exists before initializing
     if (!$lookupSelect.length) {
         return;
     }
 
-    // Clear the value to reset selection state
-    const currentValue = $lookupSelect.val();
-    if (currentValue) {
-        $lookupSelect.val(null);
-    }
-
-    // Clear all options to prevent cached data
-    const initialOptionCount = $lookupSelect.find('option').length;
-    if (initialOptionCount > 0) {
-        $lookupSelect.empty();
-    }
-
-    // Destroy existing Select2 instance if it exists
-    if ($lookupSelect.hasClass('select2-hidden-accessible') || $lookupSelect.data('select2') || $lookupSelect.attr('data-select2-id')) {
-        try {
-            $lookupSelect.select2('destroy');
-        } catch (e) {
-            console.error('Error destroying Select2:', e);
-        }
-    }
-
-    // Clear any existing options
-    $lookupSelect.empty();
-
-    // Clear Select2's internal cache and attributes
-    $lookupSelect.removeData('select2');
-    $lookupSelect.removeAttr('data-select2-id');
-    $lookupSelect.removeAttr('aria-hidden');
-    $lookupSelect.removeAttr('tabindex');
-    $lookupSelect.removeClass('select2-hidden-accessible');
-
-    // Remove any lingering Select2 container elements
-    $('.select2-container').each(function() {
-        const containerId = $(this).attr('id');
-        if (containerId && containerId.includes('applicantLookupSelect')) {
-            $(this).remove();
-        }
-    });
+    cleanupSelect2Instance($lookupSelect);
 
     // Remove any existing event handlers to prevent duplicates
     $lookupSelect.off('select2:select');
@@ -256,7 +422,6 @@ function initializeApplicantLookup() {
     $lookupSelect.off('select2:open');
     $lookupSelect.off('select2:opening');
     $lookupSelect.off('focus');
-    $('#mergeDuplicateApplicantsModal').off('hidden.bs.modal');
 
     // Initialize Select2 with AJAX autocomplete
     $lookupSelect.select2({
@@ -312,41 +477,12 @@ function initializeApplicantLookup() {
 
     // Clear cached results when dropdown opens
     $lookupSelect.on('select2:open', function (e) {
-        const $select = $(this);
-        const optionCount = $select.find('option').length;
-
-        if (optionCount > 0) {
-            $select.find('option').remove();
-        }
-
-        if ($select.data('select2')) {
-            const select2Instance = $select.data('select2');
-            if (select2Instance.results && typeof select2Instance.results.clear === 'function') {
-                select2Instance.results.clear();
-            }
-            if (select2Instance.$results) {
-                select2Instance.$results.empty();
-            }
-            if (select2Instance.dataAdapter && select2Instance.dataAdapter._cache) {
-                select2Instance.dataAdapter._cache = {};
-            }
-        }
+        clearSelect2Cache($(this));
     });
 
     // Clear cached options BEFORE selection happens
     $lookupSelect.on('select2:selecting', function (e) {
-        const $select = $(this);
-        $select.find('option').remove();
-
-        if ($select.data('select2')) {
-            const select2Instance = $select.data('select2');
-            if (select2Instance.results && typeof select2Instance.results.clear === 'function') {
-                select2Instance.results.clear();
-            }
-            if (select2Instance.dataAdapter && select2Instance.dataAdapter._cache) {
-                select2Instance.dataAdapter._cache = {};
-            }
-        }
+        clearSelect2Cache($(this));
     });
 
     // Clear options when an item is unselected
@@ -357,175 +493,14 @@ function initializeApplicantLookup() {
     // Attach select2:select event handler
     $lookupSelect.on('select2:select', function (e) {
         $('#mergeApplicantsMergeBtn').prop('disabled', false);
-        let selectedData = e.params.data;
 
-        console.log('[MERGE] Selected applicant:', selectedData.UnityApplicantId, '/', selectedData.ApplicantName);
+        let existing = getExistingApplicantData();
+        let newData = createNewApplicantDataObject(e.params.data);
 
-        // Gather existing values from the ACTIVE widget's form
-        // Use the widget wrapper to ensure we read from the current, refreshed DOM
-        const $activeWidget = $('[data-widget-name="ApplicantInfo"]');
-        let getVal = id => $activeWidget.find(`#${id}`).val() || '';
-        let existing = {
-            ApplicantId: getVal('ApplicantInfoViewApplicantId'),  // Corrected field ID
-            UnityApplicantId: getVal('ApplicantSummary_UnityApplicantId'),
-            ApplicantName: getVal('ApplicantSummary_ApplicantName'),  // Read from widget form, not breadcrumb
-            OrgName: getVal('ApplicantSummary_OrgName'),
-            OrgNumber: getVal('ApplicantSummary_OrgNumber'),
-            NonRegOrgName: getVal('ApplicantSummary_NonRegOrgName'),
-            OrganizationType: getVal('ApplicantSummary_OrganizationType'),
-            BusinessNumber: getVal('ApplicantSummary_BusinessNumber'),
-            OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
-            OrgStatus: getVal('ApplicantSummary_OrgStatus'),
-            IndigenousOrgInd: $activeWidget.find('#ApplicantSummary_IndigenousOrgInd').is(':checked') ? 'Yes' : 'No',
-            Sector: getVal('ApplicantSummary_Sector'),
-            SubSector: getVal('ApplicantSummary_SubSector'),
-            SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
-            FiscalDay: getVal('ApplicantSummary_FiscalDay'),
-            FiscalMonth: getVal('ApplicantSummary_FiscalMonth')
-        };
+        populateMergeModal(existing, newData);
+        setupMergeModalHandlers(existing, newData);
 
-        let newData = {
-            ApplicantId: selectedData.id || '',
-            UnityApplicantId: selectedData.UnityApplicantId || '',
-            ApplicantName: selectedData.ApplicantName || '',
-            OrgName: selectedData.OrgName || '',
-            OrgNumber: selectedData.OrgNumber || '',
-            NonRegOrgName: selectedData.NonRegOrgName || '',
-            OrganizationType: selectedData.OrganizationType || '',
-            BusinessNumber: selectedData.BusinessNumber || '',
-            OrganizationSize: selectedData.OrganizationSize || '',
-            OrgStatus: selectedData.OrgStatus || '',
-            IndigenousOrgInd: selectedData.IndigenousOrgInd || '',
-            Sector: selectedData.Sector || '',
-            SubSector: selectedData.SubSector || '',
-            SectorSubSectorIndustryDesc: selectedData.SectorSubSectorIndustryDesc || '',
-            FiscalDay: selectedData.FiscalDay || '',
-            FiscalMonth: selectedData.FiscalMonth || ''
-        };
-
-
-        $('#existing_ApplicantNameHeader').text(existing.ApplicantName);
-        $('#new_ApplicantNameHeader').text(newData.ApplicantName);
-
-        // Fill modal fields
-        for (const key in existing) {
-            $(`#existing_${key}`).text(existing[key]);
-            $(`#new_${key}`).text(newData[key]);
-            $(`input[name="merge_${key}"][value="existing"]`).prop('checked', true);
-        }
-
-        // Show step 1, hide step 2
-        $('#mergeApplicantsStep1').show();
-        $('#mergeApplicantsStep2').hide();
-
-        // Remove previous handlers
-        $('#mergeApplicantsNextBtn').off('click');
-        $('#mergeApplicantsBackBtn').off('click');
-        $('#mergeApplicantsMergeBtn').off('click');
-        $('#mergeDuplicateApplicantsModal').off('hidden.bs.modal');
-
-        // Next button: go to confirmation
-        $('#mergeApplicantsNextBtn').on('click', function () {
-            $('#mergeApplicantsStep1').hide();
-            $('#mergeApplicantsStep2').show();
-        });
-
-        // Back button: return to comparison
-        $('#mergeApplicantsBackBtn').on('click', function () {
-            $('#mergeApplicantsStep2').hide();
-            $('#mergeApplicantsStep1').show();
-        });
-
-        // Merge button: apply selected values to form
-        $('#mergeApplicantsMergeBtn').on('click', async function () {
-            $('#mergeApplicantsMergeBtn').prop('disabled', true);
-            $('#mergeApplicantsSpinner').show();
-
-            // Use active widget to get form values
-            const $activeWidget = $('[data-widget-name="ApplicantInfo"]');
-
-            let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
-            let principalApplicantId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
-            let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
-            let applicationId = $activeWidget.find('#ApplicantInfo_ApplicationId').val();
-
-            console.log('[MERGE] Starting merge - ApplicationId:', applicationId);
-            console.log('[MERGE] Principal ApplicantId:', principalApplicantId);
-            console.log('[MERGE] Non-Principal ApplicantId:', nonPrincipalApplicantId);
-
-            // Merge and update applicant info
-            let mergedApplicantInfo = {};
-            if (principalApplicantId) {
-                mergedApplicantInfo = getMergedApplicantInfo(existing, newData);
-                mergedApplicantInfo.ApplicantId = principalApplicantId;
-
-                let formData = $activeWidget.find("#ApplicantInfoForm").serializeArray();
-                let ApplicantInfoObj = {};
-                let formVersionId = $activeWidget.find("#ApplicationFormVersionId").val();
-                let worksheetId = $activeWidget.find("#WorksheetId").val();
-
-                $.each(formData, function (_, input) {
-                    if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
-                        Flex.includeCustomFieldObj(ApplicantInfoObj, input);
-                    }
-                    else {
-                        ApplicantInfoObj[input.name] = input.value;
-
-                        if (ApplicantInfoObj[input.name] == '') {
-                            ApplicantInfoObj[input.name] = null;
-                        }
-                    }
-                });
-
-                $activeWidget.find(`#ApplicantInfoForm input:checkbox`).each(function () {
-                    ApplicantInfoObj[this.name] = (this.checked).toString();
-                });
-                if (typeof Flex === 'function') {
-                    Flex?.setCustomFields(ApplicantInfoObj);
-                }
-
-                Object.assign(ApplicantInfoObj, mergedApplicantInfo);
-                Object.keys(ApplicantInfoObj).forEach(key => {
-                    if (ApplicantInfoObj[key] === "") {
-                        ApplicantInfoObj[key] = null;
-                    }
-                });
-
-                const orgName = $activeWidget.find('#ApplicantSummary_OrgName').val();
-                ApplicantInfoObj['ApplicantSummary.OrgName'] = orgName;
-                const orgNumber = $activeWidget.find('#ApplicantSummary_OrgNumber').val();
-                ApplicantInfoObj['ApplicantSummary.OrgNumber'] = orgNumber;
-                const orgStatus = $activeWidget.find('#ApplicantSummary_OrgStatus').val();
-                ApplicantInfoObj['ApplicantSummary.OrgStatus'] = orgStatus;
-                const businessNumber = $activeWidget.find('#ApplicantSummary_BusinessNumber').val();
-                ApplicantInfoObj['ApplicantSummary.BusinessNumber'] = businessNumber;
-
-                ApplicantInfoObj['correlationId'] = formVersionId;
-                ApplicantInfoObj['worksheetId'] = worksheetId;
-                ApplicantInfoObj.ApplicantId = principalApplicantId;
-
-                try {
-                    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
-                    console.log('[MERGE] Merge completed successfully');
-                } catch (err) {
-                    console.error('[MERGE ERROR]', err);
-                }
-            }
-
-            $('#mergeApplicantsSpinner').hide();
-            $('#mergeDuplicateApplicantsModal').modal('hide');
-        });
-
-        // On modal close, clear the ApplicantLookUp field selection
-        $('#mergeDuplicateApplicantsModal').on('hidden.bs.modal', function () {
-            const $select = $('#applicantLookupSelect');
-            $select.val(null).trigger('change');
-            $select.find('option').remove();
-        });
-
-        // Show the modal
         $('#mergeDuplicateApplicantsModal').modal('show');
-
     });
 }
 
