@@ -47,7 +47,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             applicant = await CreateNewApplicantAsync(intakeMap);
         } else {
-            applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;            
+            applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
             // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
             applicant.NonRegOrgName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegOrgName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
