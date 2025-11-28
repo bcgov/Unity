@@ -112,6 +112,11 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     // This is the Project Level Electoral District, not the Applicant's Electoral District.
     public string? ElectoralDistrict { get; set; }
 
+    // This is the Applicant's Electoral District relevant to the Address on the application
+    // specified as the primary Electoral District Address for the Form
+    // This value is meant to be in sync with the Applicant 's selected Address for Electoral District
+    public string? ApplicantElectoralDistrict { get; set; }
+
     public string? Place { get; set; }
 
     public string? RegionalDistrict { get; set; }
@@ -250,7 +255,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         if (isDirectApproval != true && (RecommendedAmount != recommendedAmount) && recommendedAmount <= 0m)
         {
             throw new BusinessException("Recommended amount cannot be 0.");
-        }        
+        }
     }
 
     /// <summary>
@@ -263,15 +268,6 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         PercentageTotalProjectBudget
             = (this.TotalProjectBudget == 0)
             ? 0 : decimal.Multiply(decimal.Divide(this.RequestedAmount, this.TotalProjectBudget), 100).To<double>();
-    }
-
-    /// <summary>
-    /// Sets the Electoral District for the application.
-    /// </summary>
-    /// <param name="electoralDistrict"></param>
-    public void SetElectoralDistrict(string electoralDistrict)
-    {
-        ElectoralDistrict = electoralDistrict;
     }
 }
 

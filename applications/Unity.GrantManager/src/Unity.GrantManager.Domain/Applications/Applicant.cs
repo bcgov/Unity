@@ -34,12 +34,6 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? NonRegOrgName { get; set; }
     public bool? IsDuplicated { get; set; }
     
-    // This is the Applicant's Electoral District, not the Project Level Electoral District.
+    [Obsolete("Stale field going forward, to be remove in a future release, use Application.ApplicantElectoralDistrict instead.")]
     public string? ElectoralDistrict { get; set; }
-
-    public Applicant SetElectoralDistrict(string? electoralDistrict)
-    {
-        ElectoralDistrict = electoralDistrict;
-        return this;
-    }
 }
