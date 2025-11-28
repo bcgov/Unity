@@ -315,11 +315,7 @@ public class ApplicationApplicantAppService(
         if (dbAddress.Id == Guid.Empty)
             await applicantAddressRepository.InsertAsync(dbAddress);
         else
-            await applicantAddressRepository.UpdateAsync(dbAddress);
-        
-        // Fire off event to update the address electoral district in the background
-        // The event should take the current address, check if changed or requires an electoral update
-        // if different or requires electoral then set it - should always be relevant to the address details
+            await applicantAddressRepository.UpdateAsync(dbAddress);       
     }
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId, string uiAnchor, CustomDataFieldDto input)
