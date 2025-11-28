@@ -246,7 +246,7 @@ function clearSelect2Cache($select) {
         if (select2Instance.$results) {
             select2Instance.$results.empty();
         }
-        if (select2Instance.dataAdapter && select2Instance.dataAdapter._cache) {
+        if (select2Instance.dataAdapter?._cache) {
             select2Instance.dataAdapter._cache = {};
         }
     }
