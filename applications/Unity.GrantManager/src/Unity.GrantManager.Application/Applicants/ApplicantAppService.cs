@@ -432,7 +432,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         var applicant = new Applicant
         {
-            ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),            
+            ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
             // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
             NonRegOrgName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
