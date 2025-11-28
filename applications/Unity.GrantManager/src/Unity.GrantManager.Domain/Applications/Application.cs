@@ -112,9 +112,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     // This is the Project Level Electoral District, not the Applicant's Electoral District.
     public string? ElectoralDistrict { get; set; }
 
-    // This is the Applicant's Electoral District relevant to the Address on the application
-    // specified as the primary Electoral District Address for the Form
-    // This value is meant to be in sync with the Applicant 's selected Address for Electoral District
+    // This is the Applicant's Electoral District, relevant to either the Applicants Physical or Mailing address.
     public string? ApplicantElectoralDistrict { get; set; }
 
     public string? Place { get; set; }
