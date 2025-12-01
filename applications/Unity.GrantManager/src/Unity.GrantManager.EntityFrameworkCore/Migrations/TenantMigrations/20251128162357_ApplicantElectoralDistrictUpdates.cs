@@ -15,6 +15,14 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 table: "Applications",
                 type: "text",
                 nullable: true);
+
+            // Migrate data from old ElectoralDistrict column in Applicants to new ApplicantElectoralDistrict column in Applications
+            migrationBuilder.Sql(@"
+                UPDATE ""Applications"" a
+                SET ""ApplicantElectoralDistrict"" = ap.""ElectoralDistrict""
+                FROM ""Applicants"" ap
+                WHERE a.""ApplicantId"" = ap.""Id"" AND ap.""ElectoralDistrict"" IS NOT NULL;
+            ");
         }
 
         /// <inheritdoc />
