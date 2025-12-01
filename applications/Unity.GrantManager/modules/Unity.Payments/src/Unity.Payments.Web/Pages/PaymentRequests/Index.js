@@ -5,7 +5,7 @@ $(function () {
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
-    toastr.options.positionClass = 'toast-top-center';
+
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'referenceNumber',
@@ -50,7 +50,7 @@ $(function () {
                     contentType: 'application/json',
                     data: JSON.stringify(selectedPaymentIds)
                 })
-                .done(() => abp.notify.info(l('Successfully Added To Reconciliation Queue')))
+                .done(() => abp.notify.success('The Status Check has been sent for verification to CFS. Please refresh this page to check for Status updates.'))
                 .fail(() => abp.notify.error(l('Failed To Add To Reconciliation Queue')));
             }
         },

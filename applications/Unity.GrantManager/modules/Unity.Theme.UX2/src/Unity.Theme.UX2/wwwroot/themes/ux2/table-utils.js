@@ -290,7 +290,7 @@ function initializeDataTable(options) {
                         firstLast: false
                     },
                     pageLength: {
-                        menu: [1, 10, 25, 50, 100],
+                        menu: [10, 25, 50, 100],
                     }
                 }
             },
