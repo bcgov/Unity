@@ -59,8 +59,7 @@ $(function () {
             getBusinessNumberColumn(columnIndex++),
             getFiscalDayColumn(columnIndex++),
             getStartedOperatingDateColumn(columnIndex++),
-            getIsDuplicatedColumn(columnIndex++),
-            getElectoralDistrictColumn(columnIndex++),
+            getIsDuplicatedColumn(columnIndex++),            
             getCreationTimeColumn(columnIndex++),
             getLastModificationTimeColumn(columnIndex++)
         ];
@@ -364,20 +363,6 @@ $(function () {
             visible: false,
             render: function (data) {
                 return convertToYesNo(data);
-            },
-            index: columnIndex
-        }
-    }
-
-    function getElectoralDistrictColumn(columnIndex) {
-        return {
-            title: 'Electoral District',
-            data: 'electoralDistrict',
-            name: 'electoralDistrict',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
             },
             index: columnIndex
         }

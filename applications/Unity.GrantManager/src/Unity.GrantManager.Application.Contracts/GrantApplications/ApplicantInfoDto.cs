@@ -13,6 +13,8 @@ public class ApplicantInfoDto : CustomDataFieldDto
     public string ApplicationReferenceNo { get; set; } = string.Empty;
     public string ApplicantName { get; set; } = string.Empty;
     public GrantApplicationState ApplicationStatusCode { get; set; }
+    
+    // Sourced from the Application.ApplicantElectoralDistrict
     public string? ElectoralDistrict { get; set; }
 
     public ApplicantSummaryDto? ApplicantSummary { get; set; }
