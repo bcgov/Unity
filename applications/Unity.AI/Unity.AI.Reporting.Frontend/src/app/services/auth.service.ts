@@ -51,24 +51,32 @@ export class AuthService {
   }
 
   async isAuthenticated(): Promise<boolean> {
+    console.log('--- AuthService.isAuthenticated() called ---');
     const token = this.getToken();
-    
+
     // Check for null, undefined, empty string, or whitespace-only strings
     if (!token || token.trim() === '') {
+      console.log('❌ No token found or empty token');
       return false;
     }
-    
+
+    console.log('Token found, validating format...');
+
     // Check if token has the correct JWT format (three parts separated by dots)
     const parts = token.split('.');
     if (parts.length !== 3) {
+      console.log('❌ Invalid token format - does not have 3 parts');
       return false;
     }
-    
+
     // Check that each part is not empty
     if (parts.some(part => !part || part.trim() === '')) {
+      console.log('❌ Invalid token format - has empty parts');
       return false;
     }
-    
+
+    console.log('✓ Token format is valid');
+
     // Basic token presence and format validation only
     // All cryptographic validation is handled by the backend
     return true;

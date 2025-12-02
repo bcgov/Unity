@@ -72,6 +72,9 @@ services:
       - /app/src/environments
     environment:
       - NODE_ENV=development
+      - API_URL=${API_URL:-http://localhost:5000/api}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - VERSION=${UAI_BUILD_VERSION:-0.0.0}
     networks:
       - unity-ai-network
     depends_on:

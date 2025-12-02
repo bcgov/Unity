@@ -62,11 +62,14 @@ services:
     build:
       context: ./Unity.AI.Reporting.Frontend
       args:
-        - API_URL=http://localhost:5000/api
         - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
         - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
     ports:
       - "80:80"
+    environment:
+      - API_URL=${API_URL:-http://localhost:5000/api}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - VERSION=${UAI_BUILD_VERSION:-0.0.0}
     depends_on:
       reporting-backend:
         condition: service_started
