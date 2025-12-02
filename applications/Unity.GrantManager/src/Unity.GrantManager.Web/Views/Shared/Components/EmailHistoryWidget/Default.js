@@ -37,22 +37,26 @@
                     className: 'dt-control',
                     orderable: false,
                     data: null,
+                    width: '30px',
                     defaultContent: ''
                 },
                 {
                     title: 'Subject',
                     data: 'subject',
-                    className: 'data-table-header'
+                    className: 'data-table-header text-break',
+                    width: '30%'
                 },
                 {
                     title: 'Status',
                     data: 'status',
-                    className: 'data-table-header'
+                    className: 'data-table-header',
+                    width: '15%'
                 },
                 {
                     title: 'Created',
                     data: 'creationTime',
                     className: 'data-table-header',
+                    width: '180px',
                     render: function (data) {
                         return data != null ? luxon.DateTime.fromISO(data, {
                             locale: abp.localization.currentCulture.name,
@@ -70,6 +74,7 @@
                     title: 'Sent By',
                     data: 'sentBy',
                     className: 'data-table-header',
+                    width: '20%',
                     render: function (data) {
                         return data ? data.name + ' ' + data.surname : '—';
                     },
@@ -94,6 +99,8 @@
                 },
                 {
                     data: 'status',
+                    width: '60px',
+                    className: 'text-center',
                     render: function (data, _, full, meta) {
                         if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.Send')) {
                             return generateDeleteButtonContent(full, meta.row);

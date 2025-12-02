@@ -1,5 +1,26 @@
+/* Updated for DataTables v2 - ensure proper width handling with scrollX */
 #ApplicationAttachmentsTable_wrapper .dt-scroll-body {
-    overflow: unset !important;
+    overflow: visible !important;
+}
+
+/* Ensure table wrapper uses full width */
+#ApplicationAttachmentsTable_wrapper {
+    width: 100%;
+}
+
+/* Ensure scroll container properly sizes */
+#ApplicationAttachmentsTable_wrapper .dt-scroll {
+    overflow: visible;
+}
+
+/* Ensure inner scroll elements take full width */
+#ApplicationAttachmentsTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+#ApplicationAttachmentsTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
+    width: 100% !important;
+}
+
+#ApplicationAttachmentsTable_wrapper .dt-scroll-body table {
+    width: 100% !important;
 }
 
 /*27121 Bug Fix*/
