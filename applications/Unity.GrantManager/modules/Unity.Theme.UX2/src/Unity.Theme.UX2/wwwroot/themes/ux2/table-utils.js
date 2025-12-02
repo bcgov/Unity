@@ -116,8 +116,16 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
 
             // Sync initial value if enabled
             if (opts.syncOnInit) {
+                let inputVal = $input.val();
                 let currentSearch = api.search();
-                if (currentSearch) {
+                
+                // If input already has a value (e.g. from browser form persistence),
+                // apply it to the DataTable search
+                if (inputVal && inputVal !== currentSearch) {
+                    api.search(inputVal).draw();
+                }
+                // Otherwise, sync DataTable's search value to the input
+                else if (currentSearch && !inputVal) {
                     $input.val(currentSearch);
                 }
             }
@@ -129,6 +137,10 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
                     let val = $input.val();
                     if (api.search() !== val) {
                         api.search(val).draw();
+                    }
+                    // Update FilterRow button state if plugin is initialized
+                    if (settings._filterRow && typeof settings._filterRow._updateButtonState === 'function') {
+                        settings._filterRow._updateButtonState();
                     }
                 }, opts.delay);
             };
@@ -517,12 +529,12 @@ function getSelectColumn(title, dataField, uniqueTableId) {
 }
 
 /**
- * Initializes the DataTable by clearing default button classes and resetting search state.
+ * Initializes the DataTable by clearing default button classes.
+ * Note: Search state is preserved and restored by stateSave/stateLoad and FilterRow plugin.
  * @param {DataTable} iDt - DataTable API instance
  */
 function init(iDt) {
     $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
-    iDt.search('').columns().search('').draw();
 }
 
 // initializeFilterButtonPopover function removed - replaced by FilterRow plugin
