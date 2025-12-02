@@ -1,10 +1,10 @@
-#ApplicationAttachmentsTable_wrapper .dataTables_scrollBody {
+#ApplicationAttachmentsTable_wrapper .dt-scroll-body {
     overflow: unset !important;
 }
 
 /*27121 Bug Fix*/
 @media (max-height: 768px) {
-    .dataTables_scrollBody {
+    .dt-scroll-body {
        max-height: inherit !important;
     }
 }
