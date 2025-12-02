@@ -31,6 +31,5 @@ public class ApplicantListDto : AuditedEntityDto<Guid>
     public string? SupplierId { get; set; }
     public Guid? SiteId { get; set; }
     public decimal? MatchPercentage { get; set; }
-    public bool? IsDuplicated { get; set; }
-    public string? ElectoralDistrict { get; set; }
+    public bool? IsDuplicated { get; set; }    
 }

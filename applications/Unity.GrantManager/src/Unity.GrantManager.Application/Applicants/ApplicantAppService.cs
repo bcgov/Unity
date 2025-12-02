@@ -48,7 +48,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicant = await CreateNewApplicantAsync(intakeMap);
         } else {
             applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
-            applicant.ElectoralDistrict = intakeMap.ElectoralDistrict ?? applicant.ElectoralDistrict;
             // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
             applicant.NonRegOrgName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegOrgName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
@@ -434,7 +433,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         var applicant = new Applicant
         {
             ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
-            ElectoralDistrict = intakeMap.ElectoralDistrict,
             // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
             NonRegOrgName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
@@ -681,7 +679,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 SiteId = applicant.SiteId,
                 MatchPercentage = applicant.MatchPercentage,
                 IsDuplicated = applicant.IsDuplicated,
-                ElectoralDistrict = applicant.ElectoralDistrict,
                 CreationTime = applicant.CreationTime,
                 LastModificationTime = applicant.LastModificationTime
             }).ToList();

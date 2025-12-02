@@ -14,6 +14,7 @@ using Unity.GrantManager.Payments;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationForms;
 using Volo.Abp;
+using Unity.Payments.Enums;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -139,6 +140,12 @@ namespace Unity.Payments.Web.Pages.Payments
             if (supplier == null || site == null || supplier.Number == null)
             {
                 missingFields = true;
+            }
+
+            // If the site paygroup is eft but there is no bank account
+            if(site != null && site.PaymentGroup == PaymentGroup.EFT && string.IsNullOrWhiteSpace(site.BankAccount)) 
+            {
+                errorList.Add("Error: Payment cannot be submitted because the default site’s pay group is set to EFT, but no bank account is configured. Please update the bank account before proceeding.");
             }
 
             if (remainingAmount <= 0)
