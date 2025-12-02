@@ -342,6 +342,7 @@
         _restoreFilterState: function () {
             let dt = this.s.dt;
             let that = this;
+            let needsRedraw = false;
 
             dt.columns().every(function (i) {
                 let column = this;
@@ -353,16 +354,23 @@
                 let key = colName || title;
                 if (searchVal) {
                     that.s.filterData[key] = searchVal;
+                    needsRedraw = true;
                 }
             });
 
             // Show filter row if filters are active
             let externalSearchId = dt.init().externalSearchInputId;
-            let searchVal = externalSearchId ? $(externalSearchId).val() : '';
-            let hasFilters = Object.keys(this.s.filterData).length > 0 || searchVal !== '';
+            let externalSearchVal = externalSearchId ? $(externalSearchId).val() : '';
+            let hasFilters = Object.keys(this.s.filterData).length > 0 || externalSearchVal !== '';
 
             if (hasFilters) {
                 this.dom.filterRow.show();
+            }
+
+            // Trigger a redraw if there were column filters to apply
+            // This ensures the filtered state is applied on page reload
+            if (needsRedraw) {
+                dt.draw();
             }
         },
 
