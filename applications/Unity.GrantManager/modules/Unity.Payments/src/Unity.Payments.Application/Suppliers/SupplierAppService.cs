@@ -144,7 +144,8 @@ namespace Unity.Payments.Suppliers
                     if (existingSite != null)
                     {
                         // Compare fields and update if necessary
-                        if (existingSite.Country != casSite.Country ||
+                        if (existingSite.PaymentGroup != casSite.PaymentGroup ||
+                            existingSite.Country != casSite.Country ||
                             existingSite.EFTAdvicePref != casSite.EFTAdvicePref ||
                             existingSite.EmailAddress != casSite.EmailAddress ||
                             existingSite.PostalCode != casSite.PostalCode ||

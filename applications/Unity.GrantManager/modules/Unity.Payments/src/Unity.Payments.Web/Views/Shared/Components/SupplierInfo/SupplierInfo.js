@@ -176,7 +176,7 @@ $(function () {
 
 
                     if (!response.hasChanges) {
-                            let message = "The site list is already up to date.";
+                            let message = "The site list has been refreshed, and no changes were detected since the last update.";
                             Swal.fire({
                                 title: 'Action Complete',
                                 text: message,
