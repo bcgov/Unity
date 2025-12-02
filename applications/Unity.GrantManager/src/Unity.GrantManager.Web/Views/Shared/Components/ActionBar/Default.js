@@ -242,10 +242,20 @@ $(function () {
     });
 
     $('#assignApplication').click(function () {
-        assignApplicationModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds),
-            actionType: 'Add'
-        });
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                // Open modal with cache key instead of application IDs array
+                assignApplicationModal.open({
+                    cacheKey: response.cacheKey,
+                    actionType: 'Add'
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare assignee selection. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
 
     $('#unAssignApplication').click(function () {
