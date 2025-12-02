@@ -92,27 +92,27 @@
     width: 100%;
 }
 
-#ApplicantAddressesTable_wrapper .dataTables_scroll,
-#ApplicantContactsTable_wrapper .dataTables_scroll {
+#ApplicantAddressesTable_wrapper .dt-scroll,
+#ApplicantContactsTable_wrapper .dt-scroll {
     overflow: visible;
 }
 
-#ApplicantAddressesTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner,
-#ApplicantContactsTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner,
-#ApplicantAddressesTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner table,
-#ApplicantContactsTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner table {
+#ApplicantAddressesTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+#ApplicantContactsTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+#ApplicantAddressesTable_wrapper .dt-scroll-head .dt-scroll-headInner table,
+#ApplicantContactsTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
     width: 100% !important;
 }
 
-#ApplicantAddressesTable_wrapper .dataTables_scrollBody,
-#ApplicantContactsTable_wrapper .dataTables_scrollBody {
+#ApplicantAddressesTable_wrapper .dt-scroll-body,
+#ApplicantContactsTable_wrapper .dt-scroll-body {
     overflow-x: auto;
     overflow-y: visible;
     max-height: none !important;
 }
 
-#ApplicantAddressesTable_wrapper .dataTables_scrollBody table,
-#ApplicantContactsTable_wrapper .dataTables_scrollBody table {
+#ApplicantAddressesTable_wrapper .dt-scroll-body table,
+#ApplicantContactsTable_wrapper .dt-scroll-body table {
     width: 100% !important;
 }
 

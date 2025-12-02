@@ -1,0 +1,30 @@
+﻿/* Updated for DataTables v2 - ensure proper width handling with scrollX */
+#EmailHistoryTable_wrapper .dt-scroll-body {
+    overflow: unset !important;
+}
+
+/* Ensure table wrapper uses full width */
+#EmailHistoryTable_wrapper {
+    width: 100%;
+}
+
+    /* Ensure scroll container properly sizes */
+    #EmailHistoryTable_wrapper .dt-scroll {
+        overflow-x: auto;
+    }
+
+    /* Ensure inner scroll elements take full width */
+    #EmailHistoryTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+    #EmailHistoryTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
+        width: 100% !important;
+    }
+
+    #EmailHistoryTable_wrapper .dt-scroll-body table {
+        width: 100% !important;
+    }
+
+@media (max-height: 768px) {
+    .dt-scroll-body {
+        max-height: inherit !important;
+    }
+}

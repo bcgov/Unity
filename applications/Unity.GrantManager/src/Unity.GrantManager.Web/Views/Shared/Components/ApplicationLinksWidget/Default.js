@@ -100,7 +100,7 @@ $(function () {
                 {
                     title: l('ApplicationLinks:LinkType'),
                     data: 'linkType',
-                    width: '20%',
+                    width: '14%',
                     render: function (data) {
                         return data ?? nullPlaceholder;
                     }
@@ -108,7 +108,7 @@ $(function () {
                 {
                     title: '',
                     data: 'id',
-                    width: '5%',
+                    width: '6%',
                     className: 'text-center',
                     render: function (data, type, full, meta) {
                         return '<button class="btn btn-link p-0 delete-link-btn" data-link-id="' + data + '" title="Delete Link" style="color: #0066cc; text-decoration: none;"><i class="fa fa-times"></i></button>';

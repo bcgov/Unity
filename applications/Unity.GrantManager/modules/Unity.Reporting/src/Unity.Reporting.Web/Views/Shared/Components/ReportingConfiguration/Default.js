@@ -1730,10 +1730,11 @@ $(function () {
 
                 if (containerHeight > 100) { // Only adjust if container has reasonable height
                     // Calculate available height for the table body
+                    // Updated for DataTables v2 class names
                     const wrapper = $('#ReportConfigurationTable_wrapper');
-                    const header = wrapper.find('.dataTables_scrollHead');
-                    const info = wrapper.find('.dataTables_info');
-                    const paginate = wrapper.find('.dataTables_paginate');
+                    const header = wrapper.find('.dt-scroll-head');
+                    const info = wrapper.find('.dt-info');
+                    const paginate = wrapper.find('.dt-paging');
 
                     const headerHeight = header.length ? header.outerHeight(true) : 0;
                     const infoHeight = info.length ? info.outerHeight(true) : 0;
@@ -1746,7 +1747,7 @@ $(function () {
                     const scrollBodyHeight = Math.max(minHeight, availableHeight);
 
                     // Apply the calculated height
-                    wrapper.find('.dataTables_scrollBody').css({
+                    wrapper.find('.dt-scroll-body').css({
                         'max-height': scrollBodyHeight + 'px',
                         'height': scrollBodyHeight + 'px'
                     });
