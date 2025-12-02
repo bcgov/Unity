@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailHistoryWidget;
 
-[Widget(ScriptTypes = [typeof(EmailHistoryScriptBundleContributor)])]
+[Widget(
+    ScriptTypes = new [] {typeof(EmailHistoryScriptBundleContributor)}, 
+    StyleTypes = new [] {typeof(EmailHistoryStyleBundleContributor)})]
 public class EmailHistoryWidgetViewComponent : AbpViewComponent
 {
     public IViewComponentResult Invoke()
