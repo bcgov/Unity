@@ -65,7 +65,7 @@ $(function () {
             className: 'data-table-header text-break',
             index: 1,
             orderable: false,
-            width: '50%',
+            width: '40%',
         };
     }
 
@@ -74,7 +74,7 @@ $(function () {
             title: 'Label',
             data: 'displayName',
             className: 'data-table-header text-break',
-            width: '50%',
+            width: '35%',
             render: function (data) {
                 let $cellWrapper = $('<div>').addClass(
                     'd-flex align-items-center'
@@ -106,6 +106,8 @@ $(function () {
             title: '',
             name: 'chefsFileDownload',
             data: 'chefsFileId',
+            width: '150px',
+            className: 'text-nowrap',
             render: function (data, type, full, meta) {
                 let html =
                     '<a href="/api/app/attachment/chefs/' +
@@ -118,11 +120,11 @@ $(function () {
                     full.fileName +
                     '" >';
                 html +=
-                    '<button class="btn" type="button"><i class="fl fl-download"></i><span>Download</span></button></a>';
+                    '<button class="btn px-2" type="button"><i class="fl fl-download"></i><span>Download</span></button></a>';
                 return html;
             },
             orderable: false,
-            index: 2,
+            index: 2
         };
     }
 
