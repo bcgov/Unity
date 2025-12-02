@@ -201,9 +201,19 @@ $(function () {
 
     // Batch Approval Start
     $('#approveApplications').on("click", function () {
-        approveApplicationsModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds)
-        });
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                // Open modal with cache key instead of application IDs array
+                approveApplicationsModal.open({
+                    cacheKey: response.cacheKey
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare bulk approval. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
     approveApplicationsModal.onResult(function (_, response) {                
         let transformedFailures = response.responseText.failures.map(failure => {

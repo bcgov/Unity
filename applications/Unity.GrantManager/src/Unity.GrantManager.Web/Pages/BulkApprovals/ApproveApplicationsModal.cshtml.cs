@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Web.Pages.BulkApprovals.ViewModels;
 using Unity.Modules.Shared.Utils;
@@ -12,7 +13,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 namespace Unity.GrantManager.Web.Pages.BulkApprovals;
 
 public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApprovalsAppService,
-    BrowserUtils browserUtils) : AbpPageModel
+    BrowserUtils browserUtils,
+    ApplicationIdsCacheService cacheService) : AbpPageModel
 {
     [BindProperty]
     public List<BulkApplicationApprovalViewModel>? BulkApplicationApprovals { get; set; }
@@ -32,51 +34,78 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
     [TempData]
     public bool MaxBatchCountExceeded { get; set; }
 
-    public async Task OnGetAsync(string applicationIds)
+    public async Task OnGetAsync(string cacheKey)
     {
         MaxBatchCount = BatchApprovalConsts.MaxBatchCount;
         BulkApplicationApprovals = [];
         MaxBatchCountExceededError = L["ApplicationBatchApprovalRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount.ToString()].Value;
 
-        Guid[] applicationGuids = ParseApplicationIds(applicationIds);
-
-        if (!ValidCount(applicationGuids))
+        try
         {
-            MaxBatchCountExceeded = true;
-        }
+            // Retrieve application IDs from distributed cache
+            var selectedApplicationIds = await cacheService.GetApplicationIdsAsync(cacheKey);
 
-        if (applicationGuids.Length == 0)
-        {
-            return;
-        }
-
-        // Load the applications by Id
-        var applications = await bulkApprovalsAppService.GetApplicationsForBulkApproval(applicationGuids);
-        var offsetMinutes = browserUtils.GetBrowserOffset();
-
-        foreach (var application in applications)
-        {
-            var bulkApproval = new BulkApplicationApprovalViewModel
+            if (selectedApplicationIds == null || selectedApplicationIds.Count == 0)
             {
-                ApplicationId = application.ApplicationId,
-                ReferenceNo = application.ReferenceNo,
-                ApplicantName = application.ApplicantName,
-                DecisionDate = application.FinalDecisionDate ?? DateTime.UtcNow.AddMinutes(-offsetMinutes),
-                RequestedAmount = application.RequestedAmount,
-                RecommendedAmount = application.RecommendedAmount,
-                ApprovedAmount = application.ApprovedAmount,
-                ApplicationStatus = application.ApplicationStatus,
-                FormName = application.FormName,
-                IsValid = application.IsValid,
-                IsDirectApproval = application.IsDirectApproval         
-            };
+                Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                ViewData["Error"] = "The session has expired. Please try selecting applications again.";
+                Invalid = true;
+                return;
+            }
 
-            SetNotes(application, bulkApproval);
-            BulkApplicationApprovals.Add(bulkApproval);
+            // Convert List<Guid> to Guid[] for existing code compatibility
+            Guid[] applicationGuids = selectedApplicationIds.ToArray();
+
+            // Clean up cache after retrieval (one-time use)
+            await cacheService.RemoveAsync(cacheKey);
+
+            // Existing validation logic
+            if (!ValidCount(applicationGuids))
+            {
+                MaxBatchCountExceeded = true;
+            }
+
+            if (applicationGuids.Length == 0)
+            {
+                return;
+            }
+
+            // Load the applications by Id
+            var applications = await bulkApprovalsAppService.GetApplicationsForBulkApproval(applicationGuids);
+            var offsetMinutes = browserUtils.GetBrowserOffset();
+
+            foreach (var application in applications)
+            {
+                var bulkApproval = new BulkApplicationApprovalViewModel
+                {
+                    ApplicationId = application.ApplicationId,
+                    ReferenceNo = application.ReferenceNo,
+                    ApplicantName = application.ApplicantName,
+                    DecisionDate = application.FinalDecisionDate ?? DateTime.UtcNow.AddMinutes(-offsetMinutes),
+                    RequestedAmount = application.RequestedAmount,
+                    RecommendedAmount = application.RecommendedAmount,
+                    ApprovedAmount = application.ApprovedAmount,
+                    ApplicationStatus = application.ApplicationStatus,
+                    FormName = application.FormName,
+                    IsValid = application.IsValid,
+                    IsDirectApproval = application.IsDirectApproval
+                };
+
+                SetNotes(application, bulkApproval);
+                BulkApplicationApprovals.Add(bulkApproval);
+            }
+
+            Invalid = applications.Exists(s => !s.IsValid) || MaxBatchCountExceeded;
+            ApplicationsCount = applications.Count;
+
+            Logger.LogInformation("Successfully loaded bulk approval modal for {Count} applications", selectedApplicationIds.Count);
         }
-
-        Invalid = applications.Exists(s => !s.IsValid) || MaxBatchCountExceeded;
-        ApplicationsCount = applications.Count;
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading bulk approval modal");
+            ViewData["Error"] = "An error occurred while loading the approval form. Please try again.";
+            Invalid = true;
+        }
     }
 
     private void SetNotes(BulkApprovalDto application, BulkApplicationApprovalViewModel bulkApproval)
@@ -157,11 +186,6 @@ public class ApproveApplicationsModalModel(IBulkApprovalsAppService bulkApproval
         }
 
         return bulkApprovals;
-    }
-
-    private static Guid[] ParseApplicationIds(string applicationIds)
-    {
-        return JsonConvert.DeserializeObject<Guid[]>(applicationIds ?? string.Empty) ?? [];
     }
 
     private bool ValidCount(Guid[] applicationGuids)
