@@ -20,7 +20,7 @@ docker-compose up -d
 
 ## Services
 
-- **Frontend**: http://localhost:80 (Angular 20)
+- **Frontend**: http://localhost:80 (Angular 20, container runs on port 8080)
 - **Backend API**: http://localhost:5000 (Flask + Azure OpenAI)
 - **Database**: PostgreSQL with pgvector
 - **pgAdmin** (dev only): http://localhost:8080
@@ -92,3 +92,13 @@ docker-compose logs -f backend
 # Embed database schemas (after first run)
 docker-compose exec reporting-backend python app.py embed
 ```
+
+## Deployment Notes
+
+### OpenShift Compatibility
+Frontend containers are configured for OpenShift deployment:
+- Run as non-root user (UID 1001) for security compliance
+- Use port 8080 internally (mapped from external port 80)
+- Include writable temp directories for nginx operation
+
+See [Manual Image Build Guide](../documentation/manual-image-build-push-openshift.md) for OpenShift deployment procedures.
