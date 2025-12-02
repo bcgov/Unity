@@ -1,4 +1,5 @@
-﻿.scores-block label,input {
+﻿.scores-block label,
+input {
     display: block;
 }
 
@@ -23,15 +24,15 @@
 }
 
 .assessment-scores-container .form-label {
-        font-size: var(--bc-font-size-sm);
-        color: var(--bc-colors-grey-text-300);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin-bottom: 0;
- }
-.assessment-sum{
-    margin-top :2px;
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+.assessment-sum {
+    margin-top: 2px;
 }
 
 #assessment-scoresheet #section-button::after {
@@ -45,11 +46,11 @@
 }
 
 #assessment-scoresheet .preview-btn:not(.collapsed) {
-    background-color: #3470B1;
+    background-color: #3470b1;
     color: #ffffff;
 }
 
-.scoresheet-top-btn-group { 
+.scoresheet-top-btn-group {
     margin-top: -45px;
 }
 
@@ -60,10 +61,10 @@
     border: 1px solid rgba(0, 102, 204, 0.2);
 }
 
-    .ai-generated-answer::placeholder {
-        color: #0066cc;
-        opacity: 0.7;
-    }
+.ai-generated-answer::placeholder {
+    color: #0066cc;
+    opacity: 0.7;
+}
 
 /* Human-confirmed answer styling (black text) */
 .human-confirmed-answer {
@@ -101,4 +102,51 @@
     font-size: 0.8rem;
     color: #004080;
     line-height: 1.3;
+}
+
+/* Low confidence answer styling */
+.low-confidence-answer {
+    border: 2px solid #f3c736 !important;
+    background-color: #fff3e0 !important;
+}
+
+.low-confidence-indicator {
+    display: inline-block;
+    margin-left: 8px;
+    color: #f3c736;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.low-confidence-indicator i {
+    margin-right: 4px;
+}
+
+/* Low confidence question styling (for accordion items) */
+.low-confidence-question {
+    border-left: 4px solid #f3c736 !important;
+    background-color: #fff8e1;
+}
+
+.low-confidence-question .accordion-button {
+    background-color: #fff8e1 !important;
+}
+
+.low-confidence-question .accordion-button:not(.collapsed) {
+    background-color: #ffe0b2 !important;
+}
+
+.low-confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background-color: #f3c736;
+    color: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.low-confidence-badge i {
+    margin-right: 4px;
 }

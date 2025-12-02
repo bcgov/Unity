@@ -10,12 +10,12 @@
             data-original-value="@Model.Answer"
             data-yes-numeric-value="@Model.YesValue"
             data-no-numeric-value="@Model.NoValue"
-            disabled="@Model.IsDisabled"
             data-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
+            disabled="@Model.IsDisabled"
             onchange="handleInputChange('@Model.QuestionId','answer-yesno-'); markAsHumanConfirmed(this)">
         <option value="">Please choose...</option>
-        <!option value="Yes" @(Model.Answer == "Yes" ? "selected" : "")>Yes</!option><!-- Note: Need to check this-->
-        <!option value="No" @(Model.Answer == "No" ? "selected" : "")>No</!option><!-- Note: Need to check this-->
+        <!option value="Yes" @(Model.Answer == "Yes" ? "selected" : "")>Yes</!option>
+        <!option value="No" @(Model.Answer == "No" ? "selected" : "")>No</!option>
     </select>
     @if (!Model.IsHumanConfirmed && !string.IsNullOrEmpty(Model.Answer))
     {

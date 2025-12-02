@@ -48,6 +48,7 @@
                                                     @foreach (var question in sec.Fields.OrderBy(q => q.Order))
                                                     {
                                                         var convertedDefinition = question.Definition?.ConvertDefinition(question.Type);
+                                                        var lowConfidenceClass = question.AIConfidence.HasValue && question.AIConfidence.Value < 85 ? "low-confidence-question" : "";
 
                                                         <div class="accordion-item">
                                                             <h2 class="accordion-header" id="question-heading-@question.Id">
@@ -56,6 +57,12 @@
                                                                     @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
                                                                     {
                                                                         <span> *</span>
+                                                                    }
+                                                                    @if (question.AIConfidence.HasValue && question.AIConfidence.Value < 85)
+                                                                    {
+                                                                        <span class="low-confidence-badge ms-2" title="AI confidence is @question.AIConfidence.Value.ToString("F1")%.">
+                                                                           <i class="fa-solid fa-wand-sparkles"></i> <i class="fas fa-exclamation-triangle"></i> @question.AIConfidence.Value.ToString("F1")%
+                                                                        </span>
                                                                     }
                                                                 </button>
                                                             </h2>
