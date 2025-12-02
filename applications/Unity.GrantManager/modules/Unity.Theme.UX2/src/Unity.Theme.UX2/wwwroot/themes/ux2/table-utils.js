@@ -235,12 +235,12 @@ function initializeDataTable(options) {
     // Add official colvis button if column selection is enabled
     if (!disableColumnSelect) {
         updatedActionButtons.push({
-            extend: 'colvis',
+            extend: 'colvisAlpha',
             text: 'Columns',
             className: 'custom-table-btn flex-none btn btn-secondary',
             columns: ':not(.notexport):not([data-name="select"])',
             columnText: function (dt, idx, title) {
-                // Return title for sorting - will be sorted alphabetically by Buttons extension
+                // Return title for sorting - will be sorted alphabetically by colvizAlpha extension
                 return title;
             }
         });

@@ -224,7 +224,7 @@ $(function () {
         },
         {
             id: 'ColumnVisibility',
-            extend: 'colvis',
+            extend: 'colvisAlpha',
             text: 'Columns',
             className: 'custom-table-btn flex-none btn btn-secondary',
             columns: ':not(.notexport):not(.custom-actions-header)'

@@ -47,6 +47,7 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/themes/ux2/zone-extensions.js");
         context.Files.Add("/themes/ux2/layout.js");
         context.Files.Add("/themes/ux2/plugins/filterRow.js");
+        context.Files.Add("/themes/ux2/plugins/colvizAlpha.js");
         context.Files.Add("/themes/ux2/table-utils.js");
     }
 }
