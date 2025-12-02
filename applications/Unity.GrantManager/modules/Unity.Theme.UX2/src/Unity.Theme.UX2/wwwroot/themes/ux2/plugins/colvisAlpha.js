@@ -37,9 +37,9 @@ $.extend(DataTable.ext.buttons, {
                     
                     // Clean up title text
                     title = title
-                        .replace(/\n/g, ' ')
-                        .replace(/<br\s*\/?>/gi, ' ')
-                        .replace(/<select[^>]*>.*?<\/select>/gi, '')
+                        .replaceAll('\n', ' ')
+                        .replaceAll(/<br\s*\/?>/gi, ' ')
+                        .replaceAll(/<select[^>]*>.*?<\/select>/gi, '')
                         .trim();
                     
                     // Strip HTML comments if available
@@ -85,7 +85,8 @@ $.extend(DataTable.ext.buttons, {
 
     /**
      * Single button to toggle column visibility (alpha variant).
-     * This is used internally by colvisAlpha and does not respond to column reorder events.
+     * This is used internally by colvisAlpha. It tracks columns by their original index
+     * to maintain correct functionality after ColReorder changes column positions.
      */
     columnVisibilityAlpha: {
         columns: undefined,
@@ -94,37 +95,62 @@ $.extend(DataTable.ext.buttons, {
         },
         className: 'buttons-columnVisibility',
         action: function (e, dt, button, conf) {
-            let col = dt.columns(conf.columns);
+            // Get the current column index - may have changed due to ColReorder
+            let currentIdx = conf._currentColumnIndex === undefined ? conf.columns : conf._currentColumnIndex;
+            let col = dt.columns(currentIdx);
             let curr = col.visible();
 
-            col.visible(
-                conf.visibility !== undefined ? conf.visibility : !(curr.length ? curr[0] : false)
-            );
+            let currentVisibility = curr.length ? curr[0] : false;
+            let newVisibility = conf.visibility === undefined ? !currentVisibility : conf.visibility;
+
+            col.visible(newVisibility);
         },
         init: function (dt, button, conf) {
-            let that = this;
+            // Store the original column index for tracking across reorders
+            conf._originalColumnIndex = conf.columns;
+            conf._currentColumnIndex = conf.columns;
+            
             let column = dt.column(conf.columns);
 
             button.attr('data-cv-idx', conf.columns);
 
             // Listen to visibility changes to update button state
-            dt.on('column-visibility.dt' + conf.namespace, function (e, settings, index, state) {
+            dt.on('column-visibility.dt' + conf.namespace, (e, settings, index, state) => {
                 if (
-                    column.index() === index &&
+                    conf._currentColumnIndex === index &&
                     !settings.bDestroying &&
                     settings.nTable == dt.settings()[0].nTable
                 ) {
-                    that.active(state);
+                    this.active(state);
                 }
             });
 
-            // Do NOT listen to column-reorder events - maintain original column reference
-            // This is the key difference from standard columnVisibility
+            // Listen to column-reorder events to update the current column index
+            // This ensures the button continues to target the correct column after reorder
+            dt.on('column-reorder.dt' + conf.namespace, () => {
+                // Button has been removed from the DOM
+                if (conf.destroying) {
+                    return;
+                }
+
+                // Use ColReorder's transpose to find where our original column now lives
+                if (dt.colReorder && dt.colReorder.transpose) {
+                    conf._currentColumnIndex = dt.colReorder.transpose(conf._originalColumnIndex, 'toCurrent');
+                }
+                
+                // Update the column reference and check visibility
+                column = dt.column(conf._currentColumnIndex);
+
+                // Update button active state based on current visibility
+                this.active(column.visible());
+            });
 
             this.active(column.visible());
         },
         destroy: function (dt, button, conf) {
-            dt.off('column-visibility.dt' + conf.namespace);
+            dt.off('column-visibility.dt' + conf.namespace).off(
+                'column-reorder.dt' + conf.namespace
+            );
         }
     },
 
