@@ -240,7 +240,7 @@ function initializeDataTable(options) {
             className: 'custom-table-btn flex-none btn btn-secondary',
             columns: ':not(.notexport):not([data-name="select"])',
             columnText: function (dt, idx, title) {
-                // Return title for sorting - will be sorted alphabetically by colvizAlpha extension
+                // Return title for sorting - will be sorted alphabetically by colvisAlpha extension
                 return title;
             }
         });
