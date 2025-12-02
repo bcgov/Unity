@@ -43,7 +43,7 @@ public class ApplicationApplicantAppService(
         applicantInfoDto.ApplicationReferenceNo = application.ReferenceNo;
         applicantInfoDto.ApplicantName = application.Applicant?.ApplicantName ?? string.Empty;
         applicantInfoDto.ApplicationStatusCode = application.ApplicationStatus.StatusCode;
-        applicantInfoDto.ElectoralDistrict = application.Applicant?.ElectoralDistrict ?? string.Empty;
+        applicantInfoDto.ElectoralDistrict = application.ApplicantElectoralDistrict;
 
         //-- APPLICANT INFO SUMMARY
         if (application.Applicant != null &&
@@ -138,8 +138,7 @@ public class ApplicationApplicantAppService(
             ContactBusinessPhone = applicantInfo.ApplicantAgent?.Phone ?? string.Empty,
             ContactCellPhone = applicantInfo.ApplicantAgent?.Phone2 ?? string.Empty,
 
-            ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(applicantInfo.Applicant?.ApplicantAddresses?.ToList() ?? []),
-            ElectoralDistrict = applicantInfo.Applicant?.ElectoralDistrict ?? string.Empty
+            ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(applicantInfo.Applicant?.ApplicantAddresses?.ToList() ?? [])
         };
     }
 
@@ -186,12 +185,12 @@ public class ApplicationApplicantAppService(
         await UpdateAddressIfPresent(applicationId, application.ApplicantId, input.Data.PhysicalAddress, AddressType.PhysicalAddress);
         await UpdateAddressIfPresent(applicationId, application.ApplicantId, input.Data.MailingAddress, AddressType.MailingAddress);
 
-        // Electoral district
+        // Electoral district - explicitly set by the user
         if (input.Data.ElectoralDistrict != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update) &&
-            application.Applicant != null)
+            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
         {
-            application.Applicant.ElectoralDistrict = input.Data.ElectoralDistrict;
+            // This keeps the electoral district in sync
+            application.ApplicantElectoralDistrict = input.Data.ElectoralDistrict;
         }
 
         // Custom fields
@@ -308,7 +307,7 @@ public class ApplicationApplicantAppService(
     {
         var applicantAddresses = await applicantAddressRepository.FindByApplicantIdAndApplicationIdAsync(applicantId, applicationId);
 
-        var dbAddress = applicantAddresses.FirstOrDefault(a => a.AddressType == updatedAddress.AddressType)
+        var dbAddress = applicantAddresses.Find(a => a.AddressType == updatedAddress.AddressType)
             ?? new ApplicantAddress { ApplicantId = applicantId, AddressType = updatedAddress.AddressType, ApplicationId = applicationId };
 
         ObjectMapper.Map(updatedAddress, dbAddress);
@@ -316,7 +315,7 @@ public class ApplicationApplicantAppService(
         if (dbAddress.Id == Guid.Empty)
             await applicantAddressRepository.InsertAsync(dbAddress);
         else
-            await applicantAddressRepository.UpdateAsync(dbAddress);
+            await applicantAddressRepository.UpdateAsync(dbAddress);       
     }
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId, string uiAnchor, CustomDataFieldDto input)

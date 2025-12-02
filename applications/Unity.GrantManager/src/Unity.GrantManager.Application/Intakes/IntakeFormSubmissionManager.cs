@@ -206,6 +206,7 @@ namespace Unity.GrantManager.Intakes
                     TotalProjectBudget = MappingUtil.ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
                     Community = intakeMap.Community,
                     ElectoralDistrict = intakeMap.ElectoralDistrict,
+                    ApplicantElectoralDistrict = intakeMap.ApplicantElectoralDistrict,
                     RegionalDistrict = intakeMap.RegionalDistrict,
                     SigningAuthorityFullName = intakeMap.SigningAuthorityFullName,
                     SigningAuthorityTitle = intakeMap.SigningAuthorityTitle,
