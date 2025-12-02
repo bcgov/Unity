@@ -77,8 +77,47 @@ export class AuthService {
 
     console.log('✓ Token format is valid');
 
-    // Basic token presence and format validation only
-    // All cryptographic validation is handled by the backend
+    // Decode and check expiration
+    const payload = this.decodeToken(token);
+    if (!payload) {
+      console.log('❌ Failed to decode token payload');
+      return false;
+    }
+
+    // Check if token has expired
+    if (payload.exp) {
+      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      const expirationTime = payload.exp;
+
+      console.log('Token expiration check:');
+      console.log('  Current time:', currentTime, '(' + new Date(currentTime * 1000).toISOString() + ')');
+      console.log('  Expiration time:', expirationTime, '(' + new Date(expirationTime * 1000).toISOString() + ')');
+
+      if (currentTime >= expirationTime) {
+        console.log('❌ Token has expired');
+        // Clear expired token
+        this.clearToken();
+        return false;
+      }
+
+      const timeRemaining = expirationTime - currentTime;
+      console.log('✓ Token is valid for', timeRemaining, 'more seconds');
+    } else {
+      console.log('⚠ Token has no expiration field (exp)');
+    }
+
+    // Validate token signature and authenticity with backend
+    // To remove backend validation and only validate structure and expiry in frontend return true here
+    console.log('Validating token with backend...');
+    const isValidOnBackend = await this.validateTokenWithBackend();
+
+    if (!isValidOnBackend) {
+      console.log('❌ Backend rejected token (invalid signature or unauthorized)');
+      this.clearToken();
+      return false;
+    }
+
+    console.log('✓ Backend confirmed token is valid');
     return true;
   }
 
