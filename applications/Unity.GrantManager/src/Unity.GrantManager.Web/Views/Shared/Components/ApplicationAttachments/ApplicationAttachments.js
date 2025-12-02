@@ -39,6 +39,8 @@ $(function () {
             columnDefs: [
                 {
                     title: '<i class="fl fl-paperclip" ></i>',
+                    width: '40px',
+                    className: 'text-center',
                     render: function (data) {
                         return '<i class="fl fl-paperclip" ></i>';
                     },
@@ -47,12 +49,14 @@ $(function () {
                 {
                     title: l('AssessmentResultAttachments:DocumentName'),
                     data: 'fileName',
-                    className: 'data-table-header',
+                    className: 'data-table-header text-break',
+                    width: '30%',
                 },
                 {
                     title: 'Label',
                     data: 'displayName',
-                    className: 'data-table-header',
+                    className: 'data-table-header text-break',
+                    width: '20%',
                     render: function (data) {
                         return data ?? nullPlaceholder;
                     }
@@ -61,6 +65,7 @@ $(function () {
                     title: l('AssessmentResultAttachments:UploadedDate'),
                     data: 'time',
                     className: 'data-table-header',
+                    width: '140px',
                     render: function (data, type) {
                         if (type === 'display') {
                             return new Date(data).toDateString();
@@ -72,10 +77,13 @@ $(function () {
                     title: l('AssessmentResultAttachments:AttachedBy'),
                     data: 'attachedBy',
                     className: 'data-table-header',
+                    width: '25%',
                 },
                 {
                     title: '',
                     data: 's3ObjectKey',
+                    width: '80px',
+                    className: 'text-center',
                     render: function (data, type, full, meta) {
                         return generateAttachmentButtonContent(data, type, full, meta, 'Application');
                     },

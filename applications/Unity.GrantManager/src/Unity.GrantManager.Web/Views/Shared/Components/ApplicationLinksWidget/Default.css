@@ -3,20 +3,20 @@
     width: 100%;
 }
 
-#ApplicationLinksTable_wrapper .dataTables_scroll {
+#ApplicationLinksTable_wrapper .dt-scroll {
     overflow: visible;
 }
 
-#ApplicationLinksTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner,
-#ApplicationLinksTable_wrapper .dataTables_scrollHead .dataTables_scrollHeadInner table {
+#ApplicationLinksTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+#ApplicationLinksTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
     width: 100% !important;
 }
 
-#ApplicationLinksTable_wrapper .dataTables_scrollBody {
+#ApplicationLinksTable_wrapper .dt-scroll-body {
     overflow: visible !important;
 }
 
-#ApplicationLinksTable_wrapper .dataTables_scrollBody table {
+#ApplicationLinksTable_wrapper .dt-scroll-body table {
     width: 100% !important;
 }
 
