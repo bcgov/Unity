@@ -60,7 +60,7 @@ RUN sed -i '/^user/d' /etc/nginx/nginx.conf && \
 RUN chown -R nginx-openshift:nginx-openshift /usr/share/nginx/html \
                                             /var/cache/nginx \
                                             /etc/nginx/conf.d && \
-    chmod -R 775 /usr/share/nginx/html
+    chmod -R 777 /usr/share/nginx/html
 
 # Expose port 8080 (non-privileged port for OpenShift)
 EXPOSE 8080
