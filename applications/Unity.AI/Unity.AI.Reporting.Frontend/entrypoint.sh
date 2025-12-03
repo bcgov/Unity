@@ -6,7 +6,7 @@ set -e
 
 # Default values if not provided
 API_URL="${API_URL:-/api}"
-ENVIRONMENT="${ENVIRONMENT:-production}"
+ENVIRONMENT="${ENVIRONMENT:-Development}"
 VERSION="${VERSION:-unknown}"
 
 echo "Generating runtime configuration..."
