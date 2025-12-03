@@ -1,4 +1,5 @@
 name: Dev - Branch Protection
+
 permissions:
   contents: read
 
@@ -11,11 +12,37 @@ jobs:
   check-dev-branch:
     runs-on: ubuntu-latest
     steps:
-      - name: Check branch
+      - name: Validate PR source branch
         run: |
-          if [[ ${GITHUB_HEAD_REF} =~ ^feature/ ]] || [[ ${GITHUB_HEAD_REF} == 'test' ]] || [[ ${GITHUB_HEAD_REF} == 'main' ]] || [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]] || [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]; then
-            echo ""
-            echo "Notice: Pull Request into dev should come from a merged 'feature/*', 'hotfix/*', 'bugfix/*', 'test', or 'main' branch"
-            echo "Notice: The dev branch is for new features, hotfixes, bugfixes and accepts merge, squash or rebase commits"
-            exit 0
+          echo "Source branch: ${GITHUB_HEAD_REF}"
+
+          if [[ ${GITHUB_HEAD_REF} =~ ^feature/ ]] || \
+             [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]]  || \
+             [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]  || \
+             [[ ${GITHUB_HEAD_REF} == "test" ]]     || \
+             [[ ${GITHUB_HEAD_REF} == "main" ]]; then
+              echo "✔ Allowed PR source branch"
+              exit 0
+          else
+              echo "❌ ERROR: PR into dev must come from:"
+              echo "   feature/*, hotfix/*, bugfix/*, test, or main"
+              exit 1
           fi
+
+  run-unit-tests:
+    runs-on: ubuntu-latest
+    needs: check-dev-branch
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x" 
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Run tests with results
+        run: dotnet test --logger "trx;LogFileName=unity-unittest-results-dev.trx"
