@@ -42,7 +42,7 @@ jobs:
           dotnet-version: "9.0.x" 
 
       - name: Restore
-        run: dotnet restore
+        run: cd applications/Unity.GrantManager && dotnet restore 
 
       - name: Run tests with results
-        run: dotnet test --logger "trx;LogFileName=unity-unittest-results-dev.trx"
+        run: cd applications/Unity.GrantManager && dotnet test --logger "trx;LogFileName=unity-unittest-results-dev.trx"
