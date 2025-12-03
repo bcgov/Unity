@@ -57,7 +57,9 @@ namespace Unity.Payments.PaymentRequests
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to store payment request IDs in cache");
-                throw;
+                throw new InvalidOperationException(
+                    $"Failed to store {paymentRequestIds.Count} payment request IDs in distributed cache with key {cacheKey}",
+                    ex);
             }
         }
 
