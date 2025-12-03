@@ -2,7 +2,7 @@ name: Dev - CI & Unit Tests
 
 permissions:
   contents: read
-  pull-requests: write   # Required if you want to post PR comments
+  pull-requests: write  # Required for PR comments
 
 on:
   pull_request:
@@ -10,33 +10,10 @@ on:
       - dev
 
 jobs:
-  check-dev-branch:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    outputs:
-      branch-allowed: ${{ steps.branch-check.outputs.allowed }}
-    steps:
-      - name: Validate PR source branch
-        id: branch-check
-        run: |
-          echo "Source branch: ${GITHUB_HEAD_REF}"
-          if [[ ${GITHUB_HEAD_REF} =~ ^feature/ ]] || \
-             [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]]  || \
-             [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]  || \
-             [[ ${GITHUB_HEAD_REF} == "test" ]]     || \
-             [[ ${GITHUB_HEAD_REF} == "main" ]]; then
-              echo "✔ Allowed PR source branch"
-              echo "allowed=true" >> $GITHUB_OUTPUT
-          else
-              echo "❌ ERROR: PR into dev must come from:"
-              echo "   feature/*, hotfix/*, bugfix/*, test, or main"
-              echo "allowed=false" >> $GITHUB_OUTPUT
-              exit 1
-          fi
 
-  run-unit-tests:
-    runs-on: ubuntu-latest
-    needs: check-dev-branch
-    if: needs.check-dev-branch.outputs.branch-allowed == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,27 +26,44 @@ jobs:
       - name: Restore NuGet packages
         run: dotnet restore applications/Unity.GrantManager/Unity.GrantManager.sln
 
-      - name: Create TestResults folder
-        run: mkdir -p applications/Unity.GrantManager/TestResults
-
-      - name: Run unit tests with XPlat Code Coverage
+      - name: Run unit tests (TRX output)
+        id: run-tests
+        continue-on-error: true
         run: |
-          dotnet test applications/Unity.GrantManager/modules/Unity.Flex/test/Unity.Flex.Web.Tests/Unity.Flex.Web.Tests.csproj \
-            --collect:"XPlat Code Coverage" \
-            --logger "trx;LogFileName=unity-flex-unittest-results-dev.trx" \
+          mkdir -p applications/Unity.GrantManager/TestResults
+          dotnet test **/*.Tests.csproj \
+            --logger "trx;LogFileName=unity-tests.trx" \
             --results-directory applications/Unity.GrantManager/TestResults
 
-      - name: Install ReportGenerator CLI
+      - name: Install XML parser for TRX extraction
+        run: sudo apt-get install -y xmlstarlet
+
+      - name: Extract test result counts from TRX
+        id: extract-results
+        run: |
+          TRX_FILE=$(find applications/Unity.GrantManager/TestResults -name "*.trx" | head -1)
+
+          echo "Found TRX: $TRX_FILE"
+
+          PASSED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Passed'])" "$TRX_FILE")
+          FAILED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Failed'])" "$TRX_FILE")
+          SKIPPED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='NotExecuted'])" "$TRX_FILE")
+
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+
+      - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
       - name: Add dotnet tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Generate HTML test report
+      - name: Convert TRX → HTML
         run: |
           mkdir -p applications/Unity.GrantManager/TestResultsHtml
           reportgenerator \
-            -reports:applications/Unity.GrantManager/TestResults/**/coverage.cobertura.xml \
+            -reports:applications/Unity.GrantManager/TestResults/*.trx \
             -targetdir:applications/Unity.GrantManager/TestResultsHtml \
             -reporttypes:Html
 
@@ -78,3 +72,47 @@ jobs:
         with:
           name: unity-tests-html
           path: applications/Unity.GrantManager/TestResultsHtml/
+
+      - name: Determine pass/fail outcome
+        id: final-result
+        run: |
+          if [[ ${{ steps.extract-results.outputs.failed }} -gt 0 ]]; then
+            echo "passed=false" >> $GITHUB_OUTPUT
+          else
+            echo "passed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate badge
+        id: badge
+        run: |
+          if [[ "${{ steps.final-result.outputs.passed }}" == "true" ]]; then
+            echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
+          else
+            echo "badge=![Tests](https://img.shields.io/badge/Tests-Failing-red)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Add PR comment with full test summary
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 🧪 Unit Test Results
+            ${{ steps.badge.outputs.badge }}
+
+            ### 📊 Summary
+            | Result | Count |
+            |--------|-------|
+            | ✅ Passed | `${{ steps.extract-results.outputs.passed }}` |
+            | ❌ Failed | `${{ steps.extract-results.outputs.failed }}` |
+            | ⚠️ Skipped | `${{ steps.extract-results.outputs.skipped }}` |
+
+            ### 📄 HTML Report
+            Download from the workflow artifacts.
+
+            _Automatically generated by CI._
+
+      - name: Fail if tests failed
+        if: steps.final-result.outputs.passed == 'false'
+        run: |
+          echo "❌ Unit tests failed."
+          exit 1
