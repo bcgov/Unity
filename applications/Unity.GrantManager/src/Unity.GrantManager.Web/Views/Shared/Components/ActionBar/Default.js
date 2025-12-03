@@ -360,9 +360,18 @@ $(function () {
     $('.spinner-grow').hide();
 
     $('#applicationPaymentRequest').click(function () {
-        applicationPaymentRequestModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds),
-        });
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                applicationPaymentRequestModal.open({
+                    cacheKey: response.cacheKey
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare payment request. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
 
     applicationPaymentRequestModal.onResult(function () {
