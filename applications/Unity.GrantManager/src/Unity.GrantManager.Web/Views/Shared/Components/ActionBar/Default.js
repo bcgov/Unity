@@ -28,8 +28,19 @@ $(function () {
             duplicate: false,
             max: 50
         });
-        let selectedIds = $('#SelectedApplicationIds').val(); 
-        let applicationIds = JSON.parse(selectedIds);
+
+        let cacheKey = $('#CacheKey').val();
+        let applicationIds = [];
+
+        if (!cacheKey) {
+            console.error("Cache key is missing");
+            abp.notify.error('Failed to load application tags. Please try again.');
+            return;
+        }
+
+        // Retrieve application IDs from hidden field (populated by modal code-behind)
+        let selectedIds = $('#SelectedApplicationIds').val();
+        applicationIds = JSON.parse(selectedIds);
 
         if (!applicationIds || applicationIds.length === 0) return;
 
@@ -39,10 +50,11 @@ $(function () {
             let allTags = [];
             let groupedTags = {};
 
-           
+
             allTags = await unity.grantManager.globalTag.tags.getList();
 
-            let tags = await unity.grantManager.grantApplications.applicationTags.getListWithApplicationIds(applicationIds);
+            // Use cache key to avoid URL length limits with many application IDs
+            let tags = await unity.grantManager.grantApplications.applicationTags.getListWithCacheKey(cacheKey);
             
             
             tags.forEach(function (item) {
@@ -330,10 +342,19 @@ $(function () {
 
 
     $('#tagApplication').click(function () {
-        tagApplicationModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds),
-            actionType: 'Add'
-        });
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                tagApplicationModal.open({
+                    cacheKey: response.cacheKey,
+                    actionType: 'Add'
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare tag selection. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
 
     $('.spinner-grow').hide();

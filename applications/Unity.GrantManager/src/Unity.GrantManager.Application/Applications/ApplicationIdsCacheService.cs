@@ -13,7 +13,7 @@ namespace Unity.GrantManager.Applications
         private readonly IDistributedCache<List<Guid>, string> _cache;
         private readonly ILogger<ApplicationIdsCacheService> _logger;
         private const string CACHE_KEY_PREFIX = "BulkAction:ApplicationIds:";
-        private const int CACHE_EXPIRATION_MINUTES = 10;
+        private const int CACHE_EXPIRATION_MINUTES = 5;
 
         public ApplicationIdsCacheService(
             IDistributedCache<List<Guid>, string> cache,

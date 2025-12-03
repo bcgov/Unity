@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -19,10 +21,14 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationTagsAppService : ApplicationService, IApplicationTagsService
 {
     private readonly IApplicationTagsRepository _applicationTagsRepository;
+    private readonly ApplicationIdsCacheService _cacheService;
 
-    public ApplicationTagsAppService(IApplicationTagsRepository repository)
+    public ApplicationTagsAppService(
+        IApplicationTagsRepository repository,
+        ApplicationIdsCacheService cacheService)
     {
         _applicationTagsRepository = repository;
+        _cacheService = cacheService;
     }
 
     public async Task<IList<ApplicationTagsDto>> GetListAsync()
@@ -42,6 +48,37 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
             .ToListAsync();
 
         return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Id).ToList());
+    }
+
+    public async Task<List<ApplicationTagsDto>> GetListWithCacheKeyAsync(string cacheKey)
+    {
+        if (string.IsNullOrWhiteSpace(cacheKey))
+        {
+            throw new UserFriendlyException("Cache key is required");
+        }
+
+        try
+        {
+            var applicationIds = await _cacheService.GetApplicationIdsAsync(cacheKey);
+
+            if (applicationIds == null || applicationIds.Count == 0)
+            {
+                Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                throw new UserFriendlyException("The session has expired. Please select applications and try again.");
+            }
+
+            Logger.LogInformation("Retrieved {Count} application IDs from cache for tag list", applicationIds.Count);
+            return await GetListWithApplicationIdsAsync(applicationIds);
+        }
+        catch (UserFriendlyException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error retrieving application tags with cache key: {CacheKey}", cacheKey);
+            throw new UserFriendlyException("Failed to retrieve application tags. Please try again.");
+        }
     }
 
     public async Task<List<ApplicationTagsDto>> GetApplicationTagsAsync(Guid id)

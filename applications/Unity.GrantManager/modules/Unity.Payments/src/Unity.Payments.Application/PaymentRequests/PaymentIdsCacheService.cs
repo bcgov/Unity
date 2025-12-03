@@ -13,7 +13,7 @@ namespace Unity.Payments.PaymentRequests
         private readonly IDistributedCache<List<Guid>, string> _cache;
         private readonly ILogger<PaymentIdsCacheService> _logger;
         private const string CACHE_KEY_PREFIX = "BulkAction:PaymentRequestIds:";
-        private const int CACHE_EXPIRATION_MINUTES = 10;
+        private const int CACHE_EXPIRATION_MINUTES = 5;
 
         public PaymentIdsCacheService(
             IDistributedCache<List<Guid>, string> cache,
