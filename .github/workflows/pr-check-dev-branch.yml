@@ -54,10 +54,10 @@ jobs:
 
       - name: Run unit tests with code coverage
         run: |
-          dotnet test applications/Unity.GrantManager/Unity.Flex.Web.Tests/Unity.Flex.Web.Tests.csproj \
+          dotnet test applications/Unity.GrantManager/modules/Unity.Flex/test/Unity.Flex.Web.Tests/Unity.Flex.Web.Tests.csproj \
             --no-build \
             --collect:"Code Coverage" \
-            --logger "trx;LogFileName=TestResults/unity-unittest-results-dev.trx"
+            --logger "trx;LogFileName=TestResults/unity-flex-unittest-results-dev.trx"
 
       - name: Install ReportUnit CLI
         run: dotnet tool install -g ReportUnit
