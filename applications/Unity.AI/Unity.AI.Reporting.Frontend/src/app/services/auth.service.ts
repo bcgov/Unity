@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LoggerService } from './logger.service';
+import { ConfigService } from './config.service';
 
 export interface JwtPayload {
   user_id?: string;
@@ -19,7 +20,10 @@ export class AuthService {
   private tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();
 
-  constructor(private logger: LoggerService) {
+  constructor(
+    private logger: LoggerService,
+    private configService: ConfigService
+  ) {
     this.initializeFromUrl();
   }
 
@@ -151,8 +155,9 @@ export class AuthService {
     }
 
     try {
-      // Make request to backend validation endpoint
-      const response = await fetch('/api/validate-token', {
+      // Make request to backend validation endpoint using configured API URL
+      const apiUrl = this.configService.apiUrl;
+      const response = await fetch(`${apiUrl}/validate-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +169,7 @@ export class AuthService {
         const data = await response.json();
         return data.valid === true;
       }
-      
+
       return false;
     } catch (error) {
       this.logger.error('Token validation error:', error);
