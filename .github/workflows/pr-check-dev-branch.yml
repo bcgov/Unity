@@ -56,7 +56,7 @@ jobs:
           mkdir -p applications/Unity.GrantManager/TestResults
           dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
             --filter "FullyQualifiedName~Tests" \
-            --logger "trx;LogFileName=unity-tests.trx" \
+            --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}.trx" \
             --results-directory applications/Unity.GrantManager/TestResults
 
       - name: Install XML parser for TRX extraction
