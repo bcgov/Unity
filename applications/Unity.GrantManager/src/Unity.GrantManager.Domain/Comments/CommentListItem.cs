@@ -12,6 +12,6 @@ namespace Unity.GrantManager.Comments
         public Guid OwnerId { get; set; }     
         public Guid Id { get; set; }
         public DateTime? LastModificationTime { get; set; }
-
-}
+        public DateTime? PinDateTime { get; set; }
+    }
 }

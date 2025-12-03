@@ -41,6 +41,18 @@
     --bc-layout-margin-large: 24px;
 }
 
+table.dataTable {
+    /* DataTables override */
+    --dt-row-selected: 230, 239, 247;
+    --dt-row-selected-text: 0, 51, 102;
+    --dt-row-selected-link: 9, 10, 11;
+}
+
+.dt-bootstrap5 > div.row:first-child,
+.dt-bootstrap5 > div.dt-layout-table {
+    margin-top: 0px !important;
+}
+
 .unity-app-container {
     background: var(--bc-colors-white-background);
     height: 100%; /* confirm this */
@@ -506,15 +518,25 @@ th #btn-toggle-filter-heading {
 
 .tr-toggle-filter {
     display: none;
+    background-color: var(--bc-colors-white-background);
+    border-bottom: 1px solid var(--bc-colors-grey-dividers);
 }
 
 .button-gap-1 > .dt-buttons {
     gap: 0.25rem !important;
 }
 
-div.dt-buttons div.dropdown-menu {
+div.dt-buttons div.dt-button-collection {
     max-height: 35rem !important;
     overflow-y: auto !important;
+}
+
+.dt-button .dropdown-item:focus {
+    background-color: transparent !important;
+}
+
+.dt-button-active-a .dropdown-item:focus {
+    background-color: #ccdef9 !important;
 }
 
 .cln-visible {
@@ -529,7 +551,7 @@ div.dt-buttons div.dropdown-menu {
     text-align: right;
 }
 
-.dataTables_filter {
+.dt-search {
     margin-bottom: .5rem;
     display: none;
 }
@@ -542,23 +564,22 @@ div.dt-buttons div.dropdown-menu {
 
     .custom-table-btn:hover {
         box-shadow: none;
-        border-color: var(--bc-colors-blue-primary);
-        border: 2px solid;
+        border: 2px solid var(--bc-colors-blue-primary);
     }
 
-.dataTables_scrollHeadInner {
+.dt-scroll-headInner {
     padding-right: 0 !important;
 }
 
-.dataTables_scrollHead {
+.dt-scroll-head {
     border-radius: 10px 10px 0px 0px;
 }
 
-.dataTables_scrollBody {
+.dt-scroll-body {
     border-radius: 0px 0px 20px;
 }
 
-.dt-button-active {
+.dt-button-active, .dt-button-active-a {
     background-color: #ccdef9 !important;
 }
 
@@ -576,7 +597,6 @@ div.dt-buttons div.dropdown-menu {
 
 ul.pagination {
     justify-content: center !important;
-    margin-top: -20px !important;
 }
 
 .flex-none {
@@ -584,7 +604,7 @@ ul.pagination {
 }
 
 
-div.dataTables_filter > label > input {
+div.dt-search > label > input {
     width: 518px !important;
     height: 37px;
     padding: 2px 24px 0px 24px;
@@ -630,7 +650,7 @@ input[type="radio"] {
     background-color: var(--bs-nav-pills-link-active-bg) !important;
 }
 
-div.dataTables_wrapper div.dataTables_filter {
+div.dt-container div.dt-search {
     text-align: left;
 }
 

@@ -9,8 +9,17 @@ $(document).ready(function () {
 
     // Handle tab switching animations
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-        let targetTab = $(e.target).attr('data-bs-target');
-        $(document).find(targetTab).addClass('fade-in-load visible');
+        var targetTab = $(e.target).attr('data-bs-target');
+        $(targetTab).addClass('fade-in-load visible');
+    });
+
+    // Add event listeners for tab clicks to adjust DataTables
+    $('#detailsTab li').on('click', function () {
+        debouncedAdjustTables('detailsTab');
+    });
+
+    $('#myTabContent li').on('click', function () {
+        debouncedAdjustTables('myTabContent');
     });
 
     // Handle resizable divider
@@ -24,16 +33,69 @@ function initializeApplicantDetailsPage() {
             $('.fade-in-load').addClass('visible');
         });
     }, 500);
+
+    // Initialize tooltips if any
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+// Debounce utility function
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
+// Debounced DataTable resizing function (called during panel resize)
+const debouncedResizeAwareDataTables = debounce(() => {
+    $('table[data-resize-aware="true"]:visible').each(function () {
+        try {
+            const table = $(this).DataTable();
+            table.columns.adjust().draw();
+        }
+        catch (error) {
+            console.error('Failed to adjust DataTable columns:', error);
+        }
+    });
+}, 15);
+
+// Debounced function for adjusting tables in specific container when tab is clicked
+const debouncedAdjustTables = debounce(adjustVisibleTablesInContainer, 15);
+
+function adjustVisibleTablesInContainer(containerId) {
+    const activeTab = $(`#${containerId} div.active`);
+    const tables = activeTab.find('table[data-resize-aware="true"]:visible');
+
+    tables.each(function () {
+        try {
+            const table = $(this).DataTable();
+            table.columns.adjust().draw();
+        }
+        catch (error) {
+            console.error('Failed to adjust DataTable in tab:', error);
+        }
+    });
 }
 
 function initializeResizableDivider() {
     const divider = document.getElementById('main-divider');
     const leftPanel = document.getElementById('main-left');
     const rightPanel = document.getElementById('main-right');
+    const container = document.getElementById('main-container');
+    const storageKey = 'applicantDetailsLeftWidth';
+    const minPercentage = 20;
+    const maxPercentage = 80;
 
-    if (!divider || !leftPanel || !rightPanel) return;
+    if (!divider || !leftPanel || !rightPanel || !container) return;
 
     let isResizing = false;
+
+    restoreDividerPosition();
 
     divider.addEventListener('mousedown', function (e) {
         isResizing = true;
@@ -42,13 +104,12 @@ function initializeResizableDivider() {
 
         // Add visual feedback
         document.body.style.cursor = 'col-resize';
-        divider.style.backgroundColor = '#007bff';
     });
 
     function handleMouseMove(e) {
         if (!isResizing) return;
 
-        const containerRect = document.getElementById('main-container').getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
         const mouseX = e.clientX;
         const containerLeft = containerRect.left;
         const containerWidth = containerRect.width;
@@ -58,9 +119,13 @@ function initializeResizableDivider() {
         const rightPercentage = 100 - leftPercentage;
 
         // Set minimum and maximum widths
-        if (leftPercentage >= 20 && leftPercentage <= 80) {
+        if (leftPercentage >= minPercentage && leftPercentage <= maxPercentage) {
             leftPanel.style.width = leftPercentage + '%';
             rightPanel.style.width = rightPercentage + '%';
+
+            // Resize DataTables during panel resize
+            debouncedResizeAwareDataTables();
+            localStorage.setItem(storageKey, leftPercentage.toString());
         }
     }
 
@@ -71,8 +136,20 @@ function initializeResizableDivider() {
 
         // Remove visual feedback
         document.body.style.cursor = '';
-        divider.style.backgroundColor = '#ccc';
     }
+
+    function restoreDividerPosition() {
+        const savedPercentage = parseFloat(localStorage.getItem(storageKey));
+        if (isNaN(savedPercentage)) {
+            return;
+        }
+
+        const clampedPercentage = Math.min(Math.max(savedPercentage, minPercentage), maxPercentage);
+        leftPanel.style.width = clampedPercentage + '%';
+        rightPanel.style.width = (100 - clampedPercentage) + '%';
+    }
+
+    window.addEventListener('resize', restoreDividerPosition);
 }
 
 

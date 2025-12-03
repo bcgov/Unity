@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,6 +14,7 @@ using Unity.GrantManager.Intakes.Mapping;
 using Unity.Payments.Events;
 using Volo.Abp;
 using Unity.GrantManager.Integrations.Orgbook;
+using Unity.Modules.Shared;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Integrations.Cas;
@@ -46,7 +48,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             applicant = await CreateNewApplicantAsync(intakeMap);
         } else {
             applicant.ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName) ?? applicant.ApplicantName;
-            applicant.ElectoralDistrict = intakeMap.ElectoralDistrict ?? applicant.ElectoralDistrict;
             // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
             applicant.NonRegOrgName = intakeMap.NonRegisteredBusinessName ?? applicant.NonRegOrgName;
             applicant.OrgName = intakeMap.OrgName ?? applicant.OrgName;
@@ -156,6 +157,153 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             // This fires a detached process event which may update the supplier if it finds it in CAS via the BN9
             await supplierService.UpdateApplicantSupplierInfoByBn9(applicant.BusinessNumber, applicant.Id);
         }
+    }
+
+    [Authorize(UnitySelector.Applicant.Summary.Update)]
+    public async Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input)
+    {
+        if (applicantId == Guid.Empty)
+        {
+            throw new ArgumentException("ApplicantId cannot be empty.", nameof(applicantId));
+        }
+
+        ArgumentNullException.ThrowIfNull(input);
+
+        ArgumentNullException.ThrowIfNull(input.Data);
+
+        var applicant = await applicantRepository.GetAsync(applicantId);
+
+        ObjectMapper.Map(input.Data, applicant);
+
+        List<string> modifiedSummaryFields = input.ModifiedFields?
+            .Where(field => !string.IsNullOrWhiteSpace(field))
+            .Select(field =>
+            {
+                var segments = field.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length == 0)
+                {
+                    throw new InvalidOperationException("Modified field path cannot be empty.");
+                }
+
+                return segments[^1];
+            })
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? [];
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase))
+        {
+            applicant.RedStop = input.Data.RedStop;
+        }
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase))
+        {
+            applicant.IndigenousOrgInd = input.Data.IndigenousOrgInd switch
+            {
+                true => "Yes",
+                false => "No",
+                _ => null
+            };
+        }
+
+        if (modifiedSummaryFields.Count > 0)
+        {
+            PropertyHelper.ApplyNullValuesFromDto(input.Data, applicant, modifiedSummaryFields);
+        }
+
+        return await applicantRepository.UpdateAsync(applicant);
+    }
+
+    public async Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
+    {
+        if (applicantId == Guid.Empty)
+        {
+            throw new ArgumentException("ApplicantId cannot be empty.", nameof(applicantId));
+        }
+
+        ArgumentNullException.ThrowIfNull(input);
+
+        if (input.PrimaryContact == null &&
+            input.PrimaryPhysicalAddress == null &&
+            input.PrimaryMailingAddress == null)
+        {
+            return;
+        }
+
+        if (input.PrimaryContact != null &&
+            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
+        {
+            await UpdatePrimaryContactAsync(applicantId, input.PrimaryContact);
+        }
+
+        if (input.PrimaryPhysicalAddress != null &&
+            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        {
+            await UpdatePrimaryAddressAsync(applicantId, input.PrimaryPhysicalAddress, GrantApplications.AddressType.PhysicalAddress);
+        }
+
+        if (input.PrimaryMailingAddress != null &&
+            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        {
+            await UpdatePrimaryAddressAsync(applicantId, input.PrimaryMailingAddress, GrantApplications.AddressType.MailingAddress);
+        }
+    }
+
+    private async Task UpdatePrimaryContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
+    {
+        if (input.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Contact identifier is required.", nameof(input));
+        }
+
+        var applicantAgent = await applicantAgentRepository.GetAsync(input.Id);
+        if (applicantAgent.ApplicantId != applicantId)
+        {
+            throw new BusinessException("Unity:Applicant:ContactNotFound")
+                .WithData("ApplicantId", applicantId)
+                .WithData("ContactId", input.Id);
+        }
+
+        applicantAgent.Name = input.FullName?.Trim() ?? string.Empty;
+        applicantAgent.Title = input.Title?.Trim() ?? string.Empty;
+        applicantAgent.Email = input.Email?.Trim() ?? string.Empty;
+        applicantAgent.Phone = input.BusinessPhone?.Trim() ?? string.Empty;
+        applicantAgent.Phone2 = input.CellPhone?.Trim() ?? string.Empty;
+
+        await applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    private async Task UpdatePrimaryAddressAsync(Guid applicantId, UpdatePrimaryApplicantAddressDto input, GrantApplications.AddressType expectedType)
+    {
+        if (input.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Address identifier is required.", nameof(input));
+        }
+
+        var applicantAddress = await addressRepository.GetAsync(input.Id);
+
+        if (applicantAddress.ApplicantId != applicantId)
+        {
+            throw new BusinessException("Unity:Applicant:AddressNotFound")
+                .WithData("ApplicantId", applicantId)
+                .WithData("AddressId", input.Id);
+        }
+
+        if (applicantAddress.AddressType != expectedType)
+        {
+            throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
+                .WithData("ApplicantId", applicantId)
+                .WithData("AddressId", input.Id)
+                .WithData("ExpectedType", expectedType.ToString());
+        }
+
+        applicantAddress.Street = input.Street?.Trim() ?? string.Empty;
+        applicantAddress.Street2 = input.Street2?.Trim() ?? string.Empty;
+        applicantAddress.Unit = input.Unit?.Trim() ?? string.Empty;
+        applicantAddress.City = input.City?.Trim() ?? string.Empty;
+        applicantAddress.Province = input.Province?.Trim() ?? string.Empty;
+        applicantAddress.Postal = input.PostalCode?.Trim() ?? string.Empty;
+
+        await addressRepository.UpdateAsync(applicantAddress);
     }
 
     [RemoteService(true)]
@@ -285,7 +433,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         var applicant = new Applicant
         {
             ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
-            ElectoralDistrict = intakeMap.ElectoralDistrict,
             // Intake map uses NonRegisteredBusinessName for non-registered organizations to support legacy mappings
             NonRegOrgName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
@@ -532,7 +679,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 SiteId = applicant.SiteId,
                 MatchPercentage = applicant.MatchPercentage,
                 IsDuplicated = applicant.IsDuplicated,
-                ElectoralDistrict = applicant.ElectoralDistrict,
                 CreationTime = applicant.CreationTime,
                 LastModificationTime = applicant.LastModificationTime
             }).ToList();

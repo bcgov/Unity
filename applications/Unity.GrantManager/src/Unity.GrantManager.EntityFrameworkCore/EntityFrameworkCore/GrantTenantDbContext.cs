@@ -96,6 +96,18 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
 
                 b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
+
+                b.HasOne<ApplicationForm>()
+                    .WithMany()
+                    .HasForeignKey(x => x.ParentFormId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                b.HasOne<ApplicationFormVersion>()
+                    .WithMany()
+                    .HasForeignKey(x => x.ParentFormVersionId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             modelBuilder.Entity<ApplicationFormVersion>(b =>

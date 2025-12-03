@@ -9,7 +9,8 @@
 
     initTribute(mentionDataList);
    
-    $('body').on('click', '.edit-button', function () {
+    $('body').on('click', '.edit-button', function (e) {
+        e.preventDefault();
         let itemId = $(this).data('id');
         toggleEditMode(itemId);
     });
@@ -61,6 +62,24 @@
             $('#addCommentContainer' + $(this).data('ownerid')).css('display', 'none');
         }
         $('#addCommentTextArea' + $(this).data('ownerid')).val('');
+    });
+
+    $('body').on('click', '.pin-button', function (e) {
+        e.preventDefault();
+        let itemId = $(this).data('id');
+        let ownerId = $(this).data('ownerid');
+        let commentType = $(this).data('type');
+        
+        pinComment(itemId, ownerId, commentType);
+    });
+
+    $('body').on('click', '.unpin-button', function (e) {
+        e.preventDefault();
+        let itemId = $(this).data('id');
+        let ownerId = $(this).data('ownerid');
+        let commentType = $(this).data('type');
+        
+        unpinComment(itemId, ownerId, commentType);
     });
 });
 
@@ -165,5 +184,40 @@ function initTribute(mentionData) {
 
     areaWithMentions.forEach(item => {
         tribute.attach(document.getElementById(item.id));
+    });
+}
+function pinComment(commentId, ownerId, commentType) {
+    abp.message.confirm(
+        'Are you sure you want to pin this comment?',
+        'Pin Comment',
+        function (confirmed) {
+            if (confirmed) {
+                unity.grantManager.comments.comment.pin(commentId, {
+                    ownerId: ownerId,
+                    commentType: commentType
+                }).then(function () {
+                    abp.notify.success('Comment pinned successfully');
+                    
+                    PubSub.publish(commentType + '_refresh');
+                }).catch(function (error) {
+                    abp.notify.error('Failed to pin comment');
+                    console.error(error);
+                });
+            }
+        }
+    );
+}
+
+function unpinComment(commentId, ownerId, commentType) {
+    unity.grantManager.comments.comment.unpin(commentId, {
+        ownerId: ownerId,
+        commentType: commentType
+    }).then(function () {
+        abp.notify.success('Comment unpinned successfully');
+
+        PubSub.publish(commentType + '_refresh');
+    }).catch(function (error) {
+        abp.notify.error('Failed to unpin comment');
+        console.error(error);
     });
 }

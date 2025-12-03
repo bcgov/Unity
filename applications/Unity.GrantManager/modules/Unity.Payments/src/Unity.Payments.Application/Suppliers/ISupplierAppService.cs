@@ -14,6 +14,8 @@ namespace Unity.Payments.Suppliers
         Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto);
         Task<SiteDto> CreateSiteAsync(Guid id, CreateSiteDto createSiteDto);
         Task<SiteDto> UpdateSiteAsync(Guid id, Guid siteId, UpdateSiteDto updateSiteDto);
-        Task<List<SiteDto>> GetSitesBySupplierNumberAsync(string? supplierNumber);
+        Task<dynamic> GetSitesBySupplierNumberAsync(string? supplierNumber, Guid applicantId);
+        Task DeleteAsync(Guid id);
+        SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId);
     }
 }

@@ -1,5 +1,6 @@
 ﻿@page
 @using Unity.GrantManager.ApplicationForms
+@using Unity.Reporting.Permissions
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
 @using Unity.GrantManager.Permissions;
@@ -12,6 +13,7 @@
 @inject IPageLayout PageLayout
 @inject IPermissionChecker PermissionChecker
 @inject IFeatureChecker FeatureChecker
+
 @{
     PageLayout.Content.MenuItemName = "GrantManager.ApplicationForms";
     PageLayout.Content.Title = "Application Mapping";
@@ -55,6 +57,11 @@
             @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
             {
                 <button class="nav-link" id="nav-payment-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-configuration" type="button" role="tab">Payment Configuration</button>
+            }
+            @if (await FeatureChecker.IsEnabledAsync("Unity.Reporting")
+                        && await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Default))
+            {
+                <button class="nav-link" id="nav-reporting-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-reporting-configuration" type="button" role="tab">Reporting Configuration</button>
             }
             <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
         </div>
@@ -139,7 +146,7 @@
                 <div class="row">
                     <div class="col-8">
                         <div class="application-forms-table-content">
-                            <abp-table id="ApplicationFormsTable" class="chef-field-table">
+                            <abp-table id="ApplicationFormsTable" class="chef-field-table table table-striped">
                                 <thead>
                                     <tr>
                                         <th scope="Column">CHEFS Label</th>
@@ -207,6 +214,18 @@
                 @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model?.ApplicationFormDto?.Id})
             </div>
         </div>
+        }
+
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Reporting")
+                && await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Default))
+        {
+            <!--Tab Content: Reporting Configuration-->
+            <div class="tab-pane fade" 
+                 id="nav-reporting-configuration" 
+                 role="tabpanel" 
+                 aria-labelledby="nav-reporting-configuration-tab">
+                @await Component.InvokeAsync("ReportingConfiguration", new { formid = @Model?.ApplicationFormDto?.Id })
+            </div>
         }
 
         <!--Tab Content: Other Configuration-->

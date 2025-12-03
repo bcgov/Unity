@@ -8,34 +8,30 @@
     let dt = $('#ApplicationPaymentRequestListTable');
     let dataTable;
     const listColumns = getColumns();
-    const defaultVisibleColumns = [
-        'id',
-        'amount',
-        'status',
-        'supplierName'
-    ];
+    const defaultVisibleColumns = ['id', 'amount', 'status', 'supplierName'];
 
     $('body').on('click', '#savePaymentInfoBtn', function () {
-        let applicationId = document.getElementById('PaymentInfoViewApplicationId').value; 
-        let formData = $("#paymentInfoForm").serializeArray();
+        let applicationId = document.getElementById(
+            'PaymentInfoViewApplicationId'
+        ).value;
+        let formData = $('#paymentInfoForm').serializeArray();
         let paymentInfoObj = {};
-        let formVersionId = $("#ApplicationFormVersionId").val();
+        let formVersionId = $('#ApplicationFormVersionId').val();
         // Check for worksheet scenario - multiple vs single
-        let multipleWorksheetsIds = $("#PaymentInfo_WorksheetIds").val();
-        let singleWorksheetId = $("#PaymentInfo_WorksheetId").val();
+        let multipleWorksheetsIds = $('#PaymentInfo_WorksheetIds').val();
+        let singleWorksheetId = $('#PaymentInfo_WorksheetId').val();
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(paymentInfoObj, input);
-            }
-            else {
-                buildFormData(paymentInfoObj, input)
+            } else {
+                buildFormData(paymentInfoObj, input);
             }
         });
 
         // Update checkboxes which are serialized if unchecked
         $(`#paymentInfoForm input:checkbox`).each(function () {
-            paymentInfoObj[this.name] = (this.checked).toString();
+            paymentInfoObj[this.name] = this.checked.toString();
         });
 
         // Make sure all the custom fields are set in the custom fields object
@@ -44,11 +40,13 @@
         }
 
         paymentInfoObj['correlationId'] = formVersionId;
-        
+
         // Set correct payload property based on worksheet scenario
         if (multipleWorksheetsIds) {
             // Multiple worksheets scenario - send as worksheetIds array
-            paymentInfoObj['worksheetIds'] = multipleWorksheetsIds.split(',').map(id => id.trim());
+            paymentInfoObj['worksheetIds'] = multipleWorksheetsIds
+                .split(',')
+                .map((id) => id.trim());
         } else if (singleWorksheetId) {
             // Single worksheet scenario - send as worksheetId
             paymentInfoObj['worksheetId'] = singleWorksheetId.trim();
@@ -57,48 +55,74 @@
     });
 
     function buildFormData(paymentInfoObj, input) {
-
         let inputElement = $('[name="' + input.name + '"]');
         // This will not work if the culture is different and uses a different decimal separator
-        if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
-            paymentInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
-        }
-        else {
-            paymentInfoObj[input.name.split(".")[1]] = input.value;
+        if (
+            inputElement.hasClass('unity-currency-input') ||
+            inputElement.hasClass('numeric-mask')
+        ) {
+            paymentInfoObj[input.name.split('.')[1]] = input.value.replace(
+                /,/g,
+                ''
+            );
+        } else {
+            paymentInfoObj[input.name.split('.')[1]] = input.value;
         }
 
-        if (input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
-            paymentInfoObj[input.name] = input.value;
+        if (
+            input.name == 'SupplierNumber' ||
+            input.name == 'OriginalSupplierNumber'
+        ) {
+            paymentInfoObj[input.name] = input.value || null;
         }
 
-        if (paymentInfoObj[input.name.split(".")[1]] == '') {
-            paymentInfoObj[input.name.split(".")[1]] = null;
+        if (paymentInfoObj[input.name.split('.')[1]] == '') {
+            paymentInfoObj[input.name.split('.')[1]] = null;
         }
     }
 
     function updatePaymentInfo(applicationId, paymentInfoObj) {
         const showSpinner = () => $('.cas-spinner').show();
         const hideSpinner = () => $('.cas-spinner').hide();
-        const disableSaveButton = (state) => $('#savePaymentInfoBtn').prop('disabled', state);
+        const disableSaveButton = (state) =>
+            $('#savePaymentInfoBtn').prop('disabled', state);
 
         try {
+            const supplierNumberCleared =
+                !paymentInfoObj['SupplierNumber'] ||
+                paymentInfoObj['SupplierNumber'].trim() === '';
+            const supplierNumberChanged =
+                paymentInfoObj['SupplierNumber'] !==
+                paymentInfoObj['OriginalSupplierNumber'];
+
             // Create an initial promise - either the supplier update or a resolved promise
-            const shouldUpdateSupplier = abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update') &&
-                paymentInfoObj['SupplierNumber'] &&
-                paymentInfoObj['SupplierNumber'] !== paymentInfoObj['OriginalSupplierNumber'];
+            const shouldUpdateSupplier =
+                abp.auth.isGranted(
+                    'Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update'
+                ) &&
+                (supplierNumberChanged || supplierNumberCleared);
 
             const supplierUpdatePromise = shouldUpdateSupplier
-                ? (showSpinner(), unity.grantManager.grantApplications.grantApplication.updateSupplierNumber(applicationId, paymentInfoObj['SupplierNumber']))
+                ? (showSpinner(),
+                  unity.grantManager.grantApplications.grantApplication.updateSupplierNumber(
+                      applicationId,
+                      paymentInfoObj['SupplierNumber'] || ''
+                  ))
                 : Promise.resolve();
 
             abp.ui.block({
                 elm: '[data-widget-name="PaymentInfo"]',
-                busy: true
+                busy: true,
             });
 
             // Chain the payment info update after the supplier update (if any)
             supplierUpdatePromise
-                .then(() => unity.payments.paymentInfo.paymentInfo.update(applicationId, paymentInfoObj))
+                .then(() =>
+                    unity.payments.paymentInfo.paymentInfo.update(
+                        applicationId,
+                        paymentInfoObj
+                    )
+                )
                 .then(() => {
                     abp.notify.success('The payment info has been updated.');
                     disableSaveButton(true);
@@ -124,11 +148,11 @@
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
-            id: "btn-toggle-filter",
+            id: 'btn-toggle-filter',
             action: function (e, dt, node, config) {},
             attr: {
-                id: 'btn-toggle-filter'
-            }
+                id: 'btn-toggle-filter',
+            },
         },
         {
             extend: 'csv',
@@ -138,15 +162,15 @@
             exportOptions: {
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
-            }
+            },
         },
     ];
 
     let appId = document.getElementById('DetailsViewApplicationId').value;
     let inputAction = function (requestData, dataTableSettings) {
-        const applicationId = appId
+        const applicationId = appId;
         return applicationId;
-    }
+    };
 
     let responseCallback = function (result) {
         if (result.length <= 15) {
@@ -155,7 +179,7 @@
         return {
             recordsTotal: result.length,
             recordsFiltered: result.length,
-            data: formatItems(result)
+            data: formatItems(result),
         };
     };
 
@@ -163,11 +187,11 @@
         const newData = items.map((item, index) => {
             return {
                 ...item,
-                rowCount: index
+                rowCount: index,
             };
         });
         return newData;
-    }
+    };
 
     dataTable = initializeDataTable({
         dt,
@@ -175,7 +199,9 @@
         listColumns,
         maxRowsPerPage: 10,
         defaultSortColumn: 3,
-        dataEndpoint: unity.payments.paymentRequests.paymentRequest.getListByApplicationId,
+        dataEndpoint:
+            unity.payments.paymentRequests.paymentRequest
+                .getListByApplicationId,
         data: inputAction,
         responseCallback,
         actionButtons,
@@ -185,17 +211,17 @@
         languageSetValues: {},
         dataTableName: 'ApplicationPaymentRequestListTable',
         externalSearchId: 'PaymentListSearch',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'});
+        dynamicButtonContainerId: 'dynamicButtonContainerId',
+    });
 
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-
         if (indexes?.length) {
-            indexes.forEach(index => {
-                $("#row_" + index).prop("checked", true);
-                if ($(".chkbox:checked").length == $(".chkbox").length) {
-                    $(".select-all-application-payments").prop("checked", true);
+            indexes.forEach((index) => {
+                $('#row_' + index).prop('checked', true);
+                if ($('.chkbox:checked').length == $('.chkbox').length) {
+                    $('.select-all-application-payments').prop('checked', true);
                 }
                 selectApplication(type, index, 'select_application_payment');
             });
@@ -204,10 +230,13 @@
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
         if (indexes?.length) {
-            indexes.forEach(index => {
-                $("#row_" + index).prop("checked", false);
-                if ($(".chkbox:checked").length != $(".chkbox").length) {
-                    $(".select-all-application-payments").prop("checked", false);
+            indexes.forEach((index) => {
+                $('#row_' + index).prop('checked', false);
+                if ($('.chkbox:checked').length != $('.chkbox').length) {
+                    $('.select-all-application-payments').prop(
+                        'checked',
+                        false
+                    );
                 }
                 selectApplication(type, index, 'deselect_application_payment');
             });
@@ -222,21 +251,24 @@
     }
 
     function handleSearch() {
-        let filterValue = $('.dataTables_filter input').val();
-        if (filterValue.length > 0) {
-
+        let filterValue = $('.dt-search input').val();
+        if (filterValue !== undefined && filterValue?.length > 0) {
             Array.from(document.getElementsByClassName('selected')).forEach(
                 function (element, index, array) {
                     element.classList.toggle('selected');
                 }
             );
-            PubSub.publish("deselect_application_payment", "reset_data");
+            PubSub.publish('deselect_application_payment', 'reset_data');
         }
     }
 
     function getColumns() {
         return [
-            getSelectColumn('Select Application', 'rowCount', 'application-payments'),
+            getSelectColumn(
+                'Select Application',
+                'rowCount',
+                'application-payments'
+            ),
             getApplicationPaymentIdColumn(),
             getApplicationPaymentAmountColumn(),
             getApplicationPaymentStatusColumn(),
@@ -249,8 +281,8 @@
             getMaskedBankAccountColumn(),
             getSiteNumberColumn(),
             geSupplierNumberColumn(),
-            getSupplierNameColumn()
-        ]
+            getSupplierNameColumn(),
+        ];
     }
 
     function getApplicationPaymentIdColumn() {
@@ -285,8 +317,12 @@
             index: 3,
             render: function (data) {
                 let statusColor = getPaymentStatusTextColor(data);
-                return `<span style="color:${statusColor};">` + l(`Enum:PaymentRequestStatus.${data}`) + '</span>';
-            }
+                return (
+                    `<span style="color:${statusColor};">` +
+                    l(`Enum:PaymentRequestStatus.${data}`) +
+                    '</span>'
+                );
+            },
         };
     }
 
@@ -299,7 +335,7 @@
             index: 5,
             render: function (data) {
                 return formatDate(data);
-            }
+            },
         };
     }
 
@@ -312,7 +348,7 @@
             index: 6,
             render: function (data) {
                 return formatDate(data);
-            }
+            },
         };
     }
 
@@ -325,7 +361,7 @@
             index: 7,
             render: function (data) {
                 return formatDate(data);
-            }
+            },
         };
     }
 
@@ -347,30 +383,50 @@
             className: 'data-table-header',
             index: 8,
             render: function (data) {
-                if(data+"" !== "undefined" && data?.length > 0) {
-                    return '<button id="cas-response-btn" class="btn btn-light info-btn cas-response-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                if (data + '' !== 'undefined' && data?.length > 0) {
+                    return (
+                        '<button id="cas-response-btn" class="btn btn-light info-btn cas-response-btn" type="button" onclick="openCasResponseModal(\'' +
+                        data +
+                        '\');">View Response<i class="fl fl-mapinfo"></i></button>'
+                    );
                 }
-                return  '{Not Available}';
-            }
+                return '{Not Available}';
+            },
         };
     }
 
-    function getMailingAddressColumn() { 
+    function getMailingAddressColumn() {
         return {
-            title: l('PaymentInfoView:ApplicationPaymentListTable.MailingAddress'),
+            title: l(
+                'PaymentInfoView:ApplicationPaymentListTable.MailingAddress'
+            ),
             name: 'addressLine1',
             data: 'site.addressLine1',
             className: 'data-table-header',
             render: function (data, type, full, meta) {
-                return nullToEmpty(full.site.addressLine1) + ' ' + nullToEmpty(full.site.addressLine2) + " " + nullToEmpty(full.site.addressLine3) + " " + nullToEmpty(full.site.city) + " " + nullToEmpty(full.site.province) + " " + nullToEmpty(full.site.postalCode);
+                return (
+                    nullToEmpty(full.site.addressLine1) +
+                    ' ' +
+                    nullToEmpty(full.site.addressLine2) +
+                    ' ' +
+                    nullToEmpty(full.site.addressLine3) +
+                    ' ' +
+                    nullToEmpty(full.site.city) +
+                    ' ' +
+                    nullToEmpty(full.site.province) +
+                    ' ' +
+                    nullToEmpty(full.site.postalCode)
+                );
             },
             index: 9,
         };
     }
 
-    function getMaskedBankAccountColumn() { 
+    function getMaskedBankAccountColumn() {
         return {
-            title: l('PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount'),
+            title: l(
+                'PaymentInfoView:ApplicationPaymentListTable.MaskedBankAccount'
+            ),
             name: 'bankAccount',
             data: 'site.bankAccount',
             className: 'data-table-header',
@@ -390,7 +446,9 @@
 
     function geSupplierNumberColumn() {
         return {
-            title: l('PaymentInfoView:ApplicationPaymentListTable.SupplierNumber'),
+            title: l(
+                'PaymentInfoView:ApplicationPaymentListTable.SupplierNumber'
+            ),
             name: 'supplierNumber',
             data: 'supplierNumber',
             className: 'data-table-header',
@@ -399,7 +457,9 @@
     }
     function getSupplierNameColumn() {
         return {
-            title: l('PaymentInfoView:ApplicationPaymentListTable.SupplierName'),
+            title: l(
+                'PaymentInfoView:ApplicationPaymentListTable.SupplierName'
+            ),
             name: 'supplierName',
             data: 'supplierName',
             className: 'data-table-header',
@@ -407,24 +467,24 @@
         };
     }
 
-
     function formatDate(data) {
-        return data != null ? luxon.DateTime.fromISO(data, {
-            locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString() : '{Not Available}';
+        return data != null
+            ? luxon.DateTime.fromISO(data, {
+                  locale: abp.localization.currentCulture.name,
+              })
+                  .toUTC()
+                  .toLocaleString()
+            : '{Not Available}';
     }
 
     /* the resizer needs looking at again after ux2 refactor 
      window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
     */
 
-    PubSub.subscribe(
-        'refresh_application_list',
-        (msg, data) => {
-            dataTable.ajax.reload(null, false);
-            PubSub.publish('clear_payment_application');
-        }
-    );
+    PubSub.subscribe('refresh_application_list', (msg, data) => {
+        dataTable.ajax.reload(null, false);
+        PubSub.publish('clear_payment_application');
+    });
 
     $('#nav-payment-info-tab').one('click', function () {
         dataTable.columns.adjust();
@@ -432,36 +492,36 @@
 
     $('.select-all-application-payments').click(function () {
         if ($(this).is(':checked')) {
-            dataTable.rows({ 'page': 'current' }).select();
-        }
-        else {
-            dataTable.rows({ 'page': 'current' }).deselect();
+            dataTable.rows({ page: 'current' }).select();
+        } else {
+            dataTable.rows({ page: 'current' }).deselect();
         }
     });
 
-    PubSub.subscribe(
-        'fields_paymentinfo',
-        () => {
-            enablePaymentInfoSaveBtn();
-        }
-    );
+    PubSub.subscribe('fields_paymentinfo', () => {
+        enablePaymentInfoSaveBtn();
+    });
 });
 
 let casPaymentResponseModal = new abp.ModalManager({
-    viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
+    viewUrl: '../PaymentRequests/CasPaymentRequestResponse',
 });
 
 function openCasResponseModal(casResponse) {
     casPaymentResponseModal.open({
-        casResponse: casResponse
+        casResponse: casResponse,
     });
 }
 
 function enablePaymentInfoSaveBtn() {
-    if (!$("#paymentInfoForm").valid()
+    if (
+        !$('#paymentInfoForm').valid() ||
         // NOTE: Required for worksheets, replace on adding worksheet permissions
-        || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Payment') 
-        || formHasInvalidCurrencyCustomFields("paymentInfoForm")) {
+        !abp.auth.isGranted(
+            'Unity.GrantManager.ApplicationManagement.Payment'
+        ) ||
+        formHasInvalidCurrencyCustomFields('paymentInfoForm')
+    ) {
         $('#savePaymentInfoBtn').prop('disabled', true);
         return;
     }
@@ -469,11 +529,11 @@ function enablePaymentInfoSaveBtn() {
 }
 
 function refreshSupplierInfoWidget() {
-    const applicantId = $("#PaymentInfo_ApplicantId").val();
+    const applicantId = $('#PaymentInfo_ApplicantId').val();
     const refreshUrl = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}`;
     fetch(refreshUrl)
-        .then(response => response.text())
-        .then(data => {
+        .then((response) => response.text())
+        .then((data) => {
             let supplierInfo = document.getElementById('supplier-info-widget');
             const parser = new DOMParser();
             const doc = parser.parseFromString(data, 'text/html');
@@ -481,11 +541,14 @@ function refreshSupplierInfoWidget() {
 
             if (supplierInfo) {
                 supplierInfo.innerHTML = data;
+                if (typeof reinitializeSupplierInfo === 'function') {
+                    reinitializeSupplierInfo();
+                }
                 PubSub.publish('reload_sites_list', siteIdValue);
             }
             $('.cas-spinner').hide();
         })
-        .catch(error => {
+        .catch((error) => {
             $('.cas-spinner').hide();
             console.error('Error refreshing supplier-info-widget:', error);
         });
@@ -497,34 +560,34 @@ function nullToEmpty(value) {
 
 function getPaymentStatusTextColor(status) {
     switch (status) {
-        case "L1Pending":
-            return "#053662";
+        case 'L1Pending':
+            return '#053662';
 
-        case "L1Declined":
-            return "#CE3E39";
+        case 'L1Declined':
+            return '#CE3E39';
 
-        case "L2Pending":
-            return "#053662";
+        case 'L2Pending':
+            return '#053662';
 
-        case "L2Declined":
-            return "#CE3E39";
+        case 'L2Declined':
+            return '#CE3E39';
 
-        case "L3Pending":
-            return "#053662";
+        case 'L3Pending':
+            return '#053662';
 
-        case "L3Declined":
-            return "#CE3E39";
+        case 'L3Declined':
+            return '#CE3E39';
 
-        case "Submitted":
-            return "#5595D9";
+        case 'Submitted':
+            return '#5595D9';
 
-        case "Paid":
-            return "#42814A";
+        case 'Paid':
+            return '#42814A';
 
-        case "Failed":
-            return "#CE3E39";
+        case 'Failed':
+            return '#CE3E39';
 
         default:
-            return "#053662";
+            return '#053662';
     }
 }

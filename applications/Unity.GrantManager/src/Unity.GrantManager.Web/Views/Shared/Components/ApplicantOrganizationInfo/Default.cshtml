@@ -1,0 +1,170 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationInfo
+
+@model ApplicantOrganizationInfoViewModel
+
+@{
+    Layout = null;
+}
+
+<div id="ApplicantOrganizationInfo_SectorData" style="display:none;">
+    @Html.Raw(Json.Serialize(Model.Sectors))
+</div>
+
+@if (Model.ApplicantId != Guid.Empty)
+{
+    <abp-row class="px-1 pb-2 mb-4 applicant-info-container">
+        <div class="save-button-container">
+            <abp-button text="Save"
+                        id="saveApplicantOrganizationInfoBtn"
+                        class="floating-save-btn"
+                        icon-type="Other"
+                        icon="fl fl-save"
+                        button-type="Primary"
+                        disabled="true" />
+        </div>
+
+        <form id="ApplicantOrganizationInfoForm" autocomplete="off" class="applicant-organization-info">
+            <input type="hidden" id="ApplicantOrganizationInfo_ApplicantId" value="@Model.ApplicantId" />
+
+            @* Applicant Info *@
+            <abp-row id="organization-info-widget" class="m-0 p-0 applicant-organization-info__section">
+                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 px-0">
+                    <abp-row class="m-0 org-info-summary">
+                        <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                            <div id="OrganizationInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                                <h6 class="fw-bold">Applicant Information</h6>
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0 applicant-organization-info__divider_line">
+                        <abp-column size="_12" class="px-1 mb-4">                            
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_3" class="px-1">
+                                    <abp-input asp-for="ApplicantName" id="ApplicantOrganizationInfo_ApplicantName" />
+                                </abp-column>
+                                <abp-column size="_3" class="px-1">
+                                    <abp-input asp-for="UnityApplicantId" id="ApplicantOrganizationInfo_UnityApplicantId" />
+                                </abp-column>
+                                <abp-column size="_3" class="px-1">
+                                    <div class="switch-container">
+                                        <div class="px-3 form-check unt-form-switch form-switch">
+                                            <abp-input type="checkbox" asp-for="RedStop" />
+                                        </div>
+                                    </div>
+                                </abp-column>
+                                <abp-column size="_3" class="px-1">
+                                    <div class="switch-container">
+                                        <div class="px-3 form-check unt-form-switch form-switch">
+                                            <abp-input type="checkbox" asp-for="IndigenousOrgInd" />
+                                        </div>
+                                    </div>
+                                </abp-column>
+                            </abp-row>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0 mt-3">
+                        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                            <div id="OrganizationInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                                <h6 class="fw-bold">Organization Information</h6>
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="px-1 mb-4">
+                            <label class="form-label" for="ApplicantOrganizationInfo_OrgBookSelect">Search in BC Registries</label>
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_11" class="px-1">
+                                    <select id="ApplicantOrganizationInfo_OrgBookSelect"
+                                            asp-for="SelectedOrgBookId"
+                                            class="auto-complete-select"
+                                            data-autocomplete-minimum-input-length="3"
+                                            data-autocomplete-api-url="/api/app/org-book/org-book-autocomplete-query"
+                                            data-autocomplete-display-property="value"
+                                            data-autocomplete-value-property="topic_source_id"
+                                            data-autocomplete-items-property="results"
+                                            data-autocomplete-filter-param-name="orgBookQuery"
+                                            data-autocomplete-placeholder="Start typing a name or number to search..."
+                                            data-autocomplete-allow-clear="true">
+                                    </select>
+                                </abp-column>
+                                <abp-column size="_1" class="px-1">
+                                    <button class="btn unt-btn-link btn-link p-0" id="ApplicantOrganizationInfo_ClearOrgBook" type="button" title="Remove registered organization" style="margin-top: 0.25rem;">
+                                        <i class="fa fa-xmark"></i>
+                                    </button>
+                                </abp-column>
+                            </abp-row>
+                        </abp-column>
+                    </abp-row>                    
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="px-1">
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="OrgName" id="ApplicantOrganizationInfo_OrgName" disabled />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="OrgNumber" id="ApplicantOrganizationInfo_OrgNumber" disabled />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-select asp-for="OrgStatus" asp-items="Model.OrgStatusList" id="ApplicantOrganizationInfo_OrgStatus" disabled />
+                                </abp-column>                                
+                            </abp-row>
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_4" class="px-1">
+                                    <abp-select asp-for="OrganizationType" asp-items="Model.OrganizationTypeList" id="ApplicantOrganizationInfo_OrganizationType" disabled />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="BusinessNumber" id="ApplicantOrganizationInfo_BusinessNumber" disabled />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    
+                                </abp-column>
+                            </abp-row>
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="NonRegOrgName" id="ApplicantOrganizationInfo_NonRegOrgName" />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input class="numeric-mask" inputmode="numeric" asp-for="OrganizationSize" id="ApplicantOrganizationInfo_OrganizationSize" />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    
+                                </abp-column>
+                            </abp-row>
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_4" class="px-1">
+                                    <abp-select asp-for="FiscalMonth" asp-items="Model.FiscalMonthList" id="ApplicantOrganizationInfo_FiscalMonth" />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-select asp-for="FiscalDay" asp-items="Model.FiscalDayList" id="ApplicantOrganizationInfo_FiscalDay" />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    
+                                </abp-column>
+                            </abp-row>
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_4" class="px-1">
+                                    <abp-select asp-for="Sector" asp-items="Model.SectorList" id="ApplicantOrganizationInfo_Sector" />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-select asp-for="SubSector" asp-items="Model.SubSectorList" id="ApplicantOrganizationInfo_SubSector" />
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                        <abp-input asp-for="SectorSubSectorIndustryDesc" />
+                                </abp-column>
+                            </abp-row>
+                            
+                        </abp-column>
+                    </abp-row>
+                </abp-row>
+            </abp-column>
+        </abp-row>
+        </form>
+    </abp-row>
+}
+else
+{
+    <div class="alert alert-warning">
+        Applicant information not found.
+    </div>
+}

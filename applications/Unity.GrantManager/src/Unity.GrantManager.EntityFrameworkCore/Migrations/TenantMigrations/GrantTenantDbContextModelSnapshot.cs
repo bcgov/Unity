@@ -1101,7 +1101,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AIAnalysis")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AIScoresheetAnswers")
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("Acquisition")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ApplicantElectoralDistrict")
                         .HasColumnType("text");
 
                     b.Property<Guid>("ApplicantId")
@@ -1434,6 +1443,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AISummary")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
@@ -1624,6 +1636,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<int?>("FormHierarchy")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("IntakeId")
                         .HasColumnType("uuid");
 
@@ -1643,6 +1658,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("ParentFormId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ParentFormVersionId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("Payable")
                         .HasColumnType("boolean");
@@ -1675,6 +1696,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("IntakeId");
+
+                    b.HasIndex("ParentFormId");
+
+                    b.HasIndex("ParentFormVersionId");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -2190,6 +2215,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<DateTime?>("PinDateTime")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -2245,6 +2273,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<DateTime?>("PinDateTime")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -3724,6 +3755,58 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("Suppliers", "Payments");
                 });
 
+            modelBuilder.Entity("Unity.Reporting.Domain.Configuration.ReportColumnsMap", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrelationProvider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Mapping")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("RoleStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("ViewName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ViewStatus")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ReportColumnsMaps", "Reporting");
+                });
+
             modelBuilder.Entity("Unity.Flex.Domain.ScoresheetInstances.ScoresheetInstance", b =>
                 {
                     b.HasOne("Unity.Flex.Domain.Scoresheets.Scoresheet", "Scoresheet")
@@ -3940,6 +4023,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasForeignKey("IntakeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
+                        .WithMany()
+                        .HasForeignKey("ParentFormId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationFormVersion", null)
+                        .WithMany()
+                        .HasForeignKey("ParentFormVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormSubmission", b =>

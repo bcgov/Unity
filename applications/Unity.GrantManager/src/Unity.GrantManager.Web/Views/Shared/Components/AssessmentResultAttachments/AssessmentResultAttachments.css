@@ -2,6 +2,27 @@
     text-align: center;
 }
 
-#AssessmentResultAttachmentsTable_wrapper .dataTables_scrollBody {
-    overflow: unset !important;
+/* Updated for DataTables v2 - ensure proper width handling with scrollX */
+#AssessmentResultAttachmentsTable_wrapper .dt-scroll-body {
+    overflow: visible !important;
+}
+
+/* Ensure table wrapper uses full width */
+#AssessmentResultAttachmentsTable_wrapper {
+    width: 100%;
+}
+
+/* Ensure scroll container allows dropdowns to overflow */
+#AssessmentResultAttachmentsTable_wrapper .dt-scroll {
+    overflow: visible;
+}
+
+/* Ensure inner scroll elements take full width */
+#AssessmentResultAttachmentsTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+#AssessmentResultAttachmentsTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
+    width: 100% !important;
+}
+
+#AssessmentResultAttachmentsTable_wrapper .dt-scroll-body table {
+    width: 100% !important;
 }

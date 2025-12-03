@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
 using System;
@@ -12,6 +13,7 @@ using Volo.Abp.Identity.Integration;
 using Volo.Abp.Identity;
 using Newtonsoft.Json;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Permissions;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 {
@@ -25,14 +27,18 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
         private readonly CommentAppService _commentAppService;
         private readonly BrowserUtils _browserUtils;
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
+        private readonly IAuthorizationService _authorizationService;
         public string AllAssignees { get; set; } = string.Empty;
 
         public CommentsWidgetViewComponent(CommentAppService commentAppService, 
-            BrowserUtils browserUtils, IIdentityUserIntegrationService identityUserIntegrationService)
+            BrowserUtils browserUtils, 
+            IIdentityUserIntegrationService identityUserIntegrationService,
+            IAuthorizationService authorizationService)
         {
             _commentAppService = commentAppService;
             _browserUtils = browserUtils;
             _identityUserLookupAppService = identityUserIntegrationService;
+            _authorizationService = authorizationService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, CommentType commentType, Guid currentUserId)
@@ -52,7 +58,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
                     Id = user.Id,
                     FullName = $"{user.Name} {user.Surname}",
                     Email = user.Email
-                }).ToList()
+                }).ToList(),
+                CanPinComments = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.Comments.Add)
             };
 
             return View(model);
@@ -73,7 +80,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
                     CommenterId = item.CommenterId,
                     LastModificationTime = item.LastModificationTime?.AddMinutes(-offset),
                     Id = item.Id,
-                    OwnerId = item.OwnerId
+                    OwnerId = item.OwnerId,
+                    PinDateTime = item.PinDateTime?.AddMinutes(-offset)
                 };
             }
         }

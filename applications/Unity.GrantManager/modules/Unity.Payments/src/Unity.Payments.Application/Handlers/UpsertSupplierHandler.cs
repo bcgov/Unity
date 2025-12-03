@@ -45,7 +45,7 @@ namespace Unity.Payments.Handlers
         {
             foreach (var siteEto in upsertSupplierEto.SiteEtos)
             {
-                var siteDto = GetSiteDtoFromSiteEto(siteEto, supplierId);
+                var siteDto = supplierAppService.GetSiteDtoFromSiteEto(siteEto, supplierId);
 
                 if (existingSitesDictionary.TryGetValue(siteDto.Number, out var existingSite))
                 {
@@ -81,29 +81,6 @@ namespace Unity.Payments.Handlers
             return supplierDto;
         }
 
-        private static SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId)
-        {
-            return new()
-                {
-                    Number = siteEto.SupplierSiteCode,
-                    PaymentGroup = Enums.PaymentGroup.EFT, // Defaulting to EFT based on conversations with CGG/CAS
-                    AddressLine1 = siteEto.AddressLine1,
-                    AddressLine2 = siteEto.AddressLine2,
-                    AddressLine3 = siteEto.AddressLine3,
-                    City = siteEto.City,
-                    Province = siteEto.Province,
-                    PostalCode = siteEto.PostalCode,
-                    SupplierId = supplierId,
-                    Country = siteEto.Country,
-                    EmailAddress = siteEto.EmailAddress,
-                    EFTAdvicePref = siteEto.EFTAdvicePref,
-                    BankAccount = siteEto.BankAccount,
-                    ProviderId = siteEto.ProviderId,
-                    Status = siteEto.Status,
-                    SiteProtected = siteEto.SiteProtected,
-                    LastUpdatedInCas = siteEto.LastUpdated
-                };
-        }
 
         private static UpdateSupplierDto GetUpdateSupplierDtoFromEvent(UpsertSupplierEto eventData)
         {

@@ -1,0 +1,72 @@
+/* ApplicantOrganizationInfo Component Styles */
+
+/* Switch container styles for boolean fields */
+.switch-container {
+    display: flex;
+    align-items: center;
+    min-height: 38px;
+}
+
+.switch-container .form-check {
+    margin-bottom: 0;
+}
+
+/* Payment info container styles */
+.applicant-info-container {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.applicant-info-container .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    position: sticky;
+    top: 72px;
+    padding-right: 24px;
+    z-index: 999;
+}
+
+.applicant-info-container .save-button-container .floating-save-btn {
+    position: static;
+}
+
+.applicant-organization-info {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.applicant-organization-info .form-label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
+.org-info-summary {
+    width: 100%;
+}
+
+.project-location {
+    margin-bottom: 1rem;
+}
+
+.project-location h6 {
+    margin: 0;
+    padding-bottom: 0.5rem;
+}
+
+.applicant-organization-info__divider_line {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+}
+
+/* Form field spacing */
+.px-1 {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+}

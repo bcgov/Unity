@@ -28,10 +28,10 @@ namespace Unity.GrantManager.Intakes.Handlers
                     return;
                 }
 
-                if (!string.IsNullOrEmpty(eventData.Application.Applicant.ElectoralDistrict))
+                if (!string.IsNullOrEmpty(eventData.Application.ApplicantElectoralDistrict))
                 {
                     logger.LogInformation("Electoral district already set to '{ExistingElectoralDistrict}' for application {ApplicationId}.",
-                        eventData.Application.Applicant.ElectoralDistrict, eventData.Application.Id);
+                        eventData.Application.ApplicantElectoralDistrict, eventData.Application.Id);
                     return;
                 }
 
@@ -87,7 +87,7 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                 if (electoralDistrict.Name != null)
                 {
-                    eventData.Application.Applicant.SetElectoralDistrict(electoralDistrict.Name);
+                    eventData.Application.ApplicantElectoralDistrict = electoralDistrict.Name;
                     logger.LogInformation("Electoral district '{ElectoralDistrict}' determined for address: {Address}",
                         electoralDistrict.Name, address);
                 }

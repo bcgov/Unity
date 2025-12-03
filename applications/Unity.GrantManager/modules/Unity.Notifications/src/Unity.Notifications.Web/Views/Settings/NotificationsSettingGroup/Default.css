@@ -31,7 +31,9 @@
 
 /* Fix DataTable empty message positioning */
 #groupUsersTable td.dataTables_empty,
-#createGroupUsersTable td.dataTables_empty {
+#createGroupUsersTable td.dataTables_empty,
+#groupUsersTable td.dt-empty,
+#createGroupUsersTable td.dt-empty {
     text-align: center !important;
 }
 

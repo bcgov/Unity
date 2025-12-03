@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Notifications;
+using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus;
@@ -15,6 +18,7 @@ namespace Unity.GrantManager.Reporting
         IApplicationFormVersionRepository applicationFormVersionRepository,
         ICurrentTenant currentTenant,
         IUnitOfWorkManager unitOfWorkManager,
+        INotificationsAppService notificationsAppService,
         ILogger<SubmissionsDynamicViewGeneratorHandler> logger) : ILocalEventHandler<SubmissionsDynamicViewGenerationEto>, ITransientDependency
     {
         /// <summary>
@@ -28,7 +32,7 @@ namespace Unity.GrantManager.Reporting
             {
                 using (currentTenant.Change(viewGenerationEvent.TenantId))
                 {
-                    using var uow = unitOfWorkManager.Begin(isTransactional: false);
+                    using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
                     var applicationFormVersion = await applicationFormVersionRepository.GetAsync(viewGenerationEvent.ApplicationFormVersionId);
 
                     if (applicationFormVersion != null)
@@ -44,6 +48,29 @@ namespace Unity.GrantManager.Reporting
             catch (Exception ex)
             {
                 logger.LogError(ex, "{ErrorMessage}", ex.Message);
+                await NotifyTeamsAsync(viewGenerationEvent, ex);
+            }
+        }
+
+        private async Task NotifyTeamsAsync(SubmissionsDynamicViewGenerationEto viewGenerationEvent, Exception exception)
+        {
+            try
+            {
+                var facts = new List<Fact>
+                {
+                    new() { Name = "FormVersionId", Value = viewGenerationEvent.ApplicationFormVersionId.ToString() },
+                    new() { Name = "TenantId", Value = viewGenerationEvent.TenantId?.ToString() ?? "N/A" },
+                    new() { Name = "Error", Value = exception.Message }
+                };
+
+                var activityTitle = "Reporting view generation failed";
+                var activitySubtitle = $"Form version {viewGenerationEvent.ApplicationFormVersionId}";
+
+                await notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+            }
+            catch (Exception notifyEx)
+            {
+                logger.LogWarning(notifyEx, "Failed to post Teams notification for view generation failure on form version {FormVersionId}", viewGenerationEvent.ApplicationFormVersionId);
             }
         }
     }

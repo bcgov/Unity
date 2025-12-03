@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Intakes
         {
             if (string.IsNullOrWhiteSpace(unityApplicantId))
             {
-                throw new ArgumentNullException(nameof(unityApplicantId), "Unity applicant ID cannot be null or empty.");
+                throw new ArgumentNullException(nameof(unityApplicantId), "Applicant ID cannot be null or empty.");
             }
 
             try
