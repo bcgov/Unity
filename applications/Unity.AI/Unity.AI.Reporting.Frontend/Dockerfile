@@ -46,10 +46,10 @@ COPY --from=build /app/dist/recap /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy entrypoint script for runtime configuration
-COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 
 # Fix line endings (Windows CRLF -> Unix LF) and make executable
-RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Update nginx configuration for OpenShift compatibility
 RUN sed -i '/^user/d' /etc/nginx/nginx.conf && \
@@ -60,7 +60,7 @@ RUN sed -i '/^user/d' /etc/nginx/nginx.conf && \
 RUN chown -R nginx-openshift:nginx-openshift /usr/share/nginx/html \
                                             /var/cache/nginx \
                                             /etc/nginx/conf.d && \
-    chmod -R 755 /usr/share/nginx/html
+    chmod -R 775 /usr/share/nginx/html
 
 # Expose port 8080 (non-privileged port for OpenShift)
 EXPOSE 8080
@@ -69,4 +69,4 @@ EXPOSE 8080
 USER 1001
 
 # Use entrypoint script to generate config.json at runtime and start nginx
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
