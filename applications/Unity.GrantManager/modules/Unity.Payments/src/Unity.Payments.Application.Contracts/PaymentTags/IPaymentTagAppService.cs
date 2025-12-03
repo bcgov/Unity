@@ -10,6 +10,7 @@ public interface IPaymentTagAppService : IApplicationService
 {
     Task<IList<PaymentTagDto>> GetListAsync();
     Task<IList<PaymentTagDto>> GetListWithPaymentRequestIdsAsync(List<Guid> ids);
+    Task<IList<PaymentTagDto>> GetListWithCacheKeyAsync(string cacheKey);
     Task<List<PaymentTagDto>> AssignTagsAsync(AssignPaymentTagDto input);
     Task<PaymentTagDto?> GetPaymentTagsAsync(Guid id);
     Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync();

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,8 @@ using System.Threading.Tasks;
 using Unity.Modules.Shared;
 using Unity.Payments.Domain.PaymentTags;
 using Unity.Payments.Events;
+using Unity.Payments.PaymentRequests;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
@@ -21,10 +24,16 @@ namespace Unity.Payments.PaymentTags
     {
         private readonly IPaymentTagRepository _paymentTagRepository;
         private readonly ILocalEventBus _localEventBus;
-        public PaymentTagAppService(IPaymentTagRepository paymentTagRepository, ILocalEventBus localEventBus)
+        private readonly PaymentIdsCacheService _cacheService;
+
+        public PaymentTagAppService(
+            IPaymentTagRepository paymentTagRepository,
+            ILocalEventBus localEventBus,
+            PaymentIdsCacheService cacheService)
         {
             _paymentTagRepository = paymentTagRepository;
             _localEventBus = localEventBus;
+            _cacheService = cacheService;
         }
         public async Task<IList<PaymentTagDto>> GetListAsync()
         {
@@ -41,6 +50,40 @@ namespace Unity.Payments.PaymentTags
             var tags = await tagsQuery.ToListAsync();
 
             return ObjectMapper.Map<List<PaymentTag>, List<PaymentTagDto>>(tags);
+        }
+
+        public async Task<IList<PaymentTagDto>> GetListWithCacheKeyAsync(string cacheKey)
+        {
+            if (string.IsNullOrWhiteSpace(cacheKey))
+            {
+                throw new UserFriendlyException("Cache key is required");
+            }
+
+            try
+            {
+                // Retrieve payment IDs from cache
+                var paymentIds = await _cacheService.GetPaymentIdsAsync(cacheKey);
+
+                if (paymentIds == null || paymentIds.Count == 0)
+                {
+                    Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                    throw new UserFriendlyException("The session has expired. Please select payments and try again.");
+                }
+
+                Logger.LogInformation("Retrieved {Count} payment IDs from cache for tag list", paymentIds.Count);
+
+                // Use the existing method to get tags for these payment IDs
+                return await GetListWithPaymentRequestIdsAsync(paymentIds);
+            }
+            catch (UserFriendlyException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error retrieving payment tags with cache key: {CacheKey}", cacheKey);
+                throw new UserFriendlyException("Failed to retrieve payment tags. Please try again.");
+            }
         }
         public async Task<PaymentTagDto?> GetPaymentTagsAsync(Guid id)
         {
