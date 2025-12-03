@@ -2,7 +2,7 @@ name: Dev - CI & Unit Tests
 
 permissions:
   contents: read
-  pull-requests: write   # Required if you want to post comments on PR
+  pull-requests: write   # Required if you want to post PR comments
 
 on:
   pull_request:
@@ -52,16 +52,26 @@ jobs:
       - name: Create TestResults folder
         run: mkdir -p applications/Unity.GrantManager/TestResults
 
-      - name: Run unit tests with code coverage
-        run: dotnet test applications/Unity.GrantManager/modules/Unity.Flex/test/Unity.Flex.Web.Tests/Unity.Flex.Web.Tests.csproj --collect:"Code Coverage" --logger "trx;LogFileName=TestResults/unity-flex-unittest-results-dev.trx"
+      - name: Run unit tests with XPlat Code Coverage
+        run: |
+          dotnet test applications/Unity.GrantManager/modules/Unity.Flex/test/Unity.Flex.Web.Tests/Unity.Flex.Web.Tests.csproj \
+            --collect:"XPlat Code Coverage" \
+            --logger "trx;LogFileName=unity-flex-unittest-results-dev.trx" \
+            --results-directory applications/Unity.GrantManager/TestResults
 
       - name: Install ReportGenerator CLI
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
       - name: Generate HTML test report
         run: |
           mkdir -p applications/Unity.GrantManager/TestResultsHtml
-          reportgenerator -reports:applications/Unity.GrantManager/TestResults/**/*.coverage -targetdir:applications/Unity.GrantManager/TestResultsHtml -reporttypes:Html
+          reportgenerator \
+            -reports:applications/Unity.GrantManager/TestResults/**/coverage.cobertura.xml \
+            -targetdir:applications/Unity.GrantManager/TestResultsHtml \
+            -reporttypes:Html
 
       - name: Upload HTML test report
         uses: actions/upload-artifact@v4
