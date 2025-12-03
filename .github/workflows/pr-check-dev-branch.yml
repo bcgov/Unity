@@ -61,10 +61,7 @@ jobs:
       - name: Generate HTML test report
         run: |
           mkdir -p applications/Unity.GrantManager/TestResultsHtml
-          reportgenerator \
-            -reports:applications/Unity.GrantManager/TestResults/**/*.trx \
-            -targetdir:applications/Unity.GrantManager/TestResultsHtml \
-            -reporttypes:Html
+          reportgenerator -reports:applications/Unity.GrantManager/TestResults/**/*.coverage -targetdir:applications/Unity.GrantManager/TestResultsHtml -reporttypes:Html
 
       - name: Upload HTML test report
         uses: actions/upload-artifact@v4
