@@ -10,6 +10,7 @@ public interface IApplicationTagsService : IApplicationService
 {
     Task<IList<ApplicationTagsDto>> GetListAsync();
     Task<List<ApplicationTagsDto>> GetListWithApplicationIdsAsync(List<Guid> ids);
+    Task<List<ApplicationTagsDto>> GetListWithCacheKeyAsync(string cacheKey);
     Task<List<ApplicationTagsDto>> AssignTagsAsync(AssignApplicationTagsDto input);
     Task<List<ApplicationTagsDto>> GetApplicationTagsAsync(Guid id);
     Task<PagedResultDto<TagSummaryCountDto>> GetTagSummaryAsync();
