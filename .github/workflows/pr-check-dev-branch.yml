@@ -1,7 +1,8 @@
-name: Dev - Branch Protection
+name: Dev - CI & Unit Tests
 
 permissions:
   contents: read
+  pull-requests: write   # Required if you want to post comments on PR
 
 on:
   pull_request:
@@ -11,38 +12,65 @@ on:
 jobs:
   check-dev-branch:
     runs-on: ubuntu-latest
+    outputs:
+      branch-allowed: ${{ steps.branch-check.outputs.allowed }}
     steps:
       - name: Validate PR source branch
+        id: branch-check
         run: |
           echo "Source branch: ${GITHUB_HEAD_REF}"
-
           if [[ ${GITHUB_HEAD_REF} =~ ^feature/ ]] || \
              [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]]  || \
              [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]  || \
              [[ ${GITHUB_HEAD_REF} == "test" ]]     || \
              [[ ${GITHUB_HEAD_REF} == "main" ]]; then
               echo "✔ Allowed PR source branch"
-              exit 0
+              echo "allowed=true" >> $GITHUB_OUTPUT
           else
               echo "❌ ERROR: PR into dev must come from:"
               echo "   feature/*, hotfix/*, bugfix/*, test, or main"
+              echo "allowed=false" >> $GITHUB_OUTPUT
               exit 1
           fi
 
   run-unit-tests:
     runs-on: ubuntu-latest
     needs: check-dev-branch
+    if: needs.check-dev-branch.outputs.branch-allowed == 'true'
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install .NET SDK
+      - name: Install .NET 9 SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x" 
+          dotnet-version: "9.0.x"
 
-      - name: Restore
-        run: cd applications/Unity.GrantManager && dotnet restore 
+      - name: Restore NuGet packages
+        run: dotnet restore applications/Unity.GrantManager/Unity.GrantManager.sln
 
-      - name: Run tests with results
-        run: cd applications/Unity.GrantManager && dotnet test --logger "trx;LogFileName=unity-unittest-results-dev.trx"
+      - name: Create TestResults folder
+        run: mkdir -p applications/Unity.GrantManager/TestResults
+
+      - name: Run unit tests with code coverage
+        run: |
+          dotnet test applications/Unity.GrantManager/Unity.Flex.Web.Tests/Unity.Flex.Web.Tests.csproj \
+            --no-build \
+            --collect:"Code Coverage" \
+            --logger "trx;LogFileName=TestResults/unity-unittest-results-dev.trx"
+
+      - name: Install ReportUnit CLI
+        run: dotnet tool install -g ReportUnit
+
+      - name: Generate HTML test report
+        run: |
+          mkdir -p applications/Unity.GrantManager/TestResultsHtml
+          reportunit \
+            applications/Unity.GrantManager/TestResults/unity-unittest-results-dev.trx \
+            applications/Unity.GrantManager/TestResultsHtml
+
+      - name: Upload HTML test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-tests-html
+          path: applications/Unity.GrantManager/TestResultsHtml/
