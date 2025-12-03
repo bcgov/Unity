@@ -214,6 +214,8 @@ out/
 .fusebox/
 .dynamodb/
 .tern-port
+*.package.json
+*.package-lock.json
 
 orleans.codegen.cs
 
