@@ -19,195 +19,127 @@ jobs:
         id: branch-check
         run: |
           echo "Source branch: ${GITHUB_HEAD_REF}"
-          if [[ ${GITHUB_HEAD_REF} =~ ^(feature/|hotfix/|bugfix/) ]] \
-             || [[ ${GITHUB_HEAD_REF} == "test" ]] \
-             || [[ ${GITHUB_HEAD_REF} == "main" ]]; then
-            echo "allowed=true" >> $GITHUB_OUTPUT
+          if [[ ${GITHUB_HEAD_REF} =~ ^feature/ ]] || \
+             [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]]  || \
+             [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]  || \
+             [[ ${GITHUB_HEAD_REF} == "test" ]]     || \
+             [[ ${GITHUB_HEAD_REF} == "main" ]]; then
+              echo "allowed=true" >> $GITHUB_OUTPUT
           else
-            echo "allowed=false" >> $GITHUB_OUTPUT
-            echo "❌ PR into 'dev' must come from feature/*, hotfix/*, bugfix/*, test, or main"
-            exit 1
+              echo "❌ ERROR: PR into dev must come from:"
+              echo "   feature/*, hotfix/*, bugfix/*, test, or main"
+              echo "allowed=false" >> $GITHUB_OUTPUT
+              exit 1
           fi
-
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: check-dev-branch
     if: needs.check-dev-branch.outputs.branch-allowed == 'true'
-
-    env:
-      SLN: applications/Unity.GrantManager/Unity.GrantManager.sln
-      RESULTS: applications/Unity.GrantManager/TestResults
-      RESULTS_HTML: applications/Unity.GrantManager/TestResultsHtml
-
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
+      - name: Install .NET 9 SDK
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
 
-      - name: Restore packages
-        run: dotnet restore $SLN
+      - name: Restore NuGet packages
+        run: dotnet restore applications/Unity.GrantManager/Unity.GrantManager.sln
 
-      ###########################################################
-      # 📌 Run Unit Tests + Generate TRX + Generate Coverage XML
-      ###########################################################
-      - name: Run unit tests (TRX + coverage)
+      - name: Run unit tests (TRX output)
         id: run-tests
         continue-on-error: true
         run: |
-          mkdir -p $RESULTS
-
-          dotnet test $SLN \
+          mkdir -p applications/Unity.GrantManager/TestResults
+          dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
             --filter "FullyQualifiedName~Tests" \
             --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}.trx" \
-            --results-directory $RESULTS \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=cobertura \
-            /p:CoverletOutput=$RESULTS/coverage.xml
-
-      - name: Install XML parser
+            --results-directory applications/Unity.GrantManager/TestResults
+      - name: Install XML parser for TRX extraction
         run: sudo apt-get install -y xmlstarlet
 
-      ###########################################################
-      # 📌 Extract Test Counts
-      ###########################################################
-      - name: Extract test counts
-        id: extract
+      - name: Extract test result counts from TRX
+        id: extract-results
         run: |
-          TRX=$(find $RESULTS -name "*.trx" | head -1)
-          echo "TRX file: $TRX"
-
-          if [[ ! -f "$TRX" ]]; then
-            echo "❌ TRX file missing"; exit 1;
-          fi
-
-          PASSED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Passed'])" "$TRX")
-          FAILED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Failed'])" "$TRX")
-          SKIPPED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='NotExecuted'])" "$TRX")
-
+          TRX_FILE=$(find applications/Unity.GrantManager/TestResults -name "*.trx" | head -1)
+          echo "Found TRX: $TRX_FILE"
+          PASSED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Passed'])" "$TRX_FILE")
+          FAILED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Failed'])" "$TRX_FILE")
+          SKIPPED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='NotExecuted'])" "$TRX_FILE")
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
-          echo "trx=$TRX" >> $GITHUB_OUTPUT
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-      - name: Compute final result
-        id: final-result
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Convert TRX → HTML
         run: |
-          if [[ "${{ steps.extract.outputs.failed }}" == "0" ]]; then
-            echo "passed=true" >> $GITHUB_OUTPUT
-          else
-            echo "passed=false" >> $GITHUB_OUTPUT
-          fi
-
-      ###########################################################
-      # 📌 Generate Test Summary Markdown
-      ###########################################################
-      - name: Generate summary markdown
-        id: summary
-        run: |
-          TRX="${{ steps.extract.outputs.trx }}"
-          echo "### Detailed Test Results" > summary.md
-          echo "| Test | Outcome |" >> summary.md
-          echo "|------|---------|" >> summary.md
-
-          xmlstarlet sel -t -m "//UnitTestResult" \
-            -v "concat(@testName,'|',@outcome)" -n "$TRX" |
-          while IFS="|" read -r name outcome; do
-            echo "| $name | $outcome |" >> summary.md
-          done
-
-          echo "summary<<EOF" >> $GITHUB_OUTPUT
-          cat summary.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      ###########################################################
-      # 📌 Generate HTML Coverage Report
-      ###########################################################
-      - name: Convert coverage to HTML
-        run: |
-          mkdir -p $RESULTS_HTML
-          dotnet tool install -g dotnet-reportgenerator-globaltool
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
+          mkdir -p applications/Unity.GrantManager/TestResultsHtml
           reportgenerator \
-            -reports:"$RESULTS/coverage.xml" \
-            -targetdir:"$RESULTS_HTML" \
+            -reports:applications/Unity.GrantManager/TestResults/*.trx \
+            -targetdir:applications/Unity.GrantManager/TestResultsHtml \
             -reporttypes:Html
-
-      ###########################################################
-      # 📌 Upload Artifacts
-      ###########################################################
-      - uses: actions/upload-artifact@v4
+      - name: Upload HTML test report
+        uses: actions/upload-artifact@v4
         with:
           name: unity-tests-html
-          path: ${{ env.RESULTS_HTML }}
+          path: applications/Unity.GrantManager/TestResultsHtml/
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: unity-tests-summary-md
-          path: summary.md
-
-      ###########################################################
-      # 📌 Badge for PR Comment
-      ###########################################################
-      - name: Build badge
+      - name: Determine pass/fail outcome
+        id: final-result
+        run: |
+          if [[ ${{ steps.extract-results.outputs.failed }} -gt 0 ]]; then
+            echo "passed=false" >> $GITHUB_OUTPUT
+          else
+            echo "passed=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Generate badge
         id: badge
         run: |
-          if [[ ${{ steps.extract.outputs.failed }} -gt 0 ]]; then
-            echo "badge=![Tests](https://img.shields.io/badge/Tests-Failing-red)" >> $GITHUB_OUTPUT
-          else
+          if [[ "${{ steps.final-result.outputs.passed }}" == "true" ]]; then
             echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
+          else
+            echo "badge=![Tests](https://img.shields.io/badge/Tests-Failing-red)" >> $GITHUB_OUTPUT
           fi
-
-      ###########################################################
-      # 📌 Comment On PR
-      ###########################################################
-      - name: Comment on PR
+      - name: Add PR comment with full test summary
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             ## 🧪 Unit Test Results
             ${{ steps.badge.outputs.badge }}
-
-            ### Summary
+            ### 📊 Summary
             | Result | Count |
-            |--------|------|
-            | Passed | `${{ steps.extract.outputs.passed }}` |
-            | Failed | `${{ steps.extract.outputs.failed }}` |
-            | Skipped | `${{ steps.extract.outputs.skipped }}` |
-
-            ${{ steps.summary.outputs.summary }}
-
-            **HTML Coverage Report** is available in workflow artifacts.
-
-      ###########################################################
-      # 📌 Teams Notification
-      ###########################################################
-      - name: Send Notification to Teams
+            |--------|-------|
+            | ✅ Passed | `${{ steps.extract-results.outputs.passed }}` |
+            | ❌ Failed | `${{ steps.extract-results.outputs.failed }}` |
+            | ⚠️ Skipped | `${{ steps.extract-results.outputs.skipped }}` |
+            ### 📄 HTML Report
+            Download from the workflow artifacts.
+            _Automatically generated by CI._
+      - name: Send Microsoft Teams Notification
         run: |
           PASSED=${{ steps.final-result.outputs.passed }}
           TOTAL_PASSED=${{ steps.extract-results.outputs.passed }}
           TOTAL_FAILED=${{ steps.extract-results.outputs.failed }}
           TOTAL_SKIPPED=${{ steps.extract-results.outputs.skipped }}
-
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_URL="${{ github.event.pull_request.html_url }}"
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          SOURCE_BRANCH="${{ github.head_ref }}"
-          TARGET_BRANCH="${{ github.base_ref }}"
-
-          if [ "$PASSED" = "true" ]; then
-            STATUS="🟢 Tests Passed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
-            COLOR="00FF00"
-          else
-            STATUS="🔴 Tests Failed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
-            COLOR="FF0000"
-          fi
-
+                PR_TITLE="${{ github.event.pull_request.title }}"
+                PR_URL="${{ github.event.pull_request.html_url }}"
+                PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+                SOURCE_BRANCH="${{ github.head_ref }}"
+                TARGET_BRANCH="${{ github.base_ref }}"
+                if [ "$PASSED" = "true" ]; then
+                STATUS="🟢 Tests Passed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
+                COLOR="00FF00"
+                else
+                STATUS="🔴 Tests Failed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
+                COLOR="FF0000"
+                fi
           JSON=$(cat <<EOF
           {
             "@type": "MessageCard",
@@ -215,28 +147,31 @@ jobs:
             "themeColor": "$COLOR",
             "summary": "Unit Test Results",
             "title": "$STATUS",
-            "sections": [
+            "sections": [({
+              "facts": [
+                { "name": "Passed", "value": "$TOTAL_PASSED" },
+                { "name": "Failed", "value": "$TOTAL_FAILED" },
+                { "name": "Skipped", "value": "$TOTAL_SKIPPED" }
+              ],
+              "markdown": true
+            })],
+            "potentialAction": [
               {
-                "facts": [
-                  { "name": "Passed", "value": "${{ steps.extract.outputs.passed }}" },
-                  { "name": "Failed", "value": "${{ steps.extract.outputs.failed }}" },
-                  { "name": "Skipped", "value": "${{ steps.extract.outputs.skipped }}" }
+                "@type": "OpenUri",
+                "name": "View CI Run",
+                "targets": [
+                  { "os": "default", "uri": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" }
                 ]
               }
             ]
           }
           EOF
           )
-
           curl -H "Content-Type: application/json" \
                -d "$JSON" \
                "https://bcgov.webhook.office.com/webhookb2/d7f6b10c-adf3-4dd1-ad14-8f526f197bd2@6fdb5200-3d0d-4a8a-b036-d3685e359adc/IncomingWebhook/92829f79fa5e45d99b98a999e3a5f9ef/730754e7-686e-4bfa-b646-16afda18661b/V28MKwZHeQmLKgrq7HW6pOT8CO-j_gDwikB34NmSJUvM01"
-
-      ###########################################################
-      # 📌 Fail the Job if Tests Failed
-      ###########################################################
       - name: Fail if tests failed
-        if: steps.extract.outputs.failed != '0'
+        if: steps.final-result.outputs.passed == 'false'
         run: |
           echo "❌ Unit tests failed."
           exit 1
