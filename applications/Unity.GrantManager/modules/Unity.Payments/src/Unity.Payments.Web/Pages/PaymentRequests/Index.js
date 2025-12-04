@@ -58,22 +58,40 @@ $(function () {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
-                paymentRequestStatusModal.open({
-                    paymentIds: JSON.stringify(selectedPaymentIds),
-                    isApprove: true
-                });
-                isApprove = true;
+                // Store payment IDs in distributed cache to avoid URL length limits
+                unity.payments.paymentRequests.paymentBulkActions
+                    .storePaymentIds({ paymentRequestIds: selectedPaymentIds })
+                    .then(function(response) {
+                        paymentRequestStatusModal.open({
+                            cacheKey: response.cacheKey,
+                            isApprove: true
+                        });
+                        isApprove = true;
+                    })
+                    .catch(function(error) {
+                        abp.notify.error('Failed to prepare payment approval. Please try again.');
+                        console.error('Error storing payment IDs:', error);
+                    });
             }
         },
         {
             text: 'Decline',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
-                paymentRequestStatusModal.open({
-                    paymentIds: JSON.stringify(selectedPaymentIds),
-                    isApprove: false
-                });
-                isApprove = false;
+                // Store payment IDs in distributed cache to avoid URL length limits
+                unity.payments.paymentRequests.paymentBulkActions
+                    .storePaymentIds({ paymentRequestIds: selectedPaymentIds })
+                    .then(function(response) {
+                        paymentRequestStatusModal.open({
+                            cacheKey: response.cacheKey,
+                            isApprove: false
+                        });
+                        isApprove = false;
+                    })
+                    .catch(function(error) {
+                        abp.notify.error('Failed to prepare payment decline. Please try again.');
+                        console.error('Error storing payment IDs:', error);
+                    });
             }
         },
         {

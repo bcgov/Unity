@@ -21,7 +21,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
             string? answer,
             string? minLength,
             string? maxLength,
-            bool required = false)
+            bool required = false,
+            bool isHumanConfirmed = true,
+            string? aiCitation = null,
+            int? aiConfidence = null)
         {
             return View(await Task.FromResult(new QuestionTextViewModel()
             {
@@ -30,7 +33,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
                 Answer = answer ?? string.Empty,
                 MinLength = minLength,
                 MaxLength = maxLength,
-                Required = required
+                Required = required,
+                IsHumanConfirmed = isHumanConfirmed,
+                AICitation = aiCitation,
+                AIConfidence = aiConfidence
             }));
         }
 

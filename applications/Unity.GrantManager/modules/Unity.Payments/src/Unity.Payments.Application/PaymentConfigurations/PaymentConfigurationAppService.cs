@@ -24,18 +24,36 @@ namespace Unity.Payments.PaymentConfigurations
         {
             string accountDistributionCode = "";
             if (accountCoding != null
-				&& accountCoding.Responsibility != null
-				&& accountCoding.ServiceLine != null
-				&& accountCoding.Stob != null
-				&& accountCoding.MinistryClient != null
-				&& accountCoding.ProjectNumber != null)
+                && accountCoding.Responsibility != null
+                && accountCoding.ServiceLine != null
+                && accountCoding.Stob != null
+                && accountCoding.MinistryClient != null
+                && accountCoding.ProjectNumber != null)
             {
                 string accountDistributionPostFix = "000000.0000";
                 accountDistributionCode = 
-                 $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{accountDistributionPostFix}"; 
+                    $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{accountDistributionPostFix}";
             }
 
             return Task.FromResult(accountDistributionCode);
+        }
+
+        public virtual async Task<string> GetAccountDistributionCodeDescription(AccountCoding accountCoding)
+        {
+            var accountDistributionCode = string.Empty;
+            var formattedCode = await GetAccountDistributionCode(accountCoding);
+
+            // If description exists, show it first, otherwise show just the code
+            if (!string.IsNullOrWhiteSpace(accountCoding.Description))
+            {
+                accountDistributionCode = $"{accountCoding.Description} - {formattedCode}";
+            }
+            else
+            {
+                accountDistributionCode = formattedCode;
+            }
+
+            return accountDistributionCode;
         }
 
         public virtual async Task<PaymentConfigurationDto> CreateAsync(CreatePaymentConfigurationDto createUpdatePaymentConfigurationDto)
