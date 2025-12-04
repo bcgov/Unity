@@ -47,23 +47,21 @@ jobs:
 
       - name: Restore NuGet packages
         run: dotnet restore applications/Unity.GrantManager/Unity.GrantManager.sln
-      - name: Ensure coverlet collector is installed
-        run: |
-          dotnet add applications/Unity.GrantManager/Unity.GrantManager.Tests package coverlet.collector
 
-      - name: Run unit tests with TRX + XPlat Code Coverage
+      - name: Run unit tests with Coverlet (OpenCover for SonarQube)
         shell: bash
         run: |
           mkdir -p applications/Unity.GrantManager/TestResults
 
-          # Unique filename (works cross-platform)
           TRX_FILE="unity-tests-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
 
           dotnet test applications/Unity.GrantManager/Unity.GrantManager.Tests/Unity.GrantManager.Tests.csproj \
             --filter "FullyQualifiedName~Tests" \
-            --collect:"XPlat Code Coverage" \
             --logger "trx;LogFileName=$TRX_FILE" \
-            --results-directory applications/Unity.GrantManager/TestResults
+            --results-directory applications/Unity.GrantManager/TestResults \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=opencover \
+            /p:CoverletOutput=applications/Unity.GrantManager/TestResults/coverage.opencover.xml
 
       - name: Install XML parser for TRX extraction
         run: sudo apt-get install -y xmlstarlet
@@ -97,6 +95,12 @@ jobs:
         with:
           name: unity-tests-html
           path: applications/Unity.GrantManager/TestResultsHtml/
+
+      - name: Upload OpenCover coverage (for SonarQube)
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-opencover-coverage
+          path: applications/Unity.GrantManager/TestResults/coverage.opencover.xml
 
       - name: Determine pass/fail outcome
         id: final-result
