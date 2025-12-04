@@ -16,25 +16,36 @@
     <abp-modal id="tagPaymentsModal" size="Large">
         <abp-modal-header title="Tags"></abp-modal-header>
         <abp-modal-body>
-            <div>
-                <abp-input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
-                @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Tags.Create))
-                {
-                    <div class="form-text"><strong>Note: </strong>The current user does not have permission to assign payment tags.</div>
-                }
+            @if (ViewData["Error"] != null)
+            {
+                <div class="alert alert-warning" role="alert">
+                    <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+                </div>
+            }
+            else
+            {
+                <div>
+                    <abp-input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
 
-                @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Tags.Delete))
-                {
-                    <div class="form-text"><strong>Note: </strong>The current user does not have permission to remove payment tags.</div>
-                }
+                    <input type="hidden" id="SelectedTagsJson" name="SelectedTagsJson" />
+                    <abp-input type="hidden" id="SelectedPaymentRequestIds" asp-for="@Model.SelectedPaymentRequestIds" />
+                    <abp-input type="hidden" id="CacheKey" asp-for="@Model.CacheKey" />
+                    <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
+                    <input type="hidden" id="Tags" name="Tags" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
+                    <input type="hidden" id="TagsJson" name="TagsJson" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
+                </div>
+            }
 
-                <input type="hidden" id="SelectedTagsJson" name="SelectedTagsJson" />
-                <abp-input type="hidden" id="SelectedPaymentRequestIds" asp-for="@Model.SelectedPaymentRequestIds" />
-                <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
-                <input type="hidden" id="Tags" name="Tags" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
-                <input type="hidden" id="TagsJson" name="TagsJson" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
+            @* Permission notes - always visible *@
+            @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Tags.Create))
+            {
+                <div class="form-text"><strong>Note: </strong>The current user does not have permission to assign payment tags.</div>
+            }
 
-            </div>
+            @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Tags.Delete))
+            {
+                <div class="form-text"><strong>Note: </strong>The current user does not have permission to remove payment tags.</div>
+            }
         </abp-modal-body>
         <abp-modal-footer>
             <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="paymentTagsModelSaveBtn">Save</button>

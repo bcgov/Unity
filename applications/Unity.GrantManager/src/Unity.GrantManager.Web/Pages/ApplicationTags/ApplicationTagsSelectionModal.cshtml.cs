@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -57,18 +58,44 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
         [BindProperty]
         public string? TagsJson { get; set; }
 
-        public ApplicationTagsModalModel(IApplicationTagsService applicationTagsService)
+        [BindProperty]
+        [DisplayName("Cache Key")]
+        public string? CacheKey { get; set; }
+
+        private readonly ApplicationIdsCacheService _cacheService;
+
+        public ApplicationTagsModalModel(
+            IApplicationTagsService applicationTagsService,
+            ApplicationIdsCacheService cacheService)
         {
             _applicationTagsService = applicationTagsService ?? throw new ArgumentNullException(nameof(applicationTagsService));
+            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
         }
 
-        public Task OnGetAsync(string applicationIds, string actionType)
+        public async Task OnGetAsync(string cacheKey, string actionType)
         {
-            SelectedApplicationIds = applicationIds;
             ActionType = actionType;
+            CacheKey = cacheKey;
 
-            // Return a completed task to ensure all code paths return a value
-            return Task.CompletedTask;
+            try
+            {
+                var applicationIds = await _cacheService.GetApplicationIdsAsync(cacheKey);
+
+                if (applicationIds == null || applicationIds.Count == 0)
+                {
+                    Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                    ViewData["Error"] = "The session has expired. Please select applications and try again.";
+                    return;
+                }
+
+                SelectedApplicationIds = JsonConvert.SerializeObject(applicationIds);
+                Logger.LogInformation("Successfully loaded application tags modal for {Count} applications", applicationIds.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error loading application tags modal");
+                ViewData["Error"] = "An error occurred while loading the tags selection. Please try again.";
+            }
         }
         public async Task<IActionResult> OnPostAsync()
         {
