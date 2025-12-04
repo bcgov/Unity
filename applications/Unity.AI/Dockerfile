@@ -89,8 +89,8 @@ cd /app/backend/src
 exec gunicorn -w 4 -b 0.0.0.0:8080 --access-logfile - --error-logfile - app:app
 EOF
 
-# Make entrypoint executable
-RUN chmod +x /entrypoint.sh && \
+# Make entrypoint executable (777 for OpenShift compatibility)
+RUN chmod 777 /entrypoint.sh && \
     chown appuser:appuser /entrypoint.sh
 
 # Change ownership
