@@ -30,7 +30,7 @@ services:
         - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
         - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
     ports:
-      - "80:80"
+      - "80:8080"
     environment:
       # Application config
       - ENVIRONMENT=${ENVIRONMENT:-production}

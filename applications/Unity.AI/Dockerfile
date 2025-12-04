@@ -83,10 +83,10 @@ CONFIGEOF
 echo "Configuration generated successfully at ${CONFIG_PATH}"
 echo "  Angular app will call: /api (same origin - Flask serves everything)"
 
-# Start Flask with gunicorn
-echo "Starting Flask application (serving static + API)..."
+# Start Flask with gunicorn on port 8080 (non-privileged port)
+echo "Starting Flask application (serving static + API) on port 8080..."
 cd /app/backend/src
-exec gunicorn -w 4 -b 0.0.0.0:80 --access-logfile - --error-logfile - app:app
+exec gunicorn -w 4 -b 0.0.0.0:8080 --access-logfile - --error-logfile - app:app
 EOF
 
 # Make entrypoint executable
