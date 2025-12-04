@@ -47,15 +47,15 @@ jobs:
 
       - name: Restore NuGet packages
         run: dotnet restore applications/Unity.GrantManager/Unity.GrantManager.sln
-
-      - name: Run unit tests (TRX output)
+      - name: Run unit tests (TRX output) with XPlat Code Coverage
         id: run-tests
         continue-on-error: true
         run: |
           mkdir -p applications/Unity.GrantManager/TestResults
           dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
             --filter "FullyQualifiedName~Tests" \
-            --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}.trx" \
+            --collect:"XPlat Code Coverage" \
+            --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}-$(date +%s%N).trx" \
             --results-directory applications/Unity.GrantManager/TestResults
       - name: Install XML parser for TRX extraction
         run: sudo apt-get install -y xmlstarlet
