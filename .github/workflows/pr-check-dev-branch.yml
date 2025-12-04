@@ -55,12 +55,12 @@ jobs:
         run: |
           mkdir -p applications/Unity.GrantManager/TestResults
           dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
-            --filter "FullyQualifiedName~Tests" \
-            --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}.trx" \
-            --results-directory applications/Unity.GrantManager/TestResults \
-            /p:CollectCoverage=true \
-            /p:CoverletOutput=applications/Unity.GrantManager/TestResults/ \
-            /p:CoverletOutputFormat=cobertura
+          --filter "FullyQualifiedName~Tests" \
+          --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}.trx" \
+          --results-directory applications/Unity.GrantManager/TestResults \
+          /p:CollectCoverage=true \
+          /p:CoverletOutput=applications/Unity.GrantManager/TestResults/coverage.cobertura.xml \
+          /p:CoverletOutputFormat=cobertura
 
       - name: Debug coverage file content
         run: |
