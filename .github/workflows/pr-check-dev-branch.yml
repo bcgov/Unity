@@ -80,6 +80,12 @@ jobs:
         run: |
           TRX_FILE=$(find applications/Unity.GrantManager/TestResults -name "*.trx" | head -1)
           echo "Using TRX: $TRX_FILE"
+          
+          if [ -z "$TRX_FILE" ] || [ ! -f "$TRX_FILE" ]; then
+            echo "❌ ERROR: TRX file not found in TestResults directory"
+            ls -la applications/Unity.GrantManager/TestResults/
+            exit 1
+          fi
 
           PASSED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Passed'])" "$TRX_FILE")
           FAILED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Failed'])" "$TRX_FILE")
@@ -93,6 +99,11 @@ jobs:
         id: test-summary
         run: |
           TRX_FILE=$(find applications/Unity.GrantManager/TestResults -name "*.trx" | head -1)
+          
+          if [ -z "$TRX_FILE" ] || [ ! -f "$TRX_FILE" ]; then
+            echo "❌ ERROR: TRX file not found for test summary"
+            exit 1
+          fi
 
           echo "### Detailed Test Results" > summary.md
           echo "| Test Name | Outcome |" >> summary.md
