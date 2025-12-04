@@ -53,41 +53,37 @@ WORKDIR /app/backend
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Create entrypoint script that generates config.json and starts Flask
-RUN cat > /entrypoint.sh <<'EOF'
-#!/bin/sh
-set -e
-
-# Default values
-ENVIRONMENT="${ENVIRONMENT:-production}"
-VERSION="${VERSION:-unknown}"
-
-echo "Generating runtime configuration..."
-echo "  ENVIRONMENT: ${ENVIRONMENT}"
-echo "  VERSION: ${VERSION}"
-
-# Generate config.json - Angular will call backend on same origin
-# Angular 17+ puts files in browser subdirectory
-if [ -d "/app/frontend/browser" ]; then
-  CONFIG_PATH="/app/frontend/browser/config.json"
-else
-  CONFIG_PATH="/app/frontend/config.json"
-fi
-
-cat > "${CONFIG_PATH}" <<CONFIGEOF
-{
-  "environment": "${ENVIRONMENT}",
-  "version": "${VERSION}"
-}
-CONFIGEOF
-
-echo "Configuration generated successfully at ${CONFIG_PATH}"
-echo "  Angular app will call: /api (same origin - Flask serves everything)"
-
-# Start Flask with gunicorn on port 8080 (non-privileged port)
-echo "Starting Flask application (serving static + API) on port 8080..."
-cd /app/backend/src
-exec gunicorn -w 4 -b 0.0.0.0:8080 --access-logfile - --error-logfile - app:app
-EOF
+# Create entrypoint script that generates config.json and starts Flask
+RUN echo '#!/bin/sh' > /entrypoint.sh && \
+echo '' >> /entrypoint.sh && \
+echo '# Default values' >> /entrypoint.sh && \
+echo 'ENVIRONMENT="${ENVIRONMENT:-production}"' >> /entrypoint.sh && \
+echo 'VERSION="${VERSION:-unknown}"' >> /entrypoint.sh && \
+echo '' >> /entrypoint.sh && \
+echo 'echo "Generating runtime configuration..."' >> /entrypoint.sh && \
+echo 'echo "  ENVIRONMENT: $ENVIRONMENT"' >> /entrypoint.sh && \
+echo 'echo "  VERSION: $VERSION"' >> /entrypoint.sh && \
+echo '' >> /entrypoint.sh && \
+echo '# Generate config.json - Angular will call backend on same origin' >> /entrypoint.sh && \
+echo '# Angular 17+ puts files in browser subdirectory' >> /entrypoint.sh && \
+echo 'if [ -d "/app/frontend/browser" ]; then' >> /entrypoint.sh && \
+echo '  CONFIG_PATH="/app/frontend/browser/config.json"' >> /entrypoint.sh && \
+echo 'else' >> /entrypoint.sh && \
+echo '  CONFIG_PATH="/app/frontend/config.json"' >> /entrypoint.sh && \
+echo 'fi' >> /entrypoint.sh && \
+echo '' >> /entrypoint.sh && \
+echo 'echo "{" > "$CONFIG_PATH"' >> /entrypoint.sh && \
+echo 'echo "  \"environment\": \"$ENVIRONMENT\"," >> "$CONFIG_PATH"' >> /entrypoint.sh && \
+echo 'echo "  \"version\": \"$VERSION\"" >> "$CONFIG_PATH"' >> /entrypoint.sh && \
+echo 'echo "}" >> "$CONFIG_PATH"' >> /entrypoint.sh && \
+echo '' >> /entrypoint.sh && \
+echo 'echo "Configuration generated successfully at $CONFIG_PATH"' >> /entrypoint.sh && \
+echo 'echo "  Angular app will call: /api (same origin - Flask serves everything)"' >> /entrypoint.sh && \
+echo '' >> /entrypoint.sh && \
+echo '# Start Flask with gunicorn on port 8080 (non-privileged port)' >> /entrypoint.sh && \
+echo 'echo "Starting Flask application (serving static + API) on port 8080..."' >> /entrypoint.sh && \
+echo 'cd /app/backend/src' >> /entrypoint.sh && \
+echo 'exec gunicorn -w 4 -b 0.0.0.0:8080 --access-logfile - --error-logfile - app:app' >> /entrypoint.sh
 
 # Make entrypoint executable (777 for OpenShift compatibility)
 RUN chmod 777 /entrypoint.sh && \
