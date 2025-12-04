@@ -47,7 +47,10 @@
                                         @if (Model.CurrentUserId == comment.CommenterId)
                                         {
                                             <li>
-                                                <a class="dropdown-item edit-button" href="#" data-id="@comment.Id">
+                                                <a class="dropdown-item edit-button" href="#" 
+                                                   data-id="@comment.Id"
+                                                   data-ownerid="@Model.OwnerId"
+                                                   data-type="@Model.CommentType">
                                                     <i class="fl fl-edit me-2"></i> Edit
                                                 </a>
                                             </li>
@@ -94,6 +97,7 @@
                     }
                     <div class="comment-lbl" data-id="@comment.Id">
                         <div>
+                            @* XSS Protection is provided by the MarkdownRenderer *@
                             @Html.Raw(comment.Comment)
                         </div>
                     </div>

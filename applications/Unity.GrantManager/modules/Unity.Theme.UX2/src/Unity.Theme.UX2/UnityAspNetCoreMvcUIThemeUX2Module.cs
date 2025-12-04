@@ -72,7 +72,11 @@ public class UnityAspNetCoreMvcUIThemeUX2Module : AbpModule
         });
 
         context.Services.AddSingleton(_ => new MarkdownPipelineBuilder()
-            .UseAutoLinks()
+            .UseAutoLinks(new Markdig.Extensions.AutoLinks.AutoLinkOptions { 
+                OpenInNewWindow = true, 
+                UseHttpsForWWWLinks = true, 
+                AllowDomainWithoutPeriod = false
+            })
             .UseReferralLinks("nofollow", "noopener")
             .UseSoftlineBreakAsHardlineBreak()
             .DisableHeadings()
