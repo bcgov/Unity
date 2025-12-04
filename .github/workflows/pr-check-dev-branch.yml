@@ -161,18 +161,17 @@ jobs:
           TOTAL_PASSED=${{ steps.extract-results.outputs.passed }}
           TOTAL_FAILED=${{ steps.extract-results.outputs.failed }}
           TOTAL_SKIPPED=${{ steps.extract-results.outputs.skipped }}
-                PR_TITLE="${{ github.event.pull_request.title }}"
-                PR_URL="${{ github.event.pull_request.html_url }}"
-                PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-                SOURCE_BRANCH="${{ github.head_ref }}"
-                TARGET_BRANCH="${{ github.base_ref }}"
-                if [ "$PASSED" = "true" ]; then
-                STATUS="🟢 Tests Passed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
-                COLOR="00FF00"
-                else
-                STATUS="🔴 Tests Failed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
-                COLOR="FF0000"
-                fi
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          TARGET_BRANCH="${{ github.base_ref }}"
+          if [ "$PASSED" = "true" ]; then
+            STATUS="🟢 Tests Passed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
+            COLOR="00FF00"
+          else
+            STATUS="🔴 Tests Failed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
+            COLOR="FF0000"
+          fi
           JSON=$(cat <<EOF
           {
             "@type": "MessageCard",
@@ -180,14 +179,14 @@ jobs:
             "themeColor": "$COLOR",
             "summary": "Unit Test Results",
             "title": "$STATUS",
-            "sections": [({
+            "sections": [{
               "facts": [
                 { "name": "Passed", "value": "$TOTAL_PASSED" },
                 { "name": "Failed", "value": "$TOTAL_FAILED" },
                 { "name": "Skipped", "value": "$TOTAL_SKIPPED" }
               ],
               "markdown": true
-            })],
+            }],
             "potentialAction": [
               {
                 "@type": "OpenUri",
