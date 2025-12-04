@@ -51,19 +51,15 @@ jobs:
       - name: Restore packages
         run: dotnet restore $SLN
 
-      - name: Run unit tests with coverage
+      - name: Run unit tests (TRX output)
         id: run-tests
         continue-on-error: true
         run: |
-          mkdir -p $RESULTS
-
-          dotnet test $SLN \
-            --logger "trx;LogFileName=unity-tests-${{ github.run_id }}.trx" \
-            --results-directory $RESULTS \
-            -m:1 \
-            /p:CollectCoverage=true \
-            /p:CoverletOutput=$RESULTS/ \
-            /p:CoverletOutputFormat="cobertura,json"
+          mkdir -p applications/Unity.GrantManager/TestResults
+          dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
+            --filter "FullyQualifiedName~Tests" \
+            --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}.trx" \
+            --results-directory applications/Unity.GrantManager/TestResults
 
       - name: Install XML parser
         run: sudo apt-get install -y xmlstarlet
