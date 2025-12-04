@@ -54,8 +54,7 @@ jobs:
           mkdir -p applications/Unity.GrantManager/TestResults
 
           TRX_FILE="unity-tests-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
-
-          dotnet test applications/Unity.GrantManager/Unity.GrantManager.Tests/Unity.GrantManager.Tests.csproj \
+          dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
             --filter "FullyQualifiedName~Tests" \
             --logger "trx;LogFileName=$TRX_FILE" \
             --results-directory applications/Unity.GrantManager/TestResults \
