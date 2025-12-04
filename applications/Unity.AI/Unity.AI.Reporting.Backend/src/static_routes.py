@@ -29,10 +29,25 @@ def add_static_routes(app):
         if path.startswith('api/'):
             return None  # Let Flask handle 404
 
+        # Security: Validate path to prevent directory traversal
+        if path and ('..' in path or path.startswith('/')):
+            logger.warning(f"Rejected potentially malicious path: {path}")
+            return "Invalid path", 400
+
         # Try to serve the requested file
-        file_path = os.path.join(FRONTEND_DIR, path) if path else None
-        if file_path and os.path.isfile(file_path):
-            return send_from_directory(FRONTEND_DIR, path)
+        # send_from_directory has built-in path traversal protection
+        if path:
+            try:
+                # Verify the resolved path is within FRONTEND_DIR
+                requested_path = os.path.join(FRONTEND_DIR, path)
+                real_path = os.path.realpath(requested_path)
+                real_frontend = os.path.realpath(FRONTEND_DIR)
+
+                if real_path.startswith(real_frontend) and os.path.isfile(real_path):
+                    return send_from_directory(FRONTEND_DIR, path)
+            except (OSError, ValueError) as e:
+                logger.warning(f"Error serving file {path}: {e}")
+                # Fall through to serve index.html
 
         # For Angular routes, always serve index.html
         index_path = os.path.join(FRONTEND_DIR, 'index.html')
