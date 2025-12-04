@@ -59,8 +59,8 @@ jobs:
             --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}.trx" \
             --results-directory applications/Unity.GrantManager/TestResults \
             /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=cobertura \
-            /p:CoverletOutput=applications/Unity.GrantManager/TestResults/coverage.xml
+            /p:CoverletOutput=applications/Unity.GrantManager/TestResults/ \
+            /p:CoverletOutputFormat=cobertura
 
       - name: Debug coverage file content
         run: |
@@ -111,7 +111,7 @@ jobs:
         run: |
           mkdir -p applications/Unity.GrantManager/TestResultsHtml
           reportgenerator \
-            -reports:applications/Unity.GrantManager/TestResults/coverage.xml \
+            -reports:applications/Unity.GrantManager/TestResults/coverage.cobertura.xml \
             -targetdir:applications/Unity.GrantManager/TestResultsHtml \
             -reporttypes:Html
 
