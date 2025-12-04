@@ -102,5 +102,5 @@ EXPOSE 8080
 # Run as non-root user
 USER 1001
 
-# Use entrypoint
-ENTRYPOINT ["/entrypoint.sh"]
+# Use entrypoint (exec form with shell)
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
