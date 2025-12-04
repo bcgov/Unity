@@ -94,7 +94,7 @@
                     }
                     <div class="comment-lbl" data-id="@comment.Id">
                         <div>
-                            @comment.Comment
+                            @Html.Raw(comment.Comment)
                         </div>
                     </div>
                     @if (@comment.LastModificationTime != null)
