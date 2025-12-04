@@ -51,19 +51,29 @@ jobs:
       - name: Restore packages
         run: dotnet restore $SLN
 
-      - name: Run unit tests (TRX output)
+      ###########################################################
+      # 📌 Run Unit Tests + Generate TRX + Generate Coverage XML
+      ###########################################################
+      - name: Run unit tests (TRX + coverage)
         id: run-tests
         continue-on-error: true
         run: |
-          mkdir -p applications/Unity.GrantManager/TestResults
-          dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
+          mkdir -p $RESULTS
+
+          dotnet test $SLN \
             --filter "FullyQualifiedName~Tests" \
             --logger "trx;LogFileName=unity-tests-${{ github.run_id }}-${{ github.run_attempt }}.trx" \
-            --results-directory applications/Unity.GrantManager/TestResults
+            --results-directory $RESULTS \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=cobertura \
+            /p:CoverletOutput=$RESULTS/coverage.xml
 
       - name: Install XML parser
         run: sudo apt-get install -y xmlstarlet
 
+      ###########################################################
+      # 📌 Extract Test Counts
+      ###########################################################
       - name: Extract test counts
         id: extract
         run: |
@@ -81,11 +91,24 @@ jobs:
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+          echo "trx=$TRX" >> $GITHUB_OUTPUT
 
+      - name: Compute final result
+        id: final-result
+        run: |
+          if [[ "${{ steps.extract.outputs.failed }}" == "0" ]]; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+      ###########################################################
+      # 📌 Generate Test Summary Markdown
+      ###########################################################
       - name: Generate summary markdown
         id: summary
         run: |
-          TRX=$(find $RESULTS -name "*.trx" | head -1)
+          TRX="${{ steps.extract.outputs.trx }}"
           echo "### Detailed Test Results" > summary.md
           echo "| Test | Outcome |" >> summary.md
           echo "|------|---------|" >> summary.md
@@ -100,6 +123,9 @@ jobs:
           cat summary.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      ###########################################################
+      # 📌 Generate HTML Coverage Report
+      ###########################################################
       - name: Convert coverage to HTML
         run: |
           mkdir -p $RESULTS_HTML
@@ -107,10 +133,13 @@ jobs:
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
           reportgenerator \
-            -reports:"$RESULTS/coverage-*.xml" \
+            -reports:"$RESULTS/coverage.xml" \
             -targetdir:"$RESULTS_HTML" \
             -reporttypes:Html
 
+      ###########################################################
+      # 📌 Upload Artifacts
+      ###########################################################
       - uses: actions/upload-artifact@v4
         with:
           name: unity-tests-html
@@ -121,6 +150,9 @@ jobs:
           name: unity-tests-summary-md
           path: summary.md
 
+      ###########################################################
+      # 📌 Badge for PR Comment
+      ###########################################################
       - name: Build badge
         id: badge
         run: |
@@ -130,6 +162,9 @@ jobs:
             echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
           fi
 
+      ###########################################################
+      # 📌 Comment On PR
+      ###########################################################
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4
         with:
@@ -147,8 +182,11 @@ jobs:
 
             ${{ steps.summary.outputs.summary }}
 
-            **HTML Coverage** is available in workflow artifacts.
+            **HTML Coverage Report** is available in workflow artifacts.
 
+      ###########################################################
+      # 📌 Teams Notification
+      ###########################################################
       - name: Send Notification to Teams
         run: |
           PASSED=${{ steps.final-result.outputs.passed }}
@@ -194,6 +232,9 @@ jobs:
                -d "$JSON" \
                "https://bcgov.webhook.office.com/webhookb2/d7f6b10c-adf3-4dd1-ad14-8f526f197bd2@6fdb5200-3d0d-4a8a-b036-d3685e359adc/IncomingWebhook/92829f79fa5e45d99b98a999e3a5f9ef/730754e7-686e-4bfa-b646-16afda18661b/V28MKwZHeQmLKgrq7HW6pOT8CO-j_gDwikB34NmSJUvM01"
 
+      ###########################################################
+      # 📌 Fail the Job if Tests Failed
+      ###########################################################
       - name: Fail if tests failed
         if: steps.extract.outputs.failed != '0'
         run: |
