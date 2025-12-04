@@ -17,7 +17,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
             string? minLength,
             string? maxLength,
             uint? rows = 1,
-            bool required = false)
+            bool required = false,
+            bool isHumanConfirmed = true,
+            string? aiCitation = null,
+            int? aiConfidence = null)
         {
             return View(await Task.FromResult(new QuestionTextAreaViewModel()
             {
@@ -27,7 +30,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
                 MinLength = minLength,
                 MaxLength = maxLength,
                 Required = required,
-                Rows = rows
+                Rows = rows,
+                IsHumanConfirmed = isHumanConfirmed,
+                AICitation = aiCitation,
+                AIConfidence = aiConfidence
             }));
         }
     }

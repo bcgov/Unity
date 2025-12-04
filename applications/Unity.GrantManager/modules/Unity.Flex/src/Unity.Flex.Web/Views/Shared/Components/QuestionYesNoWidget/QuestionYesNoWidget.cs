@@ -16,9 +16,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
         AutoInitialize = true)]
     public class QuestionYesNoWidget : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer, string? yesValue, string? noValue)
+        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer, string? yesValue, string? noValue, bool isHumanConfirmed = true, string? aiCitation = null, int? aiConfidence = null)
         {
-            return View(await Task.FromResult(new QuestionYesNoViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty, YesValue = yesValue, NoValue = noValue }));
+            return View(await Task.FromResult(new QuestionYesNoViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty, YesValue = yesValue, NoValue = noValue, IsHumanConfirmed = isHumanConfirmed, AICitation = aiCitation, AIConfidence = aiConfidence }));
         }
 
         public class QuestionYesNoWidgetStyleBundleContributor : BundleContributor

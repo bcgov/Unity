@@ -48,6 +48,7 @@
                                                     @foreach (var question in sec.Fields.OrderBy(q => q.Order))
                                                     {
                                                         var convertedDefinition = question.Definition?.ConvertDefinition(question.Type);
+                                                        var lowConfidenceClass = question.AIConfidence.HasValue && question.AIConfidence.Value < 85 ? "low-confidence-question" : "";
 
                                                         <div class="accordion-item">
                                                             <h2 class="accordion-header" id="question-heading-@question.Id">
@@ -56,6 +57,12 @@
                                                                     @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
                                                                     {
                                                                         <span> *</span>
+                                                                    }
+                                                                    @if (question.AIConfidence.HasValue && question.AIConfidence.Value < 85)
+                                                                    {
+                                                                        <span class="low-confidence-badge ms-2" title="AI confidence is @question.AIConfidence.Value.ToString("F1")%.">
+                                                                           <i class="fa-solid fa-wand-sparkles"></i> <i class="fas fa-exclamation-triangle"></i> @question.AIConfidence.Value.ToString("F1")%
+                                                                        </span>
                                                                     }
                                                                 </button>
                                                             </h2>
@@ -75,7 +82,10 @@
                                                                                              Answer = Convert.ToDouble(string.IsNullOrEmpty(question.Answer) ? 0 : question.Answer),
                                                                                              Min = convertedDefinition?.GetMinValueOrNull(),
                                                                                              Max = convertedDefinition?.GetMaxValueOrNull(),
-                                                                                             Required = convertedDefinition?.GetIsRequired()
+                                                                                             Required = convertedDefinition?.GetIsRequired(),
+                                                                                             IsHumanConfirmed = question.IsHumanConfirmed,
+                                                                                             AICitation = question.AICitation,
+                                                                                             AIConfidence = question.AIConfidence
                                                                                          })
                                                                                 break;
                                                                             }
@@ -88,7 +98,10 @@
                                                                                         Answer = question.Answer,
                                                                                         YesValue = convertedDefinition?.GetYesValueOrNull(),
                                                                                         NoValue = convertedDefinition?.GetNoValueOrNull(),
-                                                                                        Required = convertedDefinition?.GetIsRequired()
+                                                                                        Required = convertedDefinition?.GetIsRequired(),
+                                                                                        IsHumanConfirmed = question.IsHumanConfirmed,
+                                                                                        AICitation = question.AICitation,
+                                                                                        AIConfidence = question.AIConfidence
                                                                                     })
                                                                                 break;
                                                                             }
@@ -101,7 +114,10 @@
                                                                                         Answer = question.Answer,
                                                                                         MinLength = convertedDefinition?.GetMinLengthValueOrNull(),
                                                                                         MaxLength = convertedDefinition?.GetMaxLengthValueOrNull(),
-                                                                                        Required = convertedDefinition?.GetIsRequired()
+                                                                                        Required = convertedDefinition?.GetIsRequired(),
+                                                                                        IsHumanConfirmed = question.IsHumanConfirmed,
+                                                                                        AICitation = question.AICitation,
+                                                                                        AIConfidence = question.AIConfidence
                                                                                     })
                                                                                 break;
                                                                             }
@@ -113,7 +129,10 @@
                                                                                         IsDisabled = Model.IsDisabled(),
                                                                                         Answer = question.Answer,
                                                                                         Definition = question.Definition,
-                                                                                        Required = convertedDefinition?.GetIsRequired()
+                                                                                        Required = convertedDefinition?.GetIsRequired(),
+                                                                                        IsHumanConfirmed = question.IsHumanConfirmed,
+                                                                                        AICitation = question.AICitation,
+                                                                                        AIConfidence = question.AIConfidence
                                                                                     })
                                                                                 break;
                                                                             }
@@ -127,7 +146,10 @@
                                                                                         MinLength = convertedDefinition?.GetMinLengthValueOrNull(),
                                                                                         MaxLength = convertedDefinition?.GetMaxLengthValueOrNull(),
                                                                                         Rows = convertedDefinition?.GetRowsOrZero(),
-                                                                                        Required = convertedDefinition?.GetIsRequired()
+                                                                                        Required = convertedDefinition?.GetIsRequired(),
+                                                                                        IsHumanConfirmed = question.IsHumanConfirmed,
+                                                                                        AICitation = question.AICitation,
+                                                                                        AIConfidence = question.AIConfidence
                                                                                     })
                                                                                 break;
                                                                             }
