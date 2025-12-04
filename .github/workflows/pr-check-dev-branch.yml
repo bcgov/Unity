@@ -77,12 +77,6 @@ jobs:
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
 
-      - name: Install ReportGenerator
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
-
-      - name: Add dotnet tools to PATH
-        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
       - name: Convert TRX → HTML
         run: |
           mkdir -p applications/Unity.GrantManager/TestResultsHtml
@@ -157,14 +151,14 @@ jobs:
             "themeColor": "$COLOR",
             "summary": "Unit Test Results",
             "title": "$STATUS",
-            "sections": [{
+            "sections": [({
               "facts": [
                 { "name": "Passed", "value": "$TOTAL_PASSED" },
                 { "name": "Failed", "value": "$TOTAL_FAILED" },
                 { "name": "Skipped", "value": "$TOTAL_SKIPPED" }
               ],
               "markdown": true
-            }],
+            })],
             "potentialAction": [
               {
                 "@type": "OpenUri",
