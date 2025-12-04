@@ -47,20 +47,42 @@ jobs:
 
       - name: Restore NuGet packages
         run: dotnet restore applications/Unity.GrantManager/Unity.GrantManager.sln
-
       - name: Run unit tests with Coverlet (OpenCover for SonarQube)
         shell: bash
         run: |
-          mkdir -p applications/Unity.GrantManager/TestResults
+          RESULTS_DIR="applications/Unity.GrantManager/TestResults"
+          mkdir -p "$RESULTS_DIR"
 
-          TRX_FILE="unity-tests-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
-          dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
-            --filter "FullyQualifiedName~Tests" \
-            --logger "trx;LogFileName=$TRX_FILE" \
-            --results-directory applications/Unity.GrantManager/TestResults \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=opencover \
-            /p:CoverletOutput=applications/Unity.GrantManager/TestResults/coverage.opencover.xml
+          echo "🔍 Searching for test projects..."
+          TEST_PROJECTS=$(find applications/Unity.GrantManager -name "*Tests.csproj")
+
+          if [ -z "$TEST_PROJECTS" ]; then
+            echo "❌ No test projects found!"
+            exit 1
+          fi
+
+          echo "📦 Found test projects:"
+          echo "$TEST_PROJECTS"
+
+          for proj in $TEST_PROJECTS; do
+            NAME=$(basename "$proj" .csproj)
+
+            echo "------------------------------------------------------"
+            echo "▶ Running tests for: $NAME"
+            echo "------------------------------------------------------"
+
+            TRX_FILE="${NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
+            COVERAGE_FILE="${NAME}.opencover.xml"
+
+            dotnet test "$proj" \
+              --logger "trx;LogFileName=$TRX_FILE" \
+              --results-directory "$RESULTS_DIR" \
+              /p:CollectCoverage=true \
+              /p:CoverletOutputFormat=opencover \
+              /p:CoverletOutput="$RESULTS_DIR/$COVERAGE_FILE"
+          done
+
+          echo "🎉 All test projects executed."
 
       - name: Install XML parser for TRX extraction
         run: sudo apt-get install -y xmlstarlet
