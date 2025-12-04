@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 export interface AppConfig {
-  apiUrl: string;
+  apiUrl?: string;
   environment: string;
   version: string;
 }
@@ -29,6 +29,12 @@ export class ConfigService {
       this.config = await firstValueFrom(
         this.http.get<AppConfig>('/config.json')
       );
+
+      // Use default /api if not specified (for combined container)
+      if (!this.config.apiUrl) {
+        this.config.apiUrl = '/api';
+      }
+
       console.log('✓ Configuration loaded successfully from /config.json');
       console.log('  API URL:', this.config.apiUrl);
       console.log('  Environment:', this.config.environment);
@@ -64,7 +70,7 @@ export class ConfigService {
    * Get the API URL
    */
   get apiUrl(): string {
-    return this.getConfig().apiUrl;
+    return this.getConfig().apiUrl || '/api';
   }
 
   /**
