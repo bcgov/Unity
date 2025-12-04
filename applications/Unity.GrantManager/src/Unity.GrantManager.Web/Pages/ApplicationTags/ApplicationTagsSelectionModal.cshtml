@@ -17,26 +17,36 @@
     <abp-modal id="tagApplicationsModal" size="Large">
     <abp-modal-header title="Tags"></abp-modal-header>
     <abp-modal-body>
-        <div>
+        @if (ViewData["Error"] != null)
+        {
+            <div class="alert alert-warning" role="alert">
+                <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+            </div>
+        }
+        else
+        {
+            <div>
                 <input type="text" id="SelectedTags" asp-for="@Model.SelectedTags" />
-                @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create))
-                {
-                    <div class="form-text"><strong>Note: </strong>The current user does not have permission to assign application tags.</div>
-                }
-
-                @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
-                {
-                    <div class="form-text"><strong>Note: </strong>The current user does not have permission to remove application tags.</div>
-                }
 
                 <input type="hidden" id="SelectedTagsJson" name="SelectedTagsJson" />
                 <abp-input type="hidden" id="SelectedApplicationIds" asp-for="@Model.SelectedApplicationIds" />
                 <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
-                
+                <abp-input type="hidden" id="CacheKey" asp-for="@Model.CacheKey" />
+
                 <input type="hidden" id="Tags" name="Tags" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
                 <input type="hidden" id="TagsJson" name="TagsJson" value='@Html.Raw(JsonConvert.SerializeObject(Model.Tags))' />
-              
-        </div>       
+            </div>
+        }
+
+        @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create))
+        {
+            <div class="form-text"><strong>Note: </strong>The current user does not have permission to assign application tags.</div>
+        }
+
+        @if (!await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
+        {
+            <div class="form-text"><strong>Note: </strong>The current user does not have permission to remove application tags.</div>
+        }
     </abp-modal-body>
         <abp-modal-footer>
             <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="assignTagsModelSaveBtn">Save</button>

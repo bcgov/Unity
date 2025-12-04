@@ -9,19 +9,28 @@
 <abp-modal>
     <abp-modal-header title="Assessment Users"></abp-modal-header>
     <abp-modal-body>
-        <div>
-            <abp-select  asp-for="@Model.AssigneeId" asp-items="@Model.AssigneeList" label="Owner">
-                <option value="">Select a user</option>
-            </abp-select>
-            <abp-input type="text" id="SelectedAssignees" asp-for="@Model.SelectedAssignees" />
-                <abp-input type="hidden" asp-for="@Model.AssigneeList" />
-            <abp-input type="hidden" asp-for="@Model.SelectedApplicationIds" />
-            <abp-input type="hidden" asp-for="@Model.AllAssignees" />
-            <abp-input type="hidden" asp-for="@Model.CommonAssigneeList" />
-            <abp-input type="hidden" asp-for="@Model.UnCommonAssigneeList" />
-            <abp-input type="hidden" asp-for="@Model.CurrentAssigneeList" />
-            <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
-        </div>       
+        @if (ViewData["Error"] != null)
+        {
+            <div class="alert alert-warning" role="alert">
+                <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+            </div>
+        }
+        else
+        {
+            <div>
+                <abp-select  asp-for="@Model.AssigneeId" asp-items="@Model.AssigneeList" label="Owner">
+                    <option value="">Select a user</option>
+                </abp-select>
+                <abp-input type="text" id="SelectedAssignees" asp-for="@Model.SelectedAssignees" />
+                    <abp-input type="hidden" asp-for="@Model.AssigneeList" />
+                <abp-input type="hidden" asp-for="@Model.SelectedApplicationIds" />
+                <abp-input type="hidden" asp-for="@Model.AllAssignees" />
+                <abp-input type="hidden" asp-for="@Model.CommonAssigneeList" />
+                <abp-input type="hidden" asp-for="@Model.UnCommonAssigneeList" />
+                <abp-input type="hidden" asp-for="@Model.CurrentAssigneeList" />
+                <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
+            </div>
+        }
     </abp-modal-body>
     <abp-modal-footer>
         <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
