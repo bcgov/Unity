@@ -10,5 +10,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
         public string? MinLength { get; set; }
         public string? MaxLength { get; set; }
         public uint? Rows { get; set; } = 1;
+        public bool IsHumanConfirmed { get; set; } = true;
+        public string? AICitation { get; set; }
+        public int? AIConfidence { get; set; }
     }
 }

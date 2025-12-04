@@ -32,24 +32,32 @@
     <abp-modal size="ExtraLarge" id="payment-modal">
         <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentRequest:Title"].Value"></abp-modal-header>
         <abp-modal-body>
-            <abp-card class="pb-0">
-                <abp-card-body class="pb-0 mb-0">
-                    <abp-row class="m-0 p-1">
-                        <abp-column size="_4" >
-                            <label for="@Model.BatchNumberDisplay" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:BatchNumberName"]</label>
-                            <input type="text" class="form-control" value="@Model.BatchNumberDisplay" disabled />
-                        </abp-column>
-                        <abp-column size="_4">
-                            <label for="@Model.ApplicationPaymentRequestForm?.Count" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
-                            <input type="text" class="form-control" id="ApplicationCount" value="@Model.ApplicationPaymentRequestForm?.Count" disabled />
-                        </abp-column>
-                        <abp-column size="_4">
-                            <label for="@Model.TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
-                            <input type="text" class="form-control unity-currency-input" id="TotalAmount" value="@Model.TotalAmount" disabled />
-                        </abp-column>
-                    </abp-row>
-                </abp-card-body>
-            </abp-card>
+            @if (ViewData["Error"] != null)
+            {
+                <div class="alert alert-warning" role="alert">
+                    <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+                </div>
+            }
+            else
+            {
+                <abp-card class="pb-0">
+                    <abp-card-body class="pb-0 mb-0">
+                        <abp-row class="m-0 p-1">
+                            <abp-column size="_4" >
+                                <label for="@Model.BatchNumberDisplay" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:BatchNumberName"]</label>
+                                <input type="text" class="form-control" value="@Model.BatchNumberDisplay" disabled />
+                            </abp-column>
+                            <abp-column size="_4">
+                                <label for="@Model.ApplicationPaymentRequestForm?.Count" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
+                                <input type="text" class="form-control" id="ApplicationCount" value="@Model.ApplicationPaymentRequestForm?.Count" disabled />
+                            </abp-column>
+                            <abp-column size="_4">
+                                <label for="@Model.TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
+                                <input type="text" class="form-control unity-currency-input" id="TotalAmount" value="@Model.TotalAmount" disabled />
+                            </abp-column>
+                        </abp-row>
+                    </abp-card-body>
+                </abp-card>
             <abp-card class="pt-0">
                 <abp-card-body class="payment-card">
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
@@ -142,6 +150,7 @@
 
                 </abp-card-body>
             </abp-card>
+            }
         </abp-modal-body>
         <abp-modal-footer>
             <abp-button id="btnSubmitPayment" class="btn btn-primary" text="@L["ApplicationPaymentRequest:SubmitButtonText"].Value"  onclick="submitPayments()" disabled="@Model.DisableSubmit" type="button"></abp-button>
