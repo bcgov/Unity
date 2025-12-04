@@ -29,17 +29,6 @@ public partial class MarkdownRenderer : IMarkdownRenderer, ITransientDependency
             renderedMarkdownHtml = _htmlSanitizer.Sanitize(renderedMarkdownHtml);
         }
 
-        //renderedMarkdownHtml = SetReferralLinks(renderedMarkdownHtml);
-
         return Task.FromResult(renderedMarkdownHtml);
     }
-
-    private static string SetReferralLinks(string html)
-    {
-        var regex = AnchorTagRegex();
-        return regex.Replace(html, $"<a target=\"_blank\" rel=\"noopener\" $1");
-    }
-
-    [GeneratedRegex("<a(.*?>)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled | RegexOptions.Singleline, "en-CA")]
-    private static partial Regex AnchorTagRegex();
 }
