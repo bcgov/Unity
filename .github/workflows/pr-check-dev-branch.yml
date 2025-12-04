@@ -61,8 +61,9 @@ jobs:
           --logger "trx;LogFileName=unity-tests-${{ github.run_id }}.trx" \
           --results-directory applications/Unity.GrantManager/TestResults \
           /p:CollectCoverage=true \
-          /p:CoverletOutput=applications/Unity.GrantManager/TestResults/coverage- \
-          /p:CoverletOutputFormat=cobertura
+          /p:CoverletOutput=../TestResults/ \
+          /p:MergeWith=../TestResults/coverage.json \
+          /p:CoverletOutputFormat="cobertura,json"
 
       - name: Debug TestResults directory
         run: |
