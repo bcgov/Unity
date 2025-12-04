@@ -79,6 +79,8 @@ public static class PaymentsDbContextModelCreatingExtensions
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+
+            b.Property(x => x.Description).HasMaxLength(35);
         });
 
         modelBuilder.Entity<PaymentConfiguration>(b =>

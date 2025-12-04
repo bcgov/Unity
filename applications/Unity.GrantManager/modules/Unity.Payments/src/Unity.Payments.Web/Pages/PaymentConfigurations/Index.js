@@ -232,6 +232,7 @@ $(function () {
             'serviceLine',
             'stob',
             'projectNumber',
+            'description',
             'defaultRadio',
             'rowActions',        
         ];
@@ -301,6 +302,13 @@ $(function () {
                 title: 'Project #',
                 name: "projectNumber", 
                 data: "projectNumber",
+                visible: true,
+                index: index++
+            },
+            {
+                title: 'Description',
+                name: "description", 
+                data: "description",
                 visible: true,
                 index: index++
             },
