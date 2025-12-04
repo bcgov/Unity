@@ -57,7 +57,9 @@ namespace Unity.GrantManager.Applications
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to store application IDs in cache");
-                throw;
+                throw new InvalidOperationException(
+                    $"Failed to store {applicationIds.Count} application IDs in distributed cache with key {cacheKey}",
+                    ex);
             }
         }
 
