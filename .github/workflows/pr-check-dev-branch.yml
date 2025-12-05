@@ -76,19 +76,14 @@ jobs:
       - name: Ensure TestResults folder exists
         run: mkdir -p TestResults
 
-      - name: Run unit tests with coverage
+      - name: Run unit tests
         run: |
           NAME=$(basename "${{ matrix.project }}" .csproj)
           TRX="TestResults/${NAME}.trx"
-          COVERAGE="TestResults/${NAME}.opencover.xml"
           echo "▶ Running: $NAME"
           dotnet test "${{ matrix.project }}" \
             --logger "trx;LogFileName=${NAME}.trx" \
-            --results-directory TestResults \
-            /p:CollectCoverage=true \
-            /p:CoverletOutput=${COVERAGE} \
-            /p:CoverletOutputFormat=opencover \
-            /p:CoverletUseSourceLink=true
+            --results-directory TestResults
 
       - uses: actions/upload-artifact@v4
         with:
@@ -96,7 +91,7 @@ jobs:
           path: TestResults/
 
   # ---------------------------------------------------------------------
-  # 4. Merge all TRX + coverage and produce final results
+  # 4. Merge all TRX and produce final results
   # ---------------------------------------------------------------------
   aggregate-results:
     needs: test-project
@@ -111,21 +106,14 @@ jobs:
       - name: Add dotnet tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: List coverage and TRX files
+      - name: List TRX files
         run: |
-          echo "🔍 Coverage files:"
-          find artifacts/ -name "*.opencover.xml"
           echo "🔍 TRX files:"
           find artifacts/ -name "*.trx"
 
-      - name: Merge TRX + Coverage
+      - name: Merge TRX
         run: |
           mkdir -p merged
-          # Merge coverage
-          reportgenerator \
-            -reports:"artifacts/**/TestResults/*.opencover.xml" \
-            -targetdir:"merged/coverage" \
-            -reporttypes:HtmlSummary;HtmlInline_AzurePipelines;Cobertura;TextSummary
           # Merge TRX
           reportgenerator \
             -reports:"artifacts/**/TestResults/*.trx" \
@@ -171,7 +159,6 @@ jobs:
             | ⚠️ Skipped | `${{ steps.extract.outputs.skipped }}` |
             ### 📄 HTML Reports  
             - **Merged Tests (HTML):** Included in artifacts  
-            - **Merged Coverage (HTML):** Included in artifacts  
             _Generated automatically by CI._
       - name: Send Microsoft Teams Notification
         run: |
