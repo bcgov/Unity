@@ -118,7 +118,7 @@ jobs:
           reportgenerator \
             -reports:"artifacts/**/*.trx" \
             -targetdir:"merged/tests" \
-            -reporttypes:Html;TextSummary
+            -reporttypes:"Html;TextSummary"
 
       - name: Extract totals from merged TextSummary
         id: extract
