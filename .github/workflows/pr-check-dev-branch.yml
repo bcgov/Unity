@@ -125,12 +125,13 @@ jobs:
         run: |
           SUMMARY=$(find merged -name "Summary.txt" | head -1)
           echo "$SUMMARY"
-          PASSED=$(grep -oP "(?<=Passed: )\d+" "$SUMMARY")
-          FAILED=$(grep -oP "(?<=Failed: )\d+" "$SUMMARY")
-          SKIPPED=$(grep -oP "(?<=Skipped: )\d+" "$SUMMARY")
+          PASSED=$(grep "Passed:" "$SUMMARY" | awk '{print $2}')
+          FAILED=$(grep "Failed:" "$SUMMARY" | awk '{print $2}')
+          SKIPPED=$(grep "Skipped:" "$SUMMARY" | awk '{print $2}')
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+
       - uses: actions/upload-artifact@v4
         with:
           name: merged-test-results
