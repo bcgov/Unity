@@ -19,3 +19,49 @@ jobs:
             echo "Notice: The dev branch is for new features, hotfixes, bugfixes and accepts merge, squash or rebase commits"
             exit 0
           fi
+
+  sonar:
+    name: SonarQube Analysis
+    runs-on: windows-latest
+
+    env:
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SLN: applications/Unity.GrantManager/Unity.GrantManager.sln
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Needed for PR analysis
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+          dotnet-version: "9.0.x"
+
+    - name: Install SonarScanner for MSBuild
+      run: |
+        Invoke-WebRequest https://github.com/SonarSource/sonar-scanner-msbuild/releases/download/10.1.2.114627/sonar-scanner-10.1.2.114627-net-framework.zip -OutFile sonar-scanner.zip
+        Expand-Archive sonar-scanner.zip -DestinationPath $env:RUNNER_TEMP\sonarscanner
+
+    - name: Begin SonarQube Analysis
+      run: |
+        $scanner = "$env:RUNNER_TEMP\sonarscanner\SonarScanner.MSBuild.exe"
+        & $scanner begin `
+          /k:"UnityScanKey" `
+          /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
+          /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}" `
+          /d:sonar.exclusions="applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**,applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/BatchPayments/Index.js, database/crunchy-postgres/templates/**" `
+          /d:sonar.coverage.exclusions="applications/Unity.GrantManager/modules/Volo.BasicTheme/**,database/**,openshift/**,applications/Unity.AutoUI/**" `
+          /d:sonar.cpd.exclusions="**/*.aspx,**/*.aspx.designer.cs,**/*.cshtml,**/*.html,**/*.js" `
+          /d:sonar.cs.vstest.reportsPaths="$env:RUNNER_TEMP/**/*.trx"
+
+    - name: Build Solution
+      run: |
+        msbuild $SLN /t:Rebuild /p:Configuration=Release
+
+    - name: End SonarQube Analysis
+      run: |
+        $scanner = "$env:RUNNER_TEMP\sonarscanner\SonarScanner.MSBuild.exe"
+        & $scanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
