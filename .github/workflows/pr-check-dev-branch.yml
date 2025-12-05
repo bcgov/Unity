@@ -115,11 +115,20 @@ jobs:
       - name: Extract totals from merged trx files
         id: extract
         run: |
+          PASSED=0
+          FAILED=0
+          SKIPPED=0
+          for file in artifacts/**/*.trx; do
+            COUNTERS=$(grep "<Counters " "$file")
+            PASSED_FILE=$(echo "$COUNTERS" | sed -n 's/.*passed="\([0-9]*\)".*/\1/p')
+            FAILED_FILE=$(echo "$COUNTERS" | sed -n 's/.*failed="\([0-9]*\)".*/\1/p')
+            NOT_EXECUTED_FILE=$(echo "$COUNTERS" | sed -n 's/.*notExecuted="\([0-9]*\)".*/\1/p')
+            PASSED=$((PASSED + PASSED_FILE))
+            FAILED=$((FAILED + FAILED_FILE))
+            SKIPPED=$((SKIPPED + NOT_EXECUTED_FILE))
+          done
 
-          # Extract counts from TRX files directly
-          PASSED=$(grep "<Result>Passed</Result>" artifacts/**/*.trx | wc -l)
-          FAILED=$(grep "<Result>Failed</Result>" artifacts/**/*.trx | wc -l)
-          SKIPPED=$(grep "<Result>NotExecuted</Result>" artifacts/**/*.trx | wc -l)
+          echo "Passed: $PASSED, Failed: $FAILED, Skipped: $SKIPPED"
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
