@@ -19,11 +19,12 @@ RUN npm install
 # Copy frontend source
 COPY Unity.AI.Reporting.Frontend/ ./
 
-# Build the Angular application
-RUN npm run build -- --configuration=production
+# Create config file with build info BEFORE building (Angular will copy it)
+RUN mkdir -p public && \
+    echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"environment\":\"production\"}" > public/config.json
 
-# Create build info file
-RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > dist/recap/build-info.json
+# Build the Angular application (will include config.json from public folder)
+RUN npm run build -- --configuration=production
 
 # Stage 2: Runtime - Python/Flask only (serves static + API)
 FROM python:3.11-slim
@@ -52,35 +53,8 @@ COPY Unity.AI.Reporting.Backend/src/ /app/backend/src/
 WORKDIR /app/backend
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
-# Create entrypoint script that generates config.json and starts Flask
-# Create entrypoint script that generates config.json and starts Flask
+# Create simple entrypoint script that starts Flask
 RUN echo '#!/bin/sh' > /entrypoint.sh && \
-echo '' >> /entrypoint.sh && \
-echo '# Default values' >> /entrypoint.sh && \
-echo 'ENVIRONMENT="${ENVIRONMENT:-production}"' >> /entrypoint.sh && \
-echo 'VERSION="${VERSION:-unknown}"' >> /entrypoint.sh && \
-echo '' >> /entrypoint.sh && \
-echo 'echo "Generating runtime configuration..."' >> /entrypoint.sh && \
-echo 'echo "  ENVIRONMENT: $ENVIRONMENT"' >> /entrypoint.sh && \
-echo 'echo "  VERSION: $VERSION"' >> /entrypoint.sh && \
-echo '' >> /entrypoint.sh && \
-echo '# Generate config.json - Angular will call backend on same origin' >> /entrypoint.sh && \
-echo '# Angular 17+ puts files in browser subdirectory' >> /entrypoint.sh && \
-echo 'if [ -d "/app/frontend/browser" ]; then' >> /entrypoint.sh && \
-echo '  CONFIG_PATH="/app/frontend/browser/config.json"' >> /entrypoint.sh && \
-echo 'else' >> /entrypoint.sh && \
-echo '  CONFIG_PATH="/app/frontend/config.json"' >> /entrypoint.sh && \
-echo 'fi' >> /entrypoint.sh && \
-echo '' >> /entrypoint.sh && \
-echo 'echo "{" > "$CONFIG_PATH"' >> /entrypoint.sh && \
-echo 'echo "  \"environment\": \"$ENVIRONMENT\"," >> "$CONFIG_PATH"' >> /entrypoint.sh && \
-echo 'echo "  \"version\": \"$VERSION\"" >> "$CONFIG_PATH"' >> /entrypoint.sh && \
-echo 'echo "}" >> "$CONFIG_PATH"' >> /entrypoint.sh && \
-echo '' >> /entrypoint.sh && \
-echo 'echo "Configuration generated successfully at $CONFIG_PATH"' >> /entrypoint.sh && \
-echo 'echo "  Angular app will call: /api (same origin - Flask serves everything)"' >> /entrypoint.sh && \
-echo '' >> /entrypoint.sh && \
-echo '# Start Flask with gunicorn on port 8080 (non-privileged port)' >> /entrypoint.sh && \
 echo 'echo "Starting Flask application (serving static + API) on port 8080..."' >> /entrypoint.sh && \
 echo 'cd /app/backend/src' >> /entrypoint.sh && \
 echo 'exec gunicorn -w 4 -b 0.0.0.0:8080 --access-logfile - --error-logfile - app:app' >> /entrypoint.sh

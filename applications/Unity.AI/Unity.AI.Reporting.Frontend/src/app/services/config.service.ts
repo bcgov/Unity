@@ -6,6 +6,8 @@ export interface AppConfig {
   apiUrl?: string;
   environment: string;
   version: string;
+  revision?: string;
+  buildDate?: string;
 }
 
 @Injectable({

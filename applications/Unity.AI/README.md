@@ -148,9 +148,9 @@ See [deployment documentation](../documentation/manual-image-build-push-openshif
 
 ## How It Works
 
-1. **Build**: Angular compiled to static files, copied into Flask container
-2. **Runtime**: Entrypoint generates `config.json` from environment variables
-3. **Serving**: Flask `static_routes.py` serves Angular files AND API endpoints
+1. **Build**: Angular compiled to static files with `config.json` generated at build time
+2. **Runtime**: Flask serves both static files and API endpoints via `static_routes.py`
+3. **Configuration**: Angular loads build-time `config.json` with version/environment info
 4. **Requests**: Angular calls `/api/*` → same origin, no CORS issues
 
 ## Troubleshooting
