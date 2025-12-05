@@ -163,16 +163,16 @@ jobs:
             - **Merged Tests (HTML):** Included in artifacts  
             _Generated automatically by CI._
       - name: Send Microsoft Teams Notification
-        run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-
-          if [[ "${{ steps.extract.outputs.failed }}" == "0" ]]; then
-            PASSED="true"
-          else
-            PASSED="false"
-          fi
-          
+        env:
+          WEBHOOK_URL: ${{ secrets.TEAMS_NOTIFICATION_WEBHOOK_URL }} # NOSONAR
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PASSED: ${{ steps.extract.outputs.failed == '0' && 'true' || 'false' }}
+          PASSED_COUNT: ${{ steps.extract.outputs.passed }}
+          FAILED_COUNT: ${{ steps.extract.outputs.failed }}
+          SKIPPED_COUNT: ${{ steps.extract.outputs.skipped }}
+        run: |         
           if [[ "$PASSED" == "true" ]]; then
             COLOR="00FF00"
             STATUS="🟢 Tests Passed $PR_TITLE (by $PR_AUTHOR)"
@@ -186,21 +186,24 @@ jobs:
             "@context": "http://schema.org/extensions",
             "themeColor": "$COLOR",
             "summary": "Unit Test Results",
-            "title": "$STATUS - PR #${{ github.event.pull_request.number }}",
+            "title": "$STATUS - PR #$PR_NUMBER",
             "sections": [{
               "facts": [
-                { "name": "Passed", "value": "${{ steps.extract.outputs.passed }}" },
-                { "name": "Failed", "value": "${{ steps.extract.outputs.failed }}" },
-                { "name": "Skipped", "value": "${{ steps.extract.outputs.skipped }}" }
+                { "name": "Passed", "value": "$PASSED_COUNT" },
+                { "name": "Failed", "value": "$FAILED_COUNT" },
+                { "name": "Skipped", "value": "$SKIPPED_COUNT" }
               ],
               "markdown": true
             }]
           }
           EOF
           )
-          curl -H "Content-Type: application/json" \
-               -d "$JSON" \
-               "https://bcgov.webhook.office.com/webhookb2/d7f6b10c-adf3-4dd1-ad14-8f526f197bd2@6fdb5200-3d0d-4a8a-b036-d3685e359adc/IncomingWebhook/92829f79fa5e45d99b98a999e3a5f9ef/730754e7-686e-4bfa-b646-16afda18661b/V28MKwZHeQmLKgrq7HW6pOT8CO-j_gDwikB34NmSJUvM01"
+
+          if [ -n "$WEBHOOK_URL" ]; then
+            curl -H "Content-Type: application/json" -d "$JSON" "$WEBHOOK_URL"
+          else
+            echo "⚠️ TEAMS_NOTIFICATION_WEBHOOK_URL secret not configured, skipping notification"
+          fi
       - name: Fail if tests failed
         if: steps.extract.outputs.failed != '0'
         run: exit 1
