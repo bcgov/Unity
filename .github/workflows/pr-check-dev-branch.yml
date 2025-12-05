@@ -70,42 +70,49 @@ jobs:
         project: ${{ fromJson(needs.discover-test-projects.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
+      - name: Install .NET 9 SDK
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
 
-      - name: Run unit tests
+      - name: Run unit tests with Coverlet
+        shell: bash
         run: |
-          mkdir -p TestResults
+          RESULTS_DIR="TestResults"
+          mkdir -p "$RESULTS_DIR"
 
           NAME=$(basename "${{ matrix.project }}" .csproj)
-          TRX="TestResults/${NAME}.trx"
-          COVERAGE="TestResults/${NAME}.opencover.xml"
+          echo "▶ Running tests for: $NAME"
 
-          echo "▶ Running: $NAME"
+          TRX_FILE="${NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
+          COVERAGE_FILE="${NAME}.opencover.xml"
 
           dotnet test "${{ matrix.project }}" \
-            --logger "trx;LogFileName=${NAME}.trx" \
-            --results-directory TestResults \
+            --logger "trx;LogFileName=$TRX_FILE" \
+            --results-directory "$RESULTS_DIR" \
             /p:CollectCoverage=true \
-            /p:CoverletOutput=TestResults/${NAME}.opencover.xml \
-            /p:CoverletOutputFormat=opencover
+            /p:CoverletOutputFormat=opencover \
+            /p:CoverletOutput="$RESULTS_DIR/$COVERAGE_FILE"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload TRX + Coverage
+        uses: actions/upload-artifact@v4
         with:
-          name: test-output-${{ strategy.job-index }}
+          name: ${{ matrix.project }}-results
           path: TestResults/
 
   # ---------------------------------------------------------------------
   # 4. Merge all TRX + coverage and produce final results
   # ---------------------------------------------------------------------
   aggregate-results:
+    name: Merge & Summarize
     needs: test-project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
         with:
           path: artifacts/
 
@@ -117,25 +124,31 @@ jobs:
 
       - name: Merge TRX + Coverage
         run: |
-          mkdir -p merged
+          mkdir -p merged/coverage
+          mkdir -p merged/tests
 
-          # Merge coverage
-          reportgenerator \
-            -reports:"artifacts/**/**/*.opencover.xml" \
-            -targetdir:"merged/coverage" \
-            -reporttypes:HtmlSummary;HtmlInline_AzurePipelines;Cobertura;TextSummary
+          cp artifacts/*/TestResults/*.trx merged/tests/ || echo "No TRX files found"
+          cp artifacts/*/TestResults/*.opencover.xml merged/coverage/ || echo "No coverage files found"
 
-          # Merge TRX
+          # Generate HTML coverage report
           reportgenerator \
-            -reports:"artifacts/**/**/*.trx" \
-            -targetdir:"merged/tests" \
+            -reports:"merged/coverage/*.opencover.xml" \
+            -targetdir:"merged/coverage/html" \
+            -reporttypes:HtmlSummary
+
+          # Generate HTML test report
+          reportgenerator \
+            -reports:"merged/tests/*.trx" \
+            -targetdir:"merged/tests/html" \
             -reporttypes:Html;TextSummary
 
       - name: Extract totals from merged TextSummary
         id: extract
         run: |
-          SUMMARY=$(find merged -name "Summary.txt" | head -1)
-          echo "$SUMMARY"
+          SUMMARY=$(find merged/tests/html -name "Summary.txt" | head -1)
+          if [[ ! -f "$SUMMARY" ]]; then
+            echo "❌ Summary.txt not found"; exit 1; 
+          fi
 
           PASSED=$(grep -oP "(?<=Passed: )\d+" "$SUMMARY")
           FAILED=$(grep -oP "(?<=Failed: )\d+" "$SUMMARY")
@@ -175,8 +188,8 @@ jobs:
             | ⚠️ Skipped | `${{ steps.extract.outputs.skipped }}` |
 
             ### 📄 HTML Reports  
-            - **Merged Tests (HTML):** Included in artifacts  
-            - **Merged Coverage (HTML):** Included in artifacts  
+            - **Merged Tests (HTML):** Included in artifacts → `merged/tests/html`  
+            - **Merged Coverage (HTML):** Included in artifacts → `merged/coverage/html`  
 
             _Generated automatically by CI._
 
