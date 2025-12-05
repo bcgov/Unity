@@ -116,7 +116,7 @@ jobs:
           mkdir -p merged
           # Merge TRX
           reportgenerator \
-            -reports:"artifacts/**/TestResults/*.trx" \
+            -reports:"artifacts/**/*.trx" \
             -targetdir:"merged/tests" \
             -reporttypes:Html;TextSummary
 
