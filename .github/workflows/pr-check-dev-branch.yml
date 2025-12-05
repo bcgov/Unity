@@ -164,7 +164,7 @@ jobs:
             _Generated automatically by CI._
       - name: Send Microsoft Teams Notification
         env:
-          WEBHOOK_URL: ${{ secrets.TEAMS_NOTIFICATION_WEBHOOK_URL }} # NOSONAR
+          WEBHOOK_URL: ${{ secrets.TEAMS_UNITY_NOTIFICATIONS_CHANNEL }} # NOSONAR
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
