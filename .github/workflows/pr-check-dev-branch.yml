@@ -1,4 +1,5 @@
-name: Dev - Branch Protection
+name: Dev - Branch Protection + SonarQube
+
 permissions:
   contents: read
 
@@ -33,19 +34,23 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Needed for PR analysis
+        fetch-depth: 0
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-          dotnet-version: "9.0.x"
+        dotnet-version: '9.0.x'
 
     - name: Install SonarScanner for MSBuild
+      shell: pwsh
       run: |
-        Invoke-WebRequest https://github.com/SonarSource/sonar-scanner-msbuild/releases/download/10.1.2.114627/sonar-scanner-10.1.2.114627-net-framework.zip -OutFile sonar-scanner.zip
-        Expand-Archive sonar-scanner.zip -DestinationPath $env:RUNNER_TEMP\sonarscanner
+        Invoke-WebRequest `
+          https://github.com/SonarSource/sonar-scanner-msbuild/releases/download/10.1.2.114627/sonar-scanner-10.1.2.114627-net-framework.zip `
+          -OutFile "$env:RUNNER_TEMP\sonarscanner.zip"
+        Expand-Archive "$env:RUNNER_TEMP\sonarscanner.zip" -DestinationPath "$env:RUNNER_TEMP\sonarscanner"
 
     - name: Begin SonarQube Analysis
+      shell: pwsh
       run: |
         $scanner = "$env:RUNNER_TEMP\sonarscanner\SonarScanner.MSBuild.exe"
         & $scanner begin `
@@ -60,11 +65,17 @@ jobs:
           /d:sonar.qualitygate.wait=true
 
     - name: Build Solution
+      shell: pwsh
       run: |
-        msbuild $SLN /t:Rebuild /p:Configuration=Release
-        
+        msbuild $env:SLN /t:Rebuild /p:Configuration=Release
+
+    - name: Run Unit Tests
+      shell: pwsh
+      run: |
+        dotnet test $env:SLN --logger "trx;LogFileName=$env:RUNNER_TEMP/test_results.trx" --collect:"Code Coverage"
 
     - name: End SonarQube Analysis
+      shell: pwsh
       run: |
         $scanner = "$env:RUNNER_TEMP\sonarscanner\SonarScanner.MSBuild.exe"
-        & $scanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+        & $scanner end /d:sonar.login="$env:SONAR_TOKEN"
