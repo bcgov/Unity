@@ -73,9 +73,11 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Run unit tests
+      - name: Ensure TestResults folder exists
+        run: mkdir -p TestResults
+
+      - name: Run unit tests with coverage
         run: |
-          mkdir -p TestResults
           NAME=$(basename "${{ matrix.project }}" .csproj)
           TRX="TestResults/${NAME}.trx"
           COVERAGE="TestResults/${NAME}.opencover.xml"
@@ -84,8 +86,10 @@ jobs:
             --logger "trx;LogFileName=${NAME}.trx" \
             --results-directory TestResults \
             /p:CollectCoverage=true \
-            /p:CoverletOutput=TestResults/${NAME}.opencover.xml \
-            /p:CoverletOutputFormat=opencover
+            /p:CoverletOutput=${COVERAGE} \
+            /p:CoverletOutputFormat=opencover \
+            /p:CoverletUseSourceLink=true
+
       - uses: actions/upload-artifact@v4
         with:
           name: test-output-${{ strategy.job-index }}
