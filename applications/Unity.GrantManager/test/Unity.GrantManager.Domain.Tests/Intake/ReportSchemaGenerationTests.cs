@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Intake
 
         private static dynamic? LoadTestData(string filename)
         {
-            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Intake\\Mapping\\" + filename);
+            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Intake", "Mapping", filename);
             var reader = new StreamReader(filePath);
             var jsonStr = reader.ReadToEnd();
             var testData = JsonConvert.DeserializeObject<dynamic>(jsonStr);
