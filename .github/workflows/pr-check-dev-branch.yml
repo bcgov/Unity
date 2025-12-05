@@ -50,12 +50,14 @@ jobs:
         $scanner = "$env:RUNNER_TEMP\sonarscanner\SonarScanner.MSBuild.exe"
         & $scanner begin `
           /k:"UnityScanKey" `
-          /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
-          /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}" `
-          /d:sonar.exclusions="applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**,applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/BatchPayments/Index.js, database/crunchy-postgres/templates/**" `
+          /d:sonar.host.url="$env:SONAR_HOST_URL" `
+          /d:sonar.login="$env:SONAR_TOKEN" `
+          /d:sonar.exclusions="applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**,applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/BatchPayments/Index.js,database/crunchy-postgres/templates/**" `
           /d:sonar.coverage.exclusions="applications/Unity.GrantManager/modules/Volo.BasicTheme/**,database/**,openshift/**,applications/Unity.AutoUI/**" `
           /d:sonar.cpd.exclusions="**/*.aspx,**/*.aspx.designer.cs,**/*.cshtml,**/*.html,**/*.js" `
-          /d:sonar.cs.vstest.reportsPaths="$env:RUNNER_TEMP/**/*.trx"
+          /d:sonar.cs.vstest.reportsPaths="$env:RUNNER_TEMP/**/*.trx" `
+          /d:sonar.cs.vscoveragexml.reportsPaths="$env:RUNNER_TEMP/**/*.coveragexml" `
+          /d:sonar.qualitygate.wait=true
 
     - name: Build Solution
       run: |
