@@ -119,12 +119,12 @@ jobs:
           mkdir -p merged
           # Merge coverage
           reportgenerator \
-            -reports:"artifacts/**/*.opencover.xml" \
+            -reports:"artifacts/**/TestResults/*.opencover.xml" \
             -targetdir:"merged/coverage" \
             -reporttypes:HtmlSummary;HtmlInline_AzurePipelines;Cobertura;TextSummary
           # Merge TRX
           reportgenerator \
-            -reports:"artifacts/**/*.trx" \
+            -reports:"artifacts/**/TestResults/*.trx" \
             -targetdir:"merged/tests" \
             -reporttypes:Html;TextSummary
 
