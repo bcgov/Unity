@@ -33,7 +33,7 @@ jobs:
               echo "   feature/*, hotfix/*, bugfix/*, test, or main"
               echo "allowed=false" >> $GITHUB_OUTPUT
               exit 1
-
+          fi
   # ---------------------------------------------------------------------
   # 2. Discover all *Tests.csproj files and output into a matrix array
   # ---------------------------------------------------------------------
@@ -51,11 +51,9 @@ jobs:
           echo "🔍 Discovering test projects..."
           PROJECTS=$(find applications/Unity.GrantManager -name "*Tests.csproj")
           echo "$PROJECTS"
-
           # Convert list to JSON array for GitHub matrix
           MATRIX=$(printf '%s\n' $PROJECTS | jq -R -s -c 'split("\n")[:-1]')
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
-
   # ---------------------------------------------------------------------
   # 3. Run tests for each project in parallel (matrix)
   # ---------------------------------------------------------------------
@@ -69,98 +67,82 @@ jobs:
         project: ${{ fromJson(needs.discover-test-projects.outputs.matrix) }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install .NET 9 SDK
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
 
-      - name: Generate artifact name
-        id: artifact-name
+      - name: Run unit tests
         run: |
-          ARTIFACT_NAME=$(basename "${{ matrix.project }}" .csproj)
-          echo "name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-
-      - name: Run unit tests with Coverlet
-        shell: bash
-        run: |
-          RESULTS_DIR="TestResults"
-          mkdir -p "$RESULTS_DIR"
-
-          # Safe artifact name
-          ARTIFACT_NAME=$(basename "${{ matrix.project }}" .csproj)
-
-          echo "▶ Running tests for: $ARTIFACT_NAME"
-
-          TRX_FILE="${ARTIFACT_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
-          COVERAGE_FILE="${ARTIFACT_NAME}.opencover.xml"
-
+          mkdir -p TestResults
+          NAME=$(basename "${{ matrix.project }}" .csproj)
+          TRX="TestResults/${NAME}.trx"
+          COVERAGE="TestResults/${NAME}.opencover.xml"
+          echo "▶ Running: $NAME"
           dotnet test "${{ matrix.project }}" \
-            --logger "trx;LogFileName=$RESULTS_DIR/$TRX_FILE" \
-            --collect:"XPlat Code Coverage" \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.FileName="$RESULTS_DIR/$COVERAGE_FILE"
-
-      - name: Upload TRX + Coverage
-        uses: actions/upload-artifact@v4
+            --logger "trx;LogFileName=${NAME}.trx" \
+            --results-directory TestResults \
+            /p:CollectCoverage=true \
+            /p:CoverletOutput=TestResults/${NAME}.opencover.xml \
+            /p:CoverletOutputFormat=opencover
+      - uses: actions/upload-artifact@v4
         with:
-          # Only the base project name, no slashes
-          name: ${{ steps.artifact-name.outputs.name }}-results
+          name: test-output-${{ strategy.job-index }}
           path: TestResults/
 
+  # ---------------------------------------------------------------------
+  # 4. Merge all TRX + coverage and produce final results
+  # ---------------------------------------------------------------------
   aggregate-results:
-    name: Merge & Summarize
     needs: test-project
     runs-on: ubuntu-latest
     steps:
-      - name: Download all test artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts/
-
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
       - name: Add dotnet tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
+      - name: List coverage and TRX files
+        run: |
+          echo "🔍 Coverage files:"
+          find artifacts/ -name "*.opencover.xml"
+          echo "🔍 TRX files:"
+          find artifacts/ -name "*.trx"
+
       - name: Merge TRX + Coverage
         run: |
-          mkdir -p merged/coverage
-          mkdir -p merged/tests
-
-          cp artifacts/*/TestResults/*.trx merged/tests/ || echo "No TRX files found"
-          cp artifacts/*/TestResults/*.opencover.xml merged/coverage/ || echo "No coverage files found"
-
-          # Generate HTML coverage report
+          mkdir -p merged
+          # Merge coverage
           reportgenerator \
-            -reports:"merged/coverage/*.opencover.xml" \
-            -targetdir:"merged/coverage/html" \
-            -reporttypes:HtmlSummary
-
-          # Generate HTML test report
+            -reports:"artifacts/**/*.opencover.xml" \
+            -targetdir:"merged/coverage" \
+            -reporttypes:HtmlSummary;HtmlInline_AzurePipelines;Cobertura;TextSummary
+          # Merge TRX
           reportgenerator \
-            -reports:"merged/tests/*.trx" \
-            -targetdir:"merged/tests/html" \
+            -reports:"artifacts/**/*.trx" \
+            -targetdir:"merged/tests" \
             -reporttypes:Html;TextSummary
 
       - name: Extract totals from merged TextSummary
         id: extract
         run: |
-          SUMMARY=$(find merged/tests/html -name "Summary.txt" | head -1)
-          if [[ ! -f "$SUMMARY" ]]; then
-            echo "❌ Summary.txt not found"; exit 1; 
-          fi
-
+          SUMMARY=$(find merged -name "Summary.txt" | head -1)
+          echo "$SUMMARY"
           PASSED=$(grep -oP "(?<=Passed: )\d+" "$SUMMARY")
           FAILED=$(grep -oP "(?<=Failed: )\d+" "$SUMMARY")
           SKIPPED=$(grep -oP "(?<=Skipped: )\d+" "$SUMMARY")
-
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: merged-test-results
+          path: merged/
 
       - name: Build test badge
         id: badge
@@ -170,7 +152,6 @@ jobs:
           else
             echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
           fi
-
       - name: Post PR Comment
         uses: peter-evans/create-or-update-comment@v4
         with:
@@ -178,24 +159,23 @@ jobs:
           body: |
             ## 🧪 Unit Test Results (Parallel Execution)
             ${{ steps.badge.outputs.badge }}
-
             ### 📊 Summary  
             | Result | Count |
             |--------|-------|
             | ✅ Passed  | `${{ steps.extract.outputs.passed }}` |
             | ❌ Failed  | `${{ steps.extract.outputs.failed }}` |
             | ⚠️ Skipped | `${{ steps.extract.outputs.skipped }}` |
-
             ### 📄 HTML Reports  
-            - **Merged Tests (HTML):** Included in artifacts → `merged/tests/html`  
-            - **Merged Coverage (HTML):** Included in artifacts → `merged/coverage/html`  
-
+            - **Merged Tests (HTML):** Included in artifacts  
+            - **Merged Coverage (HTML):** Included in artifacts  
             _Generated automatically by CI._
-
       - name: Send Microsoft Teams Notification
         run: |
-          PASSED=$([[ "${{ steps.extract.outputs.failed }}" == "0" ]] && echo "true" || echo "false")
-
+          if [[ "${{ steps.extract.outputs.failed }}" == "0" ]]; then
+            PASSED="true"
+          else
+            PASSED="false"
+          fi
           if [[ "$PASSED" == "true" ]]; then
             COLOR="00FF00"
             STATUS="🟢 Tests Passed"
@@ -203,7 +183,6 @@ jobs:
             COLOR="FF0000"
             STATUS="🔴 Tests Failed"
           fi
-
           JSON=$(cat <<EOF
           {
             "@type": "MessageCard",
@@ -222,11 +201,9 @@ jobs:
           }
           EOF
           )
-
           curl -H "Content-Type: application/json" \
                -d "$JSON" \
                "https://bcgov.webhook.office.com/webhookb2/d7f6b10c-adf3-4dd1-ad14-8f526f197bd2@6fdb5200-3d0d-4a8a-b036-d3685e359adc/IncomingWebhook/92829f79fa5e45d99b98a999e3a5f9ef/730754e7-686e-4bfa-b646-16afda18661b/V28MKwZHeQmLKgrq7HW6pOT8CO-j_gDwikB34NmSJUvM01"
-
       - name: Fail if tests failed
         if: steps.extract.outputs.failed != '0'
         run: exit 1
