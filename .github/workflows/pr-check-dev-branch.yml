@@ -140,7 +140,7 @@ jobs:
       - name: Build test badge
         id: badge
         run: |
-          if [[ ${{ steps.extract.outputs.failed }} -gt 0 ]]; then
+          if [[ "${{ steps.extract.outputs.failed }}" -gt 0 ]]; then
             echo "badge=![Tests](https://img.shields.io/badge/Tests-Failing-red)" >> $GITHUB_OUTPUT
           else
             echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
