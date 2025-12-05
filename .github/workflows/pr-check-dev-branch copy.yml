@@ -1,0 +1,210 @@
+name: Dev - CI & Unit Tests
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  # ---------------------------------------------------------------------
+  # 1. Validate PR source branch
+  # ---------------------------------------------------------------------
+  check-dev-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      branch-allowed: ${{ steps.branch-check.outputs.allowed }}
+    steps:
+      - name: Validate PR source branch
+        id: branch-check
+        run: |
+          echo "Source branch: ${GITHUB_HEAD_REF}"
+          if [[ ${GITHUB_HEAD_REF} =~ ^feature/ ]] || \
+             [[ ${GITHUB_HEAD_REF} =~ ^hotfix/ ]]  || \
+             [[ ${GITHUB_HEAD_REF} =~ ^bugfix/ ]]  || \
+             [[ ${GITHUB_HEAD_REF} == "test" ]]     || \
+             [[ ${GITHUB_HEAD_REF} == "main" ]]; then
+              echo "allowed=true" >> $GITHUB_OUTPUT
+          else
+              echo "❌ ERROR: PR into dev must come from:"
+              echo "   feature/*, hotfix/*, bugfix/*, test, or main"
+              echo "allowed=false" >> $GITHUB_OUTPUT
+              exit 1
+          fi
+  # ---------------------------------------------------------------------
+  # 2. Discover all *Tests.csproj files and output into a matrix array
+  # ---------------------------------------------------------------------
+  discover-test-projects:
+    needs: check-dev-branch
+    if: needs.check-dev-branch.outputs.branch-allowed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: discover
+        run: |
+          echo "🔍 Discovering test projects..."
+          PROJECTS=$(find applications/Unity.GrantManager -name "*Tests.csproj")
+          echo "$PROJECTS"
+          # Convert list to JSON array for GitHub matrix
+          MATRIX=$(printf '%s\n' $PROJECTS | jq -R -s -c 'split("\n")[:-1]')
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+  # ---------------------------------------------------------------------
+  # 3. Run tests for each project in parallel (matrix)
+  # ---------------------------------------------------------------------
+  test-project:
+    needs: discover-test-projects
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJson(needs.discover-test-projects.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Ensure TestResults folder exists
+        run: mkdir -p TestResults
+
+      - name: Run unit tests
+        run: |
+          NAME=$(basename "${{ matrix.project }}" .csproj)
+          TRX="TestResults/${NAME}.trx"
+          echo "▶ Running: $NAME"
+          dotnet test "${{ matrix.project }}" \
+            --logger "trx;LogFileName=${NAME}.trx" \
+            --results-directory TestResults
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-output-${{ strategy.job-index }}
+          path: TestResults/
+
+  # ---------------------------------------------------------------------
+  # 4. Merge all TRX and produce final results
+  # ---------------------------------------------------------------------
+  aggregate-results:
+    needs: test-project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: List TRX files
+        run: |
+          echo "🔍 TRX files:"
+          find artifacts/ -name "*.trx"
+
+
+      - name: Extract totals from merged trx files
+        id: extract
+        run: |
+          PASSED=0
+          FAILED=0
+          SKIPPED=0
+          for file in artifacts/**/*.trx; do
+            COUNTERS=$(grep "<Counters " "$file")
+            PASSED_FILE=$(echo "$COUNTERS" | sed -n 's/.*passed="\([0-9]*\)".*/\1/p')
+            FAILED_FILE=$(echo "$COUNTERS" | sed -n 's/.*failed="\([0-9]*\)".*/\1/p')
+            NOT_EXECUTED_FILE=$(echo "$COUNTERS" | sed -n 's/.*notExecuted="\([0-9]*\)".*/\1/p')
+            PASSED=$((PASSED + PASSED_FILE))
+            FAILED=$((FAILED + FAILED_FILE))
+            SKIPPED=$((SKIPPED + NOT_EXECUTED_FILE))
+          done
+
+          echo "Passed: $PASSED, Failed: $FAILED, Skipped: $SKIPPED"
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: merged-test-results
+          path: merged/
+
+      - name: Build test badge
+        id: badge
+        run: |
+          if [[ "${{ steps.extract.outputs.failed }}" -gt 0 ]]; then
+            echo "badge=![Tests](https://img.shields.io/badge/Tests-Failing-red)" >> $GITHUB_OUTPUT
+          else
+            echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
+          fi
+      - name: Post PR Comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 🧪 Unit Test Results (Parallel Execution)
+            ${{ steps.badge.outputs.badge }}
+            ### 📊 Summary  
+            | Result | Count |
+            |--------|-------|
+            | ✅ Passed  | `${{ steps.extract.outputs.passed }}` |
+            | ❌ Failed  | `${{ steps.extract.outputs.failed }}` |
+            | ⚠️ Skipped | `${{ steps.extract.outputs.skipped }}` |
+            ### 📄 HTML Reports  
+            - **Merged Tests (HTML):** Included in artifacts  
+            _Generated automatically by CI._
+      - name: Send Microsoft Teams Notification
+        env:
+          WEBHOOK_URL: ${{ secrets.TEAMS_UNITY_NOTIFICATIONS_CHANNEL }} # NOSONAR
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PASSED: ${{ steps.extract.outputs.failed == '0' && 'true' || 'false' }}
+          PASSED_COUNT: ${{ steps.extract.outputs.passed }}
+          FAILED_COUNT: ${{ steps.extract.outputs.failed }}
+          SKIPPED_COUNT: ${{ steps.extract.outputs.skipped }}
+        run: |         
+          if [[ "$PASSED" == "true" ]]; then
+            COLOR="00FF00"
+            STATUS="🟢 Tests Passed $PR_TITLE (by $PR_AUTHOR)"
+          else
+            COLOR="FF0000"
+            STATUS="🔴 Tests Failed $PR_TITLE (by $PR_AUTHOR)"
+          fi
+          JSON=$(cat <<EOF
+          {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "themeColor": "$COLOR",
+            "activityImage": "https://bcgov.github.io/unity-docs/images/UnityLogo.png",
+            "summary": "Unit Test Results",
+            "title": "$STATUS - PR #$PR_NUMBER",
+            "sections": [{
+              "facts": [
+                { "name": "Passed", "value": "$PASSED_COUNT" },
+                { "name": "Failed", "value": "$FAILED_COUNT" },
+                { "name": "Skipped", "value": "$SKIPPED_COUNT" }
+              ],
+              "markdown": true
+            }]
+          }
+          EOF
+          )
+
+          if [ -n "$WEBHOOK_URL" ]; then
+            curl -H "Content-Type: application/json" -d "$JSON" "$WEBHOOK_URL"
+          else
+            echo "⚠️ TEAMS_NOTIFICATION_WEBHOOK_URL secret not configured, skipping notification"
+          fi
+      - name: Fail if tests failed
+        if: steps.extract.outputs.failed != '0'
+        run: exit 1
