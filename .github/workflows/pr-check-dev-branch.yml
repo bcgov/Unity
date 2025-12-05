@@ -26,11 +26,11 @@ jobs:
     runs-on: windows-latest
 
     env:
-      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: "https://sonarqube.econ.gov.bc.ca/sonar"
+      SONAR_TOKEN: "squ_62cffb6176ba8c35360679004e350f3e12b81653"
       SLN: applications/Unity.GrantManager/Unity.GrantManager.sln
 
-      
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
