@@ -30,6 +30,7 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SLN: applications/Unity.GrantManager/Unity.GrantManager.sln
 
+      
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
