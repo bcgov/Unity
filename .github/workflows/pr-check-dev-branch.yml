@@ -33,7 +33,6 @@ jobs:
               echo "   feature/*, hotfix/*, bugfix/*, test, or main"
               echo "allowed=false" >> $GITHUB_OUTPUT
               exit 1
-          fi
 
   # ---------------------------------------------------------------------
   # 2. Discover all *Tests.csproj files and output into a matrix array
@@ -78,34 +77,34 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
+      - name: Generate artifact name
+        id: artifact-name
+        run: |
+          ARTIFACT_NAME=$(basename "${{ matrix.project }}" .csproj)
+          echo "name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+
       - name: Run unit tests with Coverlet
         shell: bash
         run: |
           RESULTS_DIR="TestResults"
           mkdir -p "$RESULTS_DIR"
 
-          NAME=$(basename "${{ matrix.project }}" .csproj)
-          echo "▶ Running tests for: $NAME"
+          # Safe artifact name
+          ARTIFACT_NAME=$(basename "${{ matrix.project }}" .csproj)
 
-          TRX_FILE="${NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
-          COVERAGE_FILE="${NAME}.opencover.xml"
+          echo "▶ Running tests for: $ARTIFACT_NAME"
+
+          TRX_FILE="${ARTIFACT_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
+          COVERAGE_FILE="${ARTIFACT_NAME}.opencover.xml"
 
           dotnet test "${{ matrix.project }}" \
-            --logger "trx;LogFileName=$TRX_FILE" \
-            --results-directory "$RESULTS_DIR" \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=opencover \
-            /p:CoverletOutput="$RESULTS_DIR/$COVERAGE_FILE"
-
       - name: Upload TRX + Coverage
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.project }}-results
+          # Only the base project name, no slashes
+          name: ${{ steps.artifact-name.outputs.name }}-results
           path: TestResults/
 
-  # ---------------------------------------------------------------------
-  # 4. Merge all TRX + coverage and produce final results
-  # ---------------------------------------------------------------------
   aggregate-results:
     name: Merge & Summarize
     needs: test-project
@@ -170,7 +169,6 @@ jobs:
             echo "badge=![Tests](https://img.shields.io/badge/Tests-Failing-red)" >> $GITHUB_OUTPUT
           else
             echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
-          fi
 
       - name: Post PR Comment
         uses: peter-evans/create-or-update-comment@v4
@@ -195,11 +193,7 @@ jobs:
 
       - name: Send Microsoft Teams Notification
         run: |
-          if [[ "${{ steps.extract.outputs.failed }}" == "0" ]]; then
-            PASSED="true"
-          else
-            PASSED="false"
-          fi
+          PASSED=$([[ "${{ steps.extract.outputs.failed }}" == "0" ]] && echo "true" || echo "false")
 
           if [[ "$PASSED" == "true" ]]; then
             COLOR="00FF00"
