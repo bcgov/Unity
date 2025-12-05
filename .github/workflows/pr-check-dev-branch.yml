@@ -185,6 +185,7 @@ jobs:
             "@type": "MessageCard",
             "@context": "http://schema.org/extensions",
             "themeColor": "$COLOR",
+            "activityImage": "https://bcgov.github.io/unity-docs/images/UnityLogo.png",
             "summary": "Unit Test Results",
             "title": "$STATUS - PR #$PR_NUMBER",
             "sections": [{
