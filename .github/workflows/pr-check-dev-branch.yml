@@ -116,7 +116,7 @@ jobs:
           mkdir -p merged
           # Merge TRX
           reportgenerator \
-            -reports:"artifacts/**/*.trx" \
+            -reports:"artifacts/*/*.trx" \
             -targetdir:"merged/tests" \
             -reporttypes:"Html;TextSummary"
 
@@ -163,17 +163,21 @@ jobs:
             _Generated automatically by CI._
       - name: Send Microsoft Teams Notification
         run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+
           if [[ "${{ steps.extract.outputs.failed }}" == "0" ]]; then
             PASSED="true"
           else
             PASSED="false"
           fi
+          
           if [[ "$PASSED" == "true" ]]; then
             COLOR="00FF00"
-            STATUS="🟢 Tests Passed"
+            STATUS="🟢 Tests Passed $PR_TITLE (by $PR_AUTHOR)"
           else
             COLOR="FF0000"
-            STATUS="🔴 Tests Failed"
+            STATUS="🔴 Tests Failed $PR_TITLE (by $PR_AUTHOR)"
           fi
           JSON=$(cat <<EOF
           {
