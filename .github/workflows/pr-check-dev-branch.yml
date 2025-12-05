@@ -52,7 +52,7 @@ jobs:
           /k:"UnityScanKey" `
           /d:sonar.host.url="$env:SONAR_HOST_URL" `
           /d:sonar.login="$env:SONAR_TOKEN" `
-          /d:sonar.exclusions="applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**,applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/BatchPayments/Index.js,database/crunchy-postgres/templates/**" `
+          /d:sonar.exclusions="applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**,applications/Unity.Payments/src/Unity.Payments.Web/Pages/BatchPayments/Index.js,database/crunchy-postgres/templates/**" `
           /d:sonar.coverage.exclusions="applications/Unity.GrantManager/modules/Volo.BasicTheme/**,database/**,openshift/**,applications/Unity.AutoUI/**" `
           /d:sonar.cpd.exclusions="**/*.aspx,**/*.aspx.designer.cs,**/*.cshtml,**/*.html,**/*.js" `
           /d:sonar.cs.vstest.reportsPaths="$env:RUNNER_TEMP/**/*.trx" `
