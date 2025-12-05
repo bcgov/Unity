@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -53,38 +54,58 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
         private readonly GrantApplicationAppService _applicationService;
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
         private readonly IApplicationAssignmentsService _applicationAssigneeService;
+        private readonly ApplicationIdsCacheService _cacheService;
 
         public AssigneeSelectionModalModel(GrantApplicationAppService applicationService,
             IIdentityUserIntegrationService identityUserLookupAppService,
-            IApplicationAssignmentsService applicationAssigneeService)
+            IApplicationAssignmentsService applicationAssigneeService,
+            ApplicationIdsCacheService cacheService)
         {
             _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
             _identityUserLookupAppService = identityUserLookupAppService ?? throw new ArgumentNullException(nameof(identityUserLookupAppService));
             _applicationAssigneeService = applicationAssigneeService;
+            _cacheService = cacheService;
         }
 
-        public async Task OnGetAsync(string applicationIds, string actionType)
+        public async Task OnGetAsync(string cacheKey, string actionType)
         {
-            SelectedApplicationIds = applicationIds;
             ActionType = actionType;
 
             try
             {
+                // Retrieve application IDs from distributed cache
+                var selectedApplicationIds = await _cacheService.GetApplicationIdsAsync(cacheKey);
+
+                if (selectedApplicationIds == null || selectedApplicationIds.Count == 0)
+                {
+                    // Cache expired or invalid - show error
+                    Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                    ViewData["Error"] = "The session has expired. Please try selecting applications and try again.";
+                    return;
+                }
+
+                // Store as JSON string for POST handler (still needed)
+                SelectedApplicationIds = JsonConvert.SerializeObject(selectedApplicationIds);
+
+                // Clean up cache after retrieval (one-time use)
+                await _cacheService.RemoveAsync(cacheKey);
+
+                // Load users, assignees, and applications (existing logic)
                 var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
                 PopulateAssigneeList(users);
-
-                var selectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-                if (selectedApplicationIds == null) return;
 
                 var assignees = await _applicationAssigneeService.GetListWithApplicationIdsAsync(selectedApplicationIds);
                 var applications = await _applicationService.GetApplicationListAsync(selectedApplicationIds);
 
                 PopulateAssignees(users, assignees, selectedApplicationIds);
                 AssignOwnerForApplications(applications);
+
+                Logger.LogInformation("Successfully loaded assignee selection modal for {Count} applications", selectedApplicationIds.Count);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error loading users select list");
+                Logger.LogError(ex, "Error loading assignee selection modal");
+                ViewData["Error"] = "An error occurred while loading the assignee selection. Please try again.";
             }
         }
 

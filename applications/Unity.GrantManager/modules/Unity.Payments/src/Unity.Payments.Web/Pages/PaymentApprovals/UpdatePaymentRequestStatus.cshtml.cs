@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.Payments.Domain.PaymentRequests;
@@ -30,7 +30,8 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                         IApplicationFormAppService applicationFormAppService,
                         IPaymentRequestRepository paymentRepository,
                         IPaymentConfigurationAppService paymentConfigurationAppService,
-                        IPermissionCheckerService permissionCheckerService) : AbpPageModel
+                        IPermissionCheckerService permissionCheckerService,
+                        PaymentIdsCacheService cacheService) : AbpPageModel
     {
         [BindProperty] public List<PaymentGrouping> PaymentGroupings { get; set; } = [];
         [BindProperty] public decimal? UserPaymentThreshold { get; set; }
@@ -47,22 +48,43 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         public List<Guid> SelectedPaymentIds { get; set; } = [];
         public string FromStatusText { get; set; } = string.Empty;
 
-        public async Task OnGetAsync(string paymentIds, bool isApprove)
+        public async Task OnGetAsync(string cacheKey, bool isApprove)
         {
-            await InitializeStateAsync(paymentIds, isApprove);
-            var payments = await paymentRequestAppService.GetListByPaymentIdsAsync(SelectedPaymentIds);
-            var paymentApprovals = await BuildPaymentApprovalsAsync(payments);
+            try
+            {
+                var paymentIds = await cacheService.GetPaymentIdsAsync(cacheKey);
 
-            PaymentGroupings = [.. paymentApprovals.GroupBy(item => item.ToStatus).Select((group, index) => new PaymentGrouping { GroupId = index, ToStatus = group.Key, Items = [.. group] })];
+                if (paymentIds == null || paymentIds.Count == 0)
+                {
+                    Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                    ViewData["Error"] = "The session has expired. Please select payment requests and try again.";
+                    DisableSubmit = true;
+                    return;
+                }
 
-            DisableSubmit = paymentApprovals.Count == 0 || !ModelState.IsValid;
+                Logger.LogInformation("Successfully loaded payment approval modal for {Count} payment requests", paymentIds.Count);
+
+                await InitializeStateAsync(paymentIds, isApprove);
+                var payments = await paymentRequestAppService.GetListByPaymentIdsAsync(SelectedPaymentIds);
+                var paymentApprovals = await BuildPaymentApprovalsAsync(payments);
+
+                PaymentGroupings = [.. paymentApprovals.GroupBy(item => item.ToStatus).Select((group, index) => new PaymentGrouping { GroupId = index, ToStatus = group.Key, Items = [.. group] })];
+
+                DisableSubmit = paymentApprovals.Count == 0 || !ModelState.IsValid;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error loading payment approval modal");
+                ViewData["Error"] = "An error occurred while loading the payment approvals. Please try again.";
+                DisableSubmit = true;
+            }
         }
 
-        private async Task InitializeStateAsync(string paymentIds, bool isApprove)
+        private async Task InitializeStateAsync(List<Guid> paymentIds, bool isApprove)
         {
             await GetFromStateForUserAsync();
             IsApproval = isApprove;
-            SelectedPaymentIds = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? [];
+            SelectedPaymentIds = paymentIds;
             UserPaymentThreshold = await paymentRequestAppService.GetUserPaymentThresholdAsync();
             HasPaymentConfiguration = await paymentConfigurationAppService.GetAsync() != null;
         }
