@@ -56,8 +56,8 @@ jobs:
         $scanner = "$env:RUNNER_TEMP\sonarscanner\SonarScanner.MSBuild.exe"
         & $scanner begin `
           /k:"UnityScanKey" `
-          /d:sonar.host.url="$env:SONAR_HOST_URL" `
-          /d:sonar.login="$env:SONAR_TOKEN" `
+          /d:sonar.host.url="https://sonarqube.econ.gov.bc.ca/sonar" `
+          /d:sonar.login="squ_62cffb6176ba8c35360679004e350f3e12b81653" `
           /d:sonar.exclusions="applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**,applications/Unity.Payments/src/Unity.Payments.Web/Pages/BatchPayments/Index.js,database/crunchy-postgres/templates/**" `
           /d:sonar.coverage.exclusions="applications/Unity.GrantManager/modules/Volo.BasicTheme/**,database/**,openshift/**,applications/Unity.AutoUI/**" `
           /d:sonar.cpd.exclusions="**/*.aspx,**/*.aspx.designer.cs,**/*.cshtml,**/*.html,**/*.js" `
