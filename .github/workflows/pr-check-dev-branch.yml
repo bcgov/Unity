@@ -10,6 +10,9 @@ on:
       - dev
 
 jobs:
+  # ---------------------------------------------------------------------
+  # 1. Validate PR source branch
+  # ---------------------------------------------------------------------
   check-dev-branch:
     runs-on: ubuntu-latest
     outputs:
@@ -31,179 +34,191 @@ jobs:
               echo "allowed=false" >> $GITHUB_OUTPUT
               exit 1
           fi
-  unit-tests:
-    name: Unit Tests
-    runs-on: ubuntu-latest
+
+  # ---------------------------------------------------------------------
+  # 2. Discover all *Tests.csproj files and output into a matrix array
+  # ---------------------------------------------------------------------
+  discover-test-projects:
     needs: check-dev-branch
     if: needs.check-dev-branch.outputs.branch-allowed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install .NET 9 SDK
-        uses: actions/setup-dotnet@v4
+      - id: discover
+        run: |
+          echo "🔍 Discovering test projects..."
+          PROJECTS=$(find applications/Unity.GrantManager -name "*Tests.csproj")
+          echo "$PROJECTS"
+
+          # Convert list to JSON array for GitHub matrix
+          MATRIX=$(printf '%s\n' $PROJECTS | jq -R -s -c 'split("\n")[:-1]')
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  # ---------------------------------------------------------------------
+  # 3. Run tests for each project in parallel (matrix)
+  # ---------------------------------------------------------------------
+  test-project:
+    needs: discover-test-projects
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJson(needs.discover-test-projects.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
 
-      - name: Restore NuGet packages
-        run: dotnet restore applications/Unity.GrantManager/Unity.GrantManager.sln
-      - name: Run unit tests with Coverlet (OpenCover for SonarQube)
-        shell: bash
+      - name: Run unit tests
         run: |
-          RESULTS_DIR="applications/Unity.GrantManager/TestResults"
-          mkdir -p "$RESULTS_DIR"
+          mkdir -p TestResults
 
-          echo "🔍 Searching for test projects..."
-          TEST_PROJECTS=$(find applications/Unity.GrantManager -name "*Tests.csproj")
+          NAME=$(basename "${{ matrix.project }}" .csproj)
+          TRX="TestResults/${NAME}.trx"
+          COVERAGE="TestResults/${NAME}.opencover.xml"
 
-          if [ -z "$TEST_PROJECTS" ]; then
-            echo "❌ No test projects found!"
-            exit 1
-          fi
+          echo "▶ Running: $NAME"
 
-          echo "📦 Found test projects:"
-          echo "$TEST_PROJECTS"
+          dotnet test "${{ matrix.project }}" \
+            --logger "trx;LogFileName=${NAME}.trx" \
+            --results-directory TestResults \
+            /p:CollectCoverage=true \
+            /p:CoverletOutput=TestResults/${NAME}.opencover.xml \
+            /p:CoverletOutputFormat=opencover
 
-          for proj in $TEST_PROJECTS; do
-            NAME=$(basename "$proj" .csproj)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-output-${{ strategy.job-index }}
+          path: TestResults/
 
-            echo "------------------------------------------------------"
-            echo "▶ Running tests for: $NAME"
-            echo "------------------------------------------------------"
+  # ---------------------------------------------------------------------
+  # 4. Merge all TRX + coverage and produce final results
+  # ---------------------------------------------------------------------
+  aggregate-results:
+    needs: test-project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
 
-            TRX_FILE="${NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date +%Y%m%d%H%M%S%3N).trx"
-            COVERAGE_FILE="${NAME}.opencover.xml"
-
-            dotnet test "$proj" \
-              --logger "trx;LogFileName=$TRX_FILE" \
-              --results-directory "$RESULTS_DIR" \
-              /p:CollectCoverage=true \
-              /p:CoverletOutputFormat=opencover \
-              /p:CoverletOutput="$RESULTS_DIR/$COVERAGE_FILE"
-          done
-
-          echo "🎉 All test projects executed."
-
-      - name: Install XML parser for TRX extraction
-        run: sudo apt-get install -y xmlstarlet
-
-      - name: Extract test result counts from TRX
-        id: extract-results
-        run: |
-          TRX_FILE=$(find applications/Unity.GrantManager/TestResults -name "*.trx" | head -1)
-          echo "Found TRX: $TRX_FILE"
-          PASSED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Passed'])" "$TRX_FILE")
-          FAILED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='Failed'])" "$TRX_FILE")
-          SKIPPED=$(xmlstarlet sel -t -v "count(//UnitTestResult[@outcome='NotExecuted'])" "$TRX_FILE")
-          echo "passed=$PASSED" >> $GITHUB_OUTPUT
-          echo "failed=$FAILED" >> $GITHUB_OUTPUT
-          echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
       - name: Add dotnet tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Convert TRX → HTML
+      - name: Merge TRX + Coverage
         run: |
-          mkdir -p applications/Unity.GrantManager/TestResultsHtml
+          mkdir -p merged
+
+          # Merge coverage
           reportgenerator \
-            -reports:applications/Unity.GrantManager/TestResults/*.trx \
-            -targetdir:applications/Unity.GrantManager/TestResultsHtml \
-            -reporttypes:Html
-      - name: Upload HTML test report
-        uses: actions/upload-artifact@v4
-        with:
-          name: unity-tests-html
-          path: applications/Unity.GrantManager/TestResultsHtml/
+            -reports:"artifacts/**/**/*.opencover.xml" \
+            -targetdir:"merged/coverage" \
+            -reporttypes:HtmlSummary;HtmlInline_AzurePipelines;Cobertura;TextSummary
 
-      - name: Upload OpenCover coverage (for SonarQube)
-        uses: actions/upload-artifact@v4
-        with:
-          name: unity-opencover-coverage
-          path: applications/Unity.GrantManager/TestResults/coverage.opencover.xml
+          # Merge TRX
+          reportgenerator \
+            -reports:"artifacts/**/**/*.trx" \
+            -targetdir:"merged/tests" \
+            -reporttypes:Html;TextSummary
 
-      - name: Determine pass/fail outcome
-        id: final-result
+      - name: Extract totals from merged TextSummary
+        id: extract
         run: |
-          if [[ ${{ steps.extract-results.outputs.failed }} -gt 0 ]]; then
-            echo "passed=false" >> $GITHUB_OUTPUT
-          else
-            echo "passed=true" >> $GITHUB_OUTPUT
-          fi
-      - name: Generate badge
+          SUMMARY=$(find merged -name "Summary.txt" | head -1)
+          echo "$SUMMARY"
+
+          PASSED=$(grep -oP "(?<=Passed: )\d+" "$SUMMARY")
+          FAILED=$(grep -oP "(?<=Failed: )\d+" "$SUMMARY")
+          SKIPPED=$(grep -oP "(?<=Skipped: )\d+" "$SUMMARY")
+
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: merged-test-results
+          path: merged/
+
+      - name: Build test badge
         id: badge
         run: |
-          if [[ "${{ steps.final-result.outputs.passed }}" == "true" ]]; then
-            echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
-          else
+          if [[ ${{ steps.extract.outputs.failed }} -gt 0 ]]; then
             echo "badge=![Tests](https://img.shields.io/badge/Tests-Failing-red)" >> $GITHUB_OUTPUT
+          else
+            echo "badge=![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)" >> $GITHUB_OUTPUT
           fi
-      - name: Add PR comment with full test summary
+
+      - name: Post PR Comment
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ## 🧪 Unit Test Results
+            ## 🧪 Unit Test Results (Parallel Execution)
             ${{ steps.badge.outputs.badge }}
-            ### 📊 Summary
+
+            ### 📊 Summary  
             | Result | Count |
             |--------|-------|
-            | ✅ Passed | `${{ steps.extract-results.outputs.passed }}` |
-            | ❌ Failed | `${{ steps.extract-results.outputs.failed }}` |
-            | ⚠️ Skipped | `${{ steps.extract-results.outputs.skipped }}` |
-            ### 📄 HTML Report
-            Download from the workflow artifacts.
-            _Automatically generated by CI._
+            | ✅ Passed  | `${{ steps.extract.outputs.passed }}` |
+            | ❌ Failed  | `${{ steps.extract.outputs.failed }}` |
+            | ⚠️ Skipped | `${{ steps.extract.outputs.skipped }}` |
+
+            ### 📄 HTML Reports  
+            - **Merged Tests (HTML):** Included in artifacts  
+            - **Merged Coverage (HTML):** Included in artifacts  
+
+            _Generated automatically by CI._
+
       - name: Send Microsoft Teams Notification
         run: |
-          PASSED=${{ steps.final-result.outputs.passed }}
-          TOTAL_PASSED=${{ steps.extract-results.outputs.passed }}
-          TOTAL_FAILED=${{ steps.extract-results.outputs.failed }}
-          TOTAL_SKIPPED=${{ steps.extract-results.outputs.skipped }}
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          SOURCE_BRANCH="${{ github.head_ref }}"
-          TARGET_BRANCH="${{ github.base_ref }}"
-          if [ "$PASSED" = "true" ]; then
-            STATUS="🟢 Tests Passed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
-            COLOR="00FF00"
+          if [[ "${{ steps.extract.outputs.failed }}" == "0" ]]; then
+            PASSED="true"
           else
-            STATUS="🔴 Tests Failed - PR: $PR_TITLE (by $PR_AUTHOR) | $SOURCE_BRANCH → $TARGET_BRANCH"
-            COLOR="FF0000"
+            PASSED="false"
           fi
+
+          if [[ "$PASSED" == "true" ]]; then
+            COLOR="00FF00"
+            STATUS="🟢 Tests Passed"
+          else
+            COLOR="FF0000"
+            STATUS="🔴 Tests Failed"
+          fi
+
           JSON=$(cat <<EOF
           {
             "@type": "MessageCard",
             "@context": "http://schema.org/extensions",
             "themeColor": "$COLOR",
             "summary": "Unit Test Results",
-            "title": "$STATUS",
+            "title": "$STATUS - PR #${{ github.event.pull_request.number }}",
             "sections": [{
               "facts": [
-                { "name": "Passed", "value": "$TOTAL_PASSED" },
-                { "name": "Failed", "value": "$TOTAL_FAILED" },
-                { "name": "Skipped", "value": "$TOTAL_SKIPPED" }
+                { "name": "Passed", "value": "${{ steps.extract.outputs.passed }}" },
+                { "name": "Failed", "value": "${{ steps.extract.outputs.failed }}" },
+                { "name": "Skipped", "value": "${{ steps.extract.outputs.skipped }}" }
               ],
               "markdown": true
-            }],
-            "potentialAction": [
-              {
-                "@type": "OpenUri",
-                "name": "View CI Run",
-                "targets": [
-                  { "os": "default", "uri": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" }
-                ]
-              }
-            ]
+            }]
           }
           EOF
           )
+
           curl -H "Content-Type: application/json" \
                -d "$JSON" \
                "https://bcgov.webhook.office.com/webhookb2/d7f6b10c-adf3-4dd1-ad14-8f526f197bd2@6fdb5200-3d0d-4a8a-b036-d3685e359adc/IncomingWebhook/92829f79fa5e45d99b98a999e3a5f9ef/730754e7-686e-4bfa-b646-16afda18661b/V28MKwZHeQmLKgrq7HW6pOT8CO-j_gDwikB34NmSJUvM01"
+
       - name: Fail if tests failed
-        if: steps.final-result.outputs.passed == 'false'
-        run: |
-          echo "❌ Unit tests failed."
-          exit 1
+        if: steps.extract.outputs.failed != '0'
+        run: exit 1
