@@ -1,4 +1,5 @@
-name: Dev - Branch Protection
+name: Dev - Branch Protection + SonarQube
+
 permissions:
   contents: read
 
@@ -19,3 +20,61 @@ jobs:
             echo "Notice: The dev branch is for new features, hotfixes, bugfixes and accepts merge, squash or rebase commits"
             exit 0
           fi
+
+  sonar:
+    name: SonarQube Analysis
+    runs-on: windows-latest
+
+    env:
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SLN: applications/Unity.GrantManager/Unity.GrantManager.sln   
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Install SonarScanner for MSBuild
+      shell: pwsh
+      run: |
+        Invoke-WebRequest `
+          https://github.com/SonarSource/sonar-scanner-msbuild/releases/download/10.1.2.114627/sonar-scanner-10.1.2.114627-net-framework.zip `
+          -OutFile "$env:RUNNER_TEMP\sonarscanner.zip"
+        Expand-Archive "$env:RUNNER_TEMP\sonarscanner.zip" -DestinationPath "$env:RUNNER_TEMP\sonarscanner"
+
+    - name: Begin SonarQube Analysis
+      shell: pwsh
+      run: |
+        $scanner = "$env:RUNNER_TEMP\sonarscanner\SonarScanner.MSBuild.exe"
+        & $scanner begin `
+          /k:"UnityScanKey" `
+          /d:sonar.host.url="$env:SONAR_HOST_URL" `
+          /d:sonar.login="$env:SONAR_TOKEN" `
+          /d:sonar.exclusions="applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**,applications/Unity.Payments/src/Unity.Payments.Web/Pages/BatchPayments/Index.js,database/crunchy-postgres/templates/**" `
+          /d:sonar.coverage.exclusions="applications/Unity.GrantManager/modules/Volo.BasicTheme/**,database/**,openshift/**,applications/Unity.AutoUI/**" `
+          /d:sonar.cpd.exclusions="**/*.aspx,**/*.aspx.designer.cs,**/*.cshtml,**/*.html,**/*.js" `
+          /d:sonar.cs.vstest.reportsPaths="$env:RUNNER_TEMP/**/*.trx" `
+          /d:sonar.cs.vscoveragexml.reportsPaths="$env:RUNNER_TEMP/**/*.coveragexml" `
+          /d:sonar.qualitygate.wait=true
+
+    - name: Build Solution
+      shell: pwsh
+      run: |
+        msbuild $env:SLN /t:Rebuild /p:Configuration=Release
+
+    - name: Run Unit Tests
+      shell: pwsh
+      run: |
+        dotnet test $env:SLN --logger "trx;LogFileName=$env:RUNNER_TEMP/test_results.trx" --collect:"Code Coverage"
+
+    - name: End SonarQube Analysis
+      shell: pwsh
+      run: |
+        $scanner = "$env:RUNNER_TEMP\sonarscanner\SonarScanner.MSBuild.exe"
+        & $scanner end /d:sonar.login="$env:SONAR_TOKEN"
