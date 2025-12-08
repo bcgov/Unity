@@ -39,6 +39,13 @@ public class PaymentsApplicationAutoMapperProfile : Profile
         CreateMap<Supplier, SupplierDto>();
 
         CreateMap<CreateUpdateAccountCodingDto, AccountCoding>()
+           .ConstructUsing(src => AccountCoding.Create(
+               src.MinistryClient!,
+               src.Responsibility!,
+               src.ServiceLine!,
+               src.Stob!,
+               src.ProjectNumber!,
+               src.Description)) // This statement is used to support private setters
            .ForMember(dest => dest.TenantId, opt => opt.Ignore())
            .ForMember(dest => dest.LastModificationTime, opt => opt.Ignore())
            .ForMember(dest => dest.LastModifierId, opt => opt.Ignore())
@@ -47,18 +54,11 @@ public class PaymentsApplicationAutoMapperProfile : Profile
            .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore())
            .ForMember(dest => dest.ConcurrencyStamp, opt => opt.Ignore())
            .ForMember(dest => dest.Id, opt => opt.Ignore());
+        
         CreateMap<PaymentConfiguration, PaymentConfigurationDto>();
         CreateMap<AccountCoding, AccountCodingDto>();
         CreateMap<AccountCodingDto, CreateUpdateAccountCodingDto>();
-        CreateMap<CreateUpdateAccountCodingDto, AccountCoding>()
-            .ForMember(dest => dest.TenantId, opt => opt.Ignore())
-            .ForMember(dest => dest.LastModificationTime, opt => opt.Ignore())
-            .ForMember(dest => dest.LastModifierId, opt => opt.Ignore())
-            .ForMember(dest => dest.CreationTime, opt => opt.Ignore())
-            .ForMember(dest => dest.CreatorId, opt => opt.Ignore())
-            .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore())
-            .ForMember(dest => dest.ConcurrencyStamp, opt => opt.Ignore())
-            .ForMember(dest => dest.Id, opt => opt.Ignore());        
+        
         CreateMap<PaymentThresholdDto, UpdatePaymentThresholdDto>()
          .ForMember(dest => dest.UserName, opt => opt.Ignore());
         CreateMap<PaymentThreshold, PaymentThresholdDto>()

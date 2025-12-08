@@ -11,6 +11,7 @@ namespace Unity.Payments.PaymentRequests
         public string ServiceLine { get; private set; }
         public string Stob { get; private set; }
         public string ProjectNumber { get; private set; }
+        public string? Description { get; private set; }
         public AccountCodingDto()
         {
             MinistryClient = string.Empty;
@@ -18,6 +19,7 @@ namespace Unity.Payments.PaymentRequests
             ServiceLine = string.Empty;
             Stob = string.Empty;
             ProjectNumber = string.Empty;
+            Description = null;
         }
     }
 }

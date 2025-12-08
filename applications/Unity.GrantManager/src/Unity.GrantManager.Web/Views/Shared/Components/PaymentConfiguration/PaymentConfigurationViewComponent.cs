@@ -64,8 +64,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
             model.AccountCodeList = new();
             foreach (var accountCoding in accountCodings)
             {
-                string accountCodingText = await paymentConfigurationAppService.GetAccountDistributionCode(accountCoding);
-                SelectListItem selectListItem = new SelectListItem { Value = accountCoding.Id.ToString(), Text = accountCodingText};
+                string accountCodingText = await paymentConfigurationAppService.GetAccountDistributionCodeDescription(accountCoding);
+                SelectListItem selectListItem = new() { Value = accountCoding.Id.ToString(), Text = accountCodingText };
                 model.AccountCodeList.Add(selectListItem);
             }
 
