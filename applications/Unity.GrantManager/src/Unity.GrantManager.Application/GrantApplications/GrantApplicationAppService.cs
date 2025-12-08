@@ -741,7 +741,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             else
             {
                 // Update supplier number
-                await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber);
+                await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber, applicationId);
             }
         }
     }

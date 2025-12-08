@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Payments.Enums;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -13,5 +14,6 @@ namespace Unity.GrantManager.ApplicationForms
         public FormHierarchyType? FormHierarchy { get; set; }
         public Guid? ParentFormId { get; set; }
         public Guid? ParentFormVersionId { get; set; }
+        public PaymentGroup? DefaultPaymentGroup { get; set; }
     }
 }

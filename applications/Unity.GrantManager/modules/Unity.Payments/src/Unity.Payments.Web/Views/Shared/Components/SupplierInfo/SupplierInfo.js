@@ -44,6 +44,7 @@ $(function () {
         navOrgInfoTab: $('#nav-organization-info-tab'),
         siteId: $('#SiteId'),
         paymentApplicantId: $('#PaymentInfo_ApplicantId'),
+        paymentApplicationId: $('#PaymentInfoViewApplicationId'),
         originalSupplierNumber: $('#OriginalSupplierNumber'),
         supplierNumber: $('#SupplierNumber'),
         supplierName: $('#SupplierName'),
@@ -169,8 +170,9 @@ $(function () {
             }
 
             const applicantId = UIElements.paymentApplicantId.val();
+            const applicationId = UIElements.paymentApplicationId.val() || '';
             $.ajax({
-                url: `/api/app/supplier/sites-by-supplier-number/${applicantId}?supplierNumber=${originalSupplierNumber}`,
+                url: `/api/app/supplier/sites-by-supplier-number?supplierNumber=${originalSupplierNumber}&applicantId=${applicantId}&applicationId=${applicationId}`,
                 method: 'GET',
                 success: function (response) {
 
