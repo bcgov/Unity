@@ -14,8 +14,17 @@ metadata:
     {{ $key }}: {{ $value | quote }}
     {{- end }}
     app.kubernetes.io/component: "database"
+  {{- if .Values.annotations }}
+  annotations:
+  {{- range $key, $value := .Values.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
 spec:
   openshift: {{ .Values.openshift | default false }}
+  {{- if .Values.shutdown }}
+  shutdown: {{ .Values.shutdown }}
+  {{- end }}
   metadata:
     labels: 
       helm.sh/chart: {{ include "crunchy-postgres.chart" . }}
@@ -101,20 +110,6 @@ spec:
     - name: postgres
       databases:
         - {{ template "crunchy-postgres.fullname" . }}
-{{- if .Values.users }}
-{{- range .Values.users }}
-    - name: {{ .name }}
-{{- if .databases }}
-      databases:
-{{- range .databases }}
-        - {{ . }}
-{{- end }}
-{{- end }}
-{{- if .options }}
-      options: {{ .options }}
-{{- end }}
-{{- end }}
-{{- end }}
 
   {{ if .Values.dataSource.enabled }}
   dataSource:
@@ -155,11 +150,6 @@ spec:
         repo2-retention-full-type: {{ .Values.pgBackRest.retentionFullTypeS3 }}
         repo2-path: {{ .Values.pgBackRest.s3.s3Path }}
         repo2-s3-uri-style: {{ .Values.pgBackRest.s3.s3UriStyle }}
-        {{- if .Values.pgBackRest.global }}
-        {{- range $key, $value := .Values.pgBackRest.global }}
-        {{ $key }}: {{ $value | quote }}
-        {{- end }}
-        {{- end }}
         {{- end }}
       repos:
         # hardcoding repo1 until we solution allowing multiple repos
@@ -214,19 +204,7 @@ spec:
               memory: {{ .Values.pgBackRest.sidecars.limits.memory }}
   standby:
     enabled: {{ .Values.standby.enabled }}
-{{- if .Values.standby.repoName }}
     repoName: {{ .Values.standby.repoName }}
-{{- end }}
-{{- if .Values.standby.host }}
-    host: {{ .Values.standby.host }}
-    port: {{ .Values.standby.port }}
-{{- end }}
-{{- if .Values.standby.primaryUser }}
-    primaryUser: {{ .Values.standby.primaryUser }}
-{{- end }}
-{{- if .Values.standby.primaryUserSecret }}
-    primaryUserSecret: {{ .Values.standby.primaryUserSecret }}
-{{- end }}
 
   patroni:
     dynamicConfiguration:
