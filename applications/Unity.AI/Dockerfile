@@ -19,12 +19,11 @@ RUN npm install
 # Copy frontend source
 COPY Unity.AI.Reporting.Frontend/ ./
 
-# Create config file with build info BEFORE building (Angular will copy it)
-RUN mkdir -p public && \
-    echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"environment\":\"production\"}" > public/config.json
-
-# Build the Angular application (will include config.json from public folder)
+# Build the Angular application
 RUN npm run build -- --configuration=production
+
+# Create build-info.json 
+RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"environment\":\"Production\"}" > dist/recap/browser/build-info.json
 
 # Stage 2: Runtime - Python/Flask only (serves static + API)
 FROM python:3.11-slim
