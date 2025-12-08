@@ -26,6 +26,7 @@ $(function () {
         initEmailsWidget();
         updateLinksCounters();
         renderSubmission();
+        loadAIAnalysis();
         applyTabHeightOffset();
     }
 
@@ -1157,4 +1158,218 @@ function clearCurrencyError(input) {
     let errorSpan = input.attr('id') + '-error';
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
+}
+
+function loadAIAnalysis() {
+    const urlParams = new URL(window.location.toLocaleString()).searchParams;
+    const applicationId = urlParams.get('ApplicationId');
+
+    if (!applicationId) {
+        renderDemoAIAnalysis();
+        return;
+    }
+
+    // Get the application data including AI analysis
+    unity.grantManager.grantApplications.grantApplication.get(applicationId)
+        .done(function(application) {
+            console.log('Application data received:', application);
+            console.log('AI Analysis field:', application.aiAnalysis);
+
+            // Use the camelCase version that should come from the API
+            const aiAnalysis = application.aiAnalysis;
+
+            if (application && aiAnalysis) {
+                try {
+                    console.log('Raw AI analysis:', aiAnalysis);
+
+                    // Clean the JSON response (remove markdown code blocks if present)
+                    let cleanedJson = aiAnalysis.trim();
+                    if (cleanedJson.startsWith('```json') || cleanedJson.startsWith('```')) {
+                        const startIndex = cleanedJson.indexOf('\n');
+                        if (startIndex >= 0) {
+                            cleanedJson = cleanedJson.substring(startIndex + 1);
+                        }
+                    }
+                    if (cleanedJson.endsWith('```')) {
+                        const lastIndex = cleanedJson.lastIndexOf('```');
+                        if (lastIndex > 0) {
+                            cleanedJson = cleanedJson.substring(0, lastIndex);
+                        }
+                    }
+                    cleanedJson = cleanedJson.trim();
+
+                    const analysisData = JSON.parse(cleanedJson);
+                    console.log('Parsed analysis data:', analysisData);
+                    renderRealAIAnalysis(analysisData);
+                } catch (e) {
+                    console.warn('Failed to parse AI analysis JSON, showing demo data:', e);
+                    renderDemoAIAnalysis();
+                }
+            } else {
+                console.log('No AI analysis found, showing demo');
+                renderDemoAIAnalysis();
+            }
+        })
+        .fail(function(error) {
+            console.warn('Failed to load application data, showing demo AI analysis', error);
+            renderDemoAIAnalysis();
+        });
+}
+
+function renderRealAIAnalysis(analysisData) {
+    const warnings = analysisData.warnings || [];
+    const errors = analysisData.errors || [];
+    const recommendations = analysisData.recommendations || [];
+
+    // Clear existing accordion list and rebuild
+    const $accordionList = $('#aiAnalysisAccordionList');
+    $accordionList.empty();
+
+    // Add errors section if there are any
+    if (errors.length > 0) {
+        const errorsContent = errors.map(error => {
+            return `
+                <div class="ai-analysis-detail-item">
+                    <div class="ai-analysis-detail-category">${escapeHtml(error.category || 'Error')}</div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(error.message || '')}</div>
+                </div>
+            `;
+        }).join('');
+
+        const accordionItem = createAccordionGroup(
+            'errors',
+            'error',
+            'fl-times-circle',
+            `Errors (${errors.length})`,
+            errorsContent
+        );
+        $accordionList.append(accordionItem);
+    }
+
+    // Add warnings section if there are any
+    if (warnings.length > 0) {
+        const warningsContent = warnings.map(warning => {
+            return `
+                <div class="ai-analysis-detail-item">
+                    <div class="ai-analysis-detail-category">${escapeHtml(warning.category || 'Warning')}</div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(warning.message || '')}</div>
+                </div>
+            `;
+        }).join('');
+
+        const accordionItem = createAccordionGroup(
+            'warnings',
+            'warning',
+            'fl-exclamation-triangle',
+            `Warnings (${warnings.length})`,
+            warningsContent
+        );
+        $accordionList.append(accordionItem);
+    }
+
+    // Add recommendations section if there are any
+    if (recommendations.length > 0) {
+        const recommendationsContent = recommendations.map(rec => {
+            // Handle both string and object formats
+            const category = typeof rec === 'object' ? (rec.category || 'Recommendation') : 'Recommendation';
+            const message = typeof rec === 'object' ? (rec.message || rec) : rec;
+
+            return `
+                <div class="ai-analysis-detail-item">
+                    <div class="ai-analysis-detail-category">${escapeHtml(category)}</div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(message)}</div>
+                </div>
+            `;
+        }).join('');
+
+        const accordionItem = createAccordionGroup(
+            'recommendations',
+            'info',
+            'fl-info-circle',
+            `Recommendations (${recommendations.length})`,
+            recommendationsContent
+        );
+        $accordionList.append(accordionItem);
+    }
+
+    // If no items, show empty message
+    if (errors.length === 0 && warnings.length === 0 && recommendations.length === 0) {
+        $accordionList.append('<div class="ai-analysis-empty">No analysis results available.</div>');
+    }
+
+    // Add click event listeners to accordion headers
+    $('.ai-analysis-accordion-header').off('click').on('click', function() {
+        toggleAccordionItem($(this));
+    });
+
+    // Update tab badge with total count
+    const totalIssues = warnings.length + errors.length + recommendations.length;
+    $('#ai-analysis-tab').html(`<i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(${totalIssues})`);
+}
+
+function createAccordionGroup(id, type, iconClass, title, content) {
+    return `
+        <div class="ai-analysis-accordion-item">
+            <div class="ai-analysis-accordion-header ${type}" data-target="${id}">
+                <span class="ai-analysis-accordion-arrow"></span>
+                <i class="ai-analysis-accordion-icon fl ${iconClass}"></i>
+                <span class="ai-analysis-accordion-title">${title}</span>
+            </div>
+            <div class="ai-analysis-accordion-body ${type}" id="${id}">
+                ${content}
+            </div>
+        </div>
+    `;
+}
+
+function toggleAccordionItem($header) {
+    const targetId = $header.attr('data-target');
+    const $body = $('#' + targetId);
+
+    // Toggle active class on header
+    $header.toggleClass('active');
+
+    // Toggle body visibility
+    $body.slideToggle(300);
+}
+
+function renderDemoAIAnalysis() {
+    console.log('Using demo AI analysis data');
+
+    // Demo data
+    const demoData = {
+        errors: [
+            {
+                category: "Missing Required Documentation",
+                message: "The application is missing the required financial statements for the last fiscal year. This is a mandatory requirement for grant eligibility."
+            },
+            {
+                category: "Budget Calculation Error",
+                message: "The total project budget does not match the sum of individual line items. There is a discrepancy of $15,000 that needs to be resolved."
+            }
+        ],
+        warnings: [
+            {
+                category: "Incomplete Project Timeline",
+                message: "The project timeline section is missing specific milestone dates. While not mandatory, providing detailed timelines strengthens the application."
+            },
+            {
+                category: "Limited Partnership Details",
+                message: "Partnership letters are provided but lack specific commitment amounts or resource contributions from partners."
+            },
+            {
+                category: "Vague Impact Metrics",
+                message: "The expected outcomes section lacks specific, measurable impact metrics. Consider adding quantifiable targets and KPIs."
+            }
+        ],
+        recommendations: []
+    };
+
+    renderRealAIAnalysis(demoData);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

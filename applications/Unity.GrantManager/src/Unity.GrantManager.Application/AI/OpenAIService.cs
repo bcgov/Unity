@@ -161,22 +161,27 @@ Please analyze this grant application against the provided rubric and return you
   ""overall_score"": ""HIGH/MEDIUM/LOW"",
   ""warnings"": [
     {{
-      ""category"": ""Category Name"",
-      ""message"": ""Specific warning message"",
+      ""category"": ""Brief summary of the warning"",
+      ""message"": ""Detailed warning message with full context and explanation"",
       ""severity"": ""WARNING""
     }}
   ],
   ""errors"": [
     {{
-      ""category"": ""Category Name"",
-      ""message"": ""Specific error message"",
+      ""category"": ""Brief summary of the error"",
+      ""message"": ""Detailed error message with full context and explanation"",
       ""severity"": ""ERROR""
     }}
   ],
   ""recommendations"": [
-    ""Specific recommendation for improvement""
+    {{
+      ""category"": ""Brief summary of the recommendation"",
+      ""message"": ""Detailed recommendation with specific actionable guidance""
+    }}
   ]
-}}";
+}}
+
+Important: The 'category' field should be a concise summary (3-6 words) that captures the essence of the issue, while the 'message' field should contain the detailed explanation.";
 
                 var systemPrompt = @"You are an expert grant application reviewer for the BC Government.
 Analyze the provided application against the rubric and identify any issues, missing requirements, or areas of concern.

@@ -289,8 +289,11 @@ EVALUATION CRITERIA:
                 // Generate the analysis
                 var analysis = await _aiService.AnalyzeApplicationAsync(applicationContent, attachmentSummaries, rubric);
 
+                // Clean the response to remove any markdown formatting
+                var cleanedAnalysis = CleanJsonResponse(analysis);
+
                 // Update the tracked application with the analysis
-                trackedApplication.AIAnalysis = analysis;
+                trackedApplication.AIAnalysis = cleanedAnalysis;
                 await _applicationRepository.UpdateAsync(trackedApplication);
 
                 _logger.LogInformation("Successfully generated AI analysis for application {ApplicationId}", application.Id);
