@@ -32,7 +32,7 @@ $(function () {
         // Fetch raw markdown from API for editing
         const rawMarkdown = await fetchRawCommentMarkdown(itemId, ownerId, commentType);
         if (rawMarkdown !== null) {
-            $(".comment-input-mutliple[data-id='" + itemId + "']").val(rawMarkdown);
+            $(".comment-input-multiple[data-id='" + itemId + "']").val(rawMarkdown);
         }
         toggleEditMode(itemId);
     });
@@ -51,7 +51,7 @@ $(function () {
         let itemId = $(this).data('id');
         const tempOwnerId = $(this).data('ownerid');
         const tempType = $(this).data('type');
-        let editedValue = $(".comment-input-mutliple[data-id='" + itemId + "']").val();
+        let editedValue = $(".comment-input-multiple[data-id='" + itemId + "']").val();
         const mentions = mentionDataList.filter(person => editedValue.includes(`@${person.value}`));
 
         if (mentions.length > 0) {
@@ -107,8 +107,8 @@ $(function () {
 
 function toggleEditMode(itemId) {
     $(".edit-mode[data-id='" + itemId + "']").toggle();
-    let editedValue = $(".comment-input-mutliple[data-id='" + itemId + "']").val();
-    $(".comment-input-mutliple[data-id='" + itemId + "']").val(editedValue.trim());
+    let editedValue = $(".comment-input-multiple[data-id='" + itemId + "']").val();
+    $(".comment-input-multiple[data-id='" + itemId + "']").val(editedValue.trim());
     $(".read-mode[data-id='" + itemId + "']").toggle();
 }
 

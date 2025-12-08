@@ -113,7 +113,7 @@
                 </div>
 
                 <div class="single-comment edit-mode" data-id="@comment.Id" style="display: none;">
-                    <textarea rows="6" maxlength="@MaxCharCount" class="form-control comment-input-mutliple comment-with-mention" placeholder="Update the comment" data-id="@comment.Id" id="@comment.Id">@comment.Comment</textarea>
+                    <textarea rows="6" maxlength="@MaxCharCount" class="form-control comment-input-multiple comment-with-mention" placeholder="Update the comment" data-id="@comment.Id" id="@comment.Id">@comment.Comment</textarea>
                     <div class="comment-button-container">
                         <i class="fl fl-cross edit-comment-cancel-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
                         <i class="fl fl-tick edit-comment-save-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
