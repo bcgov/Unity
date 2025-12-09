@@ -65,18 +65,14 @@ $(function () {
     }
 
     function enableDisableRefreshSitesButton() {
-        const supplierNumber = UIElements.supplierNumber.val();
-        const originalSupplierNumber =
-            UIElements.originalSupplierNumber.val();
-
+        const supplierNumber = $('#SupplierNumber').val();
+        const originalSupplierNumber = $('#OriginalSupplierNumber').val();
 
         if (originalSupplierNumber != '' && supplierNumber && supplierNumber.trim() !== '' && supplierNumber === originalSupplierNumber) {
-            UIElements.refreshSitesBtn.removeAttr('disabled');
+            $('#btn-refresh-sites').removeAttr('disabled');
         } else {
-            UIElements.refreshSitesBtn.attr('disabled', 'disabled');
+            $('#btn-refresh-sites').attr('disabled', 'disabled');
         }
-
-
     }
 
     init();
@@ -189,21 +185,20 @@ $(function () {
             }
         });
 
-        UIElements.supplierNumber.on('change', enableDisableRefreshSitesButton);
-        UIElements.supplierNumber.on('keyup', enableDisableRefreshSitesButton);
-        UIElements.supplierName.on('change', validateMatchingSupplierToOrgInfo);
-        UIElements.orgName.on('change', validateMatchingSupplierToOrgInfo);
-        UIElements.nonRegisteredOrgName.on(
-            'change',
-            validateMatchingSupplierToOrgInfo
-        );
+        // Use event delegation to handle dynamic DOM replacement
+        $(document).on('change', '#SupplierNumber', enableDisableRefreshSitesButton);
+        $(document).on('keyup', '#SupplierNumber', enableDisableRefreshSitesButton);
+        $(document).on('change', '#SupplierName', validateMatchingSupplierToOrgInfo);
+        $(document).on('change', '#ApplicantSummary_OrgName', validateMatchingSupplierToOrgInfo);
+        $(document).on('change', '#ApplicantSummary_NonRegOrgName', validateMatchingSupplierToOrgInfo);
 
         $('#btnClearSupplierNo').show();
 
-        UIElements.refreshSitesBtn.on('click', function () {
-            let originalSupplierNumber =
-                UIElements.originalSupplierNumber.val();
-            let supplierNumber = UIElements.supplierNumber.val();
+        // Use event delegation to handle dynamic DOM replacement
+        $(document).on('click', '#btn-refresh-sites', function () {
+            let originalSupplierNumber = $('#OriginalSupplierNumber').val();
+            let supplierNumber = $('#SupplierNumber').val();
+
             // Check if supplier Number matches the original supplier number
             if (originalSupplierNumber == '' || supplierNumber !== originalSupplierNumber) {
                 Swal.fire({
@@ -217,8 +212,8 @@ $(function () {
                 return;
             }
 
-            const applicantId = UIElements.paymentApplicantId.val();
-            const applicationId = UIElements.paymentApplicationId.val() || '';
+            const applicantId = $('#PaymentInfo_ApplicantId').val();
+            const applicationId = $('#PaymentInfoViewApplicationId').val() || '';
             $.ajax({
                 url: `/api/app/supplier/sites-by-supplier-number?supplierNumber=${originalSupplierNumber}&applicantId=${applicantId}&applicationId=${applicationId}`,
                 method: 'GET',
