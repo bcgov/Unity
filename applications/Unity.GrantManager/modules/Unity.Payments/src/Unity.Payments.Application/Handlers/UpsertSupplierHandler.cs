@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applications;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
 using Unity.Payments.Events;
