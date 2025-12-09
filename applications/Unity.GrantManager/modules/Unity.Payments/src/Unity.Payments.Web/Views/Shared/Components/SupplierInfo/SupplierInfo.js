@@ -188,32 +188,30 @@ $(function () {
                                 },
                             });
                     } else {
-                        let dt = $('#SiteInfoTable').DataTable();
-                        if (dt) {
-                            dt.clear();
-                            dt.rows.add(response.sites);
-                            dt.draw();
-                            dt.columns.adjust();
-                            let message = "The site list has been updated. Please re-select your default site";
-                            if (response.length == 0) {
-                                message = "No sites were found for the supplier";
-                            } else if (response.length > 1) {
-                                $('input[name="default-site"]').prop('checked', false);
-                            } else if (response.length == 1) {
-                                // Auto select the only site as default
-                                let onlySiteId = response[0].id;
-                                $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
-                                message = "The site list has been updated. Only one site was returned and has been defaulted.";
-                                saveSiteDefault(onlySiteId);
-                            }
+                        // Reload the DataTable to properly apply all column render functions
+                        if (dataTable) {
+                            dataTable.ajax.reload(function() {
+                                let message = "The site list has been updated. Please re-select your default site";
+                                if (response.sites.length == 0) {
+                                    message = "No sites were found for the supplier";
+                                } else if (response.sites.length > 1) {
+                                    $('input[name="default-site"]').prop('checked', false);
+                                } else if (response.sites.length == 1) {
+                                    // Auto select the only site as default
+                                    let onlySiteId = response.sites[0].id;
+                                    $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
+                                    message = "The site list has been updated. Only one site was returned and has been defaulted.";
+                                    saveSiteDefault(onlySiteId);
+                                }
 
-                            Swal.fire({
-                                title: 'Action Complete',
-                                text: message,
-                                confirmButtonText: 'Ok',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary',
-                                },
+                                Swal.fire({
+                                    title: 'Action Complete',
+                                    text: message,
+                                    confirmButtonText: 'Ok',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary',
+                                    },
+                                });
                             });
                         }
                     }

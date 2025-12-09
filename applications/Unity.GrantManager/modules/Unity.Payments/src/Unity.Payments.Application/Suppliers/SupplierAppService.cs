@@ -178,9 +178,16 @@ namespace Unity.Payments.Suppliers
             if (hasChanges)
             {
                 await supplierService.UpdateSupplierInfo(casSupplierResponse, applicantId, applicationId);
-                existingSiteDtos = casSiteDtos;
+
+                // Re-fetch sites from database to get proper IDs
+                var updatedSupplier = await GetBySupplierNumberAsync(supplierNumber);
+                if (updatedSupplier != null)
+                {
+                    List<Site> updatedSites = await siteAppService.GetSitesBySupplierIdAsync(updatedSupplier.Id);
+                    existingSiteDtos = updatedSites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
+                }
             }
-            
+
 
             return new { sites = existingSiteDtos, hasChanges };
         }
