@@ -30,5 +30,6 @@ namespace Unity.GrantManager.ApplicationForms
         public AddressType? ElectoralDistrictAddressType { get; set; }
         public string? Prefix { get; set; }
         public SuffixConfigType? SuffixType { get; set; }
+        public int? DefaultPaymentGroup { get; set; }
     }
 }

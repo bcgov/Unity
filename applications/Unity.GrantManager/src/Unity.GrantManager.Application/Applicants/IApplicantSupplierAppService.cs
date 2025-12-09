@@ -13,6 +13,6 @@ public interface IApplicantSupplierAppService : IApplicationService
     Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId);
     Task<List<Site>> GetSitesBySupplierIdAsync(Guid supplierId);
     Task ClearApplicantSupplierAsync(Guid applicantId);
-    Task UpdateApplicantSupplierNumberAsync(Guid applicantId, string supplierNumber);
+    Task UpdateApplicantSupplierNumberAsync(Guid applicantId, string supplierNumber, Guid? applicationId = null);
     Task<dynamic> UpdateAplicantSupplierByBn9Async(Guid applicantId, string bn9);
 }

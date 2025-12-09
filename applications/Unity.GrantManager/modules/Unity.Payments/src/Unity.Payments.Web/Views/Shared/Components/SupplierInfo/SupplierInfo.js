@@ -44,6 +44,7 @@ $(function () {
         navOrgInfoTab: $('#nav-organization-info-tab'),
         siteId: $('#SiteId'),
         paymentApplicantId: $('#PaymentInfo_ApplicantId'),
+        paymentApplicationId: $('#PaymentInfoViewApplicationId'),
         originalSupplierNumber: $('#OriginalSupplierNumber'),
         supplierNumber: $('#SupplierNumber'),
         supplierName: $('#SupplierName'),
@@ -64,18 +65,14 @@ $(function () {
     }
 
     function enableDisableRefreshSitesButton() {
-        const supplierNumber = UIElements.supplierNumber.val();
-        const originalSupplierNumber =
-            UIElements.originalSupplierNumber.val();
-
+        const supplierNumber = $('#SupplierNumber').val();
+        const originalSupplierNumber = $('#OriginalSupplierNumber').val();
 
         if (originalSupplierNumber != '' && supplierNumber && supplierNumber.trim() !== '' && supplierNumber === originalSupplierNumber) {
-            UIElements.refreshSitesBtn.removeAttr('disabled');
+            $('#btn-refresh-sites').removeAttr('disabled');
         } else {
-            UIElements.refreshSitesBtn.attr('disabled', 'disabled');
+            $('#btn-refresh-sites').attr('disabled', 'disabled');
         }
-
-
     }
 
     init();
@@ -133,6 +130,54 @@ $(function () {
         }
     }
 
+    function handleRefreshSitesSuccess(response) {
+        if (!response.hasChanges) {
+            let message = "The site list has been refreshed, and no changes were detected since the last update.";
+            Swal.fire({
+                title: 'Action Complete',
+                text: message,
+                confirmButtonText: 'Ok',
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                },
+            });
+            return;
+        }
+
+        // Reload the DataTable to properly apply all column render functions
+        if (!dataTable) {
+            return;
+        }
+
+        dataTable.ajax.reload(() => showSiteListUpdateMessage(response));
+    }
+
+    function showSiteListUpdateMessage(response) {
+        let message = "The site list has been updated. Please re-select your default site";
+        const sites = response.sites || [];
+
+        if (sites.length === 0) {
+            message = "No sites were found for the supplier";
+        } else if (sites.length > 1) {
+            $('input[name="default-site"]').prop('checked', false);
+        } else if (sites.length === 1) {
+            // Auto select the only site as default
+            let onlySiteId = sites[0].id;
+            $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
+            message = "The site list has been updated. Only one site was returned and has been defaulted.";
+            saveSiteDefault(onlySiteId);
+        }
+
+        Swal.fire({
+            title: 'Action Complete',
+            text: message,
+            confirmButtonText: 'Ok',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+            },
+        });
+    }
+
     function bindUIEvents() {
         UIElements.navOrgInfoTab.one('click', function () {
             if (dataTable) {
@@ -140,21 +185,20 @@ $(function () {
             }
         });
 
-        UIElements.supplierNumber.on('change', enableDisableRefreshSitesButton);
-        UIElements.supplierNumber.on('keyup', enableDisableRefreshSitesButton);
-        UIElements.supplierName.on('change', validateMatchingSupplierToOrgInfo);
-        UIElements.orgName.on('change', validateMatchingSupplierToOrgInfo);
-        UIElements.nonRegisteredOrgName.on(
-            'change',
-            validateMatchingSupplierToOrgInfo
-        );
+        // Use event delegation to handle dynamic DOM replacement
+        $(document).on('change', '#SupplierNumber', enableDisableRefreshSitesButton);
+        $(document).on('keyup', '#SupplierNumber', enableDisableRefreshSitesButton);
+        $(document).on('change', '#SupplierName', validateMatchingSupplierToOrgInfo);
+        $(document).on('change', '#ApplicantSummary_OrgName', validateMatchingSupplierToOrgInfo);
+        $(document).on('change', '#ApplicantSummary_NonRegOrgName', validateMatchingSupplierToOrgInfo);
 
         $('#btnClearSupplierNo').show();
 
-        UIElements.refreshSitesBtn.on('click', function () {
-            let originalSupplierNumber =
-                UIElements.originalSupplierNumber.val();
-            let supplierNumber = UIElements.supplierNumber.val();
+        // Use event delegation to handle dynamic DOM replacement
+        $(document).on('click', '#btn-refresh-sites', function () {
+            let originalSupplierNumber = $('#OriginalSupplierNumber').val();
+            let supplierNumber = $('#SupplierNumber').val();
+
             // Check if supplier Number matches the original supplier number
             if (originalSupplierNumber == '' || supplierNumber !== originalSupplierNumber) {
                 Swal.fire({
@@ -168,54 +212,12 @@ $(function () {
                 return;
             }
 
-            const applicantId = UIElements.paymentApplicantId.val();
+            const applicantId = $('#PaymentInfo_ApplicantId').val();
+            const applicationId = $('#PaymentInfoViewApplicationId').val() || '';
             $.ajax({
-                url: `/api/app/supplier/sites-by-supplier-number/${applicantId}?supplierNumber=${originalSupplierNumber}`,
+                url: `/api/app/supplier/sites-by-supplier-number?supplierNumber=${originalSupplierNumber}&applicantId=${applicantId}&applicationId=${applicationId}`,
                 method: 'GET',
-                success: function (response) {
-
-
-                    if (!response.hasChanges) {
-                            let message = "The site list has been refreshed, and no changes were detected since the last update.";
-                            Swal.fire({
-                                title: 'Action Complete',
-                                text: message,
-                                confirmButtonText: 'Ok',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary',
-                                },
-                            });
-                    } else {
-                        let dt = $('#SiteInfoTable').DataTable();
-                        if (dt) {
-                            dt.clear();
-                            dt.rows.add(response.sites);
-                            dt.draw();
-                            dt.columns.adjust();
-                            let message = "The site list has been updated. Please re-select your default site";
-                            if (response.length == 0) {
-                                message = "No sites were found for the supplier";
-                            } else if (response.length > 1) {
-                                $('input[name="default-site"]').prop('checked', false);
-                            } else if (response.length == 1) {
-                                // Auto select the only site as default
-                                let onlySiteId = response[0].id;
-                                $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
-                                message = "The site list has been updated. Only one site was returned and has been defaulted.";
-                                saveSiteDefault(onlySiteId);
-                            }
-
-                            Swal.fire({
-                                title: 'Action Complete',
-                                text: message,
-                                confirmButtonText: 'Ok',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary',
-                                },
-                            });
-                        }
-                    }
-                },
+                success: handleRefreshSitesSuccess,
                 error: function (xhr, status, error) {
                     console.error('Error loading sites:', error);
                     abp.notify.error('Failed to refresh sites');

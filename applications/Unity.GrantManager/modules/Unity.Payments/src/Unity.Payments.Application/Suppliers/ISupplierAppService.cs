@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
+using Unity.Payments.Enums;
 
 namespace Unity.Payments.Suppliers
 {
@@ -14,8 +15,8 @@ namespace Unity.Payments.Suppliers
         Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto);
         Task<SiteDto> CreateSiteAsync(Guid id, CreateSiteDto createSiteDto);
         Task<SiteDto> UpdateSiteAsync(Guid id, Guid siteId, UpdateSiteDto updateSiteDto);
-        Task<dynamic> GetSitesBySupplierNumberAsync(string? supplierNumber, Guid applicantId);
+        Task<dynamic> GetSitesBySupplierNumberAsync(string? supplierNumber, Guid applicantId, Guid? applicationId = null);
         Task DeleteAsync(Guid id);
-        SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId);
+        SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId, PaymentGroup? defaultPaymentGroup = null);
     }
 }

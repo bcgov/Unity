@@ -28,6 +28,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? ScoresheetId {  get; set; }
     public Guid? TenantId { get; set; }
     public decimal? PaymentApprovalThreshold { get; set; }
+    public int? DefaultPaymentGroup { get; set; }
     public FormHierarchyType? FormHierarchy { get; set; }
     public Guid? ParentFormId { get; set; }
     public Guid? ParentFormVersionId { get; set; }
