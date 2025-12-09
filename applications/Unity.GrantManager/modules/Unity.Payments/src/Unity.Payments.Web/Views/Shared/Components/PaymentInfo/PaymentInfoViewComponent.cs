@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
@@ -23,14 +24,17 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
         private readonly GrantApplicationAppService _grantApplicationAppService;
         private readonly IPaymentRequestAppService _paymentRequestService;
         private readonly IFeatureChecker _featureChecker;
+        private readonly IApplicationLinksService _applicationLinksService;
 
         public PaymentInfoViewComponent(GrantApplicationAppService grantApplicationAppService,
                  IPaymentRequestAppService paymentRequestService,
-                 IFeatureChecker featureChecker)
+                 IFeatureChecker featureChecker,
+                 IApplicationLinksService applicationLinksService)
         {
             _grantApplicationAppService = grantApplicationAppService;
             _paymentRequestService = paymentRequestService;
             _featureChecker = featureChecker;
+            _applicationLinksService = applicationLinksService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
@@ -49,17 +53,39 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                 };
                 
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
-                
+
                 model.TotalPaid = paymentRequests
                     .Where(e => e.Status == PaymentRequestStatus.Submitted)
                     .Sum(e => e.Amount);
-                
+
+                // Calculate Total Pending Amounts for current application
                 model.TotalPendingAmounts = paymentRequests
                     .Where(e => e.Status is not (PaymentRequestStatus.Paid
                                                 or PaymentRequestStatus.L1Declined
                                                 or PaymentRequestStatus.L2Declined
                                                 or PaymentRequestStatus.L3Declined))
                     .Sum(e => e.Amount);
+
+                // Add Total Pending Amounts from child applications
+                var applicationLinks = await _applicationLinksService.GetListByApplicationAsync(applicationId);
+                var childApplications = applicationLinks
+                    .Where(link => link.LinkType == ApplicationLinkType.Child
+                                && link.ApplicationId != applicationId)  // Exclude self-references
+                    .ToList();
+
+                foreach (var childApp in childApplications)
+                {
+                    var childPaymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(childApp.ApplicationId);
+                    var childPendingAmount = childPaymentRequests
+                        .Where(e => e.Status is not (PaymentRequestStatus.Paid
+                                                    or PaymentRequestStatus.L1Declined
+                                                    or PaymentRequestStatus.L2Declined
+                                                    or PaymentRequestStatus.L3Declined))
+                        .Sum(e => e.Amount);
+
+                    model.TotalPendingAmounts += childPendingAmount;
+                }
+
                 model.RemainingAmount = application.ApprovedAmount - model.TotalPaid;
 
                 return View(model);
