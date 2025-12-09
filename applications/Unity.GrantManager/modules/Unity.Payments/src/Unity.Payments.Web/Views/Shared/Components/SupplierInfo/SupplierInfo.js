@@ -134,6 +134,54 @@ $(function () {
         }
     }
 
+    function handleRefreshSitesSuccess(response) {
+        if (!response.hasChanges) {
+            let message = "The site list has been refreshed, and no changes were detected since the last update.";
+            Swal.fire({
+                title: 'Action Complete',
+                text: message,
+                confirmButtonText: 'Ok',
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                },
+            });
+            return;
+        }
+
+        // Reload the DataTable to properly apply all column render functions
+        if (!dataTable) {
+            return;
+        }
+
+        dataTable.ajax.reload(() => showSiteListUpdateMessage(response));
+    }
+
+    function showSiteListUpdateMessage(response) {
+        let message = "The site list has been updated. Please re-select your default site";
+        const sites = response.sites || [];
+
+        if (sites.length === 0) {
+            message = "No sites were found for the supplier";
+        } else if (sites.length > 1) {
+            $('input[name="default-site"]').prop('checked', false);
+        } else if (sites.length === 1) {
+            // Auto select the only site as default
+            let onlySiteId = sites[0].id;
+            $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
+            message = "The site list has been updated. Only one site was returned and has been defaulted.";
+            saveSiteDefault(onlySiteId);
+        }
+
+        Swal.fire({
+            title: 'Action Complete',
+            text: message,
+            confirmButtonText: 'Ok',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+            },
+        });
+    }
+
     function bindUIEvents() {
         UIElements.navOrgInfoTab.one('click', function () {
             if (dataTable) {
@@ -174,52 +222,7 @@ $(function () {
             $.ajax({
                 url: `/api/app/supplier/sites-by-supplier-number?supplierNumber=${originalSupplierNumber}&applicantId=${applicantId}&applicationId=${applicationId}`,
                 method: 'GET',
-                success: function (response) {
-
-
-                    if (!response.hasChanges) {
-                        let message = "The site list has been refreshed, and no changes were detected since the last update.";
-                        Swal.fire({
-                            title: 'Action Complete',
-                            text: message,
-                            confirmButtonText: 'Ok',
-                            customClass: {
-                                confirmButton: 'btn btn-primary',
-                            },
-                        });
-                        return;
-                    }
-
-                    // Reload the DataTable to properly apply all column render functions
-                    if (!dataTable) {
-                        return;
-                    }
-
-                    dataTable.ajax.reload(function() {
-                        let message = "The site list has been updated. Please re-select your default site";
-                        const sites = response.sites || [];
-                        if (sites.length === 0) {
-                            message = "No sites were found for the supplier";
-                        } else if (sites.length > 1) {
-                            $('input[name="default-site"]').prop('checked', false);
-                        } else if (sites.length === 1) {
-                            // Auto select the only site as default
-                            let onlySiteId = sites[0].id;
-                            $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
-                            message = "The site list has been updated. Only one site was returned and has been defaulted.";
-                            saveSiteDefault(onlySiteId);
-                        }
-
-                        Swal.fire({
-                            title: 'Action Complete',
-                            text: message,
-                            confirmButtonText: 'Ok',
-                            customClass: {
-                                confirmButton: 'btn btn-primary',
-                            },
-                        });
-                    });
-                },
+                success: handleRefreshSitesSuccess,
                 error: function (xhr, status, error) {
                     console.error('Error loading sites:', error);
                     abp.notify.error('Failed to refresh sites');
