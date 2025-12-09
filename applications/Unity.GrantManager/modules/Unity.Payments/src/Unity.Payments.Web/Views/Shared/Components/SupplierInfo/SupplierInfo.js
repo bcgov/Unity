@@ -178,43 +178,47 @@ $(function () {
 
 
                     if (!response.hasChanges) {
-                            let message = "The site list has been refreshed, and no changes were detected since the last update.";
-                            Swal.fire({
-                                title: 'Action Complete',
-                                text: message,
-                                confirmButtonText: 'Ok',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary',
-                                },
-                            });
-                    } else {
-                        // Reload the DataTable to properly apply all column render functions
-                        if (dataTable) {
-                            dataTable.ajax.reload(function() {
-                                let message = "The site list has been updated. Please re-select your default site";
-                                if (response.sites.length == 0) {
-                                    message = "No sites were found for the supplier";
-                                } else if (response.sites.length > 1) {
-                                    $('input[name="default-site"]').prop('checked', false);
-                                } else if (response.sites.length == 1) {
-                                    // Auto select the only site as default
-                                    let onlySiteId = response.sites[0].id;
-                                    $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
-                                    message = "The site list has been updated. Only one site was returned and has been defaulted.";
-                                    saveSiteDefault(onlySiteId);
-                                }
-
-                                Swal.fire({
-                                    title: 'Action Complete',
-                                    text: message,
-                                    confirmButtonText: 'Ok',
-                                    customClass: {
-                                        confirmButton: 'btn btn-primary',
-                                    },
-                                });
-                            });
-                        }
+                        let message = "The site list has been refreshed, and no changes were detected since the last update.";
+                        Swal.fire({
+                            title: 'Action Complete',
+                            text: message,
+                            confirmButtonText: 'Ok',
+                            customClass: {
+                                confirmButton: 'btn btn-primary',
+                            },
+                        });
+                        return;
                     }
+
+                    // Reload the DataTable to properly apply all column render functions
+                    if (!dataTable) {
+                        return;
+                    }
+
+                    dataTable.ajax.reload(function() {
+                        let message = "The site list has been updated. Please re-select your default site";
+                        const sites = response.sites || [];
+                        if (sites.length === 0) {
+                            message = "No sites were found for the supplier";
+                        } else if (sites.length > 1) {
+                            $('input[name="default-site"]').prop('checked', false);
+                        } else if (sites.length === 1) {
+                            // Auto select the only site as default
+                            let onlySiteId = sites[0].id;
+                            $('input[name="default-site"][value="' + onlySiteId + '"]').prop('checked', true);
+                            message = "The site list has been updated. Only one site was returned and has been defaulted.";
+                            saveSiteDefault(onlySiteId);
+                        }
+
+                        Swal.fire({
+                            title: 'Action Complete',
+                            text: message,
+                            confirmButtonText: 'Ok',
+                            customClass: {
+                                confirmButton: 'btn btn-primary',
+                            },
+                        });
+                    });
                 },
                 error: function (xhr, status, error) {
                     console.error('Error loading sites:', error);
