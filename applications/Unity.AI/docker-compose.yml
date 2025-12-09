@@ -33,11 +33,8 @@ services:
       - "80:8080"
     environment:
       # Application config
-      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - ENVIRONMENT=${ENVIRONMENT:-Development}
       - VERSION=${UAI_BUILD_VERSION:-0.0.0}
-
-      # Flask config
-      - FLASK_ENV=production
 
       # Azure OpenAI config
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
