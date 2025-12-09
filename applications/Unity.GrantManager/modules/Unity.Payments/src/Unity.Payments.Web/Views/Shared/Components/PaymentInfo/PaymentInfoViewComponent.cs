@@ -54,6 +54,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                 
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
 
+                // Calculate Total Paid for current application
                 model.TotalPaid = paymentRequests
                     .Where(e => e.Status == PaymentRequestStatus.Submitted)
                     .Sum(e => e.Amount);
@@ -66,7 +67,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                                                 or PaymentRequestStatus.L3Declined))
                     .Sum(e => e.Amount);
 
-                // Add Total Pending Amounts from child applications
+                // Add Total Paid and Total Pending Amounts from child applications
                 var applicationLinks = await _applicationLinksService.GetListByApplicationAsync(applicationId);
                 var childApplications = applicationLinks
                     .Where(link => link.LinkType == ApplicationLinkType.Child
@@ -76,13 +77,20 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                 foreach (var childApp in childApplications)
                 {
                     var childPaymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(childApp.ApplicationId);
+
+                    // Add child's Total Paid
+                    var childPaidAmount = childPaymentRequests
+                        .Where(e => e.Status == PaymentRequestStatus.Submitted)
+                        .Sum(e => e.Amount);
+                    model.TotalPaid += childPaidAmount;
+
+                    // Add child's Total Pending Amounts
                     var childPendingAmount = childPaymentRequests
                         .Where(e => e.Status is not (PaymentRequestStatus.Paid
                                                     or PaymentRequestStatus.L1Declined
                                                     or PaymentRequestStatus.L2Declined
                                                     or PaymentRequestStatus.L3Declined))
                         .Sum(e => e.Amount);
-
                     model.TotalPendingAmounts += childPendingAmount;
                 }
 
