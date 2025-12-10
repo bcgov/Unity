@@ -21,7 +21,7 @@ public class ReconciliationConsumer : IQueueConsumer<ReconcilePaymentMessages>
         _invoiceService = invoiceService;
     }
 
-    public async Task<Task> ConsumeAsync(ReconcilePaymentMessages reconcilePaymentMessage)
+    public async Task ConsumeAsync(ReconcilePaymentMessages reconcilePaymentMessage)
     {
         if (reconcilePaymentMessage != null && !reconcilePaymentMessage.InvoiceNumber.IsNullOrEmpty() && reconcilePaymentMessage.TenantId != Guid.Empty)
         {
@@ -39,7 +39,6 @@ public class ReconciliationConsumer : IQueueConsumer<ReconcilePaymentMessages>
             }
 
         }
-        return Task.CompletedTask;
     }
 
 }
