@@ -6,7 +6,7 @@
   },
   "default": {
     "db_id": 5,
-    "collection_id": 16,
+    "collection_id": 19,
     "schema_types": ["public"]
   }
 }
