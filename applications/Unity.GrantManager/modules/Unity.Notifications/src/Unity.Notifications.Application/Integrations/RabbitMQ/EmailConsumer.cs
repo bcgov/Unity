@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
@@ -201,7 +202,10 @@ public class EmailConsumer(
                 await uow.SaveChangesAsync();
                 return;
             }
-            catch (AbpDbConcurrencyException ex)
+            catch (Exception ex) when (
+                ex is AbpDbConcurrencyException ||
+                ex is DbUpdateConcurrencyException
+            )
             {
                 attempt++;
 
