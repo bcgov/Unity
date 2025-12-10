@@ -232,13 +232,24 @@ class SQLGenerator:
         
         # Get relevant schemas
         schemas = self.embeddings.get_formatted_schemas(question, db_id)
-        
-        # Build prompt
-        prompt = self.build_prompt(question, schemas, past_questions)
-        logger.debug(f"Prompt: {prompt[:200]}...")
 
         # Generate multiple completions in parallel
         async with aiohttp.ClientSession() as session:
+            parsed_schema = await self.fetch_completion(f'''Please parse this schema to return only tables and columns relevant to the users question. Never add to the schema, only remove as necessary.
+                                  <question>{question}</question>
+                                  <schema>{schemas}</schema>
+                                  In the case that the question is NSFW or completely unrelated please return NSFW''', session, 0)
+
+            print("Schema:", schemas)
+            print("Parsed Schema:", parsed_schema[0])
+
+            if parsed_schema[0] == "NSFW":
+                logger.error(f"Error: NSFW or irrelevant question.", exc_info=True)
+                return None, None, None
+
+            # Build prompt
+            prompt = self.build_prompt(question, parsed_schema[0], past_questions)
+            logger.debug(f"Prompt: {prompt[:200]}...")
             tasks = [
                 self.fetch_completion(prompt, session, i)
                 for i in range(self.config.k_samples)
