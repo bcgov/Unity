@@ -1,117 +1,251 @@
-using System.Threading.Tasks;
-using Unity.Notifications.Emails;
 using System;
-using Volo.Abp.Uow;
-using System.Net.Http;
-using System.Net;
 using System.Linq;
-using Unity.Notifications.Events;
-using Volo.Abp.MultiTenancy;
-using Volo.Abp;
-using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
-using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Unity.Notifications.EmailNotifications;
 using Newtonsoft.Json;
-using Volo.Abp.SettingManagement;
-using Unity.Modules.Shared.Utils;
-using Unity.Notifications.Settings;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Notifications.EmailNotifications;
+using Unity.Notifications.Events;
+using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
+using Volo.Abp;
+using Volo.Abp.Data;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
+using Unity.Notifications.Emails;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;
 
 public class EmailConsumer(
-                    IEmailNotificationService emailNotificationService,
-                    IEmailLogsRepository emailLogsRepository,
-                    EmailQueueService emailQueueService,
-                    IUnitOfWorkManager unitOfWorkManager,
-                    ICurrentTenant currentTenant,
-                    ISettingManager settingManager,
-                    ILogger<EmailConsumer> logger) : IQueueConsumer<EmailMessages>
+    IEmailNotificationService emailNotificationService,
+    IEmailLogsRepository emailLogsRepository,
+    EmailQueueService emailQueueService,
+    IUnitOfWorkManager unitOfWorkManager,
+    ICurrentTenant currentTenant,
+    ILogger<EmailConsumer> logger
+) : IQueueConsumer<EmailMessages>
 {
-    public async Task<Task> ConsumeAsync(EmailMessages message)
+    const int maxRetries = 10;
+
+    // -----------------------------
+    //      PUBLIC ENTRY POINT
+    // -----------------------------
+    public async Task ConsumeAsync(EmailMessages message)
     {
-        EmailNotificationEvent emailNotificationEvent = message.EmailNotificationEvent;
-        if (emailNotificationEvent == null || emailNotificationEvent.TenantId == Guid.Empty || emailNotificationEvent.Id == Guid.Empty)
-        {
-            throw new UserFriendlyException("Notification Event null or no Tenant ID or Email Id");
-        }
+        var notificationEvent = message.EmailNotificationEvent;
 
-        // Grab the tenant and switch db context
-        using (currentTenant.Change(emailNotificationEvent.TenantId))
+        ValidateMessage(notificationEvent);
+
+        using (currentTenant.Change(notificationEvent.TenantId))
         {
-            var uow = unitOfWorkManager.Begin(true, false);
-            EmailLog? emailLog = await emailNotificationService.GetEmailLogById(emailNotificationEvent.Id);
-            if (emailLog != null && emailLog.Id != Guid.Empty && emailLog.ToAddress != null)
+            using var uow = unitOfWorkManager.Begin(requiresNew: true);
+
+            var emailLog = await emailNotificationService.GetEmailLogById(notificationEvent.Id);
+
+            if (emailLog == null || !ShouldProcessEmail(emailLog))
             {
-                await ProcessEmailLogAsync(emailLog, emailNotificationEvent, uow);
+                logger.LogInformation(
+                    "Email {EmailId} already processed or not found. Tenant {TenantId}. Skipping.",
+                    notificationEvent.Id,
+                    notificationEvent.TenantId
+                );
+                return;
             }
-        }
 
-        return Task.CompletedTask;
+            await ProcessEmailAsync(emailLog, notificationEvent, uow);
+
+            await uow.CompleteAsync();
+        }
     }
 
-    private async Task ProcessEmailLogAsync(EmailLog emailLog, EmailNotificationEvent emailNotificationEvent, IUnitOfWork uow)
+    // -----------------------------
+    //      CORE PROCESSING
+    // -----------------------------
+    private async Task ProcessEmailAsync(
+        EmailLog emailLog,
+        EmailNotificationEvent notificationEvent,
+        IUnitOfWork uow)
     {
         try
-        {
-            int maxRetryAttempts = SettingDefinitions.GetSettingsValueInt(settingManager, NotificationsSettings.Mailing.EmailMaxRetryAttempts);
-
-            // Resend the email - Update the RetryCount
-            if (emailLog.RetryAttempts <= maxRetryAttempts)
+        {          
+            if (emailLog.RetryAttempts > maxRetries)
             {
-                HttpResponseMessage response = await emailNotificationService.SendEmailNotification(
-                                                                                    emailLog.ToAddress,
-                                                                                    emailLog.Body,
-                                                                                    emailLog.Subject,
-                                                                                    emailLog.FromAddress, "html",
-                                                                                    emailLog.TemplateName,
-                                                                                    emailLog.CC,
-                                                                                    emailLog.BCC);
-                // Update the response
-                emailLog.ChesResponse = JsonConvert.SerializeObject(response);
-                emailLog.ChesStatus = response.StatusCode.ToString();
+                logger.LogWarning(
+                    "Email {EmailId} exceeded max retry attempts ({Attempts}).",
+                    emailLog.Id,
+                    maxRetries
+                );
 
-                if (response.StatusCode.ToString() == EmailStatus.Created.ToString())
-                {
-                    emailLog.Status = EmailStatus.Sent;
-                }
-                else if (response.StatusCode.ToString() == "0")
-                {
-                    emailLog.Status = EmailStatus.Failed;
-                }
+                emailLog.Status = EmailStatus.Failed;
+                await SaveEmailLogWithRetryAsync(emailLog, uow);
+                return;
+            }
 
-                if (ReprocessBasedOnStatusCode(response.StatusCode))
-                {
-                    emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
-                    await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
-                    await uow.SaveChangesAsync(); // Timing of Retry update
-                    emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
-                    await emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
-                }
-                else
-                {
-                    await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
-                    await uow.SaveChangesAsync();
-                }
+            HttpResponseMessage response;
+
+            try
+            {
+                response = await emailNotificationService.SendEmailNotification(
+                    emailLog.ToAddress,
+                    emailLog.Body,
+                    emailLog.Subject,
+                    emailLog.FromAddress,
+                    "html",
+                    emailLog.TemplateName,
+                    emailLog.CC,
+                    emailLog.BCC
+                );
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Email sending failed for Email {EmailId}. Tenant {TenantId}. Marking as failure and retrying.",
+                    emailLog.Id,
+                    notificationEvent.TenantId
+                );
+
+                emailLog.Status = EmailStatus.Failed;
+                await HandleRetryAsync(emailLog, notificationEvent, uow);
+                return;
+            }
+
+            UpdateEmailLogStatus(emailLog, response);
+
+            if (ShouldRetry(response.StatusCode))
+            {
+                await HandleRetryAsync(emailLog, notificationEvent, uow);
+            }
+            else
+            {
+                await SaveEmailLogWithRetryAsync(emailLog, uow);
             }
         }
         catch (Exception ex)
         {
-            string ExceptionMessage = ex.Message;
-            logger.LogInformation(ex, "Process Delayed Email Exception: {ExceptionMessage}", ExceptionMessage);
+            logger.LogError(
+                ex,
+                "Unexpected processing error for Email {EmailId}.",
+                emailLog.Id
+            );
         }
     }
 
-    private static bool ReprocessBasedOnStatusCode(HttpStatusCode statusCode)
+    // -----------------------------
+    //      RETRY HANDLING
+    // -----------------------------
+    private async Task HandleRetryAsync(
+        EmailLog log,
+        EmailNotificationEvent notificationEvent,
+        IUnitOfWork uow)
     {
-        HttpStatusCode[] reprocessStatusCodes = {
-             HttpStatusCode.TooManyRequests,
-             HttpStatusCode.InternalServerError,
-             HttpStatusCode.BadGateway,
-             HttpStatusCode.ServiceUnavailable,
-             HttpStatusCode.GatewayTimeout,
-        };
+        log.RetryAttempts++;
+        await SaveEmailLogWithRetryAsync(log, uow);
 
-        return reprocessStatusCodes.Contains(statusCode);
+        notificationEvent.RetryAttempts = log.RetryAttempts;
+
+        await emailQueueService.SendToEmailDelayedQueueAsync(notificationEvent);
+
+        logger.LogWarning(
+            "Retry scheduled for Email {EmailId}. Attempt {RetryAttempts}.",
+            log.Id,
+            log.RetryAttempts
+        );
     }
+
+    private static bool ShouldRetry(HttpStatusCode statusCode) =>
+        new[]
+        {
+            HttpStatusCode.TooManyRequests,
+            HttpStatusCode.InternalServerError,
+            HttpStatusCode.BadGateway,
+            HttpStatusCode.ServiceUnavailable,
+            HttpStatusCode.GatewayTimeout
+        }.Contains(statusCode);
+
+    // -----------------------------
+    //      STATUS UPDATE
+    // -----------------------------
+    private void UpdateEmailLogStatus(EmailLog log, HttpResponseMessage response)
+    {
+        log.ChesResponse = JsonConvert.SerializeObject(new
+        {
+            response.StatusCode,
+            Headers = response.Headers?.ToString(),
+            Body = response.Content != null ? response.Content.ReadAsStringAsync().Result : null
+        });
+
+        log.ChesStatus = response.StatusCode.ToString();
+
+        log.Status = response.IsSuccessStatusCode
+            ? EmailStatus.Sent
+            : EmailStatus.Failed;
+    }
+
+    // -----------------------------
+    //      SAFE-CONCURRENCY SAVE
+    // -----------------------------
+    private async Task SaveEmailLogWithRetryAsync(
+        EmailLog emailLog,
+        IUnitOfWork uow,
+        int maxRetries = 3)
+    {
+        int attempt = 0;
+
+        while (attempt < maxRetries)
+        {
+            try
+            {
+                await emailLogsRepository.UpdateAsync(emailLog, autoSave: false);
+                await uow.SaveChangesAsync();
+                return;
+            }
+            catch (AbpDbConcurrencyException ex)
+            {
+                attempt++;
+
+                if (attempt >= maxRetries)
+                {
+                    logger.LogError(
+                        ex,
+                        "Max concurrency retries reached for EmailLog {EmailId}. Manual intervention required.",
+                        emailLog.Id
+                    );
+                    throw;
+                }
+
+                logger.LogWarning(
+                    ex,
+                    "Concurrency conflict on EmailLog {EmailId}, retry {Attempt}. Reloading entity.",
+                    emailLog.Id,
+                    attempt
+                );
+
+                await Task.Delay(100);
+
+                var fresh = await emailNotificationService.GetEmailLogById(emailLog.Id);
+                if (fresh != null)
+                {
+                    emailLog.ConcurrencyStamp = fresh.ConcurrencyStamp;
+                }
+            }
+        }
+    }
+
+    // -----------------------------
+    //      VALIDATION / HELPERS
+    // -----------------------------
+    private static void ValidateMessage(EmailNotificationEvent evt)
+    {
+        if (evt == null ||
+            evt.TenantId == Guid.Empty ||
+            evt.Id == Guid.Empty)
+        {
+            throw new UserFriendlyException("Notification event is missing required identifiers.");
+        }
+    }
+
+    private static bool ShouldProcessEmail(EmailLog log)
+        => log != null && log.Status == EmailStatus.Initialized;
 }
