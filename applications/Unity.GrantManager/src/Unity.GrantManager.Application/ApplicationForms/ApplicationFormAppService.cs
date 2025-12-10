@@ -10,6 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Permissions;
 using Unity.Payments.Permissions;
+using Unity.Payments.Enums;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -236,6 +237,8 @@ public class ApplicationFormAppService
         appForm.FormHierarchy = dto.FormHierarchy;
         appForm.ParentFormId = dto.ParentFormId;
         appForm.ParentFormVersionId = dto.ParentFormVersionId;
+        var resolvedDefaultPaymentGroup = dto.DefaultPaymentGroup ?? PaymentGroup.EFT;
+        appForm.DefaultPaymentGroup = dto.Payable ? (int?)resolvedDefaultPaymentGroup : null;
         await Repository.UpdateAsync(appForm);
     }
 

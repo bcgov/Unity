@@ -159,7 +159,8 @@ namespace Unity.GrantManager.Controllers
             {
                 string ExceptionMessage = ex.Message;
                 logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
-                return StatusCode(500, errorFileMsg);
+                var errorCode = ex.Data.Contains("ErrorCode") ? Convert.ToInt32(ex.Data["ErrorCode"]) : 500;
+                return StatusCode(errorCode, ExceptionMessage);
             }
         }
 

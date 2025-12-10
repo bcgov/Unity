@@ -44,7 +44,7 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
     /// Update the supplier number for the applicant regardless of application. 
     /// </summary>
     [Authorize(UnitySelector.Payment.Supplier.Update)]
-    public async Task UpdateApplicantSupplierNumberAsync(Guid applicantId, string supplierNumber)
+    public async Task UpdateApplicantSupplierNumberAsync(Guid applicantId, string supplierNumber, Guid? applicationId = null)
     {
         if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
         {
@@ -64,7 +64,7 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
                 return; // No change in supplier number, so no action needed
             }
 
-            await supplierService.UpdateApplicantSupplierInfo(supplierNumber, applicantId);
+            await supplierService.UpdateApplicantSupplierInfo(supplierNumber, applicantId, applicationId);
         }
     }
 

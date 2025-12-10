@@ -10,7 +10,7 @@ namespace Unity.Payments.Integrations.RabbitMQ;
 public class InvoiceConsumer(InvoiceService invoiceService,
                              ICurrentTenant currentTenant) : IQueueConsumer<InvoiceMessages>
 {
-    public async Task<Task> ConsumeAsync(InvoiceMessages invoiceMessage)
+    public async Task ConsumeAsync(InvoiceMessages invoiceMessage)
     {
         if (invoiceMessage != null && !invoiceMessage.InvoiceNumber.IsNullOrEmpty() && invoiceMessage.TenantId != Guid.Empty)
         {
@@ -19,6 +19,5 @@ public class InvoiceConsumer(InvoiceService invoiceService,
                 await invoiceService.CreateInvoiceByPaymentRequestAsync(invoiceMessage.InvoiceNumber);
             }
         }
-        return Task.CompletedTask;
     }
 }
