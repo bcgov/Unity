@@ -74,24 +74,35 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                                 && link.ApplicationId != applicationId)  // Exclude self-references
                     .ToList();
 
-                foreach (var childApp in childApplications)
+                // Batch fetch payment requests for all child applications to avoid N+1 queries
+                var childApplicationIds = childApplications.Select(ca => ca.ApplicationId).ToList();
+                if (childApplicationIds.Any())
                 {
-                    var childPaymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(childApp.ApplicationId);
+                    var childPaymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(childApplicationIds);
+                    var paymentRequestsByAppId = childPaymentRequests
+                        .GroupBy(pr => pr.ApplicationId)
+                        .ToDictionary(g => g.Key, g => g.ToList());
 
-                    // Add child's Total Paid
-                    var childPaidAmount = childPaymentRequests
-                        .Where(e => e.Status == PaymentRequestStatus.Submitted)
-                        .Sum(e => e.Amount);
-                    model.TotalPaid += childPaidAmount;
+                    foreach (var childApp in childApplications)
+                    {
+                        if (paymentRequestsByAppId.TryGetValue(childApp.ApplicationId, out var requests))
+                        {
+                            // Add child's Total Paid
+                            var childPaidAmount = requests
+                                .Where(e => e.Status == PaymentRequestStatus.Submitted)
+                                .Sum(e => e.Amount);
+                            model.TotalPaid += childPaidAmount;
 
-                    // Add child's Total Pending Amounts
-                    var childPendingAmount = childPaymentRequests
-                        .Where(e => e.Status is not (PaymentRequestStatus.Paid
-                                                    or PaymentRequestStatus.L1Declined
-                                                    or PaymentRequestStatus.L2Declined
-                                                    or PaymentRequestStatus.L3Declined))
-                        .Sum(e => e.Amount);
-                    model.TotalPendingAmounts += childPendingAmount;
+                            // Add child's Total Pending Amounts
+                            var childPendingAmount = requests
+                                .Where(e => e.Status is not (PaymentRequestStatus.Paid
+                                                            or PaymentRequestStatus.L1Declined
+                                                            or PaymentRequestStatus.L2Declined
+                                                            or PaymentRequestStatus.L3Declined))
+                                .Sum(e => e.Amount);
+                            model.TotalPendingAmounts += childPendingAmount;
+                        }
+                    }
                 }
 
                 model.RemainingAmount = application.ApprovedAmount - model.TotalPaid;
