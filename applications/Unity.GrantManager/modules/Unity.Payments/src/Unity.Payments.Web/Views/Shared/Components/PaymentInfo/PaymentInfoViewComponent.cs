@@ -21,12 +21,12 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
        AutoInitialize = true)]
     public class PaymentInfoViewComponent : AbpViewComponent
     {
-        private readonly GrantApplicationAppService _grantApplicationAppService;
+        private readonly IGrantApplicationAppService _grantApplicationAppService;
         private readonly IPaymentRequestAppService _paymentRequestService;
         private readonly IFeatureChecker _featureChecker;
         private readonly IApplicationLinksService _applicationLinksService;
 
-        public PaymentInfoViewComponent(GrantApplicationAppService grantApplicationAppService,
+        public PaymentInfoViewComponent(IGrantApplicationAppService grantApplicationAppService,
                  IPaymentRequestAppService paymentRequestService,
                  IFeatureChecker featureChecker,
                  IApplicationLinksService applicationLinksService)
@@ -54,18 +54,10 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                 
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
 
-                // Calculate Total Paid for current application
-                model.TotalPaid = paymentRequests
-                    .Where(e => e.Status == PaymentRequestStatus.Submitted)
-                    .Sum(e => e.Amount);
-
-                // Calculate Total Pending Amounts for current application
-                model.TotalPendingAmounts = paymentRequests
-                    .Where(e => e.Status is not (PaymentRequestStatus.Paid
-                                                or PaymentRequestStatus.L1Declined
-                                                or PaymentRequestStatus.L2Declined
-                                                or PaymentRequestStatus.L3Declined))
-                    .Sum(e => e.Amount);
+                // Calculate Total Paid and Total Pending Amounts for current application
+                var (paidAmount, pendingAmount) = CalculatePaymentAmounts(paymentRequests);
+                model.TotalPaid = paidAmount;
+                model.TotalPendingAmounts = pendingAmount;
 
                 // Add Total Paid and Total Pending Amounts from child applications
                 var applicationLinks = await _applicationLinksService.GetListByApplicationAsync(applicationId);
@@ -76,30 +68,20 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
 
                 // Batch fetch payment requests for all child applications to avoid N+1 queries
                 var childApplicationIds = childApplications.Select(ca => ca.ApplicationId).ToList();
-                if (childApplicationIds.Any())
+                if (childApplicationIds.Count != 0)
                 {
                     var childPaymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(childApplicationIds);
                     var paymentRequestsByAppId = childPaymentRequests
-                        .GroupBy(pr => pr.ApplicationId)
+                        .GroupBy(pr => pr.CorrelationId)
                         .ToDictionary(g => g.Key, g => g.ToList());
 
                     foreach (var childApp in childApplications)
                     {
                         if (paymentRequestsByAppId.TryGetValue(childApp.ApplicationId, out var requests))
                         {
-                            // Add child's Total Paid
-                            var childPaidAmount = requests
-                                .Where(e => e.Status == PaymentRequestStatus.Submitted)
-                                .Sum(e => e.Amount);
+                            // Add child's Total Paid and Total Pending Amounts
+                            var (childPaidAmount, childPendingAmount) = CalculatePaymentAmounts(requests);
                             model.TotalPaid += childPaidAmount;
-
-                            // Add child's Total Pending Amounts
-                            var childPendingAmount = requests
-                                .Where(e => e.Status is not (PaymentRequestStatus.Paid
-                                                            or PaymentRequestStatus.L1Declined
-                                                            or PaymentRequestStatus.L2Declined
-                                                            or PaymentRequestStatus.L3Declined))
-                                .Sum(e => e.Amount);
                             model.TotalPendingAmounts += childPendingAmount;
                         }
                     }
@@ -111,6 +93,24 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
             }
             else
                 return View(new PaymentInfoViewModel());
+        }
+
+        private static (decimal paidAmount, decimal pendingAmount) CalculatePaymentAmounts(List<PaymentDetailsDto> paymentRequests)
+        {
+            var requestsList = paymentRequests;
+
+            var paidAmount = requestsList
+                .Where(e => e.Status == PaymentRequestStatus.Submitted)
+                .Sum(e => e.Amount);
+
+            var pendingAmount = requestsList
+                .Where(e => e.Status is not (PaymentRequestStatus.Paid
+                                            or PaymentRequestStatus.L1Declined
+                                            or PaymentRequestStatus.L2Declined
+                                            or PaymentRequestStatus.L3Declined))
+                .Sum(e => e.Amount);
+
+            return (paidAmount, pendingAmount);
         }
 
         public class PaymentInfoStyleBundleContributor : BundleContributor
