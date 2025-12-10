@@ -1,8 +1,8 @@
-# Unity AI Platform - Production Docker Compose
-# Contains services for Unity.AI.Reporting (active) and placeholders for Unity.AI.Assessment
+# Unity AI Platform - Combined Frontend + Backend Docker Compose
+# Single container running both Angular frontend and Flask backend
 
 services:
-  # Shared Database Service (PostgreSQL with pgvector)
+  # PostgreSQL Database (shared)
   postgres:
     image: pgvector/pgvector:pg16
     environment:
@@ -21,94 +21,60 @@ services:
       timeout: 5s
       retries: 5
 
-  # Unity.AI.Reporting Backend (Python Flask + AI)
-  reporting-backend:
-    build: 
-      context: ./Unity.AI.Reporting.Backend
-      args:
-        - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
-        - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
-    ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=production
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
-      - AZURE_OPENAI_EMBEDDING_DEPLOYMENT=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT}
-      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
-      - JWT_SECRET=${JWT_SECRET}
-      - METABASE_KEY=${METABASE_KEY}
-      - MB_EMBED_SECRET=${MB_EMBED_SECRET}
-      - MB_URL=${MB_URL}
-      - DEFAULT_EMBED_DB_ID=${DEFAULT_EMBED_DB_ID:-3}
-      - MB_EMBED_ID=${MB_EMBED_ID}
-      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-large}
-      - EMBED_WORKSHEETS=${EMBED_WORKSHEETS:-true}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=${POSTGRES_DB:-unity_ai}
-      - DB_USER=${POSTGRES_USER:-unity_user}
-      - DB_PASSWORD=${POSTGRES_PASSWORD}
-    networks:
-      - unity-ai-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Unity.AI.Reporting Frontend (Angular)
-  reporting-frontend:
+  # Unity.AI.Reporting - Frontend + Backend (Flask serves both)
+  reporting:
     build:
-      context: ./Unity.AI.Reporting.Frontend
+      context: .
+      dockerfile: Dockerfile
       args:
         - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
         - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
     ports:
       - "80:8080"
     environment:
-      - API_URL=${API_URL:-http://localhost:5000/api}
-      - ENVIRONMENT=${ENVIRONMENT:-production}
+      # Application config
+      - ENVIRONMENT=${ENVIRONMENT:-Development}
       - VERSION=${UAI_BUILD_VERSION:-0.0.0}
+
+      # Azure OpenAI config
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
+      - AZURE_OPENAI_EMBEDDING_DEPLOYMENT=${AZURE_OPENAI_EMBEDDING_DEPLOYMENT}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+
+      # Authentication
+      - JWT_SECRET=${JWT_SECRET}
+
+      # Metabase config
+      - METABASE_KEY=${METABASE_KEY}
+      - MB_EMBED_SECRET=${MB_EMBED_SECRET}
+      - MB_URL=${MB_URL}
+      - DEFAULT_EMBED_DB_ID=${DEFAULT_EMBED_DB_ID:-3}
+      - MB_EMBED_ID=${MB_EMBED_ID}
+
+      # Alternative (optional) AI Model config
+      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-large}
+      - EMBED_WORKSHEETS=${EMBED_WORKSHEETS:-true}
+
+      # Database config
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-unity_ai}
+      - DB_USER=${POSTGRES_USER:-unity_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
     depends_on:
-      reporting-backend:
-        condition: service_started
+      postgres:
+        condition: service_healthy
     networks:
       - unity-ai-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Unity.AI.Assessment Backend (Future Development)
-  # assessment-backend:
-  #   build: 
-  #     context: ./Unity.AI.Assessment.Backend
-  #   ports:
-  #     - "5001:5000"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   networks:
-  #     - unity-ai-network
-
-  # Unity.AI.Assessment Frontend (Future Development)  
-  # assessment-frontend:
-  #   build:
-  #     context: ./Unity.AI.Assessment.Frontend
-  #   ports:
-  #     - "81:80"
-  #   depends_on:
-  #     assessment-backend:
-  #       condition: service_started
-  #   networks:
-  #     - unity-ai-network
+      start_period: 40s
 
 networks:
   unity-ai-network:

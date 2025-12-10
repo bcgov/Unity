@@ -3,9 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 export interface AppConfig {
-  apiUrl: string;
+  apiUrl?: string;
   environment: string;
   version: string;
+  revision?: string;
+  buildDate?: string;
 }
 
 @Injectable({
@@ -17,7 +19,7 @@ export class ConfigService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Load configuration from config.json
+   * Load configuration from build-info.json
    * This should be called before the app initializes
    */
   async loadConfig(): Promise<void> {
@@ -27,15 +29,23 @@ export class ConfigService {
 
     try {
       this.config = await firstValueFrom(
-        this.http.get<AppConfig>('/config.json')
+        this.http.get<AppConfig>('/build-info.json')
       );
-      console.log('✓ Configuration loaded successfully from /config.json');
+
+      // Use default /api if not specified (for combined container)
+      if (!this.config.apiUrl) {
+        this.config.apiUrl = '/api';
+      }
+
+      console.log('✓ Configuration loaded successfully from /build-info.json');
       console.log('  API URL:', this.config.apiUrl);
       console.log('  Environment:', this.config.environment);
       console.log('  Version:', this.config.version);
+      console.log('  Revision:', this.config.revision || 'N/A');
+      console.log('  Build Date:', this.config.buildDate || 'N/A');
       console.log('=========================================');
     } catch (error) {
-      console.error('✗ Failed to load configuration from /config.json:', error);
+      console.error('✗ Failed to load configuration from /build-info.json:', error);
       // Fallback to default config
       this.config = {
         apiUrl: '/api',
@@ -64,7 +74,7 @@ export class ConfigService {
    * Get the API URL
    */
   get apiUrl(): string {
-    return this.getConfig().apiUrl;
+    return this.getConfig().apiUrl || '/api';
   }
 
   /**

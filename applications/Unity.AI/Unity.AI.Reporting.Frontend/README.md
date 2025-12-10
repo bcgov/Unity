@@ -2,10 +2,14 @@
 
 Angular frontend providing an intuitive chat interface for natural language data queries with AI-powered SQL generation.
 
+## Deployment
+
+**Note**: The frontend is deployed as part of a **combined container** with the backend. Flask serves both the Angular static files and API endpoints. See the [main README](../README.md) for deployment instructions.
+
 ## Features
 
 - Real-time chat interface for data queries
-- Interactive SQL query visualization
+- Interactive SQL query visualization  
 - SQL explanation and editing
 - Chat history management
 - Admin panel for feedback review
@@ -18,25 +22,11 @@ Angular frontend providing an intuitive chat interface for natural language data
 - **Framework**: Angular 20.0.0
 - **UI**: BC Sans typography, custom CSS
 - **HTTP**: Angular HttpClient with RxJS
-- **Build**: Angular CLI 20.0.3
+- **Build**: Angular CLI 20.0.3, esbuild
 
-## Quick Start
+## Local Development
 
-### Using Docker Compose (Recommended)
-
-From the `applications` directory:
-
-```bash
-# Development
-docker-compose -f docker-compose.dev.yml up
-
-# Production
-docker-compose up -d
-```
-
-**Note**: This containerized application runs nginx on port 8080 internally but is accessible via http://localhost:80 through container port mapping.
-
-### Local Development
+For local development (separate from Docker):
 
 1. Install dependencies:
 ```bash
@@ -72,44 +62,66 @@ Application runs on `http://localhost:4200`
 - `alert/alert.ts` - Confirmation dialogs
 
 ### Services
-- `api.service.ts` - Backend API communication
+- `api.service.ts` - Backend API communication (calls `/api/*`)
 - `auth.service.ts` - JWT authentication and token management
+- `config.service.ts` - Runtime configuration (loads `/config.json`)
 - `toast.service.ts` - Toast notification management
 - `logger.service.ts` - Centralized logging service
 
 ## Routes
 
 - `/` - Root route (redirects based on auth/admin status)
-- `/app` - Main chat interface
+- `/app` - Main chat interface (protected)
 - `/admin` - Admin feedback dashboard (admin only)
+- `/access-denied` - Access denied page
 
-## Environment Configuration
+## Configuration
 
-The application uses Angular environments:
+### Build-Time Configuration
 
-- `environment.ts` - Development configuration
-- `environment.prod.ts` - Production configuration
+The application loads configuration from `/config.json` at startup:
 
-Configuration includes:
-- API URL
-- Production flag for logging
+```json
+{
+  "environment": "production",
+  "version": "1.0.0",
+  "revision": "abc1234",
+  "buildDate": "2025-01-15T10:30:00Z"
+}
+```
+
+- **apiUrl**: Defaults to `/api` if not specified (for combined container)
+- **environment**: `production` or `development`
+- **version**: Application version from build args
+- **revision**: Git revision from build args
+- **buildDate**: ISO timestamp of build
+
+Configuration is generated at build time in the Dockerfile.
+
+### How It Works in Combined Container
+
+1. **Build**: Angular app compiled to static files, `config.json` generated with build info
+2. **Deploy**: Static files served by Flask at `/app/frontend`
+3. **Runtime**: Angular loads `config.json` at startup
+4. **API Calls**: All requests to `/api/*` go to Flask backend (same origin)
 
 ## Authentication
 
-The frontend uses JWT tokens for authentication:
-- Tokens are passed via URL parameter or stored in localStorage
-- Token validation and refresh handled by `auth.service.ts`
+JWT tokens for authentication:
+- Tokens passed via URL parameter (`?token=...`) or stored in localStorage
+- Token validation handled by `auth.service.ts`
 - Admin status checked via JWT payload (`is_it_admin` claim)
+- Protected routes use `auth.guard.ts`
 
 ## Logging
 
-The application uses a custom `LoggerService` with proper log levels:
-- `DEBUG` - Development only (stripped in production)
+Custom `LoggerService` with log levels:
+- `DEBUG` - Development only
 - `INFO` - General information
-- `WARN` - Warning messages
+- `WARN` - Warning messages  
 - `ERROR` - Error messages with stack traces
 
-Production builds automatically set log level to `WARN` or higher.
+Production builds set log level to `WARN` or higher.
 
 ## Styling
 
@@ -121,7 +133,9 @@ Production builds automatically set log level to `WARN` or higher.
 ## Building for Production
 
 ```bash
-ng build --configuration production
+npm run build
 ```
 
-Output is generated in `dist/` directory, optimized for performance.
+Output in `dist/recap/browser/` directory, optimized with esbuild.
+
+**Note**: Production builds are handled by the Dockerfile in the combined container setup.

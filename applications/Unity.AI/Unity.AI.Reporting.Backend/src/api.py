@@ -11,6 +11,7 @@ from metabase import metabase_client
 from chat import chat_manager
 from sql_generator import sql_generator
 from auth import require_auth, get_user_from_token
+from static_routes import add_static_routes
 import re
 
 # Configure logging
@@ -94,6 +95,9 @@ def create_app():
 
 
 app = create_app()
+
+# Add static file serving for Angular frontend
+add_static_routes(app)
 
 
 @app.route("/")
