@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -133,7 +134,7 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        public async Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric)
+        public async Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric, string? formFieldConfiguration = null)
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
@@ -147,16 +148,22 @@ namespace Unity.GrantManager.AI
                     ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
                     : "No attachments provided.";
 
+                var fieldConfigurationSection = !string.IsNullOrEmpty(formFieldConfiguration)
+                    ? $@"
+{formFieldConfiguration}"
+                    : string.Empty;
+
                 var analysisContent = $@"APPLICATION CONTENT:
 {applicationContent}
 
 ATTACHMENT SUMMARIES:
 - {attachmentSummariesText}
+{fieldConfigurationSection}
 
 EVALUATION RUBRIC:
 {rubric}
 
-Please analyze this grant application against the provided rubric and return your findings in the following JSON format:
+Analyze this grant application comprehensively across all five rubric categories (Eligibility, Completeness, Financial Review, Risk Assessment, and Quality Indicators). Identify issues, concerns, and areas for improvement. Return your findings in the following JSON format:
 {{
   ""overall_score"": ""HIGH/MEDIUM/LOW"",
   ""warnings"": [
@@ -184,16 +191,87 @@ Please analyze this grant application against the provided rubric and return you
 Important: The 'category' field should be a concise summary (3-6 words) that captures the essence of the issue, while the 'message' field should contain the detailed explanation.";
 
                 var systemPrompt = @"You are an expert grant application reviewer for the BC Government.
-Analyze the provided application against the rubric and identify any issues, missing requirements, or areas of concern.
-Be thorough but fair in your assessment. Focus on compliance, completeness, and alignment with program requirements.
+
+Conduct a thorough, comprehensive analysis across all rubric categories. Identify substantive issues, concerns, and opportunities for improvement.
+
+Classify findings based on their impact on the application's evaluation and fundability:
+- ERRORS: Important missing information, significant gaps in required content, compliance issues, or major concerns affecting eligibility
+- WARNINGS: Areas needing clarification, moderate issues, or concerns that should be addressed
+
+Evaluate the quality, clarity, and appropriateness of all application content. Be thorough but fair - identify real issues while avoiding nitpicking.
+
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
+                var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
+
+                // Post-process the AI response to add unique IDs to errors and warnings
+                return AddIdsToAnalysisItems(rawAnalysis);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error analyzing application");
                 return "AI analysis failed - please try again later.";
+            }
+        }
+
+        private string AddIdsToAnalysisItems(string analysisJson)
+        {
+            try
+            {
+                using var jsonDoc = JsonDocument.Parse(analysisJson);
+                using var memoryStream = new System.IO.MemoryStream();
+                using (var writer = new Utf8JsonWriter(memoryStream, new JsonWriterOptions { Indented = true }))
+                {
+                    writer.WriteStartObject();
+
+                    foreach (var property in jsonDoc.RootElement.EnumerateObject())
+                    {
+                        if (property.Name == "errors" || property.Name == "warnings")
+                        {
+                            writer.WritePropertyName(property.Name);
+                            writer.WriteStartArray();
+
+                            foreach (var item in property.Value.EnumerateArray())
+                            {
+                                writer.WriteStartObject();
+
+                                // Add unique ID first
+                                writer.WriteString("id", Guid.NewGuid().ToString());
+
+                                // Copy existing properties
+                                foreach (var itemProperty in item.EnumerateObject())
+                                {
+                                    itemProperty.WriteTo(writer);
+                                }
+
+                                writer.WriteEndObject();
+                            }
+
+                            writer.WriteEndArray();
+                        }
+                        else
+                        {
+                            property.WriteTo(writer);
+                        }
+                    }
+
+                    // Add dismissed_items array if not present
+                    if (!jsonDoc.RootElement.TryGetProperty("dismissed_items", out _))
+                    {
+                        writer.WritePropertyName("dismissed_items");
+                        writer.WriteStartArray();
+                        writer.WriteEndArray();
+                    }
+
+                    writer.WriteEndObject();
+                }
+
+                return Encoding.UTF8.GetString(memoryStream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding IDs to analysis items, returning original JSON");
+                return analysisJson; // Return original if processing fails
             }
         }
 

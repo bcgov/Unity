@@ -11,6 +11,7 @@ using Volo.Abp.EventBus;
 using Unity.Flex.Domain.Scoresheets;
 using System.Text.Json;
 using Volo.Abp.Features;
+using Newtonsoft.Json.Linq;
 
 namespace Unity.GrantManager.Intakes.Handlers
 {
@@ -24,6 +25,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly ILogger<GenerateAiSummaryHandler> _logger;
         private readonly IScoresheetRepository _scoresheetRepository;
         private readonly IApplicationFormRepository _applicationFormRepository;
+        private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IFeatureChecker _featureChecker;
 
         readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
@@ -45,6 +47,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             ILogger<GenerateAiSummaryHandler> logger,
             IScoresheetRepository scoresheetRepository,
             IApplicationFormRepository applicationFormRepository,
+            IApplicationFormVersionRepository applicationFormVersionRepository,
             IFeatureChecker featureChecker)
         {
             _aiService = aiService;
@@ -55,6 +58,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             _logger = logger;
             _scoresheetRepository = scoresheetRepository;
             _applicationFormRepository = applicationFormRepository;
+            _applicationFormVersionRepository = applicationFormVersionRepository;
             _featureChecker = featureChecker;
         }
 
@@ -223,6 +227,20 @@ namespace Unity.GrantManager.Intakes.Handlers
                 var formSubmission = await _applicationFormSubmissionRepository
                     .GetByApplicationAsync(application.Id);
 
+                // Extract form field configuration (required vs optional fields)
+                string formFieldConfiguration = "Form configuration not available.";
+                if (formSubmission?.ApplicationFormVersionId != null)
+                {
+                    formFieldConfiguration = await ExtractFormFieldConfigurationAsync(formSubmission.ApplicationFormVersionId.Value);
+                    _logger.LogDebug("Extracted form field configuration for application {ApplicationId}: {Configuration}",
+                        application.Id, formFieldConfiguration);
+                }
+                else
+                {
+                    _logger.LogWarning("Could not extract form field configuration for application {ApplicationId} - ApplicationFormVersionId is null",
+                        application.Id);
+                }
+
                 // Get application content including the full form submission
                 var notSpecified = "Not specified";
                 var applicationContent = $@"
@@ -286,8 +304,8 @@ EVALUATION CRITERIA:
                 _logger.LogDebug("Generating AI analysis for application {ApplicationId} with {AttachmentCount} attachment summaries",
                     application.Id, attachmentSummaries.Count);
 
-                // Generate the analysis
-                var analysis = await _aiService.AnalyzeApplicationAsync(applicationContent, attachmentSummaries, rubric);
+                // Generate the analysis with form field configuration
+                var analysis = await _aiService.AnalyzeApplicationAsync(applicationContent, attachmentSummaries, rubric, formFieldConfiguration);
 
                 // Clean the response to remove any markdown formatting
                 var cleanedAnalysis = CleanJsonResponse(analysis);
@@ -552,6 +570,166 @@ FULL APPLICATION FORM SUBMISSION:
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Extracts field configuration from form schema to identify which fields are required vs optional
+        /// </summary>
+        /// <param name="formVersionId">The form version ID to extract configuration from</param>
+        /// <returns>A formatted string describing required and optional fields</returns>
+        private async Task<string> ExtractFormFieldConfigurationAsync(Guid formVersionId)
+        {
+            try
+            {
+                var formVersion = await _applicationFormVersionRepository.GetAsync(formVersionId);
+                if (formVersion == null || string.IsNullOrEmpty(formVersion.FormSchema))
+                {
+                    return "Form configuration not available.";
+                }
+
+                var schema = JObject.Parse(formVersion.FormSchema);
+                var components = schema["components"] as JArray;
+
+                if (components == null || components.Count == 0)
+                {
+                    return "No form fields configured.";
+                }
+
+                var requiredFields = new List<string>();
+                var optionalFields = new List<string>();
+
+                ExtractFieldRequirements(components, requiredFields, optionalFields, string.Empty);
+
+                var configurationText = "FORM FIELD CONFIGURATION:\n\n";
+
+                if (requiredFields.Count > 0)
+                {
+                    configurationText += "REQUIRED FIELDS (must be completed):\n";
+                    foreach (var field in requiredFields)
+                    {
+                        configurationText += $"- {field}\n";
+                    }
+                    configurationText += "\n";
+                }
+
+                if (optionalFields.Count > 0)
+                {
+                    configurationText += "OPTIONAL FIELDS (may be left blank):\n";
+                    foreach (var field in optionalFields)
+                    {
+                        configurationText += $"- {field}\n";
+                    }
+                }
+
+                return configurationText;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting form field configuration for form version {FormVersionId}", formVersionId);
+                return "Form configuration could not be extracted.";
+            }
+        }
+
+        /// <summary>
+        /// Recursively extracts field requirements from form components
+        /// </summary>
+        private static void ExtractFieldRequirements(JArray components, List<string> requiredFields, List<string> optionalFields, string currentPath)
+        {
+            foreach (var component in components.OfType<JObject>())
+            {
+                var key = component["key"]?.ToString();
+                var label = component["label"]?.ToString();
+                var type = component["type"]?.ToString();
+
+                // Skip container components that don't represent actual data fields
+                var skipTypes = new HashSet<string> { "button", "simplebuttonadvanced", "html", "htmlelement", "content", "simpleseparator" };
+                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || skipTypes.Contains(type))
+                {
+                    // Still process nested components even if we skip the container
+                    ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, currentPath);
+                    continue;
+                }
+
+                var displayName = !string.IsNullOrEmpty(label) ? $"{label} ({key})" : key;
+                var fullPath = string.IsNullOrEmpty(currentPath) ? displayName : $"{currentPath} > {displayName}";
+
+                // Check if the field is required
+                var validate = component["validate"] as JObject;
+                var isRequired = validate?["required"]?.Value<bool>() ?? false;
+
+                // Add to appropriate list (only for data input fields)
+                if (component["input"]?.Value<bool>() == true)
+                {
+                    if (isRequired)
+                    {
+                        requiredFields.Add(fullPath);
+                    }
+                    else
+                    {
+                        optionalFields.Add(fullPath);
+                    }
+                }
+
+                // Process nested components
+                ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, fullPath);
+            }
+        }
+
+        /// <summary>
+        /// Processes nested components for different container types
+        /// </summary>
+        private static void ProcessNestedFieldRequirements(JObject component, string? type, List<string> requiredFields, List<string> optionalFields, string currentPath)
+        {
+            switch (type)
+            {
+                case "panel":
+                case "simplepanel":
+                case "fieldset":
+                case "well":
+                case "container":
+                case "datagrid":
+                case "table":
+                    var nestedComponents = component["components"] as JArray;
+                    if (nestedComponents != null)
+                    {
+                        ExtractFieldRequirements(nestedComponents, requiredFields, optionalFields, currentPath);
+                    }
+                    break;
+
+                case "columns":
+                case "simplecols2":
+                case "simplecols3":
+                case "simplecols4":
+                    var columns = component["columns"] as JArray;
+                    if (columns != null)
+                    {
+                        foreach (var column in columns.OfType<JObject>())
+                        {
+                            var columnComponents = column["components"] as JArray;
+                            if (columnComponents != null)
+                            {
+                                ExtractFieldRequirements(columnComponents, requiredFields, optionalFields, currentPath);
+                            }
+                        }
+                    }
+                    break;
+
+                case "tabs":
+                case "simpletabs":
+                    var tabs = component["components"] as JArray;
+                    if (tabs != null)
+                    {
+                        foreach (var tab in tabs.OfType<JObject>())
+                        {
+                            var tabComponents = tab["components"] as JArray;
+                            if (tabComponents != null)
+                            {
+                                ExtractFieldRequirements(tabComponents, requiredFields, optionalFields, currentPath);
+                            }
+                        }
+                    }
+                    break;
+            }
         }
 
     }

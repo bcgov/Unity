@@ -1216,21 +1216,60 @@ function loadAIAnalysis() {
         });
 }
 
+// Simple hash function to create stable IDs from content
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
+}
+
 function renderRealAIAnalysis(analysisData) {
-    const warnings = analysisData.warnings || [];
-    const errors = analysisData.errors || [];
+    // Generate STABLE IDs based on content hash
+    const warnings = (analysisData.warnings || []).map((w, i) => ({
+        ...w,
+        id: w.id || 'warning-' + simpleHash((w.category || '') + (w.message || ''))
+    }));
+    const errors = (analysisData.errors || []).map((e, i) => ({
+        ...e,
+        id: e.id || 'error-' + simpleHash((e.category || '') + (e.message || ''))
+    }));
     const recommendations = analysisData.recommendations || [];
+    const dismissedItems = new Set((analysisData.dismissed_items || []).filter(id => id));
+
+    // Get all valid IDs from current errors and warnings
+    const allValidIds = new Set([...errors.map(e => e.id), ...warnings.map(w => w.id)]);
+
+    // Filter dismissed items to only include IDs that exist in current errors/warnings
+    const validDismissedItems = new Set(
+        Array.from(dismissedItems).filter(id => allValidIds.has(id))
+    );
+
+    // Separate active and dismissed items
+    const activeErrors = errors.filter(e => !validDismissedItems.has(e.id));
+    const activeWarnings = warnings.filter(w => !validDismissedItems.has(w.id));
+    const dismissedErrors = errors.filter(e => validDismissedItems.has(e.id));
+    const dismissedWarnings = warnings.filter(w => validDismissedItems.has(w.id));
 
     // Clear existing accordion list and rebuild
     const $accordionList = $('#aiAnalysisAccordionList');
     $accordionList.empty();
 
     // Add errors section if there are any
-    if (errors.length > 0) {
-        const errorsContent = errors.map(error => {
+    if (activeErrors.length > 0) {
+        const errorsContent = activeErrors.map(error => {
+            const errorId = error.id || 'error-unknown-' + Date.now();
             return `
                 <div class="ai-analysis-detail-item">
-                    <div class="ai-analysis-detail-category">${escapeHtml(error.category || 'Error')}</div>
+                    <div class="ai-analysis-detail-header">
+                        <div class="ai-analysis-detail-category">${escapeHtml(error.category || 'Error')}</div>
+                        <button type="button" class="ai-analysis-dismiss-btn" data-id="${errorId}" data-type="error" title="Dismiss this error" onclick="event.stopPropagation(); dismissAIIssue('${errorId}'); return false;">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
                     <div class="ai-analysis-detail-message">${escapeHtml(error.message || '')}</div>
                 </div>
             `;
@@ -1240,18 +1279,24 @@ function renderRealAIAnalysis(analysisData) {
             'errors',
             'error',
             'fl-times-circle',
-            `Errors (${errors.length})`,
+            `Errors (${activeErrors.length})`,
             errorsContent
         );
         $accordionList.append(accordionItem);
     }
 
     // Add warnings section if there are any
-    if (warnings.length > 0) {
-        const warningsContent = warnings.map(warning => {
+    if (activeWarnings.length > 0) {
+        const warningsContent = activeWarnings.map(warning => {
+            const warningId = warning.id || 'warning-unknown-' + Date.now();
             return `
                 <div class="ai-analysis-detail-item">
-                    <div class="ai-analysis-detail-category">${escapeHtml(warning.category || 'Warning')}</div>
+                    <div class="ai-analysis-detail-header">
+                        <div class="ai-analysis-detail-category">${escapeHtml(warning.category || 'Warning')}</div>
+                        <button type="button" class="ai-analysis-dismiss-btn" data-id="${warningId}" data-type="warning" title="Dismiss this warning" onclick="event.stopPropagation(); dismissAIIssue('${warningId}'); return false;">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
                     <div class="ai-analysis-detail-message">${escapeHtml(warning.message || '')}</div>
                 </div>
             `;
@@ -1261,7 +1306,7 @@ function renderRealAIAnalysis(analysisData) {
             'warnings',
             'warning',
             'fl-exclamation-triangle',
-            `Warnings (${warnings.length})`,
+            `Warnings (${activeWarnings.length})`,
             warningsContent
         );
         $accordionList.append(accordionItem);
@@ -1292,19 +1337,88 @@ function renderRealAIAnalysis(analysisData) {
         $accordionList.append(accordionItem);
     }
 
+    // Add dismissed items section if there are any
+    if (dismissedErrors.length > 0 || dismissedWarnings.length > 0) {
+        const dismissedContent = [
+            ...dismissedErrors.map(error => {
+                const errorId = error.id || 'error-dismissed-' + Date.now();
+                return `
+                <div class="ai-analysis-detail-item dismissed">
+                    <div class="ai-analysis-detail-header">
+                        <div class="ai-analysis-detail-category">${escapeHtml(error.category || 'Error')}</div>
+                        <button type="button" class="ai-analysis-restore-btn" data-id="${errorId}" data-type="error" title="Restore this error" onclick="event.stopPropagation(); restoreAIIssue('${errorId}'); return false;">
+                            <i class="fa fa-undo"></i>
+                        </button>
+                    </div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(error.message || '')}</div>
+                </div>
+            `;
+            }),
+            ...dismissedWarnings.map(warning => {
+                const warningId = warning.id || 'warning-dismissed-' + Date.now();
+                return `
+                <div class="ai-analysis-detail-item dismissed">
+                    <div class="ai-analysis-detail-header">
+                        <div class="ai-analysis-detail-category">${escapeHtml(warning.category || 'Warning')}</div>
+                        <button type="button" class="ai-analysis-restore-btn" data-id="${warningId}" data-type="warning" title="Restore this warning" onclick="event.stopPropagation(); restoreAIIssue('${warningId}'); return false;">
+                            <i class="fa fa-undo"></i>
+                        </button>
+                    </div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(warning.message || '')}</div>
+                </div>
+            `;
+            })
+        ].join('');
+
+        const accordionItem = createAccordionGroup(
+            'dismissed',
+            'dismissed',
+            'fl-eye-slash',
+            `Dismissed Items (${dismissedErrors.length + dismissedWarnings.length})`,
+            dismissedContent
+        );
+        $accordionList.append(accordionItem);
+    }
+
     // If no items, show empty message
-    if (errors.length === 0 && warnings.length === 0 && recommendations.length === 0) {
+    if (activeErrors.length === 0 && activeWarnings.length === 0 && recommendations.length === 0 && dismissedErrors.length === 0 && dismissedWarnings.length === 0) {
         $accordionList.append('<div class="ai-analysis-empty">No analysis results available.</div>');
     }
 
-    // Add click event listeners to accordion headers
-    $('.ai-analysis-accordion-header').off('click').on('click', function() {
-        toggleAccordionItem($(this));
+    // Update tab badge with total count
+    const totalIssues = activeWarnings.length + activeErrors.length + recommendations.length;
+    $('#ai-analysis-tab').html(`<i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(${totalIssues})`);
+
+    // Remove all previous event handlers from accordion list
+    $accordionList.off('click');
+
+    // Use event delegation for dismiss buttons (highest priority)
+    $accordionList.on('click', '.ai-analysis-dismiss-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const issueId = $(this).data('id');
+        dismissAIIssue(issueId);
+        return false;
     });
 
-    // Update tab badge with total count
-    const totalIssues = warnings.length + errors.length + recommendations.length;
-    $('#ai-analysis-tab').html(`<i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(${totalIssues})`);
+    // Use event delegation for restore buttons (highest priority)
+    $accordionList.on('click', '.ai-analysis-restore-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const issueId = $(this).data('id');
+        restoreAIIssue(issueId);
+        return false;
+    });
+
+    // Add click event listener for accordion headers - check if target is not a button
+    $accordionList.on('click', '.ai-analysis-accordion-header', function(e) {
+        // Don't toggle if clicking on buttons or their children
+        if ($(e.target).closest('.ai-analysis-dismiss-btn, .ai-analysis-restore-btn').length === 0) {
+            toggleAccordionItem($(this));
+        }
+    });
 }
 
 function createAccordionGroup(id, type, iconClass, title, content) {
@@ -1320,6 +1434,34 @@ function createAccordionGroup(id, type, iconClass, title, content) {
             </div>
         </div>
     `;
+}
+
+window.dismissAIIssue = function(issueId) {
+    const applicationId = $('#DetailsViewApplicationId').val();
+
+    unity.grantManager.grantApplications.grantApplication
+        .dismissAIIssue(applicationId, issueId)
+        .then(function(updatedAnalysis) {
+            // Reload the AI analysis section with updated data
+            loadAIAnalysis();
+        })
+        .catch(function(error) {
+            abp.message.error('Failed to dismiss the issue. Please try again.');
+        });
+}
+
+window.restoreAIIssue = function(issueId) {
+    const applicationId = $('#DetailsViewApplicationId').val();
+
+    unity.grantManager.grantApplications.grantApplication
+        .restoreAIIssue(applicationId, issueId)
+        .then(function(updatedAnalysis) {
+            // Reload the AI analysis section with updated data
+            loadAIAnalysis();
+        })
+        .catch(function(error) {
+            abp.message.error('Failed to restore the issue. Please try again.');
+        });
 }
 
 function toggleAccordionItem($header) {
