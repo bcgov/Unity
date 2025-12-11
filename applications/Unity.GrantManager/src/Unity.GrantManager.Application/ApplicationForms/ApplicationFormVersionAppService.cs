@@ -197,7 +197,7 @@ namespace Unity.GrantManager.ApplicationForms
             if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting) &&
                 string.IsNullOrEmpty(applicationFormVersion.ReportViewName))
             {
-                // Should be deprecated wit new reporting configuration at some point
+                // Should be deprecated with new reporting configuration at some point
                 await reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
             }
 

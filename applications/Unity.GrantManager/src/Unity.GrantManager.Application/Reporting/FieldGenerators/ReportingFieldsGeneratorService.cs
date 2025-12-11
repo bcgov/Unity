@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
-using Volo.Abp.EventBus.Local;
+using Volo.Abp.BackgroundJobs;
 
 namespace Unity.GrantManager.Reporting.FieldGenerators
 {
     [RemoteService(false)]
-    public class ReportingFieldsGeneratorService(ILocalEventBus localEventBus,
-        IApplicationFormRepository applicationFormRepository) : ApplicationService, IReportingFieldsGeneratorService
+    public class ReportingFieldsGeneratorService(IApplicationFormRepository applicationFormRepository,
+        IBackgroundJobManager backgroundJobManager) : ApplicationService, IReportingFieldsGeneratorService
     {
         /// <summary>
         /// Dissect the form version schema and extract key value pairs to be stored as the base for reporting
@@ -27,13 +27,15 @@ namespace Unity.GrantManager.Reporting.FieldGenerators
         }
 
         private async Task QueueDynamicViewGeneratorAsync(ApplicationFormVersion applicationFormVersion)
-        {
-            await localEventBus.PublishAsync(
-                new SubmissionsDynamicViewGenerationEto
+        {            
+            await backgroundJobManager.EnqueueAsync(
+                new SubmissionsDynamicViewGenerationArgs
                 {
                     ApplicationFormVersionId = applicationFormVersion.Id,
                     TenantId = CurrentTenant.Id
-                }, true);
+                },
+                BackgroundJobPriority.Normal,
+                delay: TimeSpan.FromSeconds(1));
         }
 
         private async Task UpdateFormVersionWithReportKeysAndColumnsAsync(ApplicationFormVersion applicationFormVersion)
