@@ -1,4 +1,18 @@
-﻿$(function () {
+﻿// Fetch raw markdown for comment editing
+async function fetchRawCommentMarkdown(commentId, ownerId, commentType) {
+    try {
+        const result = await unity.grantManager.comments.comment.get(commentId, {
+            ownerId: ownerId,
+            commentType: commentType
+        });
+        return result.comment;
+    } catch (error) {
+        console.error('Error fetching raw comment:', error);
+        return null;
+    }
+}
+
+$(function () {
     const assigneeListElement = document.getElementById("assigneeListData");
     const assigneeList = JSON.parse(assigneeListElement.dataset.assignees);
     const mentionDataList = assigneeList.map(item => ({
@@ -8,10 +22,18 @@
     }));
 
     initTribute(mentionDataList);
-   
-    $('body').on('click', '.edit-button', function (e) {
+
+    $('body').on('click', '.edit-button', async function (e) {
         e.preventDefault();
         let itemId = $(this).data('id');
+        let ownerId = $(this).data('ownerid');
+        let commentType = $(this).data('type');
+        
+        // Fetch raw markdown from API for editing
+        const rawMarkdown = await fetchRawCommentMarkdown(itemId, ownerId, commentType);
+        if (rawMarkdown !== null) {
+            $(".comment-input-multiple[data-id='" + itemId + "']").val(rawMarkdown);
+        }
         toggleEditMode(itemId);
     });
 
@@ -22,7 +44,7 @@
     $('body').on('click', '.edit-comment-cancel-button', function () {        
         let itemId = $(this).data('id');                        
         toggleEditMode(itemId);
-        $(".comment-input-mutliple[data-id='" + itemId + "']").val($(".comment-lbl[data-id='" + itemId + "']").text());
+        $(".comment-input-multiple[data-id='" + itemId + "']").val($(".comment-lbl[data-id='" + itemId + "']").text());
     });
 
     $('body').on('click', '.edit-comment-save-button', function () {
@@ -30,7 +52,7 @@
         let itemId = $(this).data('id');
         const tempOwnerId = $(this).data('ownerid');
         const tempType = $(this).data('type');
-        let editedValue = $(".comment-input-mutliple[data-id='" + itemId + "']").val();
+        let editedValue = $(".comment-input-multiple[data-id='" + itemId + "']").val();
         const mentions = mentionDataList.filter(person => editedValue.includes(`@${person.value}`));
 
         if (mentions.length > 0) {
@@ -86,8 +108,8 @@
 
 function toggleEditMode(itemId) {
     $(".edit-mode[data-id='" + itemId + "']").toggle();
-    let editedValue = $(".comment-input-mutliple[data-id='" + itemId + "']").val();
-    $(".comment-input-mutliple[data-id='" + itemId + "']").val(editedValue.trim());
+    let editedValue = $(".comment-input-multiple[data-id='" + itemId + "']").val();
+    $(".comment-input-multiple[data-id='" + itemId + "']").val(editedValue.trim());
     $(".read-mode[data-id='" + itemId + "']").toggle();
 }
 

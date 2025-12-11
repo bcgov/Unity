@@ -84,7 +84,7 @@
     border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
 }
 
-.comment-input-mutliple {
+.comment-input-multiple {
     border-left: 0.50px #D6D6D6 solid;
     border-top: 0.50px #D6D6D6 solid;
     border-right: 0.50px #D6D6D6 solid;
@@ -183,11 +183,11 @@
     border-left: 4px solid var(--bs-primary-border-subtle);
 }
 
-    .pinned-comment .unity-comment-block {
-        background-color: var(--bs-primary-bg-subtle);
-        color: var(--bs-primary-text-emphasis);
-        border-radius: 0;
-    }
+.pinned-comment.unity-comment-block {
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+    border-radius: 0;
+}
 
 .pinned-icon {
     color: var(--bs-info-text-emphasis);

@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.TeamsNotifications;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.EventBus;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
@@ -16,32 +16,31 @@ namespace Unity.GrantManager.Reporting
 {
     public class SubmissionsDynamicViewGeneratorHandler(
         IApplicationFormVersionRepository applicationFormVersionRepository,
-        ICurrentTenant currentTenant,
-        IUnitOfWorkManager unitOfWorkManager,
+        ICurrentTenant currentTenant,        
         INotificationsAppService notificationsAppService,
-        ILogger<SubmissionsDynamicViewGeneratorHandler> logger) : ILocalEventHandler<SubmissionsDynamicViewGenerationEto>, ITransientDependency
+        IUnitOfWorkManager unitOfWorkManager,
+        ILogger<SubmissionsDynamicViewGeneratorHandler> logger) : AsyncBackgroundJob<SubmissionsDynamicViewGenerationArgs>, ITransientDependency
     {
         /// <summary>
         /// Generate a View in the database using the generate_submissions_view function based on the application form version
         /// </summary>
         /// <param name="viewGenerationEvent"></param>
         /// <returns></returns>
-        public async Task HandleEventAsync(SubmissionsDynamicViewGenerationEto viewGenerationEvent)
+        public override async Task ExecuteAsync(SubmissionsDynamicViewGenerationArgs viewGenerationEvent)
         {
             try
             {
                 using (currentTenant.Change(viewGenerationEvent.TenantId))
                 {
                     using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+                    
                     var applicationFormVersion = await applicationFormVersionRepository.GetAsync(viewGenerationEvent.ApplicationFormVersionId);
 
                     if (applicationFormVersion != null)
                     {
-                        var dbContext = await applicationFormVersionRepository.GetDbContextAsync();
-                        FormattableString sql = $@"CALL ""Reporting"".generate_submissions_view({viewGenerationEvent.ApplicationFormVersionId});";
-                        await dbContext.Database.ExecuteSqlAsync(sql);
+                        await GenerateSubmissionsViewAsync(viewGenerationEvent.ApplicationFormVersionId);
                     }
-
+                    
                     await uow.CompleteAsync();
                 }
             }
@@ -52,7 +51,15 @@ namespace Unity.GrantManager.Reporting
             }
         }
 
-        private async Task NotifyTeamsAsync(SubmissionsDynamicViewGenerationEto viewGenerationEvent, Exception exception)
+        private async Task GenerateSubmissionsViewAsync(Guid applicationFormVersionId)
+        {
+            var dbContext = await applicationFormVersionRepository.GetDbContextAsync();
+            
+            FormattableString sql = $@"CALL ""Reporting"".generate_submissions_view({applicationFormVersionId});";
+            await dbContext.Database.ExecuteSqlAsync(sql);
+        }
+
+        private async Task NotifyTeamsAsync(SubmissionsDynamicViewGenerationArgs viewGenerationEvent, Exception exception)
         {
             try
             {
