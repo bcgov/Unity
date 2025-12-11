@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Markdig;
+using Microsoft.Extensions.DependencyInjection;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Toolbars;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
@@ -57,7 +58,7 @@ public class UnityAspNetCoreMvcUIThemeUX2Module : AbpModule
                 {
                     bundle
                         .AddBaseBundles(StandardBundles.Styles.Global)
-                        .AddContributors(typeof(UnityThemeUX2GlobalStyleContributor));                        
+                        .AddContributors(typeof(UnityThemeUX2GlobalStyleContributor));
                 });
 
             options
@@ -69,5 +70,17 @@ public class UnityAspNetCoreMvcUIThemeUX2Module : AbpModule
                         .AddContributors(typeof(UnityThemeUX2GlobalScriptContributor));
                 });
         });
+
+        context.Services.AddSingleton(_ => new MarkdownPipelineBuilder()
+            .UseAutoLinks(new Markdig.Extensions.AutoLinks.AutoLinkOptions { 
+                OpenInNewWindow = true, 
+                UseHttpsForWWWLinks = true, 
+                AllowDomainWithoutPeriod = false
+            })
+            .UseReferralLinks("nofollow", "noopener", "noreferrer")
+            .UseSoftlineBreakAsHardlineBreak()
+            .DisableHeadings()
+            .DisableHtml()
+            .Build());
     }
 }

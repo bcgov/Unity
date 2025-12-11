@@ -26,6 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="HtmlSanitizer" Version="9.0.889" />
+    <PackageReference Include="Markdig.Signed" Version="0.44.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.5" />
     <PackageReference Include="System.Text.Json" Version="9.0.5" />
