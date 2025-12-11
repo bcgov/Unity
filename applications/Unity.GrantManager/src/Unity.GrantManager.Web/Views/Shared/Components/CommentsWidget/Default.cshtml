@@ -18,8 +18,8 @@
     {
         @if (comment != null)
         {
-            <div class="mb-2 comment-read-mode @(comment.IsPinned ? "pinned-comment" : "")">
-                <div class="unity-comment-block read-mode" data-id="@comment.Id">
+            <div class="mb-2 comment-read-mode">
+                <div class="unity-comment-block read-mode @(comment.IsPinned ? "pinned-comment" : "")" data-id="@comment.Id">
 
                     <div class="d-flex justify-content-between">
                         @if (comment.IsPinned && comment.PinDateTime != null)

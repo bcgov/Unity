@@ -1,6 +1,5 @@
 ﻿using Ganss.Xss;
 using Markdig;
-using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
@@ -19,7 +18,7 @@ public partial class MarkdownRenderer : IMarkdownRenderer, ITransientDependency
         _htmlSanitizer.AllowedAttributes.Add("data-bs-target");
     }
 
-    public Task<string> RenderAsync(string markdownText, bool preventXSS = true)
+    public string Render(string markdownText, bool preventXSS = true)
     {
         var renderedMarkdownHtml = Markdown.ToHtml(markdownText, MarkdownPipeline);
 
@@ -28,6 +27,6 @@ public partial class MarkdownRenderer : IMarkdownRenderer, ITransientDependency
             renderedMarkdownHtml = _htmlSanitizer.Sanitize(renderedMarkdownHtml);
         }
 
-        return Task.FromResult(renderedMarkdownHtml);
+        return renderedMarkdownHtml;
     }
 }

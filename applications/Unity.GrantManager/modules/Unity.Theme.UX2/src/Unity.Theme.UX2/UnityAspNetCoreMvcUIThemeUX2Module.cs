@@ -77,7 +77,7 @@ public class UnityAspNetCoreMvcUIThemeUX2Module : AbpModule
                 UseHttpsForWWWLinks = true, 
                 AllowDomainWithoutPeriod = false
             })
-            .UseReferralLinks("nofollow", "noopener")
+            .UseReferralLinks("nofollow", "noopener", "noreferrer")
             .UseSoftlineBreakAsHardlineBreak()
             .DisableHeadings()
             .DisableHtml()

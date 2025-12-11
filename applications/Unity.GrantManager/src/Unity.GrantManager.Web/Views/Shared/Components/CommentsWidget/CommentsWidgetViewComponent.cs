@@ -1,20 +1,20 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
-using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using System.Threading.Tasks;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
 using Unity.GrantManager.Comments;
-using Unity.Modules.Shared.Utils;
-using Volo.Abp.Identity.Integration;
-using Volo.Abp.Identity;
-using Newtonsoft.Json;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Permissions;
-using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
+using Unity.Modules.Shared.Utils;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.Identity;
+using Volo.Abp.Identity.Integration;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 {
@@ -32,8 +32,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
         private readonly IMarkdownRenderer _markdownRenderer;
         public string AllAssignees { get; set; } = string.Empty;
 
-        public CommentsWidgetViewComponent(CommentAppService commentAppService, 
-            BrowserUtils browserUtils, 
+        public CommentsWidgetViewComponent(CommentAppService commentAppService,
+            BrowserUtils browserUtils,
             IIdentityUserIntegrationService identityUserIntegrationService,
             IAuthorizationService authorizationService,
             IMarkdownRenderer markdownRenderer)
@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
             AllAssignees = JsonConvert.SerializeObject(users);
 
             var commentDtos = await _commentAppService.GetListAsync(new QueryCommentsByTypeDto() { OwnerId = ownerId, CommentType = commentType });
-            var mappedComments = await MapToCommentDisplay(commentDtos);
+            var mappedComments = MapToCommentDisplay(commentDtos);
 
             CommentsWidgetViewModel model = new()
             {
@@ -72,7 +72,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
             return View(model);
         }
 
-        protected virtual async Task<IEnumerable<CommentDto>> MapToCommentDisplay(IReadOnlyList<CommentDto> commentDtos)
+        protected virtual IReadOnlyList<CommentDto> MapToCommentDisplay(IReadOnlyList<CommentDto> commentDtos)
         {
             var offset = _browserUtils.GetBrowserOffset();
             var result = new List<CommentDto>(commentDtos.Count);
@@ -82,7 +82,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
                 result.Add(new CommentDto()
                 {
                     Badge = item.Badge,
-                    Comment = await _markdownRenderer.RenderAsync(item.Comment),
+                    Comment = _markdownRenderer.Render(item.Comment),
                     Commenter = item.Commenter,
                     CreationTime = item.CreationTime.AddMinutes(-offset),
                     CommenterId = item.CommenterId,

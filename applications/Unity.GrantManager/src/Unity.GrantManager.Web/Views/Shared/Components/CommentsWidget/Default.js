@@ -44,6 +44,7 @@ $(function () {
     $('body').on('click', '.edit-comment-cancel-button', function () {        
         let itemId = $(this).data('id');                        
         toggleEditMode(itemId);
+        $(".comment-input-multiple[data-id='" + itemId + "']").val($(".comment-lbl[data-id='" + itemId + "']").text());
     });
 
     $('body').on('click', '.edit-comment-save-button', function () {
