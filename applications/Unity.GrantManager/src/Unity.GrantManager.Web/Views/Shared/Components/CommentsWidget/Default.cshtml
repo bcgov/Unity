@@ -18,8 +18,8 @@
     {
         @if (comment != null)
         {
-            <div class="mb-2 comment-read-mode @(comment.IsPinned ? "pinned-comment" : "")">
-                <div class="unity-comment-block read-mode" data-id="@comment.Id">
+            <div class="mb-2 comment-read-mode">
+                <div class="unity-comment-block read-mode @(comment.IsPinned ? "pinned-comment" : "")" data-id="@comment.Id">
 
                     <div class="d-flex justify-content-between">
                         @if (comment.IsPinned && comment.PinDateTime != null)
@@ -47,7 +47,10 @@
                                         @if (Model.CurrentUserId == comment.CommenterId)
                                         {
                                             <li>
-                                                <a class="dropdown-item edit-button" href="#" data-id="@comment.Id">
+                                                <a class="dropdown-item edit-button" href="#" 
+                                                   data-id="@comment.Id"
+                                                   data-ownerid="@Model.OwnerId"
+                                                   data-type="@Model.CommentType">
                                                     <i class="fl fl-edit me-2"></i> Edit
                                                 </a>
                                             </li>
@@ -94,7 +97,8 @@
                     }
                     <div class="comment-lbl" data-id="@comment.Id">
                         <div>
-                            @comment.Comment
+                            @* XSS Protection is provided by the MarkdownRenderer *@
+                            @Html.Raw(comment.Comment)
                         </div>
                     </div>
                     @if (@comment.LastModificationTime != null)
@@ -109,7 +113,7 @@
                 </div>
 
                 <div class="single-comment edit-mode" data-id="@comment.Id" style="display: none;">
-                    <textarea rows="6" maxlength="@MaxCharCount" class="form-control comment-input-mutliple comment-with-mention" placeholder="Update the comment" data-id="@comment.Id" id="@comment.Id">@comment.Comment</textarea>
+                    <textarea rows="6" maxlength="@MaxCharCount" class="form-control comment-input-multiple comment-with-mention" placeholder="Update the comment" data-id="@comment.Id" id="@comment.Id">@comment.Comment</textarea>
                     <div class="comment-button-container">
                         <i class="fl fl-cross edit-comment-cancel-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
                         <i class="fl fl-tick edit-comment-save-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
