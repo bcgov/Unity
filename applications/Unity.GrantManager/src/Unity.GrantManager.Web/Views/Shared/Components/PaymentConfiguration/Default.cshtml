@@ -65,20 +65,25 @@
                 <h6 class="fw-bold">Settings</h6>
             </div>
             <abp-row class="m-0 p-0">
-                <abp-column size="_6" class="px-1">
+                <abp-column size="_4" class="px-1">
                     <div class="form-switch">
                         <abp-input asp-for="@Model.Payable" abp-id-name="Payable"
-                            check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"                            
+                            check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
                             label="Form is Payable" class="fw-bold" />
                     </div>
                 </abp-column>
-                <abp-column size="_6" class="px-1">
+                <abp-column size="_4" class="px-1">
                     <div class="form-switch">
                         <abp-input asp-for="@Model.PreventAutomaticPaymentToCAS"
                             abp-id-name="PreventAutomaticPaymentToCAS"
                             check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
                             label="Prevent Automatic Payment to CAS" class="fw-bold" />
                     </div>
+                </abp-column>
+                <abp-column id="default-payment-group-row" size="_4" class="px-1 @(Model.Payable ? string.Empty : "d-none")">
+                    <abp-select asp-for="@Model.DefaultPaymentGroup" asp-items="@Model.PaymentGroupList">
+                        <option value="">Please choose...</option>
+                    </abp-select>
                 </abp-column>
             </abp-row>
             <hr class="mt-4 mb-4" />

@@ -17,6 +17,8 @@
         hasEditPermission: $('#HasEditFormPaymentConfiguration'),
         paymentApprovalThreshold: $('#PaymentApprovalThreshold'),
         paymentThresholdForm: $('#PaymentThresholdForm'),
+        defaultPaymentGroup: $('#DefaultPaymentGroup'),
+        defaultPaymentGroupRow: $('#default-payment-group-row'),
         formHierarchySection: $('#form-hierarchy-section'),
         formHierarchy: $('#FormHierarchy'),
         parentFormColumn: $('#parent-form-column'),
@@ -31,6 +33,7 @@
         initializeParentFormLookup();
         toggleFormHierarchySection();
         toggleParentFormSection();
+        toggleDefaultPaymentGroupRow(UIElements.payable.is(':checked'));
 
         toastr.options.positionClass = 'toast-top-center';
         UIElements.btnSave.prop('disabled', true);
@@ -41,6 +44,7 @@
         UIElements.preventPayment.on('change', enableSaveButton);
         UIElements.payable.on('change', function () {
             toggleFormHierarchySection();
+            toggleDefaultPaymentGroupRow(UIElements.payable.is(':checked'));
             enableSaveButton();
         });
         UIElements.paymentApprovalThreshold.on('change', enableSaveButton);
@@ -48,6 +52,7 @@
             toggleParentFormSection();
             enableSaveButton();
         });
+        UIElements.defaultPaymentGroup.on('change', enableSaveButton);
 
         UIElements.btnSave.on('click', saveButtonAction);
         UIElements.btnBack.on('click', backButtonAction);
@@ -131,6 +136,18 @@
         toggleParentFormSection();
     }
 
+    function toggleDefaultPaymentGroupRow(isPayable) {
+        if (isPayable) {
+            UIElements.defaultPaymentGroupRow.removeClass('d-none');
+            if (!UIElements.defaultPaymentGroup.val()) {
+                UIElements.defaultPaymentGroup.val('1');
+            }
+        } else {
+            UIElements.defaultPaymentGroupRow.addClass('d-none');
+            UIElements.defaultPaymentGroup.val('');
+        }
+    }
+
     function toggleParentFormSection() {
         const hierarchyValue = UIElements.formHierarchy.val();
         if (hierarchyValue === String(FormHierarchyType.Child)) {
@@ -207,6 +224,9 @@
         const hierarchyValue = UIElements.formHierarchy.val();
         const formHierarchy = hierarchyValue ? parseInt(hierarchyValue, 10) : null;
         const parentFormVersionId = UIElements.parentFormSelect.val();
+        const defaultPaymentGroupValue = UIElements.payable.is(':checked')
+            ? (UIElements.defaultPaymentGroup.val() || '1')
+            : null;
 
         unity.grantManager.applicationForms.applicationForm.savePaymentConfiguration(
             {
@@ -217,7 +237,8 @@
                 paymentApprovalThreshold: UIElements.paymentApprovalThreshold.val() === '' ? null : UIElements.paymentApprovalThreshold.val(),
                 formHierarchy: Number.isNaN(formHierarchy) ? null : formHierarchy,
                 parentFormId: UIElements.parentFormId.val() || null,
-                parentFormVersionId: parentFormVersionId || null
+                parentFormVersionId: parentFormVersionId || null,
+                defaultPaymentGroup: defaultPaymentGroupValue
             })
             .then(() => {
                 UIElements.btnSave.prop('disabled', true);
