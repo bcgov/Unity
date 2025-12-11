@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.Modules.Shared.Http;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
@@ -17,17 +18,21 @@ namespace Unity.GrantManager.AI
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
+        private readonly IResilientHttpRequest _resilientHttpRequest;
 
         private string? ApiKey => _configuration["AI:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
+        private string? AgenticApiUrl => _configuration["AI:AgenticAPI:Url"];
         private readonly string NoKeyError = "OpenAI API key is not configured";
+        
 
-        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService)
+        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService, IResilientHttpRequest resilientHttpRequest)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
+            _resilientHttpRequest = resilientHttpRequest;
         }
 
         public Task<bool> IsAvailableAsync()
@@ -100,6 +105,70 @@ namespace Unity.GrantManager.AI
             }
         }
 
+        private async Task<string> GenerateAgenticSummaryAsync(
+            string userPrompt,
+            string systemPrompt, 
+            int maxTokens = 150)
+        {
+
+            int numSelfConsistency = 3;
+            int numCot = 1;
+            string model = "fast";
+            double temperature = 0.3;
+
+            try
+            {
+                var requestBody = new
+                {
+                    prompt = userPrompt,
+                    system_prompt = systemPrompt ?? "You are a professional grant analyst for the BC Government.",
+                    num_self_consistency = numSelfConsistency,
+                    num_cot = numCot,
+                    model,
+                    temperature,
+                    max_tokens = maxTokens
+                };
+
+                var response = await _resilientHttpRequest.HttpAsync(
+                    HttpMethod.Post,
+                    AgenticApiUrl!,
+                    requestBody
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Agentic AI API request failed: {StatusCode} - {Content}", 
+                        response.StatusCode, errorContent);
+                    return "AI analysis failed - service temporarily unavailable.";
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                 _logger.LogDebug("Response: {Response}", responseContent);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
+                    return "AI analysis failed - service temporarily unavailable.";
+                }
+
+                using var jsonDoc = JsonDocument.Parse(responseContent);
+                var choices = jsonDoc.RootElement.GetProperty("choices");
+                if (choices.GetArrayLength() > 0)
+                {
+                    var message = choices[0].GetProperty("message");
+                    return message.GetProperty("content").GetString() ?? "No summary generated.";
+                }
+
+                return "No summary generated.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling Agentic AI API");
+                return "AI analysis failed - please try again later.";
+            }
+        }
+
         public async Task<string> GenerateAttachmentSummaryAsync(string fileName, byte[] fileContent, string contentType)
         {
             try
@@ -124,7 +193,7 @@ namespace Unity.GrantManager.AI
                     prompt = "Please analyze this document and provide a concise summary of its content, purpose, and key information, for use by your fellow grant analysts. It should be 1-2 sentences long and about 46 tokens.";
                 }
 
-                return await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
+                return await GenerateAgenticSummaryAsync(contentToAnalyze, prompt, 150);
             }
             catch (Exception ex)
             {
@@ -183,7 +252,7 @@ Analyze the provided application against the rubric and identify any issues, mis
 Be thorough but fair in your assessment. Focus on compliance, completeness, and alignment with program requirements.
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
+                return await GenerateAgenticSummaryAsync(analysisContent, systemPrompt, 1000);
             }
             catch (Exception ex)
             {
@@ -237,7 +306,7 @@ Analyze the provided application and generate appropriate answers for the scores
 Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+                return await GenerateAgenticSummaryAsync(analysisContent, systemPrompt, 2000);
             }
             catch (Exception ex)
             {
@@ -311,7 +380,7 @@ Always provide citations that reference specific parts of the application conten
 Be honest about your confidence level - if information is missing or unclear, reflect this in a lower confidence score.
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+                return await GenerateAgenticSummaryAsync(analysisContent, systemPrompt, 2000);
             }
             catch (Exception ex)
             {
