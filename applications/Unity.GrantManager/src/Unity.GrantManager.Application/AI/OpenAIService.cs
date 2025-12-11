@@ -24,7 +24,9 @@ namespace Unity.GrantManager.AI
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
         private string? AgenticApiUrl => _configuration["AI:AgenticAPI:Url"];
         private readonly string NoKeyError = "OpenAI API key is not configured";
-        
+        private readonly string NoSummaryMsg = "No summary generated.";
+
+
 
         public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService, IResilientHttpRequest resilientHttpRequest)
         {
@@ -93,10 +95,10 @@ namespace Unity.GrantManager.AI
                 if (choices.GetArrayLength() > 0)
                 {
                     var message = choices[0].GetProperty("message");
-                    return message.GetProperty("content").GetString() ?? "No summary generated.";
+                    return message.GetProperty("content").GetString() ?? NoSummaryMsg;
                 }
 
-                return "No summary generated.";
+                return NoSummaryMsg;
             }
             catch (Exception ex)
             {
@@ -157,10 +159,10 @@ namespace Unity.GrantManager.AI
                 if (choices.GetArrayLength() > 0)
                 {
                     var message = choices[0].GetProperty("message");
-                    return message.GetProperty("content").GetString() ?? "No summary generated.";
+                    return message.GetProperty("content").GetString() ?? NoSummaryMsg;
                 }
 
-                return "No summary generated.";
+                return NoSummaryMsg;
             }
             catch (Exception ex)
             {
