@@ -21,6 +21,9 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
+# Suppress verbose urllib3 connection logs
+logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
+
 
 def _sanitize_field_array(field_array):
     """
