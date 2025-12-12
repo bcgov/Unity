@@ -145,8 +145,8 @@ The application uses these values in `config.py` tenant mappings:
 
 ```python
 "default": {
-    "db_id": int(os.getenv("DEFAULT_EMBED_DB_ID", "3")),
-    "collection_id": 47,
+    "db_id": int(os.getenv("DEFAULT_EMBED_DB_ID", "5")),
+    "collection_id": 19,
     "schema_types": ["public"]
 }
 ```
