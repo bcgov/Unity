@@ -56,7 +56,7 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 RUN echo '#!/bin/sh' > /entrypoint.sh && \
 echo 'echo "Starting Flask application (serving static + API) on port 8080..."' >> /entrypoint.sh && \
 echo 'cd /app/backend/src' >> /entrypoint.sh && \
-echo 'exec gunicorn -w 4 -b 0.0.0.0:8080 --access-logfile - --error-logfile - app:app' >> /entrypoint.sh
+echo 'exec gunicorn --preload -w 2 --threads 2 -b 0.0.0.0:8080 --timeout 120 --access-logfile - --error-logfile - app:app' >> /entrypoint.sh
 
 # Make entrypoint executable (777 for OpenShift compatibility)
 RUN chmod 777 /entrypoint.sh && \

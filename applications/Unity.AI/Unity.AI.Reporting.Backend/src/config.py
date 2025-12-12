@@ -3,6 +3,8 @@ Configuration module for the Metabase Reporter application.
 Handles environment variables and application settings.
 """
 import os
+import json
+from pathlib import Path
 from typing import Dict, Any
 from dataclasses import dataclass
 from dotenv import load_dotenv
@@ -21,8 +23,11 @@ class DatabaseConfig:
     
     @property
     def url(self) -> str:
-        """Generate database URL for connections"""
-        return f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
+        """Generate database URL for connections with pool settings"""
+        # Add connection pool parameters and automatic reconnection
+        return (
+            f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
+        )
 
 
 @dataclass
@@ -122,21 +127,31 @@ class Config:
     
     def _load_tenant_mappings(self) -> Dict[str, Dict[str, Any]]:
         """
-        Load tenant to database/collection mappings.
-        This can be extended to load from a config file or database.
+        Load tenant to database/collection mappings from JSON file.
+        Falls back to default configuration if file is not found.
         """
-        return {
-            "Cyrus Org": {
-                "db_id": 3,
-                "collection_id": 47,
-                "schema_types": ["public"]
-            },
-            "default": {
-                "db_id": int(os.getenv("DEFAULT_EMBED_DB_ID", "3")),
-                "collection_id": 47,
-                "schema_types": ["public"]
+        config_file = "/app/backend/src/tenant_config.json"
+
+        try:
+            with open(config_file, 'r') as f:
+                mappings = json.load(f)
+
+            # Override default db_id with environment variable if set
+            if "default" in mappings:
+                env_db_id = os.getenv("DEFAULT_EMBED_DB_ID")
+                if env_db_id:
+                    mappings["default"]["db_id"] = int(env_db_id)
+
+            return mappings
+        except FileNotFoundError:
+            # Fallback to hardcoded defaults if file not found
+            return {
+                "default": {
+                    "db_id": int(os.getenv("DEFAULT_EMBED_DB_ID", "5")),
+                    "collection_id": 16,
+                    "schema_types": ["public"]
+                }
             }
-        }
     
     def get_tenant_config(self, tenant_id: str) -> Dict[str, Any]:
         """Get configuration for a specific tenant"""

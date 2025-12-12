@@ -3,6 +3,7 @@ Embeddings module for managing vector storage and retrieval.
 Handles schema embedding and similarity search for NL to SQL.
 """
 import logging
+import time
 from typing import List, Optional
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
@@ -104,7 +105,7 @@ class SchemaExtractor:
 
 class EmbeddingManager:
     """Manages vector embeddings for schema similarity search"""
-    
+
     def __init__(self):
         # Initialize embeddings model based on configuration
         if config.ai.use_azure:
@@ -119,7 +120,7 @@ class EmbeddingManager:
                 model=config.ai.embedding_model,
                 api_key=config.ai.completion_key
             )
-        
+
         self.vector_store = PGVector(
             embeddings=self.embedding_model,
             collection_name=config.app.collection_name,
@@ -127,6 +128,33 @@ class EmbeddingManager:
             use_jsonb=True
         )
         self.schema_extractor = SchemaExtractor(metabase_client)
+
+    def _reconnect_vector_store(self):
+        """Recreate vector store connection"""
+        logger.warning("Reconnecting to vector store due to connection error")
+        self.vector_store = PGVector(
+            embeddings=self.embedding_model,
+            collection_name=config.app.collection_name,
+            connection=config.database.url,
+            use_jsonb=True
+        )
+
+    def _retry_on_connection_error(self, func, *args, **kwargs):
+        """Retry a function if it fails with a connection error"""
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                error_msg = str(e).lower()
+                # Check if it's a connection error
+                if any(keyword in error_msg for keyword in ['connection', 'terminating', 'closed']):
+                    logger.warning(f"Connection error on attempt {attempt + 1}/{max_retries}: {e}")
+                    if attempt < max_retries - 1:
+                        self._reconnect_vector_store()
+                        time.sleep(0.5 * (attempt + 1))  # Exponential backoff
+                        continue
+                raise
     
     def embed_schemas(self, db_id: int, schema_types: Optional[List[str]] = None):
         """
@@ -167,40 +195,42 @@ class EmbeddingManager:
                 self.vector_store.add_documents(documents)
                 logger.info(f"Added {len(documents)} {schema_type} schema embeddings")
     
-    def search_similar_schemas(self, query: str, db_id: int, 
+    def search_similar_schemas(self, query: str, db_id: int,
                              k_public: int = 4, k_custom: int = 4) -> List[Document]:
         """
-        Search for similar schemas based on query.
-        
+        Search for similar schemas based on query with automatic retry on connection errors.
+
         Args:
             query: Natural language query
             db_id: Database ID to filter by
             k_public: Number of public schemas to retrieve
             k_custom: Number of custom schemas to retrieve
-            
+
         Returns:
             List of similar schema documents
         """
         retrieved = []
-        
-        # Get public schemas
+
+        # Get public schemas with retry
         if k_public > 0:
-            public_results = self.vector_store.similarity_search(
+            public_results = self._retry_on_connection_error(
+                self.vector_store.similarity_search,
                 query,
                 k=k_public,
                 filter={"db_id": db_id, "schema_type": "public"}
             )
             retrieved.extend(public_results)
-        
-        # Get custom schemas if enabled
+
+        # Get custom schemas if enabled with retry
         if k_custom > 0 and config.app.embed_worksheets:
-            custom_results = self.vector_store.similarity_search(
+            custom_results = self._retry_on_connection_error(
+                self.vector_store.similarity_search,
                 query,
                 k=k_custom,
                 filter={"db_id": db_id, "schema_type": "custom"}
             )
             retrieved.extend(custom_results)
-        
+
         return retrieved
     
     def get_formatted_schemas(self, query: str, db_id: int) -> str:
