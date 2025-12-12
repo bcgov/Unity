@@ -130,7 +130,7 @@ class Config:
         Load tenant to database/collection mappings from JSON file.
         Falls back to default configuration if file is not found.
         """
-        config_file = Path(__file__).parent / "tenant_config.json"
+        config_file = "/app/backend/src/tenant_config.json"
 
         try:
             with open(config_file, 'r') as f:
