@@ -9,4 +9,7 @@ public class QuestionNumberViewModel : RequiredFieldViewModel
     public double? Answer {  get; set; }    
     public string? Min {  get; set; }
     public string? Max { get; set; }
+    public bool IsHumanConfirmed { get; set; } = true;
+    public string? AICitation { get; set; }
+    public int? AIConfidence { get; set; }
 }

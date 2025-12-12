@@ -590,7 +590,7 @@
         return {
             title: 'Applicant Electoral District',
             name: 'applicantElectoralDistrict',
-            data: 'applicant.electoralDistrict',
+            data: 'applicantElectoralDistrict',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';

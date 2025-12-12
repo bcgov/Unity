@@ -741,7 +741,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             else
             {
                 // Update supplier number
-                await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber);
+                await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber, applicationId);
             }
         }
     }
@@ -798,7 +798,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         applicant.FiscalDay = input.FiscalDay;
         applicant.FiscalMonth = input.FiscalMonth ?? "";
         applicant.NonRegOrgName = input.NonRegOrgName ?? "";
-        applicant.ElectoralDistrict = input.ElectoralDistrict ?? "";
 
         _ = await _applicantRepository.UpdateAsync(applicant);
 

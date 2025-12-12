@@ -47,16 +47,16 @@ namespace Unity.Payments.Integrations.Cas
             return url ?? throw new UserFriendlyException("Payment API base URL is not configured.");
         }
 
-        public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId)
+        public virtual async Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId, Guid? applicationId = null)
         {
-            Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}", supplierNumber, applicantId);
+            Logger.LogInformation("SupplierService->UpdateApplicantSupplierInfo: {SupplierNumber}, {ApplicantId}, {ApplicationId}", supplierNumber, applicantId, applicationId);
 
             // Integrate with payments module to update / insert supplier
             if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
                 && !string.IsNullOrEmpty(supplierNumber))
             {
                 dynamic casSupplierResponse = await GetCasSupplierInformationAsync(supplierNumber);
-                await UpdateSupplierInfo(casSupplierResponse, applicantId);
+                await UpdateSupplierInfo(casSupplierResponse, applicantId, applicationId);
             }
         }
 
@@ -92,7 +92,7 @@ namespace Unity.Payments.Integrations.Cas
             return casSupplierResponse;
         }
 
-        public async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId)
+        public async Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId, Guid? applicationId = null)
         {
             try
             {
@@ -104,6 +104,7 @@ namespace Unity.Payments.Integrations.Cas
                 UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(rootElement);
                 supplierEto.CorrelationId = applicantId;
                 supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+                supplierEto.ApplicationId = applicationId;
                 await localEventBus.PublishAsync(supplierEto);
             }
             catch (Exception ex)

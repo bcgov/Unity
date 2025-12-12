@@ -65,7 +65,7 @@ $(function () {
             className: 'data-table-header text-break',
             index: 1,
             orderable: false,
-            width: '50%',
+            width: '40%',
         };
     }
 
@@ -74,7 +74,7 @@ $(function () {
             title: 'Label',
             data: 'displayName',
             className: 'data-table-header text-break',
-            width: '50%',
+            width: '35%',
             render: function (data) {
                 let $cellWrapper = $('<div>').addClass(
                     'd-flex align-items-center'
@@ -106,23 +106,22 @@ $(function () {
             title: '',
             name: 'chefsFileDownload',
             data: 'chefsFileId',
+            width: '150px',
+            className: 'text-nowrap',
             render: function (data, type, full, meta) {
                 let html =
-                    '<a href="/api/app/attachment/chefs/' +
-                    encodeURIComponent(full.chefsSumbissionId) +
-                    '/download/' +
-                    encodeURIComponent(data) +
-                    '/' +
-                    encodeURIComponent(full.fileName) +
-                    '" target = "_blank" download = "' +
-                    full.fileName +
-                    '" >';
-                html +=
-                    '<button class="btn" type="button"><i class="fl fl-download"></i><span>Download</span></button></a>';
+                    '<button class="btn px-2" name="chefs-download-btn" type="button"'
+                    + ' chefs-submission-id=' + encodeURIComponent(full.chefsSumbissionId)
+                    + ' chefs-data=' + encodeURIComponent(data)
+                    + ' chefs-file-name=' + encodeURIComponent(full.fileName)
+                    + ' onclick="downloadChefsFile(event)">' +
+                    '<i class="fl fl-download"></i>' +
+                    '<span>Download</span>' +
+                    '</button>';
                 return html;
             },
             orderable: false,
-            index: 2,
+            index: 2
         };
     }
 
@@ -163,8 +162,8 @@ $(function () {
                 if (data.aiSummary) {
                     let summaryRow = $(
                         '<tr class="ai-summary-row" data-parent-row="' +
-                            dataIndex +
-                            '" style="background-color: #f8f9fa; display: none;">'
+                        dataIndex +
+                        '" style="background-color: #f8f9fa; display: none;">'
                     )
                         .append($('<td>'))
                         .append(
@@ -390,17 +389,7 @@ $(function () {
                 },
                 error: function (error) {
                     if (error.status === 403) {
-                        const message =
-                            'Please check that the CHEFS checkbox is enabled for: ' +
-                            "'Allow this API key to access submitted files' in the related CHEFS form";
-                        Swal.fire({
-                            title: 'CHEFS is not allowing Unity access to the File Download',
-                            text: message,
-                            confirmButtonText: 'Ok',
-                            customClass: {
-                                confirmButton: 'btn btn-primary',
-                            },
-                        });
+                        showChefsAPIAccessError();                        
                     } else {
                         abp.notify.error(
                             '',
@@ -414,3 +403,56 @@ $(function () {
         }
     });
 });
+
+function downloadChefsFile(event) {
+    const button = event.currentTarget;
+    const chefsFileId = button.getAttribute('chefs-data');
+    const chefsSubmissionId = button.getAttribute('chefs-submission-id');
+    const chefsFileName = button.getAttribute('chefs-file-name');
+    console.log('Downloading CHEFS file:', { chefsFileId, chefsSubmissionId, chefsFileName });
+
+    //Calls an endpoint
+    $.ajax({
+        url: '/api/app/attachment/chefs/' + chefsSubmissionId + '/download/' + chefsFileId + '/' + chefsFileName,
+        type: 'GET',
+        success: function (data) {
+            // Download file by navigating to the endpoint
+            const downloadUrl = '/api/app/attachment/chefs/' + 
+                encodeURIComponent(chefsSubmissionId) + '/download/' + 
+                encodeURIComponent(chefsFileId) + '/' + 
+                encodeURIComponent(chefsFileName);
+            
+            // Create a temporary link and trigger download
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = chefsFileName;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            abp.notify.success('', 'The file has been downloaded successfully.');
+        },
+        error: function (error) {
+            console.log('Error downloading CHEFS file:', error);
+            if (error.responseText && error.responseText.includes("You do not have access")) {
+                showChefsAPIAccessError();
+            } else {
+                abp.notify.error('', error.responseText || 'An error occurred while downloading the file.');
+            }
+        },
+    });    
+}
+
+function showChefsAPIAccessError() {
+    const message = 'Please check that the CHEFS checkbox is enabled for: ' +
+        "'Allow this API key to access submitted files' in the related CHEFS form";
+
+    Swal.fire({
+        title: 'CHEFS is not allowing Unity access to the File Download',
+        text: message,
+        confirmButtonText: 'Ok',
+        customClass: {
+            confirmButton: 'btn btn-primary',
+        },
+    });
+}

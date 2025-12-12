@@ -28,8 +28,19 @@ $(function () {
             duplicate: false,
             max: 50
         });
-        let selectedIds = $('#SelectedApplicationIds').val(); 
-        let applicationIds = JSON.parse(selectedIds);
+
+        let cacheKey = $('#CacheKey').val();
+        let applicationIds = [];
+
+        if (!cacheKey) {
+            console.error("Cache key is missing");
+            abp.notify.error('Failed to load application tags. Please try again.');
+            return;
+        }
+
+        // Retrieve application IDs from hidden field (populated by modal code-behind)
+        let selectedIds = $('#SelectedApplicationIds').val();
+        applicationIds = JSON.parse(selectedIds);
 
         if (!applicationIds || applicationIds.length === 0) return;
 
@@ -39,10 +50,11 @@ $(function () {
             let allTags = [];
             let groupedTags = {};
 
-           
+
             allTags = await unity.grantManager.globalTag.tags.getList();
 
-            let tags = await unity.grantManager.grantApplications.applicationTags.getListWithApplicationIds(applicationIds);
+            // Use cache key to avoid URL length limits with many application IDs
+            let tags = await unity.grantManager.grantApplications.applicationTags.getListWithCacheKey(cacheKey);
             
             
             tags.forEach(function (item) {
@@ -201,9 +213,19 @@ $(function () {
 
     // Batch Approval Start
     $('#approveApplications').on("click", function () {
-        approveApplicationsModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds)
-        });
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                // Open modal with cache key instead of application IDs array
+                approveApplicationsModal.open({
+                    cacheKey: response.cacheKey
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare bulk approval. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
     approveApplicationsModal.onResult(function (_, response) {                
         let transformedFailures = response.responseText.failures.map(failure => {
@@ -242,10 +264,20 @@ $(function () {
     });
 
     $('#assignApplication').click(function () {
-        assignApplicationModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds),
-            actionType: 'Add'
-        });
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                // Open modal with cache key instead of application IDs array
+                assignApplicationModal.open({
+                    cacheKey: response.cacheKey,
+                    actionType: 'Add'
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare assignee selection. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
 
     $('#unAssignApplication').click(function () {
@@ -310,18 +342,36 @@ $(function () {
 
 
     $('#tagApplication').click(function () {
-        tagApplicationModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds),
-            actionType: 'Add'
-        });
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                tagApplicationModal.open({
+                    cacheKey: response.cacheKey,
+                    actionType: 'Add'
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare tag selection. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
 
     $('.spinner-grow').hide();
 
     $('#applicationPaymentRequest').click(function () {
-        applicationPaymentRequestModal.open({
-            applicationIds: JSON.stringify(selectedApplicationIds),
-        });
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                applicationPaymentRequestModal.open({
+                    cacheKey: response.cacheKey
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare payment request. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
 
     applicationPaymentRequestModal.onResult(function () {

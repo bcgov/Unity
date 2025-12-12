@@ -7,6 +7,7 @@ using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
 using Volo.Abp.Data;
+using Microsoft.EntityFrameworkCore;
 using Unity.Payments.Enums;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentRequests;
@@ -187,8 +188,10 @@ namespace Unity.Payments.Integrations.Cas
                         return; // success
                     }
                 }
-                catch (AbpDbConcurrencyException ex)
-                {
+                catch (Exception ex) when (
+                    ex is AbpDbConcurrencyException ||
+                    ex is DbUpdateConcurrencyException
+                ) {
                     Logger.LogWarning(
                         ex,
                         "Concurrency conflict when updating PaymentRequest {Id}, attempt {Attempt}",

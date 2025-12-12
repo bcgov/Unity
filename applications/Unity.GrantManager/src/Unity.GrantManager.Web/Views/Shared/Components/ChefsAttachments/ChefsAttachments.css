@@ -72,7 +72,26 @@
 }
 
 /* Fix double scrollbar issue when AI summaries are expanded */
-#ChefsAttachmentsTable_wrapper .dataTables_scrollBody {
+#ChefsAttachmentsTable_wrapper .dt-scroll-body {
     max-height: none !important;
     overflow-y: visible !important;
+}
+
+/* Ensure table wrapper uses full width */
+#ChefsAttachmentsTable_wrapper {
+    width: 100%;
+}
+
+/* Ensure scroll container properly sizes */
+#ChefsAttachmentsTable_wrapper .dt-scroll {
+    overflow-x: auto;
+}
+
+#ChefsAttachmentsTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+#ChefsAttachmentsTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
+    width: 100% !important;
+}
+
+#ChefsAttachmentsTable_wrapper .dt-scroll-body table {
+    width: 100% !important;
 }

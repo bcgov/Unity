@@ -1110,6 +1110,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Acquisition")
                         .HasColumnType("text");
 
+                    b.Property<string>("ApplicantElectoralDistrict")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("ApplicantId")
                         .HasColumnType("uuid");
 
@@ -1616,6 +1619,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("CreatorId")
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
+
+                    b.Property<int?>("DefaultPaymentGroup")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uuid")
@@ -3108,6 +3114,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("CreatorId")
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(35)
+                        .HasColumnType("character varying(35)");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()

@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GlobalTag;
+using Unity.Payments.PaymentRequests;
 using Unity.Payments.PaymentTags;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
@@ -38,6 +39,7 @@ namespace Unity.Payments.Web.Pages.PaymentTags
         public string? ActionType { get; set; } = string.Empty;
 
         private readonly IPaymentTagAppService _paymentTagsService;
+        private readonly PaymentIdsCacheService _cacheService;
 
         [BindProperty]
         [DisplayName("Common Tags")]
@@ -57,17 +59,48 @@ namespace Unity.Payments.Web.Pages.PaymentTags
         [BindProperty]
         public string? TagsJson { get; set; }
 
-        public PaymentTagsSelectionModalModel(IPaymentTagAppService paymentTagAppService)
+        [BindProperty]
+        [DisplayName("Cache Key")]
+        public string? CacheKey { get; set; }
+
+        public PaymentTagsSelectionModalModel(
+            IPaymentTagAppService paymentTagAppService,
+            PaymentIdsCacheService cacheService)
         {
             _paymentTagsService = paymentTagAppService ?? throw new ArgumentNullException(nameof(paymentTagAppService));
+            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
         }
 
-        public Task OnGetAsync(string paymentRequestIds, string actionType)
+        public async Task OnGetAsync(string cacheKey, string actionType)
         {
-            SelectedPaymentRequestIds = paymentRequestIds;
             ActionType = actionType;
+            CacheKey = cacheKey;
 
-            return Task.CompletedTask;
+            try
+            {
+                // Retrieve payment IDs from distributed cache
+                var paymentIds = await _cacheService.GetPaymentIdsAsync(cacheKey);
+
+                if (paymentIds == null || paymentIds.Count == 0)
+                {
+                    Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                    ViewData["Error"] = "The session has expired. Please select payments and try again.";
+                    return;
+                }
+
+                // Convert to JSON string for compatibility with existing code
+                SelectedPaymentRequestIds = JsonConvert.SerializeObject(paymentIds);
+
+                // Note: Cache is NOT removed here because JavaScript needs it for tag retrieval
+                // Cache will expire automatically after 10 minutes
+
+                Logger.LogInformation("Successfully loaded payment tags modal for {Count} payments", paymentIds.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error loading payment tags modal");
+                ViewData["Error"] = "An error occurred while loading the tags selection. Please try again.";
+            }
         }
 
         public async Task<IActionResult> OnPostAsync()

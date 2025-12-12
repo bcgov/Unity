@@ -12,8 +12,15 @@ $(function () {
         });
         let selectedIds = $('#SelectedPaymentRequestIds').val();
         let paymentRequestIds = JSON.parse(selectedIds);
+        let cacheKey = $('#CacheKey').val();
 
         if (!paymentRequestIds || paymentRequestIds.length === 0) return;
+        if (!cacheKey) {
+            console.error("Cache key is missing");
+            abp.notify.error('Failed to load payment tags. Please try again.');
+            return;
+        }
+
         try {
             let commonTags = [];
             let uncommonTags = [];
@@ -23,7 +30,8 @@ $(function () {
 
             allTags = await unity.grantManager.globalTag.tags.getList();
 
-            let tags = await unity.payments.paymentTags.paymentTag.getListWithPaymentRequestIds(paymentRequestIds);
+            // Use cache key to avoid URL length limits with many payment IDs
+            let tags = await unity.payments.paymentTags.paymentTag.getListWithCacheKey(cacheKey);
 
 
             tags.forEach(function (item) {
@@ -144,10 +152,19 @@ $(function () {
     }
 
     $('#tagPayment').click(function () {
-        tagPaymentModal.open({
-            paymentRequestIds: JSON.stringify(selectedPaymentIds),
-            actionType: 'Add'
-        });
+        // Store payment IDs in distributed cache to avoid URL length limits
+        unity.payments.paymentRequests.paymentBulkActions
+            .storePaymentIds({ paymentRequestIds: selectedPaymentIds })
+            .then(function(response) {
+                tagPaymentModal.open({
+                    cacheKey: response.cacheKey,
+                    actionType: 'Add'
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare tag selection. Please try again.');
+                console.error('Error storing payment IDs:', error);
+            });
     });
 
 

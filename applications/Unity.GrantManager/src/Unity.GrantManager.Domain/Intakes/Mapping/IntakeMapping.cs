@@ -21,11 +21,6 @@ namespace Unity.GrantManager.Intakes
         [Browsable(true)]
         public string? ApplicantName { get; set; }
 
-        [DisplayName("Applicant Electoral District")]
-        [MapFieldType("String")]
-        [Browsable(true)]
-        public string? ApplicantElectoralDistrict { get; set; }
-
         [DisplayName("Approximate Number Of Employees")]
         [MapFieldType("Number")]
         [Browsable(true)]
@@ -85,6 +80,11 @@ namespace Unity.GrantManager.Intakes
         [MapFieldType("String")]
         [Browsable(true)]
         public string? ElectoralDistrict { get; set; }
+
+        [DisplayName("Applicant Electoral District")]
+        [MapFieldType("String")]
+        [Browsable(true)]
+        public string? ApplicantElectoralDistrict { get; set; }
 
         [DisplayName("Forestry")]
         [MapFieldType("String")]

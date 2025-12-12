@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Unity.Payments.PaymentConfigurations;
 using Unity.GrantManager.GrantApplications;
-using System.Text.Json;
 using Unity.Payments.Domain.Suppliers;
 using System.Linq;
 using Unity.GrantManager.Payments;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationForms;
 using Volo.Abp;
+using Unity.Payments.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -26,7 +27,8 @@ namespace Unity.Payments.Web.Pages.Payments
         IPaymentSettingsAppService paymentSettingsAppService,
         IApplicationLinksService applicationLinksService,
         IApplicationFormRepository applicationFormRepository,
-        IApplicationFormAppService applicationFormAppService
+        IApplicationFormAppService applicationFormAppService,
+        ApplicationIdsCacheService cacheService
     ) : AbpPageModel
     {
 
@@ -54,8 +56,31 @@ namespace Unity.Payments.Web.Pages.Payments
             }
         }
 
-        public async Task OnGetAsync(string applicationIds)
+        public async Task OnGetAsync(string cacheKey)
         {
+            try
+            {
+                var applicationIds = await cacheService.GetApplicationIdsAsync(cacheKey);
+
+                if (applicationIds == null || applicationIds.Count == 0)
+                {
+                    Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                    ViewData["Error"] = "The session has expired. Please select applications and try again.";
+                    DisableSubmit = true;
+                    return;
+                }
+
+                SelectedApplicationIds = applicationIds;
+                Logger.LogInformation("Successfully loaded payment requests modal for {Count} applications", applicationIds.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error loading payment requests modal");
+                ViewData["Error"] = "An error occurred while loading the payment requests. Please try again.";
+                DisableSubmit = true;
+                return;
+            }
+
             var paymentConfiguration = await paymentConfigurationAppService.GetAsync();
             if (paymentConfiguration != null)
             {
@@ -67,7 +92,6 @@ namespace Unity.Payments.Web.Pages.Payments
                 HasPaymentConfiguration = false;
             }
 
-            SelectedApplicationIds = JsonSerializer.Deserialize<List<Guid>>(applicationIds) ?? [];
             var applications = await applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
 
             foreach (var application in applications)
@@ -139,6 +163,12 @@ namespace Unity.Payments.Web.Pages.Payments
             if (supplier == null || site == null || supplier.Number == null)
             {
                 missingFields = true;
+            }
+
+            // If the site paygroup is eft but there is no bank account
+            if(site != null && site.PaymentGroup == PaymentGroup.EFT && string.IsNullOrWhiteSpace(site.BankAccount)) 
+            {
+                errorList.Add("Error: Payment cannot be submitted because the default site’s pay group is set to EFT, but no bank account is configured. Please update the bank account before proceeding.");
             }
 
             if (remainingAmount <= 0)

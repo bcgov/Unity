@@ -18,5 +18,6 @@ namespace Unity.Payments.Suppliers
         public Guid CorrelationId { get; set; }
         public string CorrelationProvider { get; set; } = string.Empty;
         public List<SiteEto> SiteEtos { get; set; } = new List<SiteEto>();
+        public Guid? ApplicationId { get; set; }
     }
 }
