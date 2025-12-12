@@ -26,6 +26,7 @@ $(function () {
         initEmailsWidget();
         updateLinksCounters();
         renderSubmission();
+        loadAIAnalysis();
         applyTabHeightOffset();
     }
 
@@ -1157,4 +1158,360 @@ function clearCurrencyError(input) {
     let errorSpan = input.attr('id') + '-error';
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
+}
+
+function loadAIAnalysis() {
+    const urlParams = new URL(window.location.toLocaleString()).searchParams;
+    const applicationId = urlParams.get('ApplicationId');
+
+    if (!applicationId) {
+        renderDemoAIAnalysis();
+        return;
+    }
+
+    // Get the application data including AI analysis
+    unity.grantManager.grantApplications.grantApplication.get(applicationId)
+        .done(function(application) {
+            console.log('Application data received:', application);
+            console.log('AI Analysis field:', application.aiAnalysis);
+
+            // Use the camelCase version that should come from the API
+            const aiAnalysis = application.aiAnalysis;
+
+            if (application && aiAnalysis) {
+                try {
+                    console.log('Raw AI analysis:', aiAnalysis);
+
+                    // Clean the JSON response (remove markdown code blocks if present)
+                    let cleanedJson = aiAnalysis.trim();
+                    if (cleanedJson.startsWith('```json') || cleanedJson.startsWith('```')) {
+                        const startIndex = cleanedJson.indexOf('\n');
+                        if (startIndex >= 0) {
+                            cleanedJson = cleanedJson.substring(startIndex + 1);
+                        }
+                    }
+                    if (cleanedJson.endsWith('```')) {
+                        const lastIndex = cleanedJson.lastIndexOf('```');
+                        if (lastIndex > 0) {
+                            cleanedJson = cleanedJson.substring(0, lastIndex);
+                        }
+                    }
+                    cleanedJson = cleanedJson.trim();
+
+                    const analysisData = JSON.parse(cleanedJson);
+                    console.log('Parsed analysis data:', analysisData);
+                    renderRealAIAnalysis(analysisData);
+                } catch (e) {
+                    console.warn('Failed to parse AI analysis JSON, showing demo data:', e);
+                    renderDemoAIAnalysis();
+                }
+            } else {
+                console.log('No AI analysis found, showing demo');
+                renderDemoAIAnalysis();
+            }
+        })
+        .fail(function(error) {
+            console.warn('Failed to load application data, showing demo AI analysis', error);
+            renderDemoAIAnalysis();
+        });
+}
+
+// Simple hash function to create stable IDs from content
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
+}
+
+function renderRealAIAnalysis(analysisData) {
+    // Generate STABLE IDs based on content hash
+    const warnings = (analysisData.warnings || []).map((w, i) => ({
+        ...w,
+        id: w.id || 'warning-' + simpleHash((w.category || '') + (w.message || ''))
+    }));
+    const errors = (analysisData.errors || []).map((e, i) => ({
+        ...e,
+        id: e.id || 'error-' + simpleHash((e.category || '') + (e.message || ''))
+    }));
+    const recommendations = analysisData.recommendations || [];
+    const dismissedItems = new Set((analysisData.dismissed_items || []).filter(id => id));
+
+    // Get all valid IDs from current errors and warnings
+    const allValidIds = new Set([...errors.map(e => e.id), ...warnings.map(w => w.id)]);
+
+    // Filter dismissed items to only include IDs that exist in current errors/warnings
+    const validDismissedItems = new Set(
+        Array.from(dismissedItems).filter(id => allValidIds.has(id))
+    );
+
+    // Separate active and dismissed items
+    const activeErrors = errors.filter(e => !validDismissedItems.has(e.id));
+    const activeWarnings = warnings.filter(w => !validDismissedItems.has(w.id));
+    const dismissedErrors = errors.filter(e => validDismissedItems.has(e.id));
+    const dismissedWarnings = warnings.filter(w => validDismissedItems.has(w.id));
+
+    // Clear existing accordion list and rebuild
+    const $accordionList = $('#aiAnalysisAccordionList');
+    $accordionList.empty();
+
+    // Add errors section if there are any
+    if (activeErrors.length > 0) {
+        const errorsContent = activeErrors.map(error => {
+            const errorId = error.id || 'error-unknown-' + Date.now();
+            return `
+                <div class="ai-analysis-detail-item">
+                    <div class="ai-analysis-detail-header">
+                        <div class="ai-analysis-detail-category">${escapeHtml(error.category || 'Error')}</div>
+                        <button type="button" class="ai-analysis-dismiss-btn" data-id="${errorId}" data-type="error" title="Dismiss this error" onclick="event.stopPropagation(); dismissAIIssue('${errorId}'); return false;">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(error.message || '')}</div>
+                </div>
+            `;
+        }).join('');
+
+        const accordionItem = createAccordionGroup(
+            'errors',
+            'error',
+            'fl-times-circle',
+            `Errors (${activeErrors.length})`,
+            errorsContent
+        );
+        $accordionList.append(accordionItem);
+    }
+
+    // Add warnings section if there are any
+    if (activeWarnings.length > 0) {
+        const warningsContent = activeWarnings.map(warning => {
+            const warningId = warning.id || 'warning-unknown-' + Date.now();
+            return `
+                <div class="ai-analysis-detail-item">
+                    <div class="ai-analysis-detail-header">
+                        <div class="ai-analysis-detail-category">${escapeHtml(warning.category || 'Warning')}</div>
+                        <button type="button" class="ai-analysis-dismiss-btn" data-id="${warningId}" data-type="warning" title="Dismiss this warning" onclick="event.stopPropagation(); dismissAIIssue('${warningId}'); return false;">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(warning.message || '')}</div>
+                </div>
+            `;
+        }).join('');
+
+        const accordionItem = createAccordionGroup(
+            'warnings',
+            'warning',
+            'fl-exclamation-triangle',
+            `Warnings (${activeWarnings.length})`,
+            warningsContent
+        );
+        $accordionList.append(accordionItem);
+    }
+
+    // Add recommendations section if there are any
+    if (recommendations.length > 0) {
+        const recommendationsContent = recommendations.map(rec => {
+            // Handle both string and object formats
+            const category = typeof rec === 'object' ? (rec.category || 'Recommendation') : 'Recommendation';
+            const message = typeof rec === 'object' ? (rec.message || rec) : rec;
+
+            return `
+                <div class="ai-analysis-detail-item">
+                    <div class="ai-analysis-detail-category">${escapeHtml(category)}</div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(message)}</div>
+                </div>
+            `;
+        }).join('');
+
+        const accordionItem = createAccordionGroup(
+            'recommendations',
+            'info',
+            'fl-info-circle',
+            `Recommendations (${recommendations.length})`,
+            recommendationsContent
+        );
+        $accordionList.append(accordionItem);
+    }
+
+    // Add dismissed items section if there are any
+    if (dismissedErrors.length > 0 || dismissedWarnings.length > 0) {
+        const dismissedContent = [
+            ...dismissedErrors.map(error => {
+                const errorId = error.id || 'error-dismissed-' + Date.now();
+                return `
+                <div class="ai-analysis-detail-item dismissed">
+                    <div class="ai-analysis-detail-header">
+                        <div class="ai-analysis-detail-category">${escapeHtml(error.category || 'Error')}</div>
+                        <button type="button" class="ai-analysis-restore-btn" data-id="${errorId}" data-type="error" title="Restore this error" onclick="event.stopPropagation(); restoreAIIssue('${errorId}'); return false;">
+                            <i class="fa fa-undo"></i>
+                        </button>
+                    </div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(error.message || '')}</div>
+                </div>
+            `;
+            }),
+            ...dismissedWarnings.map(warning => {
+                const warningId = warning.id || 'warning-dismissed-' + Date.now();
+                return `
+                <div class="ai-analysis-detail-item dismissed">
+                    <div class="ai-analysis-detail-header">
+                        <div class="ai-analysis-detail-category">${escapeHtml(warning.category || 'Warning')}</div>
+                        <button type="button" class="ai-analysis-restore-btn" data-id="${warningId}" data-type="warning" title="Restore this warning" onclick="event.stopPropagation(); restoreAIIssue('${warningId}'); return false;">
+                            <i class="fa fa-undo"></i>
+                        </button>
+                    </div>
+                    <div class="ai-analysis-detail-message">${escapeHtml(warning.message || '')}</div>
+                </div>
+            `;
+            })
+        ].join('');
+
+        const accordionItem = createAccordionGroup(
+            'dismissed',
+            'dismissed',
+            'fl-eye-slash',
+            `Dismissed Items (${dismissedErrors.length + dismissedWarnings.length})`,
+            dismissedContent
+        );
+        $accordionList.append(accordionItem);
+    }
+
+    // If no items, show empty message
+    if (activeErrors.length === 0 && activeWarnings.length === 0 && recommendations.length === 0 && dismissedErrors.length === 0 && dismissedWarnings.length === 0) {
+        $accordionList.append('<div class="ai-analysis-empty">No analysis results available.</div>');
+    }
+
+    // Update tab badge with total count
+    const totalIssues = activeWarnings.length + activeErrors.length + recommendations.length;
+    $('#ai-analysis-tab').html(`<i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(${totalIssues})`);
+
+    // Remove all previous event handlers from accordion list
+    $accordionList.off('click');
+
+    // Use event delegation for dismiss buttons (highest priority)
+    $accordionList.on('click', '.ai-analysis-dismiss-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const issueId = $(this).data('id');
+        dismissAIIssue(issueId);
+        return false;
+    });
+
+    // Use event delegation for restore buttons (highest priority)
+    $accordionList.on('click', '.ai-analysis-restore-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const issueId = $(this).data('id');
+        restoreAIIssue(issueId);
+        return false;
+    });
+
+    // Add click event listener for accordion headers - check if target is not a button
+    $accordionList.on('click', '.ai-analysis-accordion-header', function(e) {
+        // Don't toggle if clicking on buttons or their children
+        if ($(e.target).closest('.ai-analysis-dismiss-btn, .ai-analysis-restore-btn').length === 0) {
+            toggleAccordionItem($(this));
+        }
+    });
+}
+
+function createAccordionGroup(id, type, iconClass, title, content) {
+    return `
+        <div class="ai-analysis-accordion-item">
+            <div class="ai-analysis-accordion-header ${type}" data-target="${id}">
+                <span class="ai-analysis-accordion-arrow"></span>
+                <i class="ai-analysis-accordion-icon fl ${iconClass}"></i>
+                <span class="ai-analysis-accordion-title">${title}</span>
+            </div>
+            <div class="ai-analysis-accordion-body ${type}" id="${id}">
+                ${content}
+            </div>
+        </div>
+    `;
+}
+
+window.dismissAIIssue = function(issueId) {
+    const applicationId = $('#DetailsViewApplicationId').val();
+
+    unity.grantManager.grantApplications.grantApplication
+        .dismissAIIssue(applicationId, issueId)
+        .then(function(updatedAnalysis) {
+            // Reload the AI analysis section with updated data
+            loadAIAnalysis();
+        })
+        .catch(function(error) {
+            abp.message.error('Failed to dismiss the issue. Please try again.');
+        });
+}
+
+window.restoreAIIssue = function(issueId) {
+    const applicationId = $('#DetailsViewApplicationId').val();
+
+    unity.grantManager.grantApplications.grantApplication
+        .restoreAIIssue(applicationId, issueId)
+        .then(function(updatedAnalysis) {
+            // Reload the AI analysis section with updated data
+            loadAIAnalysis();
+        })
+        .catch(function(error) {
+            abp.message.error('Failed to restore the issue. Please try again.');
+        });
+}
+
+function toggleAccordionItem($header) {
+    const targetId = $header.attr('data-target');
+    const $body = $('#' + targetId);
+
+    // Toggle active class on header
+    $header.toggleClass('active');
+
+    // Toggle body visibility
+    $body.slideToggle(300);
+}
+
+function renderDemoAIAnalysis() {
+    console.log('Using demo AI analysis data');
+
+    // Demo data
+    const demoData = {
+        errors: [
+            {
+                category: "Missing Required Documentation",
+                message: "The application is missing the required financial statements for the last fiscal year. This is a mandatory requirement for grant eligibility."
+            },
+            {
+                category: "Budget Calculation Error",
+                message: "The total project budget does not match the sum of individual line items. There is a discrepancy of $15,000 that needs to be resolved."
+            }
+        ],
+        warnings: [
+            {
+                category: "Incomplete Project Timeline",
+                message: "The project timeline section is missing specific milestone dates. While not mandatory, providing detailed timelines strengthens the application."
+            },
+            {
+                category: "Limited Partnership Details",
+                message: "Partnership letters are provided but lack specific commitment amounts or resource contributions from partners."
+            },
+            {
+                category: "Vague Impact Metrics",
+                message: "The expected outcomes section lacks specific, measurable impact metrics. Consider adding quantifiable targets and KPIs."
+            }
+        ],
+        recommendations: []
+    };
+
+    renderRealAIAnalysis(demoData);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
