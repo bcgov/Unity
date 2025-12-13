@@ -7,6 +7,8 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager.Integrations;
+using Unity.GrantManager.Integrations.Endpoints;
 using Unity.Modules.Shared.Http;
 using Volo.Abp.DependencyInjection;
 
@@ -19,22 +21,21 @@ namespace Unity.GrantManager.AI
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
         private readonly IResilientHttpRequest _resilientHttpRequest;
+        private readonly IEndpointManagementAppService _endpointManagementAppService;
 
         private string? ApiKey => _configuration["AI:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
-        private string? AgenticApiUrl => _configuration["AI:AgenticAPI:Url"];
         private readonly string NoKeyError = "OpenAI API key is not configured";
         private readonly string NoSummaryMsg = "No summary generated.";
 
-
-
-        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService, IResilientHttpRequest resilientHttpRequest)
+        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService, IResilientHttpRequest resilientHttpRequest, IEndpointManagementAppService endpointManagementAppService)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
             _resilientHttpRequest = resilientHttpRequest;
+            _endpointManagementAppService = endpointManagementAppService;
         }
 
         public Task<bool> IsAvailableAsync()
@@ -48,6 +49,7 @@ namespace Unity.GrantManager.AI
             return Task.FromResult(true);
         }
 
+        //Unity AI method
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
         {
             if (string.IsNullOrEmpty(ApiKey))
@@ -95,6 +97,7 @@ namespace Unity.GrantManager.AI
                 if (choices.GetArrayLength() > 0)
                 {
                     var message = choices[0].GetProperty("message");
+                    var test = message.GetProperty("content").GetString();
                     return message.GetProperty("content").GetString() ?? NoSummaryMsg;
                 }
 
@@ -107,6 +110,7 @@ namespace Unity.GrantManager.AI
             }
         }
 
+        //AI agent method TODO/TBD: Once the AI agent code has hosted domain we can able to use this and update the endpoint management
         private async Task<string> GenerateAgenticSummaryAsync(
             string userPrompt,
             string systemPrompt, 
@@ -117,6 +121,8 @@ namespace Unity.GrantManager.AI
             int numCot = 1;
             string model = "fast";
             double temperature = 0.3;
+
+            var aiAgentBaseUri = await _endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.AGENTIC_AI);
 
             try
             {
@@ -133,7 +139,7 @@ namespace Unity.GrantManager.AI
 
                 var response = await _resilientHttpRequest.HttpAsync(
                     HttpMethod.Post,
-                    AgenticApiUrl!,
+                    aiAgentBaseUri!,
                     requestBody
                 );
 
@@ -155,11 +161,11 @@ namespace Unity.GrantManager.AI
                 }
 
                 using var jsonDoc = JsonDocument.Parse(responseContent);
-                var choices = jsonDoc.RootElement.GetProperty("choices");
-                if (choices.GetArrayLength() > 0)
+                var msg = jsonDoc.RootElement.GetProperty("final_answer");
+
+                if (jsonDoc.RootElement.TryGetProperty("final_answer", out var finalAnswer) && msg.ValueKind != JsonValueKind.Null)
                 {
-                    var message = choices[0].GetProperty("message");
-                    return message.GetProperty("content").GetString() ?? NoSummaryMsg;
+                    return msg.GetString() ?? NoSummaryMsg;
                 }
 
                 return NoSummaryMsg;
@@ -195,7 +201,7 @@ namespace Unity.GrantManager.AI
                     prompt = "Please analyze this document and provide a concise summary of its content, purpose, and key information, for use by your fellow grant analysts. It should be 1-2 sentences long and about 46 tokens.";
                 }
 
-                return await GenerateAgenticSummaryAsync(contentToAnalyze, prompt, 150);
+                return await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
             }
             catch (Exception ex)
             {
@@ -254,7 +260,7 @@ Analyze the provided application against the rubric and identify any issues, mis
 Be thorough but fair in your assessment. Focus on compliance, completeness, and alignment with program requirements.
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateAgenticSummaryAsync(analysisContent, systemPrompt, 1000);
+                return await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
             }
             catch (Exception ex)
             {
@@ -308,7 +314,7 @@ Analyze the provided application and generate appropriate answers for the scores
 Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateAgenticSummaryAsync(analysisContent, systemPrompt, 2000);
+                return await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
             }
             catch (Exception ex)
             {
@@ -382,7 +388,7 @@ Always provide citations that reference specific parts of the application conten
 Be honest about your confidence level - if information is missing or unclear, reflect this in a lower confidence score.
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateAgenticSummaryAsync(analysisContent, systemPrompt, 2000);
+                return await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
             }
             catch (Exception ex)
             {

@@ -14,4 +14,5 @@ public static class DynamicUrlKeyNames
     public const string WEBHOOK_KEY_PREFIX = "WEBHOOK_"; // General Webhook URL - Dynamically incremented
     public const string GEOCODER_API_BASE = "GEOCODER_API_BASE";
     public const string GEOCODER_LOCATION_API_BASE = "GEOCODER_LOCATION_API_BASE";
+    public const string AGENTIC_AI = "AGENTIC_AI";
 }

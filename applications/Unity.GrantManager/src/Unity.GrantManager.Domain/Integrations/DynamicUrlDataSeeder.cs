@@ -31,6 +31,7 @@ namespace Unity.GrantManager.Integrations
             public const string GEOCODER_BASE_URL = $"{PROTOCOL}//openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=";
             public const string GEOCODER_LOCATION_BASE_URL = $"{PROTOCOL}//geocoder.api.gov.bc.ca";
             public const string REPORTING_AI = $"{PROTOCOL}//reporting.grants.gov.bc.ca";
+            public const string AGENTIC_AI = $"{PROTOCOL}//localhost:5000/v1/completions";
         }
 
         private async Task SeedDynamicUrlAsync()
@@ -57,6 +58,7 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
+                    new() { KeyName = DynamicUrlKeyNames.AGENTIC_AI, Url = DynamicUrls.AGENTIC_AI, Description = "Agentic AI Source" },
                 };
 
                 foreach (var dynamicUrl in dynamicUrls)
