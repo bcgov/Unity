@@ -2,11 +2,14 @@
 # Flask serves both the static Angular frontend AND the API endpoints
 # No nginx needed - everything runs through Flask
 
+
 # Stage 1: Build Angular Frontend
 FROM node:22-alpine AS frontend-build
 
+# Declare ARGs in the stage they are used
 ARG UAI_BUILD_VERSION=0.0.0
 ARG UAI_BUILD_REVISION=0000000
+ARG UAI_TARGET_ENVIRONMENT=Development
 
 WORKDIR /app/frontend
 
@@ -23,13 +26,10 @@ COPY Unity.AI.Reporting.Frontend/ ./
 RUN npm run build -- --configuration=production
 
 # Create build-info.json 
-RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"environment\":\"Production\"}" > dist/recap/browser/build-info.json
+RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"environment\":\"${UAI_TARGET_ENVIRONMENT}\"}" > dist/recap/browser/build-info.json
 
 # Stage 2: Runtime - Python/Flask only (serves static + API)
 FROM python:3.11-slim
-
-ARG UAI_BUILD_VERSION=0.0.0
-ARG UAI_BUILD_REVISION=0000000
 
 # Create a non-root user for OpenShift compatibility
 RUN groupadd -g 1001 appuser && \
