@@ -8,7 +8,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Integrations;
-using Unity.GrantManager.Integrations.Endpoints;
 using Unity.Modules.Shared.Http;
 using Volo.Abp.DependencyInjection;
 
@@ -97,7 +96,6 @@ namespace Unity.GrantManager.AI
                 if (choices.GetArrayLength() > 0)
                 {
                     var message = choices[0].GetProperty("message");
-                    var test = message.GetProperty("content").GetString();
                     return message.GetProperty("content").GetString() ?? NoSummaryMsg;
                 }
 
@@ -110,7 +108,7 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        //AI agent method TODO/TBD: Once the AI agent code has hosted domain we can able to use this and update the endpoint management
+        //AI agent method: Once the AI agent code has hosted domain we can able to use this and update the endpoint management
         private async Task<string> GenerateAgenticSummaryAsync(
             string userPrompt,
             string systemPrompt, 
