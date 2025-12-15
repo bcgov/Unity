@@ -56,7 +56,8 @@ WORKDIR /app/backend
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Make entrypoint executable (777 for OpenShift compatibility)
-RUN chmod 777 /entrypoint.sh
+RUN chmod 777 /entrypoint.sh && \
+    chown appuser:appuser /entrypoint.sh
 
 # Change ownership
 RUN chown -R appuser:appuser /app
