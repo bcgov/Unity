@@ -1,15 +1,15 @@
-# Unity AI Platform - Applications
+# Unity AI Applications - Deployment Guide
 
-AI-powered reporting platform with natural language to SQL conversion and Metabase integration.
+This directory contains the Unity AI Reporting platform with combined frontend and backend deployment.
 
 ## Architecture
 
 **Single Combined Container**: Flask serves both the Angular frontend (static files) and backend API endpoints. No nginx required.
 
 ```
-Browser → Flask (port 80)
-          ├── /api/* → Backend API
-          └── /*     → Angular static files
+Browser (localhost:80) → Flask (container port 8080)
+                          ├── /api/* → Backend API
+                          └── /*     → Angular static files
 ```
 
 ## Quick Start
@@ -32,66 +32,60 @@ docker-compose up -d
 
 ## Configuration
 
-Copy `.env.example` to `.env` and configure:
+Copy `.env.example` to `.env` and configure required variables:
 
+### Critical Variables (Must Set)
 ```env
-# Platform
-UAI_BUILD_VERSION=1.0.0
-ENVIRONMENT=production
-
 # Azure OpenAI
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_API_KEY=your_key
+AZURE_OPENAI_API_KEY=your_api_key
 AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
 AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
-AZURE_OPENAI_API_VERSION=2024-02-15-preview
 
-# Authentication
-JWT_SECRET=your_secure_secret
+# Authentication  
+JWT_SECRET=your_jwt_secret_64_chars_minimum
 
 # Metabase
-METABASE_KEY=your_api_key
-MB_EMBED_SECRET=your_embed_secret
-MB_URL=https://your-metabase-url.com
-DEFAULT_EMBED_DB_ID=3
+METABASE_KEY=your_metabase_api_key
+MB_EMBED_SECRET=your_metabase_embed_secret
+MB_URL=https://your-metabase-instance.com
+MB_EMBED_ID=5
 
-# Database (Docker defaults)
-POSTGRES_DB=unity_ai
-POSTGRES_USER=unity_user
-POSTGRES_PASSWORD=secure_password
+# Database
+POSTGRES_PASSWORD=your_secure_password
 ```
+
+### Platform Variables
+```env
+# Build info (baked into image)
+UAI_BUILD_VERSION=0.1.0
+UAI_BUILD_REVISION=0000000
+UAI_TARGET_ENVIRONMENT=LocalDevelopment
+
+# Flask environment
+FLASK_ENV=development
+```
+
+See [Environment Configuration Guide](./documentation/environment-specific-configuration.md) for complete variable reference.
 
 ## Project Structure
 
 ```
 applications/
 ├── Dockerfile                     # Combined frontend+backend
-├── docker-compose.yml             # Deployment config
+├── docker-compose.yml             # Local deployment
+├── .env.example                   # Configuration template
 ├── Unity.AI.Reporting.Backend/    # Flask API + AI
 │   └── src/
 │       ├── api.py                 # API routes
 │       ├── static_routes.py       # Serves Angular files
-│       └── sql_generator.py       # AI SQL generation
+│       ├── sql_generator.py       # AI SQL generation
+│       └── config.py             # Configuration manager
 └── Unity.AI.Reporting.Frontend/   # Angular app
-    └── src/app/services/
-        ├── api.service.ts         # API client
-        └── config.service.ts      # Runtime config
+    └── src/app/
+        ├── services/              # API services
+        └── components/           # UI components
 ```
-
-## Features
-
-- Natural language to SQL conversion (Azure OpenAI)
-- AI-powered query explanations  
-- Chat history management
-- Admin feedback dashboard
-- Multi-tenant support
-- JWT authentication with role-based access
-- PGVector for schema similarity search
-
-## Documentation
-
-- [Backend README](./Unity.AI.Reporting.Backend/README.md) - API, database
-- [Frontend README](./Unity.AI.Reporting.Frontend/README.md) - Angular app
 
 ## Common Commands
 
@@ -99,7 +93,7 @@ applications/
 # Start
 docker-compose up
 
-# Rebuild
+# Rebuild and start
 docker-compose up --build
 
 # View logs
@@ -108,10 +102,7 @@ docker-compose logs -f reporting
 # Stop
 docker-compose down
 
-# Embed database schemas (first run)
-docker-compose exec reporting python app.py embed 3
-
-# Access PostgreSQL
+# Access database
 docker-compose exec postgres psql -U unity_user -d unity_ai
 ```
 
@@ -122,36 +113,36 @@ docker-compose exec postgres psql -U unity_user -d unity_ai
 ✅ Runs as non-root user (UID 1001)  
 ✅ Uses port 8080 (non-privileged)  
 ✅ Single container deployment  
-✅ Runtime configuration via env vars
+✅ Runtime configuration via environment variables
 
-### Build & Deploy
+### Build & Push
 
 ```bash
-# Build
+# Build image
 docker build -t unity-ai-reporting:latest .
 
-# Tag for registry
+# Tag for registry  
 docker tag unity-ai-reporting:latest your-registry/unity-ai-reporting:latest
 
 # Push
 docker push your-registry/unity-ai-reporting:latest
 ```
 
-See [deployment documentation](../documentation/manual-image-build-push-openshift.md) for details.
+### Environment-Specific Configuration
 
-## Tech Stack
+The application supports multiple deployment environments with different configurations:
 
-- **Frontend**: Angular 20, Material UI, PrimeNG
-- **Backend**: Flask 3.1.1, Gunicorn, Azure OpenAI, LangChain
-- **Database**: PostgreSQL 16 with PGVector
-- **Container**: Docker (multi-stage build)
+- **Development**: Local development with debug enabled
+- **Test**: Testing environment with test database (DB_ID=3)
+- **UAT**: User acceptance testing (DB_ID=5, FLASK_ENV=staging)  
+- **Production**: Production environment (DB_ID=3, FLASK_ENV=production)
 
-## How It Works
+See [Environment Configuration Guide](./documentation/environment-specific-configuration.md) for details.
 
-1. **Build**: Angular compiled to static files with `config.json` generated at build time
-2. **Runtime**: Flask serves both static files and API endpoints via `static_routes.py`
-3. **Configuration**: Angular loads build-time `config.json` with version/environment info
-4. **Requests**: Angular calls `/api/*` → same origin, no CORS issues
+## Component Documentation
+
+- [Backend README](./Unity.AI.Reporting.Backend/README.md) - API documentation and database setup
+- [Frontend README](./Unity.AI.Reporting.Frontend/README.md) - Angular application details
 
 ## Troubleshooting
 
@@ -161,13 +152,16 @@ docker-compose logs reporting
 ```
 
 ### Frontend can't reach backend
-Verify `apiUrl` defaults to `/api` in config.service.ts
+Verify the application is using the combined container architecture (Angular served by Flask)
 
-### Database issues
+### Database connection issues
 ```bash
 docker-compose ps postgres
-docker-compose exec reporting python -c "from database import db_manager; print(db_manager)"
+docker-compose exec reporting python -c "from src.config import config; print(config.database.url)"
 ```
 
-### Token validation fails
-Check `JWT_SECRET` environment variable is set
+### JWT authentication fails
+Ensure `JWT_SECRET` is set and at least 64 characters long
+
+### Missing environment variables
+Check that all critical variable are set in your `.env` file
