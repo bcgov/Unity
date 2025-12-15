@@ -23,6 +23,7 @@ services:
 
   # Unity.AI.Reporting - Frontend + Backend (Flask serves both)
   reporting:
+    image: unity-ai-reporting:${UAI_BUILD_VERSION:-latest}
     build:
       context: .
       dockerfile: Dockerfile
