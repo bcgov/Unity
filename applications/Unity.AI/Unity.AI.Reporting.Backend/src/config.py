@@ -156,11 +156,21 @@ class Config:
     def get_tenant_config(self, tenant_id: str) -> Dict[str, Any]:
         """Get configuration for a specific tenant"""
         return self.tenant_mappings.get(tenant_id, self.tenant_mappings["default"])
-    
+
+    def get_tenant_metabase_headers(self, tenant_id: str) -> Dict[str, str]:
+        """
+        Get Metabase API headers for a specific tenant.
+        Uses tenant-specific API key from config file if available,
+        otherwise falls back to global METABASE_KEY from environment.
+        """
+        tenant_config = self.get_tenant_config(tenant_id)
+        api_key = tenant_config.get("api_key", "") or self.metabase.api_key
+        return {"x-api-key": api_key}
+
     @property
     def metabase_headers(self) -> Dict[str, str]:
-        """Get headers for Metabase API requests"""
-        return {"x-api-key": self.metabase.api_key}
+        """Get headers for Metabase API requests (uses default tenant)"""
+        return self.get_tenant_metabase_headers("default")
 
 
 # Global config instance

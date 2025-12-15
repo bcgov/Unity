@@ -2,13 +2,11 @@
   "Cyrus Org": {
     "db_id": 3,
     "collection_id": 47,
-    "schema_types": ["public"],
-    "api_key": ""
+    "schema_types": ["public"]
   },
   "default": {
     "db_id": 5,
     "collection_id": 19,
-    "schema_types": ["public"],
-    "api_key": ""
+    "schema_types": ["public"]
   }
 }

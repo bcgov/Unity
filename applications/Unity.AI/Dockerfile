@@ -48,19 +48,15 @@ COPY --from=frontend-build /app/frontend/dist/recap /app/frontend
 COPY Unity.AI.Reporting.Backend/requirements.txt /app/backend/
 COPY Unity.AI.Reporting.Backend/src/ /app/backend/src/
 
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+
 # Install Python dependencies
 WORKDIR /app/backend
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
-# Create simple entrypoint script that starts Flask
-RUN echo '#!/bin/sh' > /entrypoint.sh && \
-echo 'echo "Starting Flask application (serving static + API) on port 8080..."' >> /entrypoint.sh && \
-echo 'cd /app/backend/src' >> /entrypoint.sh && \
-echo 'exec gunicorn --preload -w 2 --threads 2 -b 0.0.0.0:8080 --timeout 120 --access-logfile - --error-logfile - app:app' >> /entrypoint.sh
-
 # Make entrypoint executable (777 for OpenShift compatibility)
-RUN chmod 777 /entrypoint.sh && \
-    chown appuser:appuser /entrypoint.sh
+RUN chmod 777 /entrypoint.sh
 
 # Change ownership
 RUN chown -R appuser:appuser /app
