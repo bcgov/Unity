@@ -95,18 +95,7 @@ function initializeResizableDivider() {
 
     let isResizing = false;
 
-    restoreDividerPosition();
-
-    divider.addEventListener('mousedown', function (e) {
-        isResizing = true;
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-
-        // Add visual feedback
-        document.body.style.cursor = 'col-resize';
-    });
-
-    function handleMouseMove(e) {
+    const handleMouseMove = (e) => {
         if (!isResizing) return;
 
         const containerRect = container.getBoundingClientRect();
@@ -127,18 +116,18 @@ function initializeResizableDivider() {
             debouncedResizeAwareDataTables();
             localStorage.setItem(storageKey, leftPercentage.toString());
         }
-    }
+    };
 
-    function handleMouseUp() {
+    const handleMouseUp = () => {
         isResizing = false;
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
 
         // Remove visual feedback
         document.body.style.cursor = '';
-    }
+    };
 
-    function restoreDividerPosition() {
+    const restoreDividerPosition = () => {
         const savedPercentage = parseFloat(localStorage.getItem(storageKey));
         if (isNaN(savedPercentage)) {
             return;
@@ -147,7 +136,18 @@ function initializeResizableDivider() {
         const clampedPercentage = Math.min(Math.max(savedPercentage, minPercentage), maxPercentage);
         leftPanel.style.width = clampedPercentage + '%';
         rightPanel.style.width = (100 - clampedPercentage) + '%';
-    }
+    };
+
+    restoreDividerPosition();
+
+    divider.addEventListener('mousedown', function () {
+        isResizing = true;
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        // Add visual feedback
+        document.body.style.cursor = 'col-resize';
+    });
 
     window.addEventListener('resize', restoreDividerPosition);
 }
