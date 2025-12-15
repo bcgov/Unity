@@ -33,18 +33,7 @@ if not _initialized and os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
     try:
         logger.info("Embedding database schemas...")
         db_id = config.metabase.default_db_id
-
-        # Get schema types for this database from config
-        tenant_config = None
-        for tenant_id, cfg in config.tenant_mappings.items():
-            if cfg["db_id"] == db_id:
-                tenant_config = cfg
-                break
-
-        if tenant_config:
-            schema_types = tenant_config.get("schema_types", ["public"])
-        else:
-            schema_types = ["public", "custom"] if config.app.embed_worksheets else ["public"]
+        schema_types = ["public"]
 
         embedding_manager.embed_schemas(db_id, schema_types)
         logger.info("Schema embedding completed successfully")

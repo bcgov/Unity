@@ -130,11 +130,21 @@ class Config:
         Load tenant to database/collection mappings from JSON file.
         Falls back to default configuration if file is not found.
         """
+        
         config_file = "/app/backend/src/tenant_config.json"
 
         try:
             with open(config_file, 'r') as f:
-                mappings = json.load(f)
+                # mappings = json.load(f)
+                mappings = {
+                    "default": {
+                        "db_id": 5,
+                        "collection_id": 16,
+                        "schema_types": ["public"]
+                    }
+                }
+
+            print(f"Loaded tenant mappings: {mappings}")
 
             # Override default db_id with environment variable if set
             if "default" in mappings:
