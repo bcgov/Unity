@@ -150,7 +150,11 @@ class MetabaseClient:
         }
 
         logger.debug(f"Metabase create_card - URL: {url}")
-        logger.debug(f"Metabase create_card - Headers: {headers}")
+        # Redact sensitive headers before logging
+        redacted_headers = dict(headers)
+        if "x-api-key" in redacted_headers:
+            redacted_headers["x-api-key"] = "[REDACTED]"
+        logger.debug(f"Metabase create_card - Headers: {redacted_headers}")
         logger.debug(f"Metabase create_card - Payload keys: {list(payload.keys())}")
         logger.debug(f"Metabase create_card - SQL length: {len(sql)}")
 
