@@ -1,3 +1,17 @@
-﻿<div class="px-3">
-    <abp-table id="ApplicationAttachmentsTable" hoverable-rows="true" data-resize-aware="true" class="attachments-table"></abp-table>
+﻿<h6 class="fw-bold px-3 pt-4 pb-2 m-0">Assessment Attachments</h6>
+<div class="px-3">
+    <abp-table id="ApplicationAttachmentsTable" 
+        hoverable-rows="true" 
+        data-resize-aware="true" 
+        class="attachments-table"></abp-table>
+</div>
+<div class="d-flex justify-content-end m-3">
+    <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
+        <input id="application_attachment_upload" name="application_attachment_upload" type="file" size="1" multiple onchange="uploadApplicationFiles('application_attachment_upload');" style="display: none" />
+        <abp-button text="Add Attachments"
+                    id="application_attachment_upload_btn"
+                    icon-type="Other"
+                    icon="fl fl-plus"
+                    button-type="Light" />
+    </form>
 </div>
