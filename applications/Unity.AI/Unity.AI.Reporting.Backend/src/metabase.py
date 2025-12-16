@@ -150,8 +150,8 @@ class MetabaseClient:
         }
 
         logger.debug(f"Metabase create_card - URL: {url}")
-        # Log only header names to avoid leaking sensitive data
-        logger.debug(f"Metabase create_card - Headers: {list(headers.keys())}")
+        # Do NOT log header values or names to avoid leaking or signaling sensitive information
+        logger.debug("Metabase create_card - Using Metabase authorization header")
         logger.debug(f"Metabase create_card - Payload keys: {list(payload.keys())}")
         logger.debug(f"Metabase create_card - SQL length: {len(sql)}")
 
