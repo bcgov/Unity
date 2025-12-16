@@ -528,8 +528,12 @@
 
         // Handle currency formatting first
         if (formatters.currency.includes(token)) {
+            if (inputString === null || inputString === undefined || inputString === '') {
+                return '';
+            }
+
             const numericValue = Number(inputString);
-            return Number.isFinite(numericValue) ? currencyFormatter.format(numericValue) : 'ERROR';
+            return Number.isFinite(numericValue) ? currencyFormatter.format(numericValue) : '<ERROR: Invalid Amount>';
         }
 
         // Return non-string values as-is
