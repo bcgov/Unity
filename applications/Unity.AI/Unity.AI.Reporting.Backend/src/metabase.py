@@ -15,19 +15,30 @@ logger = logging.getLogger(__name__)
 
 class MetabaseClient:
     """Client for interacting with Metabase API"""
-    
+
     def __init__(self):
         self.config = config.metabase
         self.headers = config.metabase_headers
-    
-    def execute_sql(self, sql: str, db_id: int) -> Dict[str, Any]:
+
+    def _get_headers(self, tenant_id: Optional[str] = None) -> Dict[str, str]:
+        """
+        Get API headers for Metabase requests.
+        If tenant_id is provided, uses tenant-specific API key from config file.
+        Otherwise uses default headers.
+        """
+        if tenant_id:
+            return config.get_tenant_metabase_headers(tenant_id)
+        return self.headers
+
+    def execute_sql(self, sql: str, db_id: int, tenant_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Execute SQL query via Metabase API.
-        
+
         Args:
             sql: SQL query to execute
             db_id: Database ID in Metabase
-            
+            tenant_id: Optional tenant ID to use tenant-specific API key
+
         Returns:
             Query results from Metabase
         """
@@ -36,23 +47,26 @@ class MetabaseClient:
             "type": "native",
             "native": {"query": sql}
         }
-        
+
+        headers = self._get_headers(tenant_id)
+
         r = requests.post(
             f"{self.config.url}/api/dataset",
-            headers=self.headers,
+            headers=headers,
             json=payload
         )
         r.raise_for_status()
         return r.json()["data"]
     
-    def validate_sql(self, sql: str, db_id: int) -> Tuple[bool, Optional[str]]:
+    def validate_sql(self, sql: str, db_id: int, tenant_id: Optional[str] = None) -> Tuple[bool, Optional[str]]:
         """
         Validate if SQL query can be executed.
-        
+
         Args:
             sql: SQL query to validate
             db_id: Database ID
-            
+            tenant_id: Optional tenant ID to use tenant-specific API key
+
         Returns:
             Tuple of (is_valid, error_message)
         """
@@ -61,61 +75,66 @@ class MetabaseClient:
             "type": "native",
             "native": {"query": sql}
         }
-        
+
+        headers = self._get_headers(tenant_id)
+
         r = requests.post(
             f"{self.config.url}/api/dataset",
-            headers=self.headers,
+            headers=headers,
             json=payload
         )
-        
+
         if r.status_code not in (200, 202):
             return False, f"HTTP {r.status_code}: {r.text}"
-        
+
         body = r.json()
-        
+
         # Handle async queries
         if r.status_code == 202 and body.get("status") == "running":
             job_id = body["id"]
             deadline = time.time() + 10
-            
+
             while time.time() < deadline:
                 jr = requests.get(
                     f"{self.config.url}/api/async/{job_id}",
-                    headers=self.headers
+                    headers=headers
                 )
                 if jr.status_code == 200:
                     body = jr.json()
                     break
                 time.sleep(0.5)
-        
+
         if "error" in body:
             return False, body["error"]
-        
+
         return True, None
     
-    def get_database_metadata(self, db_id: int) -> Dict[str, Any]:
+    def get_database_metadata(self, db_id: int, tenant_id: Optional[str] = None) -> Dict[str, Any]:
         """Get metadata for a database including tables and fields"""
+        headers = self._get_headers(tenant_id)
         r = requests.get(
             f"{self.config.url}/api/database/{db_id}/metadata",
-            headers=self.headers
+            headers=headers
         )
         r.raise_for_status()
         return r.json()
-    
-    def create_card(self, sql: str, db_id: int, collection_id: int, 
-                    name: str) -> int:
+
+    def create_card(self, sql: str, db_id: int, collection_id: int,
+                    name: str, tenant_id: Optional[str] = None) -> int:
         """
         Create a new Metabase card (saved question).
-        
+
         Args:
             sql: SQL query for the card
             db_id: Database ID
             collection_id: Collection ID to save the card in
             name: Name of the card
-            
+            tenant_id: Optional tenant ID to use tenant-specific API key
+
         Returns:
             Card ID
         """
+        headers = self._get_headers(tenant_id)
         url = f"{self.config.url}/api/card"
         payload = {
             "name": name,
@@ -131,7 +150,8 @@ class MetabaseClient:
         }
 
         logger.debug(f"Metabase create_card - URL: {url}")
-        logger.debug(f"Metabase create_card - Headers: {self.headers}")
+        # Do NOT log header values or names to avoid leaking or signaling sensitive information
+        logger.debug("Metabase create_card - Using Metabase authorization header")
         logger.debug(f"Metabase create_card - Payload keys: {list(payload.keys())}")
         logger.debug(f"Metabase create_card - SQL length: {len(sql)}")
 
@@ -139,7 +159,7 @@ class MetabaseClient:
             logger.info("Making POST request to Metabase API...")
             r = requests.post(
                 url,
-                headers=self.headers,
+                headers=headers,
                 json=payload,
                 timeout=30  # Add timeout
             )
@@ -154,7 +174,7 @@ class MetabaseClient:
         except Exception as e:
             logger.error(f"Unexpected error during Metabase request: {e}", exc_info=True)
             raise requests.exceptions.RequestException(f"Unexpected error during Metabase request: {e}")
-        
+
         if r.status_code != 200:
             logger.error(f"Metabase API error - Status: {r.status_code}, Response: {r.text}")
             raise Exception(f"HTTP {r.status_code}: {r.text}")
@@ -167,13 +187,13 @@ class MetabaseClient:
             logger.error(f"Error parsing Metabase response: {e}", exc_info=True)
             logger.error(f"Response text: {r.text}")
             raise ValueError(f"Error parsing Metabase response: {e}")
-        
+
         # Enable embedding
         logger.info(f"Enabling embedding for card {card_id}...")
         try:
             r2 = requests.put(
                 f"{self.config.url}/api/card/{card_id}",
-                headers=self.headers,
+                headers=headers,
                 json={"enable_embedding": True},
                 timeout=30
             )
@@ -194,21 +214,24 @@ class MetabaseClient:
         return card_id
     
     def update_card_visualization(self, card_id: int, display_mode: str,
-                                 x_fields: List[str], y_fields: List[str]):
+                                 x_fields: List[str], y_fields: List[str],
+                                 tenant_id: Optional[str] = None):
         """
         Update visualization settings for a card.
-        
+
         Args:
             card_id: Card ID to update
             display_mode: Visualization type (bar, line, pie, map, etc.)
             x_fields: Fields for x-axis
             y_fields: Fields for y-axis
+            tenant_id: Optional tenant ID to use tenant-specific API key
         """
+        headers = self._get_headers(tenant_id)
         visualization_settings = {
             "graph.dimensions": x_fields,
             "graph.metrics": y_fields,
         }
-        
+
         # Add specific settings for different chart types
         if display_mode == "pie":
             visualization_settings.update({
@@ -217,37 +240,39 @@ class MetabaseClient:
             })
         elif display_mode == "map":
             visualization_settings["map.region"] = "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"
-        
+
         r = requests.put(
             f"{self.config.url}/api/card/{card_id}",
-            headers=self.headers,
+            headers=headers,
             json={
                 "display": display_mode,
                 "visualization_settings": visualization_settings
             }
         )
-        
+
         if r.status_code != 200:
             raise Exception(f"HTTP {r.status_code}: {r.text}")
-    
-    def delete_card(self, card_id: int) -> bool:
+
+    def delete_card(self, card_id: int, tenant_id: Optional[str] = None) -> bool:
         """Delete a Metabase card"""
+        headers = self._get_headers(tenant_id)
         r = requests.delete(
             f"{self.config.url}/api/card/{card_id}",
-            headers=self.headers
+            headers=headers
         )
         return r.status_code in (200, 204)
-    
-    def get_all_cards(self) -> List[int]:
+
+    def get_all_cards(self, tenant_id: Optional[str] = None) -> List[int]:
         """Get all card IDs from Metabase"""
+        headers = self._get_headers(tenant_id)
         try:
             r = requests.get(
                 f"{self.config.url}/api/card",
-                headers=self.headers
+                headers=headers
             )
             if r.status_code != 200:
                 raise Exception(f"HTTP {r.status_code}: {r.text}")
-            
+
             cards = r.json()
             return [card["id"] for card in cards]
         except Exception as e:
@@ -284,9 +309,9 @@ class MetabaseClient:
             logger.error(f"Error generating embed URL: {e}", exc_info=True)
             raise requests.exceptions.ConnectionError(f"Error generating embed URL: {e}")
     
-    def check_card_exists(self, card_id: int) -> bool:
+    def check_card_exists(self, card_id: int, tenant_id: Optional[str] = None) -> bool:
         """Check if a card exists in Metabase"""
-        existing_cards = self.get_all_cards()
+        existing_cards = self.get_all_cards(tenant_id)
         return card_id in existing_cards
 
 
