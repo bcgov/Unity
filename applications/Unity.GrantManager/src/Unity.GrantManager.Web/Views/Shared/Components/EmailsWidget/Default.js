@@ -214,7 +214,6 @@
         return validateEmailField(UIElements.inputEmailBCC[0], false); // BCC is optional
     }
 
-
     function handleConfirmSendEmail() {
         UIElements.confirmationModal.hide();
         UIElements.emailSpinner.show();
@@ -500,6 +499,7 @@
             });
         });
     }
+
     function toTitleCase(str) {
         return str.replace(/\b\w/g, function (char) {
             return char.toUpperCase();
@@ -507,35 +507,50 @@
             return char.toLowerCase();
         });
     }
-    function processString(token,inputString) {
-        let lookupArray = ['category', 'status', 'decline_rationale'];
-        let datesArray = ['submission_date', 'approval_date', 'project_start_date', 'project_end_date']
 
-        if(typeof inputString !== 'string') {
-            return inputString;
+    function createCurrencyFormatter() {
+        return new Intl.NumberFormat('en-CA', {
+            style: 'currency',
+            currency: 'CAD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    }
+
+    const currencyFormatter = createCurrencyFormatter();
+
+    function processString(token, inputString) {
+        const formatters = {
+            currency: ['approved_amount', 'recommended_amount', 'requested_amount'],
+            date: ['submission_date', 'approval_date', 'project_start_date', 'project_end_date'],
+            lookup: ['category', 'status', 'decline_rationale']
+        };
+
+        // Handle currency formatting first
+        if (formatters.currency.includes(token)) {
+            const numericValue = Number(inputString);
+            return Number.isFinite(numericValue) ? currencyFormatter.format(numericValue) : 'ERROR';
         }
 
-        if (datesArray.includes(token)) {
-            let date = new Date(inputString);
-            if (!isNaN(date.getTime())) {
+        // Return non-string values as-is
+        if (typeof inputString !== 'string') {
+            return inputString ?? '';
+        }
 
-                return luxon.DateTime.fromISO(inputString, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString()
-            }
-            else {
-                return '';
-            }
+        // Handle date formatting
+        if (formatters.date.includes(token)) {
+            const dateTime = luxon.DateTime.fromISO(inputString);
+            return dateTime.isValid
+                ? dateTime.setLocale(abp.localization.currentCulture.name).toUTC().toLocaleString()
+                : '';
         }
-        else {
-           
-            if (lookupArray.includes(token)) {
-                inputString = inputString.replace(/_/g, ' ');
-                return toTitleCase(inputString);
-            }
-            return inputString;
-            
+
+        // Handle lookup fields to Title Case
+        if (formatters.lookup.includes(token)) {
+            return toTitleCase(inputString.replace(/_/g, ' '));
         }
+
+        return inputString;
     }
 
     function extractTemplateData(apiResponse, mappingConfig) {
