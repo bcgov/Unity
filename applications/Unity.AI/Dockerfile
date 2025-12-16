@@ -9,7 +9,7 @@ FROM node:22-alpine AS frontend-build
 # Declare ARGs in the stage they are used
 ARG UAI_BUILD_VERSION=0.0.0
 ARG UAI_BUILD_REVISION=0000000
-ARG UAI_TARGET_ENVIRONMENT=Development
+ARG UAI_TARGET_ENVIRONMENT=Local
 
 WORKDIR /app/frontend
 
@@ -55,8 +55,9 @@ COPY entrypoint.sh /entrypoint.sh
 WORKDIR /app/backend
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
-# Make entrypoint executable (777 for OpenShift compatibility)
-RUN chmod 777 /entrypoint.sh && \
+# Convert line endings and make entrypoint executable (777 for OpenShift compatibility)
+RUN sed -i 's/\r$//' /entrypoint.sh && \
+    chmod 777 /entrypoint.sh && \
     chown appuser:appuser /entrypoint.sh
 
 # Change ownership
