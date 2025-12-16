@@ -34,9 +34,12 @@ services:
     ports:
       - "80:8080"
     environment:
+      # Build/Environment config
+      - UAI_TARGET_ENVIRONMENT=${UAI_TARGET_ENVIRONMENT:-Development}
+
       # Flask config
       - FLASK_ENV=${FLASK_ENV:-development}
-      
+
       # Azure OpenAI config
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
