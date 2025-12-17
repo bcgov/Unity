@@ -559,10 +559,7 @@ function downloadChefsFile(event) {
         },
         error: function (error) {
             console.log('Error downloading CHEFS file:', error);
-            if (
-                error.responseText &&
-                error.responseText.includes('You do not have access')
-            ) {
+            if (error.responseText?.includes('You do not have access')) {
                 showChefsAPIAccessError();
             } else {
                 abp.notify.error(
