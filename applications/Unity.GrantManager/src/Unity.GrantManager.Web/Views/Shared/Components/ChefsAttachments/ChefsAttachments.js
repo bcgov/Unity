@@ -27,6 +27,10 @@ $(function () {
 
             if (result.length === 0 || selectedAtttachments.length === 0) {
                 $(downloadAll).prop('disabled', true);
+
+                if (document.getElementById('generateAiSummaries')) {
+                    $generateAISummariesButton.prop('disabled', true);
+                }
             }
 
             // Check if any attachments have AI summaries and enable/disable toggle button
@@ -110,18 +114,21 @@ $(function () {
             className: 'text-nowrap',
             render: function (data, type, full, meta) {
                 let html =
-                    '<button class="btn px-2" name="chefs-download-btn" type="button"'
-                    + ' chefs-submission-id=' + encodeURIComponent(full.chefsSumbissionId)
-                    + ' chefs-data=' + encodeURIComponent(data)
-                    + ' chefs-file-name=' + encodeURIComponent(full.fileName)
-                    + ' onclick="downloadChefsFile(event)">' +
+                    '<button class="btn px-2" name="chefs-download-btn" type="button"' +
+                    ' chefs-submission-id=' +
+                    encodeURIComponent(full.chefsSumbissionId) +
+                    ' chefs-data=' +
+                    encodeURIComponent(data) +
+                    ' chefs-file-name=' +
+                    encodeURIComponent(full.fileName) +
+                    ' onclick="downloadChefsFile(event)">' +
                     '<i class="fl fl-download"></i>' +
                     '<span>Download</span>' +
                     '</button>';
                 return html;
             },
             orderable: false,
-            index: 2
+            index: 2,
         };
     }
 
@@ -162,8 +169,8 @@ $(function () {
                 if (data.aiSummary) {
                     let summaryRow = $(
                         '<tr class="ai-summary-row" data-parent-row="' +
-                        dataIndex +
-                        '" style="background-color: #f8f9fa; display: none;">'
+                            dataIndex +
+                            '" style="background-color: #f8f9fa; display: none;">'
                     )
                         .append($('<td>'))
                         .append(
@@ -190,6 +197,63 @@ $(function () {
             updateAttachmentMetadata('CHEFS', rowData.id);
         }
     );
+    //Generate AI summaries for attachments
+    const $generateAISummariesButton = $('#generateAiSummaries');
+    if ($generateAISummariesButton.length > 0) {
+        $generateAISummariesButton.on('click', function () {
+            const $button = $(this);
+            const selectedRows = chefsDataTable.rows({ selected: true }).data();
+
+            if (selectedRows.length === 0) {
+                abp.message.warn(
+                    'Please select at least one attachment to generate summaries.'
+                );
+                return;
+            }
+
+            // Get attachment IDs from selected rows
+            const attachmentIds = selectedRows.toArray().map((row) => row.id);
+
+            const existingHTML = $button.html();
+
+            // Call the backend API
+            $.ajax({
+                url: '/api/app/attachment/generate-aISummaries-attachments',
+                data: JSON.stringify(attachmentIds),
+                contentType: 'application/json',
+                type: 'POST',
+                beforeSend: function () {
+                    $button
+                        .html(
+                            '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Generating...'
+                        )
+                        .prop('disabled', true);
+                },
+                success: function (summaries) {
+                    abp.notify.success(
+                        'AI summaries generated successfully for ' +
+                            summaries.length +
+                            ' attachment(s).'
+                    );
+
+                    // Reload the table to show new summaries
+                    chefsDataTable.ajax.reload();
+
+                    // Enable the toggle button now that we have summaries
+                    $('#toggleAllAISummaries').prop('disabled', false);
+
+                    $button.html(existingHTML).prop('disabled', false);
+                },
+                error: function (error) {
+                    console.error('Error generating AI summaries:', error);
+                    abp.notify.error(
+                        'An error occurred while generating AI summaries. Please try again.'
+                    );
+                    $button.html(existingHTML).prop('disabled', false);
+                },
+            });
+        });
+    }
 
     // Toggle all AI summaries (only if feature is enabled)
     const $toggleAllAISummariesButton = $('#toggleAllAISummaries');
@@ -199,6 +263,9 @@ $(function () {
         $toggleAllAISummariesButton.on('click', function () {
             const $button = $(this);
             const $icon = $button.find('i');
+            const $text = $button.contents().filter(function () {
+                return this.nodeType === 3;
+            });
 
             // Don't do anything if button is disabled
             if ($button.prop('disabled')) {
@@ -210,23 +277,51 @@ $(function () {
                 chefsDataTable.rows().every(function () {
                     const row = this;
                     if (row.child.isShown()) {
-                        row.child.hide();
-                        $(row.node()).removeClass('shown');
+                        const $childRow = $(row.child());
+                        const $summaryRow = $childRow.find('.ai-summary-row');
+
+                        // Add fade-out class to the summary row
+                        $summaryRow.removeClass('fade-in').addClass('fade-out');
+
+                        // Wait for animation to complete before hiding
+                        setTimeout(function () {
+                            row.child.hide();
+                            $(row.node()).removeClass('shown');
+                            $summaryRow.removeClass('fade-out');
+                        }, 500); // Match animation duration
                     }
                 });
-                $icon.removeClass('fa-chevron-up').addClass('fa-wand-sparkles');
+                $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                $text.replaceWith('Show Summaries');
+                $button.attr('title', 'Show AI Summaries');
                 allAISummariesExpanded = false;
             } else {
                 // Expand all
                 chefsDataTable.rows().every(function () {
                     const row = this;
                     const rowData = row.data();
+
+                    // Only expand if there's an AI summary
                     if (rowData.aiSummary && rowData.aiSummary.trim() !== '') {
-                        row.child(formatAISummary(rowData)).show();
+                        // Create the summary HTML
+                        const summaryHtml = formatAISummary(rowData);
+
+                        // Show the child row
+                        row.child(summaryHtml).show();
                         $(row.node()).addClass('shown');
+
+                        // Add fade-in animation after DOM is ready
+                        setTimeout(function () {
+                            const $childRow = $(row.child());
+                            $childRow
+                                .find('.ai-summary-row')
+                                .addClass('fade-in');
+                        }, 10);
                     }
                 });
-                $icon.removeClass('fa-wand-sparkles').addClass('fa-chevron-up');
+                $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                $text.replaceWith('Hide Summaries');
+                $button.attr('title', 'Hide AI Summaries');
                 allAISummariesExpanded = true;
             }
         });
@@ -237,7 +332,12 @@ $(function () {
         if (allAISummariesExpanded) {
             const $button = $('#toggleAllAISummaries');
             const $icon = $button.find('i');
+            const $text = $button.contents().filter(function () {
+                return this.nodeType === 3;
+            });
             $icon.removeClass('fl-chevron-up').addClass('fa-wand-sparkles');
+            $text.replaceWith('Show Summaries');
+            $button.attr('title', 'Show AI Summaries');
             allAISummariesExpanded = false;
         }
     });
@@ -246,7 +346,7 @@ $(function () {
         return (
             '<div class="ai-summary-row">' +
             '<div class="ai-summary-content">' +
-            '<strong>AI Summary:</strong> ' +
+            '<strong><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i> Summary:</strong> ' +
             '<p class="mt-2">' +
             (data.aiSummary || 'No summary available') +
             '</p>' +
@@ -306,6 +406,15 @@ $(function () {
                 $(downloadAll).prop('disabled', false);
             } else {
                 $(downloadAll).prop('disabled', true);
+            }
+
+            if (
+                document.getElementById('generateAiSummaries') &&
+                selectedAtttachments.length > 0
+            ) {
+                $generateAISummariesButton.prop('disabled', false);
+            } else {
+                $generateAISummariesButton.prop('disabled', true);
             }
         }
     }
@@ -389,7 +498,7 @@ $(function () {
                 },
                 error: function (error) {
                     if (error.status === 403) {
-                        showChefsAPIAccessError();                        
+                        showChefsAPIAccessError();
                     } else {
                         abp.notify.error(
                             '',
@@ -409,19 +518,32 @@ function downloadChefsFile(event) {
     const chefsFileId = button.getAttribute('chefs-data');
     const chefsSubmissionId = button.getAttribute('chefs-submission-id');
     const chefsFileName = button.getAttribute('chefs-file-name');
-    console.log('Downloading CHEFS file:', { chefsFileId, chefsSubmissionId, chefsFileName });
+    console.log('Downloading CHEFS file:', {
+        chefsFileId,
+        chefsSubmissionId,
+        chefsFileName,
+    });
 
     //Calls an endpoint
     $.ajax({
-        url: '/api/app/attachment/chefs/' + chefsSubmissionId + '/download/' + chefsFileId + '/' + chefsFileName,
+        url:
+            '/api/app/attachment/chefs/' +
+            chefsSubmissionId +
+            '/download/' +
+            chefsFileId +
+            '/' +
+            chefsFileName,
         type: 'GET',
         success: function (data) {
             // Download file by navigating to the endpoint
-            const downloadUrl = '/api/app/attachment/chefs/' + 
-                encodeURIComponent(chefsSubmissionId) + '/download/' + 
-                encodeURIComponent(chefsFileId) + '/' + 
+            const downloadUrl =
+                '/api/app/attachment/chefs/' +
+                encodeURIComponent(chefsSubmissionId) +
+                '/download/' +
+                encodeURIComponent(chefsFileId) +
+                '/' +
                 encodeURIComponent(chefsFileName);
-            
+
             // Create a temporary link and trigger download
             const link = document.createElement('a');
             link.href = downloadUrl;
@@ -430,21 +552,32 @@ function downloadChefsFile(event) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            abp.notify.success('', 'The file has been downloaded successfully.');
+            abp.notify.success(
+                '',
+                'The file has been downloaded successfully.'
+            );
         },
         error: function (error) {
             console.log('Error downloading CHEFS file:', error);
-            if (error.responseText && error.responseText.includes("You do not have access")) {
+            if (
+                error.responseText &&
+                error.responseText.includes('You do not have access')
+            ) {
                 showChefsAPIAccessError();
             } else {
-                abp.notify.error('', error.responseText || 'An error occurred while downloading the file.');
+                abp.notify.error(
+                    '',
+                    error.responseText ||
+                        'An error occurred while downloading the file.'
+                );
             }
         },
-    });    
+    });
 }
 
 function showChefsAPIAccessError() {
-    const message = 'Please check that the CHEFS checkbox is enabled for: ' +
+    const message =
+        'Please check that the CHEFS checkbox is enabled for: ' +
         "'Allow this API key to access submitted files' in the related CHEFS form";
 
     Swal.fire({
