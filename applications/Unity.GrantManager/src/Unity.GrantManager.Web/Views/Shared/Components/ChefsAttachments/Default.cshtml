@@ -9,7 +9,8 @@
     <div class="submission-button-section me-3">
         @if (ViewBag.IsAIAttachmentSummariesEnabled)
         {
-            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="toggleAllAISummaries" title="Toggle AI Summaries"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>AI Summaries</button>
+            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="generateAiSummaries" title="Generate AI Summaries"><i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>Generate Summary</button>
+            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="toggleAllAISummaries" title="Toggle AI Summaries"><i class="unt-icon-sm fa-solid fa-chevron-down"></i>Show Summaries</button>
         }
         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="downloadAll"><i class="unt-icon-sm fl fl-download"></i>Download All</button>
         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="resyncSubmissionAttachments" abp-tooltip="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value"><i class="unt-icon-sm fl fl-synch"></i></button>
