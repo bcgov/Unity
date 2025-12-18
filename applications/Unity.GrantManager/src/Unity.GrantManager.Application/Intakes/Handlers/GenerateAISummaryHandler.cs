@@ -600,29 +600,33 @@ FULL APPLICATION FORM SUBMISSION:
                 var optionalFields = new List<string>();
 
                 ExtractFieldRequirements(components, requiredFields, optionalFields, string.Empty);
+               
+                var configurationText = new StringBuilder();
 
-                var configurationText = "FORM FIELD CONFIGURATION:\n\n";
+                configurationText.AppendLine("FORM FIELD CONFIGURATION:");
+                configurationText.AppendLine();
 
                 if (requiredFields.Count > 0)
                 {
-                    configurationText += "REQUIRED FIELDS (must be completed):\n";
+                    configurationText.AppendLine("REQUIRED FIELDS (must be completed):");
                     foreach (var field in requiredFields)
                     {
-                        configurationText.Append($"- {field}\n");
+                        configurationText.AppendLine($"- {field}");
                     }
-                    configurationText += "\n";
+                    configurationText.AppendLine();
                 }
 
                 if (optionalFields.Count > 0)
                 {
-                    configurationText += "OPTIONAL FIELDS (may be left blank):\n";
+                    configurationText.AppendLine("OPTIONAL FIELDS (may be left blank):");
                     foreach (var field in optionalFields)
                     {
-                        configurationText.Append($"- {field}\n");
+                        configurationText.AppendLine($"- {field}");
                     }
                 }
 
-                return configurationText;
+
+                return configurationText.ToString();
             }
             catch (Exception ex)
             {
