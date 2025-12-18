@@ -55,6 +55,7 @@ namespace Unity.Payments.Repositories
               .Where(p => p.Status != PaymentRequestStatus.L1Declined
                         && p.Status != PaymentRequestStatus.L2Declined
                         && p.Status != PaymentRequestStatus.L3Declined
+                        && p.InvoiceStatus != CasPaymentRequestStatus.NotFound
                         && p.InvoiceStatus != CasPaymentRequestStatus.ErrorFromCas)
               .GroupBy(p => p.CorrelationId)
               .Select(p => p.Sum(q => q.Amount))
