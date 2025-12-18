@@ -258,17 +258,14 @@
                 <li class="nav-item">
                     <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
                 </li>
-                @if (await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis"))
-                {
-                    <li class="nav-item">
-                        <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><i class="fl fl-search" aria-hidden="true"></i></button>
-                    </li>
-                }
                 <li class="nav-item">
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
                 <li class="nav-item">
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(5)</button>
                 </li>
             </ul>
 
@@ -382,15 +379,6 @@
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
 
-                @*-------- AI Analysis Tab Section ---------*@
-                @if (await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis"))
-                {
-                    <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
-                        @await Component.InvokeAsync("AIAnalysis", new { applicationId = Model.ApplicationId })
-                    </div>
-                }
-                @*-------- AI Analysis Tab Section END ---------*@
-
                 @*-------- Links Tab Section ---------*@
                 <div class="tab-pane fade" id="links" role="tabpanel" aria-labelledby="links-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-3 m-0">Links</h6>
@@ -407,6 +395,18 @@
                     </div>
                 </div>
                 @*-------- History Tab Section END ---------*@
+
+                @*-------- AI Analysis Tab Section ---------*@
+                <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">AI Application Analysis</h6>
+                    <div class="ai-analysis-container">
+                        @* Accordion list for errors, warnings, and recommendations *@
+                        <div class="ai-analysis-accordion-list" id="aiAnalysisAccordionList">
+                            @* Accordion items will be dynamically generated here *@
+                        </div>
+                    </div>
+                </div>
+                @*-------- AI Analysis Tab Section END ---------*@
             </div>
 
         </abp-card>
