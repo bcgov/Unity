@@ -3,7 +3,6 @@ Metabase API integration module.
 Handles all interactions with Metabase including queries, cards, and embeddings.
 """
 import requests
-import jwt
 import time
 import logging
 from typing import Dict, Any, List, Optional, Tuple
@@ -188,29 +187,13 @@ class MetabaseClient:
             logger.error(f"Response text: {r.text}")
             raise ValueError(f"Error parsing Metabase response: {e}")
 
-        # Enable embedding
-        logger.info(f"Enabling embedding for card {card_id}...")
-        try:
-            r2 = requests.put(
-                f"{self.config.url}/api/card/{card_id}",
-                headers=headers,
-                json={"enable_embedding": True},
-                timeout=30
-            )
-            logger.info(f"Embedding enable request completed - Status: {r2.status_code}")
-
         except requests.exceptions.Timeout:
             logger.error("Metabase embedding enable request timed out")
             raise requests.exceptions.Timeout("Metabase embedding enable request timed out")
         except requests.exceptions.ConnectionError as e:
             logger.error(f"Connection error enabling embedding: {e}", exc_info=True)
             raise requests.exceptions.ConnectionError(f"Connection error enabling embedding: {e}")
-
-        if r2.status_code != 200:
-            logger.error(f"Error enabling embedding - Status: {r2.status_code}, Response: {r2.text}")
-            raise Exception(f"HTTP {r2.status_code}: {r2.text}")
-
-        logger.info(f"Card {card_id} embedding enabled successfully")
+        
         return card_id
     
     def update_card_visualization(self, card_id: int, display_mode: str,
@@ -279,35 +262,6 @@ class MetabaseClient:
             logger.error(f"Error getting cards from Metabase: {e}", exc_info=True)
             return []
     
-    def generate_embed_url(self, card_id: int) -> str:
-        """Generate an embed URL for a card"""
-        logger.info(f"Generating embed URL for card {card_id}")
-
-        try:
-            payload = {
-                "resource": {"question": card_id},
-                "params": {}
-            }
-            logger.debug(f"JWT payload created: {payload}")
-
-            if not self.config.embed_secret:
-                raise ValueError("Metabase embed_secret not configured")
-
-            token = jwt.encode(
-                payload,
-                self.config.embed_secret,
-                algorithm="HS256"
-            )
-            logger.debug(f"JWT token generated successfully (length: {len(token)})")
-
-            embed_url = f"{self.config.url}/embed/question/{token}?bordered=true&titled=false"
-            logger.info(f"Embed URL generated: {embed_url[:100]}...")
-
-            return embed_url
-
-        except Exception as e:
-            logger.error(f"Error generating embed URL: {e}", exc_info=True)
-            raise requests.exceptions.ConnectionError(f"Error generating embed URL: {e}")
     
     def check_card_exists(self, card_id: int, tenant_id: Optional[str] = None) -> bool:
         """Check if a card exists in Metabase"""

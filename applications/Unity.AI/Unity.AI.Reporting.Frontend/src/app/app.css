@@ -112,6 +112,7 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   padding: 8px;
+  background: radial-gradient(ellipse at center, rgba(66, 153, 225, 0.08) 0%, rgba(255, 255, 255, 0.95) 70%);
 }
   .bubble.bot::-webkit-scrollbar {
     display: none;
@@ -129,6 +130,10 @@
   padding: 0;
   height: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 .bot-inner.loaded {
   opacity: 1;
@@ -743,4 +748,73 @@
   background: #cbd5e0;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ---------- Metabase View Button ---------- */
+.metabase-view-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+.metabase-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.metabase-view-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.metabase-view-btn:hover::before {
+  left: 100%;
+}
+
+.metabase-view-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+  color: white;
+}
+
+.metabase-view-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+}
+
+.metabase-view-btn svg {
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.metabase-view-btn:hover svg {
+  transform: translateX(2px) translateY(-2px);
+}
+
+.metabase-view-btn span {
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.3px;
 }
