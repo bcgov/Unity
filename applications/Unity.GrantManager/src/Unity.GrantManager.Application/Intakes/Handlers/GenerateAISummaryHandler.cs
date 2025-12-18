@@ -27,6 +27,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IFeatureChecker _featureChecker;
+        const string ComponentsKey = "components";
 
         readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
         {
@@ -588,7 +589,7 @@ FULL APPLICATION FORM SUBMISSION:
                 }
 
                 var schema = JObject.Parse(formVersion.FormSchema);
-                var components = schema["components"] as JArray;
+                var components = schema[ComponentsKey] as JArray;
 
                 if (components == null || components.Count == 0)
                 {
@@ -607,7 +608,7 @@ FULL APPLICATION FORM SUBMISSION:
                     configurationText += "REQUIRED FIELDS (must be completed):\n";
                     foreach (var field in requiredFields)
                     {
-                        configurationText += $"- {field}\n";
+                        configurationText.Append($"- {field}\n");
                     }
                     configurationText += "\n";
                 }
@@ -617,7 +618,7 @@ FULL APPLICATION FORM SUBMISSION:
                     configurationText += "OPTIONAL FIELDS (may be left blank):\n";
                     foreach (var field in optionalFields)
                     {
-                        configurationText += $"- {field}\n";
+                        configurationText.Append($"- {field}\n");
                     }
                 }
 
@@ -689,7 +690,7 @@ FULL APPLICATION FORM SUBMISSION:
                 case "container":
                 case "datagrid":
                 case "table":
-                    var nestedComponents = component["components"] as JArray;
+                    var nestedComponents = component[ComponentsKey] as JArray;
                     if (nestedComponents != null)
                     {
                         ExtractFieldRequirements(nestedComponents, requiredFields, optionalFields, currentPath);
@@ -705,7 +706,7 @@ FULL APPLICATION FORM SUBMISSION:
                     {
                         foreach (var column in columns.OfType<JObject>())
                         {
-                            var columnComponents = column["components"] as JArray;
+                            var columnComponents = column[ComponentsKey] as JArray;
                             if (columnComponents != null)
                             {
                                 ExtractFieldRequirements(columnComponents, requiredFields, optionalFields, currentPath);
@@ -716,12 +717,12 @@ FULL APPLICATION FORM SUBMISSION:
 
                 case "tabs":
                 case "simpletabs":
-                    var tabs = component["components"] as JArray;
+                    var tabs = component[ComponentsKey] as JArray;
                     if (tabs != null)
                     {
                         foreach (var tab in tabs.OfType<JObject>())
                         {
-                            var tabComponents = tab["components"] as JArray;
+                            var tabComponents = tab[ComponentsKey] as JArray;
                             if (tabComponents != null)
                             {
                                 ExtractFieldRequirements(tabComponents, requiredFields, optionalFields, currentPath);
