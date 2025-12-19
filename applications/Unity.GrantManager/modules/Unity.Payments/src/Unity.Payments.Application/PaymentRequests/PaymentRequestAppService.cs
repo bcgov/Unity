@@ -23,6 +23,7 @@ using Volo.Abp.Domain.Repositories;
 using Unity.GrantManager.Applications;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Suppliers;
+using Unity.Payments.PaymentRequests.Notifications;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -41,7 +42,8 @@ namespace Unity.Payments.PaymentRequests
                 IPaymentThresholdRepository paymentThresholdRepository,
                 IPermissionChecker permissionChecker,
                 ISiteRepository siteRepository,
-                CasPaymentRequestCoordinator casPaymentRequestCoordinator) : PaymentsAppService, IPaymentRequestAppService
+                CasPaymentRequestCoordinator casPaymentRequestCoordinator,
+                FsbPaymentNotifier fsbPaymentNotifier) : PaymentsAppService, IPaymentRequestAppService
     #pragma warning restore S107
 
     {
@@ -182,7 +184,8 @@ namespace Unity.Payments.PaymentRequests
 
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
         {
-            List<PaymentRequestDto> updatedPayments = [];           
+            List<PaymentRequestDto> updatedPayments = [];
+            List<Guid> fsbPaymentIds = []; // Track FSB payments
 
             // Check approval batches
             var approvalRequests = paymentRequests.Where(r => r.IsApprove).Select(x => x.PaymentRequestId).ToList();
@@ -206,6 +209,8 @@ namespace Unity.Payments.PaymentRequests
                     if (payment == null)
                         continue;
 
+                    var previousStatus = payment.Status; // Capture previous status
+
                     if (!string.IsNullOrWhiteSpace(payment.Note) && !string.IsNullOrWhiteSpace(dto.Note))
                     {
                         payment.SetNote($"{payment.Note}; {dto.Note}");
@@ -220,12 +225,39 @@ namespace Unity.Payments.PaymentRequests
                     if (triggerAction != PaymentApprovalAction.None)
                     {
                         await paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
+
+                        // Check if payment transitioned to FSB status
+                        var updatedPayment = await paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
+                        if (updatedPayment.Status == PaymentRequestStatus.FSB &&
+                            previousStatus != PaymentRequestStatus.FSB)
+                        {
+                            fsbPaymentIds.Add(dto.PaymentRequestId);
+                        }
+
                         updatedPayments.Add(await CreatePaymentRequestDtoAsync(dto.PaymentRequestId));
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.LogException(ex);
+                }
+            }
+
+            // Send FSB notification if payments reached FSB status
+            if (fsbPaymentIds.Count > 0)
+            {
+                try
+                {
+                    var fsbPayments = await paymentRequestsRepository.GetListAsync(
+                        p => fsbPaymentIds.Contains(p.Id),
+                        includeDetails: true);
+
+                    await fsbPaymentNotifier.NotifyFsbPayments(fsbPayments);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to send FSB payment notification");
+                    // Don't throw - email failure shouldn't fail approval process
                 }
             }
 

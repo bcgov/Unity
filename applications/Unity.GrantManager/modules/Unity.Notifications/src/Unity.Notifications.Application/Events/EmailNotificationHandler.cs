@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
@@ -13,7 +15,10 @@ namespace Unity.GrantManager.Events
 {
     internal class EmailNotificationHandler(
             IEmailNotificationService emailNotificationService,
-            IFeatureChecker featureChecker) : ILocalEventHandler<EmailNotificationEvent>, ITransientDependency
+            IFeatureChecker featureChecker,
+            EmailAttachmentService emailAttachmentService,
+            IEmailLogsRepository emailLogsRepository,
+            ILogger<EmailNotificationHandler> logger) : ILocalEventHandler<EmailNotificationEvent>, ITransientDependency
     {
         private const string FAILED_PAYMENTS_SUBJECT = "CAS Payment Failure Notification";
 
@@ -25,7 +30,7 @@ namespace Unity.GrantManager.Events
             }
         }
 
-        private async Task InitializeAndSendEmailToQueue(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+        private async Task InitializeAndSendEmailToQueue(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null, List<EmailAttachmentData>? emailAttachments = null)
         {
             EmailLog emailLog = await InitializeEmail(
                                                 emailTo,
@@ -37,7 +42,32 @@ namespace Unity.GrantManager.Events
                                                 emailTemplateName,
                                                 emailCC,
                                                 emailBCC);
+            
+            try
+            {
+                // Upload attachments to S3
+                if (emailAttachments != null && emailAttachments.Count != 0)
+                {
+                    foreach (var attachmentData in emailAttachments)
+                    {
+                        await emailAttachmentService.UploadAttachmentAsync(
+                            emailLog.Id,
+                            emailLog.TenantId,
+                            attachmentData.FileName,
+                            attachmentData.Content,
+                            attachmentData.ContentType);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to upload email attachments for Email {EmailId}. Email will be sent WITHOUT attachments.", emailLog.Id);
+                // DO NOT THROW - email failure should not block calling workflow
+                // Email will still be sent below, just without attachments
+                // even if S3 upload failed - recipients will notice missing attachment
+            }
 
+            // Queue email for sending
             await emailNotificationService.SendEmailToQueue(emailLog);
         }
 
@@ -59,8 +89,7 @@ namespace Unity.GrantManager.Events
         private async Task EmailNotificationEventAsync(EmailNotificationEvent eventData)
         {
             if (eventData == null) return;
-
-            string emailTo = eventData.EmailAddress;
+            
             switch (eventData.Action)
             {
                 case EmailAction.SendFailedSummary:
@@ -77,6 +106,20 @@ namespace Unity.GrantManager.Events
 
                 case EmailAction.SaveDraft:
                     await HandleSaveDraftEmail(eventData);
+                    break;
+
+                case EmailAction.SendFsbNotification:
+                    string fsbEmailToAddress = String.Join(",", eventData.EmailAddressList);
+                    await InitializeAndSendEmailToQueue(
+                        fsbEmailToAddress,
+                        eventData.Body,
+                        eventData.Subject ?? "FSB Payment Notification",
+                        eventData.ApplicationId,
+                        eventData.EmailFrom,
+                        eventData.EmailTemplateName,
+                        null, // emailCC
+                        null, // emailBCC
+                        eventData.EmailAttachments);
                     break;
 
                 case EmailAction.Retry:

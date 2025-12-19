@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -85,18 +86,23 @@ public class EmailConsumer(
 
             HttpResponseMessage response;
 
+            // Send email (with S3 attachments retrieval handled inside service)
             try
             {
-                response = await emailNotificationService.SendEmailNotification(
-                    emailLog.ToAddress,
-                    emailLog.Body,
-                    emailLog.Subject,
-                    emailLog.FromAddress,
-                    "html",
-                    emailLog.TemplateName,
-                    emailLog.CC,
-                    emailLog.BCC
+                response = await emailNotificationService.SendEmailNotification(emailLog);
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                logger.LogError(
+                    s3Ex,
+                    "S3 download failed for Email {EmailId}. Tenant {TenantId}. Retrying.",
+                    emailLog.Id,
+                    notificationEvent.TenantId
                 );
+
+                emailLog.Status = EmailStatus.Failed;
+                await HandleRetryAsync(emailLog, notificationEvent, uow);
+                return;
             }
             catch (Exception ex)
             {
@@ -168,7 +174,7 @@ public class EmailConsumer(
     // -----------------------------
     //      STATUS UPDATE
     // -----------------------------
-    private void UpdateEmailLogStatus(EmailLog log, HttpResponseMessage response)
+    private static void UpdateEmailLogStatus(EmailLog log, HttpResponseMessage response)
     {
         log.ChesResponse = JsonConvert.SerializeObject(new
         {
