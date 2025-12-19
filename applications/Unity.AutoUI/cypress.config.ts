@@ -15,6 +15,8 @@ export default defineConfig({
       {
         "runMode": 3, 
         "openMode": 0
-      }
-  },
+       },
+    experimentalMemoryManagement: true,
+    numTestsKeptInMemory: 3
+  }
 });

@@ -1,0 +1,177 @@
+describe('Send many emails safely', () => {
+    const ENABLE_LOAD_TEST = false // true="test enabled", false="test disabled"
+    const TEST_EMAIL_TO = 'grantmanagementsupport@gov.bc.ca'
+    const TEST_EMAIL_CC = 'UnitySupport@gov.bc.ca'
+    const TEST_EMAIL_BCC = 'UNITYSUP@Victoria1.gov.bc.ca'
+    const EMAIL_COUNT = 20
+    const TEMPLATE_NAME = 'Test Case 1'
+
+    function timestamp() {
+        const now = new Date()
+        return (
+            now.getFullYear() +
+            '-' +
+            String(now.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(now.getDate()).padStart(2, '0') +
+            ' ' +
+            String(now.getHours()).padStart(2, '0') +
+            ':' +
+            String(now.getMinutes()).padStart(2, '0') +
+            ':' +
+            String(now.getSeconds()).padStart(2, '0')
+        )
+    }
+
+    function switchToDefaultGrantsProgramIfAvailable() {
+        cy.get('body').then(($body) => {
+            // If we are already on GrantPrograms (or can navigate there), try. Otherwise skip quietly.
+            // Key point: never .should() an optional element.
+            const hasUserInitials = $body.find('.unity-user-initials').length > 0
+
+            if (!hasUserInitials) {
+                cy.log('Skipping tenant switch: no user initials menu found')
+                return
+            }
+
+            cy.get('.unity-user-initials').click()
+
+            cy.get('body').then(($body2) => {
+                const switchLink = $body2.find('#user-dropdown a.dropdown-item').filter((_, el) => {
+                    return (el.textContent || '').trim() === 'Switch Grant Programs'
+                })
+
+                if (switchLink.length === 0) {
+                    cy.log('Skipping tenant switch: "Switch Grant Programs" not present for this user/session')
+                    // Close dropdown so it does not block clicks later
+                    cy.get('body').click(0, 0)
+                    return
+                }
+
+                cy.wrap(switchLink.first()).click()
+
+                cy.url({ timeout: 20000 }).should('include', '/GrantPrograms')
+
+                cy.get('#search-grant-programs', { timeout: 20000 })
+                    .should('be.visible')
+                    .clear()
+                    .type('Default Grants Program')
+
+                cy.get('#UserGrantProgramsTable', { timeout: 20000 })
+                    .should('be.visible')
+                    .within(() => {
+                        cy.contains('tbody tr', 'Default Grants Program', { timeout: 20000 })
+                            .should('exist')
+                            .within(() => {
+                                cy.contains('button', 'Select')
+                                    .should('be.enabled')
+                                    .click()
+                            })
+                    })
+
+                cy.location('pathname', { timeout: 20000 }).should((p) => {
+                    expect(p.indexOf('/GrantApplications') >= 0 || p.indexOf('/auth/') >= 0).to.eq(true)
+                })
+            })
+        })
+    }
+
+    it('Login', () => {
+        cy.login()
+    })
+
+    it('Switch to Default Grants Program if available', () => {
+        switchToDefaultGrantsProgramIfAvailable()
+    })
+
+    it('Handle IDIR if required', () => {
+        cy.get('body').then(($body) => {
+            if ($body.find('#social-idir').length > 0) {
+                cy.get('#social-idir').should('be.visible').click()
+            }
+        })
+
+        cy.location('pathname', { timeout: 30000 }).should('include', '/GrantApplications')
+    })
+
+    it('Open first application', () => {
+        cy.get('#GrantApplicationsTable tbody a[href^="/GrantApplications/Details"]', { timeout: 20000 })
+            .should('have.length.greaterThan', 0)
+            .first()
+            .click()
+
+        cy.url().should('include', '/GrantApplications/Details')
+    })
+
+    it('Open Emails tab', () => {
+        cy.get('#emails-tab', { timeout: 20000 }).should('be.visible').click()
+        cy.contains('Email History', { timeout: 20000 }).should('exist')
+    })
+
+    if (ENABLE_LOAD_TEST) {
+        for (let i = 1; i <= EMAIL_COUNT; i++) {
+            it(`Send email ${i}`, () => {
+                const subject = `Load Test Email ${i} ${timestamp()}`
+
+                cy.get('#btn-new-email', { timeout: 20000 })
+                    .should('be.visible')
+                    .click()
+
+                cy.contains('Email To', { timeout: 20000 }).should('exist')
+
+                cy.intercept('GET', '/api/app/template/*/template-by-id').as('loadTemplate')
+
+                cy.get('#template', { timeout: 20000 })
+                    .should('be.visible')
+                    .select(TEMPLATE_NAME)
+
+                cy.wait('@loadTemplate', { timeout: 20000 })
+
+                cy.get('#EmailTo', { timeout: 20000 }).clear().type(TEST_EMAIL_TO)
+                cy.get('#EmailCC', { timeout: 20000 }).clear().type(TEST_EMAIL_CC)
+                cy.get('#EmailBCC', { timeout: 20000 }).clear().type(TEST_EMAIL_BCC)
+                cy.get('#EmailSubject', { timeout: 20000 }).clear().type(subject)
+
+                cy.get('#btn-save', { timeout: 20000 })
+                    .should('be.visible')
+                    .click()
+
+                cy.wait(750)
+
+                cy.get('#emails', { timeout: 20000 })
+                    .should('exist')
+                    .within(() => {
+                        cy.contains('tbody tr', subject, { timeout: 20000 })
+                            .should('exist')
+                            .click()
+                    })
+
+                cy.get('#EmailTo', { timeout: 20000 }).should('be.visible')
+                cy.get('#EmailCC', { timeout: 20000 }).should('be.visible')
+                cy.get('#EmailBCC', { timeout: 20000 }).should('be.visible')
+                cy.get('#EmailSubject', { timeout: 20000 }).should('have.value', subject)
+
+                cy.get('#btn-send', { timeout: 20000 })
+                    .should('be.visible')
+                    .click()
+
+                cy.get('#modal-content', { timeout: 20000 })
+                    .should('be.visible')
+
+                cy.get('#btn-confirm-send', { timeout: 20000 })
+                    .should('be.visible')
+                    .click()
+
+                cy.wait(1500)
+            })
+        }
+    } else {
+        it('Load test disabled', () => {
+            cy.log('Load test skipped by ENABLE_LOAD_TEST flag')
+        })
+    }
+
+    it('Logout', () => {
+        cy.logout()
+    })
+})
