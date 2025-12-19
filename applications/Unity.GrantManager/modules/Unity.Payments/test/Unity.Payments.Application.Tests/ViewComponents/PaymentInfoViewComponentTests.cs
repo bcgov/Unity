@@ -46,11 +46,11 @@ namespace Unity.Payments.ViewComponents
 
             var paymentRequests = new List<PaymentDetailsDto>
             {
-                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted },      // Paid
-                new() { Amount = 500, Status = PaymentRequestStatus.Submitted },       // Paid
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" },      // Paid
+                new() { Amount = 500, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" },       // Paid
                 new() { Amount = 2000, Status = PaymentRequestStatus.L1Pending },          // Pending
                 new() { Amount = 1500, Status = PaymentRequestStatus.L1Declined },     // Not counted
-                new() { Amount = 800, Status = PaymentRequestStatus.Paid },            // Not counted
+                new() { Amount = 800, Status = PaymentRequestStatus.Paid },            // Not counted (no PaymentStatus = "Fully Paid")
             };
 
             var appService = Substitute.For<IGrantApplicationAppService>();
@@ -71,8 +71,8 @@ namespace Unity.Payments.ViewComponents
 
             // Assert
             model.ShouldNotBeNull();
-            model.TotalPaid.ShouldBe(1500m); // 1000 + 500 (Submitted only)
-            model.TotalPendingAmounts.ShouldBe(3500m); // 1500 (Submitted) + 2000 (L1Pending) - excludes Paid and Declined
+            model.TotalPaid.ShouldBe(1500m); // 1000 + 500 (PaymentStatus = "Fully Paid")
+            model.TotalPendingAmounts.ShouldBe(2000m); // 2000 (L1Pending only)
             model.RemainingAmount.ShouldBe(5500m); // 7000 - 1500
         }
 
@@ -95,17 +95,17 @@ namespace Unity.Payments.ViewComponents
 
             var parentPayments = new List<PaymentDetailsDto>
             {
-                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted }
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" }
             };
 
             var childApp1Payments = new List<PaymentDetailsDto>
             {
-                new() { CorrelationId = childApp1Id, Amount = 500, Status = PaymentRequestStatus.Submitted }
+                new() { CorrelationId = childApp1Id, Amount = 500, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" }
             };
 
             var childApp2Payments = new List<PaymentDetailsDto>
             {
-                new() { CorrelationId = childApp2Id, Amount = 800, Status = PaymentRequestStatus.Submitted }
+                new() { CorrelationId = childApp2Id, Amount = 800, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" }
             };
 
             var childLinks = new List<ApplicationLinksInfoDto>
@@ -220,12 +220,12 @@ namespace Unity.Payments.ViewComponents
 
             var parentPayments = new List<PaymentDetailsDto>
             {
-                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted }
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" }
             };
 
             var childPayments = new List<PaymentDetailsDto>
             {
-                new() { CorrelationId = childAppId, Amount = 500, Status = PaymentRequestStatus.Submitted }
+                new() { CorrelationId = childAppId, Amount = 500, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" }
             };
 
             var links = new List<ApplicationLinksInfoDto>
@@ -275,12 +275,12 @@ namespace Unity.Payments.ViewComponents
 
             var appPayments = new List<PaymentDetailsDto>
             {
-                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted }
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" }
             };
 
             var childPayments = new List<PaymentDetailsDto>
             {
-                new() { CorrelationId = childAppId, Amount = 500, Status = PaymentRequestStatus.Submitted }
+                new() { CorrelationId = childAppId, Amount = 500, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" }
             };
 
             var links = new List<ApplicationLinksInfoDto>
@@ -335,7 +335,7 @@ namespace Unity.Payments.ViewComponents
 
             var parentPayments = new List<PaymentDetailsDto>
             {
-                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted },
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" },
                 new() { Amount = 2000, Status = PaymentRequestStatus.L1Pending }
             };
 
@@ -357,8 +357,8 @@ namespace Unity.Payments.ViewComponents
 
             // Assert
             model.ShouldNotBeNull();
-            model.TotalPaid.ShouldBe(1000m); // Only parent payments (Submitted)
-            model.TotalPendingAmounts.ShouldBe(3000m); // 1000 (Submitted) + 2000 (L1Pending)
+            model.TotalPaid.ShouldBe(1000m); // Only parent payments (PaymentStatus = "Fully Paid")
+            model.TotalPendingAmounts.ShouldBe(2000m); // 2000 (L1Pending only)
             model.RemainingAmount.ShouldBe(6000m); // 7000 - 1000
 
             // Verify that GetListByApplicationIdsAsync was NOT called since there are no children
@@ -383,7 +383,7 @@ namespace Unity.Payments.ViewComponents
 
             var parentPayments = new List<PaymentDetailsDto>
             {
-                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted }
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" }
             };
 
             var childLinks = new List<ApplicationLinksInfoDto>
@@ -411,7 +411,7 @@ namespace Unity.Payments.ViewComponents
             // Assert
             model.ShouldNotBeNull();
             model.TotalPaid.ShouldBe(1000m); // Only parent payments (child has none)
-            model.TotalPendingAmounts.ShouldBe(1000m); // 1000 (Submitted) - child has no payments
+            model.TotalPendingAmounts.ShouldBe(0m); // No pending payments
         }
 
         [Fact]
@@ -432,7 +432,7 @@ namespace Unity.Payments.ViewComponents
             var paymentRequests = new List<PaymentDetailsDto>
             {
                 new() { Amount = 1000, Status = PaymentRequestStatus.L1Pending },          // Pending
-                new() { Amount = 500, Status = PaymentRequestStatus.Paid },            // Not pending
+                new() { Amount = 500, Status = PaymentRequestStatus.Paid, PaymentStatus = "Fully Paid" },            // Paid
                 new() { Amount = 2000, Status = PaymentRequestStatus.L1Declined },     // Not pending
                 new() { Amount = 1500, Status = PaymentRequestStatus.L2Declined },     // Not pending
                 new() { Amount = 1200, Status = PaymentRequestStatus.L3Declined }      // Not pending
@@ -456,8 +456,194 @@ namespace Unity.Payments.ViewComponents
 
             // Assert
             model.ShouldNotBeNull();
-            model.TotalPendingAmounts.ShouldBe(1000m); // Only Draft status
-            model.TotalPaid.ShouldBe(0m); // No Submitted status
+            model.TotalPendingAmounts.ShouldBe(1000m); // Only L1Pending status
+            model.TotalPaid.ShouldBe(500m); // PaymentStatus = "Fully Paid"
+        }
+
+        [Fact]
+        public async Task PaymentInfo_Should_Handle_PaymentStatus_FullyPaid_CaseInsensitive_WithSpaces()
+        {
+            // Arrange
+            var appId = Guid.NewGuid();
+            var applicationFormVersionId = Guid.NewGuid();
+            var applicantId = Guid.NewGuid();
+
+            var applicationDto = new GrantApplicationDto
+            {
+                Id = appId,
+                ApprovedAmount = 10000,
+                Applicant = new GrantManager.GrantApplications.GrantApplicationApplicantDto { Id = applicantId }
+            };
+
+            var paymentRequests = new List<PaymentDetailsDto>
+            {
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" },     // Exact match
+                new() { Amount = 500, Status = PaymentRequestStatus.Submitted, PaymentStatus = "FULLY PAID" },      // Upper case
+                new() { Amount = 800, Status = PaymentRequestStatus.Submitted, PaymentStatus = "fully paid" },      // Lower case
+                new() { Amount = 300, Status = PaymentRequestStatus.Submitted, PaymentStatus = "  Fully Paid  " },  // With spaces
+                new() { Amount = 200, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Paid" },            // Not fully paid
+            };
+
+            var appService = Substitute.For<IGrantApplicationAppService>();
+            var paymentRequestService = Substitute.For<IPaymentRequestAppService>();
+            var featureChecker = Substitute.For<IFeatureChecker>();
+            var applicationLinksService = Substitute.For<IApplicationLinksService>();
+
+            appService.GetAsync(appId).Returns(applicationDto);
+            paymentRequestService.GetListByApplicationIdAsync(appId).Returns(paymentRequests);
+            applicationLinksService.GetListByApplicationAsync(appId).Returns([]);
+            featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
+
+            var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker, applicationLinksService);
+
+            // Act
+            var result = await viewComponent.InvokeAsync(appId, applicationFormVersionId) as ViewViewComponentResult;
+            var model = result!.ViewData!.Model as PaymentInfoViewModel;
+
+            // Assert
+            model.ShouldNotBeNull();
+            model.TotalPaid.ShouldBe(2600m); // 1000 + 500 + 800 + 300 (all "Fully Paid" variations, excluding 200)
+        }
+
+        [Fact]
+        public async Task PaymentInfo_Should_Include_Submitted_WithNullPaymentStatus_InPending()
+        {
+            // Arrange
+            var appId = Guid.NewGuid();
+            var applicationFormVersionId = Guid.NewGuid();
+            var applicantId = Guid.NewGuid();
+
+            var applicationDto = new GrantApplicationDto
+            {
+                Id = appId,
+                ApprovedAmount = 10000,
+                Applicant = new GrantManager.GrantApplications.GrantApplicationApplicantDto { Id = applicantId }
+            };
+
+            var paymentRequests = new List<PaymentDetailsDto>
+            {
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = null },               // Pending
+                new() { Amount = 500, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = "SentToCas" },         // Pending
+                new() { Amount = 800, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = "Validated" },         // Pending
+                new() { Amount = 300, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = "  " },                // Pending (whitespace)
+                new() { Amount = 200, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid", InvoiceStatus = "Validated" }, // Not pending (paid)
+            };
+
+            var appService = Substitute.For<IGrantApplicationAppService>();
+            var paymentRequestService = Substitute.For<IPaymentRequestAppService>();
+            var featureChecker = Substitute.For<IFeatureChecker>();
+            var applicationLinksService = Substitute.For<IApplicationLinksService>();
+
+            appService.GetAsync(appId).Returns(applicationDto);
+            paymentRequestService.GetListByApplicationIdAsync(appId).Returns(paymentRequests);
+            applicationLinksService.GetListByApplicationAsync(appId).Returns([]);
+            featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
+
+            var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker, applicationLinksService);
+
+            // Act
+            var result = await viewComponent.InvokeAsync(appId, applicationFormVersionId) as ViewViewComponentResult;
+            var model = result!.ViewData!.Model as PaymentInfoViewModel;
+
+            // Assert
+            model.ShouldNotBeNull();
+            model.TotalPendingAmounts.ShouldBe(2600m); // 1000 + 500 + 800 + 300 (all with null PaymentStatus)
+            model.TotalPaid.ShouldBe(200m); // Only the one with PaymentStatus = "Fully Paid"
+        }
+
+        [Fact]
+        public async Task PaymentInfo_Should_Exclude_Submitted_WithError_InvoiceStatus_FromPending()
+        {
+            // Arrange
+            var appId = Guid.NewGuid();
+            var applicationFormVersionId = Guid.NewGuid();
+            var applicantId = Guid.NewGuid();
+
+            var applicationDto = new GrantApplicationDto
+            {
+                Id = appId,
+                ApprovedAmount = 10000,
+                Applicant = new GrantManager.GrantApplications.GrantApplicationApplicantDto { Id = applicantId }
+            };
+
+            var paymentRequests = new List<PaymentDetailsDto>
+            {
+                new() { Amount = 1000, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = "ErrorFromCas" },        // Not pending (error)
+                new() { Amount = 500, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = "  Error  " },     // Not pending (error with spaces)
+                new() { Amount = 800, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = "ServiceUnavailable" },   // Pending (will be retried)
+                new() { Amount = 300, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = "SentToCas" },            // Pending (no error)
+                new() { Amount = 200, Status = PaymentRequestStatus.L1Pending },                                                                // Pending (L1)
+            };
+
+            var appService = Substitute.For<IGrantApplicationAppService>();
+            var paymentRequestService = Substitute.For<IPaymentRequestAppService>();
+            var featureChecker = Substitute.For<IFeatureChecker>();
+            var applicationLinksService = Substitute.For<IApplicationLinksService>();
+
+            appService.GetAsync(appId).Returns(applicationDto);
+            paymentRequestService.GetListByApplicationIdAsync(appId).Returns(paymentRequests);
+            applicationLinksService.GetListByApplicationAsync(appId).Returns([]);
+            featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
+
+            var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker, applicationLinksService);
+
+            // Act
+            var result = await viewComponent.InvokeAsync(appId, applicationFormVersionId) as ViewViewComponentResult;
+            var model = result!.ViewData!.Model as PaymentInfoViewModel;
+
+            // Assert
+            model.ShouldNotBeNull();
+            model.TotalPendingAmounts.ShouldBe(1300m); // 800 (ServiceUnavailable - will retry) + 300 (SentToCas) + 200 (L1Pending)
+            model.TotalPaid.ShouldBe(0m); // None with PaymentStatus = "Fully Paid"
+        }
+
+        [Fact]
+        public async Task PaymentInfo_Should_Include_All_Pending_Levels_InPending()
+        {
+            // Arrange
+            var appId = Guid.NewGuid();
+            var applicationFormVersionId = Guid.NewGuid();
+            var applicantId = Guid.NewGuid();
+
+            var applicationDto = new GrantApplicationDto
+            {
+                Id = appId,
+                ApprovedAmount = 20000,
+                Applicant = new GrantManager.GrantApplications.GrantApplicationApplicantDto { Id = applicantId }
+            };
+
+            var paymentRequests = new List<PaymentDetailsDto>
+            {
+                new() { Amount = 1000, Status = PaymentRequestStatus.L1Pending },                                                   // Pending
+                new() { Amount = 2000, Status = PaymentRequestStatus.L2Pending },                                                   // Pending
+                new() { Amount = 3000, Status = PaymentRequestStatus.L3Pending },                                                   // Pending
+                new() { Amount = 500, Status = PaymentRequestStatus.Submitted, PaymentStatus = null, InvoiceStatus = "SentToCas" }, // Pending
+                new() { Amount = 4000, Status = PaymentRequestStatus.Submitted, PaymentStatus = "Fully Paid" },                     // Paid
+                new() { Amount = 100, Status = PaymentRequestStatus.L1Declined },                                                   // Not pending
+                new() { Amount = 200, Status = PaymentRequestStatus.L2Declined },                                                   // Not pending
+                new() { Amount = 300, Status = PaymentRequestStatus.L3Declined },                                                   // Not pending
+            };
+
+            var appService = Substitute.For<IGrantApplicationAppService>();
+            var paymentRequestService = Substitute.For<IPaymentRequestAppService>();
+            var featureChecker = Substitute.For<IFeatureChecker>();
+            var applicationLinksService = Substitute.For<IApplicationLinksService>();
+
+            appService.GetAsync(appId).Returns(applicationDto);
+            paymentRequestService.GetListByApplicationIdAsync(appId).Returns(paymentRequests);
+            applicationLinksService.GetListByApplicationAsync(appId).Returns([]);
+            featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
+
+            var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker, applicationLinksService);
+
+            // Act
+            var result = await viewComponent.InvokeAsync(appId, applicationFormVersionId) as ViewViewComponentResult;
+            var model = result!.ViewData!.Model as PaymentInfoViewModel;
+
+            // Assert
+            model.ShouldNotBeNull();
+            model.TotalPendingAmounts.ShouldBe(6500m); // 1000 (L1) + 2000 (L2) + 3000 (L3) + 500 (Submitted with null PaymentStatus)
+            model.TotalPaid.ShouldBe(4000m); // Only PaymentStatus = "Fully Paid"
         }
 
         private PaymentInfoViewComponent CreateViewComponent(
