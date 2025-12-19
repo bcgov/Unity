@@ -3,6 +3,7 @@ describe('Send an email', () => {
     const TEST_EMAIL_CC = 'UnitySupport@gov.bc.ca'
     const TEST_EMAIL_BCC = 'UNITYSUP@Victoria1.gov.bc.ca'
     const TEMPLATE_NAME = 'Test Case 1'
+    const STANDARD_TIMEOUT = 20000
 
     const now = new Date()
     const timestamp =
@@ -19,10 +20,6 @@ describe('Send an email', () => {
         String(now.getSeconds()).padStart(2, '0')
 
     const TEST_EMAIL_SUBJECT = `Smoke Test Email ${timestamp}`
-
-    //it('Verify Login', () => {
-    //    cy.login()
-    //})
 
     function switchToDefaultGrantsProgramIfAvailable() {
         cy.get('body').then(($body) => {
@@ -51,17 +48,17 @@ describe('Send an email', () => {
 
                 cy.wrap(switchLink.first()).click()
 
-                cy.url({ timeout: 20000 }).should('include', '/GrantPrograms')
+                cy.url({ timeout: STANDARD_TIMEOUT }).should('include', '/GrantPrograms')
 
-                cy.get('#search-grant-programs', { timeout: 20000 })
+                cy.get('#search-grant-programs', { timeout: STANDARD_TIMEOUT })
                     .should('be.visible')
                     .clear()
                     .type('Default Grants Program')
 
-                cy.get('#UserGrantProgramsTable', { timeout: 20000 })
+                cy.get('#UserGrantProgramsTable', { timeout: STANDARD_TIMEOUT })
                     .should('be.visible')
                     .within(() => {
-                        cy.contains('tbody tr', 'Default Grants Program', { timeout: 20000 })
+                        cy.contains('tbody tr', 'Default Grants Program', { timeout: STANDARD_TIMEOUT })
                             .should('exist')
                             .within(() => {
                                 cy.contains('button', 'Select')
@@ -70,7 +67,7 @@ describe('Send an email', () => {
                             })
                     })
 
-                cy.location('pathname', { timeout: 20000 }).should((p) => {
+                cy.location('pathname', { timeout: STANDARD_TIMEOUT }).should((p) => {
                     expect(p.indexOf('/GrantApplications') >= 0 || p.indexOf('/auth/') >= 0).to.eq(true)
                 })
             })
@@ -98,7 +95,7 @@ describe('Send an email', () => {
     it('Open an application from the list', () => {
         cy.url().should('include', '/GrantApplications')
 
-        cy.get('#GrantApplicationsTable tbody a[href^="/GrantApplications/Details?ApplicationId="]', { timeout: 20000 })
+        cy.get('#GrantApplicationsTable tbody a[href^="/GrantApplications/Details?ApplicationId="]', { timeout: STANDARD_TIMEOUT })
             .should('have.length.greaterThan', 0)
 
         cy.get('#GrantApplicationsTable tbody a[href^="/GrantApplications/Details?ApplicationId="]')
@@ -109,33 +106,33 @@ describe('Send an email', () => {
     })
 
     it('Open Emails tab', () => {
-        cy.get('#emails-tab', { timeout: 20000 })
+        cy.get('#emails-tab', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .click()
 
-        cy.contains('Emails', { timeout: 20000 }).should('exist')
-        cy.contains('Email History', { timeout: 20000 }).should('exist')
+        cy.contains('Emails', { timeout: STANDARD_TIMEOUT }).should('exist')
+        cy.contains('Email History', { timeout: STANDARD_TIMEOUT }).should('exist')
     })
 
     it('Open New Email form', () => {
-        cy.get('#btn-new-email', { timeout: 20000 })
+        cy.get('#btn-new-email', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .click()
 
-        cy.contains('Email To', { timeout: 20000 }).should('exist')
+        cy.contains('Email To', { timeout: STANDARD_TIMEOUT }).should('exist')
     })
 
     it('Select Email Template', () => {
         cy.intercept('GET', '/api/app/template/*/template-by-id').as('loadTemplate')
 
-        cy.get('#template', { timeout: 20000 })
+        cy.get('#template', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .select(TEMPLATE_NAME)
 
-        cy.wait('@loadTemplate', { timeout: 20000 })
+        cy.wait('@loadTemplate', { timeout: STANDARD_TIMEOUT })
 
         cy.get('#template')
             .find('option:selected')
@@ -143,7 +140,7 @@ describe('Send an email', () => {
     })
 
     it('Set Email To address', () => {
-        cy.get('#EmailTo', { timeout: 20000 })
+        cy.get('#EmailTo', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .clear()
@@ -153,7 +150,7 @@ describe('Send an email', () => {
     })
 
     it('Set Email CC address', () => {
-        cy.get('#EmailCC', { timeout: 20000 })
+        cy.get('#EmailCC', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .clear()
@@ -163,7 +160,7 @@ describe('Send an email', () => {
     })
 
     it('Set Email BCC address', () => {
-        cy.get('#EmailBCC', { timeout: 20000 })
+        cy.get('#EmailBCC', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .clear()
@@ -173,7 +170,7 @@ describe('Send an email', () => {
     })
 
     it('Set Email Subject', () => {
-        cy.get('#EmailSubject', { timeout: 20000 })
+        cy.get('#EmailSubject', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .clear()
@@ -183,20 +180,20 @@ describe('Send an email', () => {
     })
 
     it('Save the email', () => {
-        cy.get('#btn-save', { timeout: 20000 })
+        cy.get('#btn-save', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .click()
 
-        cy.get('#btn-new-email', { timeout: 20000 }).should('be.visible')
+        cy.get('#btn-new-email', { timeout: STANDARD_TIMEOUT }).should('be.visible')
     })
 
     it('Select saved email from Email History', () => {
-        cy.contains('td.data-table-header', TEST_EMAIL_SUBJECT, { timeout: 20000 })
+        cy.contains('td.data-table-header', TEST_EMAIL_SUBJECT, { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .click()
 
-        cy.get('#EmailTo', { timeout: 20000 }).should('be.visible')
+        cy.get('#EmailTo', { timeout: STANDARD_TIMEOUT }).should('be.visible')
         cy.get('#EmailCC').should('be.visible')
         cy.get('#EmailBCC').should('be.visible')
         cy.get('#EmailSubject').should('be.visible')
@@ -206,21 +203,21 @@ describe('Send an email', () => {
     })
 
     it('Send the email', () => {
-        cy.get('#btn-send', { timeout: 20000 })
+        cy.get('#btn-send', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .click()
     })
 
     it('Confirm send email in modal', () => {
-        cy.get('#modal-content', { timeout: 20000 })
+        cy.get('#modal-content', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
 
-        cy.contains('Are you sure you want to send this email?', { timeout: 20000 })
+        cy.contains('Are you sure you want to send this email?', { timeout: STANDARD_TIMEOUT })
             .should('exist')
 
-        cy.get('#btn-confirm-send', { timeout: 20000 })
+        cy.get('#btn-confirm-send', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
             .click()
