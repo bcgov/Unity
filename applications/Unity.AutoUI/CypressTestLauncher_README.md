@@ -10,7 +10,7 @@ It is NOT portable as-is.
 
 If you pull it from source control, you WILL NEED to edit at least one line (the local project path), and maybe more depending on your setup.
 
-This launcher assumes these files exist in the AUTOUI root directory and mirror how OpenShift does token replacement.
+This launcher assumes these files exist in the AutoUI root directory and mirror how OpenShift does token replacement.
 
 Obviously no passwords are in these templates below, you'll have to add them yourself. The creds are securely stored in KeePass. 
 
@@ -88,7 +88,7 @@ cypress.prod.env.json
   "environment": "PROD"
 }
 
-The batch sript will overwrite (create/update) this file each run:
+The batch script will overwrite (create/update) this file each run:
 
 cypress.env.json
 
@@ -136,23 +136,23 @@ Headless: npx cypress run in a new PowerShell window
 
 GUI: npx cypress open
 
-HERE"S WHAT YOU MUST CHANGE IN THE BAT FILE TO MAKE IT WORK: (hard-coded path)
+HOW THE BAT FILE WORKS: (using relative paths)
 
-The launcher is pinned to this path inside the embedded PowerShell:
+The launcher now uses relative paths and automatically detects the project directory:
 
-C:\Local Data\AutoUI Development S29\AutoUI\
+The batch file changes to its own directory using:
 
-You need to update both occurrences of that path (they are intended to match):
+%~dp0 (changes to the directory where the batch file is located)
 
-The $projectPath variable near the top:
+The $projectPath variable gets the current location:
 
-$projectPath = 'C:\Local Data\AutoUI Development S29\AutoUI\';
+$projectPath = (Get-Location).Path;
 
-The cd in the GUI mode Start-Process command:
+The GUI mode Start-Process command uses the dynamic path:
 
-cd 'C:\Local Data\AutoUI Development S29\AutoUI\'; npx cypress open
+cd '$($projectPath)'; npx cypress open
 
-If those two do not match your local repo path, the script will launch but fail when it tries to Set-Location or cd.
+This makes the script portable - no manual path changes required.
 
 Notes / gotchas
 
@@ -162,4 +162,4 @@ It uses Start-Process powershell ... -NoExit so the window stays open for logs.
 
 It always overwrites cypress.env.json. If you keep custom local settings in that file, they will be replaced.
 
-When this was added to source control. The bat file was placed in the root of the AUTOUI folder but once you've got the repo on your system it should be moved. It is intended to be run from your desktop.
+The bat file is located in the AutoUI folder and can be run directly from there. No need to move it to your desktop since it now uses relative paths.
