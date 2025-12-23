@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.AI;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
@@ -21,7 +23,9 @@ public class AttachmentAppService(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IAssessmentAttachmentRepository assessmentAttachmentRepository,
     IIntakeFormSubmissionManager intakeFormSubmissionManager,
-    IPersonRepository personUserRepository) : ApplicationService, IAttachmentAppService
+    IPersonRepository personUserRepository, 
+    IAIService aiService,
+    ISubmissionAppService submissionAppService) : ApplicationService, IAttachmentAppService
 {
     public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
     {
@@ -180,6 +184,56 @@ public class AttachmentAppService(
     {
         var property = typeof(T).GetProperty("CreatorId");
         return property?.GetValue(attachment) as Guid?;
+    }
+
+    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId)
+    {
+        // Get the attachment
+        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
+        
+        // Get file content from CHEFS
+        var fileDto = await submissionAppService.GetChefsFileAttachment(
+            Guid.Parse(attachment.ChefsSumbissionId ?? ""),
+            Guid.Parse(attachment.ChefsFileId ?? ""),
+            attachment.FileName ?? "");
+        
+        if (fileDto?.Content == null)
+        {
+            return "Unable to retrieve file content for AI analysis.";
+        }
+        
+        // Generate AI summary
+        var summary = await aiService.GenerateAttachmentSummaryAsync(
+            attachment.FileName ?? "",
+            fileDto.Content,
+            fileDto.ContentType);
+        
+        // Update attachment with summary
+        attachment.AISummary = summary;
+        await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
+        
+        return summary;
+    }
+    
+    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds)
+    {
+        var summaries = new List<string>();
+        
+        foreach (var attachmentId in attachmentIds)
+        {
+            try
+            {
+                var summary = await GenerateAISummaryAttachmentAsync(attachmentId);
+                summaries.Add(summary);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error generating AI summary for attachment {AttachmentId}", attachmentId);
+                summaries.Add($"Error generating summary: {ex.Message}");
+            }
+        }
+        
+        return summaries;
     }
 
 }

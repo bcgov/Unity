@@ -142,6 +142,11 @@ namespace Unity.Payments.PaymentRequests
                             paymentReqeust.SetPaymentStatus(result.PaymentStatus ?? "");
                             paymentReqeust.SetPaymentDate(result.PaymentDate ?? "");
                             paymentReqeust.SetPaymentNumber(result.PaymentNumber ?? "");
+                            if(result.InvoiceStatus != null)
+                            {
+                                paymentReqeust.SetCasHttpStatusCode((int)System.Net.HttpStatusCode.OK);
+                                paymentReqeust.SetCasResponse("SUCCEEDED"); 
+                            }
 
                             await _paymentRequestsRepository.UpdateAsync(paymentReqeust, autoSave: false);
                             await uow.SaveChangesAsync();

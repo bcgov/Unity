@@ -100,14 +100,17 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
             var requestsList = paymentRequests;
 
             var paidAmount = requestsList
-                .Where(e => e.Status == PaymentRequestStatus.Submitted)
+                .Where(e => !string.IsNullOrWhiteSpace(e.PaymentStatus)
+                         && e.PaymentStatus.Trim().Equals("Fully Paid", StringComparison.OrdinalIgnoreCase))
                 .Sum(e => e.Amount);
 
             var pendingAmount = requestsList
-                .Where(e => e.Status is not (PaymentRequestStatus.Paid
-                                            or PaymentRequestStatus.L1Declined
-                                            or PaymentRequestStatus.L2Declined
-                                            or PaymentRequestStatus.L3Declined))
+                .Where(e => e.Status == PaymentRequestStatus.L1Pending
+                         || e.Status == PaymentRequestStatus.L2Pending
+                         || e.Status == PaymentRequestStatus.L3Pending
+                         || (e.Status == PaymentRequestStatus.Submitted
+                             && string.IsNullOrWhiteSpace(e.PaymentStatus)
+                             && (string.IsNullOrWhiteSpace(e.InvoiceStatus) || !e.InvoiceStatus.Trim().Contains("Error", StringComparison.OrdinalIgnoreCase))))
                 .Sum(e => e.Amount);
 
             return (paidAmount, pendingAmount);
