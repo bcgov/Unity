@@ -22,15 +22,13 @@ namespace Unity.Payments.PaymentRequests.Notifications
     /// Service responsible for sending email notifications when payments reach FSB status
     /// </summary>
     public class FsbPaymentNotifier : ISingletonDependency
-    {
-        private readonly IPaymentRequestRepository _paymentRequestsRepository;
+    {        
         private readonly IApplicationRepository _applicationRepository;
         private readonly IIdentityUserRepository _identityUserRepository;
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
         private readonly ILocalEventBus _localEventBus;
         private readonly ISettingProvider _settingProvider;
-        private readonly FsbPaymentExcelGenerator _excelGenerator;
         private readonly FsbApEmailGroupStrategy _fsbApEmailGroupStrategy;
         private readonly ILogger<FsbPaymentNotifier> _logger;
 
@@ -46,14 +44,12 @@ namespace Unity.Payments.PaymentRequests.Notifications
             FsbApEmailGroupStrategy fsbApEmailGroupStrategy,
             ILogger<FsbPaymentNotifier> logger)
         {
-            _paymentRequestsRepository = paymentRequestsRepository;
             _applicationRepository = applicationRepository;
             _identityUserRepository = identityUserRepository;
             _tenantRepository = tenantRepository;
             _currentTenant = currentTenant;
             _localEventBus = localEventBus;
-            _settingProvider = settingProvider;
-            _excelGenerator = excelGenerator;
+            _settingProvider = settingProvider;            
             _fsbApEmailGroupStrategy = fsbApEmailGroupStrategy;
             _logger = logger;
         }
@@ -91,7 +87,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
                 }
 
                 // Generate Excel file
-                byte[] excelBytes = _excelGenerator.GenerateExcelFile(paymentDataList);
+                byte[] excelBytes = FsbPaymentExcelGenerator.GenerateExcelFile(paymentDataList);
                 string fileName = $"FSB_Payments_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
 
                 // Generate email body
@@ -130,7 +126,9 @@ namespace Unity.Payments.PaymentRequests.Notifications
             catch (Exception ex)
             {
                 _logger.LogError(ex, "NotifyFsbPayments: Error sending FSB payment notification");
-                throw; // Re-throw to allow caller to handle
+                throw new InvalidOperationException(
+                    $"Failed to send FSB payment notification. See inner exception for details.",
+                    ex);
             }
         }
 
@@ -266,7 +264,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
         /// <summary>
         /// Generates HTML email body
         /// </summary>
-        private string GenerateEmailBody(int paymentCount)
+        private static string GenerateEmailBody(int paymentCount)
         {
             return $@"
 <html>

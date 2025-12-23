@@ -38,12 +38,14 @@ namespace Unity.Payments.PaymentRequests.Notifications
     {
         private const string SheetName = "FSB Payments";
 
+        private const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
         /// <summary>
         /// Generates an Excel file from a list of FSB payment data
         /// </summary>
         /// <param name="payments">List of payment data to include in Excel</param>
         /// <returns>Excel file as byte array</returns>
-        public byte[] GenerateExcelFile(List<FsbPaymentData> payments)
+        public static byte[] GenerateExcelFile(List<FsbPaymentData> payments)
         {
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add(SheetName);
@@ -71,7 +73,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
         /// <summary>
         /// Adds the header row to the worksheet
         /// </summary>
-        private void AddHeaderRow(IXLWorksheet worksheet)
+        private static void AddHeaderRow(IXLWorksheet worksheet)
         {
             worksheet.Cell(1, 1).Value = "Payment ID";
             worksheet.Cell(1, 2).Value = "Amount";
@@ -99,12 +101,12 @@ namespace Unity.Payments.PaymentRequests.Notifications
         /// <summary>
         /// Adds a payment data row to the worksheet
         /// </summary>
-        private void AddPaymentRow(IXLWorksheet worksheet, int rowNumber, FsbPaymentData payment)
+        private static void AddPaymentRow(IXLWorksheet worksheet, int rowNumber, FsbPaymentData payment)
         {
             worksheet.Cell(rowNumber, 1).Value = payment.PaymentId.ToString();
             worksheet.Cell(rowNumber, 2).Value = payment.Amount;
             worksheet.Cell(rowNumber, 3).Value = payment.ApplicantName ?? "N/A";
-            worksheet.Cell(rowNumber, 4).Value = payment.DateApproved?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";
+            worksheet.Cell(rowNumber, 4).Value = payment.DateApproved?.ToString(DATE_FORMAT) ?? "N/A";
             worksheet.Cell(rowNumber, 5).Value = payment.TenantName ?? "N/A";
             worksheet.Cell(rowNumber, 6).Value = payment.ProjectName ?? "N/A";
             worksheet.Cell(rowNumber, 7).Value = payment.BatchNumber ?? "N/A";
@@ -112,11 +114,11 @@ namespace Unity.Payments.PaymentRequests.Notifications
             worksheet.Cell(rowNumber, 9).Value = payment.SiteNumber ?? "N/A";
             worksheet.Cell(rowNumber, 10).Value = payment.InvoiceNumber ?? "N/A";
             worksheet.Cell(rowNumber, 11).Value = payment.PaymentGroup ?? "N/A";
-            worksheet.Cell(rowNumber, 12).Value = payment.L1ApprovalDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";
+            worksheet.Cell(rowNumber, 12).Value = payment.L1ApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
             worksheet.Cell(rowNumber, 13).Value = payment.L1Approver ?? "N/A";
-            worksheet.Cell(rowNumber, 14).Value = payment.L2ApprovalDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";
+            worksheet.Cell(rowNumber, 14).Value = payment.L2ApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
             worksheet.Cell(rowNumber, 15).Value = payment.L2Approver ?? "N/A";
-            worksheet.Cell(rowNumber, 16).Value = payment.L3ApprovalDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";
+            worksheet.Cell(rowNumber, 16).Value = payment.L3ApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
             worksheet.Cell(rowNumber, 17).Value = payment.L3Approver ?? "N/A";
             worksheet.Cell(rowNumber, 18).Value = payment.ContractNumber ?? "N/A";
         }

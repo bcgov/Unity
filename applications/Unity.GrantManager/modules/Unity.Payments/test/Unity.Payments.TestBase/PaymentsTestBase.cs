@@ -12,6 +12,8 @@ using Unity.Payments.Security;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Applications;
+using Volo.Abp.Identity;
+using Unity.Notifications.EmailGroups;
 
 namespace Unity.Payments;
 
@@ -89,6 +91,16 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
         var tenantRepository = Substitute.For<ITenantRepository>();
         // Mock calls
         services.AddSingleton(tenantRepository);
+
+        var identityUserRepository = Substitute.For<IIdentityUserRepository>();
+        services.AddSingleton(identityUserRepository);
+
+        var emailGroupsRepository = Substitute.For<IEmailGroupsRepository>();
+        services.AddSingleton(emailGroupsRepository);
+
+        var emailGroupUsersRepository = Substitute.For<IEmailGroupUsersRepository>();
+        services.AddSingleton(emailGroupUsersRepository);
+
         base.AfterAddApplication(services);
     }
 }

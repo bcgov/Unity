@@ -18,8 +18,7 @@ namespace Unity.GrantManager.Events
     internal class EmailNotificationHandler(
             IEmailNotificationService emailNotificationService,
             IFeatureChecker featureChecker,
-            EmailAttachmentService emailAttachmentService,
-            IEmailLogsRepository emailLogsRepository,
+            EmailAttachmentService emailAttachmentService,            
             ICurrentTenant currentTenant,
             IUnitOfWorkManager unitOfWorkManager,
             ILogger<EmailNotificationHandler> logger) : ILocalEventHandler<EmailNotificationEvent>, ITransientDependency

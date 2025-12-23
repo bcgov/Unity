@@ -80,7 +80,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     }
                 }
 
-                _logger.LogInformation("FsbApEmailGroupStrategy: Successfully found {Count} emails from FSB-AP email group.", fsbApEmails.Count);
+                _logger.LogInformation("FsbApEmailGroupStrategy: Successfully retrieved email recipients from FSB-AP email group.");
             }
             catch (Exception ex)
             {

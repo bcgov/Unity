@@ -71,8 +71,8 @@ public class EmailAttachmentService : ITransientDependency
 
         await _amazonS3Client.PutObjectAsync(putRequest);
         _logger.LogInformation(
-            "Uploaded email attachment to S3: EmailLogId={EmailLogId}, FileName={FileName}, FileSize={FileSize}, S3Key={S3Key}",
-            emailLogId, fileName, fileContent.Length, s3Key);
+            "Uploaded email attachment to S3: FileName={FileName}, FileSize={FileSize}",
+            fileName, fileContent.Length);
 
         // Create metadata record
         var attachment = new EmailLogAttachment
@@ -90,21 +90,9 @@ public class EmailAttachmentService : ITransientDependency
 
         await _emailLogAttachmentRepository.InsertAsync(attachment);
         return attachment;
-    }
+    }    
 
-    public async Task<byte[]?> DownloadAttachmentAsync(Guid attachmentId)
-    {
-        var attachment = await _emailLogAttachmentRepository.GetAsync(attachmentId);
-        if (attachment == null)
-        {
-            _logger.LogWarning("Attachment {AttachmentId} not found", attachmentId);
-            return null;
-        }
-
-        return await DownloadFromS3Async(attachment.S3ObjectKey);
-    }
-
-    public async Task<byte[]?> DownloadFromS3Async(string s3ObjectKey)
+    public async Task<byte[]?> DownloadFromS3Async(string s3ObjectKey, string emailSubject)
     {
         var bucket = _configuration["S3:Bucket"];
 
@@ -119,8 +107,8 @@ public class EmailAttachmentService : ITransientDependency
         await response.ResponseStream.CopyToAsync(memoryStream);
 
         _logger.LogInformation(
-            "Downloaded email attachment from S3: S3Key={S3Key}, FileSize={FileSize}",
-            s3ObjectKey, memoryStream.Length);
+            "Downloaded email attachment of email subject '{emailSubject}' from S3",
+            emailSubject);
         return memoryStream.ToArray();
     }
 
@@ -137,4 +125,6 @@ public class EmailAttachmentService : ITransientDependency
 
         return $"{basePath}/{tenantPart}/{emailLogId}/{escapedFileName}";
     }
+
+    
 }
