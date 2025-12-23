@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Emails
             return true;
         }
 
-        private static EmailNotificationEvent GetEmailNotificationEvent(CreateEmailDto dto)
+        private EmailNotificationEvent GetEmailNotificationEvent(CreateEmailDto dto)
         {
             var toList = dto.EmailTo.ParseEmailList() ?? [];
             var ccList = dto.EmailCC.ParseEmailList() ?? [];
@@ -39,6 +39,7 @@ namespace Unity.GrantManager.Emails
             return new EmailNotificationEvent
             {
                 Id = dto.EmailId,
+                TenantId = CurrentTenant.Id,
                 ApplicationId = dto.ApplicationId,
                 RetryAttempts = 0,
                 EmailAddress = dto.EmailTo,

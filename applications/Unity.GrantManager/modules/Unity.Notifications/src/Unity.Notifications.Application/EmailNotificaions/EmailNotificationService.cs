@@ -274,17 +274,15 @@ public class EmailNotificationService(
 
     public async Task<EmailLog?> GetEmailLogById(Guid id)
     {
-        EmailLog emailLog = new();
         try
         {
-            emailLog = await emailLogsRepository.GetAsync(id);
+            return await emailLogsRepository.GetAsync(id);
         }
         catch (EntityNotFoundException ex)
         {
-            string ExceptionMessage = ex.Message;
-            Logger.LogInformation(ex, "Entity Not found for Email Log Must be in wrong context: {ExceptionMessage}", ExceptionMessage);
+            Logger.LogError(ex, "Entity not found for Email Log. Tenant context may be incorrect: {ExceptionMessage}", ex.Message);
+            return null;
         }
-        return emailLog;
     }
 
     [Authorize]
