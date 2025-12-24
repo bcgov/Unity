@@ -390,7 +390,7 @@ public class EmailNotificationService(
 
             foreach (var attachment in attachments)
             {
-                byte[]? content = await emailAttachmentService.DownloadFromS3Async(attachment.S3ObjectKey, emailLog.Subject);
+                byte[]? content = await emailAttachmentService.DownloadFromS3Async(attachment.S3ObjectKey);
                 if (content != null)
                 {
                     attachmentList.Add(new

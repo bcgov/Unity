@@ -9,6 +9,7 @@ using Unity.Notifications.Events;
 using Unity.Notifications.Settings;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
+using Unity.Payments.PaymentRequests;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Identity;
@@ -22,8 +23,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
     /// Service responsible for sending email notifications when payments reach FSB status
     /// </summary>
     public class FsbPaymentNotifier : ISingletonDependency
-    {        
-        private readonly IApplicationRepository _applicationRepository;
+    { 
         private readonly IIdentityUserRepository _identityUserRepository;
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
@@ -44,7 +44,6 @@ namespace Unity.Payments.PaymentRequests.Notifications
             FsbApEmailGroupStrategy fsbApEmailGroupStrategy,
             ILogger<FsbPaymentNotifier> logger)
         {
-            _applicationRepository = applicationRepository;
             _identityUserRepository = identityUserRepository;
             _tenantRepository = tenantRepository;
             _currentTenant = currentTenant;
@@ -90,8 +89,16 @@ namespace Unity.Payments.PaymentRequests.Notifications
                 byte[] excelBytes = FsbPaymentExcelGenerator.GenerateExcelFile(paymentDataList);
                 string fileName = $"FSB_Payments_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
 
+                // Get tenant name for email body
+                string tenantName = "N/A";
+                if (_currentTenant.Id.HasValue)
+                {
+                    var tenant = await _tenantRepository.GetAsync(_currentTenant.Id.Value);
+                    tenantName = tenant?.Name ?? "N/A";
+                }
+
                 // Generate email body
-                string emailBody = GenerateEmailBody(paymentDataList.Count);
+                string emailBody = GenerateEmailBody(tenantName);
 
                 // Get from address
                 var defaultFromAddress = await _settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
@@ -109,15 +116,14 @@ namespace Unity.Payments.PaymentRequests.Notifications
                         EmailFrom = fromAddress,
                         EmailAddressList = recipients,
                         ApplicationId = Guid.Empty,  // System-level email, not application-specific
-                        EmailAttachments = new List<EmailAttachmentData>
-                        {
-                            new EmailAttachmentData
-                            {
+                        EmailAttachments =
+                        [
+                            new() {
                                 FileName = fileName,
                                 Content = excelBytes,  // Byte array, not Base64
                                 ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             }
-                        }
+                        ]
                     }
                 );
 
@@ -141,19 +147,6 @@ namespace Unity.Payments.PaymentRequests.Notifications
 
             try
             {
-                // Get all application IDs to fetch in batch
-                var applicationIds = fsbPayments.Select(p => p.CorrelationId).Distinct().ToList();
-                var applications = await _applicationRepository.GetListAsync(a => applicationIds.Contains(a.Id));
-                var applicationDict = applications.ToDictionary(a => a.Id);
-
-                // Get tenant name
-                string tenantName = "N/A";
-                if (_currentTenant.Id.HasValue)
-                {
-                    var tenant = await _tenantRepository.GetAsync(_currentTenant.Id.Value);
-                    tenantName = tenant?.Name ?? "N/A";
-                }
-
                 // Get all unique approver user IDs
                 var allApproverIds = fsbPayments
                     .SelectMany(p => p.ExpenseApprovals)
@@ -162,11 +155,22 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     .Distinct()
                     .ToList();
 
-                Dictionary<Guid, string> approverNameDict = new();
-                if (allApproverIds.Count > 0)
+                // Get all unique creator user IDs
+                var allCreatorIds = fsbPayments
+                    .Select(p => p.CreatorId)
+                    .Where(id => id.HasValue)
+                    .Select(id => id!.Value)
+                    .Distinct()
+                    .ToList();
+
+                // Combine approver and creator IDs for single lookup
+                var allUserIds = allApproverIds.Concat(allCreatorIds).Distinct().ToList();
+
+                Dictionary<Guid, string> userNameDict = [];
+                if (allUserIds.Count > 0)
                 {
-                    var approvers = await _identityUserRepository.GetListByIdsAsync(allApproverIds);
-                    approverNameDict = approvers.ToDictionary(
+                    var users = await _identityUserRepository.GetListByIdsAsync(allUserIds);
+                    userNameDict = users.ToDictionary(
                         u => u.Id,
                         u => $"{u.Name} {u.Surname}".Trim()
                     );
@@ -179,64 +183,118 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     {
                         var paymentData = new FsbPaymentData
                         {
-                            PaymentId = payment.Id,
-                            Amount = payment.Amount,
-                            DateApproved = payment.LastModificationTime,
-                            TenantName = tenantName,
-                            BatchNumber = payment.BatchNumber.ToString(),
-                            InvoiceNumber = payment.InvoiceNumber,
+                            // Column 1: Batch # - Use BatchName instead of BatchNumber
+                            BatchName = payment.BatchName ?? "N/A",
+
+                            // Column 2: Contract Number
                             ContractNumber = payment.ContractNumber,
-                            PaymentGroup = "N/A" // Not currently tracked in PaymentRequest
+
+                            // Column 3: Payee Name
+                            PayeeName = payment.PayeeName ?? "N/A",
+
+                            // Column 7: Invoice Number
+                            InvoiceNumber = payment.InvoiceNumber,
+
+                            // Column 8: Amount
+                            Amount = payment.Amount,
+
+                            // Column 15: CAS Cheque Stub Description
+                            CasCheckStubDescription = payment.Description,
+
+                            // Column 16: Account Coding
+                            AccountCoding = AccountCodingFormatter.Format(payment.AccountCoding),
+
+                            // Column 18: Requested On
+                            RequestedOn = payment.CreationTime
                         };
 
-                        // Get application data
-                        if (applicationDict.TryGetValue(payment.CorrelationId, out var application))
+                        // Column 4: CAS Supplier/Site Number - Combined format
+                        if (payment.Site != null)
                         {
-                            //paymentData.ApplicantName = application.ApplicantName ?? "N/A";
-                            paymentData.ProjectName = application.ProjectName ?? "N/A";
+                            string supplierNumber = "N/A";
+                            string siteNumber = payment.Site.Number ?? "N/A";
+
+                            if (payment.Site.Supplier != null)
+                            {
+                                supplierNumber = payment.Site.Supplier.Number ?? "N/A";
+                            }
+
+                            paymentData.CasSupplierSiteNumber = $"{supplierNumber}/{siteNumber}";
+
+                            // Column 5: Payee Address - Combined address string
+                            paymentData.PayeeAddress = FormatAddress(
+                                payment.Site.AddressLine1,
+                                payment.Site.AddressLine2,
+                                payment.Site.AddressLine3,
+                                payment.Site.City,
+                                payment.Site.Province,
+                                payment.Site.PostalCode
+                            );
+
+                            // Column 9: Pay Group - Convert enum to string
+                            if (payment.Site.PaymentGroup == PaymentGroup.EFT)
+                            {
+                                paymentData.PayGroup = "EFT";
+                            }
+                            else if (payment.Site.PaymentGroup == PaymentGroup.Cheque)
+                            {
+                                paymentData.PayGroup = "Cheque";
+                            }
+                            else
+                            {
+                                paymentData.PayGroup = "N/A";
+                            }
                         }
                         else
                         {
-                            paymentData.ApplicantName = "N/A";
-                            paymentData.ProjectName = "N/A";
+                            paymentData.CasSupplierSiteNumber = "N/A/N/A";
+                            paymentData.PayeeAddress = "N/A";
+                            paymentData.PayGroup = "N/A";
                         }
 
-                        // Get site data
-                        if (payment.Site != null)
+                        // Column 17: Payment Requester
+                        if (payment.CreatorId.HasValue && userNameDict.TryGetValue(payment.CreatorId.Value, out var requesterName))
                         {
-                            paymentData.SiteNumber = payment.Site.Number;
-                            if (payment.Site.Supplier != null)
-                            {
-                                paymentData.SupplierNumber = payment.Site.Supplier.Number;
-                            }
+                            paymentData.PaymentRequester = requesterName;
                         }
 
                         // Get approval data
                         var l1Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level1);
                         if (l1Approval != null)
                         {
-                            paymentData.L1ApprovalDate = l1Approval.DecisionDate;
-                            if (l1Approval.DecisionUserId.HasValue && approverNameDict.TryGetValue(l1Approval.DecisionUserId.Value, out var l1Name))
+                            // Columns 6, 10, 12: All use L1 Approval Date
+                            paymentData.InvoiceDate = l1Approval.DecisionDate;
+                            paymentData.GoodsServicesReceivedDate = l1Approval.DecisionDate;
+                            paymentData.QRApprovalDate = l1Approval.DecisionDate;
+
+                            // Column 11: Qualifier Receiver (L1 Approver name)
+                            if (l1Approval.DecisionUserId.HasValue && userNameDict.TryGetValue(l1Approval.DecisionUserId.Value, out var l1Name))
                             {
-                                paymentData.L1Approver = l1Name;
+                                paymentData.QualifierReceiver = l1Name;
                             }
                         }
 
                         var l2Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level2);
                         if (l2Approval != null)
                         {
-                            paymentData.L2ApprovalDate = l2Approval.DecisionDate;
-                            if (l2Approval.DecisionUserId.HasValue && approverNameDict.TryGetValue(l2Approval.DecisionUserId.Value, out var l2Name))
+                            // Column 14: EA-Approval Date
+                            paymentData.EAApprovalDate = l2Approval.DecisionDate;
+
+                            // Column 13: Expense Authority (L2 Approver name)
+                            if (l2Approval.DecisionUserId.HasValue && userNameDict.TryGetValue(l2Approval.DecisionUserId.Value, out var l2Name))
                             {
-                                paymentData.L2Approver = l2Name;
+                                paymentData.ExpenseAuthority = l2Name;
                             }
                         }
 
                         var l3Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level3);
                         if (l3Approval != null)
                         {
+                            // Column 20: L3 Approval Date
                             paymentData.L3ApprovalDate = l3Approval.DecisionDate;
-                            if (l3Approval.DecisionUserId.HasValue && approverNameDict.TryGetValue(l3Approval.DecisionUserId.Value, out var l3Name))
+
+                            // Column 19: L3 Approver
+                            if (l3Approval.DecisionUserId.HasValue && userNameDict.TryGetValue(l3Approval.DecisionUserId.Value, out var l3Name))
                             {
                                 paymentData.L3Approver = l3Name;
                             }
@@ -264,19 +322,59 @@ namespace Unity.Payments.PaymentRequests.Notifications
         /// <summary>
         /// Generates HTML email body
         /// </summary>
-        private static string GenerateEmailBody(int paymentCount)
+        private static string GenerateEmailBody(string tenantName)
         {
             return $@"
 <html>
 <body>
     <p>Hello,</p>
-    <p>This email is to notify you that <strong>{paymentCount}</strong> payment(s) have been approved and sent to FSB (Financial Services Branch) for processing.</p>
-    <p>Please find the attached Excel file with detailed payment information.</p>
-    <p>Thank you.</p>
+    <p>Please see the attached spreadsheet for the payment processing request from the {tenantName} program. If you have any questions, please contact payment requester.</p>
+    <p>Kind regards.</p>
     <br/>
-    <p><em>This is an automated notification. Please do not reply to this email.</em></p>
+    <br/>
+    <p><em>*ATTENTION - Please do not reply to this email as it is an automated notification which is unable to receive replies.</em></p>
 </body>
 </html>";
         }
+
+        /// <summary>
+        /// Formats address components into a single string
+        /// </summary>
+        private static string FormatAddress(
+            string? addressLine1,
+            string? addressLine2,
+            string? addressLine3,
+            string? city,
+            string? province,
+            string? postalCode)
+        {
+            var addressParts = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(addressLine1))
+                addressParts.Add(addressLine1);
+
+            if (!string.IsNullOrWhiteSpace(addressLine2))
+                addressParts.Add(addressLine2);
+
+            if (!string.IsNullOrWhiteSpace(addressLine3))
+                addressParts.Add(addressLine3);
+
+            // Combine city, province, postal code on one line
+            var cityProvincePostal = new List<string>();
+            if (!string.IsNullOrWhiteSpace(city))
+                cityProvincePostal.Add(city);
+
+            if (!string.IsNullOrWhiteSpace(province))
+                cityProvincePostal.Add(province);
+
+            if (!string.IsNullOrWhiteSpace(postalCode))
+                cityProvincePostal.Add(postalCode);
+
+            if (cityProvincePostal.Count > 0)
+                addressParts.Add(string.Join(", ", cityProvincePostal));
+
+            return addressParts.Count > 0 ? string.Join(", ", addressParts) : "N/A";
+        }
+
     }
 }

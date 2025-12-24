@@ -481,21 +481,7 @@ namespace Unity.Payments.PaymentRequests
 
         public virtual Task<string> GetAccountDistributionCode(AccountCodingDto? accountCoding)
         {
-            string accountDistributionCode = "";
-            if (accountCoding == null) return Task.FromResult(accountDistributionCode);
-
-            if (accountCoding.Responsibility != null
-                && accountCoding.ServiceLine != null
-                && accountCoding.Stob != null
-                && accountCoding.MinistryClient != null
-                && accountCoding.ProjectNumber != null)
-            {
-                const string DefaultAccountDistributionPostfix = "000000.0000";
-                accountDistributionCode =
-                 $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{DefaultAccountDistributionPostfix}";
-            }
-
-            return Task.FromResult(accountDistributionCode);
+            return Task.FromResult(AccountCodingFormatter.Format(accountCoding));
         }
 
         private static void ApplyErrorSummary(List<PaymentRequestDto> mappedPayments)

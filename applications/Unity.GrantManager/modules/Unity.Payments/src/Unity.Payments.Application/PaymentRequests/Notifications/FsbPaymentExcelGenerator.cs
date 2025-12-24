@@ -11,24 +11,26 @@ namespace Unity.Payments.PaymentRequests.Notifications
     /// </summary>
     public class FsbPaymentData
     {
-        public Guid PaymentId { get; set; }
-        public decimal Amount { get; set; }
-        public string ApplicantName { get; set; } = string.Empty;
-        public DateTime? DateApproved { get; set; }
-        public string TenantName { get; set; } = string.Empty;
-        public string ProjectName { get; set; } = string.Empty;
-        public string? BatchNumber { get; set; }
-        public string? SupplierNumber { get; set; }
-        public string? SiteNumber { get; set; }
-        public string? InvoiceNumber { get; set; }
-        public string PaymentGroup { get; set; } = "N/A"; // Not currently tracked
-        public DateTime? L1ApprovalDate { get; set; }
-        public string? L1Approver { get; set; }
-        public DateTime? L2ApprovalDate { get; set; }
-        public string? L2Approver { get; set; }
-        public DateTime? L3ApprovalDate { get; set; }
-        public string? L3Approver { get; set; }
-        public string? ContractNumber { get; set; }
+        public string BatchName { get; set; } = string.Empty;                     // Column 1
+        public string? ContractNumber { get; set; }                               // Column 2
+        public string PayeeName { get; set; } = string.Empty;                     // Column 3
+        public string CasSupplierSiteNumber { get; set; } = string.Empty;         // Column 4
+        public string PayeeAddress { get; set; } = string.Empty;                  // Column 5
+        public DateTime? InvoiceDate { get; set; }                                // Column 6
+        public string? InvoiceNumber { get; set; }                                // Column 7
+        public decimal Amount { get; set; }                                       // Column 8
+        public string PayGroup { get; set; } = "N/A";                             // Column 9
+        public DateTime? GoodsServicesReceivedDate { get; set; }                  // Column 10
+        public string? QualifierReceiver { get; set; }                            // Column 11
+        public DateTime? QRApprovalDate { get; set; }                             // Column 12
+        public string? ExpenseAuthority { get; set; }                             // Column 13
+        public DateTime? EAApprovalDate { get; set; }                             // Column 14
+        public string? CasCheckStubDescription { get; set; }                      // Column 15
+        public string? AccountCoding { get; set; }                                // Column 16
+        public string? PaymentRequester { get; set; }                             // Column 17
+        public DateTime? RequestedOn { get; set; }                                // Column 18
+        public string? L3Approver { get; set; }                                   // Column 19
+        public DateTime? L3ApprovalDate { get; set; }                             // Column 20
     }
 
     /// <summary>
@@ -75,24 +77,26 @@ namespace Unity.Payments.PaymentRequests.Notifications
         /// </summary>
         private static void AddHeaderRow(IXLWorksheet worksheet)
         {
-            worksheet.Cell(1, 1).Value = "Payment ID";
-            worksheet.Cell(1, 2).Value = "Amount";
-            worksheet.Cell(1, 3).Value = "Applicant Name";
-            worksheet.Cell(1, 4).Value = "Date Approved";
-            worksheet.Cell(1, 5).Value = "Tenant Name";
-            worksheet.Cell(1, 6).Value = "Project Name";
-            worksheet.Cell(1, 7).Value = "Batch #";
-            worksheet.Cell(1, 8).Value = "Supplier Number";
-            worksheet.Cell(1, 9).Value = "Site Number";
-            worksheet.Cell(1, 10).Value = "Invoice Number";
-            worksheet.Cell(1, 11).Value = "Payment Group";
-            worksheet.Cell(1, 12).Value = "L1 Approval Date";
-            worksheet.Cell(1, 13).Value = "L1 Approver";
-            worksheet.Cell(1, 14).Value = "L2 Approval Date";
-            worksheet.Cell(1, 15).Value = "L2 Approver";
-            worksheet.Cell(1, 16).Value = "L3 Approval Date";
-            worksheet.Cell(1, 17).Value = "L3 Approver";
-            worksheet.Cell(1, 18).Value = "Contract Number";
+            worksheet.Cell(1, 1).Value = "Batch #";
+            worksheet.Cell(1, 2).Value = "Contract Number";
+            worksheet.Cell(1, 3).Value = "Payee Name (Applicant Name)";
+            worksheet.Cell(1, 4).Value = "CAS Supplier/Site Number";
+            worksheet.Cell(1, 5).Value = "Payee Address (Site Address)";
+            worksheet.Cell(1, 6).Value = "Invoice Date";
+            worksheet.Cell(1, 7).Value = "Invoice Number";
+            worksheet.Cell(1, 8).Value = "Amount";
+            worksheet.Cell(1, 9).Value = "Pay Group";
+            worksheet.Cell(1, 10).Value = "Goods/Services Received Date";
+            worksheet.Cell(1, 11).Value = "Qualifier Receiver";
+            worksheet.Cell(1, 12).Value = "QR-Approval Date";
+            worksheet.Cell(1, 13).Value = "Expense Authority";
+            worksheet.Cell(1, 14).Value = "EA-Approval Date";
+            worksheet.Cell(1, 15).Value = "CAS Cheque Stub Description";
+            worksheet.Cell(1, 16).Value = "Account Coding";
+            worksheet.Cell(1, 17).Value = "Payment Requester";
+            worksheet.Cell(1, 18).Value = "Requested On";
+            worksheet.Cell(1, 19).Value = "L3 Approver";
+            worksheet.Cell(1, 20).Value = "L3 Approval Date";
 
             // Make header row bold
             worksheet.Row(1).Style.Font.Bold = true;
@@ -103,24 +107,26 @@ namespace Unity.Payments.PaymentRequests.Notifications
         /// </summary>
         private static void AddPaymentRow(IXLWorksheet worksheet, int rowNumber, FsbPaymentData payment)
         {
-            worksheet.Cell(rowNumber, 1).Value = payment.PaymentId.ToString();
-            worksheet.Cell(rowNumber, 2).Value = payment.Amount;
-            worksheet.Cell(rowNumber, 3).Value = payment.ApplicantName ?? "N/A";
-            worksheet.Cell(rowNumber, 4).Value = payment.DateApproved?.ToString(DATE_FORMAT) ?? "N/A";
-            worksheet.Cell(rowNumber, 5).Value = payment.TenantName ?? "N/A";
-            worksheet.Cell(rowNumber, 6).Value = payment.ProjectName ?? "N/A";
-            worksheet.Cell(rowNumber, 7).Value = payment.BatchNumber ?? "N/A";
-            worksheet.Cell(rowNumber, 8).Value = payment.SupplierNumber ?? "N/A";
-            worksheet.Cell(rowNumber, 9).Value = payment.SiteNumber ?? "N/A";
-            worksheet.Cell(rowNumber, 10).Value = payment.InvoiceNumber ?? "N/A";
-            worksheet.Cell(rowNumber, 11).Value = payment.PaymentGroup ?? "N/A";
-            worksheet.Cell(rowNumber, 12).Value = payment.L1ApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
-            worksheet.Cell(rowNumber, 13).Value = payment.L1Approver ?? "N/A";
-            worksheet.Cell(rowNumber, 14).Value = payment.L2ApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
-            worksheet.Cell(rowNumber, 15).Value = payment.L2Approver ?? "N/A";
-            worksheet.Cell(rowNumber, 16).Value = payment.L3ApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
-            worksheet.Cell(rowNumber, 17).Value = payment.L3Approver ?? "N/A";
-            worksheet.Cell(rowNumber, 18).Value = payment.ContractNumber ?? "N/A";
+            worksheet.Cell(rowNumber, 1).Value = payment.BatchName ?? "N/A";
+            worksheet.Cell(rowNumber, 2).Value = payment.ContractNumber ?? "N/A";
+            worksheet.Cell(rowNumber, 3).Value = payment.PayeeName ?? "N/A";
+            worksheet.Cell(rowNumber, 4).Value = payment.CasSupplierSiteNumber ?? "N/A";
+            worksheet.Cell(rowNumber, 5).Value = payment.PayeeAddress ?? "N/A";
+            worksheet.Cell(rowNumber, 6).Value = payment.InvoiceDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 7).Value = payment.InvoiceNumber ?? "N/A";
+            worksheet.Cell(rowNumber, 8).Value = payment.Amount;
+            worksheet.Cell(rowNumber, 9).Value = payment.PayGroup ?? "N/A";
+            worksheet.Cell(rowNumber, 10).Value = payment.GoodsServicesReceivedDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 11).Value = payment.QualifierReceiver ?? "N/A";
+            worksheet.Cell(rowNumber, 12).Value = payment.QRApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 13).Value = payment.ExpenseAuthority ?? "N/A";
+            worksheet.Cell(rowNumber, 14).Value = payment.EAApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 15).Value = payment.CasCheckStubDescription ?? "N/A";
+            worksheet.Cell(rowNumber, 16).Value = payment.AccountCoding ?? "N/A";
+            worksheet.Cell(rowNumber, 17).Value = payment.PaymentRequester ?? "N/A";
+            worksheet.Cell(rowNumber, 18).Value = payment.RequestedOn?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 19).Value = payment.L3Approver ?? "N/A";
+            worksheet.Cell(rowNumber, 20).Value = payment.L3ApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
         }
     }
 }

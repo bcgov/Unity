@@ -92,7 +92,7 @@ public class EmailAttachmentService : ITransientDependency
         return attachment;
     }    
 
-    public async Task<byte[]?> DownloadFromS3Async(string s3ObjectKey, string emailSubject)
+    public async Task<byte[]?> DownloadFromS3Async(string s3ObjectKey)
     {
         var bucket = _configuration["S3:Bucket"];
 
@@ -107,8 +107,7 @@ public class EmailAttachmentService : ITransientDependency
         await response.ResponseStream.CopyToAsync(memoryStream);
 
         _logger.LogInformation(
-            "Downloaded email attachment of email subject '{emailSubject}' from S3",
-            emailSubject);
+            "Downloaded email attachment from S3");
         return memoryStream.ToArray();
     }
 
