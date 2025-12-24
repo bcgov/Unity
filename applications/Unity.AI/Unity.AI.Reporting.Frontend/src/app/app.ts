@@ -33,6 +33,7 @@ export class App implements OnInit, OnDestroy {
   selectedVisualization: string = 'table';
 
   constructor(
+    private readonly sanitizer: DomSanitizer,
     private readonly authService: AuthService,
     private readonly apiService: ApiService,
     private readonly toastService: ToastService,
@@ -170,6 +171,89 @@ export class App implements OnInit, OnDestroy {
     await this.saveChat();
   }
 
+  private observerMap = new Map<any, IntersectionObserver>();
+
+  // In your component class, add a method:
+  onIframeLoad(turn: any) {
+    // Start observing the iframe for content stability
+    this.observeIframeStability(turn);
+  }
+
+  private observeIframeStability(turn: any): void {
+    // Clean up any existing observer for this turn
+    if (this.observerMap.has(turn)) {
+      this.observerMap.get(turn)?.disconnect();
+      this.observerMap.delete(turn);
+    }
+
+    // Find the iframe element for this turn
+    const iframeElement = document.querySelector(`iframe[src*="${turn.embed?.card_id}"]`) as HTMLIFrameElement;
+    if (!iframeElement) {
+      // Fallback to timeout if iframe not found
+      setTimeout(() => turn.iframeLoaded = true, 2000);
+      return;
+    }
+
+    let stableCount = 0;
+    let lastHeight = 0;
+    let lastWidth = 0;
+    const requiredStableChecks = 3;
+    const checkInterval = 500;
+
+    const checkStability = () => {
+      try {
+        // Check if iframe dimensions have stabilized
+        const currentHeight = iframeElement.offsetHeight;
+        const currentWidth = iframeElement.offsetWidth;
+
+        // Also check if the iframe has actual content by looking at its document
+        let hasContent = false;
+        try {
+          const iframeDoc = iframeElement.contentDocument || iframeElement.contentWindow?.document;
+          if (iframeDoc && iframeDoc.body) {
+            // Check if there's meaningful content (not just loading states)
+            const bodyContent = iframeDoc.body.innerText || '';
+            const hasElements = iframeDoc.body.children.length > 0;
+            hasContent = bodyContent.length > 10 || hasElements;
+          }
+        } catch (crossOriginError) {
+          // Cross-origin iframe, can't access content - rely on dimensions only
+          hasContent = true;
+        }
+
+        if (currentHeight === lastHeight && currentWidth === lastWidth && currentHeight > 0 && hasContent) {
+          stableCount++;
+          if (stableCount >= requiredStableChecks) {
+            // Content appears stable and has actual content
+            turn.iframeLoaded = true;
+            clearInterval(stabilityChecker);
+            return;
+          }
+        } else {
+          stableCount = 0;
+        }
+
+        lastHeight = currentHeight;
+        lastWidth = currentWidth;
+      } catch (error) {
+        // If we can't access iframe properties, fall back to timeout
+        clearInterval(stabilityChecker);
+        setTimeout(() => turn.iframeLoaded = true, 1000);
+      }
+    };
+
+    // Check stability every 500ms
+    const stabilityChecker = setInterval(checkStability, checkInterval);
+
+    // Maximum timeout as fallback (10 seconds)
+    setTimeout(() => {
+      clearInterval(stabilityChecker);
+      if (!turn.iframeLoaded) {
+        turn.iframeLoaded = true;
+      }
+    }, 10000);
+  }
+
   async redirectToMB(turn: Turn): Promise<Window | null> {
     try {
       // Get Metabase URL from backend configuration
@@ -302,6 +386,7 @@ export class App implements OnInit, OnDestroy {
       const res = await firstValueFrom(
         this.apiService.changeDisplay<Embed>(turn.embed.card_id, mode, turn.embed.x_field, turn.embed.y_field)
       );
+      turn.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(res.url + '&cb=' + Date.now());
       // Update the current visualization in the embed
       turn.embed.current_visualization = mode;
       // turn.embed = res;
@@ -334,14 +419,19 @@ export class App implements OnInit, OnDestroy {
     this.question = "";
     try {
       if (! await this.authService.isAuthenticated()) throw new Error('Not authenticated');
-
+      
       turn.embed = await firstValueFrom(
         this.apiService.askQuestion<Embed>(turn.question, this.conversation)
       );
-      turn.embed.current_visualization = 'table';
-      turn.iframeLoaded = true; // Mark as loaded since we're not using iframes anymore
-      turn.safeUrl = null; // No iframe URL needed anymore
 
+      if (turn.embed.url == "fail") {
+        throw new Error;
+      }
+      
+      // New questions always start as table view
+      turn.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(turn.embed.url);
+      turn.embed.current_visualization = 'table';
+      
       await this.saveChat();
     } catch (error) {
       turn.iframeLoaded = true;
@@ -394,7 +484,8 @@ export class App implements OnInit, OnDestroy {
 
       this.conversation = chatData.conversation.map(turn => ({
         ...turn,
-        iframeLoaded: true, // No iframe anymore, always mark as loaded
+        safeUrl: turn.embed?.url ? this.sanitizer.bypassSecurityTrustResourceUrl(turn.embed.url) : 'failure',
+        iframeLoaded: !turn.embed?.url, // If no URL (failure), mark as loaded
         sql_explanation_visible: turn.sql_explanation_visible || false // Preserve visibility state or default to false
       }));
       

@@ -359,11 +359,23 @@ def ask():
                 logger.debug(f"Card error type: {type(card_error)}")
                 raise card_error
 
+            # Generate embed URL
+            logger.info("Generating embed URL...")
+            try:
+                logger.debug("Calling metabase_client.generate_embed_url...")
+                embed_url = metabase_client.generate_embed_url(card_id)
+                logger.info(f"Embed URL generated successfully: {embed_url[:50]}...")
+            except Exception as embed_error:
+                logger.error(f"Error during embed URL generation: {embed_error}", exc_info=True)
+                logger.debug(f"Embed error type: {type(embed_error)}")
+                raise embed_error
+
         except Exception as step_error:
             logger.error(f"Error in specific step: {step_error}", exc_info=True)
             raise step_error
         
         return {
+            "url": embed_url,
             "card_id": card_id,
             "x_field": metadata.get('x_axis', []),
             "y_field": metadata.get('y_axis', []),

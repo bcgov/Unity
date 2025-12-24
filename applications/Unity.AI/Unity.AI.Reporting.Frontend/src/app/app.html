@@ -62,19 +62,15 @@
               </div>
             </div>
             <div class="bot-inner" *ngIf="turn.safeUrl != 'loading' && turn.safeUrl != 'failure' " [class.loaded]="turn.iframeLoaded">
-
+              
               <app-sql-explanation *ngIf="turn.sql_explanation_visible" [explanation]="turn.embed.sql_explanation"></app-sql-explanation>
 
-              <div class="metabase-view-container">
-                <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <span>View Full Report in Metabase</span>
-                </button>
-              </div>
+              <iframe
+                [src]="turn.safeUrl"
+                allowtransparency="true"
+                (load)="onIframeLoad(turn)"
+              ></iframe>
+
 
               <div class="sql-panel" *ngIf="turn.sqlPanelOpen">
                 <div class="sql-panel-header">Generated SQL</div>
