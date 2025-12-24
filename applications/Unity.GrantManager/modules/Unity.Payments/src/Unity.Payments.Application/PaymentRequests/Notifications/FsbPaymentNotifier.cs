@@ -32,15 +32,12 @@ namespace Unity.Payments.PaymentRequests.Notifications
         private readonly FsbApEmailGroupStrategy _fsbApEmailGroupStrategy;
         private readonly ILogger<FsbPaymentNotifier> _logger;
 
-        public FsbPaymentNotifier(
-            IPaymentRequestRepository paymentRequestsRepository,
-            IApplicationRepository applicationRepository,
+        public FsbPaymentNotifier(            
             IIdentityUserRepository identityUserRepository,
             ITenantRepository tenantRepository,
             ICurrentTenant currentTenant,
             ILocalEventBus localEventBus,
-            ISettingProvider settingProvider,
-            FsbPaymentExcelGenerator excelGenerator,
+            ISettingProvider settingProvider,            
             FsbApEmailGroupStrategy fsbApEmailGroupStrategy,
             ILogger<FsbPaymentNotifier> logger)
         {
@@ -147,158 +144,17 @@ namespace Unity.Payments.PaymentRequests.Notifications
 
             try
             {
-                // Get all unique approver user IDs
-                var allApproverIds = fsbPayments
-                    .SelectMany(p => p.ExpenseApprovals)
-                    .Where(ea => ea.DecisionUserId.HasValue)
-                    .Select(ea => ea.DecisionUserId!.Value)
-                    .Distinct()
-                    .ToList();
-
-                // Get all unique creator user IDs
-                var allCreatorIds = fsbPayments
-                    .Select(p => p.CreatorId)
-                    .Where(id => id.HasValue)
-                    .Select(id => id!.Value)
-                    .Distinct()
-                    .ToList();
-
-                // Combine approver and creator IDs for single lookup
-                var allUserIds = allApproverIds.Concat(allCreatorIds).Distinct().ToList();
-
-                Dictionary<Guid, string> userNameDict = [];
-                if (allUserIds.Count > 0)
-                {
-                    var users = await _identityUserRepository.GetListByIdsAsync(allUserIds);
-                    userNameDict = users.ToDictionary(
-                        u => u.Id,
-                        u => $"{u.Name} {u.Surname}".Trim()
-                    );
-                }
+                var userNameDict = await BuildUserNameDictionaryAsync(fsbPayments);
 
                 // Process each payment
                 foreach (var payment in fsbPayments)
                 {
                     try
                     {
-                        var paymentData = new FsbPaymentData
-                        {
-                            // Column 1: Batch # - Use BatchName instead of BatchNumber
-                            BatchName = payment.BatchName ?? "N/A",
-
-                            // Column 2: Contract Number
-                            ContractNumber = payment.ContractNumber,
-
-                            // Column 3: Payee Name
-                            PayeeName = payment.PayeeName ?? "N/A",
-
-                            // Column 7: Invoice Number
-                            InvoiceNumber = payment.InvoiceNumber,
-
-                            // Column 8: Amount
-                            Amount = payment.Amount,
-
-                            // Column 15: CAS Cheque Stub Description
-                            CasCheckStubDescription = payment.Description,
-
-                            // Column 16: Account Coding
-                            AccountCoding = AccountCodingFormatter.Format(payment.AccountCoding),
-
-                            // Column 18: Requested On
-                            RequestedOn = payment.CreationTime
-                        };
-
-                        // Column 4: CAS Supplier/Site Number - Combined format
-                        if (payment.Site != null)
-                        {
-                            string supplierNumber = "N/A";
-                            string siteNumber = payment.Site.Number ?? "N/A";
-
-                            if (payment.Site.Supplier != null)
-                            {
-                                supplierNumber = payment.Site.Supplier.Number ?? "N/A";
-                            }
-
-                            paymentData.CasSupplierSiteNumber = $"{supplierNumber}/{siteNumber}";
-
-                            // Column 5: Payee Address - Combined address string
-                            paymentData.PayeeAddress = FormatAddress(
-                                payment.Site.AddressLine1,
-                                payment.Site.AddressLine2,
-                                payment.Site.AddressLine3,
-                                payment.Site.City,
-                                payment.Site.Province,
-                                payment.Site.PostalCode
-                            );
-
-                            // Column 9: Pay Group - Convert enum to string
-                            if (payment.Site.PaymentGroup == PaymentGroup.EFT)
-                            {
-                                paymentData.PayGroup = "EFT";
-                            }
-                            else if (payment.Site.PaymentGroup == PaymentGroup.Cheque)
-                            {
-                                paymentData.PayGroup = "Cheque";
-                            }
-                            else
-                            {
-                                paymentData.PayGroup = "N/A";
-                            }
-                        }
-                        else
-                        {
-                            paymentData.CasSupplierSiteNumber = "N/A/N/A";
-                            paymentData.PayeeAddress = "N/A";
-                            paymentData.PayGroup = "N/A";
-                        }
-
-                        // Column 17: Payment Requester
-                        if (payment.CreatorId.HasValue && userNameDict.TryGetValue(payment.CreatorId.Value, out var requesterName))
-                        {
-                            paymentData.PaymentRequester = requesterName;
-                        }
-
-                        // Get approval data
-                        var l1Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level1);
-                        if (l1Approval != null)
-                        {
-                            // Columns 6, 10, 12: All use L1 Approval Date
-                            paymentData.InvoiceDate = l1Approval.DecisionDate;
-                            paymentData.GoodsServicesReceivedDate = l1Approval.DecisionDate;
-                            paymentData.QRApprovalDate = l1Approval.DecisionDate;
-
-                            // Column 11: Qualifier Receiver (L1 Approver name)
-                            if (l1Approval.DecisionUserId.HasValue && userNameDict.TryGetValue(l1Approval.DecisionUserId.Value, out var l1Name))
-                            {
-                                paymentData.QualifierReceiver = l1Name;
-                            }
-                        }
-
-                        var l2Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level2);
-                        if (l2Approval != null)
-                        {
-                            // Column 14: EA-Approval Date
-                            paymentData.EAApprovalDate = l2Approval.DecisionDate;
-
-                            // Column 13: Expense Authority (L2 Approver name)
-                            if (l2Approval.DecisionUserId.HasValue && userNameDict.TryGetValue(l2Approval.DecisionUserId.Value, out var l2Name))
-                            {
-                                paymentData.ExpenseAuthority = l2Name;
-                            }
-                        }
-
-                        var l3Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level3);
-                        if (l3Approval != null)
-                        {
-                            // Column 20: L3 Approval Date
-                            paymentData.L3ApprovalDate = l3Approval.DecisionDate;
-
-                            // Column 19: L3 Approver
-                            if (l3Approval.DecisionUserId.HasValue && userNameDict.TryGetValue(l3Approval.DecisionUserId.Value, out var l3Name))
-                            {
-                                paymentData.L3Approver = l3Name;
-                            }
-                        }
+                        var paymentData = CreateBasePaymentData(payment);
+                        ApplySiteData(paymentData, payment);
+                        ApplyPaymentRequester(paymentData, payment, userNameDict);
+                        ApplyApprovals(paymentData, payment, userNameDict);
 
                         paymentDataList.Add(paymentData);
                     }
@@ -317,6 +173,200 @@ namespace Unity.Payments.PaymentRequests.Notifications
             }
 
             return paymentDataList;
+        }
+
+        private async Task<Dictionary<Guid, string>> BuildUserNameDictionaryAsync(List<PaymentRequest> fsbPayments)
+        {
+            var allApproverIds = fsbPayments
+                .SelectMany(p => p.ExpenseApprovals)
+                .Where(ea => ea.DecisionUserId.HasValue)
+                .Select(ea => ea.DecisionUserId!.Value)
+                .Distinct()
+                .ToList();
+
+            var allCreatorIds = fsbPayments
+                .Select(p => p.CreatorId)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .Distinct()
+                .ToList();
+
+            var allUserIds = allApproverIds.Concat(allCreatorIds).Distinct().ToList();
+            if (allUserIds.Count == 0)
+            {
+                return [];
+            }
+
+            var users = await _identityUserRepository.GetListByIdsAsync(allUserIds);
+            return users.ToDictionary(
+                u => u.Id,
+                u => $"{u.Name} {u.Surname}".Trim()
+            );
+        }
+
+        private static FsbPaymentData CreateBasePaymentData(PaymentRequest payment)
+        {
+            return new FsbPaymentData
+            {
+                // Column 1: Batch # - Use BatchName instead of BatchNumber
+                BatchName = payment.BatchName ?? "N/A",
+
+                // Column 2: Contract Number
+                ContractNumber = payment.ContractNumber,
+
+                // Column 3: Payee Name
+                PayeeName = payment.PayeeName ?? "N/A",
+
+                // Column 7: Invoice Number
+                InvoiceNumber = payment.InvoiceNumber,
+
+                // Column 8: Amount
+                Amount = payment.Amount,
+
+                // Column 15: CAS Cheque Stub Description
+                CasCheckStubDescription = payment.Description,
+
+                // Column 16: Account Coding
+                AccountCoding = AccountCodingFormatter.Format(payment.AccountCoding),
+
+                // Column 18: Requested On
+                RequestedOn = payment.CreationTime
+            };
+        }
+
+        private static void ApplySiteData(FsbPaymentData paymentData, PaymentRequest payment)
+        {
+            if (payment.Site == null)
+            {
+                paymentData.CasSupplierSiteNumber = "N/A/N/A";
+                paymentData.PayeeAddress = "N/A";
+                paymentData.PayGroup = "N/A";
+                return;
+            }
+
+            string supplierNumber = payment.Site.Supplier?.Number ?? "N/A";
+            string siteNumber = payment.Site.Number ?? "N/A";
+
+            // Column 4: CAS Supplier/Site Number - Combined format
+            paymentData.CasSupplierSiteNumber = $"{supplierNumber}/{siteNumber}";
+
+            // Column 5: Payee Address - Combined address string
+            paymentData.PayeeAddress = FormatAddress(
+                payment.Site.AddressLine1,
+                payment.Site.AddressLine2,
+                payment.Site.AddressLine3,
+                payment.Site.City,
+                payment.Site.Province,
+                payment.Site.PostalCode
+            );
+
+            // Column 9: Pay Group - Convert enum to string
+            paymentData.PayGroup = FormatPayGroup(payment.Site.PaymentGroup);
+        }
+
+        private static string FormatPayGroup(PaymentGroup paymentGroup)
+        {
+            return paymentGroup switch
+            {
+                PaymentGroup.EFT => "EFT",
+                PaymentGroup.Cheque => "Cheque",
+                _ => "N/A"
+            };
+        }
+
+        private static void ApplyPaymentRequester(
+            FsbPaymentData paymentData,
+            PaymentRequest payment,
+            IReadOnlyDictionary<Guid, string> userNameDict)
+        {
+            // Column 17: Payment Requester
+            if (!payment.CreatorId.HasValue)
+            {
+                return;
+            }
+
+            if (userNameDict.TryGetValue(payment.CreatorId.Value, out var requesterName))
+            {
+                paymentData.PaymentRequester = requesterName;
+            }
+        }
+
+        private static void ApplyApprovals(
+            FsbPaymentData paymentData,
+            PaymentRequest payment,
+            IReadOnlyDictionary<Guid, string> userNameDict)
+        {
+            ApplyLevel1Approval(paymentData, payment, userNameDict);
+            ApplyLevel2Approval(paymentData, payment, userNameDict);
+            ApplyLevel3Approval(paymentData, payment, userNameDict);
+        }
+
+        private static void ApplyLevel1Approval(
+            FsbPaymentData paymentData,
+            PaymentRequest payment,
+            IReadOnlyDictionary<Guid, string> userNameDict)
+        {
+            var l1Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level1);
+            if (l1Approval == null)
+            {
+                return;
+            }
+
+            // Columns 6, 10, 12: All use L1 Approval Date
+            paymentData.InvoiceDate = l1Approval.DecisionDate;
+            paymentData.GoodsServicesReceivedDate = l1Approval.DecisionDate;
+            paymentData.QRApprovalDate = l1Approval.DecisionDate;
+
+            // Column 11: Qualifier Receiver (L1 Approver name)
+            if (l1Approval.DecisionUserId.HasValue
+                && userNameDict.TryGetValue(l1Approval.DecisionUserId.Value, out var l1Name))
+            {
+                paymentData.QualifierReceiver = l1Name;
+            }
+        }
+
+        private static void ApplyLevel2Approval(
+            FsbPaymentData paymentData,
+            PaymentRequest payment,
+            IReadOnlyDictionary<Guid, string> userNameDict)
+        {
+            var l2Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level2);
+            if (l2Approval == null)
+            {
+                return;
+            }
+
+            // Column 14: EA-Approval Date
+            paymentData.EAApprovalDate = l2Approval.DecisionDate;
+
+            // Column 13: Expense Authority (L2 Approver name)
+            if (l2Approval.DecisionUserId.HasValue
+                && userNameDict.TryGetValue(l2Approval.DecisionUserId.Value, out var l2Name))
+            {
+                paymentData.ExpenseAuthority = l2Name;
+            }
+        }
+
+        private static void ApplyLevel3Approval(
+            FsbPaymentData paymentData,
+            PaymentRequest payment,
+            IReadOnlyDictionary<Guid, string> userNameDict)
+        {
+            var l3Approval = payment.ExpenseApprovals.FirstOrDefault(ea => ea.Type == ExpenseApprovalType.Level3);
+            if (l3Approval == null)
+            {
+                return;
+            }
+
+            // Column 20: L3 Approval Date
+            paymentData.L3ApprovalDate = l3Approval.DecisionDate;
+
+            // Column 19: L3 Approver
+            if (l3Approval.DecisionUserId.HasValue
+                && userNameDict.TryGetValue(l3Approval.DecisionUserId.Value, out var l3Name))
+            {
+                paymentData.L3Approver = l3Name;
+            }
         }
 
         /// <summary>
