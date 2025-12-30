@@ -35,7 +35,7 @@ if not _initialized and os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         db_id = config.metabase.default_db_id
         schema_types = ["public"]
 
-        embedding_manager.embed_schemas(db_id, schema_types)
+        # embedding_manager.embed_schemas(db_id, schema_types)
         logger.info("Schema embedding completed successfully")
     except Exception as e:
         logger.warning(f"Schema embedding failed: {e}", exc_info=True)
