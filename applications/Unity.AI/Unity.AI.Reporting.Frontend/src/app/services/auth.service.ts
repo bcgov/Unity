@@ -46,8 +46,6 @@ export class AuthService {
     window.addEventListener('message', (event: MessageEvent) => {
       // Check if this is an AUTH_TOKEN message
       if (event.data && event.data.type === 'AUTH_TOKEN' && event.data.token) {
-        console.log('Token received via postMessage from:', event.origin);
-
         // Store the token
         this.setToken(event.data.token);
 

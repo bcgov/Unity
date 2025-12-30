@@ -56,44 +56,22 @@ class AuthManager:
             Token payload if valid, None if invalid
         """
         try:
-            # First, try to decode with Unity.GrantManager strict validation
-            try:
-                payload = jwt.decode(
-                    token,
-                    self.jwt_secret,
-                    algorithms=[self.jwt_algorithm],
-                    issuer="Unity.GrantManager",
-                    audience="Unity.GrantManager.Users"
-                )
-                logger.debug("Token validated with Unity.GrantManager issuer/audience")
-            except (jwt.InvalidIssuerError, jwt.InvalidAudienceError) as e:
-                # If issuer/audience don't match, try without validation
-                logger.debug(f"Unity validation failed ({e}), trying without issuer/audience validation")
-                payload = jwt.decode(
-                    token,
-                    self.jwt_secret,
-                    algorithms=[self.jwt_algorithm],
-                    options={"verify_iss": False, "verify_aud": False}
-                )
-                logger.debug("Token validated without issuer/audience verification")
+            # Decode without audience/issuer verification since we don't control token creation
+            payload = jwt.decode(
+                token,
+                self.jwt_secret,
+                algorithms=[self.jwt_algorithm],
+                options={"verify_aud": False, "verify_iss": False}
+            )
 
             # Map Unity JWT claims to AI Reporting format
             # Unity uses 'sub' (subject) instead of 'user_id'
             if 'sub' in payload and 'user_id' not in payload:
                 payload['user_id'] = payload['sub']
 
-            # If tenant is missing, try to extract from other claims or use default
+            # If tenant is missing, use default
             if 'tenant' not in payload:
-                # Try common claim names for tenant/organization
-                for claim_name in ['tenant_id', 'tenantId', 'organization', 'org']:
-                    if claim_name in payload:
-                        payload['tenant'] = payload[claim_name]
-                        break
-
-                # If still no tenant found, use a default value
-                if 'tenant' not in payload:
-                    payload['tenant'] = 'default'
-                    logger.debug("No tenant claim found in JWT, using default tenant")
+                payload['tenant'] = 'default'
 
             return payload
         except jwt.ExpiredSignatureError:
@@ -153,8 +131,6 @@ def require_auth(f: Callable) -> Callable:
         try:
             user_data = auth_manager.get_current_user()
             if not user_data:
-                logger.warning("Authentication failed: No valid user data from token")
-                logger.debug(f"Authorization header: {request.headers.get('Authorization', 'None')[:50]}...")
                 return jsonify({
                     'error': 'Authentication required',
                     'message': 'Valid JWT token must be provided in Authorization header'
@@ -165,7 +141,6 @@ def require_auth(f: Callable) -> Callable:
             missing_fields = [field for field in required_fields if field not in user_data]
             if missing_fields:
                 logger.warning(f"Token missing required fields: {missing_fields}")
-                logger.debug(f"Token payload: {user_data}")
                 return jsonify({
                     'error': 'Invalid token',
                     'message': f'Token missing required fields: {", ".join(missing_fields)}'
@@ -173,7 +148,6 @@ def require_auth(f: Callable) -> Callable:
 
             # Make user data available to the route
             request.current_user = user_data
-            logger.debug(f"Authentication successful for user: {user_data.get('user_id')}")
             return f(*args, **kwargs)
 
         except Exception as e:
