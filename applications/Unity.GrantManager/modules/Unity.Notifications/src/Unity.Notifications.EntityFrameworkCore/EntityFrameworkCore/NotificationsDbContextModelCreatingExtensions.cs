@@ -22,6 +22,24 @@ public static class NotificationsDbContextModelCreatingExtensions
             b.ConfigureByConvention();
         });
 
+        modelBuilder.Entity<EmailLogAttachment>(b =>
+        {
+            b.ToTable(NotificationsDbProperties.DbTablePrefix + "EmailLogAttachments",
+                NotificationsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            // Foreign key to EmailLog with CASCADE delete
+            b.HasOne<EmailLog>()
+                .WithMany()
+                .HasForeignKey(x => x.EmailLogId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes for performance
+            b.HasIndex(x => x.EmailLogId);
+            b.HasIndex(x => x.S3ObjectKey);
+        });
+
         modelBuilder.Entity<EmailTemplate>(b =>
         {
             b.ToTable(NotificationsDbProperties.DbTablePrefix + "EmailTemplates",

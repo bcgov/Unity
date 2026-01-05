@@ -71,10 +71,12 @@ namespace Unity.Payments.PaymentRequests.BackgroundJobWorkers
                             await localEventBus.PublishAsync(
                                 new EmailNotificationEvent
                                 {
-                                    Action = EmailAction.SendFailedSummary,  
+                                    Action = EmailAction.SendFailedSummary,
+                                    TenantId = tenantId,
+                                    ApplicationId = Guid.Empty,  // System-level summary email
                                     RetryAttempts = 0,
                                     Body = failedContent,
-                                    EmailFrom = fromAddress,                                    
+                                    EmailFrom = fromAddress,
                                     EmailAddressList = recipientList
                                 }
                             );
