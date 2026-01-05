@@ -376,7 +376,7 @@ ul.pagination {
     }
 
 .input-validation-error {
-    border-color: #dc3545;
+    border-color: #dc3545 !important;
 }
 
 .field-validation-error {
