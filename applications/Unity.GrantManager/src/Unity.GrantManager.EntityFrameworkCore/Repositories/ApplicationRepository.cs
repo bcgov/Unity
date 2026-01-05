@@ -33,7 +33,8 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
             .Include(a => a.ApplicationStatus)
             .Include(a => a.Applicant)
             .Include(a => a.ApplicantAgent)
-            .Include(a => a.ApplicationTags)
+            .Include(s => s.ApplicationTags)
+                .ThenInclude(x => x.Tag)
             .Include(a => a.Owner)
             .Include(a => a.ApplicationAssignments)
                 .ThenInclude(aa => aa.Assignee);
