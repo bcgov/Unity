@@ -71,7 +71,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
             .Include(a => a.ApplicationForm)
             .Include(a => a.ApplicationTags)
             .Include(a => a.Owner)
-            .Include(a => a.ApplicationAssignments)
+            .Include(a => a.ApplicationAssignments!)
                 .ThenInclude(aa => aa.Assignee)
             .Include(a => a.Applicant)
             .Include(a => a.ApplicantAgent)
@@ -110,9 +110,9 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
     public async Task<List<Application>> WithFullDetailsAsync(
         int skipCount,
         int maxResultCount,
-        string? sorting,
-        DateTime? submittedFromDate,
-        DateTime? submittedToDate,
+        string? sorting = null,
+        DateTime? submittedFromDate = null, 
+        DateTime? submittedToDate = null,
         string? searchTerm = null)
     {
         var query = await BuildBaseQueryAsync();
