@@ -1,6 +1,6 @@
 @echo off
-REM Ensure a valid working directory
-cd /d "%USERPROFILE%\Desktop"
+REM Ensure a valid working directory - change to the directory where this batch file is located
+cd /d "%~dp0"
 
 REM Run the PowerShell script
 powershell -ExecutionPolicy Bypass -Command ^
@@ -8,7 +8,7 @@ powershell -ExecutionPolicy Bypass -Command ^
     $ProgressPreference = 'SilentlyContinue'; ^
     Add-Type -AssemblyName System.Windows.Forms; ^
     Add-Type -AssemblyName System.Drawing; ^
-    $projectPath = 'C:\Local Data\AutoUI Development S29\AutoUI\'; ^
+    $projectPath = (Get-Location).Path; ^
     $padding = 20; ^
     $controlWidth = 300; ^
     $controlHeight = 25; ^
@@ -72,7 +72,7 @@ powershell -ExecutionPolicy Bypass -Command ^
             Set-Location -Path $projectPath; ^
             Copy-Item -Path .\cypress.$env.env.json -Destination .\cypress.env.json -Force; ^
             Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass', '-NoExit', '-Command', ^
-            'cd ''C:\Local Data\AutoUI Development S29\AutoUI\''; npx cypress open' -NoNewWindow; ^
+            "cd '$projectPath'; npx cypress open" -NoNewWindow; ^
 
         } ^
     }); ^

@@ -11,6 +11,7 @@ namespace Unity.Notifications.EntityFrameworkCore;
 public class NotificationsDbContext : AbpDbContext<NotificationsDbContext>, INotificationsDbContext
 {
     public DbSet<EmailLog> EmailLogs { get; set; }
+    public DbSet<EmailLogAttachment> EmailLogAttachments { get; set; }
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
     public DbSet<TemplateVariable> TemplateVariables { get; set; }
     public DbSet<EmailGroup> EmailGroups { get; set; }
