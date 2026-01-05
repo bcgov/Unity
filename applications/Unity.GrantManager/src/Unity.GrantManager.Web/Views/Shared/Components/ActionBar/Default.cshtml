@@ -16,6 +16,30 @@
 <div class="action-bar p-2 search-action-bar">
     <div class="search-action-bar_search-wrapper">
         <input type="search" id="search" placeholder="Search" class="tbl-search">
+        <div class="mb-3 date-input-filter-div">
+            <label class="form-label" for="SubmittedFromDate">Submitted Date From</label>
+            <input   
+                abp-data-datepicker="false"              
+                type="date"
+                id="submittedFromDate" 
+                name="SubmittedFromDate" 
+                value="" 
+                class="form-control date-input-filter"
+                min="1900-01-01"
+                max="2100-01-01">
+        </div>
+        <div class="mb-3 date-input-filter-div">
+            <label class="form-label" for="SubmittedToDate">Submitted Date To</label>
+            <input
+                abp-data-datepicker="false" 
+                type="date"
+                id="submittedToDate" 
+                name="SubmittedToDate" 
+                value="" 
+                class="form-control date-input-filter"
+                min="1900-01-01"
+                max="2100-01-01">
+        </div>        
     </div>
 
     <div class="btn-group" id="app_custom_buttons">

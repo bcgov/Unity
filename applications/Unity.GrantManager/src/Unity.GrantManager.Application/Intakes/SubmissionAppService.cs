@@ -171,7 +171,6 @@ public class SubmissionAppService(
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
     }
-
     private async Task ProcessTenantSubmissions(
         Tenant tenant,
         List<FormSubmissionSummaryDto> chefsSubmissions,
@@ -179,13 +178,14 @@ public class SubmissionAppService(
         HashSet<string> checkedForms,
         HashSet<string> unityRefNos)
     {
-        var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, int.MaxValue);
+        // Replace the invalid method call with `WithFullDetailsAsync`.
+        var groupedResult = await applicationRepository.WithFullDetailsAsync(0, int.MaxValue, null, null);
         var appDtos = new List<GrantApplicationDto>();
         var rowCounter = 0;
 
-        foreach (var grouping in groupedResult)
+        foreach (var application in groupedResult)
         {
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
             appDto.RowCount = rowCounter++;
             appDtos.Add(appDto);
 
