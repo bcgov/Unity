@@ -1,32 +1,47 @@
-describe('Grant Manager Login and Top Navigation', () => {
+import { PageFactory } from "../utilities/PageFactory";
 
-  it('Verify Login', () => {
-    cy.login()
-  })
-  it('Verify navigation options in the top banner', () => {
-    // 3.) Verify Default Grant Program tenant is selected.
-    cy.get('.unity-user-initials').should('exist').click()
-    cy.get('#user-dropdown .btn-dropdown span').should('contain', 'Default Grants Program')
-    // 4.) Ensure all expected headings are present.
-    // 5.) Applications
-    cy.contains("Applications").should('exist').click()
-    cy.wait(1000)
-    // 6.) Roles
-    cy.contains("Roles").should('exist').click()
-    // 7.) Users
-    cy.contains("Users").should('exist').click()
-    // 8.) Intakes
-    cy.contains("Intakes").should('exist').click()
-    // 9.) Forms
-    cy.contains("Forms").should('exist').click()
-    // 10.) Dashboard
-    cy.contains("Dashboard").should('exist').click()
-    // 11.) Payments
-    cy.contains("Payments").should('exist').click()
+describe("Grant Manager Login and Top Navigation", () => {
+  it("Verify Login", () => {
+    const loginPage = PageFactory.getLoginPage();
+    loginPage.login();
+  });
+
+  it("Verify navigation options in the top banner", () => {
+    const navPage = PageFactory.getNavigationPage();
+
+    // Verify Default Grant Program tenant is selected.
+    navPage.clickUserMenu();
+    navPage.verifyCurrentTenant("Default Grants Program");
+
+    // Ensure all expected headings are present.
+    // Applications
+    navPage.goToApplications();
+    cy.wait(1000);
+
+    // Roles
+    navPage.goToRoles();
+
+    // Users
+    navPage.goToUsers();
+
+    // Intakes
+    navPage.goToIntakes();
+
+    // Forms
+    navPage.goToForms();
+
+    // Dashboard
+    navPage.goToDashboard();
+
+    // Payments
+    navPage.goToPayments();
+
     // Return to top
-    cy.visit(Cypress.env('webapp.url'))
-  })
-  it('Verify Logout', () => {
-    cy.logout()
-  })
-})
+    cy.visit(Cypress.env("webapp.url"));
+  });
+
+  it("Verify Logout", () => {
+    const loginPage = PageFactory.getLoginPage();
+    loginPage.logout();
+  });
+});
