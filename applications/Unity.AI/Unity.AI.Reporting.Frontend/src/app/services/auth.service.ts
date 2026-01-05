@@ -25,12 +25,13 @@ export class AuthService {
     private configService: ConfigService
   ) {
     this.initializeFromUrl();
+    this.initializePostMessageListener();
   }
 
   private initializeFromUrl(): void {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
-    
+
     if (token) {
       this.setToken(token);
       // Clean up URL to remove token from address bar
@@ -38,6 +39,25 @@ export class AuthService {
       url.searchParams.delete('token');
       window.history.replaceState({}, document.title, url.toString());
     }
+  }
+
+  private initializePostMessageListener(): void {
+    // Listen for token from parent window (when embedded in iframe)
+    window.addEventListener('message', (event: MessageEvent) => {
+      // Check if this is an AUTH_TOKEN message
+      if (event.data && event.data.type === 'AUTH_TOKEN' && event.data.token) {
+        // Store the token
+        this.setToken(event.data.token);
+
+        // Send acknowledgment back to parent
+        if (event.source && typeof (event.source as Window).postMessage === 'function') {
+          (event.source as Window).postMessage(
+            { type: 'AUTH_TOKEN_RECEIVED', success: true },
+            event.origin
+          );
+        }
+      }
+    });
   }
 
   setToken(token: string): void {

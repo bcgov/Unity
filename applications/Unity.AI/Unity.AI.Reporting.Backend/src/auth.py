@@ -48,21 +48,31 @@ class AuthManager:
     def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
         """
         Validate a JWT token and extract payload
-        
+
         Args:
             token: JWT token string
-            
+
         Returns:
             Token payload if valid, None if invalid
         """
         try:
-            # Decode without audience verification since we don't control token creation
+            # Decode without audience/issuer verification since we don't control token creation
             payload = jwt.decode(
-                token, 
-                self.jwt_secret, 
+                token,
+                self.jwt_secret,
                 algorithms=[self.jwt_algorithm],
-                options={"verify_aud": False}  # Skip audience verification
+                options={"verify_aud": False, "verify_iss": False}
             )
+
+            # Map Unity JWT claims to AI Reporting format
+            # Unity uses 'sub' (subject) instead of 'user_id'
+            if 'sub' in payload and 'user_id' not in payload:
+                payload['user_id'] = payload['sub']
+
+            # If tenant is missing, use default
+            if 'tenant' not in payload:
+                payload['tenant'] = 'default'
+
             return payload
         except jwt.ExpiredSignatureError:
             logger.warning("Token has expired")
@@ -125,7 +135,7 @@ def require_auth(f: Callable) -> Callable:
                     'error': 'Authentication required',
                     'message': 'Valid JWT token must be provided in Authorization header'
                 }), 401
-            
+
             # Validate required fields in token
             required_fields = ['user_id', 'tenant']
             missing_fields = [field for field in required_fields if field not in user_data]
@@ -135,7 +145,7 @@ def require_auth(f: Callable) -> Callable:
                     'error': 'Invalid token',
                     'message': f'Token missing required fields: {", ".join(missing_fields)}'
                 }), 401
-            
+
             # Make user data available to the route
             request.current_user = user_data
             return f(*args, **kwargs)
