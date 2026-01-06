@@ -29,6 +29,19 @@ function createNumberFormatter() {
 }
 
 // ============================================================================
+// Global Exports - MUST BE EARLY FOR OTHER SCRIPTS TO USE
+// ============================================================================
+
+/**
+ * Export utility functions to global scope for use in other scripts
+ */
+if (typeof window !== 'undefined') {
+    window.createNumberFormatter = createNumberFormatter;
+    window.nullPlaceholder = nullPlaceholder;
+    window.FilterDesc = FilterDesc;
+}
+
+// ============================================================================
 // DataTables Button Extensions
 // ============================================================================
 
@@ -373,133 +386,254 @@ function initializeDataTable(options) {
                     externalSearch.val(data.externalSearch);
                 }
             }
-        },
-        stateLoaded: function (settings, data) {
-            let dtApi = new $.fn.dataTable.Api(settings);
-            console.log('stateLoaded - syncing FilterRow UI', data);
+
+            let stateCorrupted = false;
+            const tableId = settings.sTableId || settings.nTable.id;
+            const aoColumns = settings.aoColumns;
 
             try {
-                if (settings._filterRow) {
-                    setTimeout(function () {
-                        const $filterRow = $('tr.tr-toggle-filter');
-
-                        if ($filterRow.length) {
-                            console.log(
-                                'Syncing FilterRow inputs with column searches'
+                // Validate column structure
+                if (data.columns && Array.isArray(data.columns)) {
+                    data.columns.forEach((colVal, idx) => {
+                        if (aoColumns[idx]) {
+                            const name = aoColumns[idx].name;
+                            const dataObj = data.columns.find(
+                                (col) => col.name === name
                             );
 
-                            // Clear ALL filter inputs first
-                            $filterRow
-                                .find('input.custom-filter-input')
-                                .val('');
-
-                            // Clear all column searches before reapplying
-                            dtApi.columns().every(function () {
-                                this.search('');
-                            });
-
-                            // Get the current table headers in DISPLAY order (after reorder)
-                            let $headers = $(dtApi.table().header()).find('th');
-
-                            // Get filter row cells in DISPLAY order
-                            let $filterCells = $filterRow.find('td, th');
-
-                            // Iterate through each visible column in current display order
-                            $headers.each(function (displayIdx) {
-                                let colName = $(this).attr('data-name');
-
-                                if (colName) {
-                                    // Find the column index by name in aoColumns (original structure)
-                                    let originalIdx =
-                                        settings.aoColumns.findIndex(
-                                            (col) => col.name === colName
-                                        );
-
-                                    let origIdx = settings.aoColumns.find(
-                                        (col) => col.name === colName
-                                    ).index;
-                                    console.log(
-                                        'settings.aoColumns',
-                                        settings.aoColumns
-                                    );
-                                    console.log('origIdx Real', origIdx);
-                                    console.log('originalIdx', originalIdx);
-                                    if (
-                                        originalIdx !== -1 &&
-                                        data.columns[originalIdx]
-                                    ) {
-                                        // Get the search value from saved state for this column
-                                        let savedColTest = data.columns.find(
-                                            (col) => col.name === colName
-                                        );
-                                        console.log(
-                                            'savedColTest',
-                                            savedColTest
-                                        );
-
-                                        let savedCol =
-                                            data.columns[originalIdx];
-
-                                        let searchValue =
-                                            savedCol?.search?.search || '';
-
-                                        // Find the filter input at this DISPLAY position
-                                        let $filterCell =
-                                            $filterCells.eq(displayIdx);
-                                        let $input = $filterCell.find(
-                                            'input.custom-filter-input'
-                                        );
-
-                                        console.log('$filterCell', $filterCell);
-                                        if ($input.length && searchValue) {
-                                            // Update FilterRow UI
-                                            $input.val(searchValue);
-
-                                            //Apply search to DataTables API using the CURRENT column index
-                                            let currentColIdx = dtApi
-                                                .column(displayIdx + ':visible')
-                                                .index();
-                                            console.log(
-                                                'currentColIdx',
-                                                currentColIdx
-                                            );
-                                            console.log(
-                                                'displayIdx',
-                                                displayIdx
-                                            );
-                                            if (
-                                                currentColIdx !== undefined &&
-                                                currentColIdx !== -1
-                                            ) {
-                                                dtApi
-                                                    .column(currentColIdx)
-                                                    .search(searchValue);
-                                                console.log(
-                                                    `Applied search to col ${currentColIdx} (${colName}): "${searchValue}"`
-                                                );
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-
-                            // Update filter button state
-                            if (
-                                typeof settings._filterRow
-                                    ._updateButtonState === 'function'
-                            ) {
-                                settings._filterRow._updateButtonState();
+                            if (typeof dataObj === 'undefined') {
+                                console.warn(
+                                    `Column mismatch at index ${idx}, name: ${name}`
+                                );
+                                localStorage.removeItem(
+                                    `DataTables_${tableId}_${window.location.pathname}`
+                                );
+                                cleanInvalidStateRestore(tableId);
+                                stateCorrupted = true;
                             }
                         }
-                    }, 500);
+                    });
                 }
-                console.log('Drawing table with applied filters');
-                dtApi.columns.adjust().draw();
+
+                // PRESERVE search values before clearing them
+                // Store them in settings so stateLoaded can access them
+                if (data.columns && Array.isArray(data.columns)) {
+                    //console.log('stateLoadParams - Preserving column searches');
+
+                    // Store original search values in settings
+                    settings._savedSearches = {};
+                    data.columns.forEach((col) => {
+                        if (col.name && col.search && col.search.search) {
+                            settings._savedSearches[col.name] = col.search.search;
+                            //console.log(`Preserved search for "${col.name}": "${col.search.search}"`);
+                        }
+                    });
+
+                    // Now clear them to prevent DataTables auto-apply
+                    data.columns.forEach((col) => {
+                        if (col.search) {
+                            col.search.search = '';
+                        }
+                    });
+                }
+
+            } catch (err) {
+                console.warn('stateLoadParams validation failed:', err);
+            }
+
+            if (stateCorrupted) {
+                window.location.reload();
+                return false;
+            }
+        },
+        stateLoaded: function (settings, data) {
+            let dtApi = null;
+            const tableId = settings.sTableId || settings.nTable.id;
+            //console.log('stateLoaded - restoring state', data);*/
+
+            try {
+                dtApi = new $.fn.dataTable.Api(settings);
+
+                if (!dtApi || !dtApi.table().node()) {
+                    throw new Error('Invalid DataTable instance.');
+                }
+
+                // STEP 1: Clear ALL searches (DataTable only, NOT UI yet)
+                //console.log('Clearing all column searches...');
+                dtApi.columns().every(function () {
+                    this.search('');
+                });
+
+                // STEP 2: Restore Column visibility
+                if (Array.isArray(data.columns)) {
+                    data.columns.forEach((savedCol) => {
+                        const colIndex = settings.aoColumns.findIndex(
+                            (col) => col.name === savedCol.name
+                        );
+                        if (colIndex !== -1) {
+                            dtApi.column(colIndex).visible(savedCol.visible, false);
+                        }
+                    });
+                }
+
+                // Re-sync tableColumns based on current table state
+                tableColumns.forEach((col) => {
+                    const colIdx = col.index;
+                    if (dtApi.column(colIdx).header()) {
+                        col.visible = dtApi.column(colIdx).visible();
+                    }
+                });
+
+                // STEP 3: Apply saved filters and draw
+                applyFiltersAndDraw(dtApi, settings);
+
             } catch (err) {
                 console.warn('StateLoaded failed:', err);
+                const stateKey = `DataTables_${tableId}_${window.location.pathname}`;
+                localStorage.removeItem(stateKey);
             }
         },
     });
+
+    //Listen for stateRestore events (when user clicks a saved state)
+    iDt.on('stateRestore-stateRestore', function (e, settings, data) {
+
+        const dtApi = new $.fn.dataTable.Api(settings);
+
+        // Clear all searches immediately
+        dtApi.columns().every(function () {
+            this.search('');
+        });
+
+        // Preserve the search values from the restored state
+        settings._savedSearches = {};
+        if (data.columns && Array.isArray(data.columns)) {
+            data.columns.forEach((col) => {
+                if (col.name && col.search && col.search.search) {
+                    settings._savedSearches[col.name] = col.search.search;
+                    //console.log(`Preserved search from stateRestore for "${col.name}": "${col.search.search}"`);
+                }
+            });
+        }
+
+        // Apply filters and draw
+        applyFiltersAndDraw(dtApi, settings);
+    });
+
+    //Extracted common filter application logic
+    function applyFiltersAndDraw(dtApi, settings) {
+        if (settings._filterRow) {
+            let attempts = 0;
+            const maxAttempts = 5;
+
+            function applyFiltersWhenReady() {
+                attempts++;
+                const $filterRow = $('tr.tr-toggle-filter');
+
+                if (!$filterRow.length && attempts < maxAttempts) {
+                    //console.log(`FilterRow not ready, retrying... (attempt ${attempts}/${maxAttempts})`);
+                    setTimeout(applyFiltersWhenReady, 100);
+                    return;
+                }
+
+                if (!$filterRow.length) {
+                    console.warn('FilterRow not found after maximum attempts, drawing without filters');
+                    dtApi.columns.adjust().draw();
+                    return;
+                }
+
+                console.log('FilterRow ready, applying filters...');
+
+                // Clear ALL column searches again (including hidden columns)
+                dtApi.columns().every(function () {
+                    this.search('');
+                });
+
+                // Clear filter row inputs
+                $filterRow.find('input.custom-filter-input').val('');
+
+                // Use preserved searches
+                const savedSearches = settings._savedSearches || {};
+
+                if (Object.keys(savedSearches).length > 0) {
+                    //console.log('Applying saved filters from preserved state...', savedSearches);
+
+                    const $headers = $(dtApi.table().header()).find('th');
+                    const $filterCells = $filterRow.find('td, th');
+
+                    let filtersApplied = 0;
+
+                    $headers.each(function (displayIdx) {
+                        const colName = $(this).attr('data-name');
+
+                        if (colName && savedSearches[colName]) {
+                            const searchValue = savedSearches[colName];
+
+                            const $input = $filterCells.eq(displayIdx).find('input.custom-filter-input');
+                            if ($input.length) {
+                                $input.val(searchValue);
+
+                                const colIdx = dtApi.column(colName + ':name').index();
+                                if (colIdx !== undefined && colIdx !== -1) {
+                                    dtApi.column(colIdx).search(searchValue);
+                                    filtersApplied++;
+                                    //console.log(`Applied filter "${colName}" = "${searchValue}" at display ${displayIdx}`);
+                                }
+                            }
+                        }
+                    });
+
+                    //console.log(`Total filters applied: ${filtersApplied}`);
+
+                    if (typeof settings._filterRow._updateButtonState === 'function') {
+                        settings._filterRow._updateButtonState();
+                    }
+                } else {
+                    console.log('No saved filters to apply');
+                }
+
+                //console.log('Drawing table with updated state...');
+                dtApi.columns.adjust().draw();
+
+                delete settings._savedSearches;
+            }
+
+            setTimeout(applyFiltersWhenReady, 250);
+
+        } else {
+            //console.log('No FilterRow plugin, drawing immediately...');
+            dtApi.columns.adjust().draw();
+        }
+    }
+
+    function cleanInvalidStateRestore(tableId) {
+        Object.keys(localStorage)
+            .filter(
+                (key) =>
+                    key.includes('DataTables_stateRestore') &&
+                    key.includes(`${tableId}`)
+            )
+            .forEach((key) => {
+                try {
+                    const value = localStorage.getItem(key);
+                    if (!value) return;
+                    const obj = JSON.parse(value);
+                    if (Array.isArray(obj.columns)) {
+                        const hasMissingUniqueKey = obj.columns.some(
+                            (col) => !('uniqueKey' in col)
+                        );
+                        if (hasMissingUniqueKey) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                } catch (e) {
+                    console.warn(
+                        `Could not process DataTables state for key: ${key}`,
+                        e
+                    );
+                }
+            });
+    }
 
     // Initialize FilterRow plugin if filter button exists
     if ($('#btn-toggle-filter').length) {
@@ -796,3 +930,16 @@ $(document).keydown(function (e) {
         return false;
     }
 });
+
+// ============================================================================
+// More Global Exports (after they're defined)
+// ============================================================================
+
+/**
+ * Export additional utility functions that depend on other code
+ */
+if (typeof window !== 'undefined') {
+    window.initializeDataTable = initializeDataTable;
+    window.commonTableActionButtons = commonTableActionButtons;
+    window.getSelectColumn = getSelectColumn;
+}
