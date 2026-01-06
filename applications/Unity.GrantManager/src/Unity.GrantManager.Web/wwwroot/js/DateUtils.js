@@ -1,7 +1,7 @@
 /**
  * Date utility functions for Grant Manager application
  */
-var DateUtils = (function () {
+const DateUtils = (function () {
     'use strict';
 
     /**

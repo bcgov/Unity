@@ -444,7 +444,8 @@ const listColumns = getColumns();
             className: 'data-table-header',
             index: columnIndex,
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                const formattedDate = DateUtils.formatUtcDateToLocal(data, type);
+                return formattedDate ? String(formattedDate) : '';
             }
         };
     }
