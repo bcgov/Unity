@@ -418,14 +418,12 @@ function initializeDataTable(options) {
                 // PRESERVE search values before clearing them
                 // Store them in settings so stateLoaded can access them
                 if (data.columns && Array.isArray(data.columns)) {
-                    //console.log('stateLoadParams - Preserving column searches');
 
                     // Store original search values in settings
                     settings._savedSearches = {};
                     data.columns.forEach((col) => {
                         if (col.name && col.search && col.search.search) {
                             settings._savedSearches[col.name] = col.search.search;
-                            //console.log(`Preserved search for "${col.name}": "${col.search.search}"`);
                         }
                     });
 
@@ -449,7 +447,6 @@ function initializeDataTable(options) {
         stateLoaded: function (settings, data) {
             let dtApi = null;
             const tableId = settings.sTableId || settings.nTable.id;
-            //console.log('stateLoaded - restoring state', data);*/
 
             try {
                 dtApi = new $.fn.dataTable.Api(settings);
@@ -459,7 +456,6 @@ function initializeDataTable(options) {
                 }
 
                 // STEP 1: Clear ALL searches (DataTable only, NOT UI yet)
-                //console.log('Clearing all column searches...');
                 dtApi.columns().every(function () {
                     this.search('');
                 });
@@ -511,7 +507,6 @@ function initializeDataTable(options) {
             data.columns.forEach((col) => {
                 if (col.name && col.search && col.search.search) {
                     settings._savedSearches[col.name] = col.search.search;
-                    //console.log(`Preserved search from stateRestore for "${col.name}": "${col.search.search}"`);
                 }
             });
         }
@@ -531,7 +526,6 @@ function initializeDataTable(options) {
                 const $filterRow = $('tr.tr-toggle-filter');
 
                 if (!$filterRow.length && attempts < maxAttempts) {
-                    //console.log(`FilterRow not ready, retrying... (attempt ${attempts}/${maxAttempts})`);
                     setTimeout(applyFiltersWhenReady, 100);
                     return;
                 }
@@ -556,7 +550,7 @@ function initializeDataTable(options) {
                 const savedSearches = settings._savedSearches || {};
 
                 if (Object.keys(savedSearches).length > 0) {
-                    //console.log('Applying saved filters from preserved state...', savedSearches);
+                    //Applying saved filters from preserved state...', savedSearches
 
                     const $headers = $(dtApi.table().header()).find('th');
                     const $filterCells = $filterRow.find('td, th');
@@ -577,13 +571,13 @@ function initializeDataTable(options) {
                                 if (colIdx !== undefined && colIdx !== -1) {
                                     dtApi.column(colIdx).search(searchValue);
                                     filtersApplied++;
-                                    //console.log(`Applied filter "${colName}" = "${searchValue}" at display ${displayIdx}`);
+                                    //(`Applied filter "${colName}" = "${searchValue}" at display ${displayIdx}`);
                                 }
                             }
                         }
                     });
 
-                    //console.log(`Total filters applied: ${filtersApplied}`);
+                    //(`Total filters applied: ${filtersApplied}`);
 
                     if (typeof settings._filterRow._updateButtonState === 'function') {
                         settings._filterRow._updateButtonState();
@@ -592,7 +586,6 @@ function initializeDataTable(options) {
                     console.log('No saved filters to apply');
                 }
 
-                //console.log('Drawing table with updated state...');
                 dtApi.columns.adjust().draw();
 
                 delete settings._savedSearches;
@@ -601,7 +594,6 @@ function initializeDataTable(options) {
             setTimeout(applyFiltersWhenReady, 250);
 
         } else {
-            //console.log('No FilterRow plugin, drawing immediately...');
             dtApi.columns.adjust().draw();
         }
     }
