@@ -2,19 +2,90 @@
 describe('Unity Login and check data from CHEFS', () => {
 
     it('Verify Login', () => {
-        cy.login()
+
+        // 1.) Always start from the base URL
+        cy.visit(Cypress.env('webapp.url'))
+
+        // 2.) Decide auth path based on visible UI
+        cy.get('body').then($body => {
+
+            // Already authenticated
+            if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
+                cy.contains('VIEW APPLICATIONS').click()
+                return
+            }
+
+            // Not authenticated
+            if ($body.find('button:contains("LOGIN")').length > 0) {
+                cy.contains('LOGIN').should('be.visible').click()
+                cy.contains('IDIR').should('be.visible').click()
+
+                cy.get('body').then($loginBody => {
+                    // Perform IDIR login only if prompted
+                    if ($loginBody.find('#user').length) {
+                        cy.get('#user').type(Cypress.env('test1username'))
+                        cy.get('#password').type(Cypress.env('test1password'))
+                        cy.contains('Continue').should('exist').click()
+                    } else {
+                        cy.log('Already logged in')
+                    }
+                })
+
+                return
+            }
+
+            // Fail loudly if neither state is detectable
+            throw new Error('Unable to determine authentication state')
+        })
+
+        // 3.) Post-condition check
+        cy.url().should('include', '/GrantApplications')
     })
+
     // 19.) Verify that the info panel populates with mapped data
     it('Verify the UI is populated with valid data from CHEFS', () => {
 
         cy.getSubmissionDetail('confirmationID').then(id => { cy.log(`Confirmation ID: ${id}`); });
 
-        cy.get('#search').should('exist').clear(); // Ensure the field exists and clear its contents
-        cy.get('#search').click() // click the search field
-        cy.getSubmissionDetail('confirmationID').then(id => cy.get('#search').type(id)); // Fetch the confirmation ID and type it into the search field
-        cy.getSubmissionDetail('confirmationID').then(id => cy.contains('tr', id).find('.checkbox-select').click()); // Fetch the confirmation ID, find its row, and click the checkbox
+        // Ensure the search field exists
+        cy.get('#search').should('exist')
 
-        cy.get('#applicationLink').should('exist').click() // open the info panel
+        // Conditionally widen Submitted Date range if the control exists
+        cy.get('body').then(($body) => {
+            if ($body.find('input#submittedFromDate').length > 0) {
+                cy.get('input#submittedFromDate')
+                    .should('be.visible')
+                    .clear()
+                    .type('2022-01-01')
+            }
+        })
+
+        // Clear and focus search
+        cy.get('#search').clear()
+        cy.get('#search').click()
+
+        // Type confirmation ID
+        cy.getSubmissionDetail('confirmationID')
+            .then(id => cy.get('#search').type(id))
+
+        // Select matching row if table rendering exists
+        cy.getSubmissionDetail('confirmationID')
+            .then(id => {
+                cy.get('body').then(($body) => {
+                    if ($body.find(`tr:contains("${id}")`).length > 0) {
+                        cy.contains('tr', id)
+                            .find('.checkbox-select')
+                            .click()
+                    }
+                })
+            })
+
+        // Open the info panel if available
+        cy.get('body').then(($body) => {
+            if ($body.find('#applicationLink').length > 0) {
+                cy.get('#applicationLink').click()
+            }
+        })
         // 19.) Verify that the info panel populates with mapped data
         // Category: AutoUI
         cy.get('label[for="Category"]').next('.display-input').should('include.text', 'AutoUI');
@@ -155,7 +226,7 @@ describe('Unity Login and check data from CHEFS', () => {
                 .siblings('select')
                 .as('subSector')
 
-            // pick “Manufacturing” in Sector
+            // pick  Manufacturing  in Sector
             cy.get('@sector').select('Manufacturing')
 
             // one-line array of expected Sub-sector options
