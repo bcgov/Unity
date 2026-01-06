@@ -442,9 +442,11 @@ const listColumns = getColumns();
             data: 'submissionDate',
             name: 'submissionDate',
             className: 'data-table-header',
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
-            index: columnIndex
-        }
+            index: columnIndex,
+            render: function (data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
+            }
+        };
     }
 
     function getProjectNameColumn(columnIndex) {
