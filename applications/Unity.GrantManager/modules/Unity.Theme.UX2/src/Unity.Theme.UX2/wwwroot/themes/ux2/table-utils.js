@@ -571,13 +571,13 @@ function initializeDataTable(options) {
                                 if (colIdx !== undefined && colIdx !== -1) {
                                     dtApi.column(colIdx).search(searchValue);
                                     filtersApplied++;
-                                    //(`Applied filter "${colName}" = "${searchValue}" at display ${displayIdx}`);
+                                    //Applied filter "${colName}" = "${searchValue}" at display ${displayIdx}
                                 }
                             }
                         }
                     });
 
-                    //(`Total filters applied: ${filtersApplied}`);
+                    //Total filters applied: ${filtersApplied}
 
                     if (typeof settings._filterRow._updateButtonState === 'function') {
                         settings._filterRow._updateButtonState();
