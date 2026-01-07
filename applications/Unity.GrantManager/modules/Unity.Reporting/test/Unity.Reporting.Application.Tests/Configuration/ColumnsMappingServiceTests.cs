@@ -625,8 +625,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
             {
                 CorrelationId = correlationId,
                 CorrelationProvider = correlationProvider,
-                Mapping = "{\"Rows\":}",
-
+                Mapping = "{\"Rows\":[]}",
                 ViewName = viewName
             };
 
@@ -636,38 +635,48 @@ namespace Unity.Reporting.Application.Tests.Configuration
             _reportColumnsMapRepository.ViewExistsAsync(viewName).Returns(true);
 
             // Act
-            await _reportMappingService.DeleteAsync(correlationId, correlationProvider, true);
+            var result = await _reportMappingService.DeleteAsync(correlationId, correlationProvider);
 
             // Assert
+            result.ShouldNotBeNull();
+            result.ConfigurationDeleted.ShouldBeTrue();
+            result.ViewDeleted.ShouldBeTrue();
+            result.DeletedViewName.ShouldBe(viewName);
+            result.Message.ShouldBeNull();
+
             await _reportColumnsMapRepository.Received(1).ViewExistsAsync(viewName);
             await _reportColumnsMapRepository.Received(1).DeleteViewAsync(viewName);
             await _reportColumnsMapRepository.Received(1).DeleteAsync(reportColumnsMap);
         }
 
         [Fact]
-        public async Task DeleteAsync_Should_Delete_Mapping_Without_View_When_DeleteView_False()
+        public async Task DeleteAsync_Should_Delete_Mapping_Without_View_When_No_View_Exists()
         {
             // Arrange
             var correlationId = Guid.NewGuid();
             var correlationProvider = "testProvider";
-            var viewName = "test_view";
 
             var reportColumnsMap = new ReportColumnsMap
             {
                 CorrelationId = correlationId,
                 CorrelationProvider = correlationProvider,
-                Mapping = "{\"Rows\":}",
-
-                ViewName = viewName
+                Mapping = "{\"Rows\":[]}",
+                ViewName = "" // No view name
             };
 
             _reportColumnsMapRepository.FindByCorrelationAsync(correlationId, correlationProvider)
                 .Returns(reportColumnsMap);
 
             // Act
-            await _reportMappingService.DeleteAsync(correlationId, correlationProvider, false);
+            var result = await _reportMappingService.DeleteAsync(correlationId, correlationProvider);
 
             // Assert
+            result.ShouldNotBeNull();
+            result.ConfigurationDeleted.ShouldBeTrue();
+            result.ViewDeleted.ShouldBeFalse();
+            result.DeletedViewName.ShouldBeNull();
+            result.Message.ShouldBeNull();
+
             await _reportColumnsMapRepository.DidNotReceive().ViewExistsAsync(Arg.Any<string>());
             await _reportColumnsMapRepository.DidNotReceive().DeleteViewAsync(Arg.Any<string>());
             await _reportColumnsMapRepository.Received(1).DeleteAsync(reportColumnsMap);
@@ -697,9 +706,16 @@ namespace Unity.Reporting.Application.Tests.Configuration
                 .Do(x => throw new Exception("View deletion failed"));
 
             // Act & Assert - Should not throw exception
-            await _reportMappingService.DeleteAsync(correlationId, correlationProvider, true);
+            var result = await _reportMappingService.DeleteAsync(correlationId, correlationProvider);
 
             // Assert - Mapping should still be deleted even if view deletion fails
+            result.ShouldNotBeNull();
+            result.ConfigurationDeleted.ShouldBeTrue();
+            result.ViewDeleted.ShouldBeFalse(); // Failed to delete view
+            result.DeletedViewName.ShouldBeNull();
+            result.Message.ShouldContain("Warning");
+            result.Message.ShouldContain(viewName);
+
             await _reportColumnsMapRepository.Received(1).DeleteViewAsync(viewName);
             await _reportColumnsMapRepository.Received(1).DeleteAsync(reportColumnsMap);
         }
@@ -716,7 +732,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
 
             // Act & Assert
             await Should.ThrowAsync<Volo.Abp.Domain.Entities.EntityNotFoundException>(async () =>
-                await _reportMappingService.DeleteAsync(correlationId, correlationProvider, true));
+                await _reportMappingService.DeleteAsync(correlationId, correlationProvider));
         }
 
         [Fact]
@@ -728,7 +744,7 @@ namespace Unity.Reporting.Application.Tests.Configuration
 
             // Act & Assert
             await Should.ThrowAsync<ArgumentException>(async () =>
-                await _reportMappingService.DeleteAsync(correlationId, invalidProvider, true));
+                await _reportMappingService.DeleteAsync(correlationId, invalidProvider));
         }
 
         [Fact]
@@ -743,7 +759,6 @@ namespace Unity.Reporting.Application.Tests.Configuration
                 CorrelationId = correlationId,
                 CorrelationProvider = correlationProvider,
                 Mapping = "{\"Rows\":[]}",
-
                 ViewName = "" // Empty view name
             };
 
@@ -751,9 +766,15 @@ namespace Unity.Reporting.Application.Tests.Configuration
                 .Returns(reportColumnsMap);
 
             // Act
-            await _reportMappingService.DeleteAsync(correlationId, correlationProvider, true);
+            var result = await _reportMappingService.DeleteAsync(correlationId, correlationProvider);
 
             // Assert - Should not attempt view operations
+            result.ShouldNotBeNull();
+            result.ConfigurationDeleted.ShouldBeTrue();
+            result.ViewDeleted.ShouldBeFalse();
+            result.DeletedViewName.ShouldBeNull();
+            result.Message.ShouldBeNull();
+
             await _reportColumnsMapRepository.DidNotReceive().ViewExistsAsync(Arg.Any<string>());
             await _reportColumnsMapRepository.DidNotReceive().DeleteViewAsync(Arg.Any<string>());
             await _reportColumnsMapRepository.Received(1).DeleteAsync(reportColumnsMap);

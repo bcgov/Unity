@@ -356,7 +356,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// Requires Configuration.Delete permissions for security.
         /// </summary>
         /// <param name="deleteViewRequest">The deletion request specifying correlation details and whether to delete the associated view.</param>
-        /// <returns>An OK result with success message, NotFound if mapping doesn't exist, or BadRequest for invalid correlation parameters.</returns>
+        /// <returns>An OK result with success message indicating what was deleted, NotFound if mapping doesn't exist, or BadRequest for invalid correlation parameters.</returns>
         [HttpDelete]
         [Route("Delete")]
         [Authorize(ReportingPermissions.Configuration.Delete)]
@@ -370,8 +370,26 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 
             try
             {
-                await reportMappingService.DeleteAsync(deleteViewRequest.CorrelationId, deleteViewRequest.CorrelationProvider, deleteViewRequest.DeleteView);
-                return Ok(new { message = "Configuration and view deleted successfully" });
+                var result = await reportMappingService.DeleteAsync(deleteViewRequest.CorrelationId, deleteViewRequest.CorrelationProvider);
+                
+                // Generate appropriate success message based on what was actually deleted
+                string message;
+                if (result.ViewDeleted)
+                {
+                    message = "Configuration and view deleted successfully";
+                }
+                else
+                {
+                    message = "Configuration deleted successfully";
+                }
+                
+                // Include any warning messages from the delete operation
+                if (!string.IsNullOrWhiteSpace(result.Message))
+                {
+                    message += $". {result.Message}";
+                }
+                
+                return Ok(new { message = message });
             }
             catch (Volo.Abp.Domain.Entities.EntityNotFoundException ex)
             {
@@ -477,12 +495,6 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// Determines the mapping lookup strategy for locating the configuration to delete.
         /// </summary>
         [JsonRequired]
-        public string CorrelationProvider { get; set; } = string.Empty;
-        
-        /// <summary>
-        /// Gets or sets whether to also delete the associated database view during mapping deletion.
-        /// When true, removes both mapping configuration and generated database view; when false, preserves the view.
-        /// </summary>
-        public bool DeleteView { get; set; } = true;
+        public string CorrelationProvider { get; set; } = string.Empty;        
     }
 }
