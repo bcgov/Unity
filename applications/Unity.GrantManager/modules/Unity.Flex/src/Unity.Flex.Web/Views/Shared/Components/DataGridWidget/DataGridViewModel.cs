@@ -13,7 +13,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         public DataGridDefinitionSummaryOption SummaryOption { get; set; }
         public DataGridViewSummary Summary { get; set; } = new DataGridViewSummary();
         public Guid WorksheetInstanceId { get; set; }
-        public Guid WorksheetId { get; set; }
+        public new Guid WorksheetId { get; set; }
         public string UiAnchor { get; set; } = string.Empty;
 
         public DataGridViewModel() : base()
