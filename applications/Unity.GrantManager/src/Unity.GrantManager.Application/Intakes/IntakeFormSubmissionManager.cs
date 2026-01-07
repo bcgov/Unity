@@ -228,7 +228,7 @@ namespace Unity.GrantManager.Intakes
 
             ApplicantAgentDto applicantAgentDto = new()
             {
-                Applicant = applicant,
+                Applicant = applicant!,
                 Application = application,
                 IntakeMap = intakeMap
             };

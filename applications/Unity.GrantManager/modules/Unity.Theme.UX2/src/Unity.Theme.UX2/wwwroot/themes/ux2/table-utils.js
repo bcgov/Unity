@@ -179,7 +179,6 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
  * @param {jQuery} options.dt - jQuery element to initialize as DataTable
  * @param {Array<string>} [options.defaultVisibleColumns=[]] - Column names visible by default
  * @param {Array<Object>} options.listColumns - Column definitions with name, data, title, render, etc.
- * @param {number} options.maxRowsPerPage - Maximum rows before hiding pagination controls
  * @param {number} options.defaultSortColumn - Index of column to sort by default
  * @param {string} options.dataEndpoint - API endpoint URL for fetching table data
  * @param {Function|Object} options.data - Data source or function returning request parameters
@@ -189,7 +188,6 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
  * @param {boolean} options.pagingEnabled - Enable pagination
  * @param {boolean} options.reorderEnabled - Enable column reordering
  * @param {Object} options.languageSetValues - DataTables language/localization settings
- * @param {string} options.dataTableName - Unique identifier for the table
  * @param {string} options.dynamicButtonContainerId - DOM ID where buttons are rendered
  * @param {boolean} [options.useNullPlaceholder=false] - Replace nulls with placeholder character
  * @param {string} [options.externalSearchId='search'] - ID of external search input element
@@ -212,7 +210,6 @@ function initializeDataTable(options) {
         dt,
         defaultVisibleColumns = [],
         listColumns,
-        maxRowsPerPage,
         defaultSortColumn,
         dataEndpoint,
         data,
@@ -222,7 +219,6 @@ function initializeDataTable(options) {
         pagingEnabled,
         reorderEnabled,
         languageSetValues,
-        dataTableName,
         dynamicButtonContainerId,
         useNullPlaceholder = false,
         externalSearchId = 'search',

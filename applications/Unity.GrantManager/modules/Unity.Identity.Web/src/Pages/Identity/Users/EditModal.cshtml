@@ -104,12 +104,7 @@
     static string ConvertUserFriendlyFormat(DateTime? dateTime)
     {
         return dateTime == null ? DefaultEmptyValue : dateTime.Value.ToUniversalTime().ToString(DateTimeFormat);
-    }
-    
-    static string ConvertUserFriendlyFormat(DateTimeOffset? dateTime)
-    {
-        return dateTime == null ? DefaultEmptyValue : dateTime.Value.UtcDateTime.ToString(DateTimeFormat);
-    }
+    }    
     
     static string ConvertUserFriendlyFormat(string value)
     {
