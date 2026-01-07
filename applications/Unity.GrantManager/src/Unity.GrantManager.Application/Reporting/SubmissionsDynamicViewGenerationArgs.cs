@@ -2,7 +2,7 @@
 
 namespace Unity.GrantManager.Reporting
 {
-    public class SubmissionsDynamicViewGenerationEto
+    public class SubmissionsDynamicViewGenerationArgs
     {
         public Guid ApplicationFormVersionId { get; set; }
         public Guid? TenantId { get; set; }

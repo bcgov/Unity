@@ -41,13 +41,7 @@ public class SubmissionAppService(
             throw new ApiException(400, "Missing required parameter 'formId' when calling GetSubmission");
         }
 
-        ApplicationForm? applicationForm = await GetApplicationFormBySubmissionId(formSubmissionId);
-
-        if (applicationForm == null)
-        {
-            throw new ApiException(400, "Missing Form configuration");
-        }
-
+        ApplicationForm? applicationForm = await GetApplicationFormBySubmissionId(formSubmissionId) ?? throw new ApiException(400, "Missing Form configuration");
         if (applicationForm.ChefsApplicationFormGuid == null)
         {
             throw new ApiException(400, "Missing CHEFS form Id");
@@ -59,12 +53,9 @@ public class SubmissionAppService(
         }
 
         ApplicationFormSubmission? applicationFormSubmisssion = await GetApplicationFormSubmissionBySubmissionId(formSubmissionId);
-        if (applicationFormSubmisssion == null)
-        {
-            throw new ApiException(400, "Missing Form Submission");
-        }
-
-        return applicationFormSubmisssion.Submission;
+        return applicationFormSubmisssion == null
+            ? throw new ApiException(400, "Missing Form Submission")
+            : (object)applicationFormSubmisssion.Submission;
     }
 
     [AllowAnonymous]
@@ -80,13 +71,7 @@ public class SubmissionAppService(
             throw new ApiException(400, "Missing required parameter 'chefsFileAttachmentId' when calling GetFileAttachment");
         }
 
-        ApplicationForm? applicationForm = await GetApplicationFormBySubmissionId(formSubmissionId);
-
-        if (applicationForm == null)
-        {
-            throw new ApiException(400, "Missing Form configuration");
-        }
-
+        ApplicationForm? applicationForm = await GetApplicationFormBySubmissionId(formSubmissionId) ?? throw new ApiException(400, "Missing Form configuration");
         if (applicationForm.ChefsApplicationFormGuid == null)
         {
             throw new ApiException(400, "Missing CHEFS form Id");
@@ -115,7 +100,7 @@ public class SubmissionAppService(
             throw new ApiException((int)response.StatusCode, "Error calling GetChefsFileAttachment: " + errorContent, response.ReasonPhrase ?? $"{response.StatusCode}");
         }
 
-        var contentBytes = response.Content != null ? await response.Content.ReadAsByteArrayAsync() : Array.Empty<byte>();
+        var contentBytes = response.Content != null ? await response.Content.ReadAsByteArrayAsync() : [];
         var contentType = response.Content?.Headers?.ContentType?.MediaType ?? "application/octet-stream";
 
         return new BlobDto { Name = name, Content = contentBytes, ContentType = contentType };
@@ -186,7 +171,6 @@ public class SubmissionAppService(
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
     }
-
     private async Task ProcessTenantSubmissions(
         Tenant tenant,
         List<FormSubmissionSummaryDto> chefsSubmissions,
@@ -194,13 +178,14 @@ public class SubmissionAppService(
         HashSet<string> checkedForms,
         HashSet<string> unityRefNos)
     {
-        var groupedResult = await applicationRepository.WithFullDetailsGroupedAsync(0, int.MaxValue);
+        // Replace the invalid method call with `WithFullDetailsAsync`.
+        var groupedResult = await applicationRepository.WithFullDetailsAsync(0, int.MaxValue, null, null);
         var appDtos = new List<GrantApplicationDto>();
         var rowCounter = 0;
 
-        foreach (var grouping in groupedResult)
+        foreach (var application in groupedResult)
         {
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
             appDto.RowCount = rowCounter++;
             appDtos.Add(appDto);
 

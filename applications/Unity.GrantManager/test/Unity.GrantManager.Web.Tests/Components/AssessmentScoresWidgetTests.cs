@@ -7,6 +7,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 using Xunit;
@@ -22,20 +23,30 @@ namespace Unity.GrantManager.Components
             var assessmentRepository = Substitute.For<IAssessmentRepository>();
             var scoresheetRepository = Substitute.For<IScoresheetRepository>();
             var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
+            var applicationRepository = Substitute.For<IApplicationRepository>();
             var expectedFinancialAnalysis = 1;
             var expectedEconomicImpact = 2;
             var expectedInclusiveGrowth = 3;
             var expectedCleanGrowth = 4;
             var assessmentId = Guid.NewGuid();
+            var applicationId = Guid.NewGuid();
             var currentUserId = Guid.NewGuid();
             var httpContext = new DefaultHttpContext();
-            assessmentRepository.GetAsync(assessmentId).Returns(await Task.FromResult(new Assessment()
+
+            assessmentRepository.GetAsync(assessmentId).Returns(Task.FromResult(new Assessment(id: assessmentId, applicationId: applicationId, assessorId: Guid.NewGuid())
             {
                 FinancialAnalysis = expectedFinancialAnalysis,
                 EconomicImpact = expectedEconomicImpact,
                 InclusiveGrowth = expectedInclusiveGrowth,
                 CleanGrowth = expectedCleanGrowth
             }));
+
+            applicationRepository.GetAsync(applicationId).Returns(Task.FromResult(new Application()
+            {
+                AIScoresheetAnswers = null
+            }));
+
+            instanceRepository.GetByCorrelationAsync(assessmentId).Returns(Task.FromResult<ScoresheetInstance?>(null));
 
             var viewContext = new ViewContext
             {
@@ -46,7 +57,7 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new AssessmentScoresWidgetViewComponent(assessmentRepository, scoresheetRepository, instanceRepository)
+            var viewComponent = new AssessmentScoresWidgetViewComponent(assessmentRepository, scoresheetRepository, instanceRepository, applicationRepository)
             {
                 ViewComponentContext = viewComponentContext
             };

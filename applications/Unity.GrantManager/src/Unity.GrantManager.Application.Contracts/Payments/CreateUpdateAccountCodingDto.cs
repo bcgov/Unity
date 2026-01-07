@@ -1,4 +1,4 @@
-﻿﻿using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace Unity.GrantManager.Payments
@@ -39,5 +39,9 @@ namespace Unity.GrantManager.Payments
         [StringLength(7, MinimumLength = 7, ErrorMessage = "{0} must have a minimum of {1} characters.")]
         [MaxLength(7, ErrorMessage = "{0} must have a max of {1} characters.")]
         public string? ProjectNumber { get; set; } = string.Empty;
+
+        [DisplayName("Description")]
+        [MaxLength(35, ErrorMessage = "{0} must have a max of {1} characters.")]
+        public string? Description { get; set; }
     }
 }

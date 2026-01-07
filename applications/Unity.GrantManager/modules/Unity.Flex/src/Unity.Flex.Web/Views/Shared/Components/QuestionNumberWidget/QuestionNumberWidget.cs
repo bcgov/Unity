@@ -21,7 +21,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
             double? answer,
             string? min,
             string? max,
-            bool required = false)
+            bool required = false,
+            bool isHumanConfirmed = true,
+            string? aiCitation = null,
+            int? aiConfidence = null)
         {
             return View(await Task.FromResult(new QuestionNumberViewModel()
             {
@@ -30,7 +33,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
                 Answer = answer,
                 Min = min,
                 Max = max,
-                Required = required
+                Required = required,
+                IsHumanConfirmed = isHumanConfirmed,
+                AICitation = aiCitation,
+                AIConfidence = aiConfidence
             }));
         }
 

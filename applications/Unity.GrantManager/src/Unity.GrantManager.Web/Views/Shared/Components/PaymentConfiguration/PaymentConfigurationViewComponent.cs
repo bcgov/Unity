@@ -12,6 +12,7 @@ using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationForms;
+using Unity.Payments.Enums;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
 {
@@ -43,6 +44,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
             model.FormHierarchy = applicationForm?.FormHierarchy;
             model.ParentFormId = applicationForm?.ParentFormId;
             model.ParentFormVersionId = applicationForm?.ParentFormVersionId;
+            model.DefaultPaymentGroup = applicationForm?.DefaultPaymentGroup ?? (int)PaymentGroup.EFT;
 
             // Load parent form display name if parent form is selected
             if (model.ParentFormId.HasValue && model.ParentFormVersionId.HasValue)
@@ -61,11 +63,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
                 new SelectListItem { Value = ((int)FormHierarchyType.Parent).ToString(), Text = "Parent Form" },
                 new SelectListItem { Value = ((int)FormHierarchyType.Child).ToString(), Text = "Child Form" }
             };
+            model.PaymentGroupList = new()
+            {
+                new SelectListItem { Value = ((int)PaymentGroup.EFT).ToString(), Text = "EFT" },
+                new SelectListItem { Value = ((int)PaymentGroup.Cheque).ToString(), Text = "Cheque" }
+            };
             model.AccountCodeList = new();
             foreach (var accountCoding in accountCodings)
             {
-                string accountCodingText = await paymentConfigurationAppService.GetAccountDistributionCode(accountCoding);
-                SelectListItem selectListItem = new SelectListItem { Value = accountCoding.Id.ToString(), Text = accountCodingText};
+                string accountCodingText = await paymentConfigurationAppService.GetAccountDistributionCodeDescription(accountCoding);
+                SelectListItem selectListItem = new() { Value = accountCoding.Id.ToString(), Text = accountCodingText };
                 model.AccountCodeList.Add(selectListItem);
             }
 

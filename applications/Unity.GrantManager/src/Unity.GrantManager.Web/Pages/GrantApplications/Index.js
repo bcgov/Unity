@@ -4,23 +4,6 @@
     let dt = $('#GrantApplicationsTable');
     let dataTable;
 
-    const listColumns = getColumns();
-    const defaultVisibleColumns = ['select',
-        'applicantName',
-        'category',
-        'referenceNo',
-        'submissionDate',
-        'status',
-        'subStatusDisplayValue',
-        'community',
-        'requestedAmount',
-        'approvedAmount',
-        'projectName',
-        'applicantId',
-        'applicationTag',
-        'assignees'
-    ]
-
     //For stateRestore label in modal
     let languageSetValues = {
         buttons: {
@@ -117,6 +100,34 @@
         }
     ];
 
+const listColumns = getColumns();
+    const defaultVisibleColumns = ['select',
+        'applicantName',
+        'category',
+        'referenceNo',
+        'submissionDate',
+        'status',
+        'subStatusDisplayValue',
+        'community',
+        'requestedAmount',
+        'approvedAmount',
+        'projectName',
+        'applicantId',
+        'applicationTag',
+        'assignees'
+    ]
+
+    let grantTableFilters = {
+        submittedFromDate: null,
+        submittedToDate: null
+    };
+
+    const UIElements = {
+        inputFilter: $('.date-input-filter'),
+        submittedToInput: $('#submittedToDate'),
+        submittedFromInput: $('#submittedFromDate'),
+    };    
+
     let responseCallback = function (result) {
         return {
             recordsTotal: result.totalCount,
@@ -135,51 +146,166 @@
         return newData;
     }
 
-    dataTable = initializeDataTable({
-        dt,
-        defaultVisibleColumns,
-        listColumns,
-        maxRowsPerPage: 10,
-        defaultSortColumn: 4,
-        dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
-        data: {},
-        responseCallback,
-        actionButtons,
-        serverSideEnabled: false,
-        pagingEnabled: true,
-        reorderEnabled: true,
-        languageSetValues,
-        dataTableName: 'GrantApplicationsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId'
-    });
+    init();
 
-    dataTable.on('search.dt', () => handleSearch());
+    function init() {
+        bindUIEvents();
+        initializeSubmittedFilterDates();
+        initializeDataTableAndEvents();
+    }
 
-    dataTable.on('select', function (e, dt, type, indexes) {
+    function initializeSubmittedFilterDates() {
 
-        if (indexes?.length) {
-            indexes.forEach(index => {
-                $("#row_" + index).prop("checked", true);
-                if ($(".chkbox:checked").length == $(".chkbox").length) {
-                    $(".select-all-applications").prop("checked", true);
-                }
-                selectApplication(type, index, 'select_application');
-            });
+        const fromDate = localStorage.getItem('GrantApplications_FromDate');
+        const toDate = localStorage.getItem('GrantApplications_ToDate');
+
+        // Check if localStorage has values and use them
+        if (fromDate && toDate) {
+            UIElements.submittedFromInput.val(fromDate);
+            UIElements.submittedToInput.val(toDate);
+            grantTableFilters.submittedFromDate = fromDate;
+            grantTableFilters.submittedToDate = toDate;
+            return;
         }
 
-    });
+        let dtToday = new Date();
+        let month = dtToday.getMonth() + 1;
+        let day = dtToday.getDate();
+        let year = dtToday.getFullYear();
+        if (month < 10)
+            month = '0' + month.toString();
+        if (day < 10)
+            day = '0' + day.toString();
+        let todayDate = year + '-' + month + '-' + day;
+        
+        let dtSixMonthsAgo = new Date();
+        dtSixMonthsAgo.setMonth(dtSixMonthsAgo.getMonth() - 6);
+        let minMonth = dtSixMonthsAgo.getMonth() + 1;
+        let minDay = dtSixMonthsAgo.getDate();
+        let minYear = dtSixMonthsAgo.getFullYear();
+        if (minMonth < 10)
+            minMonth = '0' + minMonth.toString();
+        if (minDay < 10)
+            minDay = '0' + minDay.toString();
+        let suggestedMinDate = minYear + '-' + minMonth + '-' + minDay;
+        
+        UIElements.submittedToInput.attr({ 'max': todayDate });
+        UIElements.submittedToInput.val(todayDate);
+        UIElements.submittedFromInput.attr({ 'max': todayDate });
+        UIElements.submittedFromInput.val(suggestedMinDate);
+        grantTableFilters.submittedFromDate = suggestedMinDate;
+        grantTableFilters.submittedToDate = todayDate;
+    }
 
-    dataTable.on('deselect', function (e, dt, type, indexes) {
-        if (indexes?.length) {
-            indexes.forEach(index => {
-                selectApplication(type, index, 'deselect_application');
-                $("#row_" + index).prop("checked", false);
-                if ($(".chkbox:checked").length != $(".chkbox").length) {
-                    $(".select-all-applications").prop("checked", false);
-                }
-            });
+    function bindUIEvents() {
+        UIElements.inputFilter.on('change', handleInputFilterChange);       
+    }
+
+    function validateDate(dateValue, element) {
+        if (dateValue) {
+            const selectedDate = new Date(dateValue);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
+            const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
+            
+            if (selectedDate > today) {
+                element.addClass('input-validation-error');
+                abp.notify.error('The date cannot be in the future', 'Invalid Date');
+                return false;
+            }
+            
+            if (minDate && selectedDate < minDate) {
+                element.addClass('input-validation-error');
+                abp.notify.error('The date cannot be before the minimum allowed date', 'Invalid Date');
+                return false;
+            }
+            
+            if (maxDate && selectedDate > maxDate) {
+                element.addClass('input-validation-error');
+                abp.notify.error('The date cannot be after the maximum allowed date', 'Invalid Date');
+                return false;
+            }
+            
+            element.removeClass('input-validation-error');
+            return true;
         }
-    });
+        return true;
+    }
+
+    // =====================
+    // Input filter change handler
+    // =====================
+    function handleInputFilterChange() {
+        const $input = $(this);
+        const dateValue = $input.val();
+
+        if (!validateDate(dateValue, $input)) return;
+
+        grantTableFilters.submittedFromDate = UIElements.submittedFromInput.val();
+        grantTableFilters.submittedToDate = UIElements.submittedToInput.val();
+
+        const dtInstance = $('#GrantApplicationsTable').DataTable();
+
+        localStorage.setItem("GrantApplications_FromDate", grantTableFilters.submittedFromDate);
+        localStorage.setItem("GrantApplications_ToDate", grantTableFilters.submittedToDate);
+
+        dtInstance.ajax.reload(null, true);
+    }
+   
+    function initializeDataTableAndEvents() {
+        dataTable = initializeDataTable({
+            dt,
+            defaultVisibleColumns,
+            listColumns,
+            maxRowsPerPage: 10,
+            serverSideEnabled: true,   // Must be TRUE for ajax reloads to call server
+            defaultSortColumn: 4,
+            dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
+            data: function () {
+                return {
+                    submittedFromDate: grantTableFilters.submittedFromDate,
+                    submittedToDate: grantTableFilters.submittedToDate
+                };
+            },            
+            responseCallback,
+            actionButtons,
+            serverSideEnabled: false,
+            pagingEnabled: true,
+            reorderEnabled: true,
+            languageSetValues,
+            dataTableName: 'GrantApplicationsTable',
+            dynamicButtonContainerId: 'dynamicButtonContainerId'         
+        });
+        dataTable.on('search.dt', () => handleSearch());
+
+        dataTable.on('select', function (e, dt, type, indexes) {
+
+            if (indexes?.length) {
+                indexes.forEach(index => {
+                    $("#row_" + index).prop("checked", true);
+                    if ($(".chkbox:checked").length == $(".chkbox").length) {
+                        $(".select-all-applications").prop("checked", true);
+                    }
+                    selectApplication(type, index, 'select_application');
+                });
+            }
+
+        });
+
+        dataTable.on('deselect', function (e, dt, type, indexes) {
+            if (indexes?.length) {
+                indexes.forEach(index => {
+                    selectApplication(type, index, 'deselect_application');
+                    $("#row_" + index).prop("checked", false);
+                    if ($(".chkbox:checked").length != $(".chkbox").length) {
+                        $(".select-all-applications").prop("checked", false);
+                    }
+                });
+            }
+        });
+    }
 
     $('#search').on('input', function () {
         let table = $('#GrantApplicationsTable').DataTable();
@@ -316,9 +442,12 @@
             data: 'submissionDate',
             name: 'submissionDate',
             className: 'data-table-header',
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
-            index: columnIndex
-        }
+            index: columnIndex,
+            render: function (data, type) {
+                const formattedDate = DateUtils.formatUtcDateToLocal(data, type);
+                return formattedDate ? String(formattedDate) : '';
+            }
+        };
     }
 
     function getProjectNameColumn(columnIndex) {

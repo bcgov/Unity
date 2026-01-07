@@ -19,6 +19,9 @@ namespace Unity.Flex.Scoresheets
 
         public virtual string? Answer { get; set; }
         public virtual string? Definition { get; set; } = "{}";
+        public virtual bool IsHumanConfirmed { get; set; } = true;
+        public virtual string? AICitation { get; set; }
+        public virtual int? AIConfidence { get; set; }
 
         public string? GetMin()
         {

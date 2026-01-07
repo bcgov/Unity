@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -99,72 +99,74 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _zoneChecker = zoneChecker;
     }
 
-    public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+    public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(input.SkipCount, input.MaxResultCount, input.Sorting);
+        // 1️⃣ Fetch applications with filters + paging in DB
+        var applications = await _applicationRepository.WithFullDetailsAsync(
+            input.SkipCount,
+            input.MaxResultCount,
+            input.Sorting,
+            input.SubmittedFromDate,
+            input.SubmittedToDate
+        );
 
-        // Pre-fetch payment requests for all applications in a single query to reduce database calls
-        var applicationIds = groupedResult.SelectMany(g => g).Select(a => a.Id).ToList();
+        var applicationIds = applications.Select(a => a.Id).ToList();
 
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-        List<PaymentDetailsDto> paymentRequests = [];
-        if (paymentsFeatureEnabled)
+        List<PaymentDetailsDto> paymentRequests = new();
+
+        if (paymentsFeatureEnabled && applicationIds.Count > 0)
         {
             paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
         }
 
+        // 2️⃣ Pre-aggregate payment amounts for O(1) lookup
+        var paymentRequestsByApplication = paymentRequests
+            .Where(pr => pr.Status == PaymentRequestStatus.Submitted)
+            .GroupBy(pr => pr.CorrelationId)
+            .ToDictionary(g => g.Key, g => g.Sum(pr => pr.Amount));
 
-        // Map applications to DTOs
-        var appDtos = groupedResult.Select(grouping =>
+        // 3️⃣ Map applications to DTOs
+        var appDtos = applications.Select(app =>
         {
-            var firstApplication = grouping.First();
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(firstApplication);
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
 
-            // Map additional properties
-            appDto.Status = firstApplication.ApplicationStatus.InternalStatus;
-            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(firstApplication.Applicant);
-            appDto.Category = firstApplication.ApplicationForm.Category ?? string.Empty;
-            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(firstApplication.ApplicationTags?.ToList() ?? []);
-            appDto.Owner = BuildApplicationOwner(firstApplication.Owner);
-            appDto.OrganizationName = firstApplication.Applicant?.OrgName ?? string.Empty;
-            appDto.NonRegOrgName = firstApplication.Applicant?.NonRegOrgName ?? string.Empty;
-            appDto.OrganizationType = firstApplication.Applicant?.OrganizationType ?? string.Empty;
-            appDto.Assignees = BuildApplicationAssignees(firstApplication.ApplicationAssignments);
+            appDto.Status = app.ApplicationStatus.InternalStatus;
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(app.Applicant);
+            appDto.Category = app.ApplicationForm.Category ?? string.Empty;
+            appDto.Owner = BuildApplicationOwner(app.Owner);
+            appDto.OrganizationName = app.Applicant?.OrgName ?? string.Empty;            
+            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(app.ApplicationTags?.ToList() ?? []);            
+            appDto.NonRegOrgName = app.Applicant?.NonRegOrgName ?? string.Empty;
+            appDto.OrganizationType = app.Applicant?.OrganizationType ?? string.Empty;
+            appDto.Assignees = BuildApplicationAssignees(app.ApplicationAssignments);
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
-            appDto.ContactFullName = firstApplication.ApplicantAgent?.Name;
-            appDto.ContactEmail = firstApplication.ApplicantAgent?.Email;
-            appDto.ContactTitle = firstApplication.ApplicantAgent?.Title;
-            appDto.ContactBusinessPhone = firstApplication.ApplicantAgent?.Phone;
-            appDto.ContactCellPhone = firstApplication.ApplicantAgent?.Phone2;
+            appDto.ContactFullName = app.ApplicantAgent?.Name;
+            appDto.ContactEmail = app.ApplicantAgent?.Email;
+            appDto.ContactTitle = app.ApplicantAgent?.Title;
+            appDto.ContactBusinessPhone = app.ApplicantAgent?.Phone;
+            appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
 
-            //Payment request info if the feature is enabled
 
-            if (paymentsFeatureEnabled && paymentRequests != null && paymentRequests is { Count: > 0 })
+            if (paymentsFeatureEnabled && paymentRequestsByApplication.Count > 0)
             {
-                var paymentInfo = new PaymentInfoDto
+                appDto.PaymentInfo = new PaymentInfoDto
                 {
-                    ApprovedAmount = firstApplication.ApprovedAmount,
-                    TotalPaid = paymentRequests
-                        .Where(pr => pr.CorrelationId == firstApplication.Id && pr.Status.Equals(PaymentRequestStatus.Submitted))
-                        .Sum(pr => pr.Amount)
+                    ApprovedAmount = app.ApprovedAmount,
+                    TotalPaid = paymentRequestsByApplication.GetValueOrDefault(app.Id)
                 };
-                appDto.PaymentInfo = paymentInfo;
             }
 
             return appDto;
         }).ToList();
 
-        long totalCount = 0;
-        try
-        {
-            totalCount = await _applicationRepository.GetCountAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "An exception occurred GetCountAsync: {ExceptionMessage}", ex.Message);
-        }
+        // 4️⃣ Get total count using same filters
+        var totalCount = await _applicationRepository.GetCountAsync(
+            input.SubmittedFromDate,
+            input.SubmittedToDate
+        );
 
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
@@ -741,7 +743,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             else
             {
                 // Update supplier number
-                await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber);
+                await _applicantSupplierService.UpdateApplicantSupplierNumberAsync(application.ApplicantId, supplierNumber, applicationId);
             }
         }
     }
@@ -1319,5 +1321,106 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
 
         return result;
+    }
+
+    public async Task<string> DismissAIIssueAsync(Guid applicationId, string issueId)
+    {
+        var application = await _applicationRepository.GetAsync(applicationId);
+
+        if (string.IsNullOrEmpty(application.AIAnalysis))
+        {
+            throw new UserFriendlyException("No AI analysis available for this application.");
+        }
+
+        try
+        {
+            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss: true);
+            application.AIAnalysis = updatedAnalysis;
+            await _applicationRepository.UpdateAsync(application);
+            return updatedAnalysis;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error dismissing AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
+            throw new UserFriendlyException("Failed to dismiss the AI issue. Please try again.");
+        }
+    }
+
+    public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)
+    {
+        var application = await _applicationRepository.GetAsync(applicationId);
+
+        if (string.IsNullOrEmpty(application.AIAnalysis))
+        {
+            throw new UserFriendlyException("No AI analysis available for this application.");
+        }
+
+        try
+        {
+            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss: false);
+            application.AIAnalysis = updatedAnalysis;
+            await _applicationRepository.UpdateAsync(application);
+            return updatedAnalysis;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error restoring AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
+            throw new UserFriendlyException("Failed to restore the AI issue. Please try again.");
+        }
+    }
+
+    private static string ModifyDismissedItems(string analysisJson, string issueId, bool isDismiss)
+    {
+        using var jsonDoc = System.Text.Json.JsonDocument.Parse(analysisJson);
+        using var memoryStream = new System.IO.MemoryStream();
+        using (var writer = new Utf8JsonWriter(memoryStream, new JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartObject();
+
+            var dismissedItems = new HashSet<string>();
+            if (jsonDoc.RootElement.TryGetProperty("dismissed_items", out var dismissedArray))
+            {
+                foreach (var item in dismissedArray.EnumerateArray())
+                {
+                    var itemValue = item.GetString();
+                    if (!string.IsNullOrWhiteSpace(itemValue))
+                    {
+                        dismissedItems.Add(itemValue);
+                    }
+                }
+            }
+
+            // Modify the dismissed items set
+            if (isDismiss && !string.IsNullOrWhiteSpace(issueId))
+            {
+                dismissedItems.Add(issueId);
+            }
+            else if (!isDismiss)
+            {
+                dismissedItems.Remove(issueId);
+            }
+
+            // Write all properties
+            foreach (var property in jsonDoc.RootElement.EnumerateObject())
+            {
+                if (property.Name != "dismissed_items")
+                {
+                    property.WriteTo(writer);
+                }
+            }
+
+            // Write updated dismissed_items array
+            writer.WritePropertyName("dismissed_items");
+            writer.WriteStartArray();
+            foreach (var id in dismissedItems)
+            {
+                writer.WriteStringValue(id);
+            }
+            writer.WriteEndArray();
+
+            writer.WriteEndObject();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
     }
 }
