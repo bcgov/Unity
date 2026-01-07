@@ -128,38 +128,6 @@ public class EmailConsumer(
             {
                 await SaveEmailLogWithRetryAsync(emailLog, uow);
             }
-            catch (Exception ex)
-            {
-                logger.LogError(
-                    ex,
-                    "Email sending failed for Email {EmailId}. Tenant {TenantId}. Marking as failure and retrying.",
-                    emailLog.Id,
-                    notificationEvent.TenantId
-                );
-
-                emailLog.Status = EmailStatus.Failed;
-                await HandleRetryAsync(emailLog, notificationEvent, uow);
-                return;
-            }
-
-            UpdateEmailLogStatus(emailLog, response);
-
-            if (ShouldRetry(response.StatusCode))
-            {
-                await HandleRetryAsync(emailLog, notificationEvent, uow);
-            }
-            else
-            {
-                await SaveEmailLogWithRetryAsync(emailLog, uow);
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Unexpected processing error for Email {EmailId}.",
-                emailLog.Id
-            );
         }
         catch (Exception ex)
         {
