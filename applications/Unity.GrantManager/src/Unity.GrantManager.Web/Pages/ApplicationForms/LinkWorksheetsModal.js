@@ -1,6 +1,4 @@
 ﻿$(function () {
-    let lastDroppedLocation = {};
-    let lastDragFromLocation = {};
     let customTabIds = [];
     let assessmentInfoIds = [];
     let projectInfoIds = [];
@@ -11,7 +9,6 @@
     PubSub.subscribe(
         'refresh_configure_worksheets',
         () => {
-            lastDroppedLocation = {};
             customTabIds = [];
             assessmentInfoIds = [];
             projectInfoIds = [];
@@ -101,7 +98,6 @@
         let draggedEl = ev.target;
         if (draggedEl.classList + "" != "undefined") {
             draggedEl.classList.add('dragging');
-            lastDragFromLocation = draggedEl.parentNode;
         }
     }
 
@@ -134,7 +130,6 @@
         let beingDragged = document.querySelector('.dragging');
         updateDraggedClasses(beingDragged, addClass, removeClass);
         dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
         storeFunction();
     }
 
@@ -225,7 +220,6 @@
         let beingDragged = document.querySelector('.dragging');
         updateDraggedClasses(beingDragged, addClass, removeClass);
         dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
     }
 
     function updateDraggedClasses(beingDragged, addClass, removeClass) {
