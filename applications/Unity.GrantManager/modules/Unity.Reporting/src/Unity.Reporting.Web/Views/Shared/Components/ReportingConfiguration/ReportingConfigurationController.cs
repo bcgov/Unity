@@ -41,7 +41,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                 Logger.LogWarning("Invalid model state for ReportingConfigurationController:Refresh");
                 return ViewComponent(typeof(ReportingConfigurationViewComponent));
             }
-            
+
             return ViewComponent(typeof(ReportingConfigurationViewComponent), new { formId, selectedVersionId, provider });
         }
 
@@ -220,7 +220,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
             try
             {
                 bool isAvailable;
-                
+
                 if (correlationId.HasValue && !string.IsNullOrWhiteSpace(correlationProvider))
                 {
                     // Use correlation-aware availability check
@@ -231,7 +231,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                     // Use basic availability check (backward compatibility)
                     isAvailable = await reportMappingService.IsViewNameAvailableAsync(viewName);
                 }
-                
+
                 return Ok(isAvailable);
             }
             catch (ArgumentException ex)
@@ -262,10 +262,10 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
             try
             {
                 var result = await reportMappingService.GenerateViewAsync(
-                    request.CorrelationId, 
-                    request.CorrelationProvider, 
+                    request.CorrelationId,
+                    request.CorrelationProvider,
                     request.ViewName);
-                
+
                 // Return 202 Accepted for async operations that have been queued
                 return Accepted(result);
             }
@@ -274,7 +274,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                 return NotFound(ex.Message);
             }
             catch (ArgumentException ex)
-            { 
+            {
                 return BadRequest(ex.Message);
             }
         }
@@ -371,25 +371,19 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
             try
             {
                 var result = await reportMappingService.DeleteAsync(deleteViewRequest.CorrelationId, deleteViewRequest.CorrelationProvider);
-                
-                // Generate appropriate success message based on what was actually deleted
-                string message;
-                if (result.ViewDeleted)
-                {
-                    message = "Configuration and view deleted successfully";
-                }
-                else
-                {
-                    message = "Configuration deleted successfully";
-                }
-                
+
+                // Generate appropriate success message based on what was actually deleted                
+                string message = result.ViewDeleted
+                    ? "Configuration and view deleted successfully"
+                    : "Configuration deleted successfully";
+
                 // Include any warning messages from the delete operation
                 if (!string.IsNullOrWhiteSpace(result.Message))
                 {
                     message += $". {result.Message}";
                 }
-                
-                return Ok(new { message = message });
+
+                return Ok(new { message });
             }
             catch (Volo.Abp.Domain.Entities.EntityNotFoundException ex)
             {
@@ -456,19 +450,19 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// Used in combination with Take to implement efficient pagination for large datasets.
         /// </summary>
         public int Skip { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the maximum number of records to return in the query result.
         /// Provides control over result set size for performance and user interface optimization.
         /// </summary>
         public int Take { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the optional SQL WHERE clause filter for restricting query results.
         /// Should be a valid PostgreSQL WHERE clause condition without the "WHERE" keyword.
         /// </summary>
         public string? Filter { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the optional SQL ORDER BY clause for sorting query results.
         /// Should be a valid PostgreSQL ORDER BY clause without the "ORDER BY" keywords.
@@ -495,6 +489,6 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// Determines the mapping lookup strategy for locating the configuration to delete.
         /// </summary>
         [JsonRequired]
-        public string CorrelationProvider { get; set; } = string.Empty;        
+        public string CorrelationProvider { get; set; } = string.Empty;
     }
 }

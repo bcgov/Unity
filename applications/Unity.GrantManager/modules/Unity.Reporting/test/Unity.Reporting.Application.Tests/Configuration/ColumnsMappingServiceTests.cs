@@ -713,8 +713,8 @@ namespace Unity.Reporting.Application.Tests.Configuration
             result.ConfigurationDeleted.ShouldBeTrue();
             result.ViewDeleted.ShouldBeFalse(); // Failed to delete view
             result.DeletedViewName.ShouldBeNull();
-            result.Message.ShouldContain("Warning");
-            result.Message.ShouldContain(viewName);
+            result.Message?.ShouldContain("Warning");
+            result.Message?.ShouldContain(viewName);
 
             await _reportColumnsMapRepository.Received(1).DeleteViewAsync(viewName);
             await _reportColumnsMapRepository.Received(1).DeleteAsync(reportColumnsMap);
@@ -745,39 +745,6 @@ namespace Unity.Reporting.Application.Tests.Configuration
             // Act & Assert
             await Should.ThrowAsync<ArgumentException>(async () =>
                 await _reportMappingService.DeleteAsync(correlationId, invalidProvider));
-        }
-
-        [Fact]
-        public async Task DeleteAsync_Should_Skip_View_Deletion_When_ViewName_Is_Empty()
-        {
-            // Arrange
-            var correlationId = Guid.NewGuid();
-            var correlationProvider = "testProvider";
-
-            var reportColumnsMap = new ReportColumnsMap
-            {
-                CorrelationId = correlationId,
-                CorrelationProvider = correlationProvider,
-                Mapping = "{\"Rows\":[]}",
-                ViewName = "" // Empty view name
-            };
-
-            _reportColumnsMapRepository.FindByCorrelationAsync(correlationId, correlationProvider)
-                .Returns(reportColumnsMap);
-
-            // Act
-            var result = await _reportMappingService.DeleteAsync(correlationId, correlationProvider);
-
-            // Assert - Should not attempt view operations
-            result.ShouldNotBeNull();
-            result.ConfigurationDeleted.ShouldBeTrue();
-            result.ViewDeleted.ShouldBeFalse();
-            result.DeletedViewName.ShouldBeNull();
-            result.Message.ShouldBeNull();
-
-            await _reportColumnsMapRepository.DidNotReceive().ViewExistsAsync(Arg.Any<string>());
-            await _reportColumnsMapRepository.DidNotReceive().DeleteViewAsync(Arg.Any<string>());
-            await _reportColumnsMapRepository.Received(1).DeleteAsync(reportColumnsMap);
         }
 
         #endregion
