@@ -9,8 +9,8 @@ namespace Unity.Payments.Integrations.Cas
     {
         Task<dynamic> GetCasSupplierInformationByBn9Async(string? bn9);
         Task<dynamic> GetCasSupplierInformationAsync(string? supplierNumber);
-        Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId);
+        Task UpdateApplicantSupplierInfo(string? supplierNumber, Guid applicantId, Guid? applicationId = null);
         Task<dynamic> UpdateApplicantSupplierInfoByBn9(string? bn9, Guid applicantId);
-        Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId);
+        Task UpdateSupplierInfo(dynamic casSupplierResponse, Guid applicantId, Guid? applicationId = null);
     }
 }

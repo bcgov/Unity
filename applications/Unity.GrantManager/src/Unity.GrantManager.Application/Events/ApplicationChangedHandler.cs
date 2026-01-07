@@ -9,6 +9,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.Events
@@ -19,17 +20,20 @@ namespace Unity.GrantManager.Events
         private readonly IFeatureChecker _featureChecker;
         private readonly ILocalEventBus _localEventBus;
         private readonly ISettingProvider _settingProvider;
+        private readonly ICurrentTenant _currentTenant;
 
         public ApplicationChangedHandler(
             IApplicantAgentRepository applicantAgentRepository,
             ILocalEventBus localEventBus,
             IFeatureChecker featureChecker,
-            ISettingProvider settingProvider)
+            ISettingProvider settingProvider,
+            ICurrentTenant currentTenant)
         {
             _applicantAgentRepository = applicantAgentRepository;
             _localEventBus = localEventBus;
             _featureChecker = featureChecker;
             _settingProvider = settingProvider;
+            _currentTenant = currentTenant;
         }
 
         public async Task HandleEventAsync(ApplicationChangedEvent eventData)
@@ -59,6 +63,7 @@ namespace Unity.GrantManager.Events
                                 new EmailNotificationEvent
                                 {
                                     Action = EmailAction.SendApproval,
+                                    TenantId = _currentTenant.Id,
                                     ApplicationId = eventData.ApplicationId,
                                     RetryAttempts = 0,
                                     EmailAddress = emailTo,
@@ -73,6 +78,7 @@ namespace Unity.GrantManager.Events
                                 new EmailNotificationEvent
                                 {
                                     Action = EmailAction.SendDecline,
+                                    TenantId = _currentTenant.Id,
                                     ApplicationId = eventData.ApplicationId,
                                     RetryAttempts = 0,
                                     EmailAddress = emailTo,

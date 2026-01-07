@@ -1620,6 +1620,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<int?>("DefaultPaymentGroup")
+                        .HasColumnType("integer");
+
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uuid")
                         .HasColumnName("DeleterId");
@@ -2688,6 +2691,80 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("EmailLogs", "Notifications");
                 });
 
+            modelBuilder.Entity("Unity.Notifications.Emails.EmailLogAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<Guid>("EmailLogId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("S3ObjectKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<DateTime>("Time")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmailLogId");
+
+                    b.HasIndex("S3ObjectKey");
+
+                    b.ToTable("EmailLogAttachments", "Notifications");
+                });
+
             modelBuilder.Entity("Unity.Notifications.Templates.EmailTemplate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3111,6 +3188,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("CreatorId")
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(35)
+                        .HasColumnType("character varying(35)");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -4148,6 +4229,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.Notifications.EmailGroups.EmailGroup", null)
                         .WithMany()
                         .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Emails.EmailLogAttachment", b =>
+                {
+                    b.HasOne("Unity.Notifications.Emails.EmailLog", null)
+                        .WithMany()
+                        .HasForeignKey("EmailLogId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

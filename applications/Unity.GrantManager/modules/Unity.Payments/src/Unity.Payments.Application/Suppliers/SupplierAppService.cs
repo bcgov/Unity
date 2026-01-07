@@ -5,8 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Unity.GrantManager.Applications;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
+using Unity.Payments.Enums;
 using Unity.Payments.Integrations.Cas;
 using Volo.Abp.Features;
 
@@ -15,10 +18,11 @@ namespace Unity.Payments.Suppliers
     [RequiresFeature("Unity.Payments")]
     public class SupplierAppService(ISupplierRepository supplierRepository,
                                     ISupplierService supplierService,
-                                    ISiteAppService siteAppService) : PaymentsAppService, ISupplierAppService
+                                    ISiteAppService siteAppService,
+                                    IApplicationRepository applicationRepository) : PaymentsAppService, ISupplierAppService
     {
         protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
-
+        
         public virtual async Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto)
         {
             Supplier supplier = new Supplier(Guid.NewGuid(),
@@ -102,11 +106,12 @@ namespace Unity.Payments.Suppliers
             return ObjectMapper.Map<Supplier, SupplierDto?>(result);
         }
 
-        public async Task<dynamic> GetSitesBySupplierNumberAsync(string? supplierNumber, Guid applicantId)
+        public async Task<dynamic> GetSitesBySupplierNumberAsync(string? supplierNumber, Guid applicantId, Guid? applicationId = null)
         {
             // Change this code to get the supplier list of sites - from the datatabase which it is currently doing
             // Then go to CAS and get the list of sites again
             // Compare and update the database if there are any new sites
+            var defaultPaymentGroup = await ResolveDefaultPaymentGroupForApplicantAsync(applicantId, applicationId);
             dynamic casSupplierResponse = await supplierService.GetCasSupplierInformationAsync(supplierNumber);
             var casSiteDtos = new List<SiteDto>();
             if (casSupplierResponse.TryGetProperty("supplieraddress", out JsonElement sitesJson) &&
@@ -115,7 +120,7 @@ namespace Unity.Payments.Suppliers
                 foreach (var site in sitesJson.EnumerateArray())
                 {
                     SiteEto siteEto = SupplierService.GetSiteEto(site);
-                    SiteDto siteDto = GetSiteDtoFromSiteEto(siteEto, Guid.Empty);
+                    SiteDto siteDto = GetSiteDtoFromSiteEto(siteEto, Guid.Empty, defaultPaymentGroup);
                     casSiteDtos.Add(siteDto);
                 }
             }
@@ -144,7 +149,8 @@ namespace Unity.Payments.Suppliers
                     if (existingSite != null)
                     {
                         // Compare fields and update if necessary
-                        if (existingSite.Country != casSite.Country ||
+                        if (existingSite.PaymentGroup != casSite.PaymentGroup ||
+                            existingSite.Country != casSite.Country ||
                             existingSite.EFTAdvicePref != casSite.EFTAdvicePref ||
                             existingSite.EmailAddress != casSite.EmailAddress ||
                             existingSite.PostalCode != casSite.PostalCode ||
@@ -171,10 +177,17 @@ namespace Unity.Payments.Suppliers
 
             if (hasChanges)
             {
-                await supplierService.UpdateSupplierInfo(casSupplierResponse, applicantId);
-                existingSiteDtos = casSiteDtos;
+                await supplierService.UpdateSupplierInfo(casSupplierResponse, applicantId, applicationId);
+
+                // Re-fetch sites from database to get proper IDs
+                var updatedSupplier = await GetBySupplierNumberAsync(supplierNumber);
+                if (updatedSupplier != null)
+                {
+                    List<Site> updatedSites = await siteAppService.GetSitesBySupplierIdAsync(updatedSupplier.Id);
+                    existingSiteDtos = updatedSites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
+                }
             }
-            
+
 
             return new { sites = existingSiteDtos, hasChanges };
         }
@@ -222,12 +235,13 @@ namespace Unity.Payments.Suppliers
             await supplierRepository.DeleteAsync(id);
         }
 
-        public SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId)
+        public SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId, PaymentGroup? defaultPaymentGroup = null)
         {
+            var resolvedPaymentGroup = defaultPaymentGroup ?? PaymentGroup.EFT;
             return new()
                 {
                     Number = siteEto.SupplierSiteCode,
-                    PaymentGroup = Enums.PaymentGroup.EFT, // Defaulting to EFT based on conversations with CGG/CAS
+                    PaymentGroup = resolvedPaymentGroup,
                     AddressLine1 = siteEto.AddressLine1,
                     AddressLine2 = siteEto.AddressLine2,
                     AddressLine3 = siteEto.AddressLine3,
@@ -244,6 +258,41 @@ namespace Unity.Payments.Suppliers
                     SiteProtected = siteEto.SiteProtected,
                     LastUpdatedInCas = siteEto.LastUpdated
                 };
+        }
+
+        private async Task<PaymentGroup> ResolveDefaultPaymentGroupForApplicantAsync(Guid applicantId, Guid? applicationId = null)
+        {
+            const PaymentGroup fallbackPaymentGroup = PaymentGroup.EFT;
+            try
+            {
+                var applicationsQueryable = await applicationRepository.GetQueryableAsync();
+                var query = applicationsQueryable.Include(a => a.ApplicationForm).Where(a => a.ApplicantId == applicantId);
+
+                if (applicationId.HasValue && applicationId.Value != Guid.Empty)
+                {
+                    query = query.Where(a => a.Id == applicationId.Value);
+                }
+                else
+                {
+                    return fallbackPaymentGroup;
+                }
+
+                var application = await query
+                        .OrderByDescending(a => a.CreationTime)
+                        .FirstOrDefaultAsync();
+
+                var formPaymentGroup = application?.ApplicationForm?.DefaultPaymentGroup;
+                if (formPaymentGroup.HasValue && Enum.IsDefined(typeof(PaymentGroup), formPaymentGroup.Value))
+                {
+                    return (PaymentGroup)formPaymentGroup.Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Unable to resolve default payment group for applicant {ApplicantId}", applicantId);
+            }
+
+            return fallbackPaymentGroup;
         }
     }
 }

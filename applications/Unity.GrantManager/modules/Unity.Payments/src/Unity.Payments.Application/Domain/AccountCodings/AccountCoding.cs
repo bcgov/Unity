@@ -16,6 +16,8 @@ namespace Unity.Payments.Domain.AccountCodings
         public string Stob { get; private set; }
         public string ProjectNumber { get; private set; }
 
+        public string? Description { get; private set; }
+
         public AccountCoding()
         {
             MinistryClient = string.Empty;
@@ -23,18 +25,21 @@ namespace Unity.Payments.Domain.AccountCodings
             ServiceLine = string.Empty;
             Stob = string.Empty;
             ProjectNumber = string.Empty;
+            Description = null;
         }
         private AccountCoding(string ministryClient,
             string responsibility,
             string serviceLine,
             string stob,
-            string projectNumber)            
+            string projectNumber,
+            string? description = null)            
         {
             MinistryClient = ministryClient;
             Responsibility = responsibility;
             ServiceLine = serviceLine;
             Stob = stob;
             ProjectNumber = projectNumber;
+            Description = description;
         }
 
         public static AccountCoding Create(
@@ -42,7 +47,8 @@ namespace Unity.Payments.Domain.AccountCodings
         string responsibility,
         string serviceLine,
         string stob,
-        string projectNumber)
+        string projectNumber,
+        string? description = null)
         {
             ValidateField(ministryClient, 3, nameof(MinistryClient), false);  
             ValidateField(responsibility, 5, nameof(Responsibility), false);
@@ -50,7 +56,14 @@ namespace Unity.Payments.Domain.AccountCodings
             ValidateField(stob, 4, nameof(stob), true);
             ValidateField(projectNumber, 7, nameof(projectNumber), true);
 
-            return new AccountCoding(ministryClient, responsibility, serviceLine, stob, projectNumber);
+            if (!string.IsNullOrWhiteSpace(description) && description.Length > 35)
+            {
+                throw new BusinessException(ErrorConsts.InvalidAccountCodingField)
+                    .WithData("field", nameof(Description))
+                    .WithData("length", 35);
+            }
+
+            return new AccountCoding(ministryClient, responsibility, serviceLine, stob, projectNumber, description);
         }
 
         private static void ValidateField(string field, uint length, string fieldName, bool validateAlphanumeric)

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -14,62 +15,185 @@ namespace Unity.GrantManager.Repositories;
 
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(IApplicationRepository))]
-public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Application, Guid>, IApplicationRepository
+public class ApplicationRepository
+    : EfCoreRepository<GrantTenantDbContext, Application, Guid>,
+      IApplicationRepository
 {
-    public ApplicationRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
+    private static readonly TimeZoneInfo VancouverTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+
+    public ApplicationRepository(
+        IDbContextProvider<GrantTenantDbContext> dbContextProvider)
+        : base(dbContextProvider)
     {
     }
 
-    public async Task<List<IGrouping<Guid, Application>>> WithFullDetailsGroupedAsync(int skipCount, int maxResultCount, string? sorting = null, string? filter = null)
+    /// <summary>
+    /// Converts Vancouver local date range to UTC range (inclusive)
+    /// </summary>
+    private static (DateTime? FromUtc, DateTime? ToUtc) ConvertToUtcRange(
+        DateTime? fromLocal,
+        DateTime? toLocal)
     {
-        var query = await BuildBaseQueryAsync();
+        DateTime? fromUtc = null;
+        DateTime? toUtc = null;
 
-        // Apply filter
-        if (!string.IsNullOrWhiteSpace(filter))
+        if (fromLocal.HasValue)
         {
-            query = query.Where(a =>
-                a.ProjectName.Contains(filter) ||
-                a.ReferenceNo.Contains(filter)
-            );
+            var localFrom = DateTime.SpecifyKind(
+                fromLocal.Value,
+                DateTimeKind.Unspecified);
+
+            fromUtc = TimeZoneInfo.ConvertTimeToUtc(
+                localFrom,
+                VancouverTimeZone);
         }
-        // Apply sorting
-        query = ApplySorting(query, sorting);
 
-        var groupedResult = query
-            .AsEnumerable()
-            .GroupBy(s => s.Id)
-            .Skip(skipCount)
-            .Take(maxResultCount)
-            .ToList();
+        if (toLocal.HasValue)
+        {
+            // End of local day (23:59:59.9999999)
+            var localToEndOfDay = DateTime.SpecifyKind(
+                toLocal.Value.Date.AddDays(1).AddTicks(-1),
+                DateTimeKind.Unspecified);
 
-        return groupedResult;
+            toUtc = TimeZoneInfo.ConvertTimeToUtc(
+                localToEndOfDay,
+                VancouverTimeZone);
+        }
+
+        return (fromUtc, toUtc);
     }
 
+    /// <summary>
+    /// Base query with all required includes
+    /// </summary>
     private async Task<IQueryable<Application>> BuildBaseQueryAsync()
     {
         return (await GetQueryableAsync())
             .AsNoTracking()
-            .Include(s => s.ApplicationStatus)
-            .Include(s => s.ApplicationForm)
-            .Include(s => s.ApplicationTags)
+            .Include(a => a.ApplicationForm)
+            .Include(a => a.ApplicationStatus)
+            .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent)
+            .Include(a => a.ApplicationTags!)
                 .ThenInclude(x => x.Tag)
-            .Include(s => s.Owner)
-            .Include(s => s.ApplicationAssignments!)
-                .ThenInclude(t => t.Assignee)
-            .Include(s => s.Applicant)
-            .Include(s => s.ApplicantAgent)
-            .AsQueryable();
+            .Include(a => a.Owner)
+            .Include(a => a.ApplicationAssignments!)
+                .ThenInclude(aa => aa.Assignee);
     }
 
-    private static IQueryable<Application> ApplySorting(IQueryable<Application> query, string? sorting)
+    public async Task<Application> WithBasicDetailsAsync(Guid id)
     {
-        if (string.IsNullOrEmpty(sorting))
+        var application = await (await GetQueryableAsync())
+            .AsNoTracking()
+            .Include(a => a.Applicant)
+                .ThenInclude(a => a.ApplicantAddresses)
+            .Include(a => a.ApplicantAgent)
+            .Include(a => a.ApplicationStatus)
+            .FirstAsync(a => a.Id == id);
+
+        if (application.Applicant?.ApplicantAddresses != null)
         {
-            return query;
+            application.Applicant.ApplicantAddresses =
+                new Collection<ApplicantAddress>(
+                    application.Applicant.ApplicantAddresses
+                        .Where(addr => addr.ApplicationId == id)
+                        .ToList());
         }
 
+        return application;
+    }
+
+    public async Task<Application?> GetWithFullDetailsByIdAsync(Guid id)
+    {
+        return await (await GetQueryableAsync())
+            .AsNoTracking()
+            .Include(a => a.ApplicationStatus)
+            .Include(a => a.ApplicationForm)
+            .Include(a => a.ApplicationTags)
+            .Include(a => a.Owner)
+            .Include(a => a.ApplicationAssignments!)
+                .ThenInclude(aa => aa.Assignee)
+            .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent)
+            .FirstOrDefaultAsync(a => a.Id == id);
+    }
+
+    public async Task<List<Application>> GetListByIdsAsync(Guid[] ids)
+    {
+        return await (await GetQueryableAsync())
+            .AsNoTracking()
+            .Include(a => a.ApplicationStatus)
+            .Include(a => a.Applicant)
+            .Include(a => a.ApplicationForm)
+            .Where(a => ids.Contains(a.Id))
+            .ToListAsync();
+    }
+
+    public override async Task<IQueryable<Application>> WithDetailsAsync()
+    {
+        return (await GetQueryableAsync()).IncludeDetails();
+    }
+
+    public async Task<long> GetCountAsync(
+        DateTime? submittedFromDate,
+        DateTime? submittedToDate)
+    {
+        var query = await BuildBaseQueryAsync();
+        var (fromUtc, toUtc) = ConvertToUtcRange(
+            submittedFromDate,
+            submittedToDate);
+
+        if (fromUtc.HasValue)
+            query = query.Where(a => a.SubmissionDate >= fromUtc.Value);
+
+        if (toUtc.HasValue)
+            query = query.Where(a => a.SubmissionDate <= toUtc.Value);
+
+        return await query.LongCountAsync();
+    }
+
+    public async Task<List<Application>> WithFullDetailsAsync(
+        int skipCount,
+        int maxResultCount,
+        string? sorting = null,
+        DateTime? submittedFromDate = null,
+        DateTime? submittedToDate = null,
+        string? searchTerm = null)
+    {
+        var query = await BuildBaseQueryAsync();
+        var (fromUtc, toUtc) = ConvertToUtcRange(
+            submittedFromDate,
+            submittedToDate);
+
+        if (fromUtc.HasValue)
+            query = query.Where(a => a.SubmissionDate >= fromUtc.Value);
+
+        if (toUtc.HasValue)
+            query = query.Where(a => a.SubmissionDate <= toUtc.Value);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+            query = query.Where(a =>
+                a.ProjectName.Contains(searchTerm) ||
+                a.ReferenceNo.Contains(searchTerm));
+
+        query = ApplySorting(query, sorting);
+
+        return await query
+            .Skip(skipCount)
+            .Take(maxResultCount)
+            .ToListAsync();
+    }
+
+    private static IQueryable<Application> ApplySorting(
+        IQueryable<Application> query,
+        string? sorting)
+    {
+        if (string.IsNullOrWhiteSpace(sorting))
+            return query.OrderBy(a => a.SubmissionDate);
+
         var sortingFields = sorting
-            .Split(',')
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(f => f.Trim())
             .Where(f => !f.StartsWith("rowCount", StringComparison.OrdinalIgnoreCase))
             .Select(MapSortingField)
@@ -79,120 +203,103 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         if (sortingFields.Length > 0)
         {
             var sortingExpression = string.Join(",", sortingFields);
-            query = query.OrderBy(sortingExpression);
+            try
+            {
+                return query.OrderBy(sortingExpression);
+            }
+            catch
+            {
+                return query.OrderBy(a => a.SubmissionDate);
+            }
         }
 
-        return query;
+        return query.OrderBy(a => a.SubmissionDate);
     }
 
     private static string? MapSortingField(string field)
     {
-        if (field.StartsWith("status ", StringComparison.OrdinalIgnoreCase) || field.Equals("status", StringComparison.OrdinalIgnoreCase))
+        if (field.StartsWith("status", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "status",
+                "ApplicationStatus.InternalStatus",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("category", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "category",
+                "ApplicationForm.Category",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("assignees", StringComparison.OrdinalIgnoreCase))
         {
-            return field.Replace("status", "ApplicationStatus.InternalStatus", StringComparison.OrdinalIgnoreCase);
+            var parts = field.Split(' ', 2);
+            return parts.Length == 2
+                ? $"ApplicationAssignments.Count() {parts[1]}"
+                : "ApplicationAssignments.Count()";
         }
-        if (field.StartsWith("category ", StringComparison.OrdinalIgnoreCase) || field.Equals("category", StringComparison.OrdinalIgnoreCase))
+
+        if (field.StartsWith("subStatusDisplayValue", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "subStatusDisplayValue",
+                "SubStatus",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("applicationTag", StringComparison.OrdinalIgnoreCase))
         {
-            return field.Replace("category", "ApplicationForm.Category", StringComparison.OrdinalIgnoreCase);
+            var parts = field.Split(' ', 2);
+            return parts.Length == 2
+                ? $"ApplicationTags.FirstOrDefault().Text {parts[1]}"
+                : "ApplicationTags.FirstOrDefault().Text";
         }
-        if (field.StartsWith("assignees ", StringComparison.OrdinalIgnoreCase) || field.Equals("assignees", StringComparison.OrdinalIgnoreCase))
-        {
-            var parts = field.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-            return parts.Length == 2 ? $"ApplicationAssignments.Count() {parts[1]}" : "ApplicationAssignments.Count()";
-        }
-        if (field.StartsWith("totalPaidAmount ", StringComparison.OrdinalIgnoreCase) || field.Equals("totalPaidAmount", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-        if (field.StartsWith("subStatusDisplayValue ", StringComparison.OrdinalIgnoreCase) || field.Equals("subStatusDisplayValue", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("subStatusDisplayValue", "SubStatus", StringComparison.OrdinalIgnoreCase);
-        }
-        if (field.StartsWith("applicationTag ", StringComparison.OrdinalIgnoreCase) || field.Equals("applicationTag", StringComparison.OrdinalIgnoreCase))
-        {
-            var parts = field.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-            return parts.Length == 2 ? $"ApplicationTags.FirstOrDefault().Text {parts[1]}" : "ApplicationTags.FirstOrDefault().Text";
-        }
-        if (field.StartsWith("organizationType ", StringComparison.OrdinalIgnoreCase) || field.Equals("organizationType", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("organizationType", "Applicant.OrganizationType", StringComparison.OrdinalIgnoreCase);
-        }
-        if (field.StartsWith("organizationName ", StringComparison.OrdinalIgnoreCase) || field.Equals("organizationName", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("organizationName", "Applicant.OrgName", StringComparison.OrdinalIgnoreCase);
-        }
-        if (field.StartsWith("businessNumber ", StringComparison.OrdinalIgnoreCase) || field.Equals("businessNumber", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("businessNumber", "Applicant.BusinessNumber", StringComparison.OrdinalIgnoreCase);
-        }
-        if (field.StartsWith("contactFullName ", StringComparison.OrdinalIgnoreCase) || field.Equals("contactFullName", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("contactFullName", "ApplicantAgent.Name", StringComparison.OrdinalIgnoreCase);
-        }
-        if (field.StartsWith("contactTitle ", StringComparison.OrdinalIgnoreCase) || field.Equals("contactTitle", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("contactTitle", "ApplicantAgent.Title", StringComparison.OrdinalIgnoreCase);
-        }
-        if (field.StartsWith("contactEmail ", StringComparison.OrdinalIgnoreCase) || field.Equals("contactEmail", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("contactEmail", "ApplicantAgent.Email", StringComparison.OrdinalIgnoreCase);
-        }
-        if (field.StartsWith("contactBusinessPhone ", StringComparison.OrdinalIgnoreCase) || field.Equals("contactBusinessPhone", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("contactBusinessPhone", "ApplicantAgent.Phone", StringComparison.OrdinalIgnoreCase);
-        }
-        if (field.StartsWith("contactCellPhone ", StringComparison.OrdinalIgnoreCase) || field.Equals("contactCellPhone", StringComparison.OrdinalIgnoreCase))
-        {
-            return field.Replace("contactCellPhone", "ApplicantAgent.Phone2", StringComparison.OrdinalIgnoreCase);
-        }
+
+        if (field.StartsWith("organizationType", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "organizationType",
+                "Applicant.OrganizationType",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("organizationName", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "organizationName",
+                "Applicant.OrgName",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("businessNumber", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "businessNumber",
+                "Applicant.BusinessNumber",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("contactFullName", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "contactFullName",
+                "ApplicantAgent.Name",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("contactTitle", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "contactTitle",
+                "ApplicantAgent.Title",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("contactEmail", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "contactEmail",
+                "ApplicantAgent.Email",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("contactBusinessPhone", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "contactBusinessPhone",
+                "ApplicantAgent.Phone",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (field.StartsWith("contactCellPhone", StringComparison.OrdinalIgnoreCase))
+            return field.Replace(
+                "contactCellPhone",
+                "ApplicantAgent.Phone2",
+                StringComparison.OrdinalIgnoreCase);
+
         return field;
-    }
-
-    public async Task<Application> WithBasicDetailsAsync(Guid id)
-    {
-        return await (await GetQueryableAsync())
-          .AsNoTracking()
-          .Include(s => s.Applicant)
-            .ThenInclude(s => s.ApplicantAddresses!.Where(addr => addr.ApplicationId == id))
-          .Include(s => s.ApplicantAgent)
-          .Include(s => s.ApplicationStatus)
-          .FirstAsync(s => s.Id == id);
-    }
-
-    public async Task<List<Application>> GetListByIdsAsync(Guid[] ids)
-    {
-        return await (await GetQueryableAsync())
-            .AsNoTracking()
-            .Include(s => s.ApplicationStatus)
-            .Include(s => s.Applicant)
-            .Include(s => s.ApplicationForm)
-            .Where(s => ids.Contains(s.Id))
-            .ToListAsync();
-    }
-
-    /// <summary>
-    /// Include defined sub-collections
-    /// </summary>
-    /// <remarks>See Best Practice: https://docs.abp.io/en/abp/latest/Best-Practices/Entity-Framework-Core-Integration#repository-implementation</remarks>
-    /// <returns></returns>
-    public override async Task<IQueryable<Application>> WithDetailsAsync()
-    {
-        // Uses the extension method defined above
-        return (await GetQueryableAsync()).IncludeDetails();
-    }
-
-    public async Task<Application?> GetWithFullDetailsByIdAsync(Guid id)
-    {
-        return await (await GetQueryableAsync())
-            .Include(a => a.ApplicationStatus)
-            .Include(a => a.ApplicationForm)
-            .Include(a => a.ApplicationTags)
-            .Include(a => a.Owner)
-            .Include(a => a.ApplicationAssignments!)
-                .ThenInclude(aa => aa.Assignee)
-            .Include(a => a.Applicant)
-            .Include(a => a.ApplicantAgent)
-            .AsNoTracking()                 // read?only; drop this line if you need tracking
-            .FirstOrDefaultAsync(a => a.Id == id);
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
@@ -37,8 +38,9 @@ public class EmailNotificationService(
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
-        IHttpContextAccessor httpContextAccessor) : ApplicationService, IEmailNotificationService
-#pragma warning restore S107 // Methods should not have too many parameters        
+        IHttpContextAccessor httpContextAccessor,
+        EmailAttachmentService emailAttachmentService) : ApplicationService, IEmailNotificationService
+#pragma warning restore S107 // Methods should not have too many parameters
 {
 
     public async Task DeleteEmail(Guid id)
@@ -70,7 +72,7 @@ public class EmailNotificationService(
             return null;
         }
         
-        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName);
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName, emailCC, emailBCC);
         EmailLog emailLog = await emailLogsRepository.GetAsync(emailId);
         emailLog = UpdateMappedEmailLog(emailLog, emailObject);
         emailLog.ApplicationId = applicationId;
@@ -208,7 +210,7 @@ public class EmailNotificationService(
 
             }
             // Send the email using the CHES client service
-            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName);
+            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC);
             var response = await chesClientService.SendAsync(emailObject);
 
             // Assuming SendAsync returns a HttpResponseMessage or equivalent:
@@ -224,19 +226,63 @@ public class EmailNotificationService(
         }
     }
 
-    public async Task<EmailLog?> GetEmailLogById(Guid id)
+    /// <summary>
+    /// Send Email Notification from EmailLog (with S3 attachments support)
+    /// </summary>
+    /// <param name="emailLog">The email log containing email details</param>
+    /// <returns>HttpResponseMessage indicating the result of the operation</returns>
+    public async Task<HttpResponseMessage> SendEmailNotification(EmailLog emailLog)
     {
-        EmailLog emailLog = new();
         try
         {
-            emailLog = await emailLogsRepository.GetAsync(id);
+            if (emailLog == null)
+            {
+                Logger.LogError("EmailNotificationService->SendEmailNotification: The 'emailLog' parameter is null.");
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("'emailLog' cannot be null.")
+                };
+            }
+
+            if (string.IsNullOrEmpty(emailLog.ToAddress))
+            {
+                Logger.LogError("EmailNotificationService->SendEmailNotification: The 'emailLog.ToAddress' parameter is null or empty.");
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("'emailLog.ToAddress' cannot be null or empty.")
+                };
+
+            }
+
+            // Build email object with attachments from S3
+            var emailObject = await BuildEmailObjectWithAttachmentsAsync(emailLog);
+
+            // Send via CHES
+            var response = await chesClientService.SendAsync(emailObject);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "EmailNotificationService->SendEmailNotification: Exception occurred while sending email for EmailLog {EmailId}.", emailLog?.Id);
+            return new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+            };
+        }
+    }
+
+    public async Task<EmailLog?> GetEmailLogById(Guid id)
+    {
+        try
+        {
+            return await emailLogsRepository.GetAsync(id);
         }
         catch (EntityNotFoundException ex)
         {
-            string ExceptionMessage = ex.Message;
-            Logger.LogInformation(ex, "Entity Not found for Email Log Must be in wrong context: {ExceptionMessage}", ExceptionMessage);
+            Logger.LogError(ex, "Entity not found for Email Log. Tenant context may be incorrect: {ExceptionMessage}", ex.Message);
+            return null;
         }
-        return emailLog;
     }
 
     [Authorize]
@@ -304,20 +350,63 @@ public class EmailNotificationService(
 
         var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
 
-        var emailObject = new
+        dynamic emailObject = new ExpandoObject();
+        var emailObjectDictionary = (IDictionary<string, object?>)emailObject;
+
+        emailObjectDictionary["body"] = body;
+        emailObjectDictionary["bodyType"] = emailBodyType ?? "text";
+        emailObjectDictionary["cc"] = ccList;
+        emailObjectDictionary["bcc"] = bccList;
+        emailObjectDictionary["encoding"] = "utf-8";
+        emailObjectDictionary["from"] = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca";
+        emailObjectDictionary["priority"] = "normal";
+        emailObjectDictionary["subject"] = subject;
+        emailObjectDictionary["tag"] = "tag";
+        emailObjectDictionary["to"] = toList;
+        emailObjectDictionary["templateName"] = emailTemplateName;
+
+        return emailObject;
+    }
+
+    public async Task<dynamic> BuildEmailObjectWithAttachmentsAsync(EmailLog emailLog)
+    {
+        // Get base email object (without attachments)
+        var emailObject = await GetEmailObjectAsync(
+            emailLog.ToAddress,
+            emailLog.Body,
+            emailLog.Subject,
+            emailLog.FromAddress,
+            emailLog.BodyType,
+            emailLog.TemplateName,
+            emailLog.CC,
+            emailLog.BCC);
+
+        // Retrieve attachments from S3
+        var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLog.Id);
+
+        if (attachments.Count != 0)
         {
-            body,
-            bodyType = emailBodyType ?? "text",
-            cc = ccList,
-            bcc = bccList,
-            encoding = "utf-8",
-            from = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca",
-            priority = "normal",
-            subject,
-            tag = "tag",
-            to = toList,
-            templateName = emailTemplateName,
-        };
+            var attachmentList = new List<object>();
+
+            foreach (var attachment in attachments)
+            {
+                byte[]? content = await emailAttachmentService.DownloadFromS3Async(attachment.S3ObjectKey);
+                if (content != null)
+                {
+                    attachmentList.Add(new
+                    {
+                        content = Convert.ToBase64String(content),  // Convert to Base64 for CHES
+                        contentType = attachment.ContentType,
+                        encoding = "base64",
+                        filename = attachment.FileName
+                    });
+                }
+            }
+
+            var emailObjectDictionary = (IDictionary<string, object?>)emailObject;
+            emailObjectDictionary["attachments"] = attachmentList.ToArray();
+        }
+
         return emailObject;
     }
 
