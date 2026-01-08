@@ -16,6 +16,8 @@ namespace Unity.GrantManager.Data;
 
 public class GrantManagerDbMigrationService : ITransientDependency
 {
+    private const string TenantSuffix = " tenant";
+
     public ILogger<GrantManagerDbMigrationService> Logger { get; set; }
 
     private readonly IDataSeeder _dataSeeder;
@@ -49,7 +51,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
         Logger.LogInformation("Started database migrations...");
 
         await MigrateDatabaseSchemaAsync();
-        await SeedDataAsync();        
+        await SeedDataAsync();
 
         var tenants = await _tenantRepository.GetListAsync(includeDetails: true);
 
@@ -62,7 +64,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
             Logger.LogInformation("Successfully completed {TenantName} tenant database migrations.", tenant.Name);
         }
 
-        Logger.LogInformation("Successfully completed all database migrations.");        
+        Logger.LogInformation("Successfully completed all database migrations.");
     }
 
     public async Task MigrateAndSeedTenantAsync(HashSet<string> migratedDatabaseSchemas, Tenant? tenant)
@@ -91,30 +93,30 @@ public class GrantManagerDbMigrationService : ITransientDependency
 
     private async Task MigrateDatabaseSchemaAsync(Tenant? tenant = null)
     {
-        Logger.LogInformation("Migrating schema for {Database} database...", tenant == null ? "host" : tenant.Name + " tenant");
+        Logger.LogInformation("Migrating schema for {Database} database...", tenant == null ? "host" : tenant.Name + TenantSuffix);
 
         foreach (var migrator in _dbSchemaMigrators)
         {
             await migrator.MigrateAsync(tenant);
         }
 
-        Logger.LogInformation("Successfully completed {Database} database migrations.", tenant == null ? "host" : tenant.Name + " tenant");
+        Logger.LogInformation("Successfully completed {Database} database migrations.", tenant == null ? "host" : tenant.Name + TenantSuffix);
     }
 
     private async Task SeedDataAsync(Tenant? tenant = null)
     {
-        Logger.LogInformation("Executing {Database} database seed...", tenant == null ? "host" : tenant.Name + " tenant");
+        Logger.LogInformation("Executing {Database} database seed...", tenant == null ? "host" : tenant.Name + TenantSuffix);
 
         try
         {
             await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id));
 
-            Logger.LogInformation("Successfully seeded {Database} database data.", tenant == null ? "host" : tenant.Name + " tenant");
+            Logger.LogInformation("Successfully seeded {Database} database data.", tenant == null ? "host" : tenant.Name + TenantSuffix);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "An error occurred while seeding {Database} database data.", tenant == null ? "host" : tenant.Name + " tenant");
-        }        
+            Logger.LogError(ex, "An error occurred while seeding {Database} database data.", tenant == null ? "host" : tenant.Name + TenantSuffix);
+        }
     }
 
     private bool AddInitialMigrationIfNotExist()
@@ -145,7 +147,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
         }
         catch (Exception e)
         {
-            Logger.LogWarning("Couldn't determine if any migrations exist : {Exception}", e);
+            Logger.LogWarning(e, "Couldn't determine if any migrations exist");
             return false;
         }
     }
@@ -192,8 +194,10 @@ public class GrantManagerDbMigrationService : ITransientDependency
         var slnDirectoryPath = GetSolutionDirectoryPath() ?? throw new IOException("Solution folder not found!");
         var srcDirectoryPath = Path.Combine(slnDirectoryPath, "src");
 
-        return Directory.GetDirectories(srcDirectoryPath)
-            .FirstOrDefault(d => d.EndsWith(".EntityFrameworkCore"));
+        return Directory
+            .GetDirectories(srcDirectoryPath)
+            .ToList()
+            .Find(d => d.EndsWith(".EntityFrameworkCore"));
     }
 
     private static string? GetSolutionDirectoryPath()
@@ -204,7 +208,10 @@ public class GrantManagerDbMigrationService : ITransientDependency
         {
             currentDirectory = Directory.GetParent(currentDirectory.FullName);
 
-            if (currentDirectory != null && Directory.GetFiles(currentDirectory.FullName).FirstOrDefault(f => f.EndsWith(".sln")) != null)
+            if (currentDirectory != null && Directory
+                .GetFiles(currentDirectory.FullName)
+                .ToList()
+                .Find(f => f.EndsWith(".sln")) != null)
             {
                 return currentDirectory.FullName;
             }
