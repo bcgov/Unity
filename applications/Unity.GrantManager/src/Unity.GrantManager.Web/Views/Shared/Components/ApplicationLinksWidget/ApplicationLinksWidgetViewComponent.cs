@@ -5,8 +5,6 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Unity.GrantManager.GrantApplications;
-using System.Linq;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
 {
@@ -17,20 +15,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
         AutoInitialize = true)]
     public class ApplicationLinksWidgetViewComponent : AbpViewComponent
     {
-        private readonly IApplicationLinksService _applicationLinksService;
-
-        public ApplicationLinksWidgetViewComponent(IApplicationLinksService applicationLinksService)
-        {
-            _applicationLinksService = applicationLinksService;
-        }
-
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
             // DataTables will load the data via AJAX, so we don't need to pre-load it here
             ApplicationLinksWidgetViewModel model = new() {
-                ApplicationLinks = new List<ApplicationLinksInfoDto>(), // Empty list since DataTables will load the data
+                ApplicationLinks = [], // Empty list since DataTables will load the data
                 ApplicationId = applicationId
             };
+
+            await Task.CompletedTask;
 
             return View(model);
         }
