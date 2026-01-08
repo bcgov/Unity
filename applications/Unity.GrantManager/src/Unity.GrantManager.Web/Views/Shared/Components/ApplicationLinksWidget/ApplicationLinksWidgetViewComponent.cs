@@ -5,8 +5,6 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Unity.GrantManager.GrantApplications;
-using System.Linq;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
 {
@@ -25,7 +23,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
                 ApplicationId = applicationId
             };
 
-            return View(model);
+            return View(await Task.FromResult(model));
         }
     }
 
