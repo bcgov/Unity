@@ -512,13 +512,12 @@ namespace Unity.Reporting.Configuration
         /// Provides comprehensive cleanup of both the mapping configuration and any generated database objects.
         /// </summary>
         /// <param name="correlationId">The unique identifier of the correlated entity whose mapping should be deleted.</param>
-        /// <param name="correlationProvider">The provider type identifier (e.g., "worksheet", "scoresheet", "chefs").</param>
-        /// <param name="deleteView">Whether to also delete the associated database view if it exists. Defaults to true.</param>
-        /// <returns>A task representing the asynchronous delete operation.</returns>
+        /// <param name="correlationProvider">The provider type identifier (e.g., "worksheet", "scoresheet", "chefs").</param>        
+        /// <returns>A DeleteResult indicating what was successfully deleted.</returns>
         /// <exception cref="ArgumentException">Thrown when an unknown or invalid correlation provider is specified.</exception>
         /// <exception cref="EntityNotFoundException">Thrown when no mapping exists for the specified correlation.</exception>
         [Authorize(ReportingPermissions.Configuration.Delete)]
-        public async Task DeleteAsync(Guid correlationId, string correlationProvider, bool deleteView = true)
+        public async Task<DeleteResult> DeleteAsync(Guid correlationId, string correlationProvider)
         {
             var providerKey = correlationProvider?.ToLowerInvariant() ?? string.Empty;
 
@@ -532,30 +531,39 @@ namespace Unity.Reporting.Configuration
             var reportColumnsMap = await reportColumnsMapRepository.FindByCorrelationAsync(correlationId, correlationProvider)
                 ?? throw new EntityNotFoundException(typeof(ReportColumnsMap), $"CorrelationId: {correlationId}, CorrelationProvider: {correlationProvider}");
 
-            // Delete the associated view if requested and it exists
-            if (deleteView && !string.IsNullOrWhiteSpace(reportColumnsMap.ViewName))
+            var deleteResult = new DeleteResult();
+            var viewName = reportColumnsMap.ViewName;
+            
+            // Delete the associated view if it exists
+            if (!string.IsNullOrWhiteSpace(viewName))
             {
                 try
                 {
-                    var viewExists = await reportColumnsMapRepository.ViewExistsAsync(reportColumnsMap.ViewName);
+                    var viewExists = await reportColumnsMapRepository.ViewExistsAsync(viewName);
                     if (viewExists)
                     {
-                        await reportColumnsMapRepository.DeleteViewAsync(reportColumnsMap.ViewName);
-                        Logger.LogInformation("Deleted database view: {ViewName}", reportColumnsMap.ViewName);
+                        await reportColumnsMapRepository.DeleteViewAsync(viewName);
+                        deleteResult.ViewDeleted = true;
+                        deleteResult.DeletedViewName = viewName;
+                        Logger.LogInformation("Deleted database view: {ViewName}", viewName);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogWarning(ex, "Failed to delete database view: {ViewName}. Continuing with mapping deletion.", reportColumnsMap.ViewName);
+                    Logger.LogWarning(ex, "Failed to delete database view: {ViewName}. Continuing with mapping deletion.", viewName);
+                    deleteResult.Message = $"Warning: Failed to delete database view '{viewName}'. The mapping was still deleted.";
                     // Continue with mapping deletion even if view deletion fails
                 }
             }
 
             // Delete the mapping record
             await reportColumnsMapRepository.DeleteAsync(reportColumnsMap);
+            deleteResult.ConfigurationDeleted = true;
             
             Logger.LogInformation("Deleted report mapping for CorrelationId: {CorrelationId}, CorrelationProvider: {CorrelationProvider}", 
                 correlationId, correlationProvider);
+
+            return deleteResult;
         }
     }
 }
