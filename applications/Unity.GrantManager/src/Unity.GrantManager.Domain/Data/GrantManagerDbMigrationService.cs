@@ -108,13 +108,13 @@ public class GrantManagerDbMigrationService : ITransientDependency
         try
         {
             await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id));
+
+            Logger.LogInformation("Successfully seeded {Database} database data.", tenant == null ? "host" : tenant.Name + " tenant");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(ex);
-        }
-
-        Logger.LogInformation("Successfully seeded {Database} database data.", tenant == null ? "host" : tenant.Name + " tenant");
+            Logger.LogError(ex, "An error occurred while seeding {Database} database data.", tenant == null ? "host" : tenant.Name + " tenant");
+        }        
     }
 
     private bool AddInitialMigrationIfNotExist()
@@ -145,7 +145,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
         }
         catch (Exception e)
         {
-            Logger.LogWarning("Couldn't determinate if any migrations exist : {Exception}", e);
+            Logger.LogWarning("Couldn't determine if any migrations exist : {Exception}", e);
             return false;
         }
     }
