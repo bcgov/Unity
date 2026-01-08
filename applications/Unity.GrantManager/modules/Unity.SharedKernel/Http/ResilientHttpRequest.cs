@@ -229,9 +229,6 @@ namespace Unity.Modules.Shared.Http
             var requestMessage = new HttpRequestMessage(httpVerb, fullUrl);
             requestMessage.Headers.Accept.Clear();
 
-            // NO Connection: close — this caused constant TLS renegotiation
-            // requestMessage.Headers.ConnectionClose = true;
-
             // Bearer Token
             if (!string.IsNullOrWhiteSpace(authToken))
             {

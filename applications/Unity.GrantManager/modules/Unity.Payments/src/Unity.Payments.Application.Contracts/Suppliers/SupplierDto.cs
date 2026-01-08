@@ -19,12 +19,12 @@ namespace Unity.Payments.Suppliers
         public DateTime? LastUpdatedInCAS { get; set; }
 
         /* Address */
-        public string? MailingAddress { get; private set; }
-        public string? City { get; private set; }
-        public string? Province { get; private set; }
-        public string? PostalCode { get; private set; }
+        public string? MailingAddress { get; }
+        public string? City { get; }
+        public string? Province { get; }
+        public string? PostalCode { get; }
 
-        public Collection<SiteDto> Sites { get; private set; }
+        public Collection<SiteDto> Sites { get; }
     }
 #pragma warning restore CS8618
 }

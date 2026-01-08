@@ -3,9 +3,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Unity.GrantManager.Attributes
 {
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
     public class MaxValueAttribute : ValidationAttribute
     {
-        private readonly double _maxValue;        
+        private readonly double _maxValue;
 
         public MaxValueAttribute(double maxValue, string? propertyName = null)
         {

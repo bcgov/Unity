@@ -5,7 +5,6 @@
     let intakeFieldsString = document.getElementById('intakeProperties').value;
     let chefsFormId = document.getElementById('chefsFormId').value;
     let formVersionId = document.getElementById('formVersionId').value;
-    let applicationFormId = document.getElementById('applicationFormId').value;
     let intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
     let dataTable;
@@ -582,7 +581,7 @@
         for (let i = 0; i < jsonText.length; i++) {
             currChar = jsonText.charAt(i);
 
-            if (currChar == '\"') {
+            if (currChar == '"') {
                 if (prevChar != '\\') {
                     doubleQuoteIn = !doubleQuoteIn;
                 }

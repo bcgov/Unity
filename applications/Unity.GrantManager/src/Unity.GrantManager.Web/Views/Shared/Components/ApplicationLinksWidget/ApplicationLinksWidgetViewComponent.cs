@@ -13,9 +13,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
         StyleTypes = new[] { typeof(ApplicationLinksWidgetStyleBundleContributor) },
         AutoInitialize = true)]
     public class ApplicationLinksWidgetViewComponent : AbpViewComponent
-    {        
-
-        public IViewComponentResult Invoke(Guid applicationId)
+    {
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
             // DataTables will load the data via AJAX, so we don't need to pre-load it here
             ApplicationLinksWidgetViewModel model = new() {

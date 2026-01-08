@@ -1,4 +1,4 @@
-﻿namespace Unity.Notifications.Web.Views.Settings;
+﻿namespace Unity.GrantManager.Web.Views.Settings;
 
 using System.Threading.Tasks;
 using Unity.GrantManager.Permissions;
@@ -8,14 +8,10 @@ using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 
 public class BackgroundJobsPageContributor : SettingPageContributorBase
 {
-    public BackgroundJobsPageContributor()
-    {
-        RequiredFeatures(SettingManagementFeatures.Enable);
-        RequiredPermissions(UnitySettingManagementPermissions.BackgroundJobSettings);
-    }
-
     public override Task ConfigureAsync(SettingPageCreationContext context)
     {
+        RequiredFeatures(SettingManagementFeatures.Enable);
+        RequiredPermissions(UnitySettingManagementPermissions.BackgroundJobSettings);        
         context.Groups.Add(
             new SettingPageGroup(
                 "GrantManager.BackgroundJobs",

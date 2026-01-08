@@ -166,10 +166,6 @@ body {
     border-bottom: none;
 }
 
-.dt-container table th:last-child {
-    border-right: none;
-}
-
 .dt-container table {
     font-size: var(--bc-font-size-sm);
 }
@@ -179,6 +175,7 @@ body {
 }
 
 .dt-container table th:last-child {
+    border-right: none;
     border-top-right-radius: 10px;
 }
 

@@ -82,7 +82,6 @@ $(function () {
 
     // Delete Tags
     LinksInput.prototype.deleteLink = function (link, i) {
-        let self = this;
         link.remove();
             this.arr.splice(i, 1);
             this.orignal_input.value = JSON.stringify(this.arr);
