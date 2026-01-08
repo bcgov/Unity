@@ -1,7 +1,5 @@
-﻿@using Unity.Notifications.Web.Bundling
-@model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
+﻿@model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
 
-@* SonarQube false positive - this is an ABP tag helper, not a using statement *@
 <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
 <abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />
 <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
@@ -10,60 +8,78 @@
     <div class="unity-page-titlebar">
         <h4 class="m-0">Notifications</h4>
     </div>
+
     <nav>
         <div class="nav nav-tabs" id="nav-tab" role="tablist">
-            <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-config" type="button" role="tab">Notifications Configuration</button>
-            <button class="nav-link" id="nav-template-tab" data-bs-toggle="tab" data-bs-target="#nav-template" type="button" role="tab">Email Templates</button>
-            <button class="nav-link" id="nav-internal-email-group-tab" data-bs-toggle="tab" data-bs-target="#nav-internal-email-group" type="button" role="tab">Internal Email Group</button>
+            <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-config" type="button" role="tab">
+                Notifications Configuration
+            </button>
+            <button class="nav-link" id="nav-template-tab" data-bs-toggle="tab" data-bs-target="#nav-template" type="button" role="tab">
+                Email Templates
+            </button>
+            <button class="nav-link" id="nav-internal-email-group-tab" data-bs-toggle="tab" data-bs-target="#nav-internal-email-group" type="button" role="tab">
+                Internal Email Group
+            </button>
         </div>
     </nav>
 
     <div class="tab-content unt-tab-content" id="nav-tabContent">
-        <!--Tab Content: Mapping-->
+
+        <!-- Notifications Configuration -->
         <div class="tab-pane fade show active" id="nav-config" role="tabpanel" aria-labelledby="nav-mapping-tab">
             <div class="row">
                 <div class="p-3">
                     <form id="NotificationsSettingsForm">
                         <abp-row>
                             <abp-column size-md="_12" class="mx-2 fw-bold">
-                                <abp-input asp-for="@Model.DefaultFromAddress" />
+                                <abp-input asp-for="DefaultFromAddress" />
                             </abp-column>
                         </abp-row>
+
                         <abp-row>
                             <abp-column size-md="_12" class="mx-2 fw-bold">
-                                <abp-input asp-for="@Model.MaximumRetryAttempts" />
+                                <abp-input asp-for="MaximumRetryAttempts" />
                             </abp-column>
                         </abp-row>
+
                         <abp-row>
                             <hr class="my-4" />
                             <div class="d-flex p-2">
                                 <abp-button id="NotificationsSaveButton"
                                             text="Save Changes"
-                                            button-type="Primary" class="me-2"
+                                            button-type="Primary"
+                                            class="me-2"
                                             type="submit" />
+
                                 <abp-button id="NotificationsDiscardButton"
                                             text="Discard Changes"
-                                            button-type="Light" class="me-2"
+                                            button-type="Light"
+                                            class="me-2"
                                             disabled="true" />
                             </div>
                         </abp-row>
                     </form>
                 </div>
-                </div>
-         </div>
+            </div>
+        </div>
+
+        <!-- Email Templates -->
         <div class="tab-pane fade" id="nav-template" role="tabpanel" aria-labelledby="nav-template-tab">
             <div class="row">
                 <div class="container mt-3">
                     <h3>Email Templates</h3>
 
-
                     <abp-button id="CreateNewTemplate"
                                 text="+ Add Template"
-                                button-type="Primary" class="me-2  ms-auto" />
+                                button-type="Primary"
+                                class="me-2 ms-auto" />
+
                     <div id="cardContainer" class="v-scroll p-3"></div>
                 </div>
             </div>
         </div>
+
+        <!-- Internal Email Groups -->
         <div class="tab-pane fade" id="nav-internal-email-group" role="tabpanel" aria-labelledby="nav-internal-email-group-tab">
             <div class="row">
                 <div class="container mt-3">
@@ -72,10 +88,14 @@
                             <div class="container">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="m-0"><b>Email Groups</b></h5>
-                                    <button id="CreateNewEmailGroup" class="btn btn-primary" type="button" title="Create">
+                                    <button id="CreateNewEmailGroup"
+                                            class="btn btn-primary"
+                                            type="button"
+                                            title="Create">
                                         <span>+ ADD Email Group</span>
                                     </button>
                                 </div>
+
                                 <abp-table id="EmailGroupsTable" data-resize-aware="true"></abp-table>
                             </div>
                         </div>
@@ -83,7 +103,6 @@
                 </div>
             </div>
         </div>
+
     </div>
-    
-    
 </div>
