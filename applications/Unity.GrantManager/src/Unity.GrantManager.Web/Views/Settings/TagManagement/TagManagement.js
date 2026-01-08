@@ -284,7 +284,8 @@ $(function () {
         });
     }
     _renameTagModal.onResult(function () {
-        
+        const updatedTagName = $('#ViewModel_ReplacementTag').val();
+        abp.notify.success(`"The tag "${updatedTagName}" has been updated.`);
         refreshGlobalTagsTable();
     });
 
@@ -295,6 +296,8 @@ $(function () {
     }
 
     addNewTagModal.onResult(function () {
+        const newTagName = $('#NewTags').val() 
+        abp.notify.success(`"The tag "${newTagName}" has been created.`);
         refreshGlobalTagsTable();
     });
 });
