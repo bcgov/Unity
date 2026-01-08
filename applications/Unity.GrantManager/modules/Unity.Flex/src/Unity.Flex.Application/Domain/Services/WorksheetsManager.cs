@@ -168,7 +168,7 @@ namespace Unity.Flex.Domain.Services
             var newWorksheetInstances = new List<(Worksheet, WorksheetInstance)>();
 
             // naming convention custom_worksheetname_fieldname
-            foreach (var (fieldName, _, _) in eventData.CustomFields)
+            foreach (var (fieldName, chefsPropertyName, value) in eventData.CustomFields)
             {
                 var split = fieldName.Split('_', StringSplitOptions.RemoveEmptyEntries);
 
