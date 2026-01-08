@@ -14,7 +14,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
         AutoInitialize = true)]
     public class ApplicationLinksWidgetViewComponent : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public IViewComponentResult Invoke(Guid applicationId)
         {
             // DataTables will load the data via AJAX, so we don't need to pre-load it here
             ApplicationLinksWidgetViewModel model = new() {
