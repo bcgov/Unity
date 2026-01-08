@@ -142,7 +142,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
             };
         }
 
-        private string GetAddressTypeName(GrantApplications.AddressType addressType)
+        private static string GetAddressTypeName(GrantApplications.AddressType addressType)
         {
             return addressType switch
             {

@@ -195,7 +195,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             return View(model);
         }
 
-        private string ConvertNumericAnswerToSelectListValue(string numericAnswer, string? definition)
+        private static string ConvertNumericAnswerToSelectListValue(string numericAnswer, string? definition)
         {
             if (string.IsNullOrEmpty(definition) || string.IsNullOrEmpty(numericAnswer))
                 return numericAnswer;
