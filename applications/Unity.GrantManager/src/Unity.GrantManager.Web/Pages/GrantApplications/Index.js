@@ -259,8 +259,7 @@ const listColumns = getColumns();
             dt,
             defaultVisibleColumns,
             listColumns,
-            maxRowsPerPage: 10,
-            serverSideEnabled: true,   // Must be TRUE for ajax reloads to call server
+            maxRowsPerPage: 10,            
             defaultSortColumn: 4,
             dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
             data: function () {
@@ -442,9 +441,12 @@ const listColumns = getColumns();
             data: 'submissionDate',
             name: 'submissionDate',
             className: 'data-table-header',
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
-            index: columnIndex
-        }
+            index: columnIndex,
+            render: function (data, type) {
+                const formattedDate = DateUtils.formatUtcDateToLocal(data, type);
+                return formattedDate ? String(formattedDate) : '';
+            }
+        };
     }
 
     function getProjectNameColumn(columnIndex) {

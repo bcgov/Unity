@@ -275,7 +275,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
         private static void ApplyPaymentRequester(
             FsbPaymentData paymentData,
             PaymentRequest payment,
-            IReadOnlyDictionary<Guid, string> userNameDict)
+            Dictionary<Guid, string> userNameDict)
         {
             // Column 17: Payment Requester
             if (!payment.CreatorId.HasValue)
