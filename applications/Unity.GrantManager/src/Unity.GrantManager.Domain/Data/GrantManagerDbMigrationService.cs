@@ -49,9 +49,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
         Logger.LogInformation("Started database migrations...");
 
         await MigrateDatabaseSchemaAsync();
-        await SeedDataAsync();
-
-        Logger.LogInformation($"Successfully completed host database migrations.");
+        await SeedDataAsync();        
 
         var tenants = await _tenantRepository.GetListAsync(includeDetails: true);
 
@@ -61,11 +59,10 @@ public class GrantManagerDbMigrationService : ITransientDependency
         {
             await MigrateAndSeedTenantAsync(migratedDatabaseSchemas, tenant);
 
-            Logger.LogInformation("Successfully completed {tenantName} tenant database migrations.", tenant.Name);
+            Logger.LogInformation("Successfully completed {TenantName} tenant database migrations.", tenant.Name);
         }
 
-        Logger.LogInformation("Successfully completed all database migrations.");
-        Logger.LogInformation("You can safely end this process...");
+        Logger.LogInformation("Successfully completed all database migrations.");        
     }
 
     public async Task MigrateAndSeedTenantAsync(HashSet<string> migratedDatabaseSchemas, Tenant? tenant)
@@ -94,26 +91,30 @@ public class GrantManagerDbMigrationService : ITransientDependency
 
     private async Task MigrateDatabaseSchemaAsync(Tenant? tenant = null)
     {
-        Logger.LogInformation("Migrating schema for {database} database...", tenant == null ? "host" : tenant.Name + " tenant");
+        Logger.LogInformation("Migrating schema for {Database} database...", tenant == null ? "host" : tenant.Name + " tenant");
 
         foreach (var migrator in _dbSchemaMigrators)
         {
             await migrator.MigrateAsync(tenant);
         }
+
+        Logger.LogInformation("Successfully completed {Database} database migrations.", tenant == null ? "host" : tenant.Name + " tenant");
     }
 
     private async Task SeedDataAsync(Tenant? tenant = null)
     {
-        Logger.LogInformation("Executing {database} database seed...", tenant == null ? "host" : tenant.Name + " tenant");
+        Logger.LogInformation("Executing {Database} database seed...", tenant == null ? "host" : tenant.Name + " tenant");
 
         try
         {
             await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id));
+
+            Logger.LogInformation("Successfully seeded {Database} database data.", tenant == null ? "host" : tenant.Name + " tenant");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(ex);
-        }
+            Logger.LogError(ex, "An error occurred while seeding {Database} database data.", tenant == null ? "host" : tenant.Name + " tenant");
+        }        
     }
 
     private bool AddInitialMigrationIfNotExist()
@@ -144,7 +145,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
         }
         catch (Exception e)
         {
-            Logger.LogWarning("Couldn't determinate if any migrations exist : {message}", e.Message);
+            Logger.LogWarning("Couldn't determine if any migrations exist : {Exception}", e);
             return false;
         }
     }
