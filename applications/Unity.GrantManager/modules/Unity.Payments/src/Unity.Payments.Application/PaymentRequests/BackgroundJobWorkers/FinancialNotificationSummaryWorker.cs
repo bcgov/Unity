@@ -15,7 +15,6 @@ namespace Unity.Payments.PaymentRequests;
 [DisallowConcurrentExecution]
 public class FinancialNotificationSummaryWorker : QuartzBackgroundWorkerBase
 {
-    private readonly ILogger<FinancialNotificationSummaryWorker> _logger;
     private readonly FinancialSummaryNotifier _financialSummaryNotifier;
     private readonly IEnumerable<IEmailRecipientStrategy> _strategies;
 
@@ -26,10 +25,9 @@ public class FinancialNotificationSummaryWorker : QuartzBackgroundWorkerBase
         IEnumerable<IEmailRecipientStrategy> strategies)
     {
         _financialSummaryNotifier = financialSummaryNotifier;
-        _logger = logger;
         _strategies = strategies;
 
-        _logger.LogInformation("FinancialNotificationSummary Constructor: Email strategies registered.");
+        logger.LogInformation("FinancialNotificationSummary Constructor: Email strategies registered.");
 
         string casFinancialNotificationExpression = "";
 

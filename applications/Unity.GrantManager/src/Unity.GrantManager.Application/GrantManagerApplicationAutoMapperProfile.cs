@@ -103,9 +103,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<Application, SigningAuthorityDto>();
         CreateMap<Applicant, ApplicantSummaryDto>()
             .ForMember(dest => dest.IndigenousOrgInd,
-                opt => opt.MapFrom(src =>
-                    src.IndigenousOrgInd == "Yes" ? true :
-                    src.IndigenousOrgInd == "No" ? false : (bool?)null));
+                opt => opt.MapFrom(src => src.IndigenousOrgInd != null ? ConvertIndigenousOrgIndToBool(src.IndigenousOrgInd) : null));
         CreateMap<ApplicantAgent, ContactInfoDto>();
         CreateMap<ApplicantAddress, ApplicantAddressDto>();
 
@@ -128,6 +126,16 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<UpdateApplicantAddressDto, ApplicantAddress>()
             .ForMember(dest => dest.Postal, opt => opt.MapFrom(src => src.PostalCode))
             .IgnoreNullAndDefaultValues();
+    }
+
+    private static bool? ConvertIndigenousOrgIndToBool(string indigenousOrgInd)
+    {
+        return indigenousOrgInd switch
+        {
+            "Yes" => true,
+            "No" => false,
+            _ => null
+        };
     }
 }
 

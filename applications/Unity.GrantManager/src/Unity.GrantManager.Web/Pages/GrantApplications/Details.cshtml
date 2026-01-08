@@ -63,7 +63,7 @@
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 @functions
 {
-    public string GetInitials(string name)
+    public static string GetInitials(string name)
     {
         // StringSplitOptions.RemoveEmptyEntries excludes empty spaces returned by the Split method
         string[] nameSplit = name.Split(new string[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);

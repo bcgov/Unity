@@ -259,8 +259,7 @@ const listColumns = getColumns();
             dt,
             defaultVisibleColumns,
             listColumns,
-            maxRowsPerPage: 10,
-            serverSideEnabled: true,   // Must be TRUE for ajax reloads to call server
+            maxRowsPerPage: 10,            
             defaultSortColumn: 4,
             dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
             data: function () {

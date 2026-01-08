@@ -8,14 +8,10 @@ using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 
 public class TagManagementPageContributor : SettingPageContributorBase
 {
-    public TagManagementPageContributor()
-    {
-        RequiredFeatures(SettingManagementFeatures.Enable);
-        RequiredPermissions(UnitySelector.SettingManagement.Tags.Default);
-    }
-
     public override Task ConfigureAsync(SettingPageCreationContext context)
     {
+        RequiredFeatures(SettingManagementFeatures.Enable);
+        RequiredPermissions(UnitySelector.SettingManagement.Tags.Default);        
         context.Groups.Add(
             new SettingPageGroup(
                 "GrantManager.TagManagement",

@@ -48,7 +48,6 @@
                                                     @foreach (var question in sec.Fields.OrderBy(q => q.Order))
                                                     {
                                                         var convertedDefinition = question.Definition?.ConvertDefinition(question.Type);
-                                                        var lowConfidenceClass = question.AIConfidence.HasValue && question.AIConfidence.Value < 85 ? "low-confidence-question" : "";
 
                                                         <div class="accordion-item">
                                                             <h2 class="accordion-header" id="question-heading-@question.Id">
