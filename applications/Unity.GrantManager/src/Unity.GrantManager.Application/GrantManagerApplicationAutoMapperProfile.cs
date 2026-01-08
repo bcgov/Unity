@@ -103,7 +103,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<Application, SigningAuthorityDto>();
         CreateMap<Applicant, ApplicantSummaryDto>()
             .ForMember(dest => dest.IndigenousOrgInd,
-                opt => opt.MapFrom(src => ConvertIndigenousOrgIndToBool(src.IndigenousOrgInd)));
+                opt => opt.MapFrom(src => src.IndigenousOrgInd != null ? ConvertIndigenousOrgIndToBool(src.IndigenousOrgInd) : null));
         CreateMap<ApplicantAgent, ContactInfoDto>();
         CreateMap<ApplicantAddress, ApplicantAddressDto>();
 
