@@ -1,4 +1,10 @@
 ﻿$(function () {
+    // Check if createNumberFormatter exists
+    if (typeof createNumberFormatter !== 'function') {
+        console.error('createNumberFormatter is not defined. Ensure table-utils.js is loaded before Index.js');
+        return;
+    }
+
     const formatter = createNumberFormatter();
     const l = abp.localization.getResource('GrantManager');
     let dt = $('#GrantApplicationsTable');
