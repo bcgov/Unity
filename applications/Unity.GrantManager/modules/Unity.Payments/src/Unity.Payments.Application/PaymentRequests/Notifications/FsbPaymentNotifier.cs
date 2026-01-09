@@ -465,7 +465,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
 
             // Generate filename with sanitized batch name
             string sanitizedBatchName = SanitizeFileName(batchName);
-            string fileName = $"FSB_Payments_{sanitizedBatchName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+            string fileName = $"FSB_Payments_{sanitizedBatchName}_{DateTime.UtcNow:yyyyMMdd_HHmmssfff}.xlsx";
 
             // Generate email body (reuse existing method)
             string emailBody = GenerateEmailBody(tenantName);
@@ -523,8 +523,8 @@ namespace Unity.Payments.PaymentRequests.Notifications
             sanitized = sanitized.Replace(' ', '_');
 
             // Trim to reasonable length (Windows has 255 char limit)
-            // Reserve space for: "FSB_Payments_" (13) + "_yyyyMMdd_HHmmss.xlsx" (22) = 35 chars
-            const int maxBatchNameLength = 220;  // Conservative limit
+            // Reserve space for: "FSB_Payments_" (13) + "_yyyyMMdd_HHmmssfff.xlsx" (25) = 38 chars
+            const int maxBatchNameLength = 217;  // Conservative limit (255 - 38 = 217)
             if (sanitized.Length > maxBatchNameLength)
             {
                 sanitized = sanitized.Substring(0, maxBatchNameLength);
