@@ -8,6 +8,8 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager.Integrations;
+using Unity.Modules.Shared.Http;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
@@ -18,17 +20,22 @@ namespace Unity.GrantManager.AI
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
+        private readonly IResilientHttpRequest _resilientHttpRequest;
+        private readonly IEndpointManagementAppService _endpointManagementAppService;
 
         private string? ApiKey => _configuration["AI:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
         private readonly string NoKeyError = "OpenAI API key is not configured";
+        private readonly string NoSummaryMsg = "No summary generated.";
 
-        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService)
+        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService, IResilientHttpRequest resilientHttpRequest, IEndpointManagementAppService endpointManagementAppService)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
+            _resilientHttpRequest = resilientHttpRequest;
+            _endpointManagementAppService = endpointManagementAppService;
         }
 
         public Task<bool> IsAvailableAsync()
@@ -42,6 +49,7 @@ namespace Unity.GrantManager.AI
             return Task.FromResult(true);
         }
 
+        //Unity AI method
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
         {
             if (string.IsNullOrEmpty(ApiKey))
@@ -89,14 +97,81 @@ namespace Unity.GrantManager.AI
                 if (choices.GetArrayLength() > 0)
                 {
                     var message = choices[0].GetProperty("message");
-                    return message.GetProperty("content").GetString() ?? "No summary generated.";
+                    return message.GetProperty("content").GetString() ?? NoSummaryMsg;
                 }
 
-                return "No summary generated.";
+                return NoSummaryMsg;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating AI summary");
+                return "AI analysis failed - please try again later.";
+            }
+        }
+
+        //AI agent method: Once the AI agent code has hosted domain we can able to use this and update the endpoint management
+        private async Task<string> GenerateAgenticSummaryAsync(
+            string userPrompt,
+            string systemPrompt, 
+            int maxTokens = 150)
+        {
+
+            int numSelfConsistency = 3;
+            int numCot = 1;
+            string model = "fast";
+            double temperature = 0.3;
+
+            var aiAgentBaseUri = await _endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.AGENTIC_AI);
+
+            try
+            {
+                var requestBody = new
+                {
+                    prompt = userPrompt,
+                    system_prompt = systemPrompt ?? "You are a professional grant analyst for the BC Government.",
+                    num_self_consistency = numSelfConsistency,
+                    num_cot = numCot,
+                    model,
+                    temperature,
+                    max_tokens = maxTokens
+                };
+
+                var response = await _resilientHttpRequest.HttpAsync(
+                    HttpMethod.Post,
+                    aiAgentBaseUri!,
+                    requestBody
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Agentic AI API request failed: {StatusCode} - {Content}", 
+                        response.StatusCode, errorContent);
+                    return "AI analysis failed - service temporarily unavailable.";
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                 _logger.LogDebug("Response: {Response}", responseContent);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
+                    return "AI analysis failed - service temporarily unavailable.";
+                }
+
+                using var jsonDoc = JsonDocument.Parse(responseContent);
+                var msg = jsonDoc.RootElement.GetProperty("final_answer");
+
+                if (jsonDoc.RootElement.TryGetProperty("final_answer", out var finalAnswer) && msg.ValueKind != JsonValueKind.Null)
+                {
+                    return msg.GetString() ?? NoSummaryMsg;
+                }
+
+                return NoSummaryMsg;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling Agentic AI API");
                 return "AI analysis failed - please try again later.";
             }
         }
