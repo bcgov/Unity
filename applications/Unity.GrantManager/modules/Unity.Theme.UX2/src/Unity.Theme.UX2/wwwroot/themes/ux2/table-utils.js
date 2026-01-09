@@ -418,7 +418,7 @@ function initializeDataTable(options) {
                     // Store original search values in settings
                     settings._savedSearches = {};
                     data.columns.forEach((col) => {
-                        if (col.name && col?.search && col?.search?.search) {
+                        if (col.name && col?.search?.search) {
                             settings._savedSearches[col.name] = col.search.search;
                         }
                     });
@@ -447,7 +447,7 @@ function initializeDataTable(options) {
             try {
                 dtApi = new $.fn.dataTable.Api(settings);
 
-                if (!dtApi || !dtApi?.table()?.node()) {
+                if (!dtApi?.table()?.node()) {
                     throw new Error('Invalid DataTable instance.');
                 }
 
@@ -501,7 +501,7 @@ function initializeDataTable(options) {
         settings._savedSearches = {};
         if (data.columns && Array.isArray(data.columns)) {
             data.columns.forEach((col) => {
-                if (col.name && col?.search && col?.search?.search) {
+                if (col.name && col?.search?.search) {
                     settings._savedSearches[col.name] = col.search.search;
                 }
             });

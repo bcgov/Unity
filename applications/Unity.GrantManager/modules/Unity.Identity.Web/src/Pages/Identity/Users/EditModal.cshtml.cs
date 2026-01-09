@@ -45,12 +45,9 @@ public class EditModalModel : IdentityPageModel
         IsEditCurrentUser = CurrentUser.Id == id;
 
         var userRoleNames = (await IdentityUserAppService.GetRolesAsync(UserInfo.Id)).Items.Select(r => r.Name).ToList();
-        foreach (var role in Roles)
+        foreach (var role in Roles.Where(r => userRoleNames.Contains(r.Name)))
         {
-            if (userRoleNames.Contains(role.Name))
-            {
-                role.IsAssigned = true;
-            }
+            role.IsAssigned = true;
         }
 
         Detail = ObjectMapper.Map<IdentityUserDto, DetailViewModel>(user);

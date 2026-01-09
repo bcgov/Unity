@@ -16,18 +16,18 @@ namespace Unity.GrantManager.Controllers
 {
     // This is designed to download configuration files for the user for app setup
     [Route("/api/app/configurationFile")]
-    public class ConfigurationFileController : AbpController
+    public class ConfigurationFileController(IApplicationFormConfigurationAppService applicationFormConfigurationAppService,
+        ICurrentTenant currentTenant) : AbpController
     {
-        private readonly IApplicationFormConfigurationAppService _applicationFormConfigurationAppService;
-        private readonly ICurrentTenant _currentTenant;
-        protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
-
-        public ConfigurationFileController(IApplicationFormConfigurationAppService applicationFormConfigurationAppService,
-            ICurrentTenant currentTenant)
+        private readonly IApplicationFormConfigurationAppService _applicationFormConfigurationAppService = applicationFormConfigurationAppService;
+        private readonly ICurrentTenant _currentTenant = currentTenant;
+        protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
+        
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
-            _applicationFormConfigurationAppService = applicationFormConfigurationAppService;
-            _currentTenant = currentTenant;
-        }
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
 
         [HttpGet("{type}")]
         public async Task<IActionResult> DownloadConfiguration(string type)
@@ -47,7 +47,7 @@ namespace Unity.GrantManager.Controllers
                 return type.ToLower() switch
                 {
                     "applicationforms" => await GetApplicationFormsConfigAsync(),
-                    _ => throw new AbpValidationException(new List<ValidationResult> { new ValidationResult($"{type} not supported") })
+                    _ => throw new AbpValidationException([new($"{type} not supported")])
                 };
             }
             catch (AbpValidationException ex)
@@ -57,7 +57,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "ConfigurationFileController->DownloadConfiguration: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "ConfigurationFileController->DownloadConfiguration: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
@@ -70,11 +70,7 @@ namespace Unity.GrantManager.Controllers
             {
                 using TextWriter tw = new StreamWriter(ms);
                 await tw.WriteAsync(JsonSerializer.Serialize(await _applicationFormConfigurationAppService.GetConfiguration(),
-                    options: new JsonSerializerOptions()
-                    {
-                        WriteIndented = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                    }));
+                    options: _jsonSerializerOptions));
                 await tw.FlushAsync();
                 ms.Position = 0;
                 bytes = ms.ToArray();

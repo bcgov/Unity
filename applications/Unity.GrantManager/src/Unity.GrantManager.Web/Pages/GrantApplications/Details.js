@@ -446,29 +446,40 @@ $(function () {
     });
 
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
-        let newTab = window.open('', '_blank');
-        newTab.document.write('<html><head><title>Print</title>');
-        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
-        newTab.document.write(
-            '<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">'
-        );
-        newTab.document.write(
-            '<link rel="stylesheet" href="/Pages/GrantApplications/ScoresheetPrint.css">'
-        );
-        newTab.document.write('</head><body>');
-        newTab.document.write(assessmentScoresheet);
-        newTab.document.write('</body></html>');
+        const newTab = window.open('', '_blank');
+        const doc = newTab.document;
+        
+        doc.open();
+        doc.close();
+        doc.title = 'Print';
+        
+        // Create and append stylesheets
+        const stylesheets = [
+            { href: '/libs/bootstrap-4/dist/css/bootstrap.min.css' },
+            { href: '/Pages/GrantApplications/ScoresheetPrint.css' }
+        ];
+        
+        stylesheets.forEach(({ href }) => {
+            const link = doc.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            doc.head.appendChild(link);
+        });
+        
+        // Add jQuery script
+        const jqueryScript = doc.createElement('script');
+        jqueryScript.src = '/libs/jquery/jquery.js';
+        doc.head.appendChild(jqueryScript);
+        
+        doc.body.innerHTML = assessmentScoresheet;
+        
+        // Load and execute print script
         newTab.onload = function () {
-            let script = newTab.document.createElement('script');
+            const script = doc.createElement('script');
             script.src = '/Pages/GrantApplications/loadScoresheetPrint.js';
-            script.onload = function () {
-                newTab.executeOperations();
-            };
-
-            newTab.document.head.appendChild(script);
+            script.onload = () => newTab.executeOperations();
+            doc.head.appendChild(script);
         };
-
-        newTab.document.close();
     }
 
     let applicationBreadcrumbWidgetManager = new abp.WidgetManager({

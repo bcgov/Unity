@@ -35,7 +35,7 @@ namespace Unity.GrantManager.Intake
         private readonly IApplicationFormTokenAppService _formTokenAppService;
         private readonly IEnumerable<IFormIdResolver> _formIdResolvers;
         private readonly ITenantTokenRepository _tenantTokenRepository;
-        private readonly IStringEncryptionService _stringEncryptionService;
+        private readonly StringEncryptionService _stringEncryptionService;
 
         public FormsApiTokenAuthFilterTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
@@ -104,7 +104,7 @@ namespace Unity.GrantManager.Intake
             }
 
             // Assert            
-            context.Result.ShouldBeOfType(typeof(UnauthorizedObjectResult));
+            context.Result.ShouldBeOfType<UnauthorizedObjectResult>();
             var result = context.Result as UnauthorizedObjectResult;
             result!.Value.ShouldBe("API Key missing");
         }
@@ -140,7 +140,7 @@ namespace Unity.GrantManager.Intake
             }
 
             // Assert            
-            context.Result.ShouldBeOfType(typeof(UnauthorizedObjectResult));
+            context.Result.ShouldBeOfType<UnauthorizedObjectResult>();
             var result = context.Result as UnauthorizedObjectResult;
             result!.Value.ShouldBe("Invalid Form Id");
         }
@@ -177,7 +177,7 @@ namespace Unity.GrantManager.Intake
             }
 
             // Assert            
-            context.Result.ShouldBeOfType(typeof(UnauthorizedObjectResult));
+            context.Result.ShouldBeOfType<UnauthorizedObjectResult>();
             var result = context.Result as UnauthorizedObjectResult;
             result!.Value.ShouldBe("Invalid API Key");
         }
