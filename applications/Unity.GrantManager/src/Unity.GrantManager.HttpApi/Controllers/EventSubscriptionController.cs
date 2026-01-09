@@ -38,13 +38,20 @@ namespace Unity.GrantManager.Controllers
             else return await HandleIntakeEventAsync(eventSubscription);
         }
 
+#pragma warning disable IDE0079
+#pragma warning disable ASP0018
+        // __tenant is automatically handled by ABP multi-tenancy and sets the CurrentTenant accordingly
+        // https://abp.io/docs/latest/framework/architecture/multi-tenancy#default-tenant-resolvers
         [HttpPost]
         [Route("{__tenant}")]
         [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
         public async Task<dynamic> PostEventSubscriptionTenantAsync([FromBody] EventSubscription eventSubscription)
+
         {
             return await HandleIntakeEventAsync(eventSubscription);
         }
+#pragma warning restore ASP0018
+#pragma warning restore IDE0079
 
         private async Task<dynamic> HandleIntakeEventAsync(EventSubscription eventSubscription)
         {

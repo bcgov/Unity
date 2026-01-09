@@ -73,7 +73,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
 
         using (_currentTenant.Change(tenant.Id))
         {
-            if (tenant.ConnectionStrings.Any())
+            if (tenant.ConnectionStrings.Count > 0)
             {
                 var tenantConnectionStrings = tenant.ConnectionStrings
                     .Select(x => x.Value)
