@@ -37,6 +37,7 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
         if (UpsertAction == WorksheetUpsertAction.Update)
         {
             WorksheetDto worksheetDto = await worksheetAppService.GetAsync(worksheetId);
+            UpsertAction = Enum.Parse<WorksheetUpsertAction>(actionType);
 
             Name = worksheetDto.Name;
             WorksheetId = worksheetDto.Id;

@@ -22,8 +22,7 @@ public class QuestionModalModel : FlexPageModel
     {
         _questionAppService = questionAppService;
         _scoresheetAppService = scoresheetAppService;
-        QuestionTypeOptionsList = Enum.GetValues(typeof(QuestionType))
-                                      .Cast<QuestionType>()
+        QuestionTypeOptionsList = Enum.GetValues<QuestionType>()
                                       .Select(qt => new SelectListItem
                                       {
                                           Value = ((int)qt).ToString(),

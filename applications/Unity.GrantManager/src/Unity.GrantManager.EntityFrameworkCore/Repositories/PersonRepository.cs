@@ -25,8 +25,7 @@ namespace Unity.GrantManager.Repositories
             var dbSet = await GetDbSetAsync();
             return await dbSet.AsQueryable()
                 .FirstOrDefaultAsync(s => s.OidcSub
-                .ToUpper()
-                .StartsWith(oidcSub.ToSubjectWithoutIdp()));                
+                .StartsWith(oidcSub.ToSubjectWithoutIdp(), StringComparison.OrdinalIgnoreCase));                
         }
     }
 }

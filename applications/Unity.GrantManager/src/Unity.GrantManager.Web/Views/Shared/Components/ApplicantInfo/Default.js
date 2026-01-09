@@ -215,7 +215,7 @@ function cleanupSelect2Instance($select) {
         try {
             $select.select2('destroy');
         } catch (e) {
-            // Silently handle destroy errors
+            console.warn('Error destroying Select2 instance:', e);
         }
     }
 

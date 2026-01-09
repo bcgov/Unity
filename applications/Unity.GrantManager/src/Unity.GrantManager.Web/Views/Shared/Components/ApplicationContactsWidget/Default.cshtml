@@ -15,7 +15,7 @@
         <div data-id="@contact.Id">
             <div class="d-flex px-2 justify-content-between align-items-center">
                 <div>
-                    <p>@Model.ContactTypeValue(contact.ContactType)</p>
+                    <p>@ApplicationContactsWidgetViewModel.ContactTypeValue(contact.ContactType)</p>
                     <p class="fw-bold text-muted">@contact.ContactFullName, @contact.ContactTitle</p>
                     @if (!contact.ContactEmail.IsNullOrEmpty())
                     {

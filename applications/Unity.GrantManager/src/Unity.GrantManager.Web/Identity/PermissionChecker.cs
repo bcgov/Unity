@@ -91,7 +91,7 @@ namespace Unity.GrantManager.Web.Identity
             Check.NotNull(names, nameof(names));
 
             var result = new MultiplePermissionGrantResult();
-            if (!names.Any())
+            if (names.Length == 0)
             {
                 return result;
             }

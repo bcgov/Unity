@@ -66,17 +66,8 @@
 {
     public static string GetInitials(string name)
     {
-        // StringSplitOptions.RemoveEmptyEntries excludes empty spaces returned by the Split method
-        string[] nameSplit = name.Split(new string[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
-
-        string initials = "";
-
-        foreach (string item in nameSplit)
-        {
-            initials += item.Substring(0, 1).ToUpper();
-        }
-
-        return initials;
+        var nameParts = name.Split(new[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(nameParts.Select(part => char.ToUpper(part[0])));
     }
 
     public async Task<bool> IsZoneVisible(string zoneName) => Model.ZoneStateSet.Contains(zoneName) && await PermissionChecker.IsGrantedAsync(zoneName);

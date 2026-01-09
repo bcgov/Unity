@@ -346,7 +346,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         }
 
         // Add who should and are missing
-        foreach (var (assigneeId, fullName) in assigneeSubs)
+        foreach (var (assigneeId, _) in assigneeSubs)
         {
             var currentAssignment = currentUserAssignments.Find(s => s.AssigneeId == assigneeId);
             if (currentAssignment == null && assigneeId != null)
