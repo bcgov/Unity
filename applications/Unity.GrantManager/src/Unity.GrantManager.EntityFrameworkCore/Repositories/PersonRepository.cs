@@ -11,21 +11,14 @@ namespace Unity.GrantManager.Repositories
 {
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(IPersonRepository))]
-#pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
-    // This pattern is an implementation ontop of ABP framework, will not change this
-    public class PersonRepository : EfCoreRepository<GrantTenantDbContext, Person, Guid>, IPersonRepository
-#pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
+    public class PersonRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : EfCoreRepository<GrantTenantDbContext, Person, Guid>(dbContextProvider), IPersonRepository
     {
-        public PersonRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
-
         public async Task<Person?> FindByOidcSub(string oidcSub)
         {
             var dbSet = await GetDbSetAsync();
+            var compare = oidcSub.ToSubjectWithoutIdp().ToUpper();
             return await dbSet.AsQueryable()
-                .FirstOrDefaultAsync(s => s.OidcSub
-                .StartsWith(oidcSub.ToSubjectWithoutIdp(), StringComparison.OrdinalIgnoreCase));                
+                .FirstOrDefaultAsync(s => s.OidcSub.StartsWith(compare));
         }
     }
 }
