@@ -31,4 +31,5 @@ public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
     public DateTime? SendOnDateTime { get; set; }
     public DateTime? SentDateTime { get; set; }
     public string TemplateName { get; set; } = string.Empty;
+    public string PaymentRequestIds { get; set; } = string.Empty;
 }

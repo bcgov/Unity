@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
@@ -62,8 +63,6 @@ namespace Unity.Payments.PaymentRequests.Notifications
 
             try
             {
-                _logger.LogInformation("NotifyFsbPayments: Processing {Count} FSB payments", fsbPayments.Count);
-
                 // Get recipients from FSB-AP email group
                 var recipients = await _fsbApEmailGroupStrategy.GetEmailRecipientsAsync();
                 if (recipients == null || recipients.Count == 0)
@@ -72,17 +71,15 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     return;
                 }
 
-                // Collect payment data for Excel
-                var paymentDataList = await CollectPaymentData(fsbPayments);
-                if (paymentDataList.Count == 0)
-                {
-                    _logger.LogWarning("NotifyFsbPayments: Failed to collect payment data. Email not sent.");
-                    return;
-                }
+                // Group payments by batch name (treating null/empty as "Unknown")
+                var batchGroups = fsbPayments
+                    .GroupBy(p => string.IsNullOrWhiteSpace(p.BatchName) ? "Unknown" : p.BatchName)
+                    .ToList();
 
-                // Generate Excel file
-                byte[] excelBytes = FsbPaymentExcelGenerator.GenerateExcelFile(paymentDataList);
-                string fileName = $"FSB_Payments_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+                _logger.LogInformation(
+                    "NotifyFsbPayments: Grouped {TotalPayments} payments into {BatchCount} batches",
+                    fsbPayments.Count,
+                    batchGroups.Count);
 
                 // Get tenant name for email body
                 string tenantName = "N/A";
@@ -92,43 +89,57 @@ namespace Unity.Payments.PaymentRequests.Notifications
                     tenantName = tenant?.Name ?? "N/A";
                 }
 
-                // Generate email body
-                string emailBody = GenerateEmailBody(tenantName);
-
                 // Get from address
                 var defaultFromAddress = await _settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
                 string fromAddress = defaultFromAddress ?? "NoReply@gov.bc.ca";
 
-                // Publish email event with attachment
-                await _localEventBus.PublishAsync(
-                    new EmailNotificationEvent
-                    {
-                        Action = EmailAction.SendFsbNotification,
-                        TenantId = _currentTenant.Id,
-                        RetryAttempts = 0,
-                        Body = emailBody,
-                        Subject = "FSB Payment Notification",
-                        EmailFrom = fromAddress,
-                        EmailAddressList = recipients,
-                        ApplicationId = Guid.Empty,  // System-level email, not application-specific
-                        EmailAttachments =
-                        [
-                            new() {
-                                FileName = fileName,
-                                Content = excelBytes,  // Byte array, not Base64
-                                ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            }
-                        ]
-                    }
-                );
+                // Process each batch
+                int successCount = 0;
+                int failureCount = 0;
 
-                _logger.LogInformation("NotifyFsbPayments: Email notification published successfully for {Count} payments", fsbPayments.Count);
+                foreach (var batchGroup in batchGroups)
+                {
+                    string batchName = batchGroup.Key;
+                    var batchPayments = batchGroup.ToList();
+
+                    try
+                    {
+                        await SendBatchNotification(
+                            batchName,
+                            batchPayments,
+                            recipients,
+                            tenantName,
+                            fromAddress);
+
+                        successCount++;
+                        _logger.LogInformation(
+                            "NotifyFsbPayments: Successfully sent notification for batch '{BatchName}' with {PaymentCount} payments",
+                            batchName,
+                            batchPayments.Count);
+                    }
+                    catch (Exception ex)
+                    {
+                        failureCount++;
+                        _logger.LogError(
+                            ex,
+                            "NotifyFsbPayments: Failed to send notification for batch '{BatchName}' with {PaymentCount} payments. Continuing with other batches.",
+                            batchName,
+                            batchPayments.Count);
+                        // Continue processing other batches (resilient processing)
+                    }
+                }
+
+                _logger.LogInformation(
+                    "NotifyFsbPayments: Completed processing {TotalBatches} batches. Success: {SuccessCount}, Failed: {FailureCount}",
+                    batchGroups.Count,
+                    successCount,
+                    failureCount);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "NotifyFsbPayments: Error sending FSB payment notification");
+                _logger.LogError(ex, "NotifyFsbPayments: Critical error during batch processing");
                 throw new InvalidOperationException(
-                    $"Failed to send FSB payment notification. See inner exception for details.",
+                    $"Failed to process FSB payment notifications. See inner exception for details.",
                     ex);
             }
         }
@@ -422,6 +433,108 @@ namespace Unity.Payments.PaymentRequests.Notifications
                 addressParts.Add(string.Join(", ", cityProvincePostal));
 
             return addressParts.Count > 0 ? string.Join(", ", addressParts) : "N/A";
+        }
+
+        /// <summary>
+        /// Sends email notification for a single batch of payments
+        /// </summary>
+        /// <param name="batchName">Name of the batch (already normalized for "Unknown")</param>
+        /// <param name="batchPayments">List of payment requests in this batch</param>
+        /// <param name="recipients">Email recipients list</param>
+        /// <param name="tenantName">Current tenant name for email body</param>
+        /// <param name="fromAddress">Email from address</param>
+        private async Task SendBatchNotification(
+            string batchName,
+            List<PaymentRequest> batchPayments,
+            List<string> recipients,
+            string tenantName,
+            string fromAddress)
+        {
+            // Collect payment data for this batch
+            var paymentDataList = await CollectPaymentData(batchPayments);
+            if (paymentDataList.Count == 0)
+            {
+                _logger.LogWarning(
+                    "SendBatchNotification: Failed to collect payment data for batch '{BatchName}'. Email not sent.",
+                    batchName);
+                return;
+            }
+
+            // Generate Excel file
+            byte[] excelBytes = FsbPaymentExcelGenerator.GenerateExcelFile(paymentDataList);
+
+            // Generate filename with sanitized batch name
+            string sanitizedBatchName = SanitizeFileName(batchName);
+            string fileName = $"FSB_Payments_{sanitizedBatchName}_{DateTime.UtcNow:yyyyMMdd_HHmmssfff}.xlsx";
+
+            // Generate email body (reuse existing method)
+            string emailBody = GenerateEmailBody(tenantName);
+
+            // Generate email subject per requirement
+            string subject = $"Batch # {batchName}";
+
+            // Extract payment IDs for tracking
+            var paymentIds = batchPayments.Select(p => p.Id).ToList();
+
+            // Publish email event with attachment
+            await _localEventBus.PublishAsync(
+                new EmailNotificationEvent
+                {
+                    Action = EmailAction.SendFsbNotification,
+                    TenantId = _currentTenant.Id,
+                    RetryAttempts = 0,
+                    Body = emailBody,
+                    Subject = subject,  // Batch-specific subject
+                    EmailFrom = fromAddress,
+                    EmailAddressList = recipients,
+                    ApplicationId = Guid.Empty,
+                    EmailAttachments =
+                    [
+                        new() {
+                            FileName = fileName,  // Batch-specific filename
+                            Content = excelBytes,
+                            ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        }
+                    ],
+                    PaymentRequestIds = paymentIds  // Track which payments are in this email
+                }
+            );
+        }
+
+        /// <summary>
+        /// Sanitizes batch name for use in filenames by removing invalid characters
+        /// </summary>
+        /// <param name="batchName">Original batch name</param>
+        /// <returns>Sanitized batch name safe for filenames</returns>
+        private static string SanitizeFileName(string batchName)
+        {
+            if (string.IsNullOrWhiteSpace(batchName))
+            {
+                return "Unknown";
+            }
+
+            // Get OS-specific invalid filename characters
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+
+            // Replace invalid characters with underscore
+            string sanitized = batchName;
+            foreach (char c in invalidChars)
+            {
+                sanitized = sanitized.Replace(c, '_');
+            }
+
+            // Replace spaces with underscores for cleaner filenames
+            sanitized = sanitized.Replace(' ', '_');
+
+            // Trim to reasonable length (Windows has 255 char limit)
+            // Reserve space for: "FSB_Payments_" (13) + "_yyyyMMdd_HHmmssfff.xlsx" (25) = 38 chars
+            const int maxBatchNameLength = 217;  // Conservative limit (255 - 38 = 217)
+            if (sanitized.Length > maxBatchNameLength)
+            {
+                sanitized = sanitized.Substring(0, maxBatchNameLength);
+            }
+
+            return sanitized;
         }
 
     }

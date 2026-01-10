@@ -41,6 +41,11 @@ namespace Unity.Payments.PaymentRequests
         public Collection<PaymentTagDto> PaymentTags { get; set; }
         public  Collection<ExpenseApprovalDto> ExpenseApprovals { get;  set; }
 
+        // FSB Notification Tracking
+        public Guid? FsbNotificationEmailLogId { get; set; }
+        public DateTime? FsbNotificationSentDate { get; set; }
+        public string? FsbApNotified { get; set; }
+
         public static explicit operator PaymentRequestDto(CreatePaymentRequestDto v)
         {
             throw new NotImplementedException();

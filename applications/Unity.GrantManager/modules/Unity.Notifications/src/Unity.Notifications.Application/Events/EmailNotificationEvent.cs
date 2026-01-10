@@ -24,6 +24,7 @@ namespace Unity.Notifications.Events
         public EmailAction Action { get; set; }
         public string? EmailTemplateName { get; set; } = string.Empty;
         public List<EmailAttachmentData>? EmailAttachments { get; set; }
+        public List<Guid>? PaymentRequestIds { get; set; }
     }
 
     public class EmailAttachmentData
