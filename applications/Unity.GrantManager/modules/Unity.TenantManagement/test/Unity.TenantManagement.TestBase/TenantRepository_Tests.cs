@@ -61,6 +61,6 @@ public abstract class TenantRepository_Tests<TStartupModule> : TenantManagementT
     {
         var role = await TenantRepository.FindByNameAsync("ACME");
         role.ConnectionStrings.ShouldNotBeNull();
-        role.ConnectionStrings.Any().ShouldBeTrue();
+        role.ConnectionStrings.Count.ShouldBeGreaterThan(0);
     }
 }

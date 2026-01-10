@@ -63,7 +63,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
         WorksheetId = worksheetId;
         SectionId = sectionId;
         FieldTypes = GetAvailableFieldTypes();
-        UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
+        UpsertAction = Enum.Parse<WorksheetUpsertAction>(actionType);
         FieldType = "Text";
 
         if (UpsertAction == WorksheetUpsertAction.Update)
@@ -118,7 +118,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
             Definition = ExtractDefinition(),
             Label = Label!,
             Key = Key!,
-            Type = (CustomFieldType)Enum.Parse(typeof(CustomFieldType), FieldType!)
+            Type = Enum.Parse<CustomFieldType>(FieldType!)
         });
     }
 
@@ -129,7 +129,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
             Definition = ExtractDefinition(),
             Label = Label!,
             Key = Key!,
-            Type = (CustomFieldType)Enum.Parse(typeof(CustomFieldType), FieldType!)
+            Type = Enum.Parse<CustomFieldType>(FieldType!)
         });
     }
 

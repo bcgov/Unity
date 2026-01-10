@@ -36,6 +36,14 @@ namespace Unity.GrantManager.ApplicationForms
         CreateUpdateApplicationFormDto>,
         IApplicationFormSycnronizationService
     {
+        private static readonly JsonSerializerOptions _submissionSerializerOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
         private readonly IStringEncryptionService _stringEncryptionService;
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly ICurrentTenant _currentTenant;
@@ -44,11 +52,11 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IFormsApiService _formsApiService;
         private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
         private readonly INotificationsAppService _notificationsAppService;
-        private List<Fact> _facts = new();
+        private List<Fact> _facts = [];
         private readonly RestClient _intakeClient;
         private readonly ITenantRepository _tenantRepository;
-        public List<ApplicationFormDto>? applicationFormDtoList { get; set; }
-        public HashSet<string> FormVersionsInitializedVersionHash { get; set; } = new HashSet<string>();
+        public List<ApplicationFormDto>? ApplicationFormDtoList { get; set; }
+        public HashSet<string> FormVersionsInitializedVersionHash { get; set; } = [];
       
         public ApplicationFormSycnronizationService(
             INotificationsAppService notificationsAppService,
@@ -87,7 +95,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "ApplicationFormSycnronizationService->SynchronizeFormSubmissions Exception: {Exception}", ex);
+                Logger.LogError(ex, "ApplicationFormSycnronizationService->SynchronizeFormSubmissions Exception occurred");
             }
         }
 
@@ -172,21 +180,21 @@ namespace Unity.GrantManager.ApplicationForms
 
         public async Task<(HashSet<string> MissingSubmissions, string MissingSubmissionsReport)> GetMissingSubmissions(int numberOfDaysToCheck)
         {
-            _facts = new List<Fact>();
+            _facts = [];
             var missingSubmissionsReportBuilder = new System.Text.StringBuilder();
             int missingSubmissionsCounter = 1;
 
-            HashSet<string> missingSubmissions = new HashSet<string>();
+            HashSet<string> missingSubmissions = [];
             // Get all forms with api keys
-            applicationFormDtoList = (List<ApplicationFormDto>?) await GetConnectedApplicationFormsAsync();
+            ApplicationFormDtoList = (List<ApplicationFormDto>?) await GetConnectedApplicationFormsAsync();
 
-            if (applicationFormDtoList != null)
+            if (ApplicationFormDtoList != null)
             {
-                AddFact("Forms Count: ", "" + applicationFormDtoList.Count);
+                AddFact("Forms Count: ", "" + ApplicationFormDtoList.Count);
                 int missingSubmissionsCount = 0;
                 int formsMissingSubmissions = 0;
 
-                foreach (ApplicationFormDto applicationFormDto in applicationFormDtoList)
+                foreach (ApplicationFormDto applicationFormDto in ApplicationFormDtoList)
                 {
                     try
                     {
@@ -322,20 +330,11 @@ namespace Unity.GrantManager.ApplicationForms
             };
 
             if (!string.IsNullOrEmpty(errorMessage))
-            {
-                Logger.LogError(errorMessage);
+            {                
                 throw new ApiException((int)response.StatusCode, errorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
             }
 
-            var submissionOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNameCaseInsensitive = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
-
-            List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
+            List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, _submissionSerializerOptions);
             return jsonResponse;
         }
 

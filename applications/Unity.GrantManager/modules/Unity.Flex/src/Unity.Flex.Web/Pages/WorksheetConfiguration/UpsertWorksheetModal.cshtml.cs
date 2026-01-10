@@ -32,12 +32,12 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
 
     public async Task OnGetAsync(Guid worksheetId, string actionType)
     {
-        UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
+        UpsertAction = Enum.Parse<WorksheetUpsertAction>(actionType);
 
         if (UpsertAction == WorksheetUpsertAction.Update)
         {
             WorksheetDto worksheetDto = await worksheetAppService.GetAsync(worksheetId);
-            UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
+            UpsertAction = Enum.Parse<WorksheetUpsertAction>(actionType);
 
             Name = worksheetDto.Name;
             WorksheetId = worksheetDto.Id;
