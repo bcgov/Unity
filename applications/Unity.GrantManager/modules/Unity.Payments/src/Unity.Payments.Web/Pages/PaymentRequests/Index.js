@@ -694,10 +694,9 @@ $(function () {
             data: 'fsbApNotified',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data, type, row) {
-                // Show "Yes" badge if field value is "Yes"
-                if (data === 'Yes') {
-                    return '<span class="badge badge-success">Yes</span>';
+            render: function (data, type, row) {                
+                if (data) {
+                    return data;
                 }
                 // Show placeholder for null/empty
                 return nullPlaceholder;

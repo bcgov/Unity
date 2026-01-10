@@ -47,7 +47,7 @@ namespace Unity.Payments.Handlers
                     {
                         try
                         {
-                            var payment = await _paymentRequestRepository.GetAsync(paymentId);
+                            var payment = await _paymentRequestRepository.GetAsync(paymentId, includeDetails: false);
                             payment.SetFsbNotificationEmailLog(eventData.EmailLogId, eventData.SentDate);
                             await _paymentRequestRepository.UpdateAsync(payment, autoSave: false);
                         }

@@ -193,7 +193,7 @@ public class EmailConsumer(
 
         // Publish distributed event for successful FSB payment notifications
         if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(log.PaymentRequestIds))
-        {
+        {            
             var paymentIds = log.PaymentRequestIds
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(id => Guid.Parse(id))
@@ -205,7 +205,7 @@ public class EmailConsumer(
                 PaymentRequestIds = paymentIds,
                 SentDate = DateTime.UtcNow,
                 TenantId = log.TenantId
-            });
+            });           
         }
     }
 
