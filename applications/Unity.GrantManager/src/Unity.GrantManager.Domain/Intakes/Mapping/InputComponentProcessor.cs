@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Intakes
         // Method to initialize the logger (if needed)
         public static void InitializeLogger(ILoggerFactory loggerFactory)
         {
-            logger = loggerFactory.CreateLogger(typeof(InputComponentProcessor));
+            logger = loggerFactory.CreateLogger<InputComponentProcessor>();
         }
 
         private static readonly HashSet<string> allowableContainerTypes = new HashSet<string>

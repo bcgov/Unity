@@ -28,7 +28,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationTagsWidget
         {
             var applicationTags = await _applicationTagsService.GetApplicationTagsAsync(applicationId);
             string applicationText = "";
-            if (applicationTags != null && applicationTags.Any())
+            if (applicationTags != null && applicationTags.Count > 0)
             {
                 var tagNames = applicationTags
                     .Where(x => x?.Tag?.Name != null)

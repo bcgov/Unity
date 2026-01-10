@@ -41,7 +41,7 @@ namespace Unity.Flex.Web.Pages.Flex
                     CurrentValueId = Guid.Empty,
                     Definition = GetDefaultDefinition(column.Type),
                     Enabled = true,
-                    Type = (CustomFieldType)Enum.Parse(typeof(CustomFieldType), column.Type),
+                    Type = Enum.Parse<CustomFieldType>(column.Type),
                     UiAnchor = string.Empty,
                     Order = rowNumber
                 });
@@ -52,7 +52,7 @@ namespace Unity.Flex.Web.Pages.Flex
 
         internal static string GetDefaultDefinition(string type)
         {
-            return DefinitionResolver.Resolve((CustomFieldType)Enum.Parse(typeof(CustomFieldType), type), null);
+            return DefinitionResolver.Resolve(Enum.Parse<CustomFieldType>(type), null);
         }
 
         internal static string? GetCurrentValueAndTransform(DataGridRow? dataRow, DataGridDefinitionColumn column)

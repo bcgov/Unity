@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Unity.GrantManager.Web.Filters
@@ -11,14 +10,14 @@ namespace Unity.GrantManager.Web.Filters
     {
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
-            if (context.ApiDescription.ActionDescriptor is ControllerActionDescriptor descriptor)
+            if (context.ApiDescription.ActionDescriptor is ControllerActionDescriptor)
             {
                 if (!context.ApiDescription.CustomAttributes().Any((a) => a is ServiceFilterAttribute))
                 {                    
                     return;
                 }
 
-                operation.Security ??= new List<OpenApiSecurityRequirement>();
+                operation.Security ??= [];
                 operation.Security.Add(
                     new OpenApiSecurityRequirement{
                     {

@@ -295,17 +295,17 @@ namespace Unity.GrantManager.Controllers
             {
                 return ErrorList;
             }
-            foreach (var source in files.Where(file =>
+            foreach (var fileName in files.Where(file =>
             {
-                string FileType = System.IO.Path.GetExtension(file.FileName);
+                string FileType = Path.GetExtension(file.FileName);
                 if (FileType.StartsWith('.'))
                 {
                     FileType = FileType[1..];
                 }
                 return DisallowedFileTypes.Contains(FileType.ToLower());
-            }))
+            }).Select(source => source.FileName))
             {
-                ErrorList.Add(new ValidationResult("Invalid file type for " + source.FileName, [nameof(source.FileName)]));
+                ErrorList.Add(new ValidationResult("Invalid file type for " + fileName, [nameof(fileName)]));
             }
             return ErrorList;
         }
