@@ -38,9 +38,15 @@ public static class PaymentsDbContextModelCreatingExtensions
             b.HasOne(e => e.AccountCoding)
                 .WithMany()
                 .HasForeignKey(x => x.AccountCodingId)
-                .OnDelete(DeleteBehavior.NoAction);                
-          
+                .OnDelete(DeleteBehavior.NoAction);
+
             b.HasIndex(e => e.ReferenceNumber).IsUnique();
+
+            // FSB Notification Tracking
+            b.Property(x => x.FsbNotificationEmailLogId).IsRequired(false);
+            b.Property(x => x.FsbNotificationSentDate).IsRequired(false);
+            b.Property(x => x.FsbApNotified).IsRequired(false).HasMaxLength(10);
+            b.HasIndex(x => x.FsbNotificationEmailLogId);
         });
 
 

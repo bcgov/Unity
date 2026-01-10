@@ -473,6 +473,9 @@ namespace Unity.Payments.PaymentRequests.Notifications
             // Generate email subject per requirement
             string subject = $"Batch # {batchName}";
 
+            // Extract payment IDs for tracking
+            var paymentIds = batchPayments.Select(p => p.Id).ToList();
+
             // Publish email event with attachment
             await _localEventBus.PublishAsync(
                 new EmailNotificationEvent
@@ -492,7 +495,8 @@ namespace Unity.Payments.PaymentRequests.Notifications
                             Content = excelBytes,
                             ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         }
-                    ]
+                    ],
+                    PaymentRequestIds = paymentIds  // Track which payments are in this email
                 }
             );
         }

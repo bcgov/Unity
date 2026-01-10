@@ -63,6 +63,12 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual Guid? AccountCodingId { get; private set; }
         public virtual AccountCoding? AccountCoding { get; set; } = null;
         public virtual string? Note { get; private set; } = null;
+
+        // FSB Notification Tracking
+        public virtual Guid? FsbNotificationEmailLogId { get; private set; }
+        public virtual DateTime? FsbNotificationSentDate { get; private set; }
+        public virtual string? FsbApNotified { get; private set; }
+
         protected PaymentRequest()
         {
             ExpenseApprovals = [];
@@ -173,6 +179,22 @@ namespace Unity.Payments.Domain.PaymentRequests
         public PaymentRequest SetCasResponse(string casResponse)
         {
             CasResponse = casResponse;
+            return this;
+        }
+
+        public PaymentRequest SetFsbNotificationEmailLog(Guid emailLogId, DateTime sentDate)
+        {
+            FsbNotificationEmailLogId = emailLogId;
+            FsbNotificationSentDate = sentDate;
+            FsbApNotified = "Yes";
+            return this;
+        }
+
+        public PaymentRequest ClearFsbNotificationEmailLog()
+        {
+            FsbNotificationEmailLogId = null;
+            FsbNotificationSentDate = null;
+            FsbApNotified = null;
             return this;
         }
 

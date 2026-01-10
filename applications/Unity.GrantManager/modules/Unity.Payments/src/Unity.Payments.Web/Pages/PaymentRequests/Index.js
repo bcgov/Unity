@@ -326,6 +326,7 @@ $(function () {
             getTagsColumn(columnIndex++),
             getNoteColumn(columnIndex++),
             getAccountDistributionColumn(columnIndex++),
+            getFsbNotifiedColumn(columnIndex++),
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -682,6 +683,24 @@ $(function () {
                 } else {
                     return "";
                 }
+            }
+        };
+    }
+
+    function getFsbNotifiedColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:FsbApNotified'),
+            name: 'fsbApNotified',
+            data: 'fsbApNotified',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type, row) {
+                // Show "Yes" badge if field value is "Yes"
+                if (data === 'Yes') {
+                    return '<span class="badge badge-success">Yes</span>';
+                }
+                // Show placeholder for null/empty
+                return nullPlaceholder;
             }
         };
     }
