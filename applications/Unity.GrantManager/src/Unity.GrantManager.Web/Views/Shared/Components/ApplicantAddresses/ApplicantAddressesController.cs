@@ -13,6 +13,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         [Route("Refresh")]
         public async Task<IActionResult> Refresh(Guid applicantId)
         {
+            await Task.CompletedTask;
+
             return ViewComponent("ApplicantAddresses", new { applicantId });
         }
     }
