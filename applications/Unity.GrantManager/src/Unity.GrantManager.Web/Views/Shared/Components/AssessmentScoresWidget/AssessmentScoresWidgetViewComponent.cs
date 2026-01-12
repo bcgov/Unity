@@ -162,39 +162,43 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             foreach (var answer in scoresheetInstance.Answers)
             {
                 humanAnsweredQuestions.Add(answer.QuestionId);
-                foreach (var section in scoresheetDto!.Sections)
+
+                if (scoresheetDto != null)
                 {
-                    var question = section.Fields.FirstOrDefault(q => q.Id == answer.QuestionId);
-                    if (question != null)
+                    foreach (var section in scoresheetDto.Sections)
                     {
-                        question.IsHumanConfirmed = true; // Mark as human confirmed
-                        switch (question.Type)
+                        var question = section.Fields.FirstOrDefault(q => q.Id == answer.QuestionId);
+                        if (question != null)
                         {
-                            case QuestionType.Number:
-                                {
-                                    question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.Numeric)!.ToString();
-                                    break;
-                                }
-                            case QuestionType.YesNo:
-                                {
-                                    question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.YesNo)!.ToString();
-                                    break;
-                                }
-                            case QuestionType.Text:
-                                {
-                                    question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.Text)!.ToString();
-                                    break;
-                                }
-                            case QuestionType.SelectList:
-                                {
-                                    question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.SelectList)!.ToString();
-                                    break;
-                                }
-                            case QuestionType.TextArea:
-                                {
-                                    question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.TextArea)!.ToString();
-                                    break;
-                                }
+                            question.IsHumanConfirmed = true; // Mark as human confirmed
+                            switch (question.Type)
+                            {
+                                case QuestionType.Number:
+                                    {
+                                        question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.Numeric)!.ToString();
+                                        break;
+                                    }
+                                case QuestionType.YesNo:
+                                    {
+                                        question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.YesNo)!.ToString();
+                                        break;
+                                    }
+                                case QuestionType.Text:
+                                    {
+                                        question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.Text)!.ToString();
+                                        break;
+                                    }
+                                case QuestionType.SelectList:
+                                    {
+                                        question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.SelectList)!.ToString();
+                                        break;
+                                    }
+                                case QuestionType.TextArea:
+                                    {
+                                        question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.TextArea)!.ToString();
+                                        break;
+                                    }
+                            }
                         }
                     }
                 }
