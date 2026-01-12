@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Unity.Notifications.Events;
 using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.EventBus;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
@@ -15,7 +15,7 @@ namespace Unity.Payments.Handlers
     /// Handles FSB email sent events to update payment request tracking
     /// </summary>
     public class FsbEmailSentEventHandler :
-        IDistributedEventHandler<FsbEmailSentEto>,
+        ILocalEventHandler<FsbEmailSentEto>,
         ITransientDependency
     {
         private readonly IPaymentRequestRepository _paymentRequestRepository;

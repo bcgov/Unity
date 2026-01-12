@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Unity.Notifications.Events
 {
     /// <summary>
-    /// Distributed event published when FSB payment notification email is successfully sent via CHES
+    /// Local event published when FSB payment notification email is successfully sent via CHES
     /// </summary>
     public class FsbEmailSentEto
     {

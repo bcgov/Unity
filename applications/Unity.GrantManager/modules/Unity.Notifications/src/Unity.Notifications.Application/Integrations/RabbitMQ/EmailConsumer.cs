@@ -16,7 +16,7 @@ using Volo.Abp.Data;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 using Unity.Notifications.Emails;
-using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;
 
@@ -26,7 +26,7 @@ public class EmailConsumer(
     EmailQueueService emailQueueService,
     IUnitOfWorkManager unitOfWorkManager,
     ICurrentTenant currentTenant,
-    IDistributedEventBus distributedEventBus,
+    ILocalEventBus localEventBus,
     ILogger<EmailConsumer> logger
 ) : IQueueConsumer<EmailMessages>
 {
@@ -191,21 +191,21 @@ public class EmailConsumer(
             ? EmailStatus.Sent
             : EmailStatus.Failed;
 
-        // Publish distributed event for successful FSB payment notifications
+        // Publish local event for successful FSB payment notifications
         if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(log.PaymentRequestIds))
-        {            
+        {
             var paymentIds = log.PaymentRequestIds
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(id => Guid.Parse(id))
                 .ToList();
 
-            await distributedEventBus.PublishAsync(new FsbEmailSentEto
+            await localEventBus.PublishAsync(new FsbEmailSentEto
             {
                 EmailLogId = log.Id,
                 PaymentRequestIds = paymentIds,
                 SentDate = DateTime.UtcNow,
                 TenantId = log.TenantId
-            });           
+            });
         }
     }
 
