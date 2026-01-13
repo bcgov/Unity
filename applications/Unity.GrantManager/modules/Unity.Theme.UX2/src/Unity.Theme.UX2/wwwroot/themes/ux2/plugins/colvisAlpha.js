@@ -128,7 +128,7 @@ $.extend(DataTable.ext.buttons, {
                 }
 
                 // Use ColReorder's transpose to find where our original column now lives
-                if (dt.colReorder && dt.colReorder.transpose) {
+                if (dt.colReorder?.transpose) {
                     conf._currentColumnIndex = dt.colReorder.transpose(conf._originalColumnIndex, 'toCurrent');
                 }
                 
