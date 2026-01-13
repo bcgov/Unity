@@ -1,5 +1,4 @@
 $(function () {
-    let lastDroppedLocation = {};
     let customTabIds = [];
     let assessmentInfoIds = [];
     let projectInfoIds = [];
@@ -32,9 +31,9 @@ $(function () {
 
         e.preventDefault(); // prevent full page reload
 
-        var $form = UIElements.worksheetForm;
-        var url = $form.attr('action') || window.location.href;
-        var data = $form.serialize(); // serialize form data
+        let $form = UIElements.worksheetForm;
+        let url = $form.attr('action') || window.location.href;
+        let data = $form.serialize(); // serialize form data
 
         abp.ui.setBusy($form); // optional ABP spinner on form
 
@@ -86,7 +85,6 @@ $(function () {
     PubSub.subscribe(
         'refresh_configure_worksheets',
         () => {
-            lastDroppedLocation = {};
             customTabIds = [];
             assessmentInfoIds = [];
             projectInfoIds = [];
@@ -176,7 +174,6 @@ $(function () {
         let draggedEl = ev.target;
         if (draggedEl.classList + "" != "undefined") {
             draggedEl.classList.add('dragging');
-            lastDragFromLocation = draggedEl.parentNode;
         }
     }
 

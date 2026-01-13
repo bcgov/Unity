@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.UI.Alerts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
@@ -26,6 +25,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
         [HttpPost("update")]
         public async Task<IActionResult> UpdateCustomFields([FromForm] CustomFieldsViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var tabLinks = new List<(Guid worksheetId, string anchor, uint order)>();
 
             ProcessSlotIds(model.CustomTabsSlotIds, FlexConsts.CustomTab, tabLinks);

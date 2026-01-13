@@ -80,7 +80,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 }
                 else if (ApplicationFormVersionDto == null)
                 {
-                    ApplicationFormVersionDto = ApplicationFormVersionDtoList.First();
+                    ApplicationFormVersionDto = ApplicationFormVersionDtoList[0];
                 }
 
                 ApplicationFormVersionDtoString = JsonSerializer.Serialize(ApplicationFormVersionDto);
