@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Unity.Flex.WorksheetLinks;
 using Unity.Flex.Worksheets;
@@ -12,7 +13,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
     {
         public List<SelectListItem> ScoresheetOptionsList { get; set; } = [];
 
-        [Required]
+        [JsonRequired]
         public Guid ChefsFormVersionId { get; set; }
 
         public string? FormName { get; set; }
