@@ -32,7 +32,7 @@ $(function () {
         e.preventDefault(); // prevent full page reload
 
         let $form = UIElements.worksheetForm;
-        let url = $form.attr('action') || window.location.href;
+        let url = $form.attr('action') || location.href;
         let data = $form.serialize(); // serialize form data
 
         abp.ui.setBusy($form); // optional ABP spinner on form
@@ -78,10 +78,6 @@ $(function () {
             });
     }
 
-    function handleBack() {
-        location.href = '/ApplicationForms';
-    }
-
     PubSub.subscribe(
         'refresh_configure_worksheets',
         () => {
@@ -110,72 +106,48 @@ $(function () {
         dragEnd(ev);
     });
 
+    function handleSingleTarget(event, dragOver) {
+        if (!dragOver.classList.contains('single-target')) return false;
+        
+        if (event.target.childElementCount > 0) {
+            event.preventDefault();
+        } else {
+            dropToSingleTarget(event, null, 'published-form');
+        }
+        return true;
+    }
+
+    function handleMultiTarget(event, dragOver) {
+        if (!dragOver.classList.contains('multi-target')) return false;
+
+        const multiTargetHandlers = {
+            'available-worksheets': () => dropToAvailableWorksheets(event, 'published-form', null),
+            'custom-tabs-list': () => dropToCustomTabs(event, null, 'published-form'),
+            'assessment-info-list': () => dropToAssessmentInfo(event, null, 'published-form'),
+            'project-info-list': () => dropToProjectInfo(event, null, 'published-form'),
+            'applicant-info-list': () => dropToApplicantInfo(event, null, 'published-form'),
+            'payment-info-list': () => dropToPaymentInfo(event, null, 'published-form'),
+            'funding-agreement-info-list': () => dropToFundingAgreementInfo(event, null, 'published-form')
+        };
+
+        for (const [className, handler] of Object.entries(multiTargetHandlers)) {
+            if (event.target.classList.contains(className)) {
+                handler();
+                return true;
+            }
+        }
+        return false;
+    }
+
     document.addEventListener('dragover', function (event) {
         let beingDragged = document.querySelector('.dragging');
         let dragOver = event.target;
 
         if (!beingDragged.classList.contains('draggable-card')) return;
 
-        if (dragOver.classList.contains('single-target')
-            && event.target.childElementCount > 0) {
-            event.preventDefault();
-            return;
-        }
-
-        if (dragOver.classList.contains('single-target')
-            && event.target.childElementCount === 0) {
-            dropToSingleTarget(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('available-worksheets')) {
-            dropToAvailableWorksheets(event, 'published-form', null);
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('custom-tabs-list')) {
-            dropToCustomTabs(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('assessment-info-list')) {
-            dropToAssessmentInfo(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('project-info-list')) {
-            dropToProjectInfo(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('applicant-info-list')) {
-            dropToApplicantInfo(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('payment-info-list')) {
-            dropToPaymentInfo(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('funding-agreement-info-list')) {
-            dropToFundingAgreementInfo(event, null, 'published-form');
-        }
+        if (handleSingleTarget(event, dragOver)) return;
+        handleMultiTarget(event, dragOver);
     });
-
-    function beingDragged(ev) {
-        let draggedEl = ev.target;
-        if (draggedEl.classList + "" != "undefined") {
-            draggedEl.classList.add('dragging');
-        }
-    }
 
     function dragEnd(ev) {
         let draggedEl = ev.target;
@@ -206,7 +178,6 @@ $(function () {
         let beingDragged = document.querySelector('.dragging');
         updateDraggedClasses(beingDragged, addClass, removeClass);
         dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
         storeFunction();
     }
 
@@ -282,32 +253,42 @@ $(function () {
         parent.append(items);
     }
 
-    function compareSort(vA, vB) {
-        if (vA < vB) {
-            return -1;
-        } else if (vA > vB) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }
-
     function dropToSingleTarget(event, addClass, removeClass) {
         let dragOver = event.target;
         let beingDragged = document.querySelector('.dragging');
         updateDraggedClasses(beingDragged, addClass, removeClass);
         dragOver.appendChild(beingDragged);
-        lastDroppedLocation = dragOver;
-    }
-
-    function updateDraggedClasses(beingDragged, addClass, removeClass) {
-        if (addClass) {
-            beingDragged.classList.add('published-form');
-        }
-        if (removeClass) {
-            beingDragged.classList.remove('published-form');
-        }
     }
 });
+
+function updateDraggedClasses(beingDragged, addClass, removeClass) {
+    if (addClass) {
+        beingDragged.classList.add('published-form');
+    }
+    if (removeClass) {
+        beingDragged.classList.remove('published-form');
+    }
+}
+
+function compareSort(vA, vB) {
+    if (vA < vB) {
+        return -1;
+    } else if (vA > vB) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+function beingDragged(ev) {
+    let draggedEl = ev.target;
+    if (draggedEl.classList + "" != "undefined") {
+        draggedEl.classList.add('dragging');
+    }
+}
+
+function handleBack() {
+    location.href = '/ApplicationForms';
+}
 
 
