@@ -50,7 +50,7 @@
             <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-mapping" type="button" role="tab">
                 Mapping
             </button>
-            <button class="nav-link" id="nav-custom-fields-tab" data-bs-toggle="tab" data-bs-target="#nav-custom-fields" type="button" role="tab">
+            <button class="nav-link" id="nav-custom-fields-tab" data-bs-to  ggle="tab" data-bs-target="#nav-custom-fields" type="button" role="tab">
                 Scoresheet & Worksheets
             </button>
             @if (await PermissionChecker.IsGrantedAsync(UnitySettingManagementPermissions.UserInterface))
@@ -127,8 +127,8 @@
                     </div>
                     <div class="col-4">
                         <!--Tab list 2-->
-                        <nav>
-                            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                        <nav aria-label="Field mapping tabs">
+                            <div class="nav nav-tabs" role="tablist">
                                 <button class="nav-link active" id="nav-intake-fields-tab" data-bs-toggle="tab"
                                     data-bs-target="#nav-intake-fields" type="button" role="tab">Intake Fields</button>
                                 <button class="nav-link" id="nav-worksheet-fields-tab" data-bs-toggle="tab"
