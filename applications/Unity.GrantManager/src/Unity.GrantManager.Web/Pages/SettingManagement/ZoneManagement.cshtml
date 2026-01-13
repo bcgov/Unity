@@ -16,8 +16,7 @@
             <div class="col-12">
                 <input asp-for="@Model.ProviderKey" />
                 <input asp-for="@Model.ProviderName" />
-                <abp-tabs name="ZonesTabs" tab-style="Tab" class="custom-scroll-container">
-                    <abp-tab title="Application Details" name="tab-@Model.GroupTemplate.Name">
+
                         <div class="w-100">
                             <div class="ps-1">
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
@@ -56,13 +55,12 @@
                                 </div>
                             </div>
                         </div>
-                    </abp-tab>
-                </abp-tabs>
+
             </div>
         </div>
         <div class="row">
             <div class="col-12">
-                <div class="d-flex justify-content-end">
+                <div class="d-flex justify-content-start">
                     <abp-button button-type="Primary" 
                                 text="Save"
                                 icon-type="Other"

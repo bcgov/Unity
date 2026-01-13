@@ -1,11 +1,11 @@
 ﻿$(function () {
-    let worksheetsModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/LinkWorksheetsModal');
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
     let chefsFormId = document.getElementById('chefsFormId').value;
     let formVersionId = document.getElementById('formVersionId').value;
     let intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
+    let worksheetMapColumn = document.querySelector('#worksheet-map-available-fields-column');
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
     let dataTable;
     toastr.options.positionClass = 'toast-top-center';
@@ -65,15 +65,14 @@
         inputSearchBar: $('#search-bar'),
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
-        linkWorksheets: $('#btn-link-worksheets'),
-        uiConfigurationTab: $('#nav-ui-configuration')        
+        uiConfigurationTab: $('#nav-ui-configuration'),        
+        mappingTab: $('#nav-mapping-tab'),
+        customFieldsTab: $('#nav-worksheet-fields-tab'),
+        intakeFieldsTab: $('#nav-intake-fields-tab'),
+        refreshAvailableWorksheetsHidden: $('#refresh_available_worksheets')
     };
 
     init();
-
-    worksheetsModal.onResult(function (_, response) {
-        navigateToVersion(response.responseText.chefsFormVersionId);
-    });
 
     function init() {
         bindUIEvents();
@@ -101,12 +100,8 @@
         UIElements.btnCancel.on('click', handleCancelMapping);
         UIElements.btnClose.on('click', handleCancelMapping);
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
-        UIElements.selectVersionList.on('change', handleSelectVersion);
-        UIElements.linkWorksheets.on('click', handleLinkWorksheets);        
-    }
-
-    function handleLinkWorksheets() {
-        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });
+        UIElements.selectVersionList.on('change', handleSelectVersion);  
+        UIElements.mappingTab.on('click', handleMappingTabClick);
     }
 
     function initializeUIConfiguration() {
@@ -178,20 +173,22 @@
     }
 
     function navigateToVersion(chefsFormVersionGuid) {
-        let searchStr = "&ChefsFormVersionGuid=";
-        let indexOfVersion = location.href.indexOf(searchStr);
-
         abp.notify.success(
             '',
             'Reloading page to new version'
         );
 
         setTimeout(function () {
-            if (indexOfVersion > 0) {
-                location.href = location.href.substring(0, indexOfVersion + searchStr.length) + chefsFormVersionGuid;
-            } else {
-                location.href = location.href + "&ChefsFormVersionGuid=" + chefsFormVersionGuid;
+            const url = new URL(window.location.href);
+
+            // If this really is a GUID, validate it defensively
+            if (!/^[0-9a-fA-F-]{36}$/.test(chefsFormVersionGuid)) {
+                abp.notify.error("The CHEFS Form Version ID is not in a GUID format");
+                return; // or handle error                
             }
+
+            url.searchParams.set("ChefsFormVersionGuid", chefsFormVersionGuid);
+            window.location.href = url.toString();
         }, 500);
     }
 
@@ -224,7 +221,7 @@
         return new DataTable('#ApplicationFormsTable', {
             info: false,
             ordering: false,
-            fixedHeader: true,
+            fixedHeader: false,
             paging: false,
             columnDefs: [
                 {
@@ -301,32 +298,6 @@
             }
         }
         handleSaveMapping(mappingJson);
-        saveScoresheet();
-    }
-
-    function saveScoresheet() {
-        let appFormId = $('#applicationFormId').val();
-        let originalValue = $('#originalScoresheetId').val();
-        let scoresheetId = $('#scoresheet').val();
-        if (originalValue == scoresheetId) {
-            return;
-        }
-        unity.grantManager.applicationForms.applicationForm.saveApplicationFormScoresheet({ applicationFormId: appFormId, scoresheetId: scoresheetId })
-            .then(response => {
-                abp.notify.success(
-                    'Scoresheet is successfully saved.',
-                    'Application Form Scoresheet'
-                );
-                $('#originalScoresheetId').val(scoresheetId);
-                Swal.fire({
-                    title: "Note",
-                    text: "Please note that any changes made to the scoresheet template will not impact assessments that have already been scored using the previous scoresheet template.",
-                    confirmButtonText: 'Ok',
-                    customClass: {
-                        confirmButton: 'btn btn-primary'
-                    }
-                });
-            });
     }
 
     function handleSaveMapping(mappingJson) {
@@ -361,6 +332,7 @@
 
     function handleReset() {
         $(intakeMapColumn).empty();
+        $(worksheetMapColumn).empty();
         let availableChefsFields = JSON.parse(availableChefFieldsString)
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
@@ -383,7 +355,12 @@
                     dragableDiv.className = 'card mapping-field';
                     dragableDiv.setAttribute("draggable", "true");
                     dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}` + intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
-                    intakeMapColumn.appendChild(dragableDiv);
+                    if (intakeFieldJson.IsCustom) {
+                        worksheetMapColumn.appendChild(dragableDiv);
+                        dragableDiv.className += ' custom-field';
+                    } else {
+                        intakeMapColumn.appendChild(dragableDiv);
+                    }
                 }
             }
 
@@ -476,6 +453,10 @@
         if (ev.target.classList.contains('non-drag')) {
             ev.preventDefault();
             return;
+        } else if (ev.target.classList.contains('custom-field')) {
+            UIElements.customFieldsTab.trigger('click');
+        } else if (!ev.target.classList.contains('custom-field')) {
+            UIElements.intakeFieldsTab.trigger('click');
         }
         beingDragged(ev);
     });
@@ -507,14 +488,14 @@
 
     function beingDragged(ev) {
         let draggedEl = ev.target;
-        if (draggedEl.classList + "" != "undefined") {
+        if (draggedEl.classList + "" !== "undefined") {
             draggedEl.classList.add('dragging');
         }
     }
 
     function dragEnd(ev) {
         let draggedEl = ev.target;
-        if (draggedEl.classList + "" != "undefined") {
+        if (draggedEl.classList + "" !== "undefined") {
             draggedEl.classList.remove('dragging');
         }
     }
@@ -565,8 +546,6 @@
         return i;
     }
 
-    const TAB = '    ';
-
     function prettyJson(jsonText) {
         if (!jsonText) {
             return jsonText;
@@ -581,10 +560,8 @@
         for (let i = 0; i < jsonText.length; i++) {
             currChar = jsonText.charAt(i);
 
-            if (currChar == '"') {
-                if (prevChar != '\\') {
-                    doubleQuoteIn = !doubleQuoteIn;
-                }
+            if (currChar === '\"' && prevChar !== '\\') {
+                doubleQuoteIn = !doubleQuoteIn;
             }
 
             switch (currChar) {
@@ -620,8 +597,24 @@
     }
 
     function insertTab(prettyJson, depth) {
+        const TAB = '    ';
         for (let i = 0; i < depth; i++) {
             prettyJson.push(TAB);
         }
-    }    
+    }
+    
+    function handleMappingTabClick() {
+        // Refresh the hidden field with the latest form version ID
+        refreshAvailableWorkSheets = UIElements.refreshAvailableWorksheetsHidden.val();
+        if(refreshAvailableWorkSheets && refreshAvailableWorkSheets !== "undefined" ) {
+            navigateToVersion(refreshAvailableWorkSheets);
+        }
+    }
+
+    PubSub.subscribe(
+        'refresh_available_worksheets',
+        (_, data) => {
+            UIElements.refreshAvailableWorksheetsHidden.val(data.chefsFormVersionId);
+        }
+    );
 });
