@@ -12,7 +12,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
     {
         public List<SelectListItem> ScoresheetOptionsList { get; set; } = [];
 
-        public Guid? ChefsFormVersionId { get; set; }
+        [Required]
+        public Guid ChefsFormVersionId { get; set; }
 
         public string? FormName { get; set; }
         public string? Version { get; set; }
