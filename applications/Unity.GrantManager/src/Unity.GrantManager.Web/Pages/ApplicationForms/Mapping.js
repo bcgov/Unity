@@ -560,7 +560,7 @@
         for (let i = 0; i < jsonText.length; i++) {
             currChar = jsonText.charAt(i);
 
-            if (currChar === '\"' && prevChar !== '\\') {
+            if (currChar === '"' && prevChar !== '\\') {
                 doubleQuoteIn = !doubleQuoteIn;
             }
 
@@ -605,7 +605,7 @@
     
     function handleMappingTabClick() {
         // Refresh the hidden field with the latest form version ID
-        refreshAvailableWorkSheets = UIElements.refreshAvailableWorksheetsHidden.val();
+        let refreshAvailableWorkSheets = UIElements.refreshAvailableWorksheetsHidden.val();
         if(refreshAvailableWorkSheets && refreshAvailableWorkSheets !== "undefined" ) {
             navigateToVersion(refreshAvailableWorkSheets);
         }
