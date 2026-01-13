@@ -173,20 +173,22 @@
     }
 
     function navigateToVersion(chefsFormVersionGuid) {
-        let searchStr = "&ChefsFormVersionGuid=";
-        let indexOfVersion = location.href.indexOf(searchStr);
-
         abp.notify.success(
             '',
             'Reloading page to new version'
         );
 
         setTimeout(function () {
-            if (indexOfVersion > 0) {
-                location.href = location.href.substring(0, indexOfVersion + searchStr.length) + chefsFormVersionGuid;
-            } else {
-                location.href = location.href + "&ChefsFormVersionGuid=" + chefsFormVersionGuid;
+            const url = new URL(window.location.href);
+
+            // If this really is a GUID, validate it defensively
+            if (!/^[0-9a-fA-F-]{36}$/.test(chefsFormVersionGuid)) {
+                abp.notify.error("The CHEFS Form Version ID is not in a GUID format");
+                return; // or handle error                
             }
+
+            url.searchParams.set("ChefsFormVersionGuid", chefsFormVersionGuid);
+            window.location.href = url.toString();
         }, 500);
     }
 
