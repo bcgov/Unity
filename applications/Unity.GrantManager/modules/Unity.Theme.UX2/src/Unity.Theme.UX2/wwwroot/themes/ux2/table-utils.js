@@ -172,6 +172,94 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
 }
 
 /**
+ * Restores the filter state for a single column in the DataTable.
+ * Extracts saved search values from state data and applies them to filter inputs and column searches.
+ *
+ * @param {HTMLElement} columnHeader - The header element being processed
+ * @param {number} displayIdx - Display index of the column
+ * @param {Object} settings - DataTables settings object
+ * @param {Object} data - Saved state data
+ * @param {DataTable.Api} dtApi - DataTables API instance
+ * @param {jQuery} $filterCells - jQuery collection of filter row cells
+ */
+function restoreColumnFilterState(columnHeader, displayIdx, settings, data, dtApi, $filterCells) {
+    let colName = $(columnHeader).attr('data-name');
+
+    if (colName) {
+        // Find the column index by name in aoColumns (original structure)
+        let originalIdx = settings.aoColumns.findIndex(
+            (col) => col.name === colName
+        );
+
+        let origIdx = settings.aoColumns.find(
+            (col) => col.name === colName
+        ).index;
+        console.log(
+            'settings.aoColumns',
+            settings.aoColumns
+        );
+        console.log('origIdx Real', origIdx);
+        console.log('originalIdx', originalIdx);
+        if (
+            originalIdx !== -1 &&
+            data.columns[originalIdx]
+        ) {
+            // Get the search value from saved state for this column
+            let savedColTest = data.columns.find(
+                (col) => col.name === colName
+            );
+            console.log(
+                'savedColTest',
+                savedColTest
+            );
+
+            let savedCol =
+                data.columns[originalIdx];
+
+            let searchValue =
+                savedCol?.search?.search || '';
+
+            // Find the filter input at this DISPLAY position
+            let $filterCell =
+                $filterCells.eq(displayIdx);
+            let $input = $filterCell.find(
+                'input.custom-filter-input'
+            );
+
+            console.log('$filterCell', $filterCell);
+            if ($input.length && searchValue) {
+                // Update FilterRow UI
+                $input.val(searchValue);
+
+                //Apply search to DataTables API using the CURRENT column index
+                let currentColIdx = dtApi
+                    .column(displayIdx + ':visible')
+                    .index();
+                console.log(
+                    'currentColIdx',
+                    currentColIdx
+                );
+                console.log(
+                    'displayIdx',
+                    displayIdx
+                );
+                if (
+                    currentColIdx !== undefined &&
+                    currentColIdx !== -1
+                ) {
+                    dtApi
+                        .column(currentColIdx)
+                        .search(searchValue);
+                    console.log(
+                        `Applied search to col ${currentColIdx} (${colName}): "${searchValue}"`
+                    );
+                }
+            }
+        }
+    }
+}
+
+/**
  * Initializes a DataTable with comprehensive configuration including filtering, column management,
  * state persistence, and custom button controls.
  *
@@ -179,7 +267,6 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
  * @param {jQuery} options.dt - jQuery element to initialize as DataTable
  * @param {Array<string>} [options.defaultVisibleColumns=[]] - Column names visible by default
  * @param {Array<Object>} options.listColumns - Column definitions with name, data, title, render, etc.
- * @param {number} options.maxRowsPerPage - Maximum rows before hiding pagination controls
  * @param {number} options.defaultSortColumn - Index of column to sort by default
  * @param {string} options.dataEndpoint - API endpoint URL for fetching table data
  * @param {Function|Object} options.data - Data source or function returning request parameters
@@ -189,7 +276,6 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
  * @param {boolean} options.pagingEnabled - Enable pagination
  * @param {boolean} options.reorderEnabled - Enable column reordering
  * @param {Object} options.languageSetValues - DataTables language/localization settings
- * @param {string} options.dataTableName - Unique identifier for the table
  * @param {string} options.dynamicButtonContainerId - DOM ID where buttons are rendered
  * @param {boolean} [options.useNullPlaceholder=false] - Replace nulls with placeholder character
  * @param {string} [options.externalSearchId='search'] - ID of external search input element
@@ -212,7 +298,6 @@ function initializeDataTable(options) {
         dt,
         defaultVisibleColumns = [],
         listColumns,
-        maxRowsPerPage,
         defaultSortColumn,
         dataEndpoint,
         data,
@@ -222,7 +307,6 @@ function initializeDataTable(options) {
         pagingEnabled,
         reorderEnabled,
         languageSetValues,
-        dataTableName,
         dynamicButtonContainerId,
         useNullPlaceholder = false,
         externalSearchId = 'search',
@@ -406,81 +490,7 @@ function initializeDataTable(options) {
 
                             // Iterate through each visible column in current display order
                             $headers.each(function (displayIdx) {
-                                let colName = $(this).attr('data-name');
-
-                                if (colName) {
-                                    // Find the column index by name in aoColumns (original structure)
-                                    let originalIdx =
-                                        settings.aoColumns.findIndex(
-                                            (col) => col.name === colName
-                                        );
-
-                                    let origIdx = settings.aoColumns.find(
-                                        (col) => col.name === colName
-                                    ).index;
-                                    console.log(
-                                        'settings.aoColumns',
-                                        settings.aoColumns
-                                    );
-                                    console.log('origIdx Real', origIdx);
-                                    console.log('originalIdx', originalIdx);
-                                    if (
-                                        originalIdx !== -1 &&
-                                        data.columns[originalIdx]
-                                    ) {
-                                        // Get the search value from saved state for this column
-                                        let savedColTest = data.columns.find(
-                                            (col) => col.name === colName
-                                        );
-                                        console.log(
-                                            'savedColTest',
-                                            savedColTest
-                                        );
-
-                                        let savedCol =
-                                            data.columns[originalIdx];
-
-                                        let searchValue =
-                                            savedCol?.search?.search || '';
-
-                                        // Find the filter input at this DISPLAY position
-                                        let $filterCell =
-                                            $filterCells.eq(displayIdx);
-                                        let $input = $filterCell.find(
-                                            'input.custom-filter-input'
-                                        );
-
-                                        console.log('$filterCell', $filterCell);
-                                        if ($input.length && searchValue) {
-                                            // Update FilterRow UI
-                                            $input.val(searchValue);
-
-                                            //Apply search to DataTables API using the CURRENT column index
-                                            let currentColIdx = dtApi
-                                                .column(displayIdx + ':visible')
-                                                .index();
-                                            console.log(
-                                                'currentColIdx',
-                                                currentColIdx
-                                            );
-                                            console.log(
-                                                'displayIdx',
-                                                displayIdx
-                                            );
-                                            if (
-                                                currentColIdx !== undefined &&
-                                                currentColIdx !== -1
-                                            ) {
-                                                dtApi
-                                                    .column(currentColIdx)
-                                                    .search(searchValue);
-                                                console.log(
-                                                    `Applied search to col ${currentColIdx} (${colName}): "${searchValue}"`
-                                                );
-                                            }
-                                        }
-                                    }
-                                }
+                                restoreColumnFilterState(this, displayIdx, settings, data, dtApi, $filterCells);
                             });
 
                             // Update filter button state

@@ -20,7 +20,7 @@ namespace Unity.Flex.Domain.ScoresheetInstances
 
         // Correlation
         public virtual Guid CorrelationId { get; private set; }
-        public virtual string CorrelationProvider { get; private set; } = string.Empty;
+        public virtual string CorrelationProvider { get; private set; }
 
         public Guid? TenantId { get; set; }
 

@@ -22,13 +22,11 @@
 @section scripts
 {
     <abp-script src="/Pages/ApplicationForms/Mapping.js" />
-    <abp-script src="/Pages/ApplicationForms/LinkWorksheetsModal.js" />
     <abp-script src="/Pages/SettingManagement/zone-management.js" />
 }
 
 @section styles {
     <abp-style src="/Pages/ApplicationForms/Mapping.css" />
-    <abp-style src="/Pages/ApplicationForms/LinkWorksheetsModal.css" />
 }
 
 <input type="hidden" id="intakeProperties" value="@Model.IntakeProperties" />
@@ -47,34 +45,48 @@
         </div>
     </div>
     <!--Tab list -->
-    <nav>
+    <nav aria-label="Application form configuration tabs">
         <div class="nav nav-tabs" id="nav-tab" role="tablist">
-            <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-mapping" type="button" role="tab">Mapping</button>
+            <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-mapping" type="button" role="tab">
+                Mapping
+            </button>
+            <button class="nav-link" id="nav-custom-fields-tab" data-bs-to  ggle="tab" data-bs-target="#nav-custom-fields" type="button" role="tab">
+                Scoresheet & Worksheets
+            </button>
             @if (await PermissionChecker.IsGrantedAsync(UnitySettingManagementPermissions.UserInterface))
             {
-                <button class="nav-link" id="nav-ui-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-ui-configuration" type="button" role="tab">UI Configuration</button>
+                <button class="nav-link" id="nav-ui-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-ui-configuration" type="button" role="tab">
+                    User Interface
+                </button>
             }
             @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
             {
-                <button class="nav-link" id="nav-payment-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-configuration" type="button" role="tab">Payment Configuration</button>
+                <button class="nav-link" id="nav-payment-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-configuration" type="button" role="tab">
+                    Payment
+                </button>
             }
             @if (await FeatureChecker.IsEnabledAsync("Unity.Reporting")
                         && await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Default))
             {
-                <button class="nav-link" id="nav-reporting-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-reporting-configuration" type="button" role="tab">Reporting Configuration</button>
+                <button class="nav-link" id="nav-reporting-configuration-tab" data-bs-toggle="tab"
+                    data-bs-target="#nav-reporting-configuration" type="button" role="tab">Reporting Configuration</button>
             }
-            <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab" data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
+            <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab"
+                data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
         </div>
     </nav>
     <div class="tab-content unt-tab-content" id="nav-tabContent">
         <!--Tab Content: Mapping-->
         <div class="tab-pane fade show active" id="nav-mapping" role="tabpanel" aria-labelledby="nav-mapping-tab">
+            <input type="hidden" id="refresh_available_worksheets" value="" />
             <div class="row">
-                <div class="col-4 p-3">
+                <div class="col-4">
                     <label for="applicationFormVersion" class="form-label">Version:</label>
                     <div class="select-icon-wrapper">
                         <select class="form-select form-control" id="applicationFormVersion" name="Version">
-                            @foreach (var applicationFormVersionDto in Model?.ApplicationFormVersionDtoList ?? new List<ApplicationFormVersionDto> { })
+                            @foreach (var applicationFormVersionDto in Model?.ApplicationFormVersionDtoList ?? new
+                                                        List<ApplicationFormVersionDto>
+                            { })
                             {
                                 @if (@applicationFormVersionDto.ChefsFormVersionGuid + "" != "")
                                 {
@@ -84,7 +96,9 @@
                                         selected = true;
                                     }
 
-                                    <option value="@applicationFormVersionDto.ChefsFormVersionGuid" selected="@(selected)"> @applicationFormVersionDto.Version - @applicationFormVersionDto.ChefsFormVersionGuid</option>
+                                    <option value="@applicationFormVersionDto.ChefsFormVersionGuid" selected="@(selected)">
+                                        @applicationFormVersionDto.Version - @applicationFormVersionDto.ChefsFormVersionGuid
+                                    </option>
                                 }
                             }
                         </select>
@@ -97,50 +111,31 @@
                 <div class="col-4 p-3">
                     <label for="chefsFormVersionId" class="form-label">Form Version ID:</label>
                     <div class="input-button-wrapper ">
-                        <input id="chefsFormVersionId" class="form-control input-width" type="text" value="@Model?.ChefsFormVersionGuid">
-                        <abp-button id="btn-sync"
-                                    text="Sync"
-                                    disabled="false"
-                                    icon-type="Other"
-                                    icon="fl fl-synch"
-                                    class="btn unt-btn-success btn-success"
-                                    abp-tooltip="Call out to CHEFS and bring back all the Available CHEFS form Fields. This action requires a Form Version ID to be entered"
-                                    button-type="Success" />
+                        <input id="chefsFormVersionId" class="form-control input-width" type="text"
+                            value="@Model?.ChefsFormVersionGuid">
+                        <abp-button id="btn-sync" text="Sync" disabled="false" icon-type="Other" icon="fl fl-synch"
+                            class="btn unt-btn-success btn-success"
+                            abp-tooltip="Call out to CHEFS and bring back all the Available CHEFS form Fields. This action requires a Form Version ID to be entered"
+                            button-type="Success" />
                     </div>
                 </div>
             </div>
-
-            @if (Model?.FlexEnabled == true)
-            {
-                <div class="row">
-                    <div class="col-4">
-                        <input type="hidden" id="originalScoresheetId" value="@Model.ScoresheetId" />
-                        <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
-                            <option value="">Please choose...</option>
-                        </abp-select>
-                    </div>
-                    <div class="col-4">
-                        <div class="btn-label-wrapper">
-                            <label for="btn-link-worksheets" class="form-label">Custom Fields:</label>
-                            <abp-button id="btn-link-worksheets"
-                                        icon-type="Other"
-                                        icon="fl fl-link"
-                                        text="Link Worksheets"
-                                        class="btn unt-btn-primary btn-primary"
-                                        abp-tooltip="Link custom field worksheets for the currently selected form version."
-                                        button-type="Primary" />
-                        </div>
-                    </div>
-                </div>
-            }
-
             <div class="unt-mapping-container">
                 <div class="row">
                     <div class="col-8">
-                        <div class="label table-title">Chefs Available Fields</div>
+                        <div class="label table-title">Chefs Fields</div>
                     </div>
                     <div class="col-4">
-                        <div class="title intake-mapping-title row label table-title">Available Intake Mapping Fields</div>
+                        <!--Tab list 2-->
+                        <nav aria-label="Field mapping tabs">
+                            <div class="nav nav-tabs" role="tablist">
+                                <button class="nav-link active" id="nav-intake-fields-tab" data-bs-toggle="tab"
+                                    data-bs-target="#nav-intake-fields" type="button" role="tab">Intake Fields</button>
+                                <button class="nav-link" id="nav-worksheet-fields-tab" data-bs-toggle="tab"
+                                    data-bs-target="#nav-worksheet-fields" type="button" role="tab">Custom
+                                    Fields</button>
+                            </div>
+                        </nav>
                     </div>
                 </div>
                 <div class="row">
@@ -159,49 +154,66 @@
                         </div>
                     </div>
                     <div class="col-4">
-                        <div class="intake-mapping-content">
-                            <div id="intake-map-available-fields-column" class="col" style="overflow-y:scroll"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <div class="buttons">
-                            <div class="buttons-div">
-                                <abp-button id="btn-save"
-                                            text="Save"
-                                            icon-type="Other"
-                                            icon="fl fl-save"
-                                            class="btn unt-btn-primary btn-primary mx-1"
-                                            style="pointer-events: all;"
-                                            abp-tooltip="Save the Scoresheet and the Mapping of CHEFS fields to Unity Fields"
-                                            button-type="Primary" />
-                                <abp-button id="btn-edit"
-                                            text="Edit Mapping"
-                                            icon-type="Other"
-                                            data-target="#editMappingModal"
-                                            icon="fl fl-edit"
-                                            class="btn unt-btn-primary btn-primary mx-1"
-                                            data-toggle="modal"
-                                            style="pointer-events: all;"
-                                            abp-tooltip="Edit the Mapping JSON Manually"
-                                            button-type="Primary" />
-                                <abp-button id="btn-reset"
-                                            text="Reset Mapping"
-                                            icon-type="Other"
-                                            icon="fl fl-undo"
-                                            class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                                            abp-tooltip="This button resets the mapping to the last saved state" />
-                                <abp-button id="btn-back"
-                                            text="Back"
-                                            class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                                            abp-tooltip="Navigate back to the Forms" />
+                        <div class="tab-content unt-tab-content" id="nav-tabContent">
+                            <!--Tab Content: Mapping-->
+                            <div class="tab-pane fade show active" id="nav-intake-fields" role="tabpanel"
+                                aria-labelledby="nav-intake-fields-tab">
+
+                                <div class="intake-mapping-content">
+                                    <div id="intake-map-available-fields-column" class="col" style="overflow-y:scroll">
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Tab Content: Worksheet Fields-->
+                            <div class="tab-pane fade" id="nav-worksheet-fields" role="tabpanel"
+                                aria-labelledby="nav-worksheet-fields-tab">
+                                <div class="worksheet-mapping-content">
+                                    <div id="worksheet-map-available-fields-column" class="col"
+                                        style="overflow-y:scroll">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="buttons">
+                        <div class="buttons-div">
+                            <abp-button id="btn-save" text="Save" icon-type="Other"
+                                class="btn unt-btn-primary btn-primary mx-1" style="pointer-events: all;"
+                                abp-tooltip="Save the Scoresheet and the Mapping of CHEFS fields to Unity Fields"
+                                button-type="Primary" />
+                            <abp-button id="btn-edit" text="Edit Mapping" icon-type="Other" data-target="#editMappingModal"
+                                icon="fl fl-edit" class="btn unt-btn-primary btn-primary mx-1" data-toggle="modal"
+                                style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
+                                button-type="Primary" />
+                            <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
+                                class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                                abp-tooltip="This button resets the mapping to the last saved state" />
+                            <abp-button id="btn-back" text="Back"
+                                class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                                abp-tooltip="Navigate back to the Forms" />
+                        </div>
+                    </div>
+                </div>
+            </div>        
+        </div>      
+
+        <!--Tab Content: Worksheets-->
+        @if (Model?.FlexEnabled == true)
+        {
+            <div class="tab-pane fade" id="nav-custom-fields" role="tabpanel" aria-labelledby="nav-custom-fields-tab">
+                <div id="customFieldsWidget">
+                    @await Component.InvokeAsync("CustomFields", 
+                        new {   formVersionId = @Model?.ApplicationFormVersionDto?.ChefsFormVersionGuid, 
+                                formName = @Model?.ApplicationFormDto?.ApplicationFormName 
+                            }
+                    )
+                </div>
+            </div>
+        }
 
         <!--Tab Content: UI Configuration loaded by initializeUIConfiguration-->
         <div class="tab-pane fade" id="nav-ui-configuration" role="tabpanel" aria-labelledby="nav-ui-configuration-tab"></div>
@@ -229,29 +241,24 @@
         }
 
         <!--Tab Content: Other Configuration-->
-        <div class="tab-pane fade" id="nav-other-configuration" role="tabpanel" aria-labelledby="nav-other-configuration-tab">
-            @await Component.InvokeAsync(typeof(ApplicationFormConfigWidget), new { configType = "Other", applicationForm = Model?.ApplicationFormDto })
+        <div class="tab-pane fade" id="nav-other-configuration" role="tabpanel"
+            aria-labelledby="nav-other-configuration-tab">
+            @await Component.InvokeAsync(typeof(ApplicationFormConfigWidget), new { configType = "Other",
+            applicationForm = Model?.ApplicationFormDto })
         </div>
     </div>
 
     <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">
         <abp-modal-header title="Edit Mapping JSON"></abp-modal-header>
         <abp-modal-body>
-            <textarea id="jsonText" rows="15" cols="80">@Model?.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
+            <textarea id="jsonText" rows="15"
+                cols="80">@Model?.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
         </abp-modal-body>
         <abp-modal-footer>
-            <abp-button id="btn-save-mapping"
-                        text="Save Mapping JSON"
-                        icon-type="Other"
-                        class="btn unt-btn-primary btn-primary"
-                        abp-tooltip="Save the Mapping JSON"
-                        button-type="Primary" />
-            <abp-button id="btn-cancel-mapping"
-                        text="Cancel"
-                        icon-type="Other"
-                        class="btn unt-btn-link btn-link"
-                        abp-tooltip="Cancel the Edit"
-                        button-type="Secondary" />
+            <abp-button id="btn-save-mapping" text="Save Mapping JSON" icon-type="Other"
+                class="btn unt-btn-primary btn-primary" abp-tooltip="Save the Mapping JSON" button-type="Primary" />
+            <abp-button id="btn-cancel-mapping" text="Cancel" icon-type="Other" class="btn unt-btn-link btn-link"
+                abp-tooltip="Cancel the Edit" button-type="Secondary" />
         </abp-modal-footer>
     </abp-modal>
 </div>

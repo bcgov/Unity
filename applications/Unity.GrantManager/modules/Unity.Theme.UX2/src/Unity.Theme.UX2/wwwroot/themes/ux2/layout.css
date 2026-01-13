@@ -166,12 +166,18 @@ body {
     border-bottom: none;
 }
 
-.dt-container table th:last-child {
-    border-right: none;
-}
-
 .dt-container table {
     font-size: var(--bc-font-size-sm);
+}
+
+.cstm-save-view .dt-button-collection .dropdown-menu.show
+.dtsr-removeAllStates + .dt-button-spacer.bar.divider {
+    border-bottom: 1px solid var(--bc-colors-grey-dividers) !important;
+}
+
+.cstm-save-view .dt-button-collection .dropdown-menu.show span.dtsr-emptyStates {
+    padding-bottom: 3px !important;
+    padding-top: 7px !important;
 }
 
 .dt-container table th:first-child {
@@ -179,6 +185,7 @@ body {
 }
 
 .dt-container table th:last-child {
+    border-right: none;
     border-top-right-radius: 10px;
 }
 

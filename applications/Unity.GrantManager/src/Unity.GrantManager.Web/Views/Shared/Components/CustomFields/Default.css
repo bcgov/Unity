@@ -1,10 +1,9 @@
-﻿.drop-layout {
+.drop-layout {
     height: 464px;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    align-content: center;
-    align-items: center;
+    min-height: fit-content;
 }
 
 .published-forms-col {
@@ -29,6 +28,7 @@
     height: 100%;
     max-height: 400px;
     overflow-y: auto;
+    min-height: fit-content;
 }
 
 .single-slot {
@@ -40,16 +40,27 @@
     padding: 2px;
 }
 
+
 .multi-slot {
-    min-height: 100px;
-    overflow-y: scroll;
+    min-height: 47px;
+    height: auto;          /* allows container to naturally grow with content */
+    overflow-y: auto;      /* enables scrolling if content exceeds container height */
     width: 98%;
     border: 1px solid gray;
     margin: 0px 5px 5px;
     border-radius: 5px;
+    resize: vertical;      /* user can resize down or up manually */
+    display: flex;         /* children stack */
+    flex-direction: column;
+    gap: 10px;             /* spacing between items */
+    padding: 10px;
 }
 
-.slot-title {
+.multi-slot:has(*) {
+    min-height: fit-content;
+}
+
+.form-label .slot-title {
     margin-left: 5px;
     font-weight: bold;
     color: var(--bc-colors-blue-background, #38598A);
@@ -69,7 +80,10 @@
     opacity: 0.5;
 }
 
-
+.scoresheets {
+    display: block;
+    margin-top: 12px;
+}
 .save-note {
     border: 2px solid;
     border-color: var(--bc-colors-blue-primary);
@@ -77,4 +91,13 @@
     padding-top: 1rem;
     background-color: var(--bc-colors-blue-hover);
     border-radius: 5px;
+}
+
+.button-row {
+    display: block;
+}
+
+.custom-fields-container {
+    overflow: auto;
+    height: calc(100vh - 250px);
 }

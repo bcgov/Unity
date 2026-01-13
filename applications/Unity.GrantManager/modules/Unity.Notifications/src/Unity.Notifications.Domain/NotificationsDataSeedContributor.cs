@@ -74,7 +74,7 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
         var emailGroups = new List<EmailGroupDto>
         {
             new EmailGroupDto  {Name = "FSB-AP", Description = "This group manages the recipients for PO-related payments, which will be sent to FSB-AP to update contracts and initiate payment creation.",Type = "static"},
-            new EmailGroupDto  {Name = "Payments", Description = "This group manages the recipients for payment notifications, such as failures or errors",Type = "dynamic"}
+            new EmailGroupDto  {Name = "Payments", Description = "This group manages the recipients for payment notifications, such as failures or errors",Type = "static"}
         };
         try
         {

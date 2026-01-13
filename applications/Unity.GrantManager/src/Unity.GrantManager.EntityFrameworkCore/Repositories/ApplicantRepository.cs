@@ -42,9 +42,12 @@ namespace Unity.GrantManager.Repositories
             string unityApplicantNameNormalized = unityApplicantName.Trim().ToLower();  // Normalize the input
 
             var dbContext = await GetDbContextAsync();
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+            // EF Core cannot translate StringComparison overloads to SQL, so we use ToLower() for database compatibility
             return await dbContext.Applicants
                 .FirstOrDefaultAsync(a => a.ApplicantName != null &&
                                           a.ApplicantName.ToLower() == unityApplicantNameNormalized);
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
         }
         public async Task<List<Applicant>> GetApplicantsWithUnityApplicantIdAsync()

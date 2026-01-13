@@ -1561,6 +1561,44 @@ $(function () {
         });
     });
 
+    // Function to update delete modal content based on current view state
+    function updateDeleteModalContent(correlationId, callback) {
+        // Get current configuration to check for view name
+        abp.ajax({
+            url: abp.appPath + 'ReportingConfiguration/GetConfiguration',
+            type: 'GET',
+            data: {
+                correlationId: correlationId,
+                correlationProvider: getCorrelationProvider()
+            }
+        }).done(function (result) {
+            const viewName = result.viewName;
+            const $deleteViewListItem = $('#deleteViewListItem');
+            
+            if (viewName && viewName.trim() !== '') {
+                // Update the view name in the list item and show it
+                $deleteViewListItem.html(`The associated database view (${viewName})`);
+                $deleteViewListItem.show();
+            } else {
+                // Hide the view deletion item if no view exists
+                $deleteViewListItem.hide();
+            }
+            
+            // Call the callback to show the modal
+            if (callback) {
+                callback();
+            }
+        }).fail(function (error) {
+            // If we can't get the configuration, hide the view item and show modal anyway
+            $('#deleteViewListItem').hide();
+            
+            // Call the callback to show the modal
+            if (callback) {
+                callback();
+            }
+        });
+    }
+
     // Delete configuration button
     $('#btn-delete-report-configuration').on('click', function () {
         const correlationId = getCurrentCorrelationId();
@@ -1570,9 +1608,12 @@ $(function () {
             return;
         }
 
-        // Show delete confirmation modal
-        const modal = new bootstrap.Modal(document.getElementById('deleteConfigurationModal'));
-        modal.show();
+        // Check for view existence and update modal content before showing
+        updateDeleteModalContent(correlationId, function() {
+            // Show delete confirmation modal
+            const modal = new bootstrap.Modal(document.getElementById('deleteConfigurationModal'));
+            modal.show();
+        });
     });
 
     // Handle delete confirmation

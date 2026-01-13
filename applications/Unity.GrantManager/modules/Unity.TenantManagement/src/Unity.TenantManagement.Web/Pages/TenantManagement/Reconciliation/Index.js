@@ -1,7 +1,6 @@
 $(function () {
 
     const l = abp.localization.getResource('GrantManager');
-    let dt = $('#ReconciliationTable');
     let submissions = [];
     unity.grantManager.intakes.submission.getSubmissionsList(true).then(function (pagedResultDto) { 
         submissions = pagedResultDto.items.filter(x => x.formSubmissionStatusCode === "SUBMITTED");

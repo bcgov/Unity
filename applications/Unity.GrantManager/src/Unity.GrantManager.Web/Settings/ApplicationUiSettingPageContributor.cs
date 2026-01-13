@@ -7,14 +7,10 @@ namespace Unity.GrantManager.Web.Settings;
 
 public class ApplicationUiSettingPageContributor : SettingPageContributorBase
 {
-    public ApplicationUiSettingPageContributor()
-    {
-        RequiredFeatures(SettingManagementFeatures.Enable);
-        RequiredPermissions(UnitySettingManagementPermissions.UserInterface);
-    }
-
     public override Task ConfigureAsync(SettingPageCreationContext context)
     {
+        RequiredFeatures(SettingManagementFeatures.Enable);
+        RequiredPermissions(UnitySettingManagementPermissions.UserInterface);        
         return Task.CompletedTask;
     }
 }

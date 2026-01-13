@@ -231,6 +231,7 @@ public class EmailNotificationService(
     /// </summary>
     /// <param name="emailLog">The email log containing email details</param>
     /// <returns>HttpResponseMessage indicating the result of the operation</returns>
+    [RemoteService(false)]
     public async Task<HttpResponseMessage> SendEmailNotification(EmailLog emailLog)
     {
         try

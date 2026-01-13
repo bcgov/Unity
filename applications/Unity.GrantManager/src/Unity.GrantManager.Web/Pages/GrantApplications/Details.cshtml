@@ -29,6 +29,7 @@
     PageLayout.Content.Title = L["Grants"].Value;
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
+    var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
 }
 @section styles
 {
@@ -63,19 +64,10 @@
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 @functions
 {
-    public string GetInitials(string name)
+    public static string GetInitials(string name)
     {
-        // StringSplitOptions.RemoveEmptyEntries excludes empty spaces returned by the Split method
-        string[] nameSplit = name.Split(new string[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
-
-        string initials = "";
-
-        foreach (string item in nameSplit)
-        {
-            initials += item.Substring(0, 1).ToUpper();
-        }
-
-        return initials;
+        var nameParts = name.Split(new[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(nameParts.Select(part => char.ToUpper(part[0])));
     }
 
     public async Task<bool> IsZoneVisible(string zoneName) => Model.ZoneStateSet.Contains(zoneName) && await PermissionChecker.IsGrantedAsync(zoneName);
@@ -246,12 +238,12 @@
                 <li class="nav-item">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
-                @if (notificationsFeatureEnabled && readEmailGranted)
-                {
-                    <li class="nav-item">
-                        <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
-                    </li>
-                }
+            @if (notificationsFeatureEnabled && readEmailGranted)
+            {
+                <li class="nav-item">
+                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
+                </li>
+            }
                 <li class="nav-item">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                 </li>
@@ -264,9 +256,12 @@
                 <li class="nav-item">
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
                 </li>
+            @if (aiApplicationAnalysisEnabled)
+            {                
                 <li class="nav-item">
                     <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(5)</button>
                 </li>
+            }
             </ul>
 
             <div class="tab-content details-scrollable" id="myTabContent">

@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Web.Identity
         {
             if (validatedTokenContext.Principal != null)
             {
-                var idpSplitter = validatedTokenContext.SecurityToken.Subject.IndexOf("@");
+                var idpSplitter = validatedTokenContext.SecurityToken.Subject.IndexOf('@');
                 var userIdentifier = validatedTokenContext.SecurityToken.Subject[..(idpSplitter == -1 ? validatedTokenContext.SecurityToken.Subject.Length : idpSplitter)].ToUpper();
                 var userTenantAccounts = await userTenantsAppService.GetUserTenantsAsync(userIdentifier);
                 var idp = validatedTokenContext.SecurityToken.Claims.FirstOrDefault(s => s.Type == UnityClaimsTypes.IdpProvider)?.Value;

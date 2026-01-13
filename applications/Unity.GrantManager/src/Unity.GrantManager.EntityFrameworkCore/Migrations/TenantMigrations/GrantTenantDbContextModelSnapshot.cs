@@ -2649,6 +2649,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("PaymentRequestIds")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasColumnType("text");
@@ -3428,6 +3432,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<string>("FsbApNotified")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<Guid?>("FsbNotificationEmailLogId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FsbNotificationSentDate")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
                         .HasColumnType("text");
@@ -3500,6 +3514,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("AccountCodingId");
+
+                    b.HasIndex("FsbNotificationEmailLogId");
 
                     b.HasIndex("ReferenceNumber")
                         .IsUnique();

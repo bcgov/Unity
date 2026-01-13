@@ -9,11 +9,8 @@ namespace Unity.Flex.Scoresheets
     public class ScoresheetSectionDto : ExtensibleEntityDto<Guid>
     {
         public virtual string Name { get; private set; } = string.Empty;
-        public virtual uint Order { get; private set; }      
-        public virtual Guid ScoresheetId { get; }
-
+        public virtual uint Order { get; private set;} = 0;
+        public virtual Guid ScoresheetId { get; } 
         public virtual Collection<QuestionDto> Fields { get; private set; } = [];
-
-
     }
 }

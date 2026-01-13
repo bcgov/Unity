@@ -9,7 +9,7 @@ $(document).ready(function () {
 
     // Handle tab switching animations
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-        var targetTab = $(e.target).attr('data-bs-target');
+        let targetTab = $(e.target).attr('data-bs-target');
         $(targetTab).addClass('fade-in-load visible');
     });
 
@@ -35,8 +35,8 @@ function initializeApplicantDetailsPage() {
     }, 500);
 
     // Initialize tooltips if any
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 }
