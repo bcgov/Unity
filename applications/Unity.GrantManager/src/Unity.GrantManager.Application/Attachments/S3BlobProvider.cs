@@ -3,7 +3,6 @@ using Amazon.S3;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -151,8 +150,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
         
         if (assessmentId != null)
         {            
-            queryParams.TryGetValue("userId", out StringValues currentUserId);
-            queryParams.TryGetValue("userName", out StringValues currentUserName);
+            queryParams.TryGetValue("userId", out StringValues currentUserId);            
 #pragma warning disable CS8604 // Possible null reference argument.
             await UploadAssessmentAttachment(args, assessmentId.ToString(), currentUserId.ToString());
 #pragma warning restore CS8604 // Possible null reference argument.
@@ -162,8 +160,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             var applicationId = routeData.Values["applicationId"];
             if(applicationId != null)
             {
-                queryParams.TryGetValue("userId", out StringValues currentUserId);
-                queryParams.TryGetValue("userName", out StringValues currentUserName);
+                queryParams.TryGetValue("userId", out StringValues currentUserId);                
 #pragma warning disable CS8604 // Possible null reference argument.
                 await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString());
 #pragma warning restore CS8604 // Possible null reference argument.

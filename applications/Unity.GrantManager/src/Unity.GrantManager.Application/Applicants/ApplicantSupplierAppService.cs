@@ -9,7 +9,6 @@ using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Integrations.Cas;
-using Unity.Payments.Permissions;
 using Unity.Payments.Suppliers;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
