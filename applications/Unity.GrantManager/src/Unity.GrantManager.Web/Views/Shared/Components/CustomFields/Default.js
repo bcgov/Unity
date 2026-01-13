@@ -58,7 +58,7 @@ $(function () {
         let appFormId = $('#applicationFormId').val();
         let originalValue = $('#originalScoresheetId').val();
         let scoresheetId = $('#scoresheet').val();
-        if (originalValue == scoresheetId) {
+        if (originalValue === scoresheetId) {
             return;
         }
         unity.grantManager.applicationForms.applicationForm.saveApplicationFormScoresheet({ applicationFormId: appFormId, scoresheetId: scoresheetId })
@@ -125,7 +125,7 @@ $(function () {
         }
 
         if (dragOver.classList.contains('single-target')
-            && event.target.childElementCount == 0) {
+            && event.target.childElementCount === 0) {
             dropToSingleTarget(event, null, 'published-form');
             return;
         }

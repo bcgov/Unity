@@ -44,11 +44,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
                     WorksheetAnchors = tabLinks
                 });
 
-            Guid ChefsFormVersionId = !string.IsNullOrEmpty(formVersion?.ChefsFormVersionGuid) 
+            Guid chefsFormVersionId = !string.IsNullOrEmpty(formVersion?.ChefsFormVersionGuid) 
                 ? Guid.Parse(formVersion.ChefsFormVersionGuid) 
                 : Guid.Empty;
         
-            return new OkObjectResult(new { ChefsFormVersionId });
+            return new OkObjectResult(new { chefsFormVersionId });
         }
 
         private static void ProcessSlotIds(string? slotIds, string uiAnchor, List<(Guid worksheetId, string anchor, uint order)> tabLinks)

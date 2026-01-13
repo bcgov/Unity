@@ -355,7 +355,7 @@
                     dragableDiv.className = 'card mapping-field';
                     dragableDiv.setAttribute("draggable", "true");
                     dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}` + intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
-                    if(intakeFieldJson.IsCustom) {
+                    if (intakeFieldJson.IsCustom) {
                         worksheetMapColumn.appendChild(dragableDiv);
                         dragableDiv.className += ' custom-field';
                     } else {
@@ -488,14 +488,14 @@
 
     function beingDragged(ev) {
         let draggedEl = ev.target;
-        if (draggedEl.classList + "" != "undefined") {
+        if (draggedEl.classList + "" !== "undefined") {
             draggedEl.classList.add('dragging');
         }
     }
 
     function dragEnd(ev) {
         let draggedEl = ev.target;
-        if (draggedEl.classList + "" != "undefined") {
+        if (draggedEl.classList + "" !== "undefined") {
             draggedEl.classList.remove('dragging');
         }
     }
@@ -560,10 +560,8 @@
         for (let i = 0; i < jsonText.length; i++) {
             currChar = jsonText.charAt(i);
 
-            if (currChar == '\"') {
-                if (prevChar != '\\') {
-                    doubleQuoteIn = !doubleQuoteIn;
-                }
+            if (currChar === '\"' && prevChar !== '\\') {
+                doubleQuoteIn = !doubleQuoteIn;
             }
 
             switch (currChar) {
