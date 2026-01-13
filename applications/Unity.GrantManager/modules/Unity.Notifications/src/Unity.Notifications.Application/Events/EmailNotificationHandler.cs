@@ -148,7 +148,7 @@ namespace Unity.GrantManager.Events
                         eventData.EmailAttachments);
 
                     // Store payment request IDs for tracking
-                    if (eventData.PaymentRequestIds != null && eventData.PaymentRequestIds.Any())
+                    if (eventData.PaymentRequestIds != null && eventData.PaymentRequestIds.Count != 0)
                     {
                         emailLog.PaymentRequestIds = string.Join(",", eventData.PaymentRequestIds);
                         await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);

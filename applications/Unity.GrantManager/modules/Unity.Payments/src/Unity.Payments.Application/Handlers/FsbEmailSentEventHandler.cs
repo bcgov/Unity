@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.Notifications.Events;
@@ -71,9 +70,10 @@ namespace Unity.Payments.Handlers
                 catch (Exception ex)
                 {
                     _logger.LogError(ex,
-                        "Failed to update FSB notification tracking for batch. EmailLogId: {EmailLogId}",
-                        eventData.EmailLogId);
-                    throw;
+                        "Failed to update FSB notification tracking for batch.");
+                    throw new InvalidOperationException(
+                        $"Failed to update FSB notification tracking for batch.",
+                        ex);
                 }
             }
         }
