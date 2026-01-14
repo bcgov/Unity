@@ -52,20 +52,17 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
 
         private readonly GrantApplicationAppService _applicationService;
-        private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
-        private readonly IApplicationAssignmentsService _applicationAssigneeService;
+        private readonly IIdentityUserIntegrationService _identityUserLookupAppService;        
         private readonly ApplicationIdsCacheService _cacheService;
         private readonly IApplicationAssignmentsService _applicationAssignmentsService;
 
         public AssigneeSelectionModalModel(GrantApplicationAppService applicationService,
             IIdentityUserIntegrationService identityUserLookupAppService,
-            IApplicationAssignmentsService applicationAssigneeService,
             ApplicationIdsCacheService cacheService,
             IApplicationAssignmentsService applicationAssignmentsService)
         {
             _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
             _identityUserLookupAppService = identityUserLookupAppService ?? throw new ArgumentNullException(nameof(identityUserLookupAppService));
-            _applicationAssigneeService = applicationAssigneeService;
             _cacheService = cacheService;
             _applicationAssignmentsService = applicationAssignmentsService;
         }
@@ -97,7 +94,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                 var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
                 PopulateAssigneeList(users);
 
-                var assignees = await _applicationAssigneeService.GetListWithApplicationIdsAsync(selectedApplicationIds);
+                var assignees = await _applicationAssignmentsService.GetListWithApplicationIdsAsync(selectedApplicationIds);
                 var applications = await _applicationService.GetApplicationListAsync(selectedApplicationIds);
 
                 PopulateAssignees(users, assignees, selectedApplicationIds);

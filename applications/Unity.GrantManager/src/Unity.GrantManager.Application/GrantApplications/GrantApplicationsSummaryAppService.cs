@@ -89,16 +89,13 @@ namespace Unity.GrantManager.GrantApplications
         {
             var owner = await personRepository.FindAsync(ownerId);
 
-            if (owner != null)
-            {
-                return new GrantApplicationAssigneeDto
+            return owner != null
+                ? new GrantApplicationAssigneeDto
                 {
                     Id = owner.Id,
                     FullName = owner.FullName
-                };
-            }
-            else
-                return new GrantApplicationAssigneeDto();
+                }
+                : new GrantApplicationAssigneeDto();
         }
     }
 }

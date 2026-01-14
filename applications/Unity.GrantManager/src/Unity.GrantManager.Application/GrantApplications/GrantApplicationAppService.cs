@@ -108,7 +108,6 @@ public class GrantApplicationAppService(
                     TotalPaid = paymentRequestsByApplication.GetValueOrDefault(app.Id)
                 };
             }
-
             return appDto;
 
         }).ToList();

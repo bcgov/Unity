@@ -16,15 +16,14 @@ namespace Unity.GrantManager.Assignments;
 [Authorize]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(ApplicationAssignmentsAppService), typeof(IApplicationAssignmentsService))]
-public class ApplicationAssignmentsAppService(IApplicationAssignmentRepository applicationAssignmentsRepository,
-    IApplicationManager applicationManager,
+public class ApplicationAssignmentsAppService(IApplicationManager applicationManager,
     IPersonRepository personRepository,
     IApplicationAssignmentRepository applicationAssignmentRepository)
     : ApplicationService, IApplicationAssignmentsService
 {
     public async Task<List<GrantApplicationAssigneeDto>> GetListWithApplicationIdsAsync(List<Guid> ids)
     {
-        var assignments = await applicationAssignmentsRepository.GetListAsync(e => ids.Contains(e.ApplicationId));
+        var assignments = await applicationAssignmentRepository.GetListAsync(e => ids.Contains(e.ApplicationId));
 
         return ObjectMapper.Map<List<ApplicationAssignment>, List<GrantApplicationAssigneeDto>>(assignments.OrderBy(t => t.Id).ToList());
     }
