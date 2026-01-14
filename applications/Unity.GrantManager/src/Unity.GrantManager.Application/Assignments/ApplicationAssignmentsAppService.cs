@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -44,7 +44,7 @@ public class ApplicationAssignmentsAppService(IApplicationManager applicationMan
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(ex.ToString());
+            Logger.LogError(ex, "Error inserting assignee");
         }
     }
 
@@ -56,7 +56,7 @@ public class ApplicationAssignmentsAppService(IApplicationManager applicationMan
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(ex.ToString());
+            Logger.LogError(ex, "Error deleting assignee");
         }
     }
 
