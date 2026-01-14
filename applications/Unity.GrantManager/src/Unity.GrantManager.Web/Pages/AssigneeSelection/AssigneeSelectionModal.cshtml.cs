@@ -55,16 +55,19 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
         private readonly IApplicationAssignmentsService _applicationAssigneeService;
         private readonly ApplicationIdsCacheService _cacheService;
+        private readonly IApplicationAssignmentsService _applicationAssignmentsService;
 
         public AssigneeSelectionModalModel(GrantApplicationAppService applicationService,
             IIdentityUserIntegrationService identityUserLookupAppService,
             IApplicationAssignmentsService applicationAssigneeService,
-            ApplicationIdsCacheService cacheService)
+            ApplicationIdsCacheService cacheService,
+            IApplicationAssignmentsService applicationAssignmentsService)
         {
             _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
             _identityUserLookupAppService = identityUserLookupAppService ?? throw new ArgumentNullException(nameof(identityUserLookupAppService));
             _applicationAssigneeService = applicationAssigneeService;
             _cacheService = cacheService;
+            _applicationAssignmentsService = applicationAssignmentsService;
         }
 
         public async Task OnGetAsync(string cacheKey, string actionType)
@@ -271,7 +274,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
                 foreach (var assignee in assigneesToRemove)
                 {
-                    await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
+                    await _applicationAssignmentsService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
                 }
             }
         }
@@ -282,7 +285,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             {
                 foreach (var assignee in selectedAssignees)
                 {
-                    await _applicationService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Duty);
+                    await _applicationAssignmentsService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Duty);
                 }
             }
         }

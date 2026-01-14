@@ -230,43 +230,7 @@ namespace Unity.GrantManager.Assessments
                 assessment.ApprovalRecommended = dto.ApprovalRecommended;
                 await _assessmentRepository.UpdateAsync(assessment);
             }
-        }
-
-        #region ASSESSMENT COMMENTS
-        public async Task<CommentDto> CreateCommentAsync(Guid id, CreateCommentDto dto)
-        {
-            return ObjectMapper.Map<AssessmentComment, CommentDto>((AssessmentComment)
-             await _commentsManager.CreateCommentAsync(id, dto.Comment, CommentType.AssessmentComment));
-        }
-
-        public async Task<IReadOnlyList<CommentDto>> GetCommentsAsync(Guid id)
-        {
-            return ObjectMapper.Map<IReadOnlyList<AssessmentComment>, IReadOnlyList<CommentDto>>((IReadOnlyList<AssessmentComment>)
-                await _commentsManager.GetCommentsAsync(id, CommentType.AssessmentComment));
-        }
-
-        public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
-        {
-            try
-            {
-                return ObjectMapper.Map<AssessmentComment, CommentDto>((AssessmentComment)
-                      await _commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentType.AssessmentComment));
-            }
-            catch (EntityNotFoundException)
-            {
-                throw new InvalidCommentParametersException();
-            }
-        }
-
-        public async Task<CommentDto> GetCommentAsync(Guid id, Guid commentId)
-        {
-            var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentType.AssessmentComment);
-
-            return comment == null
-                ? throw new InvalidCommentParametersException()
-                : ObjectMapper.Map<AssessmentComment, CommentDto>((AssessmentComment)comment);
-        }
-        #endregion ASSESSMENT COMMENTS
+        }    
 
         #region ASSESSMENT WORKFLOW
         /// <summary>
