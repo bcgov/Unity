@@ -16,27 +16,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
         ScriptTypes = new[] { typeof(SummaryWidgetScriptBundleContributor) },
         StyleTypes = new[] { typeof(SummaryWidgetStyleBundleContributor) },
         AutoInitialize = true)]
-    public class SummaryWidgetViewComponent : AbpViewComponent
+    public class SummaryWidgetViewComponent(IGrantApplicationsSummaryAppService grantApplicationsSummaryAppService,
+        BrowserUtils browserUtils) : AbpViewComponent
     {
-        private readonly IGrantApplicationAppService _grantApplicationService;
-        private readonly BrowserUtils _browserUtils;
-        public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService,
-            BrowserUtils browserUtils)
-        {
-            _grantApplicationService = grantApplicationAppService;
-            _browserUtils = browserUtils;
-        }
-
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Boolean isReadOnly)
         {
-            var offset = _browserUtils.GetBrowserOffset();
+            var offset = browserUtils.GetBrowserOffset();
 
             if (applicationId == Guid.Empty)
             {
                 return View(new SummaryWidgetViewModel());
             }
 
-            var summaryDto = await _grantApplicationService.GetSummaryAsync(applicationId);
+            var summaryDto = await grantApplicationsSummaryAppService.GetSummaryAsync(applicationId);
 
             summaryDto.SubmissionDate = summaryDto.SubmissionDate?.AddMinutes(-offset);
 

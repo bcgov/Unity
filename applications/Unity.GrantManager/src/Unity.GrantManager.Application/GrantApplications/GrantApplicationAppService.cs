@@ -17,16 +17,12 @@ using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
-using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
-using Unity.GrantManager.Zones;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
-using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
@@ -35,7 +31,6 @@ using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -45,20 +40,15 @@ namespace Unity.GrantManager.GrantApplications;
 public class GrantApplicationAppService(
     IApplicationManager applicationManager,
     IApplicationRepository applicationRepository,
-    IApplicationStatusRepository applicationStatusRepository,
-    IApplicationAssignmentRepository applicationAssignmentRepository,
+    IApplicationStatusRepository applicationStatusRepository,    
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
-    ICommentsManager commentsManager,
-    IApplicationFormRepository applicationFormRepository,
-    IPersonRepository personRepository,
+    IApplicationFormRepository applicationFormRepository,    
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
-    ILocalEventBus localEventBus,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService,
-    IPaymentRequestRepository paymentRequestsRepository,
-    IZoneChecker zoneChecker) : GrantManagerAppService, IGrantApplicationAppService
+    IPaymentRequestAppService paymentRequestService)
+    : GrantManagerAppService, IGrantApplicationAppService
 {
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
@@ -109,7 +99,6 @@ public class GrantApplicationAppService(
             appDto.ContactTitle = app.ApplicantAgent?.Title;
             appDto.ContactBusinessPhone = app.ApplicantAgent?.Phone;
             appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
-
 
             if (paymentsFeatureEnabled && paymentRequestsByApplication.Count > 0)
             {
@@ -227,55 +216,7 @@ public class GrantApplicationAppService(
     public async Task<ApplicationForm?> GetApplicationFormAsync(Guid applicationFormId)
     {
         return await (await applicationFormRepository.GetQueryableAsync()).FirstOrDefaultAsync(s => s.Id == applicationFormId);
-    }
-
-    public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
-    {
-        var query = from application in await applicationRepository.GetQueryableAsync()
-                    join applicationForm in await applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals applicationForm.Id
-                    join applicant in await applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                    where application.Id == applicationId
-                    select new GetSummaryDto
-                    {
-                        Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = application.SubmissionDate,
-                        OrganizationName = applicant.OrgName,
-                        OrganizationNumber = applicant.OrgNumber,
-                        EconomicRegion = application.EconomicRegion,
-                        City = application.City,
-                        RequestedAmount = application.RequestedAmount,
-                        ProjectBudget = application.TotalProjectBudget,
-                        Sector = applicant.Sector,
-                        Community = application.Community,
-                        Status = application.ApplicationStatus.InternalStatus,
-                        LikelihoodOfFunding = application.LikelihoodOfFunding != null && application.LikelihoodOfFunding != "" ? AssessmentResultsOptionsList.FundingList[application.LikelihoodOfFunding] : "",
-                        AssessmentStartDate = string.Format("{0:yyyy/MM/dd}", application.AssessmentStartDate),
-                        FinalDecisionDate = string.Format("{0:yyyy/MM/dd}", application.FinalDecisionDate),
-                        TotalScore = application.TotalScore.ToString(),
-                        AssessmentResult = application.AssessmentResultStatus != null && application.AssessmentResultStatus != "" ? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus] : "",
-                        RecommendedAmount = application.RecommendedAmount,
-                        ApprovedAmount = application.ApprovedAmount,
-                        Batch = "", // to-do: ask BA for the implementation of Batch field,                        
-                        RegionalDistrict = application.RegionalDistrict,
-                        OwnerId = application.OwnerId,
-                        UnityApplicationId = application.UnityApplicationId
-                    };
-
-        var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
-        if (queryResult != null)
-        {
-            var ownerId = queryResult.OwnerId ?? Guid.Empty;
-            queryResult.Owner = await GetOwnerAsync(ownerId);
-            queryResult.Assignees = await GetAssigneesAsync(applicationId);
-
-            return queryResult;
-        }
-        else
-        {
-            return await Task.FromResult(new GetSummaryDto());
-        }
-
-    }
+    }  
 
     [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
@@ -388,7 +329,7 @@ public class GrantApplicationAppService(
         input.ApprovedAmount ??= application.ApprovedAmount;
 
         // Sanitize if zone is disabled
-        if (!await zoneChecker.IsEnabledAsync(UnitySelector.Review.Approval.Default, application.ApplicationFormId))
+        if (!await ZoneChecker.IsEnabledAsync(UnitySelector.Review.Approval.Default, application.ApplicationFormId))
         {
             input.SubStatus ??= application.SubStatus;
             input.FinalDecisionDate ??= application.FinalDecisionDate;
@@ -413,7 +354,7 @@ public class GrantApplicationAppService(
         input.TotalScore ??= application.TotalScore;
 
         // Sanitize if zone is disabled
-        if (!await zoneChecker.IsEnabledAsync(UnitySelector.Review.AssessmentResults.Default, application.ApplicationFormId))
+        if (!await ZoneChecker.IsEnabledAsync(UnitySelector.Review.AssessmentResults.Default, application.ApplicationFormId))
         {
             input.LikelihoodOfFunding ??= application.LikelihoodOfFunding;
             input.RiskRanking ??= application.RiskRanking;
@@ -457,8 +398,8 @@ public class GrantApplicationAppService(
 
         var application = await applicationRepository.GetAsync(id);
 
-        var hasSummaryZone = await zoneChecker.IsEnabledAsync(UnitySelector.Project.Summary.Default, application.ApplicationFormId);
-        var hasLocationZone = await zoneChecker.IsEnabledAsync(UnitySelector.Project.Location.Default, application.ApplicationFormId);
+        var hasSummaryZone = await ZoneChecker.IsEnabledAsync(UnitySelector.Project.Summary.Default, application.ApplicationFormId);
+        var hasLocationZone = await ZoneChecker.IsEnabledAsync(UnitySelector.Project.Location.Default, application.ApplicationFormId);
 
         if (!hasSummaryZone || !hasLocationZone)
         {
@@ -685,7 +626,7 @@ public class GrantApplicationAppService(
         var application = await applicationRepository.GetAsync(applicationId);
         if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && application != null)
         {
-            var pendingPayments = await paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(applicationId);
+            var pendingPayments = await paymentRequestService.GetPaymentPendingListByCorrelationIdAsync(applicationId);
             if (pendingPayments != null && pendingPayments.Count > 0)
             {
                 throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
@@ -839,7 +780,7 @@ public class GrantApplicationAppService(
         {
             if (input.CorrelationId != Guid.Empty)
             {
-                await localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+                await LocalEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
                 {
                     InstanceCorrelationId = applicationId,
                     InstanceCorrelationProvider = CorrelationConsts.Application,
@@ -909,39 +850,6 @@ public class GrantApplicationAppService(
         }
     }
 
-    public async Task<List<GrantApplicationAssigneeDto>> GetAssigneesAsync(Guid applicationId)
-    {
-        var query = from userAssignment in await applicationAssignmentRepository.GetQueryableAsync()
-                    join user in await personRepository.GetQueryableAsync() on userAssignment.AssigneeId equals user.Id
-                    where userAssignment.ApplicationId == applicationId
-                    select new GrantApplicationAssigneeDto
-                    {
-                        Id = userAssignment.Id,
-                        AssigneeId = userAssignment.AssigneeId,
-                        FullName = user.FullName,
-                        Duty = userAssignment.Duty,
-                        ApplicationId = applicationId
-                    };
-
-        return await query.ToListAsync();
-    }
-
-    public async Task<GrantApplicationAssigneeDto> GetOwnerAsync(Guid ownerId)
-    {
-        var owner = await personRepository.FindAsync(ownerId);
-
-        if (owner != null)
-        {
-            return new GrantApplicationAssigneeDto
-            {
-                Id = owner.Id,
-                FullName = owner.FullName
-            };
-        }
-        else
-            return new GrantApplicationAssigneeDto();
-    }
-
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
     {
         ApplicationFormSubmission applicationFormSubmission = new();
@@ -981,39 +889,7 @@ public class GrantApplicationAppService(
                 Debug.WriteLine(ex.ToString());
             }
         }
-    }
-
-    public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
-    {
-        try
-        {
-            var assignees = await GetAssigneesAsync(applicationId);
-            if (assignees == null || assignees.FindIndex(a => a.AssigneeId == assigneeId) == -1)
-            {
-                await applicationManager.AssignUserAsync(applicationId, assigneeId, duty);
-            }
-            else
-            {
-                await applicationManager.UpdateAssigneeAsync(applicationId, assigneeId, duty);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine(ex.ToString());
-        }
-    }
-
-    public async Task DeleteAssigneeAsync(Guid applicationId, Guid assigneeId)
-    {
-        try
-        {
-            await applicationManager.RemoveAssigneeAsync(applicationId, assigneeId);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine(ex.ToString());
-        }
-    }
+    }   
 
     public async Task<List<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
     {
@@ -1126,41 +1002,6 @@ public class GrantApplicationAppService(
         }
     }
 
-    public async Task<CommentDto> CreateCommentAsync(Guid id, CreateCommentDto dto)
-    {
-        return ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)
-         await commentsManager.CreateCommentAsync(id, dto.Comment, CommentType.ApplicationComment));
-    }
-
-    public async Task<IReadOnlyList<CommentDto>> GetCommentsAsync(Guid id)
-    {
-        return ObjectMapper.Map<IReadOnlyList<ApplicationComment>, IReadOnlyList<CommentDto>>((IReadOnlyList<ApplicationComment>)
-            await commentsManager.GetCommentsAsync(id, CommentType.ApplicationComment));
-    }
-
-    public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
-    {
-        try
-        {
-            return ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)
-                await commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentType.ApplicationComment));
-
-        }
-        catch (EntityNotFoundException)
-        {
-            throw new InvalidCommentParametersException();
-        }
-    }
-
-    public async Task<CommentDto> GetCommentAsync(Guid id, Guid commentId)
-    {
-        var comment = await commentsManager.GetCommentAsync(id, commentId, CommentType.ApplicationComment);
-
-        return comment == null
-            ? throw new InvalidCommentParametersException()
-            : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
-    }
-
     public async Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id)
     {
         var application = await applicationRepository.GetAsync(id, true);
@@ -1228,7 +1069,7 @@ public class GrantApplicationAppService(
 
         application = await applicationManager.TriggerAction(applicationId, triggerAction);
 
-        await localEventBus.PublishAsync(
+        await LocalEventBus.PublishAsync(
             new ApplicationChangedEvent
             {
                 Action = triggerAction,

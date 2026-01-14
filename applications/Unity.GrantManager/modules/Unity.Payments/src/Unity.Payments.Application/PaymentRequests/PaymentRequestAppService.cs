@@ -29,8 +29,8 @@ namespace Unity.Payments.PaymentRequests
 {
     [RequiresFeature("Unity.Payments")]
     [Authorize]
-    #pragma warning disable S107 // Suppress "Constructor has too many parameters"
-        public class PaymentRequestAppService(
+#pragma warning disable S107 // Suppress "Constructor has too many parameters"
+    public class PaymentRequestAppService(
                 ICurrentUser currentUser,
                 IDataFilter dataFilter,
                 IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
@@ -44,7 +44,7 @@ namespace Unity.Payments.PaymentRequests
                 ISiteRepository siteRepository,
                 CasPaymentRequestCoordinator casPaymentRequestCoordinator,
                 FsbPaymentNotifier fsbPaymentNotifier) : PaymentsAppService, IPaymentRequestAppService
-    #pragma warning restore S107
+#pragma warning restore S107
 
     {
         public async Task<Guid?> GetDefaultAccountCodingId()
@@ -85,13 +85,13 @@ namespace Unity.Payments.PaymentRequests
                     string referenceNumberPrefix = GenerateReferenceNumberPrefixAsync(paymentIdPrefix);
                     string sequenceNumber = GenerateSequenceNumberAsync(nextSequenceNumber, paymentRequestItem.i);
                     string referenceNumber = GenerateReferenceNumberAsync(referenceNumberPrefix, sequenceNumber);
-                    string invoiceNumber = GenerateInvoiceNumberAsync(referenceNumberPrefix, paymentRequestDto.InvoiceNumber, sequenceNumber);                
+                    string invoiceNumber = GenerateInvoiceNumberAsync(referenceNumberPrefix, paymentRequestDto.InvoiceNumber, sequenceNumber);
 
                     paymentRequestDto.InvoiceNumber = invoiceNumber;
                     paymentRequestDto.ReferenceNumber = referenceNumber;
                     paymentRequestDto.BatchName = batchName;
                     paymentRequestDto.BatchNumber = batchNumber;
-       
+
                     var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
                     var result = await paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
@@ -297,7 +297,7 @@ namespace Unity.Payments.PaymentRequests
         {
             if (!dto.IsApprove)
                 return PaymentApprovalAction.L2Decline;
-            
+
             decimal? threshold = null;
             try
             {
@@ -319,9 +319,9 @@ namespace Unity.Payments.PaymentRequests
             var application = await (await applicationRepository.GetQueryableAsync())
             .Include(a => a.ApplicationForm)
             .FirstOrDefaultAsync(a => a.Id == applicationId) ?? throw new BusinessException($"Application with Id {applicationId} not found.");
-            var appForm = application.ApplicationForm ?? 
-            (application.ApplicationFormId != Guid.Empty 
-                ? await applicationFormRepository.GetAsync(application.ApplicationFormId) 
+            var appForm = application.ApplicationForm ??
+            (application.ApplicationFormId != Guid.Empty
+                ? await applicationFormRepository.GetAsync(application.ApplicationFormId)
                 : null);
 
             var formThreshold = appForm?.PaymentApprovalThreshold;
@@ -333,7 +333,7 @@ namespace Unity.Payments.PaymentRequests
 
             return formThreshold ?? userPaymentThreshold ?? 0m;
         }
-    
+
         private async Task<bool> CanPerformLevel1ActionAsync(PaymentRequestStatus status)
         {
             List<PaymentRequestStatus> level1Approvals = [PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined];
@@ -458,11 +458,11 @@ namespace Unity.Payments.PaymentRequests
                     paymentRequestDto.CreatorUser = paymentRequestUserDto;
                 }
 
-                if(paymentRequestDto != null && paymentRequestDto.AccountCoding != null)
+                if (paymentRequestDto != null && paymentRequestDto.AccountCoding != null)
                 {
                     paymentRequestDto.AccountCodingDisplay = await GetAccountDistributionCode(paymentRequestDto.AccountCoding);
                 }
-                
+
                 if (paymentRequestDto != null && paymentRequestDto.ExpenseApprovals != null)
                 {
                     foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
@@ -565,7 +565,7 @@ namespace Unity.Payments.PaymentRequests
             }
             await casPaymentRequestCoordinator.ManuallyAddPaymentRequestsToReconciliationQueue(paymentRequestDtos);
         }
-        
+
         private async Task<int> GetNextSequenceNumberAsync(int currentYear)
         {
             // Retrieve all payment requests
@@ -592,6 +592,12 @@ namespace Unity.Payments.PaymentRequests
 
             // If no payments exist or parsing fails, return the initial sequence number
             return 1;
+        }
+
+        public async Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId)
+        {
+            var payments = await paymentRequestsRepository.GetPaymentPendingListByCorrelationIdAsync(applicationId);
+            return ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments);
         }
     }
 }
