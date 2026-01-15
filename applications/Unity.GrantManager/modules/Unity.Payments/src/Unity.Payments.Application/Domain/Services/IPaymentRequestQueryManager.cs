@@ -1,20 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.PaymentRequests;
 
 namespace Unity.Payments.Domain.Services
 {
-    public interface IPaymentRequestManager
+    public interface IPaymentRequestQueryManager
     {
-        // Configuration & Lookup
-        Task<Guid?> GetDefaultAccountCodingIdAsync();
-        Task<PaymentConfiguration?> GetPaymentConfigurationAsync();
-        Task<string> GetNextBatchInfoAsync();
-        Task<decimal> GetMaxBatchNumberAsync();
-
         // Payment Request Queries
         Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId);
         Task<long> GetPaymentRequestCountAsync();
@@ -29,21 +22,10 @@ namespace Unity.Payments.Domain.Services
         // Payment Request Operations
         Task<PaymentRequest> InsertPaymentRequestAsync(PaymentRequest paymentRequest);
 
-        // Threshold & Approval Logic
-        Task<decimal?> GetPaymentRequestThresholdByApplicationIdAsync(Guid applicationId, decimal? userPaymentThreshold);
-        Task<decimal?> GetUserPaymentThresholdAsync(Guid? userId);
-
         // DTO Creation & Mapping
         Task<PaymentRequestDto> CreatePaymentRequestDtoAsync(Guid paymentRequestId);
         Task<List<PaymentRequestDto>> MapToDtoAndLoadDetailsAsync(List<PaymentRequest> paymentsList);
         Task<string> GetAccountDistributionCodeAsync(AccountCodingDto? accountCoding);
-
-        // Utility Methods
-        Task<int> GetNextSequenceNumberAsync(int currentYear);
-        string GenerateReferenceNumberPrefix(string paymentIdPrefix);
-        string GenerateSequenceNumber(int sequenceNumber, int index);
-        string GenerateReferenceNumber(string referenceNumber, string sequencePart);
-        string GenerateInvoiceNumber(string referenceNumber, string invoiceNumber, string sequencePart);
 
         // Queue Operations
         Task ManuallyAddPaymentRequestsToReconciliationQueueAsync(List<Guid> paymentRequestIds);

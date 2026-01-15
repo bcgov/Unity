@@ -28,19 +28,20 @@ namespace Unity.Payments.PaymentRequests
                 IPermissionChecker permissionChecker,
                 IPaymentsManager paymentsManager,
                 FsbPaymentNotifier fsbPaymentNotifier,
-                IPaymentRequestManager paymentRequestManager) : PaymentsAppService, IPaymentRequestAppService
+                IPaymentRequestQueryManager paymentRequestQueryManager,
+                IPaymentRequestConfigurationManager paymentRequestConfigurationManager) : PaymentsAppService, IPaymentRequestAppService
 
     {
         public async Task<Guid?> GetDefaultAccountCodingId()
         {
-            return await paymentRequestManager.GetDefaultAccountCodingIdAsync();
+            return await paymentRequestConfigurationManager.GetDefaultAccountCodingIdAsync();
         }
 
         [Authorize(PaymentsPermissions.Payments.RequestPayment)]
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
         {
             List<PaymentRequestDto> createdPayments = [];
-            var paymentConfig = await paymentRequestManager.GetPaymentConfigurationAsync();
+            var paymentConfig = await paymentRequestConfigurationManager.GetPaymentConfigurationAsync();
             var paymentIdPrefix = string.Empty;
 
             if (paymentConfig != null && !paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
@@ -48,10 +49,10 @@ namespace Unity.Payments.PaymentRequests
                 paymentIdPrefix = paymentConfig.PaymentIdPrefix;
             }
 
-            var batchNumber = await paymentRequestManager.GetMaxBatchNumberAsync();
+            var batchNumber = await paymentRequestConfigurationManager.GetMaxBatchNumberAsync();
             var batchName = $"{paymentIdPrefix}_UNITY_BATCH_{batchNumber}";
             var currentYear = DateTime.UtcNow.Year;
-            var nextSequenceNumber = await paymentRequestManager.GetNextSequenceNumberAsync(currentYear);
+            var nextSequenceNumber = await paymentRequestConfigurationManager.GetNextSequenceNumberAsync(currentYear);
 
             foreach (var paymentRequestItem in paymentRequests.Select((value, i) => new { i, value }))
             {
@@ -59,10 +60,10 @@ namespace Unity.Payments.PaymentRequests
                 {
                     // referenceNumber + Chefs Confirmation ID + 6 digit sequence based on sequence number and index
                     CreatePaymentRequestDto paymentRequestDto = paymentRequestItem.value;
-                    string referenceNumberPrefix = paymentRequestManager.GenerateReferenceNumberPrefix(paymentIdPrefix);
-                    string sequenceNumber = paymentRequestManager.GenerateSequenceNumber(nextSequenceNumber, paymentRequestItem.i);
-                    string referenceNumber = paymentRequestManager.GenerateReferenceNumber(referenceNumberPrefix, sequenceNumber);
-                    string invoiceNumber = paymentRequestManager.GenerateInvoiceNumber(referenceNumberPrefix, paymentRequestDto.InvoiceNumber, sequenceNumber);
+                    string referenceNumberPrefix = paymentRequestConfigurationManager.GenerateReferenceNumberPrefix(paymentIdPrefix);
+                    string sequenceNumber = paymentRequestConfigurationManager.GenerateSequenceNumber(nextSequenceNumber, paymentRequestItem.i);
+                    string referenceNumber = paymentRequestConfigurationManager.GenerateReferenceNumber(referenceNumberPrefix, sequenceNumber);
+                    string invoiceNumber = paymentRequestConfigurationManager.GenerateInvoiceNumber(referenceNumberPrefix, paymentRequestDto.InvoiceNumber, sequenceNumber);
 
                     paymentRequestDto.InvoiceNumber = invoiceNumber;
                     paymentRequestDto.ReferenceNumber = referenceNumber;
@@ -70,7 +71,7 @@ namespace Unity.Payments.PaymentRequests
                     paymentRequestDto.BatchNumber = batchNumber;
 
                     var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
-                    var result = await paymentRequestManager.InsertPaymentRequestAsync(payment);
+                    var result = await paymentRequestQueryManager.InsertPaymentRequestAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
                     {
                         Id = result.Id,
@@ -99,12 +100,12 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<string> GetNextBatchInfoAsync()
         {
-            return await paymentRequestManager.GetNextBatchInfoAsync();
+            return await paymentRequestConfigurationManager.GetNextBatchInfoAsync();
         }
 
         public Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId)
         {
-            return paymentRequestManager.GetPaymentRequestCountBySiteIdAsync(siteId);
+            return paymentRequestQueryManager.GetPaymentRequestCountBySiteIdAsync(siteId);
         }
 
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
@@ -114,7 +115,7 @@ namespace Unity.Payments.PaymentRequests
 
             // Check approval batches
             var approvalRequests = paymentRequests.Where(r => r.IsApprove).Select(x => x.PaymentRequestId).ToList();
-            var approvalList = await paymentRequestManager.GetPaymentRequestsByIdsAsync(approvalRequests, includeDetails: true);
+            var approvalList = await paymentRequestQueryManager.GetPaymentRequestsByIdsAsync(approvalRequests, includeDetails: true);
 
             // Rule AB#26693: Reject Payment Request update batch if violates L1 and L2 separation of duties
             if (approvalList.Exists(
@@ -130,7 +131,7 @@ namespace Unity.Payments.PaymentRequests
             {
                 try
                 {
-                    var payment = await paymentRequestManager.GetPaymentRequestByIdAsync(dto.PaymentRequestId);
+                    var payment = await paymentRequestQueryManager.GetPaymentRequestByIdAsync(dto.PaymentRequestId);
                     if (payment == null)
                         continue;
 
@@ -152,14 +153,14 @@ namespace Unity.Payments.PaymentRequests
                         await paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
 
                         // Check if payment transitioned to FSB status
-                        var updatedPayment = await paymentRequestManager.GetPaymentRequestByIdAsync(dto.PaymentRequestId);
+                        var updatedPayment = await paymentRequestQueryManager.GetPaymentRequestByIdAsync(dto.PaymentRequestId);
                         if (updatedPayment?.Status == PaymentRequestStatus.FSB &&
                             previousStatus != PaymentRequestStatus.FSB)
                         {
                             fsbPaymentIds.Add(dto.PaymentRequestId);
                         }
 
-                        updatedPayments.Add(await paymentRequestManager.CreatePaymentRequestDtoAsync(dto.PaymentRequestId));
+                        updatedPayments.Add(await paymentRequestQueryManager.CreatePaymentRequestDtoAsync(dto.PaymentRequestId));
                     }
                 }
                 catch (Exception ex)
@@ -173,7 +174,7 @@ namespace Unity.Payments.PaymentRequests
             {
                 try
                 {
-                    var fsbPayments = await paymentRequestManager.GetPaymentRequestsByIdsAsync(fsbPaymentIds, includeDetails: true);
+                    var fsbPayments = await paymentRequestQueryManager.GetPaymentRequestsByIdsAsync(fsbPaymentIds, includeDetails: true);
 
                     await fsbPaymentNotifier.NotifyFsbPayments(fsbPayments);
                 }
@@ -225,7 +226,7 @@ namespace Unity.Payments.PaymentRequests
             try
             {
                 decimal? userPaymentThreshold = await GetUserPaymentThresholdAsync();
-                threshold = await paymentRequestManager.GetPaymentRequestThresholdByApplicationIdAsync(payment.CorrelationId, userPaymentThreshold);
+                threshold = await paymentRequestConfigurationManager.GetPaymentRequestThresholdByApplicationIdAsync(payment.CorrelationId, userPaymentThreshold);
             }
             catch (Exception ex)
             {
@@ -236,8 +237,13 @@ namespace Unity.Payments.PaymentRequests
                 return PaymentApprovalAction.L2Approve;
 
             return PaymentApprovalAction.Submit;
-        }        
-    
+        }
+
+        public async Task<decimal?> GetPaymentRequestThresholdByApplicationIdAsync(Guid applicationId, decimal? userPaymentThreshold = null)
+        {
+            return await paymentRequestConfigurationManager.GetPaymentRequestThresholdByApplicationIdAsync(applicationId, userPaymentThreshold);
+        }
+
         private async Task<bool> CanPerformLevel1ActionAsync(PaymentRequestStatus status)
         {
             List<PaymentRequestStatus> level1Approvals = [PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined];
@@ -267,19 +273,19 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdsAsync(List<Guid> applicationIds)
         {
-            return await paymentRequestManager.GetListByApplicationIdsAsync(applicationIds);
+            return await paymentRequestQueryManager.GetListByApplicationIdsAsync(applicationIds);
         }
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
-            var totalCount = await paymentRequestManager.GetPaymentRequestCountAsync();
+            var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
             using (dataFilter.Disable<ISoftDelete>())
             {
-                var paymentWithIncludes = await paymentRequestManager.GetPagedPaymentRequestsWithIncludesAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty);
+                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty);
 
-                var mappedPayments = await paymentRequestManager.MapToDtoAndLoadDetailsAsync(paymentWithIncludes);
+                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(paymentWithIncludes);
 
-                paymentRequestManager.ApplyErrorSummary(mappedPayments);
+                paymentRequestQueryManager.ApplyErrorSummary(mappedPayments);
 
                 return new PagedResultDto<PaymentRequestDto>(totalCount, mappedPayments);
             }
@@ -289,23 +295,23 @@ namespace Unity.Payments.PaymentRequests
         {
             using (dataFilter.Disable<ISoftDelete>())
             {
-                return await paymentRequestManager.GetListByApplicationIdAsync(applicationId);
+                return await paymentRequestQueryManager.GetListByApplicationIdAsync(applicationId);
             }
         }
 
         public async Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds)
         {
-            return await paymentRequestManager.GetListByPaymentIdsAsync(paymentIds);
+            return await paymentRequestQueryManager.GetListByPaymentIdsAsync(paymentIds);
         }
 
         public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
         {
-            return await paymentRequestManager.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);
+            return await paymentRequestQueryManager.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);
         }
 
         public async Task<decimal?> GetUserPaymentThresholdAsync()
         {
-            return await paymentRequestManager.GetUserPaymentThresholdAsync(currentUser.Id);
+            return await paymentRequestConfigurationManager.GetUserPaymentThresholdAsync(currentUser.Id);
         }
 
         protected virtual string GetCurrentRequesterName()
@@ -315,7 +321,7 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task ManuallyAddPaymentRequestsToReconciliationQueue(List<Guid> paymentRequestIds)
         {
-            await paymentRequestManager.ManuallyAddPaymentRequestsToReconciliationQueueAsync(paymentRequestIds);
+            await paymentRequestQueryManager.ManuallyAddPaymentRequestsToReconciliationQueueAsync(paymentRequestIds);
         }
     }
 }
