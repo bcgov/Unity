@@ -357,7 +357,7 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
 
     #region Helper Methods
 
-    private Supplier CreateTestSupplier()
+    private static Supplier CreateTestSupplier()
     {
         var id = Guid.NewGuid();
         var basicInfo = new SupplierBasicInfo("Test Supplier", "SUP001", "Category A");
