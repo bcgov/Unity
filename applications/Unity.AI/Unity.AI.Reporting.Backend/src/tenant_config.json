@@ -1,13 +1,13 @@
 {
   "Demo Org": {
     "db_id": 5,
-    "collection_id": 16,
+    "collection_id": 19,
     "schema_types": ["public"],
     "api_key": ""
   },
   "default": {
-    "db_id": 10,
-    "collection_id": 25,
+    "db_id": 5,
+    "collection_id": 19,
     "schema_types": ["public"],
     "api_key": ""
   }
