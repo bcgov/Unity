@@ -37,22 +37,21 @@ namespace Unity.Payments.Domain.Suppliers
         protected Supplier()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
-            Sites = new Collection<Site>();
+            Sites = [];
         }
 
         public Supplier(Guid id,
             string? name,
             string? number,
-            Guid correlationId,
-            string correlationProvider,
+            Correlation correlation,
             MailingAddress? mailingAddress = default)
            : base(id)
         {
             Name = name;
             Number = number;
-            CorrelationId = correlationId;
-            CorrelationProvider = correlationProvider;
-            Sites = new Collection<Site>();
+            CorrelationId = correlation.CorrelationId;
+            CorrelationProvider = correlation.CorrelationProvider;
+            Sites = [];
             MailingAddress = mailingAddress?.AddressLine;
             City = mailingAddress?.City;
             Province = mailingAddress?.Province;
@@ -60,32 +59,26 @@ namespace Unity.Payments.Domain.Suppliers
         }
 
         public Supplier(Guid id,
-            string? name,
-            string? number,
-            string? subcategory,
-            string? providerId,
-            string? businessNumber,
-            string? status,
-            string? supplierProtected,
-            string? standardIndustryClassification,
-            DateTime? lastUpdatedInCAS,
-            Guid correlationId,
-            string correlationProvider,
+            SupplierBasicInfo basicInfo,
+            Correlation correlation,
+            ProviderInfo? providerInfo = default,
+            SupplierStatus? supplierStatus = default,
+            CasMetadata? casMetadata = default,
             MailingAddress? mailingAddress = default)
            : base(id)
         {
-            Name = name;
-            Number = number;
-            Subcategory = subcategory;
-            ProviderId = providerId;
-            BusinessNumber = businessNumber;
-            Status = status;
-            SupplierProtected = supplierProtected;
-            StandardIndustryClassification = standardIndustryClassification;
-            LastUpdatedInCAS = lastUpdatedInCAS;
-            CorrelationId = correlationId;
-            CorrelationProvider = correlationProvider;
-            Sites = new Collection<Site>();
+            Name = basicInfo.Name;
+            Number = basicInfo.Number;
+            Subcategory = basicInfo.Subcategory;
+            ProviderId = providerInfo?.ProviderId;
+            BusinessNumber = providerInfo?.BusinessNumber;
+            Status = supplierStatus?.Status;
+            SupplierProtected = supplierStatus?.SupplierProtected;
+            StandardIndustryClassification = supplierStatus?.StandardIndustryClassification;
+            LastUpdatedInCAS = casMetadata?.LastUpdatedInCAS;
+            CorrelationId = correlation.CorrelationId;
+            CorrelationProvider = correlation.CorrelationProvider;
+            Sites = [];
             MailingAddress = mailingAddress?.AddressLine;
             City = mailingAddress?.City;
             Province = mailingAddress?.Province;
@@ -134,6 +127,39 @@ namespace Unity.Payments.Domain.Suppliers
             City = city;
             Province = province;
             PostalCode = postalCode;
+        }
+
+        public void UpdateBasicInfo(SupplierBasicInfo basicInfo)
+        {
+            /* Business rules around updating basic supplier information */
+            
+            Name = basicInfo.Name;
+            Number = basicInfo.Number;
+            Subcategory = basicInfo.Subcategory;
+        }
+
+        public void UpdateProviderInfo(ProviderInfo providerInfo)
+        {
+            /* Business rules around updating provider information */
+            
+            ProviderId = providerInfo.ProviderId;
+            BusinessNumber = providerInfo.BusinessNumber;
+        }
+
+        public void UpdateStatus(SupplierStatus supplierStatus)
+        {
+            /* Business rules around updating supplier status */
+            
+            Status = supplierStatus.Status;
+            SupplierProtected = supplierStatus.SupplierProtected;
+            StandardIndustryClassification = supplierStatus.StandardIndustryClassification;
+        }
+
+        public void UpdateCasMetadata(CasMetadata casMetadata)
+        {
+            /* Business rules around updating CAS metadata */
+            
+            LastUpdatedInCAS = casMetadata.LastUpdatedInCAS;
         }
     }
 }
