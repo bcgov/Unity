@@ -147,4 +147,11 @@ export abstract class BasePage {
     cy.clearCookies();
     cy.clearLocalStorage();
   }
+
+  /**
+   * Refresh the current page
+   */
+  refreshPage(): void {
+    cy.reload();
+  }
 }

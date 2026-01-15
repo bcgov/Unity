@@ -75,6 +75,10 @@ export class ApplicationsPage extends ListPage {
     applicationLink: "#applicationLink",
     externalLink: "#externalLink",
     closeSummaryCanvas: "#closeSummaryCanvas",
+    // Search and Filter selectors
+    searchBar: "#search",
+    submittedFromDate: "#submittedFromDate",
+    submittedToDate: "#submittedToDate",
     // GrantApplicationsTable selectors
     table: "#GrantApplicationsTable",
     selectAllCheckbox: ".select-all-applications",
@@ -90,6 +94,10 @@ export class ApplicationsPage extends ListPage {
     btnPayment: "#applicationPaymentRequest",
     btnInfo: "#applicationLink",
     btnFilter: "#btn-toggle-filter",
+    // Additional action buttons
+    btnExport: ".dt-buttons button:contains('Export')",
+    btnSaveView: ".buttons-collection.grp-savedStates",
+    btnColumns: ".dt-buttons .dropdown-toggle:contains('Columns')",
   };
 
   // Column indices for GrantApplicationsTable
@@ -256,6 +264,72 @@ export class ApplicationsPage extends ListPage {
     cy.get(this.selectors.btnPayment).should("be.visible");
     cy.get(this.selectors.btnInfo).should("be.visible");
     cy.get(this.selectors.btnFilter).should("be.visible");
+  }
+
+  /**
+   * Verify search bar exists and is visible
+   */
+  verifySearchBarExists(): void {
+    cy.get(this.selectors.searchBar)
+      .should("exist")
+      .and("be.visible")
+      .and("have.attr", "placeholder", "Search");
+  }
+
+  /**
+   * Verify submitted date from filter exists
+   */
+  verifySubmittedFromDateExists(): void {
+    cy.get(this.selectors.submittedFromDate)
+      .should("exist")
+      .and("be.visible")
+      .and("have.attr", "type", "date");
+    cy.contains("label", "Submitted Date From").should("be.visible");
+  }
+
+  /**
+   * Verify submitted date to filter exists
+   */
+  verifySubmittedToDateExists(): void {
+    cy.get(this.selectors.submittedToDate)
+      .should("exist")
+      .and("be.visible")
+      .and("have.attr", "type", "date");
+    cy.contains("label", "Submitted Date To").should("be.visible");
+  }
+
+  /**
+   * Verify all action bar menu items exist
+   */
+  verifyAllActionBarItemsExist(): void {
+    // Verify search and date filters
+    this.verifySearchBarExists();
+    this.verifySubmittedFromDateExists();
+    this.verifySubmittedToDateExists();
+
+    // Verify action buttons
+    this.verifyActionButtonsVisible();
+
+    // Verify additional buttons
+    cy.get(this.selectors.btnExport).should("exist").and("be.visible");
+    cy.get(this.selectors.btnSaveView).should("exist").and("be.visible");
+    cy.get(this.selectors.btnColumns).should("exist").and("be.visible");
+  }
+
+  /**
+   * Set date filter range
+   */
+  setDateRange(fromDate: string, toDate: string): void {
+    cy.get(this.selectors.submittedFromDate).clear().type(fromDate);
+    cy.get(this.selectors.submittedToDate).clear().type(toDate);
+  }
+
+  /**
+   * Clear date filters
+   */
+  clearDateFilters(): void {
+    cy.get(this.selectors.submittedFromDate).clear();
+    cy.get(this.selectors.submittedToDate).clear();
   }
 
   // ============ Enhanced GrantApplicationsTable Methods ============

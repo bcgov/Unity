@@ -6,6 +6,8 @@ import { LoginPage } from "../pages/LoginPage";
 import { NavigationPage } from "../pages/NavigationPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
+import { EmailsPage } from "../pages/EmailsPage";
+import { ApplicationActionBarPage } from "../pages/ApplicationActionBarPage";
 import {
   ApplicationsPage,
   RolesPage,
@@ -92,6 +94,23 @@ export class PageFactory {
   }
 
   /**
+   * Get or create EmailsPage instance
+   */
+  static getEmailsPage(): EmailsPage {
+    return this.getInstance("EmailsPage", () => new EmailsPage());
+  }
+
+  /**
+   * Get or create ApplicationActionBarPage instance
+   */
+  static getApplicationActionBarPage(): ApplicationActionBarPage {
+    return this.getInstance(
+      "ApplicationActionBarPage",
+      () => new ApplicationActionBarPage()
+    );
+  }
+
+  /**
    * Generic getInstance with caching
    */
   private static getInstance<T>(key: string, factory: () => T): T {
@@ -130,3 +149,6 @@ export const UsersPageInstance = () => PageFactory.getUsersPage();
 export const IntakesPageInstance = () => PageFactory.getIntakesPage();
 export const FormsPageInstance = () => PageFactory.getFormsPage();
 export const PaymentsPageInstance = () => PageFactory.getPaymentsPage();
+export const EmailsPageInstance = () => PageFactory.getEmailsPage();
+export const ApplicationActionBarPageInstance = () =>
+  PageFactory.getApplicationActionBarPage();

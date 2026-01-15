@@ -8,6 +8,7 @@ export { LoginPage } from "../pages/LoginPage";
 export { NavigationPage } from "../pages/NavigationPage";
 export { DashboardPage } from "../pages/DashboardPage";
 export { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
+export { ApplicationActionBarPage } from "../pages/ApplicationActionBarPage";
 export {
   ListPage,
   ApplicationsPage,
@@ -26,6 +27,7 @@ export {
   DashboardPageInstance,
   ApplicationsPageInstance,
   ApplicationDetailsPageInstance,
+  ApplicationActionBarPageInstance,
   RolesPageInstance,
   UsersPageInstance,
   IntakesPageInstance,
