@@ -25,12 +25,14 @@ export class AuthService {
     private configService: ConfigService
   ) {
     this.initializeFromUrl();
+    this.initializePostMessageListener();
+    this.sendReadyMessageToParent();
   }
 
   private initializeFromUrl(): void {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
-    
+
     if (token) {
       this.setToken(token);
       // Clean up URL to remove token from address bar
@@ -40,18 +42,50 @@ export class AuthService {
     }
   }
 
+  private initializePostMessageListener(): void {
+    // Listen for token from parent window (when embedded in iframe)
+    window.addEventListener('message', (event: MessageEvent) => {
+      // Check if this is an AUTH_TOKEN message
+      if (event.data && event.data.type === 'AUTH_TOKEN' && event.data.token) {
+        // Store the token
+        this.setToken(event.data.token);
+
+        // Send acknowledgment back to parent
+        if (event.source && typeof (event.source as Window).postMessage === 'function') {
+          (event.source as Window).postMessage(
+            { type: 'AUTH_TOKEN_RECEIVED', success: true },
+            event.origin
+          );
+        }
+      }
+    });
+  }
+
+  private sendReadyMessageToParent(): void {
+    // Only send READY message if we're in an iframe
+    if (window.self !== window.top && window.parent) {
+      try {
+        // Send READY message to parent to request authentication token
+        window.parent.postMessage({ type: 'READY' }, '*');
+        this.logger.info('Sent READY message to parent window');
+      } catch (error) {
+        this.logger.error('Failed to send READY message to parent:', error);
+      }
+    }
+  }
+
   setToken(token: string): void {
     this.tokenSubject.next(token);
-    localStorage.setItem('jwt_token', token);
+    localStorage.setItem('ai_reporting', token);
   }
 
   getToken(): string | null {
-    return this.tokenSubject.value || localStorage.getItem('jwt_token');
+    return this.tokenSubject.value || localStorage.getItem('ai_reporting');
   }
 
   clearToken(): void {
     this.tokenSubject.next(null);
-    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('ai_reporting');
   }
 
   async isAuthenticated(): Promise<boolean> {
