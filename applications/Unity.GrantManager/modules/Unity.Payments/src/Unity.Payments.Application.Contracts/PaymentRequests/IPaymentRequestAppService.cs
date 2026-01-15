@@ -20,5 +20,6 @@ namespace Unity.Payments.PaymentRequests
         Task<Guid?> GetDefaultAccountCodingId();
         Task<decimal?> GetUserPaymentThresholdAsync();
         Task ManuallyAddPaymentRequestsToReconciliationQueue(List<Guid> paymentRequestIds);
+        Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId);
     }
 }

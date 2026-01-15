@@ -13,25 +13,18 @@ namespace Unity.GrantManager.Comments
     [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(CommentAppService), typeof(ICommentAppService))]
-    public class CommentAppService : ApplicationService, ICommentAppService
+    public class CommentAppService(ICommentsManager commentsManager) : ApplicationService, ICommentAppService
     {
-        private readonly ICommentsManager _commentsManager;
-
-        public CommentAppService(ICommentsManager commentsManager)
-        {
-            _commentsManager = commentsManager;
-        }
-
         public async Task<CommentDto> CreateAsync(CreateCommentByTypeDto dto)
         {
             return ObjectMapper.Map<CommentBase, CommentDto>
-                (await _commentsManager.CreateCommentAsync(dto.OwnerId, dto.Comment, dto.CommentType));
+                (await commentsManager.CreateCommentAsync(dto.OwnerId, dto.Comment, dto.CommentType));
         }
 
         public async Task<IReadOnlyList<CommentDto>> GetListAsync(QueryCommentsByTypeDto dto)
         {
             return ObjectMapper.Map<IReadOnlyList<CommentListItem>, IReadOnlyList<CommentDto>>
-                (await _commentsManager.GetCommentsDisplayListAsync(dto.OwnerId, dto.CommentType));
+                (await commentsManager.GetCommentsDisplayListAsync(dto.OwnerId, dto.CommentType));
         }
 
         public async Task<CommentDto> UpdateAsync(UpdateCommentByTypeDto dto)
@@ -39,7 +32,7 @@ namespace Unity.GrantManager.Comments
             try
             {
                 return ObjectMapper.Map<CommentBase, CommentDto>
-                    (await _commentsManager.UpdateCommentAsync(dto.OwnerId, dto.CommentId, dto.Comment, dto.CommentType));
+                    (await commentsManager.UpdateCommentAsync(dto.OwnerId, dto.CommentId, dto.Comment, dto.CommentType));
 
             }
             catch (EntityNotFoundException)
@@ -50,7 +43,7 @@ namespace Unity.GrantManager.Comments
 
         public async Task<CommentDto> GetAsync(Guid id, QueryCommentsByTypeDto dto)
         {
-            var comment = await _commentsManager.GetCommentAsync(dto.OwnerId, id, dto.CommentType);
+            var comment = await commentsManager.GetCommentAsync(dto.OwnerId, id, dto.CommentType);
 
             return comment == null
                 ? throw new InvalidCommentParametersException()
@@ -60,13 +53,13 @@ namespace Unity.GrantManager.Comments
         [Authorize(GrantApplicationPermissions.Comments.Add)]
         public virtual async Task PinAsync(Guid id, PinCommentDto dto)
         {
-            await _commentsManager.PinCommentAsync(dto.OwnerId, id, dto.CommentType);
+            await commentsManager.PinCommentAsync(dto.OwnerId, id, dto.CommentType);
         }
 
         [Authorize(GrantApplicationPermissions.Comments.Add)]
         public virtual async Task UnpinAsync(Guid id, PinCommentDto dto)
         {
-            await _commentsManager.UnpinCommentAsync(dto.OwnerId, id, dto.CommentType);
+            await commentsManager.UnpinCommentAsync(dto.OwnerId, id, dto.CommentType);
         }
     }
 }

@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.GrantManager.Comments;
 using Unity.Modules.Shared;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications
 {
-    public interface IGrantApplicationAppService : ICommentsService
+    public interface IGrantApplicationAppService
     {
         Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id);
-        Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false);
-        Task<GetSummaryDto> GetSummaryAsync(Guid applicationId);
+        Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false);        
         Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input);
         Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input);
         Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input);

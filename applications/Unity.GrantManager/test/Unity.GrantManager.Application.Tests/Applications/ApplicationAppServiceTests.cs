@@ -18,10 +18,11 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 {
     private readonly GrantApplicationAppService _grantApplicationAppServiceTest;
-    private readonly IGrantApplicationAppService _grantApplicationAppService;
+    private readonly ICommentAppService _commentsAppService;
     private readonly IRepository<Application, Guid> _applicationsRepository;
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentsRepository;
     private readonly IApplicationAssignmentRepository _userAssignmentRepository;
+    private readonly IApplicationAssignmentsService _applicationAssignmentsService;
     private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
@@ -29,12 +30,13 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
     {
 
         _grantApplicationAppServiceTest = GetRequiredService<GrantApplicationAppService>();
-        _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
+        _commentsAppService = GetRequiredService<ICommentAppService>();
         _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
         _applicationCommentsRepository = GetRequiredService<IRepository<ApplicationComment, Guid>>();
         _identityUserLookupAppService = GetRequiredService<IIdentityUserIntegrationService>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
         _userAssignmentRepository = GetRequiredService<IApplicationAssignmentRepository>();
+        _applicationAssignmentsService = GetRequiredService<IApplicationAssignmentsService>();
     }
 
     [Fact]
@@ -50,7 +52,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
             UserData uData = users.Items[0];
 
             // Act
-            await _grantApplicationAppServiceTest.InsertAssigneeAsync(application.Id, uData.Id,"");
+            await _applicationAssignmentsService.InsertAssigneeAsync(application.Id, uData.Id,"");
             await uow.SaveChangesAsync();
 
 
@@ -60,7 +62,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
             assignments.Count.ShouldBe(1);
 
             // Act
-            await _grantApplicationAppServiceTest.DeleteAssigneeAsync(application.Id, uData.Id);
+            await _applicationAssignmentsService.DeleteAssigneeAsync(application.Id, uData.Id);
             await uow.SaveChangesAsync();
 
             IQueryable<ApplicationAssignment> queryableAssignment2 = await _userAssignmentRepository.GetQueryableAsync();
@@ -83,10 +85,11 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         var comment = "Test Application Comment Integration";
 
         // Act
-        _ = await _grantApplicationAppService.CreateCommentAsync(application.Id, new CreateCommentDto()
+        _ = await _commentsAppService.CreateAsync(new CreateCommentByTypeDto() 
         {
+            OwnerId = application.Id,
             Comment = comment
-        });
+        });        
 
         // Assert
         var afterAssessmentComments = (await _applicationCommentsRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList();
@@ -105,8 +108,9 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         var updateComment = "Updated Comment";
 
         // Act
-        var updatedCommentDto = await _grantApplicationAppService.UpdateCommentAsync(application.Id, new UpdateCommentDto()
+        var updatedCommentDto = await _commentsAppService.UpdateAsync(new UpdateCommentByTypeDto()
         {
+            OwnerId = application.Id,
             CommentId = applicationComment.Id,
             Comment = updateComment
         });
@@ -125,7 +129,11 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         var application = (await _applicationsRepository.GetListAsync())[0];
 
         // Act
-        var assessmentComments = (await _grantApplicationAppService.GetCommentsAsync(application.Id)).ToList();
+        var assessmentComments = (await _commentsAppService.GetListAsync(new QueryCommentsByTypeDto() 
+        { 
+            CommentType = CommentType.ApplicationComment,
+            OwnerId = application.Id
+        })).ToList();
 
         // Assert            
         assessmentComments.ShouldNotBeNull();
@@ -139,8 +147,9 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         // Arrange                        
         // Act
         // Assert
-        await Assert.ThrowsAsync<InvalidCommentParametersException>(() => _grantApplicationAppService.UpdateCommentAsync(Guid.NewGuid(), new UpdateCommentDto()
+        await Assert.ThrowsAsync<InvalidCommentParametersException>(() => _commentsAppService.UpdateAsync(new UpdateCommentByTypeDto()
         {
+            OwnerId = Guid.NewGuid(),
             CommentId = Guid.NewGuid(),
             Comment = "Foobar"
         }));
@@ -153,6 +162,6 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         // Arrange                        
         // Act
         // Assert
-        await Assert.ThrowsAsync<InvalidCommentParametersException>(() => _grantApplicationAppService.GetCommentAsync(Guid.NewGuid(), Guid.NewGuid()));
+        await Assert.ThrowsAsync<InvalidCommentParametersException>(() => _commentsAppService.GetAsync(Guid.NewGuid(), new QueryCommentsByTypeDto()));
     }
 }
