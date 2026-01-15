@@ -161,12 +161,12 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
         supplier.Name.ShouldBe("Test Supplier");
         supplier.Number.ShouldBe("SUP001");
         supplier.Subcategory.ShouldBeNull();
-        supplier.ProviderId.ShouldBeNull();
-        supplier.BusinessNumber.ShouldBeNull();
-        supplier.Status.ShouldBeNull();
-        supplier.SupplierProtected.ShouldBeNull();
-        supplier.StandardIndustryClassification.ShouldBeNull();
-        supplier.LastUpdatedInCAS.ShouldBeNull();
+        supplier.ProviderId.ShouldBe(string.Empty); // Preserves default value due to null-coalescing operator
+        supplier.BusinessNumber.ShouldBe(string.Empty); // Preserves default value due to null-coalescing operator
+        supplier.Status.ShouldBe(string.Empty); // Preserves default value due to null-coalescing operator
+        supplier.SupplierProtected.ShouldBe(string.Empty); // Preserves default value due to null-coalescing operator
+        supplier.StandardIndustryClassification.ShouldBe(string.Empty); // Preserves default value due to null-coalescing operator
+        supplier.LastUpdatedInCAS.ShouldBeNull(); // DateTime? remains null
         supplier.MailingAddress.ShouldBeNull();
         supplier.City.ShouldBeNull();
         supplier.Province.ShouldBeNull();
@@ -190,8 +190,8 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
         supplier.Number.ShouldBe("SUP001");
         supplier.Subcategory.ShouldBe("Category");
         supplier.ProviderId.ShouldBe("PROV123");
-        supplier.BusinessNumber.ShouldBeNull();
-        supplier.Status.ShouldBeNull(); // Not provided
+        supplier.BusinessNumber.ShouldBe(string.Empty); // Null-coalescing operator preserves default when null provided
+        supplier.Status.ShouldBe(string.Empty); // Preserves default value when SupplierStatus not provided
         supplier.LastUpdatedInCAS.ShouldBeNull(); // Not provided
     }
 

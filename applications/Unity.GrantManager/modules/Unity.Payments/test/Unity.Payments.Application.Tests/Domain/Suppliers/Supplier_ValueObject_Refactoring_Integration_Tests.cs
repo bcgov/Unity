@@ -230,13 +230,13 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         supplier.Number.ShouldBe("MIN001");
         supplier.Subcategory.ShouldBeNull(); // Optional in SupplierBasicInfo
         
-        // Properties from optional value objects should be null when value objects not provided
-        // The null-conditional operator returns null when the value object is null
-        supplier.ProviderId.ShouldBeNull(); // providerInfo?.ProviderId returns null
-        supplier.BusinessNumber.ShouldBeNull(); // providerInfo?.BusinessNumber returns null
-        supplier.Status.ShouldBeNull(); // supplierStatus?.Status returns null
-        supplier.SupplierProtected.ShouldBeNull(); // supplierStatus?.SupplierProtected returns null
-        supplier.StandardIndustryClassification.ShouldBeNull(); // supplierStatus?.StandardIndustryClassification returns null
+        // Properties from optional value objects should be string.Empty when value objects not provided
+        // The null-coalescing operator preserves the existing property default values
+        supplier.ProviderId.ShouldBe(string.Empty); // Preserves default value
+        supplier.BusinessNumber.ShouldBe(string.Empty); // Preserves default value
+        supplier.Status.ShouldBe(string.Empty); // Preserves default value
+        supplier.SupplierProtected.ShouldBe(string.Empty); // Preserves default value
+        supplier.StandardIndustryClassification.ShouldBe(string.Empty); // Preserves default value
         supplier.LastUpdatedInCAS.ShouldBeNull(); // casMetadata?.LastUpdatedInCAS returns null
         supplier.MailingAddress.ShouldBeNull(); // mailingAddress?.AddressLine returns null
         supplier.City.ShouldBeNull();
@@ -280,8 +280,7 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
 
         // Act - Use 'with' expressions to create modified copies
         var modifiedName = originalBasicInfo with { Name = "Modified Name" };
-        var modifiedNumber = originalBasicInfo with { Number = "MOD001" };
-        var modifiedCategory = originalBasicInfo with { Subcategory = "Modified Category" };
+        var modifiedNumber = originalBasicInfo with { Number = "MOD001" };        
 
         // Assert - Original unchanged, new instances created with modifications
         originalBasicInfo.Name.ShouldBe("Original Name");
