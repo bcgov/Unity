@@ -65,7 +65,7 @@ namespace Unity.GrantManager.Locality.BackgroundJobs
                             await localEventBus.PublishAsync(new DetermineElectoralRetrospectivelyEvent
                             {
                                 Application = application,
-                                FormVersion = formVersion                          
+                                FormVersion = formVersion
                             });
 
                             await unitOfWork.CompleteAsync();

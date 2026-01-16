@@ -24,12 +24,17 @@ namespace Unity.GrantManager.Intakes.Handlers
             await DetermineElectoralDistrictAsync(eventData.Application, eventData.FormVersion);
         }
 
-        /// <summary>
-        /// Core method to determine electoral district that can be called by different handlers.
+        /// This method mutates the provided <paramref name="application"/> instance by setting
+        /// its <c>ApplicantElectoralDistrict</c> property when appropriate but does not persist
+        /// changes or manage transaction boundaries.
         /// </summary>
-        /// <param name="application">The application to process</param>
+        /// <param name="application">The application to process. Must be tracked within an active unit of work so that changes are persisted by the caller.</param>
         /// <param name="formVersion">The form version associated with the application</param>
-        /// <returns></returns>
+        /// <remarks>
+        /// This method assumes it is executed within a valid unit of work or transactional context.
+        /// Callers are responsible for managing transaction boundaries and saving any changes made
+        /// to the <paramref name="application"/> entity.
+        /// </remarks>
         public async Task DetermineElectoralDistrictAsync(Application? application, ApplicationFormVersion? formVersion)
         {
             try
