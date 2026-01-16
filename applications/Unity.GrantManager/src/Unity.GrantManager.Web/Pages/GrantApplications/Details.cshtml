@@ -30,6 +30,7 @@
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
+    var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles
 {
@@ -42,6 +43,7 @@
     <abp-script src="/libs/formiojs/formio.form.min.js" />
     <abp-script src="/libs/jspdf/dist/jspdf.umd.min.js" />
     <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
+    <abp-script src="/Pages/GrantApplications/ai-analysis.js" />
 }
 
 <div id="applicationBreadcrumbWidget" class="fade-in-load">
@@ -62,6 +64,8 @@
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
 <input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
+<input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
+
 @functions
 {
     public static string GetInitials(string name)
@@ -209,7 +213,7 @@
                 }
                 @*-------- Payments Section END ---------*@
 
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                @if (flexFeatureEnabled)
                 {
                     @foreach (var customTab in Model.CustomTabs)
                     {
@@ -392,15 +396,69 @@
                 @*-------- History Tab Section END ---------*@
 
                 @*-------- AI Analysis Tab Section ---------*@
+                @if (aiApplicationAnalysisEnabled)
+                { 
                 <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">AI Application Analysis</h6>
                     <div class="ai-analysis-container">
+                        @* Default message when no analysis data is available *@
+                        <div class="ai-analysis-no-data px-3 py-4" id="aiAnalysisNoData">
+                            <div class="text-center text-muted">
+                                <i class="fa-solid fa-wand-sparkles fa-2x mb-3 opacity-50"></i>
+                                <h6 class="mb-2">No AI Analysis Available</h6>
+                                <p class="small mb-0">AI analysis results will appear here when available.</p>
+                            </div>
+                        </div>
                         @* Accordion list for errors, warnings, and recommendations *@
                         <div class="ai-analysis-accordion-list" id="aiAnalysisAccordionList">
                             @* Accordion items will be dynamically generated here *@
                         </div>
                     </div>
+
+                    @* Hidden HTML templates for AI analysis items *@
+                    <div class="d-none" id="aiAnalysisTemplates">
+                        @* Template for accordion group *@
+                        <div class="ai-analysis-accordion-item" data-template="accordion-group">
+                            <div class="ai-analysis-accordion-header" data-element="header">
+                                <span class="ai-analysis-accordion-arrow"></span>
+                                <i class="ai-analysis-accordion-icon fl" data-element="icon"></i>
+                                <span class="ai-analysis-accordion-title" data-element="title"></span>
+                            </div>
+                            <div class="ai-analysis-accordion-body" data-element="body">
+                                @* Content will be populated here *@
+                            </div>
+                        </div>
+
+                        @* Template for dismissible item (errors/warnings) *@
+                        <div class="ai-analysis-detail-item" data-template="dismissible-item">
+                            <div class="ai-analysis-detail-header">
+                                <div class="ai-analysis-detail-category" data-element="category"></div>
+                                <button type="button" class="ai-analysis-dismiss-btn" data-element="dismiss-btn" title="Dismiss this item">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="ai-analysis-detail-message" data-element="message"></div>
+                        </div>
+
+                        @* Template for dismissed item *@
+                        <div class="ai-analysis-detail-item dismissed" data-template="dismissed-item">
+                            <div class="ai-analysis-detail-header">
+                                <div class="ai-analysis-detail-category" data-element="category"></div>
+                                <button type="button" class="ai-analysis-restore-btn" data-element="restore-btn" title="Restore this item">
+                                    <i class="fa fa-undo"></i>
+                                </button>
+                            </div>
+                            <div class="ai-analysis-detail-message" data-element="message"></div>
+                        </div>
+
+                        @* Template for recommendation item *@
+                        <div class="ai-analysis-detail-item" data-template="recommendation-item">
+                            <div class="ai-analysis-detail-category" data-element="category"></div>
+                            <div class="ai-analysis-detail-message" data-element="message"></div>
+                        </div>
+                    </div>
                 </div>
+                }
                 @*-------- AI Analysis Tab Section END ---------*@
             </div>
 

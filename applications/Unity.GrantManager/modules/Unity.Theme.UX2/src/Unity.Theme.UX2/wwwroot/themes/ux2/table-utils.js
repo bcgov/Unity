@@ -47,7 +47,7 @@ function createNumberFormatter() {
  *     }
  * ]
  */
-if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.ext) {
+if ($.fn.dataTable !== undefined && $.fn.dataTable.ext) {
     $.fn.dataTable.ext.buttons.csvNoPlaceholder = {
         extend: 'csv',
         exportOptions: {
@@ -96,7 +96,7 @@ if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.ext) {
  *       syncOnInit: false
  *   });
  */
-if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.Api) {
+if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
     $.fn.dataTable.Api.register(
         'externalSearch()',
         function (selector, options) {
@@ -260,6 +260,165 @@ function restoreColumnFilterState(columnHeader, displayIdx, settings, data, dtAp
 }
 
 /**
+ * Prepares action buttons for DataTable, handling CSV export and column visibility.
+ * @param {Array<Object>} actionButtons - Original button configurations
+ * @param {boolean} useNullPlaceholder - Whether to use csvNoPlaceholder extension
+ * @param {boolean} disableColumnSelect - Whether to disable column visibility toggle
+ * @returns {Array<Object>} Processed button configurations
+ */
+function prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect) {
+    let updatedActionButtons = actionButtons.map((button) => {
+        if (useNullPlaceholder && button.extend === 'csv') {
+            return {
+                ...button,
+                extend: 'csvNoPlaceholder',
+            };
+        }
+        return button;
+    });
+
+    if (!disableColumnSelect) {
+        updatedActionButtons.push({
+            extend: 'colvisAlpha',
+            text: 'Columns',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            columns: ':not(.notexport):not([data-name="select"])',
+            columnText: function (dt, idx, title) {
+                return title;
+            },
+        });
+    }
+
+    return updatedActionButtons;
+}
+
+/**
+ * Adds CSS to prevent column squishing during DataTable initialization.
+ */
+function addDataTableFixCSS() {
+    if (!$('#dt-column-fix-css').length) {
+        $('<style id="dt-column-fix-css">' +
+            '.dt-loading { visibility: hidden; }' +
+            '.dt-loading .dt-scroll-body { min-height: 200px; }' +
+            'table.dataTable { table-layout: fixed; width: 100% !important; }' +
+            'table.dataTable thead th { min-width: 100px; }' +
+            '</style>').appendTo('head');
+    }
+}
+
+/**
+ * Configures column definitions for DataTable.
+ * @param {Array<number>} visibleColumns - Indices of visible columns
+ * @param {boolean} useNullPlaceholder - Whether to use null placeholder
+ * @param {Array<Object>} listColumnDefs - Additional column definitions
+ * @returns {Array<Object>} Column definitions array
+ */
+function buildColumnDefs(visibleColumns, useNullPlaceholder, listColumnDefs) {
+    const baseDefs = [
+        {
+            targets: visibleColumns,
+            visible: true,
+        },
+        {
+            targets: '_all',
+            visible: false,
+            ...(useNullPlaceholder ? { defaultContent: nullPlaceholder } : {}),
+        },
+    ];
+
+    if (Array.isArray(listColumnDefs) && listColumnDefs.length > 0) {
+        return [...baseDefs, ...listColumnDefs];
+    }
+
+    return baseDefs;
+}
+
+/**
+ * Handles column adjustment with multiple retry attempts.
+ * @param {DataTable.Api} api - DataTable API instance
+ */
+function adjustColumnsWithRetry(api) {
+    const adjustColumns = () => {
+        try {
+            api.columns.adjust();
+            setTimeout(() => {
+                api.draw('page');
+            }, 50);
+        } catch (e) {
+            console.warn('Initial column adjustment failed:', e);
+        }
+    };
+    
+    setTimeout(adjustColumns, 0);
+    setTimeout(adjustColumns, 100);
+}
+
+/**
+ * Initializes FilterRow plugin if available and button exists.
+ * @param {DataTable} iDt - DataTable instance
+ */
+function initializeFilterRowPlugin(iDt) {
+    if (!$('#btn-toggle-filter').length) {
+        return;
+    }
+
+    if ($.fn.dataTable !== undefined && $.fn.dataTable.FilterRow !== undefined) {
+        const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
+            buttonId: 'btn-toggle-filter',
+            buttonText: FilterDesc.Default,
+            buttonTextActive: FilterDesc.With_Filter,
+            enablePopover: $.fn.popover !== undefined,
+        });
+
+        iDt.settings()[0]._filterRow = filterRow;
+    } else {
+        console.warn(
+            'FilterRow plugin not loaded. Include plugins/filterRow.js before table-utils.js'
+        );
+    }
+}
+
+/**
+ * Moves DataTable buttons to designated container.
+ * @param {DataTable} iDt - DataTable instance
+ * @param {Array<Object>} updatedActionButtons - Button configurations
+ * @param {string} dynamicButtonContainerId - Target container ID
+ */
+function moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContainerId) {
+    if (!updatedActionButtons || updatedActionButtons.length === 0) {
+        return;
+    }
+
+    const buttonsContainer = iDt.buttons().container();
+    if (buttonsContainer.length && $(`#${dynamicButtonContainerId}`).length) {
+        buttonsContainer.prependTo(`#${dynamicButtonContainerId}`);
+    } else if (!buttonsContainer.length) {
+        console.warn(
+            'Buttons container not found. Ensure Buttons extension is loaded and buttons are configured.'
+        );
+    }
+}
+
+/**
+ * Sets up external search input binding if configured.
+ * @param {DataTable} iDt - DataTable instance
+ * @param {string} externalSearchId - ID of external search input
+ */
+function setupExternalSearch(iDt, externalSearchId) {
+    if (!externalSearchId || !$('#' + externalSearchId).length) {
+        return;
+    }
+
+    if (typeof iDt.externalSearch === 'function') {
+        iDt.externalSearch('#' + externalSearchId, { delay: 300 });
+    } else {
+        console.warn(
+            'DataTables externalSearch API not registered. Ensure table-utils.js API extensions are loaded.'
+        );
+    }
+}
+
+/**
  * Initializes a DataTable with comprehensive configuration including filtering, column management,
  * state persistence, and custom button controls.
  *
@@ -321,31 +480,14 @@ function initializeDataTable(options) {
         defaultVisibleColumns
     );
 
-    // Prepare action buttons - use official colvis instead of custom implementation
-    let updatedActionButtons = actionButtons.map((button) => {
-        // Replace csv buttons with csvNoPlaceholder if useNullPlaceholder is enabled
-        if (useNullPlaceholder && button.extend === 'csv') {
-            return {
-                ...button,
-                extend: 'csvNoPlaceholder',
-            };
-        }
-        return button;
-    });
+    // Prepare action buttons
+    let updatedActionButtons = prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect);
 
-    // Add official colvis button if column selection is enabled
-    if (!disableColumnSelect) {
-        updatedActionButtons.push({
-            extend: 'colvisAlpha',
-            text: 'Columns',
-            className: 'custom-table-btn flex-none btn btn-secondary',
-            columns: ':not(.notexport):not([data-name="select"])',
-            columnText: function (dt, idx, title) {
-                // Return title for sorting - will be sorted alphabetically by colvisAlpha extension
-                return title;
-            },
-        });
-    }
+    // Add CSS to prevent initial column squishing
+    addDataTableFixCSS();
+    
+    // Add loading class initially
+    dt.closest('.dt-container, .dataTables_wrapper').addClass('dt-loading');
 
     DataTable.type('num', 'className', 'dt-head-left dt-body-right');
     DataTable.type('num-fmt', 'className', 'dt-head-left');
@@ -360,7 +502,9 @@ function initializeDataTable(options) {
         externalSearchInputId: `#${externalSearchId}`,
         scrollX: true,
         scrollCollapse: true,
+        autoWidth: false,
         deferRender: false,
+        deferLoading: serverSideEnabled ? 0 : null,
         ajax: abp.libs.datatables.createAjax(
             dataEndpoint,
             data,
@@ -412,31 +556,42 @@ function initializeDataTable(options) {
             const api = this.api();
             const aoColumns = api.settings()[0].aoColumns;
 
+            // Set data-name attributes for columns
             api.columns().every(function (i) {
                 const name = aoColumns[i].name;
                 $(api.column(i).header()).attr('data-name', name);
             });
+            
+            // Remove loading class and make table visible
+            $(api.table().container()).removeClass('dt-loading');
+            
+            // Force immediate column adjustment with multiple attempts
+            adjustColumnsWithRetry(api);
+        },
+        preDrawCallback: function() {
+            // Force immediate column width calculation on first draw
+            const api = this.api();
+            const settings = api.settings()[0];
+            
+            if (!settings._columnsAdjusted) {
+                try {
+                    // Add loading class to prevent visual flicker during first draw
+                    $(api.table().container()).addClass('dt-loading');
+                    api.columns.adjust();
+                    settings._columnsAdjusted = true;
+                } catch (e) {
+                    console.warn('Pre-draw column adjustment failed:', e);
+                }
+            }
+            return true;
+        },
+        drawCallback: function() {
+            // Ensure table is visible after drawing
+            const api = this.api();
+            $(api.table().container()).removeClass('dt-loading');
         },
         columns: tableColumns,
-        columnDefs: [
-            {
-                targets: visibleColumns,
-                visible: true,
-            },
-            {
-                targets: '_all',
-                // Hide all other columns initially
-                visible: false,
-                // Set default content for all cells to placeholder if null
-                ...(useNullPlaceholder
-                    ? { defaultContent: nullPlaceholder }
-                    : {}),
-            },
-            // Add listColumnDefs if not null or empty
-            ...(Array.isArray(listColumnDefs) && listColumnDefs.length > 0
-                ? listColumnDefs
-                : []),
-        ],
+        columnDefs: buildColumnDefs(visibleColumns, useNullPlaceholder, listColumnDefs),
         processing: true,
         stateSave: true,
         stateDuration: 0,
@@ -463,6 +618,13 @@ function initializeDataTable(options) {
             console.log('stateLoaded - syncing FilterRow UI', data);
 
             try {
+                // Get table node with validation
+                const tableNode = dtApi.table().node();
+                if (!tableNode || !$(tableNode).length) {
+                    console.warn('Table DOM node not available');
+                    return;
+                }
+
                 if (settings._filterRow) {
                     setTimeout(function () {
                         const $filterRow = $('tr.tr-toggle-filter');
@@ -501,10 +663,26 @@ function initializeDataTable(options) {
                                 settings._filterRow._updateButtonState();
                             }
                         }
-                    }, 500);
+                    }, 100);
                 }
                 console.log('Drawing table with applied filters');
-                dtApi.columns.adjust().draw();
+                
+                // Enhanced validation before adjusting columns
+                if (tableNode && $(tableNode).length && $(tableNode).is(':visible')) {
+                    // Additional check for table container and scroll elements
+                    const $tableWrapper = $(tableNode).closest('.dt-container, .dataTables_wrapper');
+                    if ($tableWrapper.length && $tableWrapper.find('.dt-scroll-body').length) {
+                        try {
+                            dtApi.columns.adjust().draw();
+                        } catch (adjustError) {
+                            console.warn('Column adjustment failed:', adjustError);
+                        }
+                    } else {
+                        console.warn('Table wrapper or scroll container not ready for column adjustment');
+                    }
+                } else {
+                    console.warn('Table DOM element not available for column adjustment');
+                }
             } catch (err) {
                 console.warn('StateLoaded failed:', err);
             }
@@ -512,55 +690,16 @@ function initializeDataTable(options) {
     });
 
     // Initialize FilterRow plugin if filter button exists
-    if ($('#btn-toggle-filter').length) {
-        if (
-            $.fn.dataTable !== 'undefined' &&
-            typeof $.fn.dataTable.FilterRow !== 'undefined'
-        ) {
-            const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
-                buttonId: 'btn-toggle-filter',
-                buttonText: FilterDesc.Default,
-                buttonTextActive: FilterDesc.With_Filter,
-                enablePopover: $.fn.popover !== 'undefined',
-            });
-
-            iDt.settings()[0]._filterRow = filterRow;
-        } else {
-            console.warn(
-                'FilterRow plugin not loaded. Include plugins/filterRow.js before table-utils.js'
-            );
-        }
-    }
+    initializeFilterRowPlugin(iDt);
 
     // Move buttons to designated container (if buttons exist)
-    // Note: In DT 2.x, buttons need to be explicitly created via buttons() API
-    if (updatedActionButtons && updatedActionButtons.length > 0) {
-        const buttonsContainer = iDt.buttons().container();
-        if (
-            buttonsContainer.length &&
-            $(`#${dynamicButtonContainerId}`).length
-        ) {
-            buttonsContainer.prependTo(`#${dynamicButtonContainerId}`);
-        } else if (!buttonsContainer.length) {
-            console.warn(
-                'Buttons container not found. Ensure Buttons extension is loaded and buttons are configured.'
-            );
-        }
-    }
+    moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContainerId);
 
     // Initialize table (clear default styles, reset search)
     init(iDt);
 
     // Setup external search if provided
-    if (externalSearchId && $('#' + externalSearchId).length) {
-        if (typeof iDt.externalSearch === 'function') {
-            iDt.externalSearch('#' + externalSearchId, { delay: 300 });
-        } else {
-            console.warn(
-                'DataTables externalSearch API not registered. Ensure table-utils.js API extensions are loaded.'
-            );
-        }
-    }
+    setupExternalSearch(iDt, externalSearchId);
 
     // Prevent row selection when clicking on links inside cells
     iDt.on('user-select', function (e, dt, type, cell, originalEvent) {
@@ -629,12 +768,12 @@ function getVisibleColumnIndexes(columns, visibleColumnsArray) {
                         (col) => col.name === colName || col.data === colName
                     )?.index
             )
-            .filter((index) => typeof index !== 'undefined');
+            .filter((index) => index !== undefined);
     } else {
         // If visibleColumnsArray is empty, include all column indexes.
         indexes = columns
             .map((col) => col.index)
-            .filter((index) => typeof index !== 'undefined');
+            .filter((index) => index !== undefined);
     }
 
     // Always add 0 if not already present
@@ -642,7 +781,7 @@ function getVisibleColumnIndexes(columns, visibleColumnsArray) {
         indexes.push(0);
     }
 
-    return indexes.sort();
+    return indexes.sort((a, b) => a - b);
 }
 
 /**
@@ -737,14 +876,6 @@ function findColumnByTitle(title, dataTable) {
 function getColumnByName(name, columns) {
     return columns.find((obj) => obj.name === name);
 }
-
-// isColumnVisToggled, toggleManageColumnButton, and getColumnToggleButtonsSorted functions removed
-// Replaced by official DataTables Buttons 'colvis' extension
-
-// setExternalSearchFilter function removed - replaced by externalSearch() API method
-
-// updateFilter, searchFilter, and updateFilterButton functions removed
-// Replaced by FilterRow plugin (see plugins/filterRow.js)
 
 /**
  * Event handler for the select-all checkbox in DataTables.
