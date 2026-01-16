@@ -6,37 +6,25 @@ using System;
 using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
-using Volo.Abp.Data;
-using Microsoft.EntityFrameworkCore;
 using Unity.Payments.Enums;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
-using Unity.Payments.Codes;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
-using Volo.Abp.Uow;
 using Unity.Modules.Shared.Http;
-using Unity.Payments.PaymentConfigurations;
-using Unity.Payments.Domain.AccountCodings;
 using Unity.GrantManager.Integrations;
+using Unity.Payments.Domain.Services;
 
 namespace Unity.Payments.Integrations.Cas
 {
     [IntegrationService]
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
-#pragma warning disable S107 // Methods should not have too many parameters        
     public class InvoiceService(
                     IEndpointManagementAppService endpointManagementAppService,
                     ICasTokenService iTokenService,
-                    IAccountCodingRepository accountCodingRepository,
-                    PaymentConfigurationAppService paymentConfigurationAppService,
-                    IPaymentRequestRepository paymentRequestRepository,
                     IResilientHttpRequest resilientHttpRequest,
-                    ISupplierRepository iSupplierRepository,
-                    ISiteRepository iSiteRepository,
-                    IUnitOfWorkManager unitOfWorkManager) : ApplicationService, IInvoiceService
-#pragma warning restore S107 // Methods should not have too many parameters
+                    IInvoiceManager invoiceManager) : ApplicationService, IInvoiceService
     {
         private const string CFS_APINVOICE = "cfs/apinvoice";
 
@@ -50,7 +38,7 @@ namespace Unity.Payments.Integrations.Cas
                                                                   string? accountDistributionCode)
         {
             Invoice? casInvoice = new();
-            Site? site = await GetSiteByPaymentRequestAsync(paymentRequest);
+            Site? site = await invoiceManager.GetSiteByPaymentRequestAsync(paymentRequest);
 
             if (site != null && site.Supplier != null && site.Supplier.Number != null && accountDistributionCode != null)
             {
@@ -86,41 +74,23 @@ namespace Unity.Payments.Integrations.Cas
             return casInvoice;
         }
 
-        public async Task<Site?> GetSiteByPaymentRequestAsync(PaymentRequest paymentRequest)
-        {
-            Site? site = await iSiteRepository.GetAsync(paymentRequest.SiteId, true);
-            if (site?.SupplierId != null)
-            {
-                Supplier supplier = await iSupplierRepository.GetAsync(site.SupplierId);
-                site.Supplier = supplier;
-            }
-            return site;
-        }
-
         public async Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(string invoiceNumber)
         {
             InvoiceResponse invoiceResponse = new();
             try
             {
-                var paymentRequest = await paymentRequestRepository.GetPaymentRequestByInvoiceNumber(invoiceNumber)
-                    ?? throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Payment Request not found");
+                var paymentRequestData = await invoiceManager.GetPaymentRequestDataAsync(invoiceNumber);
 
-                if (!paymentRequest.AccountCodingId.HasValue)
-                    throw new UserFriendlyException("CreateInvoiceByPaymentRequestAsync: Account Coding - Payment Request - not found");
-
-                AccountCoding accountCoding = await accountCodingRepository.GetAsync(paymentRequest.AccountCodingId.Value);
-                string accountDistributionCode = await paymentConfigurationAppService.GetAccountDistributionCode(accountCoding);// this will be on the payment request
-
-                if (!string.IsNullOrEmpty(accountDistributionCode))
+                if (!string.IsNullOrEmpty(paymentRequestData.AccountDistributionCode))
                 {
-                    Invoice? invoice = await InitializeCASInvoice(paymentRequest, accountDistributionCode);
+                    Invoice? invoice = await InitializeCASInvoice(paymentRequestData.PaymentRequest, paymentRequestData.AccountDistributionCode);
 
                     if (invoice is not null)
                     {
                         invoiceResponse = await CreateInvoiceAsync(invoice);
                         if (invoiceResponse is not null)
                         {
-                            await UpdatePaymentRequestWithInvoice(paymentRequest.Id, invoiceResponse);
+                            await invoiceManager.UpdatePaymentRequestWithInvoiceAsync(paymentRequestData.PaymentRequest.Id, invoiceResponse);
                         }
                     }
                 }
@@ -133,104 +103,6 @@ namespace Unity.Payments.Integrations.Cas
 
             return invoiceResponse;
         }
-
-        private async Task UpdatePaymentRequestWithInvoice(Guid paymentRequestId, InvoiceResponse invoiceResponse)
-        {
-            const int maxRetries = 3;
-
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    // Each attempt must have a fresh UoW
-                    using (var uow = unitOfWorkManager.Begin())
-                    {
-                        // Load with tracking
-                        var paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
-
-                        if (paymentRequest == null)
-                        {
-                            Logger.LogWarning("PaymentRequest {Id} not found. Skipping update.", paymentRequestId);
-                            return;
-                        }
-
-                        // Idempotency: do not re-process
-                        if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.SentToCas)
-                        {
-                            Logger.LogInformation(
-                                "PaymentRequest {Id} already invoiced. Skipping update.",
-                                paymentRequestId
-                            );
-                            return;
-                        }
-
-                        // Apply CAS response info
-                        paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
-                        paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
-
-                        // Set status
-                        paymentRequest.SetInvoiceStatus(
-                            invoiceResponse.IsSuccess()
-                                ? CasPaymentRequestStatus.SentToCas
-                                : CasPaymentRequestStatus.ErrorFromCas
-                        );
-
-                        await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
-
-                        // Commit this attempt
-                        await uow.CompleteAsync();
-
-                        Logger.LogInformation(
-                            "PaymentRequest {Id} updated successfully on attempt {Attempt}.",
-                            paymentRequestId,
-                            attempt
-                        );
-                        return; // success
-                    }
-                }
-                catch (Exception ex) when (
-                    ex is AbpDbConcurrencyException ||
-                    ex is DbUpdateConcurrencyException
-                ) {
-                    Logger.LogWarning(
-                        ex,
-                        "Concurrency conflict when updating PaymentRequest {Id}, attempt {Attempt}",
-                        paymentRequestId,
-                        attempt
-                    );
-
-                    if (attempt == maxRetries)
-                    {
-                        Logger.LogError(
-                            ex,
-                            "Max retries reached for PaymentRequest {Id}. Manual intervention may be required.",
-                            paymentRequestId
-                        );
-
-                        throw new UserFriendlyException(
-                            $"Failed to update payment request {paymentRequestId} after {maxRetries} attempts due to concurrency conflicts."
-                        );
-                    }
-
-                    // Brief pause before retrying to reduce immediate collision
-                    await Task.Delay(75);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(
-                        ex,
-                        "Unexpected exception updating PaymentRequest {Id} on attempt {Attempt}",
-                        paymentRequestId,
-                        attempt
-                    );
-
-                    throw new UserFriendlyException(
-                        $"Failed to update payment request {paymentRequestId}: {ex.Message}"
-                    );
-                }
-            }
-        }
-
 
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
