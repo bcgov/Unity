@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -322,6 +322,11 @@ namespace Unity.Payments.PaymentRequests
         public async Task ManuallyAddPaymentRequestsToReconciliationQueue(List<Guid> paymentRequestIds)
         {
             await paymentRequestQueryManager.ManuallyAddPaymentRequestsToReconciliationQueueAsync(paymentRequestIds);
+        }
+
+        public async Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId)
+        {
+            return await paymentRequestQueryManager.GetPaymentPendingListByCorrelationIdAsync(applicationId);
         }
     }
 }

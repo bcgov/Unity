@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +11,7 @@ using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Unity.Payments.Enums;
 using Unity.Payments.Integrations.Cas;
 using Volo.Abp.Features;
+using Unity.Modules.Shared.Correlation;
 
 namespace Unity.Payments.Suppliers
 {
@@ -20,27 +20,40 @@ namespace Unity.Payments.Suppliers
                                     ISupplierService supplierService,
                                     ISiteAppService siteAppService,
                                     IApplicationRepository applicationRepository) : PaymentsAppService, ISupplierAppService
-    {
-        protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
-        
+    {                
         public virtual async Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto)
         {
-            Supplier supplier = new Supplier(Guid.NewGuid(),
-                createSupplierDto.Name,
-                createSupplierDto.Number,
-                createSupplierDto.Subcategory,
-                createSupplierDto.ProviderId,
-                createSupplierDto.BusinessNumber,
-                createSupplierDto.Status,
-                createSupplierDto.SupplierProtected,
-                createSupplierDto.StandardIndustryClassification,
-                createSupplierDto.LastUpdatedInCAS,
-                createSupplierDto.CorrelationId,
-                createSupplierDto.CorrelationProvider,
-                new MailingAddress(createSupplierDto.MailingAddress,
-                    createSupplierDto.City,
-                    createSupplierDto.Province,
-                    createSupplierDto.PostalCode));
+            var basicInfo = new SupplierBasicInfo(
+                createSupplierDto.Name, 
+                createSupplierDto.Number, 
+                createSupplierDto.Subcategory);
+            
+            var providerInfo = new ProviderInfo(
+                createSupplierDto.ProviderId, 
+                createSupplierDto.BusinessNumber);
+            
+            var supplierStatus = new SupplierStatus(
+                createSupplierDto.Status, 
+                createSupplierDto.SupplierProtected, 
+                createSupplierDto.StandardIndustryClassification);
+            
+            var casMetadata = new CasMetadata(createSupplierDto.LastUpdatedInCAS);
+            
+            var correlation = new Correlation(createSupplierDto.CorrelationId, createSupplierDto.CorrelationProvider);
+            
+            var mailingAddress = new MailingAddress(
+                createSupplierDto.MailingAddress,
+                createSupplierDto.City,
+                createSupplierDto.Province,
+                createSupplierDto.PostalCode);
+
+            Supplier supplier = new(Guid.NewGuid(),
+                basicInfo,
+                correlation,
+                providerInfo,
+                supplierStatus,
+                casMetadata,
+                mailingAddress);
 
             var result = await supplierRepository.InsertAsync(supplier);
             return ObjectMapper.Map<Supplier, SupplierDto>(result);
@@ -49,15 +62,24 @@ namespace Unity.Payments.Suppliers
         public virtual async Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto)
         {
             var supplier = await supplierRepository.GetAsync(id);
-            supplier.Name = updateSupplierDto.Name;
-            supplier.Number = updateSupplierDto.Number;
-            supplier.Subcategory = updateSupplierDto.Subcategory;
-            supplier.ProviderId = updateSupplierDto.ProviderId;
-            supplier.BusinessNumber = updateSupplierDto.BusinessNumber;
-            supplier.Status = updateSupplierDto.Status;
-            supplier.SupplierProtected = updateSupplierDto.SupplierProtected;
-            supplier.StandardIndustryClassification = updateSupplierDto.StandardIndustryClassification;
-            supplier.LastUpdatedInCAS = updateSupplierDto.LastUpdatedInCAS;
+            
+            // Use the new value object methods for better encapsulation
+            supplier.UpdateBasicInfo(new SupplierBasicInfo(
+                updateSupplierDto.Name, 
+                updateSupplierDto.Number, 
+                updateSupplierDto.Subcategory));
+            
+            supplier.UpdateProviderInfo(new ProviderInfo(
+                updateSupplierDto.ProviderId, 
+                updateSupplierDto.BusinessNumber));
+            
+            supplier.UpdateStatus(new SupplierStatus(
+                updateSupplierDto.Status, 
+                updateSupplierDto.SupplierProtected, 
+                updateSupplierDto.StandardIndustryClassification));
+            
+            supplier.UpdateCasMetadata(new CasMetadata(updateSupplierDto.LastUpdatedInCAS));
+            
             supplier.CorrelationId = updateSupplierDto.CorrelationId;
             supplier.CorrelationProvider = updateSupplierDto.CorrelationProvider;
 
@@ -80,7 +102,7 @@ namespace Unity.Payments.Suppliers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error fetching supplier");
+                Logger.LogError(ex, "Error fetching supplier");
                 return null;
             }
         }
@@ -128,7 +150,7 @@ namespace Unity.Payments.Suppliers
             var supplier = await GetBySupplierNumberAsync(supplierNumber);
             if (supplier == null) return new List<SiteDto>();
             List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(supplier.Id);
-            List<SiteDto> existingSiteDtos = sites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
+            List<SiteDto> existingSiteDtos = [.. sites.Select(ObjectMapper.Map<Site, SiteDto>)];
 
             bool hasChanges = false;
             // If the list of CAS sites is different from the existing sites
@@ -184,7 +206,7 @@ namespace Unity.Payments.Suppliers
                 if (updatedSupplier != null)
                 {
                     List<Site> updatedSites = await siteAppService.GetSitesBySupplierIdAsync(updatedSupplier.Id);
-                    existingSiteDtos = updatedSites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
+                    existingSiteDtos = [.. updatedSites.Select(ObjectMapper.Map<Site, SiteDto>)];
                 }
             }
 
@@ -289,7 +311,7 @@ namespace Unity.Payments.Suppliers
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Unable to resolve default payment group for applicant {ApplicantId}", applicantId);
+                Logger.LogWarning(ex, "Unable to resolve default payment group for applicant {ApplicantId}", applicantId);
             }
 
             return fallbackPaymentGroup;

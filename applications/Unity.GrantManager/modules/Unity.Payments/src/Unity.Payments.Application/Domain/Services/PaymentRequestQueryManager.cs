@@ -212,5 +212,11 @@ namespace Unity.Payments.Domain.Services
             }
             await casPaymentRequestCoordinator.ManuallyAddPaymentRequestsToReconciliationQueue(paymentRequestDtos);
         }
+
+        public async Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId)
+        {
+            var payments = await paymentRequestRepository.GetPaymentPendingListByCorrelationIdAsync(applicationId);
+            return objectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments);
+        }
     }
 }

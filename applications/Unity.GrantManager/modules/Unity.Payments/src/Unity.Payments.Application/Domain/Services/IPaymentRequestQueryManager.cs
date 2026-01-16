@@ -32,5 +32,8 @@ namespace Unity.Payments.Domain.Services
 
         // Helper Method
         void ApplyErrorSummary(List<PaymentRequestDto> mappedPayments);
+
+        // Pending Payments
+        Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId);
     }
 }
