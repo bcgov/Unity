@@ -109,6 +109,9 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var tagsPermissionsGroup = context.AddGroup("Tags", L("Permission:Tags"));
             tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Create, L(UnitySelector.Application.Tags.Create));
             tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));
+
+            // AI
+            var aiPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.AIReporting.Default, L("Permission:GrantApplicationManagement.AIReporting.Default"));
         }
 
         private static LocalizableString L(string name)

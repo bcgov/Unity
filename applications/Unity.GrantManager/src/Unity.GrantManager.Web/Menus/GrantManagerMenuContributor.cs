@@ -118,7 +118,7 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
-        if (await featureChecker.IsEnabledAsync("Unity.AIReporting") || currentUser.IsInRole(IdentityConsts.ITAdminRoleName))
+        if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
         {
             context.Menu.AddItem(
                 new ApplicationMenuItem(
@@ -126,6 +126,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                     l["Menu:AIReporting"],
                     "~/AIReporting",
                     icon: "fl fl-view-dashboard",
+                    requiredPermissionName: GrantApplicationPermissions.AIReporting.Default,
                     order: 9
                 )
             );
