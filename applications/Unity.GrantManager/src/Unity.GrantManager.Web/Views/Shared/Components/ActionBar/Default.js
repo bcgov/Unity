@@ -83,7 +83,7 @@ $(function () {
         
         Object.entries(groupedTags).forEach(function ([appId, tagList]) {
             let uncommon = filterUncommonTags(tagList, commonTags);
-            uncommonTags = uncommonTags.concat(uncommon);
+            uncommonTags.push(...uncommon);
         });
         
         return uncommonTags;
@@ -148,18 +148,18 @@ $(function () {
         if (!applicationIds || applicationIds.length === 0) return;
 
         try {
-            let allTags = await unity.grantManager.globalTag.tags.getList();
+            let globalTags = await unity.grantManager.globalTag.tags.getList();
             let tags = await unity.grantManager.grantApplications.applicationTags.getListWithCacheKey(cacheKey);
             
             let groupedTags = groupTagsByApplication(tags, applicationIds);
             let commonTags = findCommonTags(groupedTags);
-            let alltags = buildAllTagsData(groupedTags, commonTags);
+            let allTags = buildAllTagsData(groupedTags, commonTags);
             let uncommonTags = collectUncommonTags(groupedTags, commonTags);
             
-            $('#TagsJson').val(JSON.stringify(alltags));
+            $('#TagsJson').val(JSON.stringify(allTags));
             
             let tagInputArray = buildTagInputArray(commonTags, uncommonTags);
-            setupTagInput(tagInput, allTags, tagInputArray);
+            setupTagInput(tagInput, globalTags, tagInputArray);
         } catch (error) {
             console.error("Error loading tag select list", error);
         }
@@ -171,8 +171,7 @@ $(function () {
         let tagInputArray = [];
 
         if (allTags) {
-            suggestionsArray = JSON.parse(allTags);
-            console.log(suggestionsArray);
+            suggestionsArray = JSON.parse(allTags);            
         }
 
         if (uncommonTags && uncommonTags != null && uncommonTags != "[]") {
