@@ -297,12 +297,7 @@ function prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSe
  */
 function addDataTableFixCSS() {
     if (!$('#dt-column-fix-css').length) {
-        $('<style id="dt-column-fix-css">' +
-            '.dt-loading { visibility: hidden; }' +
-            '.dt-loading .dt-scroll-body { min-height: 200px; }' +
-            'table.dataTable { width: 98% !important; }' +
-            'table.dataTable thead th { min-width: fit-content; }' +
-            '</style>').appendTo('head');
+        $('<style id="dt-column-fix-css"> dataTable { width: 100%; }</style>').appendTo('head');
     }
 }
 
