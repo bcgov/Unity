@@ -661,6 +661,16 @@ function createNumberFormatter() {
 }
 
 /**
+ * Adds CSS to prevent column squishing during DataTable initialization.
+ */
+function addDataTableFixCSS() {
+    if (!$('#dt-column-fix-css').length) {
+        $('<style id="dt-column-fix-css"> dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; max-height: 90%; } </style>').appendTo('head');
+    }
+}
+
+
+/**
  * Assigns sequential index values to columns that don't have one.
  * Preserves existing indices and continues numbering from the highest existing index.
  * @param {Array<Object>} columnsArray - Array of column definition objects
