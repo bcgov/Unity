@@ -263,7 +263,7 @@
             @if (aiApplicationAnalysisEnabled)
             {                
                 <li class="nav-item">
-                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(5)</button>
+                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(<span id="ai_analysis_count">0</span>)</button>
                 </li>
             }
             </ul>
@@ -354,7 +354,7 @@
                         @await Component.InvokeAsync("EmailsWidget", new { applicationId = Model.ApplicationId, currentUserId = Model.CurrentUserId })
                     </div>
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Email History</h6>
-                    <div class="px-3 pb-2" id="applicationEmailsWidget">
+                    <div class="px-3 pb-2" id="applicationEmailHistoryWidget">
                         @await Component.InvokeAsync("EmailHistoryWidget")
                     </div>
                 </div>
