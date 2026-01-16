@@ -3,7 +3,6 @@ import { PageFactory } from "../utilities/PageFactory";
 describe("Send an email", () => {
   const loginPage = PageFactory.getLoginPage();
   const navigationPage = PageFactory.getNavigationPage();
-  const applicationsPage = PageFactory.getApplicationsPage();
   const emailsPage = PageFactory.getEmailsPage();
 
   const TEST_EMAIL_TO = "grantmanagementsupport@gov.bc.ca";

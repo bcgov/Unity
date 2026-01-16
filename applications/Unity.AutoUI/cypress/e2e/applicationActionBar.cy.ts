@@ -6,13 +6,10 @@
 
 import {
   LoginPageInstance,
-  ApplicationsPageInstance,
   ApplicationActionBarPageInstance,
-  BasePage,
 } from "../utilities";
 
 const loginPage = LoginPageInstance();
-const applicationsPage = ApplicationsPageInstance();
 const actionBarPage = ApplicationActionBarPageInstance();
 
 describe("Application List Action Bar Validation", () => {

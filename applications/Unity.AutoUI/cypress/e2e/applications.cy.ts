@@ -5,25 +5,11 @@
 
 import {
   LoginPageInstance,
-  NavigationPageInstance,
-  DashboardPageInstance,
-  ApplicationsPageInstance,
-  RolesPageInstance,
-  UsersPageInstance,
-  IntakesPageInstance,
-  FormsPageInstance,
   ApplicationDetailsPageInstance,
 } from "../utilities";
 
 describe("Grant Manager Login and List Navigation (POM)", () => {
   const loginPage = LoginPageInstance();
-  const navPage = NavigationPageInstance();
-  const dashboardPage = DashboardPageInstance();
-  const applicationsPage = ApplicationsPageInstance();
-  const rolesPage = RolesPageInstance();
-  const usersPage = UsersPageInstance();
-  const intakesPage = IntakesPageInstance();
-  const formsPage = FormsPageInstance();
   const applicationDetailsPage = ApplicationDetailsPageInstance();
 
   it("Verify Login", () => {
