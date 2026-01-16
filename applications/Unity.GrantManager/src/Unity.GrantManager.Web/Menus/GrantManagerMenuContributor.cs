@@ -9,7 +9,6 @@ using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Features;
-using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Menus;
 
