@@ -206,7 +206,12 @@ function renderRealAIAnalysis(analysisData) {
             `Dismissed Items (${dismissedErrors.length + dismissedWarnings.length})`,
             $dismissedContainer
         );
+
         $accordionList.append(accordionItem);
+        let totalLength = recommendations.length + activeWarnings.length + activeErrors.length;
+        PubSub.publish('update_ai_analysis_count', {
+            itemCount: totalLength,
+        });
     }
 
     // If no items, show the no-data message; otherwise hide it
@@ -294,41 +299,6 @@ function toggleAccordionItem($header) {
     $body.slideToggle(300);
 }
 
-function renderDemoAIAnalysis() {
-    console.debug('Using demo AI analysis data');
-
-    // Demo data
-    const demoData = {
-        errors: [
-            {
-                category: "Missing Required Documentation",
-                message: "The application is missing the required financial statements for the last fiscal year. This is a mandatory requirement for grant eligibility."
-            },
-            {
-                category: "Budget Calculation Error",
-                message: "The total project budget does not match the sum of individual line items. There is a discrepancy of $15,000 that needs to be resolved."
-            }
-        ],
-        warnings: [
-            {
-                category: "Incomplete Project Timeline",
-                message: "The project timeline section is missing specific milestone dates. While not mandatory, providing detailed timelines strengthens the application."
-            },
-            {
-                category: "Limited Partnership Details",
-                message: "Partnership letters are provided but lack specific commitment amounts or resource contributions from partners."
-            },
-            {
-                category: "Vague Impact Metrics",
-                message: "The expected outcomes section lacks specific, measurable impact metrics. Consider adding quantifiable targets and KPIs."
-            }
-        ],
-        recommendations: []
-    };
-
-    renderRealAIAnalysis(demoData);
-}
-
 function loadAIAnalysis() {
     if($('#AIAnalysisFeatureEnabled') == 'False') {
         return;
@@ -337,7 +307,6 @@ function loadAIAnalysis() {
     const applicationId = urlParams.get('ApplicationId');
 
     if (!applicationId) {
-        renderDemoAIAnalysis();
         return;
     }
 
@@ -369,6 +338,9 @@ function loadAIAnalysis() {
                         }
                     }
                     cleanedJson = cleanedJson.trim();
+
+                    // Remove trailing commas before closing brackets/braces (common JSON error from AI)
+                    cleanedJson = cleanedJson.replaceAll(/,(\s*[}\]])/g, '$1');
 
                     const analysisData = JSON.parse(cleanedJson);
                     console.debug('Parsed analysis data:', analysisData);
