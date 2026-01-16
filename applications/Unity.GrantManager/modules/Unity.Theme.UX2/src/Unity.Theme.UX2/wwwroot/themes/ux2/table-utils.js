@@ -618,13 +618,7 @@ function initializeDataTable(options) {
             console.log('stateLoaded - syncing FilterRow UI', data);
 
             try {
-                // Validate that the DataTable API is properly initialized
-                if (!dtApi || !dtApi.table) {
-                    console.warn('DataTable API not properly initialized');
-                    return;
-                }
-
-                // Get table node with additional validation
+                // Get table node with validation
                 const tableNode = dtApi.table().node();
                 if (!tableNode || !$(tableNode).length) {
                     console.warn('Table DOM node not available');

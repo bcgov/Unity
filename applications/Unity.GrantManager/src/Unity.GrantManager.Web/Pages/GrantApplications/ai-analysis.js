@@ -7,7 +7,7 @@
 function simpleHash(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
-        const char = str.codePointAt(i);
+        const char = str.codePointAt(i) || 0;
         hash = ((hash << 5) - hash) + char;
         hash = hash & hash; // Convert to 32bit integer
     }
@@ -295,7 +295,7 @@ function toggleAccordionItem($header) {
 }
 
 function renderDemoAIAnalysis() {
-    console.log('Using demo AI analysis data');
+    console.debug('Using demo AI analysis data');
 
     // Demo data
     const demoData = {
@@ -344,15 +344,15 @@ function loadAIAnalysis() {
     // Get the application data including AI analysis
     unity.grantManager.grantApplications.grantApplication.get(applicationId)
         .done(function(application) {
-            console.log('Application data received:', application);
-            console.log('AI Analysis field:', application.aiAnalysis);
+            console.debug('Application data received:', application);
+            console.debug('AI Analysis field:', application.aiAnalysis);
 
             // Use the camelCase version that should come from the API
             const aiAnalysis = application.aiAnalysis;
 
             if (application && aiAnalysis) {
                 try {
-                    console.log('Raw AI analysis:', aiAnalysis);
+                    console.debug('Raw AI analysis:', aiAnalysis);
 
                     // Clean the JSON response (remove markdown code blocks if present)
                     let cleanedJson = aiAnalysis.trim();
@@ -371,13 +371,13 @@ function loadAIAnalysis() {
                     cleanedJson = cleanedJson.trim();
 
                     const analysisData = JSON.parse(cleanedJson);
-                    console.log('Parsed analysis data:', analysisData);
+                    console.debug('Parsed analysis data:', analysisData);
                     renderRealAIAnalysis(analysisData);
                 } catch (e) {
                     console.warn('Failed to parse AI analysis JSON, showing demo data:', e);
                 }
             } else {
-                console.log('No AI analysis found, showing demo');             
+                console.debug('No AI analysis found, showing demo');             
             }
         })
         .fail(function(error) {
