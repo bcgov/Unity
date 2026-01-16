@@ -9,8 +9,7 @@
   <ItemGroup>
     <!-- Explicitly reference compatible version to avoid transitive dependency warnings -->
     <PackageReference Include="Microsoft.Extensions.Compliance.Abstractions" Version="9.5.0" />
-    <!-- Resolve EntityFrameworkCore.Relational version conflicts -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.5" />
+
   </ItemGroup>
   
 </Project>
