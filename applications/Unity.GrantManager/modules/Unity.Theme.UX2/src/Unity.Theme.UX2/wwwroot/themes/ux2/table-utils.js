@@ -568,7 +568,7 @@ function adjustColumnsWithRetry(api) {
  */
 function initializeFilterRowPlugin(iDt) {
     if (!$('#btn-toggle-filter').length) return;
-    if ($.fn.dataTable && $.fn.dataTable.FilterRow) {
+    if ($.fn.dataTable?.FilterRow) {
         const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
             buttonId: 'btn-toggle-filter',
             buttonText: FilterDesc.Default,
@@ -601,7 +601,7 @@ function moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContaine
  * @param {DataTable.Api} iDt
  */
 function resizeDataTableScrollBody(iDt) {
-    if (!iDt || !iDt.table || !iDt.table().node) return;
+    if (!iDt?.table?.()?.node) return;
 
     const $wrapper = $(iDt.table().container());
     const $scrollBody = $wrapper.find('.dt-scroll-body');
