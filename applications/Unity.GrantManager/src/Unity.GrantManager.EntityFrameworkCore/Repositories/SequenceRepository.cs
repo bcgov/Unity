@@ -44,7 +44,10 @@ public class SequenceRepository(IDbContextProvider<GrantTenantDbContext> dbConte
             var sqlCommand = string.Format("SELECT {0}.get_next_sequence_number(@tenantId, @prefix);", safeSchema);
                         
             using var command = connection.CreateCommand();
+            // Schema is sanitized via QuoteIdentifier, parameters are properly parameterized
+#pragma warning disable S2077 // SQL queries should not be dynamically formatted
             command.CommandText = sqlCommand;
+#pragma warning restore S2077
             command.Parameters.Add(new NpgsqlParameter("tenantId", tenantId));
             command.Parameters.Add(new NpgsqlParameter("prefix", prefix));
             
