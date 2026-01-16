@@ -301,7 +301,7 @@ function addDataTableFixCSS() {
             '.dt-loading { visibility: hidden; }' +
             '.dt-loading .dt-scroll-body { min-height: 200px; }' +
             'table.dataTable { width: 98% !important; }' +
-            'table.dataTable thead th { min-width: 80px; }' +
+            'table.dataTable thead th { min-width: fit-content; }' +
             '</style>').appendTo('head');
     }
 }
