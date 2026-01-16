@@ -22,6 +22,114 @@ $(function () {
         viewUrl: 'PaymentRequests/CreatePaymentRequests',
     });
 
+    // Helper functions to reduce nesting depth
+    function groupTagsByApplication(tags, applicationIds) {
+        let groupedTags = {};
+        
+        tags.forEach(function (item) {
+            if (!item.tag) return;
+            let appId = item.applicationId;
+            if (!groupedTags[appId]) {
+                groupedTags[appId] = [];
+            }
+
+            let exists = groupedTags[appId].some(t => t.id === item.tag.id);
+            if (!exists) {
+                groupedTags[appId].push(item.tag);
+            }
+        });
+
+        applicationIds.forEach(function (id) {
+            if (!groupedTags.hasOwnProperty(id)) {
+                groupedTags[id] = [];
+            }
+        });
+
+        return groupedTags;
+    }
+
+    // Helper function for tag comparison
+    function hasMatchingTagId(tag, tagList) {
+        return tagList.some(t => t.id === tag.id);
+    }
+
+    function findCommonTags(groupedTags) {
+        let groupedValues = Object.values(groupedTags);
+        if (groupedValues.length === 0) return [];
+        
+        return groupedValues.reduce(function (prev, next) {
+            return prev.filter(p => hasMatchingTagId(p, next));
+        });
+    }
+
+    function filterUncommonTags(tagList, commonTags) {
+        return tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+    }
+
+    function buildAllTagsData(groupedTags, commonTags) {
+        return Object.entries(groupedTags).map(function([appId, tagList]) {
+            let uncommon = filterUncommonTags(tagList, commonTags);
+
+            return {
+                applicationId: appId,
+                commonTags: [...commonTags].sort((a, b) => a.name.localeCompare(b.name)),
+                uncommonTags: uncommon.sort((a, b) => a.name.localeCompare(b.name))
+            };
+        });
+    }
+
+    function collectUncommonTags(groupedTags, commonTags) {
+        let uncommonTags = [];
+        
+        Object.entries(groupedTags).forEach(function ([appId, tagList]) {
+            let uncommon = filterUncommonTags(tagList, commonTags);
+            uncommonTags.push(...uncommon);
+        });
+        
+        // Remove duplicates by filtering based on tag ID
+        uncommonTags = uncommonTags.filter((tag, index, self) => 
+            index === self.findIndex(t => t.id === tag.id)
+        );
+        
+        return uncommonTags;
+    }
+
+    function buildTagInputArray(commonTags, uncommonTags) {
+        let tagInputArray = [];
+
+        if (uncommonTags.length > 0) {
+            tagInputArray.unshift({
+                tagId: '00000000-0000-0000-0000-000000000000',
+                name: 'Uncommon Tags',
+                class: 'tags-uncommon',
+                id: '00000000-0000-0000-0000-000000000000'
+            });
+        }
+
+        if (commonTags.length > 0) {
+            commonTags.forEach(function (tag) {
+                tagInputArray.push({
+                    tagId: tag.id,
+                    name: tag.name,
+                    class: 'tags-common',
+                    id: tag.id
+                });
+            });
+        }
+
+        return tagInputArray;
+    }
+
+    function setupTagInput(tagInput, allTags, tagInputArray) {
+        tagInput.setSuggestions(
+            (allTags || []).filter((value, index, self) =>
+                index === self.findIndex(t => t.id === value.id)
+            ).sort((a, b) => a.name.localeCompare(b.name))
+        );
+
+        tagInput.addData(tagInputArray);
+    }
+
     tagApplicationModal.onOpen(async function () {
         let tagInput = new TagsInput({
             selector: 'SelectedTags',
@@ -45,101 +153,52 @@ $(function () {
         if (!applicationIds || applicationIds.length === 0) return;
 
         try {
-            let commonTags = [];
-            let uncommonTags = [];
-            let allTags = [];
-            let groupedTags = {};
-
-
-            allTags = await unity.grantManager.globalTag.tags.getList();
-
-            // Use cache key to avoid URL length limits with many application IDs
+            let globalTags = await unity.grantManager.globalTag.tags.getList();
             let tags = await unity.grantManager.grantApplications.applicationTags.getListWithCacheKey(cacheKey);
             
+            let groupedTags = groupTagsByApplication(tags, applicationIds);
+            let commonTags = findCommonTags(groupedTags);
+            let allTags = buildAllTagsData(groupedTags, commonTags);
+            let uncommonTags = collectUncommonTags(groupedTags, commonTags);
             
-            tags.forEach(function (item) {
-                if (!item.tag) return;
-                let appId = item.applicationId;
-                if (!groupedTags[appId]) {
-                    groupedTags[appId] = [];
-                }
-
-                let exists = groupedTags[appId].some(t => t.id === item.tag.id);
-                if (!exists) {
-                    groupedTags[appId].push(item.tag);
-                }
-            });
-
-            applicationIds.forEach(function (id) {
-                if (!groupedTags.hasOwnProperty(id)) {
-                    groupedTags[id] = [];
-                }
-            });
-
+            $('#TagsJson').val(JSON.stringify(allTags));
             
-            let groupedValues = Object.values(groupedTags);
-            if (groupedValues.length > 0) {
-                commonTags = groupedValues.reduce(function (prev, next) {
-                    return prev.filter(p => next.some(n => n.id === p.id));
-                });
-            }
-
-            let alltags = Object.entries(groupedTags).map(([appId, tagList]) => {
-                let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
-
-                return {
-                    applicationId: appId,
-                    commonTags: [...commonTags].sort((a, b) => a.name.localeCompare(b.name)),
-                    uncommonTags: uncommon.sort((a, b) => a.name.localeCompare(b.name))
-                };
-            });
-
-           
-            $('#TagsJson').val(JSON.stringify(alltags));
-            let tagInputArray = [];
-
-            
-            Object.entries(groupedTags).forEach(function ([appId, tagList]) {
-                let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
-                uncommonTags = uncommonTags.concat(uncommon);
-
-             
-            });
-
-           
-            if (uncommonTags.length > 0) {
-                tagInputArray.unshift({
-                    tagId: '00000000-0000-0000-0000-000000000000',
-                    name: 'Uncommon Tags',
-                    class: 'tags-uncommon',
-                    id: '00000000-0000-0000-0000-000000000000'
-                });
-            }
-
-           
-            if (commonTags.length > 0) {
-                commonTags.forEach(function (tag) {
-                    tagInputArray.push({
-                        tagId: tag.id,
-                        name: tag.name,
-                        class: 'tags-common',
-                        id: tag.id
-                    });
-                });
-            }
-
-            tagInput.setSuggestions(
-                (allTags || []).filter((value, index, self) =>
-                    index === self.findIndex(t => t.id === value.id)
-                ).sort((a, b) => a.name.localeCompare(b.name))
-            );
-
-            tagInput.addData(tagInputArray);
+            let tagInputArray = buildTagInputArray(commonTags, uncommonTags);
+            setupTagInput(tagInput, globalTags, tagInputArray);
         } catch (error) {
             console.error("Error loading tag select list", error);
         }
-
     });
+
+    // Helper functions for assignee modal
+    function parseAssigneeData(uncommonTags, commonTags, allTags) {
+        let suggestionsArray = [];
+        let tagInputArray = [];
+
+        if (allTags) {
+            suggestionsArray = JSON.parse(allTags);            
+        }
+
+        if (uncommonTags && uncommonTags != "[]") {
+            tagInputArray.push({ 
+                FullName: 'Uncommon Assignees', 
+                class: 'tags-uncommon', 
+                Id: 'uncommonAssignees', 
+                Role: 'Various Roles' 
+            });
+        }
+
+        if (commonTags && commonTags != "[]") {
+            const commonTagsArray = JSON.parse(commonTags);
+            if (commonTagsArray.length) {
+                commonTagsArray.forEach(function (item) {
+                    tagInputArray.push(item);
+                });
+            }
+        }
+
+        return { suggestionsArray, tagInputArray };
+    }
 
     assignApplicationModal.onOpen(function () {
         let userTagsInput = new UserTagsInput({
@@ -147,38 +206,16 @@ $(function () {
             duplicate: false,
             max: 50
         });
-        let suggestionsArray = [];
+        
         let uncommonTags = $('#UnCommonAssigneeList').val();
         let commonTags = $('#CommonAssigneeList').val();
         let allTags = $('#AllAssignees').val();
-        if (allTags) {
-            suggestionsArray = JSON.parse(allTags);
-            console.log(suggestionsArray)
-        }
+        
+        let { suggestionsArray, tagInputArray } = parseAssigneeData(uncommonTags, commonTags, allTags);
+        
         userTagsInput.setSuggestions(suggestionsArray);
-
-        let tagInputArray = [];
-
-        if (uncommonTags && uncommonTags != null && uncommonTags != "[]") {
-            tagInputArray.push({ FullName: 'Uncommon Assignees', class: 'tags-uncommon', Id: 'uncommonAssignees', Role: 'Various Roles' })
-
-        }
-
-        if (commonTags && commonTags != null && commonTags != "[]") {
-            const commonTagsArray = JSON.parse(commonTags);
-            if (commonTagsArray.length) {
-
-                commonTagsArray.forEach(function (item) {
-
-                    tagInputArray.push(item)
-                });
-
-            }
-        }
         userTagsInput.addData(tagInputArray);
-
         document.getElementById("user-tags-input").setAttribute("data-touched", "false");
-
     });
     tagApplicationModal.onResult(function () {
         abp.notify.success(
@@ -263,7 +300,7 @@ $(function () {
         manageActionButtons();
     });
 
-    $('#assignApplication').click(function () {
+    $('#assignApplication').on('click', function () {
         // Store application IDs in distributed cache to avoid URL length limits
         unity.grantManager.applications.applicationBulkActions
             .storeApplicationIds({ applicationIds: selectedApplicationIds })
@@ -280,26 +317,26 @@ $(function () {
             });
     });
 
-    $('#unAssignApplication').click(function () {
+    $('#unAssignApplication').on('click', function () {
         unAssignApplicationModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
             actionType: 'Remove'
         });
     });
 
-    $('#statusUpdate').click(function () {
+    $('#statusUpdate').on('click', function () {
         statusUpdateModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
         });
     });
 
-    $('#applicationLink').click(function () {
+    $('#applicationLink').on('click', function () {
         const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
         const rightSideCanvas = new bootstrap.Offcanvas(summaryCanvas);
         rightSideCanvas.show();
     });
 
-    $('#externalLink').click(function () {
+    $('#externalLink').on('click', function () {
         location.href =
             '/GrantApplications/Details?ApplicationId=' +
             selectedApplicationIds[0];
@@ -341,7 +378,7 @@ $(function () {
     }
 
 
-    $('#tagApplication').click(function () {
+    $('#tagApplication').on('click', function () {
         // Store application IDs in distributed cache to avoid URL length limits
         unity.grantManager.applications.applicationBulkActions
             .storeApplicationIds({ applicationIds: selectedApplicationIds })
@@ -359,7 +396,7 @@ $(function () {
 
     $('.spinner-grow').hide();
 
-    $('#applicationPaymentRequest').click(function () {
+    $('#applicationPaymentRequest').on('click', function () {
         // Store application IDs in distributed cache to avoid URL length limits
         unity.grantManager.applications.applicationBulkActions
             .storeApplicationIds({ applicationIds: selectedApplicationIds })
