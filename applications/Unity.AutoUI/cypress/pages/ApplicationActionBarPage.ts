@@ -444,6 +444,10 @@ export class ApplicationActionBarPage extends BasePage {
       });
   }
 
+  /**
+   * Search for an application by ID and select it
+   * @param applicationId - The application ID to search for and select
+   */
   selectSearchedApplicationById(applicationId: string): void {
     this.searchFor(applicationId);
     cy.wait(500); // Wait for search results to update
