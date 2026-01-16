@@ -48,18 +48,27 @@ $(function () {
         return groupedTags;
     }
 
+    // Helper function for tag comparison
+    function hasMatchingTagId(tag, tagList) {
+        return tagList.some(t => t.id === tag.id);
+    }
+
     function findCommonTags(groupedTags) {
         let groupedValues = Object.values(groupedTags);
         if (groupedValues.length === 0) return [];
         
         return groupedValues.reduce(function (prev, next) {
-            return prev.filter(p => next.some(n => n.id === p.id));
+            return prev.filter(p => hasMatchingTagId(p, next));
         });
     }
 
+    function filterUncommonTags(tagList, commonTags) {
+        return tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+    }
+
     function buildAllTagsData(groupedTags, commonTags) {
-        return Object.entries(groupedTags).map(([appId, tagList]) => {
-            let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+        return Object.entries(groupedTags).map(function([appId, tagList]) {
+            let uncommon = filterUncommonTags(tagList, commonTags);
 
             return {
                 applicationId: appId,
@@ -73,7 +82,7 @@ $(function () {
         let uncommonTags = [];
         
         Object.entries(groupedTags).forEach(function ([appId, tagList]) {
-            let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+            let uncommon = filterUncommonTags(tagList, commonTags);
             uncommonTags = uncommonTags.concat(uncommon);
         });
         
