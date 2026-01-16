@@ -300,7 +300,7 @@ function addDataTableFixCSS() {
         $('<style id="dt-column-fix-css">' +
             '.dt-loading { visibility: hidden; }' +
             '.dt-loading .dt-scroll-body { min-height: 200px; }' +
-            'table.dataTable { width: 100% !important; }' +
+            'table.dataTable { width: 98% !important; }' +
             'table.dataTable thead th { min-width: 80px; }' +
             '</style>').appendTo('head');
     }
