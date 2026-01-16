@@ -17,7 +17,6 @@ using Unity.GrantManager.Workflow;
 using Unity.Modules.Shared;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
@@ -35,8 +34,7 @@ namespace Unity.GrantManager.Assessments
         private readonly IAssessmentRepository _assessmentRepository;
         private readonly AssessmentManager _assessmentManager;
         private readonly IApplicationRepository _applicationRepository;
-        private readonly IIdentityUserIntegrationService _userLookupProvider;
-        private readonly ICommentsManager _commentsManager;
+        private readonly IIdentityUserIntegrationService _userLookupProvider;        
         private readonly IScoresheetInstanceAppService _scoresheetInstanceAppService;
         private readonly IScoresheetAppService _scoresheetAppService;
         private readonly ILocalEventBus _localEventBus;
@@ -60,7 +58,6 @@ namespace Unity.GrantManager.Assessments
             _assessmentManager = assessmentManager;
             _applicationRepository = applicationRepository;
             _userLookupProvider = userLookupProvider;
-            _commentsManager = commentsManager;
             _scoresheetInstanceAppService = scoresheetInstanceAppService;
             _scoresheetAppService = scoresheetAppService;
             _featureChecker = featureChecker;

@@ -16,8 +16,7 @@ using Xunit.Abstractions;
 namespace Unity.GrantManager.GrantApplications;
 
 public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
-{
-    private readonly GrantApplicationAppService _grantApplicationAppServiceTest;
+{    
     private readonly ICommentAppService _commentsAppService;
     private readonly IRepository<Application, Guid> _applicationsRepository;
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentsRepository;
@@ -28,8 +27,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
     public ApplicationAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
     {
-
-        _grantApplicationAppServiceTest = GetRequiredService<GrantApplicationAppService>();
+        
         _commentsAppService = GetRequiredService<ICommentAppService>();
         _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
         _applicationCommentsRepository = GetRequiredService<IRepository<ApplicationComment, Guid>>();

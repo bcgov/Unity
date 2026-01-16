@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager;
 
-public class GrantManagerWebTestStartup
+public static class GrantManagerWebTestStartup
 {
     public static void ConfigureServices(IServiceCollection services)
     {
