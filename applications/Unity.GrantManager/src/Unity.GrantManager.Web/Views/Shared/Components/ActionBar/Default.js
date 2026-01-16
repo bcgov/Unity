@@ -86,6 +86,11 @@ $(function () {
             uncommonTags.push(...uncommon);
         });
         
+        // Remove duplicates by filtering based on tag ID
+        uncommonTags = uncommonTags.filter((tag, index, self) => 
+            index === self.findIndex(t => t.id === tag.id)
+        );
+        
         return uncommonTags;
     }
 
@@ -174,7 +179,7 @@ $(function () {
             suggestionsArray = JSON.parse(allTags);            
         }
 
-        if (uncommonTags && uncommonTags != null && uncommonTags != "[]") {
+        if (uncommonTags && uncommonTags != "[]") {
             tagInputArray.push({ 
                 FullName: 'Uncommon Assignees', 
                 class: 'tags-uncommon', 
@@ -183,7 +188,7 @@ $(function () {
             });
         }
 
-        if (commonTags && commonTags != null && commonTags != "[]") {
+        if (commonTags && commonTags != "[]") {
             const commonTagsArray = JSON.parse(commonTags);
             if (commonTagsArray.length) {
                 commonTagsArray.forEach(function (item) {
