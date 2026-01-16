@@ -150,7 +150,7 @@ namespace Unity.Payments.Suppliers
             var supplier = await GetBySupplierNumberAsync(supplierNumber);
             if (supplier == null) return new List<SiteDto>();
             List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(supplier.Id);
-            List<SiteDto> existingSiteDtos = sites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
+            List<SiteDto> existingSiteDtos = [.. sites.Select(ObjectMapper.Map<Site, SiteDto>)];
 
             bool hasChanges = false;
             // If the list of CAS sites is different from the existing sites
@@ -206,7 +206,7 @@ namespace Unity.Payments.Suppliers
                 if (updatedSupplier != null)
                 {
                     List<Site> updatedSites = await siteAppService.GetSitesBySupplierIdAsync(updatedSupplier.Id);
-                    existingSiteDtos = updatedSites.Select(ObjectMapper.Map<Site, SiteDto>).ToList();
+                    existingSiteDtos = [.. updatedSites.Select(ObjectMapper.Map<Site, SiteDto>)];
                 }
             }
 

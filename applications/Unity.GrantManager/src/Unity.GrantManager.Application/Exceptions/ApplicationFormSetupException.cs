@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Volo.Abp.Validation;
 
@@ -12,12 +10,13 @@ namespace Unity.GrantManager.Exceptions
         private const string FormSetupErrorMessage = "Application Form Setup Error";
 
         public ApplicationFormSetupException(string? message = null)
-            : base(new List<ValidationResult> { new(message ?? FormSetupErrorMessage) })
+            : base([new(message ?? FormSetupErrorMessage)])
         {
             LogLevel = Microsoft.Extensions.Logging.LogLevel.Error;
         }
 
-        protected ApplicationFormSetupException(SerializationInfo serializationEntries, StreamingContext context) : base()
+        protected ApplicationFormSetupException(SerializationInfo serializationEntries, StreamingContext context)
+            : base([new(FormSetupErrorMessage)])
         {
             LogLevel = Microsoft.Extensions.Logging.LogLevel.Error;
         }
