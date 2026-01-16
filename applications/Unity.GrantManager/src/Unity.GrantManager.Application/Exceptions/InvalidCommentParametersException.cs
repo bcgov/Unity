@@ -12,11 +12,13 @@ namespace Unity.GrantManager.Exceptions
         private const string InvalidCommentMessage = "Invalid Comment Parameters";
 
         public InvalidCommentParametersException(string? message = null)
-            : base(new List<ValidationResult> { new(message ?? InvalidCommentMessage) })
+            : base([new(message ?? InvalidCommentMessage)])
         {
         }
 
-        protected InvalidCommentParametersException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
+        // Fix: Adjust the constructor to match the base class signature
+        protected InvalidCommentParametersException(SerializationInfo serializationEntries, StreamingContext context)
+            : base([new(InvalidCommentMessage)])
         {
         }
     }
