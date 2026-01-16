@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Exceptions
             LogLevel = Microsoft.Extensions.Logging.LogLevel.Error;
         }
 
-        protected ApplicationFormSetupException(SerializationInfo serializationEntries, StreamingContext context) : base()
+        protected ApplicationFormSetupException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
         {
             LogLevel = Microsoft.Extensions.Logging.LogLevel.Error;
         }

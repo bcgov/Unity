@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Exceptions
         {
         }
 
-        protected InvalidFormDataSubmissionException(SerializationInfo serializationEntries, StreamingContext context) : base()
+        protected InvalidFormDataSubmissionException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
         {
         }
 

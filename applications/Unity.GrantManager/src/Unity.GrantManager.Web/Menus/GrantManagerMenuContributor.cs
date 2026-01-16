@@ -30,7 +30,6 @@ public class GrantManagerMenuContributor : IMenuContributor
     {
         var l = context.GetLocalizer<GrantManagerResource>();
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
-        var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
 
         context.Menu.AddItem(
             new ApplicationMenuItem(

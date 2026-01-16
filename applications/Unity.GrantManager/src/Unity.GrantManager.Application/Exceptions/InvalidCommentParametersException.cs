@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Exceptions
         {
         }
 
-        protected InvalidCommentParametersException(SerializationInfo serializationEntries, StreamingContext context) : base()
+        protected InvalidCommentParametersException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
         {
         }
     }
