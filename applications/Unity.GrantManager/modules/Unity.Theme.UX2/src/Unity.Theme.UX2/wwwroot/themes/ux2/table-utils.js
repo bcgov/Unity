@@ -16,7 +16,6 @@ const FilterDesc = {
 };
 
 
-
 // ============================================================================
 // DataTables Button Extensions
 // ============================================================================
@@ -160,228 +159,8 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
     );
 }
 
-/**
- * Restores the filter state for a single column in the DataTable.
- * Extracts saved search values from state data and applies them to filter inputs and column searches.
- *
- * @param {HTMLElement} columnHeader - The header element being processed
- * @param {number} displayIdx - Display index of the column
- * @param {Object} settings - DataTables settings object
- * @param {Object} data - Saved state data
- * @param {DataTable.Api} dtApi - DataTables API instance
- * @param {jQuery} $filterCells - jQuery collection of filter row cells
- */
-function restoreColumnFilterState(columnHeader, displayIdx, settings, data, dtApi, $filterCells) {
-    let colName = $(columnHeader).attr('data-name');
 
-    if (colName) {
-        // Find the column index by name in aoColumns (original structure)
-        let originalIdx = settings.aoColumns.findIndex(
-            (col) => col.name === colName
-        );
 
-        let origIdx = settings.aoColumns.find(
-            (col) => col.name === colName
-        ).index;
-        console.log(
-            'settings.aoColumns',
-            settings.aoColumns
-        );
-        console.log('origIdx Real', origIdx);
-        console.log('originalIdx', originalIdx);
-        if (
-            originalIdx !== -1 &&
-            data.columns[originalIdx]
-        ) {
-            // Get the search value from saved state for this column
-            let savedColTest = data.columns.find(
-                (col) => col.name === colName
-            );
-            console.log(
-                'savedColTest',
-                savedColTest
-            );
-
-            let savedCol =
-                data.columns[originalIdx];
-
-            let searchValue =
-                savedCol?.search?.search || '';
-
-            // Find the filter input at this DISPLAY position
-            let $filterCell =
-                $filterCells.eq(displayIdx);
-            let $input = $filterCell.find(
-                'input.custom-filter-input'
-            );
-
-            console.log('$filterCell', $filterCell);
-            if ($input.length && searchValue) {
-                // Update FilterRow UI
-                $input.val(searchValue);
-
-                //Apply search to DataTables API using the CURRENT column index
-                let currentColIdx = dtApi
-                    .column(displayIdx + ':visible')
-                    .index();
-                console.log(
-                    'currentColIdx',
-                    currentColIdx
-                );
-                console.log(
-                    'displayIdx',
-                    displayIdx
-                );
-                if (
-                    currentColIdx !== undefined &&
-                    currentColIdx !== -1
-                ) {
-                    dtApi
-                        .column(currentColIdx)
-                        .search(searchValue);
-                    console.log(
-                        `Applied search to col ${currentColIdx} (${colName}): "${searchValue}"`
-                    );
-                }
-            }
-        }
-    }
-}
-
-/**
- * Prepares action buttons for DataTable, handling CSV export and column visibility.
- * @param {Array<Object>} actionButtons - Original button configurations
- * @param {boolean} useNullPlaceholder - Whether to use csvNoPlaceholder extension
- * @param {boolean} disableColumnSelect - Whether to disable column visibility toggle
- * @returns {Array<Object>} Processed button configurations
- */
-function prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect) {
-    let updatedActionButtons = actionButtons.map((button) => {
-        if (useNullPlaceholder && button.extend === 'csv') {
-            return {
-                ...button,
-                extend: 'csvNoPlaceholder',
-            };
-        }
-        return button;
-    });
-
-    if (!disableColumnSelect) {
-        updatedActionButtons.push({
-            extend: 'colvisAlpha',
-            text: 'Columns',
-            className: 'custom-table-btn flex-none btn btn-secondary',
-            columns: ':not(.notexport):not([data-name="select"])',
-            columnText: function (dt, idx, title) {
-                return title;
-            },
-        });
-    }
-
-    return updatedActionButtons;
-}
-
-/**
- * Adds CSS to prevent column squishing during DataTable initialization.
- */
-function addDataTableFixCSS() {
-    if (!$('#dt-column-fix-css').length) {
-        $('<style id="dt-column-fix-css"> dataTable { width: 100%; }</style>').appendTo('head');
-    }
-}
-
-/**
- * Configures column definitions for DataTable.
- * @param {Array<number>} visibleColumns - Indices of visible columns
- * @param {boolean} useNullPlaceholder - Whether to use null placeholder
- * @param {Array<Object>} listColumnDefs - Additional column definitions
- * @returns {Array<Object>} Column definitions array
- */
-function buildColumnDefs(visibleColumns, useNullPlaceholder, listColumnDefs) {
-    const baseDefs = [
-        {
-            targets: visibleColumns,
-            visible: true,
-        },
-        {
-            targets: '_all',
-            visible: false,
-            ...(useNullPlaceholder ? { defaultContent: nullPlaceholder } : {}),
-        },
-    ];
-
-    if (Array.isArray(listColumnDefs) && listColumnDefs.length > 0) {
-        return [...baseDefs, ...listColumnDefs];
-    }
-
-    return baseDefs;
-}
-
-/**
- * Handles column adjustment with multiple retry attempts.
- * @param {DataTable.Api} api - DataTable API instance
- */
-function adjustColumnsWithRetry(api) {
-    const adjustColumns = () => {
-        try {
-            api.columns.adjust();
-            setTimeout(() => {
-                api.draw('page');
-            }, 50);
-        } catch (e) {
-            console.warn('Initial column adjustment failed:', e);
-        }
-    };
-    
-    setTimeout(adjustColumns, 0);
-    setTimeout(adjustColumns, 100);
-}
-
-/**
- * Initializes FilterRow plugin if available and button exists.
- * @param {DataTable} iDt - DataTable instance
- */
-function initializeFilterRowPlugin(iDt) {
-    if (!$('#btn-toggle-filter').length) {
-        return;
-    }
-
-    if ($.fn.dataTable !== undefined && $.fn.dataTable.FilterRow !== undefined) {
-        const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
-            buttonId: 'btn-toggle-filter',
-            buttonText: FilterDesc.Default,
-            buttonTextActive: FilterDesc.With_Filter,
-            enablePopover: $.fn.popover !== undefined,
-        });
-
-        iDt.settings()[0]._filterRow = filterRow;
-    } else {
-        console.warn(
-            'FilterRow plugin not loaded. Include plugins/filterRow.js before table-utils.js'
-        );
-    }
-}
-
-/**
- * Moves DataTable buttons to designated container.
- * @param {DataTable} iDt - DataTable instance
- * @param {Array<Object>} updatedActionButtons - Button configurations
- * @param {string} dynamicButtonContainerId - Target container ID
- */
-function moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContainerId) {
-    if (!updatedActionButtons || updatedActionButtons.length === 0) {
-        return;
-    }
-
-    const buttonsContainer = iDt.buttons().container();
-    if (buttonsContainer.length && $(`#${dynamicButtonContainerId}`).length) {
-        buttonsContainer.prependTo(`#${dynamicButtonContainerId}`);
-    } else if (!buttonsContainer.length) {
-        console.warn(
-            'Buttons container not found. Ensure Buttons extension is loaded and buttons are configured.'
-        );
-    }
-}
 
 
 /**
@@ -734,16 +513,6 @@ function prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSe
 }
 
 /**
- * Adds CSS to prevent column squishing during DataTable initialization.
- */
-function addDataTableFixCSS() {
-    if (!$('#dt-column-fix-css').length) {
-        $('<style id="dt-column-fix-css"> dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; max-height: 90%; } </style>').appendTo('head');
-    }
-}
-
-
-/**
  * Configures column definitions for DataTable.
  * @param {Array<number>} visibleColumns - Indices of visible columns
  * @param {boolean} useNullPlaceholder - Whether to use null placeholder
@@ -799,7 +568,7 @@ function adjustColumnsWithRetry(api) {
  */
 function initializeFilterRowPlugin(iDt) {
     if (!$('#btn-toggle-filter').length) return;
-    if ($.fn.dataTable && $.fn.dataTable.FilterRow) {
+    if ($.fn.dataTable?.FilterRow) {
         const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
             buttonId: 'btn-toggle-filter',
             buttonText: FilterDesc.Default,
@@ -832,7 +601,7 @@ function moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContaine
  * @param {DataTable.Api} iDt
  */
 function resizeDataTableScrollBody(iDt) {
-    if (!iDt || !iDt.table || !iDt.table().node) return;
+    if (!iDt?.table?.()?.node) return;
 
     const $wrapper = $(iDt.table().container());
     const $scrollBody = $wrapper.find('.dt-scroll-body');
@@ -890,6 +659,16 @@ function createNumberFormatter() {
         maximumFractionDigits: 2,
     });
 }
+
+/**
+ * Adds CSS to prevent column squishing during DataTable initialization.
+ */
+function addDataTableFixCSS() {
+    if (!$('#dt-column-fix-css').length) {
+        $('<style id="dt-column-fix-css"> dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; max-height: 90%; } </style>').appendTo('head');
+    }
+}
+
 
 /**
  * Assigns sequential index values to columns that don't have one.
