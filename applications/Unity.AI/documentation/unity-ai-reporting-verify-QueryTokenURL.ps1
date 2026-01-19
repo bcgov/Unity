@@ -99,9 +99,11 @@ Write-Host ""
 Write-Host "Development URLs (copy and paste):" -ForegroundColor Yellow
 $localUrl = "http://localhost/?token=$jwt"
 $openshiftUrl = "https://dev-unity-ai-reporting-d18498-dev.apps.silver.devops.gov.bc.ca/?token=$jwt"
+$openshiftUrl2 = "https://dev2-unity-ai-reporting-d18498-dev.apps.silver.devops.gov.bc.ca/?token=$jwt"
 
 Write-Host "  Local:     $localUrl"
 Write-Host "  OpenShift: $openshiftUrl"
+Write-Host "  OpenShift2:$openshiftUrl2"
 Write-Host ""
 
 if ($IsAdmin) {

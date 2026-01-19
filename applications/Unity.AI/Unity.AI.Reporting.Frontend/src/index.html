@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Recap</title>
+  <title>AI Reporting</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <meta http-equiv="Content-Security-Policy" content="frame-ancestors *;">
+  <script>
+    console.log('AI Reporting: HTML postMessage listener loaded');
+    
+    // Note: PostMessage handling is done by Angular services with proper origin validation
+    // No HTML-level postMessage listener to prevent security bypass
+    
+    console.log('AI Reporting: PostMessage listener setup complete');
+  </script>
 </head>
 <body class="iframe-embeddable">
   <app-root></app-root>

@@ -68,16 +68,18 @@ export class RootComponent implements OnInit {
         return;
       }
 
-      // Check if user is admin
-      const adminResponse = await firstValueFrom(
-        this.apiService.checkAdmin<{ is_admin: boolean; user_id: string }>()
-      );
-
-      if (adminResponse.is_admin) {
-        this.logger.info('Admin user detected, redirecting to admin page');
+      // Check JWT token for admin status instead of backend API
+      const payload = this.authService.decodeToken();
+      const isAdmin = payload?.['is_it_admin'] === true || payload?.['is_it_admin'] === 'true';
+      
+      this.logger.info('JWT Token admin claim (is_it_admin):', payload?.['is_it_admin']);
+      this.logger.info('Final admin decision:', isAdmin);
+      
+      if (isAdmin) {
+        this.logger.info('Admin user detected from JWT token, redirecting to admin page');
         this.router.navigate(['/admin']);
       } else {
-        this.logger.info('Regular user, redirecting to main app');
+        this.logger.info('Regular user from JWT token, redirecting to main app');
         this.router.navigate(['/app']);
       }
 

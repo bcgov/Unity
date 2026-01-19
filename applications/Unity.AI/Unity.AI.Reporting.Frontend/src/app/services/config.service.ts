@@ -97,4 +97,37 @@ export class ConfigService {
   get isProduction(): boolean {
     return this.getConfig().environment === 'production';
   }
+
+  private _iframeOrigins: string[] | null = null;
+
+  /**
+   * Get allowed iframe origin URLs from backend
+   */
+  get iframeOriginUrls(): string[] {
+    return this._iframeOrigins || [];
+  }
+
+  /**
+   * Check if iframe origins have been loaded
+   */
+  get iframeOriginsLoaded(): boolean {
+    return this._iframeOrigins !== null;
+  }
+
+  /**
+   * Load iframe origins from backend API
+   */
+  async loadIframeOrigins(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<{iframe_origins: string[]}>('/api/iframe-origins')
+      );
+      this._iframeOrigins = response.iframe_origins || [];
+    } catch (error) {
+      console.error('✗ Failed to load iframe origins:', error);
+      // No fallback - if API fails, no origins are allowed (fail secure)
+      this._iframeOrigins = [];
+      console.warn('No iframe origins loaded - postMessage validation will be disabled');
+    }
+  }
 }

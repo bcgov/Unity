@@ -49,6 +49,7 @@ services:
 
       # Authentication
       - JWT_SECRET=${JWT_SECRET}
+      - ORIGIN_URL=${ORIGIN_URL}
 
       # Metabase config
       - METABASE_KEY=${METABASE_KEY}
