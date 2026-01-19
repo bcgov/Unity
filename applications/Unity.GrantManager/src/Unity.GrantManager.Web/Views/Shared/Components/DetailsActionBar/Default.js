@@ -138,22 +138,12 @@ $(function () {
         );
     }
 
-    // Helper function to get uncommon tags for an application
-    function getAppUncommonTags(tagList, commonTags) {
-        return tagList.filter(tag => !isCommonTag(tag, commonTags));
-    }
-
-    // Helper function to process application tags and collect uncommon ones
-    function processAppTags(uncommonTags, appId, tagList, commonTags) {
-        let uncommon = getAppUncommonTags(tagList, commonTags);
-        return uncommonTags.concat(uncommon);
-    }
-
     // Helper function to collect uncommon tags
     function collectUncommonTags(groupedTags, commonTags) {
         let uncommonTags = [];
         Object.entries(groupedTags).forEach(([appId, tagList]) => {
-            uncommonTags = processAppTags(uncommonTags, appId, tagList, commonTags);
+            let uncommon = tagList.filter(tag => !isCommonTag(tag, commonTags));
+            uncommonTags = uncommonTags.concat(uncommon);
         });
         return uncommonTags;
     }
