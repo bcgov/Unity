@@ -92,35 +92,68 @@ $(function () {
         });
     }
 
+    // Helper function to check if tag exists in application tags
+    function tagExistsInApp(tag, appTags) {
+        return appTags.some(n => n.id === tag.id);
+    }
+
+    // Helper function to filter common tags between two applications
+    function filterCommonTags(prevTags, nextTags) {
+        return prevTags.filter(p => tagExistsInApp(p, nextTags));
+    }
+
     // Helper function to calculate common tags across all applications
     function calculateCommonTags(groupedTags) {
         let groupedValues = Object.values(groupedTags);
         if (groupedValues.length === 0) return [];
         
-        return groupedValues.reduce(function (prev, next) {
-            return prev.filter(p => next.some(n => n.id === p.id));
-        });
+        return groupedValues.reduce(filterCommonTags);
+    }
+
+    // Helper function to check if tag is common
+    function isCommonTag(tag, commonTags) {
+        return commonTags.some(ct => ct.id === tag.id);
+    }
+
+    // Helper function to sort tags by name
+    function sortTagsByName(tags) {
+        return [...tags].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // Helper function to create application tag summary
+    function createAppTagSummary(appId, tagList, commonTags) {
+        let uncommonTags = tagList.filter(tag => !isCommonTag(tag, commonTags));
+        
+        return {
+            applicationId: appId,
+            commonTags: sortTagsByName(commonTags),
+            uncommonTags: sortTagsByName(uncommonTags)
+        };
     }
 
     // Helper function to create tag summary data
     function createTagSummary(groupedTags, commonTags) {
-        return Object.entries(groupedTags).map(([appId, tagList]) => {
-            let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+        return Object.entries(groupedTags).map(([appId, tagList]) => 
+            createAppTagSummary(appId, tagList, commonTags)
+        );
+    }
 
-            return {
-                applicationId: appId,
-                commonTags: [...commonTags].sort((a, b) => a.name.localeCompare(b.name)),
-                uncommonTags: uncommon.sort((a, b) => a.name.localeCompare(b.name))
-            };
-        });
+    // Helper function to get uncommon tags for an application
+    function getAppUncommonTags(tagList, commonTags) {
+        return tagList.filter(tag => !isCommonTag(tag, commonTags));
+    }
+
+    // Helper function to process application tags and collect uncommon ones
+    function processAppTags(uncommonTags, appId, tagList, commonTags) {
+        let uncommon = getAppUncommonTags(tagList, commonTags);
+        return uncommonTags.concat(uncommon);
     }
 
     // Helper function to collect uncommon tags
     function collectUncommonTags(groupedTags, commonTags) {
         let uncommonTags = [];
-        Object.entries(groupedTags).forEach(function ([appId, tagList]) {
-            let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
-            uncommonTags = uncommonTags.concat(uncommon);
+        Object.entries(groupedTags).forEach(([appId, tagList]) => {
+            uncommonTags = processAppTags(uncommonTags, appId, tagList, commonTags);
         });
         return uncommonTags;
     }
