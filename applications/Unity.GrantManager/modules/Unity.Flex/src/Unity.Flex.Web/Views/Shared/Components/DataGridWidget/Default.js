@@ -118,18 +118,6 @@ $(function () {
         return total;
     }
 
-    // Function to find column index by header text
-    function findColumnIndexByText(table, key) {
-        let foundIndex = -1;
-        table.columns().header().each(function (header, index) {
-            if ($(header).text() === key) {
-                foundIndex = index;
-                return false; // Break out of each loop
-            }
-        });
-        return foundIndex;
-    }
-
     // Function to update totals
     function updateTotals(table, fieldId) {
         // Iterate through each input field that has the id pattern 'total-{key}'
@@ -138,7 +126,7 @@ $(function () {
             let key = inputId.replace('total-', '');
             
             // Find the corresponding column in the DataTable by matching the key
-            let columnIndex = findColumnIndexByText(table, key);
+            let columnIndex = getColumnIndex(table, key);
             
             if (columnIndex !== -1) {
                 let total = calculateColumnSum(table, columnIndex);
