@@ -105,37 +105,48 @@ $(function () {
         handleEditDatagridRowModalResult(response);
     });
 
+    // Function to calculate sum for a specific column
+    function calculateColumnSum(table, columnIndex) {
+        let total = 0;
+        table.column(columnIndex).data().each(function (value) {
+            // Remove currency symbols and commas for numeric check
+            let cleanedValue = value.replace(/[^\d.-]/g, '');
+            if (isNumeric(cleanedValue)) {
+                total += parseFloat(cleanedValue);
+            }
+        });
+        return total;
+    }
+
+    // Function to find column index by header text
+    function findColumnIndexByText(table, key) {
+        let foundIndex = -1;
+        table.columns().header().each(function (header, index) {
+            if ($(header).text() === key) {
+                foundIndex = index;
+                return false; // Break out of each loop
+            }
+        });
+        return foundIndex;
+    }
+
     // Function to update totals
     function updateTotals(table, fieldId) {
         // Iterate through each input field that has the id pattern 'total-{key}'
         $('#summary-' + fieldId + ' input[id^="total-"]').each(function () {
             let inputId = $(this).attr('id');
             let key = inputId.replace('total-', '');
-            let total = 0;
-            let headerFound = false;
-
+            
             // Find the corresponding column in the DataTable by matching the key
-            table.columns().header().each(function (header, index) {
-                if ($(header).text() === key) {
-                    headerFound = true;
-                    // Sum up all numeric values in the column
-                    table.column(index).data().each(function (value, rowIndex) {
-                        // Remove currency symbols and commas for numeric check
-                        let cleanedValue = value.replace(/[^\d.-]/g, '');
-
-                        if (isNumeric(cleanedValue)) {
-                            total += parseFloat(cleanedValue);
-                        }
-                    });
-                }
-            });
-
-            // Update the input field with the calculated total only if the header is found 
-            if (headerFound) {
+            let columnIndex = findColumnIndexByText(table, key);
+            
+            if (columnIndex !== -1) {
+                let total = calculateColumnSum(table, columnIndex);
+                
+                // Update the input field with the calculated total
                 if ($(this).data('field-type') === 'Currency') {
                     $(this).val(formatCurrency(total));
-                }
-                else {
+                } else {
                     $(this).val(total);
                 }
             }
@@ -278,6 +289,25 @@ $(function () {
         return availableOptions;
     }
 
+    // Function to configure action buttons for a table cell
+    function configureActionButtonForCell(cell) {
+        cell.innerHTML = getEditRowButtonTemplate(); // Add edit button to each cell
+
+        // Attach click event handler to the newly added button 
+        $(cell).find('.row-edit-btn').on('click', function () {
+            let button = this; // `this` refers to the button element 
+            editDataRow(button);
+        });
+    }
+
+    // Function to setup the actions column
+    function setupActionsColumn(table, columnIndex) {
+        table.column(columnIndex).header().innerHTML = 'Actions'; // Update column header if needed
+        table.column(columnIndex).nodes().each(function (cell) {
+            configureActionButtonForCell(cell);
+        });
+    }
+
     function configureTable(table, fieldId) {
         // Move buttons to custom container
         table.buttons().container().prependTo(`#btn-container-${fieldId}`);
@@ -285,16 +315,7 @@ $(function () {
         // Add edit buttons to the last column (Actions)
         table.columns().every(function (index) {
             if (index === table.columns().count() - 1) { // Check if it is the last column
-                table.column(index).header().innerHTML = 'Actions'; // Update column header if needed
-                table.column(index).nodes().each(function (cell) {
-                    cell.innerHTML = getEditRowButtonTemplate(); // Add edit button to each cell
-
-                    // Attach click event handler to the newly added button 
-                    $(cell).find('.row-edit-btn').on('click', function () {
-                        let button = this; // `this` refers to the button element 
-                        editDataRow(button);
-                    });
-                });
+                setupActionsColumn(table, index);
             }
         });
     }
