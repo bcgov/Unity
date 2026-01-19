@@ -12,6 +12,7 @@ import { ApiService } from './services/api.service';
 import { ToastService } from './services/toast.service';
 import { LoggerService } from './services/logger.service';
 import { IframeDetectorService } from './iframe-detector.service';
+import { ConfigService } from './services/config.service';
 import { SidebarComponent, Chat } from './sidebar/sidebar';
 import { environment } from '../environments/environment';
 
@@ -22,7 +23,7 @@ import { environment } from '../environments/environment';
   styleUrls: ['./app.css']
 })
 export class App implements OnInit, OnDestroy {
-  protected title = 'recap';
+  protected title = 'AI Reporting';
   protected api_url = environment.apiUrl;
   question: string = "";
   conversation: Turn[] = [];
@@ -37,7 +38,8 @@ export class App implements OnInit, OnDestroy {
     private readonly apiService: ApiService,
     private readonly toastService: ToastService,
     private readonly logger: LoggerService,
-    private readonly iframeDetector: IframeDetectorService
+    private readonly iframeDetector: IframeDetectorService,
+    private readonly configService: ConfigService
   ) {}
 
   @ViewChild('turnsContainer') private turnsContainer!: ElementRef<HTMLDivElement>;
@@ -45,6 +47,8 @@ export class App implements OnInit, OnDestroy {
   @ViewChild('sidebar') private sidebar!: SidebarComponent;
 
   async ngOnInit(): Promise<void> {
+    console.log('🔧 APP COMPONENT: Initialized (postMessage handling done by AuthService)');
+    
     // Add iframe-specific styling
     this.iframeDetector.addIframeClass();
     

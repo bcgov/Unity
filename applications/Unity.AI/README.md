@@ -44,6 +44,7 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
 
 # Authentication  
 JWT_SECRET=your_jwt_secret_64_chars_minimum
+ORIGIN_URL=https://your-parent-domain.com,http://localhost
 
 # Metabase
 METABASE_KEY=your_metabase_api_key
@@ -64,6 +65,19 @@ UAI_TARGET_ENVIRONMENT=LocalDevelopment
 
 # Flask environment
 FLASK_ENV=development
+```
+
+### JWT Authentication Configuration
+```env
+# ORIGIN_URL configures iframe authentication security
+# For local development, include localhost for URL token access
+# For production, specify authorized parent domains for PostMessage
+ORIGIN_URL=http://localhost
+
+# Example configurations:
+# Local only: ORIGIN_URL=http://localhost
+# Production only: ORIGIN_URL=https://your-parent-domain.com
+# Multi-environment: ORIGIN_URL=https://prod.domain.com,https://test.domain.com,http://localhost
 ```
 
 See [Environment Configuration Guide](./documentation/environment-specific-configuration.md) for complete variable reference.
@@ -165,3 +179,41 @@ Ensure `JWT_SECRET` is set and at least 64 characters long
 
 ### Missing environment variables
 Check that all critical variable are set in your `.env` file
+
+## Testing & Validation
+
+### Authentication Testing
+```bash
+# 1. Test direct URL access with JWT token (localhost only)
+# Ensure ORIGIN_URL includes "http://localhost" for this to work
+http://localhost/?token=YOUR_JWT_TOKEN
+
+# 2. Verify origin configuration
+curl http://localhost/api/iframe-origins
+
+# Expected response (includes localhost for local development):
+# {"iframe_origins": ["http://localhost"]}
+
+# 3. Check application health
+curl http://localhost/api/health
+```
+
+### JWT Token Flow Testing
+1. **Local Development**: Direct URL access works with `?token=` parameter
+2. **Production Iframe**: PostMessage from authorized ORIGIN_URL domains only
+3. **Security Validation**: Direct access blocked on production domains
+
+### Environment Variable Verification
+```bash
+# Check ORIGIN_URL is loaded in container
+docker-compose exec reporting printenv | grep ORIGIN_URL
+
+# Should show: ORIGIN_URL=http://localhost
+```
+
+### Console Log Patterns for Debugging
+- `AUTH SERVICE ORIGIN VALIDATION:` - Origin validation details
+- `AI Reporting AUTH SERVICE: Origin validation passed` - Success
+- `AI Reporting AUTH SERVICE: Rejected token` - Blocked origin
+- `AUTH SERVICE: URL token loaded, authorized: true` - Local URL token
+- `Token acknowledgment received` - PostMessage success

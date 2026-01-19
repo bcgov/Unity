@@ -9,9 +9,9 @@ export const authGuard: CanActivateFn = async (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  const token = authService.getToken();
-  console.log('Token present:', !!token);
-  console.log('Token value:', token ? `${token.substring(0, 20)}...` : 'null');
+  // Get debug info before authentication check
+  const debugInfo = authService.getAuthDebugInfo();
+  console.log('🔍 AUTH GUARD DEBUG:', debugInfo);
 
   const isAuthenticated = await authService.isAuthenticated();
   console.log('Is authenticated:', isAuthenticated);
@@ -26,6 +26,5 @@ export const authGuard: CanActivateFn = async (route, state) => {
   }
 
   console.log('✓ Authentication successful - allowing access');
-  console.log('============================');
   return true;
 };

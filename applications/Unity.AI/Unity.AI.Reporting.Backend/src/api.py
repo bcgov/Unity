@@ -5,6 +5,7 @@ from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 import asyncio
 import logging
+import datetime
 from config import config
 from database import db_manager, chat_repository, feedback_repository
 from metabase import metabase_client
@@ -212,6 +213,44 @@ def check_admin():
         "is_admin": bool(is_admin),
         "user_id": user_data["user_id"]
     }), 200
+
+
+@app.route("/api/iframe-origins", methods=["GET"])
+def get_iframe_origins():
+    """
+    Get allowed iframe origins from environment variable
+    This endpoint does not require authentication as it's used for security validation
+    """
+    import os
+    
+    # Get ORIGIN_URL from environment variable
+    origin_url = os.environ.get("ORIGIN_URL", "")
+    
+    if not origin_url:
+        return jsonify({"iframe_origins": []}), 200
+    
+    # Parse comma-separated origins
+    origins = [origin.strip() for origin in origin_url.split(",") if origin.strip()]
+    
+    return jsonify({"iframe_origins": origins}), 200
+
+
+@app.route("/api/auth-debug", methods=["GET"])
+def auth_debug():
+    """
+    Debug endpoint for authentication troubleshooting
+    Returns environment and configuration info (no auth required)
+    """
+    import os
+    
+    debug_info = {
+        "origin_url_env": os.environ.get("ORIGIN_URL", "NOT_SET"),
+        "hostname": os.environ.get("HOSTNAME", "unknown"),
+        "environment": os.environ.get("FLASK_ENV", "unknown"),
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+    
+    return jsonify(debug_info), 200
 
 
 @app.route("/api/metabase-url", methods=["GET"])
