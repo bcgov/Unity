@@ -426,6 +426,101 @@ $(function () {
         });
     }
 
+    // Helper function to process detected changes alert (module-level to reduce nesting)
+    function processDetectedChanges(detectedChanges) {
+        if (detectedChanges && detectedChanges.trim() !== '') {
+            setTimeout(function () {
+                displayDetectedChangesAlert(detectedChanges);
+            }, 100);
+        }
+    }
+
+    // Helper function to transform configuration data (module-level to reduce nesting)
+    function transformConfigurationResult(result) {
+        processDetectedChanges(result.detectedChanges);
+        
+        const items = result.mapping.rows.map(row => ({
+            label: row.label,
+            key: row.propertyName,
+            type: row.type,
+            path: row.path,
+            dataPath: row.dataPath,
+            columnName: row.columnName || '',
+            typePath: row.typePath
+        }));
+
+        return {
+            items: items,
+            totalCount: items.length
+        };
+    }
+
+    // Helper function to transform fields metadata (module-level to reduce nesting)
+    function transformFieldsMetadata(fieldsMetadata) {
+        const items = fieldsMetadata.fields.map(field => ({
+            label: field.label || field.key,
+            key: field.key,
+            type: field.type,
+            path: field.path,
+            dataPath: field.dataPath,
+            columnName: field.label || field.key,
+            typePath: field.typePath
+        }));
+
+        return {
+            items: items,
+            totalCount: items.length
+        };
+    }
+
+    // Helper function to handle configuration data loading and transformation
+    function loadConfigurationData(correlationId, correlationProvider) {
+        return abp.ajax({
+            url: abp.appPath + 'ReportingConfiguration/GetConfiguration',
+            type: 'GET',
+            data: {
+                correlationId: correlationId,
+                correlationProvider: correlationProvider
+            }
+        }).then(transformConfigurationResult);
+    }
+
+    // Helper function to handle fields metadata loading and transformation
+    function loadFieldsMetadata(correlationId, correlationProvider) {
+        return abp.ajax({
+            url: abp.appPath + 'ReportingConfiguration/GetFieldsMetadata',
+            type: 'GET',
+            data: {
+                correlationId: correlationId,
+                correlationProvider: correlationProvider
+            }
+        }).then(transformFieldsMetadata);
+    }
+
+    // Helper function to handle data loading based on configuration existence
+    function handleDataLoading(exists, correlationId, correlationProvider) {
+        // Update button visibility based on configuration existence
+        updateGenerateViewButtonVisibility(exists);
+        updateDeleteButtonVisibility(exists);
+
+        if (exists) {
+            // Configuration exists - load from mapping
+            return loadConfigurationData(correlationId, correlationProvider);
+        } else {
+            // No configuration exists - load from fields metadata
+            return loadFieldsMetadata(correlationId, correlationProvider);
+        }
+    }
+
+    // Helper function to handle data loading errors
+    function handleDataLoadingError(error) {
+        console.error('Failed to load report configuration:', error);
+        abp.message.error('Failed to load report configuration');
+        updateGenerateViewButtonVisibility(false);
+        updateDeleteButtonVisibility(false);
+        return { items: [], totalCount: 0 };
+    }
+
     // Initialize DataTable
     function initializeReportConfigTable() {
         const dt = $('#ReportConfigurationTable');
@@ -523,85 +618,6 @@ $(function () {
             return newData;
         };
 
-        // Helper function to handle configuration data loading and transformation
-        function loadConfigurationData(correlationId, correlationProvider) {
-            return abp.ajax({
-                url: abp.appPath + 'ReportingConfiguration/GetConfiguration',
-                type: 'GET',
-                data: {
-                    correlationId: correlationId,
-                    correlationProvider: correlationProvider
-                }
-            }).then(function (result) {
-                // Check for detected changes and display alert if present
-                if (result.detectedChanges && result.detectedChanges.trim() !== '') {
-                    // Use setTimeout to ensure the alert appears after the table loads
-                    setTimeout(function () {
-                        displayDetectedChangesAlert(result.detectedChanges);
-                    }, 100);
-                }
-
-                // Transform configuration result
-                const items = result.mapping.rows.map(row => ({
-                    label: row.label,
-                    key: row.propertyName,
-                    type: row.type,
-                    path: row.path,
-                    dataPath: row.dataPath,
-                    columnName: row.columnName || '',
-                    typePath: row.typePath
-                }));
-
-                return {
-                    items: items,
-                    totalCount: items.length
-                };
-            });
-        }
-
-        // Helper function to handle fields metadata loading and transformation
-        function loadFieldsMetadata(correlationId, correlationProvider) {
-            return abp.ajax({
-                url: abp.appPath + 'ReportingConfiguration/GetFieldsMetadata',
-                type: 'GET',
-                data: {
-                    correlationId: correlationId,
-                    correlationProvider: correlationProvider
-                }
-            }).then(function (fieldsMetadata) {
-                // Transform fields metadata result
-                const items = fieldsMetadata.fields.map(field => ({
-                    label: field.label || field.key,
-                    key: field.key,
-                    type: field.type,
-                    path: field.path,
-                    dataPath: field.dataPath,
-                    columnName: field.label || field.key,
-                    typePath: field.typePath
-                }));
-
-                return {
-                    items: items,
-                    totalCount: items.length
-                };
-            });
-        }
-
-        // Helper function to handle data loading based on configuration existence
-        function handleDataLoading(exists, correlationId, correlationProvider) {
-            // Update button visibility based on configuration existence
-            updateGenerateViewButtonVisibility(exists);
-            updateDeleteButtonVisibility(exists);
-
-            if (exists) {
-                // Configuration exists - load from mapping
-                return loadConfigurationData(correlationId, correlationProvider);
-            } else {
-                // No configuration exists - load from fields metadata
-                return loadFieldsMetadata(correlationId, correlationProvider);
-            }
-        }
-
         // Create data endpoint function that handles the exists check and fallback logic
         const dataEndpoint = function (requestData) {
             const correlationId = getCurrentCorrelationId();
@@ -622,13 +638,7 @@ $(function () {
                 }
             }).then(function (exists) {
                 return handleDataLoading(exists, correlationId, correlationProvider);
-            }).catch(function (error) {
-                console.error('Failed to load report configuration:', error);
-                abp.message.error('Failed to load report configuration');
-                updateGenerateViewButtonVisibility(false);
-                updateDeleteButtonVisibility(false);
-                return { items: [], totalCount: 0 };
-            });
+            }).catch(handleDataLoadingError);
         };
 
         dataTable = initializeDataTable({
@@ -1278,6 +1288,53 @@ $(function () {
         });
     });
 
+    // Helper function to update view name validation UI (module-level to reduce nesting)
+    function updateViewNameValidationUI(isValid, errors, $viewNameInput, $confirmButton, $feedback) {
+        if (isValid) {
+            $viewNameInput.addClass('is-valid');
+            $confirmButton.prop('disabled', false);
+        } else {
+            $viewNameInput.addClass('is-invalid');
+            $feedback.text(errors.join(', '));
+            $confirmButton.prop('disabled', true);
+        }
+    }
+
+    // Helper function to handle view name availability check (module-level to reduce nesting)
+    function handleViewNameAvailabilityCheck(existingViewName, $viewNameInput, $confirmButton, $feedback) {
+        checkViewNameAvailability(existingViewName, function (isValid, errors) {
+            updateViewNameValidationUI(isValid, errors, $viewNameInput, $confirmButton, $feedback);
+        });
+    }
+
+    // Helper function to process existing configuration result (module-level to reduce nesting)
+    function processExistingConfigurationResult(result, $viewNameInput, $confirmButton, $feedback) {
+        const existingViewName = result.viewName || '';
+        $viewNameInput.val(existingViewName);
+
+        // Store the original view name for rename detection
+        $viewNameInput.data('original-view-name', existingViewName);
+
+        // Enable the confirm button if the view name is valid
+        if (existingViewName) {
+            handleViewNameAvailabilityCheck(existingViewName, $viewNameInput, $confirmButton, $feedback);
+        }
+    }
+
+    // Helper function to handle existing configuration loading (module-level to reduce nesting)
+    function handleExistingConfigurationLoading(correlationId, $viewNameInput, $confirmButton, $feedback) {
+        abp.ajax({
+            url: abp.appPath + 'ReportingConfiguration/GetConfiguration',
+            type: 'GET',
+            data: {
+                correlationId: correlationId,
+                correlationProvider: getCorrelationProvider()
+            }
+        }).done(function (result) {
+            processExistingConfigurationResult(result, $viewNameInput, $confirmButton, $feedback);
+        });
+    }
+
     // Generate view button
     $('#btn-generate-view-report-configuration').on('click', function () {
         const correlationId = getCurrentCorrelationId();
@@ -1285,43 +1342,6 @@ $(function () {
         if (!correlationId) {
             abp.message.error('Please ensure a valid form or version is selected first');
             return;
-        }
-
-        // Helper function to check and update view name validation
-        function checkAndUpdateViewNameValidation(existingViewName, $viewNameInput, $confirmButton, $feedback) {
-            checkViewNameAvailability(existingViewName, function (isValid, errors) {
-                if (isValid) {
-                    $viewNameInput.addClass('is-valid');
-                    $confirmButton.prop('disabled', false);
-                } else {
-                    $viewNameInput.addClass('is-invalid');
-                    $feedback.text(errors.join(', '));
-                    $confirmButton.prop('disabled', true);
-                }
-            });
-        }
-
-        // Helper function to handle existing configuration loading
-        function handleExistingConfiguration(correlationId, $viewNameInput, $confirmButton, $feedback) {
-            abp.ajax({
-                url: abp.appPath + 'ReportingConfiguration/GetConfiguration',
-                type: 'GET',
-                data: {
-                    correlationId: correlationId,
-                    correlationProvider: getCorrelationProvider()
-                }
-            }).done(function (result) {
-                const existingViewName = result.viewName || '';
-                $viewNameInput.val(existingViewName);
-
-                // Store the original view name for rename detection
-                $viewNameInput.data('original-view-name', existingViewName);
-
-                // Enable the confirm button if the view name is valid
-                if (existingViewName) {
-                    checkAndUpdateViewNameValidation(existingViewName, $viewNameInput, $confirmButton, $feedback);
-                }
-            });
         }
 
         // Reset modal state
@@ -1343,7 +1363,7 @@ $(function () {
         checkConfigurationExists(correlationId, function (exists) {
             if (exists) {
                 // Configuration exists - load the view name
-                handleExistingConfiguration(correlationId, $viewNameInput, $confirmButton, $feedback);
+                handleExistingConfigurationLoading(correlationId, $viewNameInput, $confirmButton, $feedback);
             } else {
                 // No existing view name, clear the stored original
                 $viewNameInput.removeData('original-view-name');
