@@ -153,7 +153,7 @@ $(function () {
         let tagInputArray = [];
 
         if (uncommonTags.length > 0) {
-            tagInputArray.push({
+            tagInputArray.unshift({
                 tagId: '00000000-0000-0000-0000-000000000000',
                 name: 'Uncommon Tags',
                 class: 'tags-uncommon',
