@@ -545,6 +545,13 @@ $(function () {
             tabCounters.files + tabCounters.chefs
         );
     });
+    
+    PubSub.subscribe('update_ai_analysis_count', (msg, data) => {
+        if (data.itemCount || data.itemCount === 0) {
+            tabCounters.ai_analysis = data.itemCount;
+        }
+        $('#ai_analysis_count').html(tabCounters.ai_analysis);
+    });
 
     PubSub.subscribe('update_application_emails_count', (msg, data) => {
         if (data.itemCount || data.itemCount === 0) {

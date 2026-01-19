@@ -127,14 +127,19 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         if (MappingUtil.IsJObject(intakeMap.ApplicantAgent))
         {
+
             newApplicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
             newApplicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
             newApplicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
             newApplicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
-            newApplicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
+            
             newApplicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
             newApplicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
+            
+            newApplicantAgent.OidcSubUser = intakeMap.ApplicantAgent?.oidc_sub_user ?? string.Empty;              
+            newApplicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
         }
+
 
         await applicantAgentRepository.InsertAsync(newApplicantAgent);
         return newApplicantAgent;
