@@ -13,11 +13,11 @@ public class FakeExternalUserLookupServiceProvider : IExternalUserLookupServiceP
     {
         return Task.FromResult<IUserData>(id switch
         {
-            var userId when userId == PaymentsTestData.UserDataMocks.User1.Id => PaymentsTestData.UserDataMocks.User1,
-            var userId when userId == PaymentsTestData.UserDataMocks.User2.Id => PaymentsTestData.UserDataMocks.User2,
-            var userId when userId == PaymentsTestData.UserDataMocks.User3.Id => PaymentsTestData.UserDataMocks.User3,
-            var userId when userId == PaymentsTestData.UserDataMocks.User4.Id => PaymentsTestData.UserDataMocks.User4,
-            var userId when userId == PaymentsTestData.UserDataMocks.User5.Id => PaymentsTestData.UserDataMocks.User5,
+            _ when id == PaymentsTestData.UserDataMocks.User1.Id => PaymentsTestData.UserDataMocks.User1,
+            _ when id == PaymentsTestData.UserDataMocks.User2.Id => PaymentsTestData.UserDataMocks.User2,
+            _ when id == PaymentsTestData.UserDataMocks.User3.Id => PaymentsTestData.UserDataMocks.User3,
+            _ when id == PaymentsTestData.UserDataMocks.User4.Id => PaymentsTestData.UserDataMocks.User4,
+            _ when id == PaymentsTestData.UserDataMocks.User5.Id => PaymentsTestData.UserDataMocks.User5,
             _ => new UserData(id, id.ToString())
         });
     }

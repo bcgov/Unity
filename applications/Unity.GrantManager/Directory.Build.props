@@ -1,0 +1,17 @@
+<Project>
+  
+  <PropertyGroup>
+    <!-- Suppress NU1701 warnings for Microsoft.Extensions.Compliance.Abstractions -->
+    <!-- This package works correctly with .NET 9.0 despite targeting older frameworks -->
+    <!-- Suppress MSB3277 warnings for EntityFrameworkCore.Relational version conflicts -->
+    <!-- These conflicts don't cause runtime issues in this solution -->
+    <NoWarn>$(NoWarn);NU1701;MSB3277</NoWarn>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <!-- Explicitly reference compatible version to avoid transitive dependency warnings -->
+    <PackageReference Include="Microsoft.Extensions.Compliance.Abstractions" Version="9.5.0" />
+
+  </ItemGroup>
+  
+</Project>

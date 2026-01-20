@@ -1091,8 +1091,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicationId")
                         .IsUnique();
 
-                    b.HasIndex("OidcSubUser");
-
                     b.ToTable("ApplicantAgents", (string)null);
                 });
 
@@ -1452,7 +1450,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("ChefsFileId")
                         .HasColumnType("text");
 
-                    b.Property<string>("ChefsSumbissionId")
+                    b.Property<string>("ChefsSubmissionId")
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -4024,11 +4022,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Applications.Application", "Application")
                         .WithOne("ApplicantAgent")
                         .HasForeignKey("Unity.GrantManager.Applications.ApplicantAgent", "ApplicationId");
-
-                    b.HasOne("Unity.GrantManager.Identity.Person", null)
-                        .WithMany()
-                        .HasForeignKey("OidcSubUser")
-                        .HasPrincipalKey("OidcSub");
 
                     b.Navigation("Application");
                 });

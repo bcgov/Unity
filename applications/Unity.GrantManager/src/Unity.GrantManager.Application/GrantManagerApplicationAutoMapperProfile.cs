@@ -117,9 +117,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             .IgnoreNullAndDefaultValues();
         CreateMap<UpdateApplicantSummaryDto, Applicant>()
             .ForMember(dest => dest.IndigenousOrgInd,
-                opt => opt.MapFrom(src =>
-                        src.IndigenousOrgInd == true ? "Yes" :
-                        src.IndigenousOrgInd == false ? "No" : null))
+                opt => opt.MapFrom(src => ConvertBoolToIndigenousOrgInd(src.IndigenousOrgInd)))
             .IgnoreNullAndDefaultValues();
         CreateMap<ContactInfoDto, ApplicantAgent>()
             .IgnoreNullAndDefaultValues();
@@ -134,6 +132,16 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         {
             "Yes" => true,
             "No" => false,
+            _ => null
+        };
+    }
+
+    private static string? ConvertBoolToIndigenousOrgInd(bool? indigenousOrgInd)
+    {
+        return indigenousOrgInd switch
+        {
+            true => "Yes",
+            false => "No",
             _ => null
         };
     }

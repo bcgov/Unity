@@ -4,7 +4,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
@@ -63,13 +62,10 @@ namespace Unity.GrantManager.Locality.BackgroundJobs
 
                             var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
 
-                            await localEventBus.PublishAsync(new ApplicationProcessEvent
+                            await localEventBus.PublishAsync(new DetermineElectoralRetrospectivelyEvent
                             {
                                 Application = application,
-                                FormVersion = formVersion,
-                                ApplicationFormSubmission = null,
-                                RawSubmission = null,
-                                OnlyLocationRetrofill = true
+                                FormVersion = formVersion
                             });
 
                             await unitOfWork.CompleteAsync();
