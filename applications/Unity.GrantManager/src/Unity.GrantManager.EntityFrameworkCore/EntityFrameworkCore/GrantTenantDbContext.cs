@@ -176,8 +176,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAgents",
                     GrantManagerConsts.DbSchema);
 
-                b.ConfigureByConvention(); //auto configure for the base class props                             
-                b.HasOne<Person>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired(false);
+                b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
