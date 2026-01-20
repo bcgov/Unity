@@ -266,8 +266,7 @@
     `;
     }
 
-    function initializeEditor(editorId, id, data, isPopulated, dropdownItems) {
-        console.log("tinymce", tinymce);
+    function initializeEditor(editorId, id, data, isPopulated, dropdownItems) {        
         if (tinymce.get(editorId)) {
             tinymce.get(editorId).remove();
         }
@@ -281,8 +280,7 @@
             promotion: false,
             content_css: false,
             skin: false,
-            setup: function (editor) {
-                console.log("editor", editor);
+            setup: function (editor) {                
                 setupEditor(editor, id, editorId, data, isPopulated, dropdownItems);
             }
         });
@@ -316,8 +314,7 @@
             if (data?.bodyHTML) {
                 editor.setContent(data.bodyHTML);
             }
-            editorInstances[id] = editor;
-            console.log(`Editor initialized: ${editorId}`);
+            editorInstances[id] = editor;            
         });
     }
 
