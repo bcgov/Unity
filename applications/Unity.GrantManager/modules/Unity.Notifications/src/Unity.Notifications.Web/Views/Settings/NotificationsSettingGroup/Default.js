@@ -207,9 +207,10 @@
         } = cardConfig;
         
         const disabled = isPopulated ? 'disabled' : '';
+        const cardDataId = data?.id?.toString() || elementIds.wrapperId;
         
         return `
-        <div class="card mb-3 shadow-sm" id="${elementIds.wrapperId}" data-id="${data?.id?.toString() || generateTempId()}">
+        <div class="card mb-3 shadow-sm" id="${elementIds.wrapperId}" data-id="${cardDataId}">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong class="template-title">${data?.name || 'Untitled Template'}</strong>
                 <div class="d-flex align-items-center gap-3">
@@ -246,7 +247,7 @@
                             <textarea id="${elementIds.editorId}"></textarea>
                         </div>
                          <div class="mb-3">
-                         <p><b>NOTE</b>:<span class="note-text"> Selecting text will let your customize it: replace it with a variable, make it bold, italic, change the alignment, add a link, create a list, etc.</span></p>
+                         <p><b>NOTE</b>:<span class="note-text"> Selecting text will let you customize it: replace it with a variable, make it bold, italic, change the alignment, add a link, create a list, etc.</span></p>
                          </div>
                          <div class="mb-3">
                          <hr>
