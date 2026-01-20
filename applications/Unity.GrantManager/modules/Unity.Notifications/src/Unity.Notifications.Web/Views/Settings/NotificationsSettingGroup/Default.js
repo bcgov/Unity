@@ -287,19 +287,27 @@
         });
     }
 
+    function createMenuItems(dropdownItems, editor) {
+        return dropdownItems.map(item => ({
+            type: 'menuitem',
+            text: item.text,
+            onAction: () => {
+                editor.insertContent(`{{${item.value}}}`);
+            }
+        }));
+    }
+
+    function fetchVariablesMenuItems(dropdownItems, editor) {
+        return function (callback) {
+            const items = createMenuItems(dropdownItems, editor);
+            callback(items);
+        };
+    }
+
     function setupEditor(editor, id, editorId, data, isPopulated, dropdownItems) {
         editor.ui.registry.addMenuButton('variablesDropdownButton', {
             text: 'VARIABLES',
-            fetch: function (callback) {
-                const items = dropdownItems.map(item => ({
-                    type: 'menuitem',
-                    text: item.text,
-                    onAction: () => {
-                        editor.insertContent(`{{${item.value}}}`);
-                    }
-                }));
-                callback(items);
-            }
+            fetch: fetchVariablesMenuItems(dropdownItems, editor)
         });
 
         editor.on('init', function () {
