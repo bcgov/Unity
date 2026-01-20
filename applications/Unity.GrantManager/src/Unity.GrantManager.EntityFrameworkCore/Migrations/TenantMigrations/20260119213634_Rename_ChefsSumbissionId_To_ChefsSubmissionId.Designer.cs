@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119213634_Rename_ChefsSumbissionId_To_ChefsSubmissionId")]
+    partial class Rename_ChefsSumbissionId_To_ChefsSubmissionId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1090,6 +1093,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationId")
                         .IsUnique();
+
+                    b.HasIndex("OidcSubUser");
 
                     b.ToTable("ApplicantAgents", (string)null);
                 });
@@ -4022,6 +4027,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Applications.Application", "Application")
                         .WithOne("ApplicantAgent")
                         .HasForeignKey("Unity.GrantManager.Applications.ApplicantAgent", "ApplicationId");
+
+                    b.HasOne("Unity.GrantManager.Identity.Person", null)
+                        .WithMany()
+                        .HasForeignKey("OidcSubUser")
+                        .HasPrincipalKey("OidcSub");
 
                     b.Navigation("Application");
                 });
