@@ -17,7 +17,7 @@
     "datatables.net-staterestore": "~1.4.2",
     "datatables.net-staterestore-dt": "~1.4.2",
     "echarts": "~6.0.0",
-    "formiojs": "~4.17.4",
+    "formiojs": "4.17.4",
     "html2canvas": "~1.4.1",
     "jquery-maskmoney": "~3.0.2",
     "jspdf": "~4.0.0",
