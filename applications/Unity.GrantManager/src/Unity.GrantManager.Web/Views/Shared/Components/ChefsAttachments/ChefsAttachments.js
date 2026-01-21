@@ -116,7 +116,7 @@ $(function () {
                 let html =
                     '<button class="btn px-2" name="chefs-download-btn" type="button"' +
                     ' chefs-submission-id=' +
-                    encodeURIComponent(full.chefsSumbissionId) +
+                    encodeURIComponent(full.chefsSubmissionId) +
                     ' chefs-data=' +
                     encodeURIComponent(data) +
                     ' chefs-file-name=' +
@@ -390,7 +390,7 @@ $(function () {
                 );
                 if (!found) {
                     selectedAtttachments.push({
-                        FormSubmissionId: data.chefsSumbissionId,
+                        FormSubmissionId: data.chefsSubmissionId,
                         ChefsFileId: data.chefsFileId,
                         Filename: data.fileName,
                     });
