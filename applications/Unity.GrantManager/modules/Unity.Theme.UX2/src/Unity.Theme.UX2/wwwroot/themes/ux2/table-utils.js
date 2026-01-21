@@ -239,7 +239,7 @@ function initializeDataTable(options) {
         searching: true,
         scrollX: true,
         scrollCollapse: true,
-        autoWidth: false,
+        autoWidth: true,
         deferRender: false,
         deferLoading: serverSideEnabled ? 0 : null,
         ajax: abp.libs.datatables.createAjax(
@@ -624,25 +624,6 @@ function resizeDataTableScrollBody(iDt) {
     try { iDt.columns.adjust(); } catch (e) { console.warn('resizeDataTableScrollBody: columns.adjust failed', e); }
 }
 
-/**
- * Attach ResizeObserver (preferred) or globalThis resize fallback for dynamic table resizing
- * @param {DataTable.Api} iDt
- */
-function attachResizeObserverToDataTable(iDt) {
-    const $wrapper = $(iDt.table().container());
-    const $container = $wrapper.closest('.dt-container, .dataTables_wrapper');
-    if (!$container.length) return;
-
-    if (typeof ResizeObserver === 'undefined') {
-        const resizeNs = 'resize.dt-' + iDt.settings()[0].sTableId;
-        $(globalThis).on(resizeNs, () => resizeDataTableScrollBody(iDt));
-        iDt.one('destroy', () => $(globalThis).off(resizeNs));
-    } else {
-        const observer = new ResizeObserver(() => resizeDataTableScrollBody(iDt));
-        observer.observe($container[0]);
-        iDt.settings()[0]._resizeObserver = observer;
-    }
-}
 
 // ============================================================================
 // Other previously existing functions (init, getSelectColumn, assignColumnIndices, etc.) remain unchanged
@@ -741,30 +722,6 @@ function getVisibleColumnIndexes(columns, visibleColumnsArray) {
     }
 
     return indexes.sort((a, b) => a - b);
-}
-
-/**
- * Dynamically adjusts the table scroll body height based on viewport size.
- * Prevents tables from exceeding viewport height while maintaining usability.
- * @param {string} tableName - ID of the DataTable element (without wrapper suffix)
- */
-function setTableHeighDynamic(tableName) {
-    const dtContainer = $(`#${tableName}`).closest('.dt-container');
-    if (!dtContainer.length) return;
-
-    let tableHeight = dtContainer[0].clientHeight;
-    let docHeight = document.body.clientHeight;
-    let tableOffset = 425;
-
-    if (tableHeight + tableOffset > docHeight) {
-        dtContainer.find('.dt-scroll-body').css({
-            height: docHeight - tableOffset,
-        });
-    } else {
-        dtContainer.find('.dt-scroll-body').css({
-            height: tableHeight + 10,
-        });
-    }
 }
 
 /**
