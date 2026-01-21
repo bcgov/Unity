@@ -477,10 +477,6 @@
             : '{Not Available}';
     }
 
-    /* the resizer needs looking at again after ux2 refactor 
-     window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
-    */
-
     PubSub.subscribe('refresh_application_list', (msg, data) => {
         dataTable.ajax.reload(null, false);
         PubSub.publish('clear_payment_application');
