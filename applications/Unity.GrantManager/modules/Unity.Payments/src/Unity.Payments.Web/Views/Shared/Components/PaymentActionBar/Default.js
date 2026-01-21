@@ -79,7 +79,7 @@ $(function () {
                 commonTags = groupedValues.reduce(filterCommonTags);
             }
             
-            let alltags = Object.entries(groupedTags).map(([paymentId, tagList]) => {
+            let allTagEntries = Object.entries(groupedTags).map(([paymentId, tagList]) => {
                 let uncommon = getUncommonTags(tagList);
 
                 return {
@@ -90,7 +90,7 @@ $(function () {
             });
 
 
-            $('#TagsJson').val(JSON.stringify(alltags));
+            $('#TagsJson').val(JSON.stringify(allTagEntries));
 
             let tagInputArray = [];
 
