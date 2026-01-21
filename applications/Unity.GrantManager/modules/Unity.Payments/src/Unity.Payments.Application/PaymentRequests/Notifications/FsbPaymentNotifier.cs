@@ -471,7 +471,7 @@ namespace Unity.Payments.PaymentRequests.Notifications
             string emailBody = GenerateEmailBody(tenantName);
 
             // Generate email subject per requirement
-            string subject = $"Batch # {batchName}";
+            string subject = batchName;
 
             // Extract payment IDs for tracking
             var paymentIds = batchPayments.Select(p => p.Id).ToList();
