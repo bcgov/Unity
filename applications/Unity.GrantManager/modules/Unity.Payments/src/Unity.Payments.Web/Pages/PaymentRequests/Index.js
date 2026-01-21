@@ -714,10 +714,6 @@ $(function () {
         }).toUTC().toLocaleString() : null;
     }
 
-    /* the resizer needs looking at again after ux2 refactor 
-     window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
-    */
-
     $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
