@@ -205,6 +205,27 @@ $(function () {
     // Initial check for generating status
     setTimeout(checkStatusAndManagePolling, 1000);
 
+    // Helper function to handle added nodes in the DOM
+    function handleAddedNode(node, observer) {
+        if (node.nodeType !== 1) return; // Early return if not an element node
+        
+        const statusElement = node.querySelector ? node.querySelector('.view-status-compact') : null;
+        if (!statusElement && !node?.classList?.contains('view-status-compact')) return;
+        
+        // New status element added, start observing it
+        observer.observe(statusElement || node, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
+        
+        // Re-bind events and check status after a brief delay
+        setTimeout(() => {
+            bindPreviewEvents();
+            checkStatusAndManagePolling();
+        }, 100);
+    }
+
     // Monitor for changes in the widget content using MutationObserver
     if (window.MutationObserver) {
         const observer = new MutationObserver(function(mutations) {
@@ -235,23 +256,7 @@ $(function () {
         const bodyObserver = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) { // Element node
-                        const statusElement = node.querySelector ? node.querySelector('.view-status-compact') : null;
-                        if (statusElement || (node?.classList?.contains('view-status-compact'))) {
-                            // New status element added, start observing it
-                            observer.observe(statusElement || node, {
-                                childList: true,
-                                subtree: true,
-                                characterData: true
-                            });
-                            
-                            // Re-bind events and check status after a brief delay
-                            setTimeout(() => {
-                                bindPreviewEvents();
-                                checkStatusAndManagePolling();
-                            }, 100);
-                        }
-                    }
+                    handleAddedNode(node, observer);
                 });
             });
         });
