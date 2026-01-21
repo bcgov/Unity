@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
         
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            var applicationApplicant = await _applicationApplicantAppService.GetByApplicationIdAsync(applicationId);
+            var applicationApplicant = await _applicationApplicantAppService.GetApplicantInfoBasicAsync(applicationId);            
             var formDetails = await _applicationFormAppService.GetFormDetailsByApplicationIdAsync(applicationId);
 
             return View(new ApplicationBreadcrumbWidgetViewModel()
@@ -38,6 +38,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
                 ApplicantName = applicationApplicant.ApplicantName,
                 ApplicationStatus = applicationApplicant.ApplicationStatus,
                 ReferenceNo = applicationApplicant.ApplicationReferenceNo,
+
                 ApplicationFormId = formDetails.ApplicationFormId,
                 ApplicationFormName = formDetails.ApplicationFormName,
                 ApplicationFormCategory = formDetails.ApplicationFormCategory,

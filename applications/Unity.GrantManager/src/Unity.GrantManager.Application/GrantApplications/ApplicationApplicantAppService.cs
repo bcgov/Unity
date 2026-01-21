@@ -93,9 +93,8 @@ public class ApplicationApplicantAppService(
         return applicantInfoDto;
     }
 
-    [Obsolete("Use GetApplicantInfoTabAsync instead.")]
     [Authorize]
-    public async Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId)
+    public async Task<ApplicationApplicantInfoDto> GetApplicantInfoBasicAsync(Guid applicationId)
     {
         var applicantInfo = await applicationRepository.WithBasicDetailsAsync(applicationId);
         if (applicantInfo == null) return new ApplicationApplicantInfoDto();
@@ -107,40 +106,9 @@ public class ApplicationApplicantAppService(
             ApplicantName = applicantInfo.Applicant?.ApplicantName ?? string.Empty,
             ApplicationReferenceNo = applicantInfo.ReferenceNo,
             ApplicationStatus = applicantInfo.ApplicationStatus.InternalStatus,
-            ApplicationStatusCode = applicantInfo.ApplicationStatus.StatusCode,
-
-            OrganizationName = applicantInfo.Applicant?.OrgName ?? string.Empty,
-            OrganizationSize = applicantInfo.Applicant?.OrganizationSize ?? string.Empty,
-            OrganizationType = applicantInfo.Applicant?.OrganizationType ?? string.Empty,
-            OrgNumber = applicantInfo.Applicant?.OrgNumber ?? string.Empty,
-            OrgStatus = applicantInfo.Applicant?.OrgStatus ?? string.Empty,
-            BusinessNumber = applicantInfo.Applicant?.BusinessNumber ?? string.Empty,
-            NonRegOrgName = applicantInfo.Applicant?.NonRegOrgName ?? string.Empty,
-
-            Sector = applicantInfo.Applicant?.Sector ?? string.Empty,
-            SectorSubSectorIndustryDesc = applicantInfo.Applicant?.SectorSubSectorIndustryDesc ?? string.Empty,
-            SubSector = applicantInfo.Applicant?.SubSector ?? string.Empty,
-            RedStop = applicantInfo.Applicant?.RedStop ?? false,
-            IndigenousOrgInd = applicantInfo.Applicant?.IndigenousOrgInd ?? string.Empty,
-            UnityApplicantId = applicantInfo.Applicant?.UnityApplicantId ?? string.Empty,
-            FiscalDay = applicantInfo.Applicant?.FiscalDay.ToString() ?? string.Empty,
-            FiscalMonth = applicantInfo.Applicant?.FiscalMonth ?? string.Empty,
-
-            SigningAuthorityBusinessPhone = applicantInfo.SigningAuthorityBusinessPhone ?? string.Empty,
-            SigningAuthorityCellPhone = applicantInfo.SigningAuthorityCellPhone ?? string.Empty,
-            SigningAuthorityEmail = applicantInfo.SigningAuthorityEmail ?? string.Empty,
-            SigningAuthorityFullName = applicantInfo.SigningAuthorityFullName ?? string.Empty,
-            SigningAuthorityTitle = applicantInfo.SigningAuthorityTitle ?? string.Empty,
-
-            ContactFullName = applicantInfo.ApplicantAgent?.Name ?? string.Empty,
-            ContactTitle = applicantInfo.ApplicantAgent?.Title ?? string.Empty,
-            ContactEmail = applicantInfo.ApplicantAgent?.Email ?? string.Empty,
-            ContactBusinessPhone = applicantInfo.ApplicantAgent?.Phone ?? string.Empty,
-            ContactCellPhone = applicantInfo.ApplicantAgent?.Phone2 ?? string.Empty,
-
-            ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(applicantInfo.Applicant?.ApplicantAddresses?.ToList() ?? [])
+            ApplicationStatusCode = applicantInfo.ApplicationStatus.StatusCode
         };
-    }
+    }  
 
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(
