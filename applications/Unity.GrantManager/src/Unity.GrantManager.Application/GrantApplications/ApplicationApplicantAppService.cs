@@ -108,7 +108,7 @@ public class ApplicationApplicantAppService(
             ApplicationStatus = applicantInfo.ApplicationStatus.InternalStatus,
             ApplicationStatusCode = applicantInfo.ApplicationStatus.StatusCode
         };
-    }  
+    }
 
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(
