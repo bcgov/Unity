@@ -46,6 +46,15 @@
 
     let editorInstances = {};
 
+    // Utility function for debouncing
+    function debounce(func, delay) {
+        let timeoutId;
+        return function (...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
     // Utility functions for template operations
     function extractFormData(formDataArray) {
         return {
@@ -329,14 +338,18 @@
     }
 
     function setupTemplateNameValidation(formId, wrapperId, id) {
+        const debouncedValidation = debounce(function (templateInput, newTitle) {
+            checkTemplateNameUnique(newTitle, id, function (isUnique) {
+                toggleTemplateNameValidation(templateInput, formId, isUnique);
+            });
+        }, 250);
+
         $(`#${formId} input[name="templateName"]`).on('input', function () {
             const templateInput = $(this);
             const newTitle = templateInput.val().trim() || 'Untitled Template';
             $(`#${wrapperId} .template-title`).text(newTitle);
 
-            checkTemplateNameUnique(newTitle, id, function (isUnique) {
-                toggleTemplateNameValidation(templateInput, formId, isUnique);
-            });
+            debouncedValidation(templateInput, newTitle);
         });
     }
 
