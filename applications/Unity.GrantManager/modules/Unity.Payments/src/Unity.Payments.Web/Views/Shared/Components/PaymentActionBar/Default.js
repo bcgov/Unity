@@ -53,36 +53,52 @@ $(function () {
                 }
             });
 
+            // Helper functions to reduce nesting depth
+            function hasMatchingId(tagA, tagB) {
+                return tagA.id === tagB.id;
+            }
+
+            function tagExistsInList(tag, tagList) {
+                return tagList.some(t => hasMatchingId(t, tag));
+            }
+
+            function filterCommonTags(prev, next) {
+                return prev.filter(p => tagExistsInList(p, next));
+            }
+
+            function getUncommonTags(tagList) {
+                return tagList.filter(tag => !tagExistsInList(tag, commonTags));
+            }
+
+            function sortByName(a, b) {
+                return a.name.localeCompare(b.name);
+            }
 
             let groupedValues = Object.values(groupedTags);
             if (groupedValues.length > 0) {
-                commonTags = groupedValues.reduce(function (prev, next) {
-                    return prev.filter(p => next.some(n => n.id === p.id));
-                });
+                commonTags = groupedValues.reduce(filterCommonTags);
             }
-            let alltags = Object.entries(groupedTags).map(([paymentId, tagList]) => {
-                let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+            
+            let allTagEntries = Object.entries(groupedTags).map(([paymentId, tagList]) => {
+                let uncommon = getUncommonTags(tagList);
 
                 return {
                     paymentRequestId : paymentId,
-                    commonTags: [...commonTags].sort((a, b) => a.name.localeCompare(b.name)),
-                    uncommonTags: uncommon.sort((a, b) => a.name.localeCompare(b.name))
+                    commonTags: [...commonTags].sort(sortByName),
+                    uncommonTags: uncommon.sort(sortByName)
                 };
             });
 
 
-            $('#TagsJson').val(JSON.stringify(alltags));
+            $('#TagsJson').val(JSON.stringify(allTagEntries));
 
             let tagInputArray = [];
 
 
             Object.entries(groupedTags).forEach(function ([paymentId, tagList]) {
-                let uncommon = tagList.filter(tag => !commonTags.some(ct => ct.id === tag.id));
+                let uncommon = getUncommonTags(tagList);
                 uncommonTags = uncommonTags.concat(uncommon);
-
-
             });
-
 
             if (uncommonTags.length > 0) {
                 tagInputArray.unshift({
@@ -139,7 +155,7 @@ $(function () {
             $('*[data-selector="batch-payment-table-actions"]').prop('disabled', true);
             $('*[data-selector="batch-payment-table-actions"]').addClass('action-bar-btn-unavailable');
             $('.action-bar').addClass('disabled');
-            $('#tagPayment').prop('disabled', true); 
+            $('#tagPayment').prop('disabled', true);
         }
         else {
             $('*[data-selector="batch-payment-table-actions"]').prop('disabled', false);
@@ -147,11 +163,10 @@ $(function () {
             $('.action-bar').addClass('active');
             $('#tagPayment').removeClass('disabled');
             $('#tagPayment').prop('disabled', false);
-
         }
     }
 
-    $('#tagPayment').click(function () {
+    $('#tagPayment').on('click', function () {
         // Store payment IDs in distributed cache to avoid URL length limits
         unity.payments.paymentRequests.paymentBulkActions
             .storePaymentIds({ paymentRequestIds: selectedPaymentIds })
@@ -176,6 +191,5 @@ $(function () {
         selectedPaymentIds = [];
         PubSub.publish("refresh_payment_list");
     });
-
 });
 
