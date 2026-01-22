@@ -7,10 +7,10 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # set up node
-ARG NODE_VERSION=22.17.0
+ARG NODE_VERSION=24.13.0
 ARG YARN_VERSION=1.22.22
 ARG NODE_DOWNLOAD_URL=https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz
-ARG NODE_DOWNLOAD_SHA=0fa01328a0f3d10800623f7107fbcd654a60ec178fab1ef5b9779e94e0419e1a
+ARG NODE_DOWNLOAD_SHA=6223aad1a81f9d1e7b682c59d12e2de233f7b4c37475cd40d1c89c42b737ffa8
 
 RUN curl -SL --compressed "${NODE_DOWNLOAD_URL}" --output nodejs.tar.gz \
     && echo "${NODE_DOWNLOAD_SHA} nodejs.tar.gz" | sha256sum -c - \
