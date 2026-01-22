@@ -751,26 +751,6 @@ async function generateUnityApplicantIdBtn() {
     }
 };
 
-async function checkUnityApplicantIdExist(unityAppId, appId, appInfoObj) {
-    try {
-        let existingApplicant = await unity.grantManager.applicants.applicant.getExistingApplicant(unityAppId);
-
-        if (existingApplicant) {
-            Swal.fire({
-                icon: "error",
-                text: "Applicatn ID already exists. Please enter a unique ID.",
-                confirmButtonText: 'Ok',
-                customClass: { confirmButton: 'btn btn-primary' }
-            });
-        } else {
-            updateApplicantInfo(appId, appInfoObj);
-        }
-    }
-    catch (error) {
-        console.log(error);
-    }
-}
-
 function enableApplicantInfoSaveBtn(inputText) {
     if (!$("#ApplicantInfoForm").valid()
         || !abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Applicant') // Note: Will replace after worksheet permissions added
@@ -783,19 +763,6 @@ function enableApplicantInfoSaveBtn(inputText) {
         return;
     }
     $('#saveApplicantInfoBtn').prop('disabled', false);
-}
-
-function updateApplicantInfo(appId, appInfoObj) {
-    return unity.grantManager.grantApplications.grantApplication
-        .updateProjectApplicantInfo(appId, appInfoObj)
-        .done(function () {
-            abp.notify.success(
-                'The Applicant info has been updated.'
-            );
-            $('#saveApplicantInfoBtn').prop('disabled', true);
-            PubSub.publish("refresh_detail_panel_summary");
-            PubSub.publish('applicant_info_updated', appInfoObj);
-        });
 }
 
 function setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId) {
