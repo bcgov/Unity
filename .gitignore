@@ -116,3 +116,4 @@ appsettings.json
 
 /applications/Orchestrator
 *.env
+/applications/Unity.GrantManager/src/Unity.GrantManager.Web/package-lock.json

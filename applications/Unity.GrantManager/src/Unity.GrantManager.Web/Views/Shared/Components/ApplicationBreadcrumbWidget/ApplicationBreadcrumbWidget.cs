@@ -15,29 +15,21 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
         ScriptTypes = [typeof(ApplicationBreadcrumbWidgetScriptBundleContributor)],
         StyleTypes = [typeof(ApplicationBreadcrumbWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class ApplicationBreadcrumbWidgetViewComponent : AbpViewComponent
+    public class ApplicationBreadcrumbWidgetViewComponent(
+        IApplicationApplicantAppService applicationApplicantAppService,
+        IApplicationFormAppService applicationFormAppService) : AbpViewComponent
     {
-        private readonly IApplicationApplicantAppService _applicationApplicantAppService;
-        private readonly IApplicationFormAppService _applicationFormAppService;
-
-        public ApplicationBreadcrumbWidgetViewComponent(
-            IApplicationApplicantAppService applicationApplicantAppService,
-            IApplicationFormAppService applicationFormAppService)
-        {
-            _applicationApplicantAppService = applicationApplicantAppService;
-            _applicationFormAppService = applicationFormAppService;
-        }
-        
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            var applicationApplicant = await _applicationApplicantAppService.GetByApplicationIdAsync(applicationId);
-            var formDetails = await _applicationFormAppService.GetFormDetailsByApplicationIdAsync(applicationId);
+            var applicationApplicant = await applicationApplicantAppService.GetApplicantInfoBasicAsync(applicationId);
+            var formDetails = await applicationFormAppService.GetFormDetailsByApplicationIdAsync(applicationId);
 
             return View(new ApplicationBreadcrumbWidgetViewModel()
             {
                 ApplicantName = applicationApplicant.ApplicantName,
                 ApplicationStatus = applicationApplicant.ApplicationStatus,
                 ReferenceNo = applicationApplicant.ApplicationReferenceNo,
+
                 ApplicationFormId = formDetails.ApplicationFormId,
                 ApplicationFormName = formDetails.ApplicationFormName,
                 ApplicationFormCategory = formDetails.ApplicationFormCategory,
