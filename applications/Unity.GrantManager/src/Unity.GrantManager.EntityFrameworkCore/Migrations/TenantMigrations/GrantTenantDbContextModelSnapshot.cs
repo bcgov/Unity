@@ -2601,10 +2601,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ChesHttpStatusCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Guid?>("ChesMsgId")
                         .HasColumnType("uuid");
 
