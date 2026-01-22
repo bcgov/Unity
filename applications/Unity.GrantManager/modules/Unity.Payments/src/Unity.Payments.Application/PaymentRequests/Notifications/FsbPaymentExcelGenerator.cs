@@ -41,6 +41,14 @@ namespace Unity.Payments.PaymentRequests.Notifications
         private const string SheetName = "FSB Payments";
 
         private const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+        private const string PacificTimeZoneId = "Pacific Standard Time";
+        private static readonly string[] PacificTimeZoneIanaIds =
+        [
+            "America/Vancouver",
+            "America/Los_Angeles"
+        ];
+        private static readonly TimeZoneInfo PacificTimeZone = ResolvePacificTimeZone();
+        private static readonly bool PacificTimeZoneIsUtcFallback = PacificTimeZone.Id == TimeZoneInfo.Utc.Id;
 
         /// <summary>
         /// Generates an Excel file from a list of FSB payment data
@@ -112,21 +120,61 @@ namespace Unity.Payments.PaymentRequests.Notifications
             worksheet.Cell(rowNumber, 3).Value = payment.PayeeName ?? "N/A";
             worksheet.Cell(rowNumber, 4).Value = payment.CasSupplierSiteNumber ?? "N/A";
             worksheet.Cell(rowNumber, 5).Value = payment.PayeeAddress ?? "N/A";
-            worksheet.Cell(rowNumber, 6).Value = payment.InvoiceDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 6).Value = FormatDate(payment.InvoiceDate);
             worksheet.Cell(rowNumber, 7).Value = payment.InvoiceNumber ?? "N/A";
             worksheet.Cell(rowNumber, 8).Value = payment.Amount;
             worksheet.Cell(rowNumber, 9).Value = payment.PayGroup ?? "N/A";
-            worksheet.Cell(rowNumber, 10).Value = payment.GoodsServicesReceivedDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 10).Value = FormatDate(payment.GoodsServicesReceivedDate);
             worksheet.Cell(rowNumber, 11).Value = payment.QualifierReceiver ?? "N/A";
-            worksheet.Cell(rowNumber, 12).Value = payment.QRApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 12).Value = FormatDate(payment.QRApprovalDate);
             worksheet.Cell(rowNumber, 13).Value = payment.ExpenseAuthority ?? "N/A";
-            worksheet.Cell(rowNumber, 14).Value = payment.EAApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 14).Value = FormatDate(payment.EAApprovalDate);
             worksheet.Cell(rowNumber, 15).Value = payment.CasCheckStubDescription ?? "N/A";
             worksheet.Cell(rowNumber, 16).Value = payment.AccountCoding ?? "N/A";
             worksheet.Cell(rowNumber, 17).Value = payment.PaymentRequester ?? "N/A";
-            worksheet.Cell(rowNumber, 18).Value = payment.RequestedOn?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 18).Value = FormatDate(payment.RequestedOn);
             worksheet.Cell(rowNumber, 19).Value = payment.L3Approver ?? "N/A";
-            worksheet.Cell(rowNumber, 20).Value = payment.L3ApprovalDate?.ToString(DATE_FORMAT) ?? "N/A";
+            worksheet.Cell(rowNumber, 20).Value = FormatDate(payment.L3ApprovalDate);
+        }
+
+        private static string FormatDate(DateTime? utcDateTime)
+        {
+            if (!utcDateTime.HasValue)
+            {
+                return "N/A";
+            }
+
+            var normalizedUtc = DateTime.SpecifyKind(utcDateTime.Value, DateTimeKind.Utc);
+            var pacificTime = TimeZoneInfo.ConvertTime(new DateTimeOffset(normalizedUtc), PacificTimeZone);
+            var tzAbbreviation = "UTC";
+            if (!PacificTimeZoneIsUtcFallback)
+            {
+                tzAbbreviation = PacificTimeZone.IsDaylightSavingTime(pacificTime.DateTime) ? "PDT" : "PST";
+            }
+            return $"{pacificTime.ToString(DATE_FORMAT)} {tzAbbreviation}";
+        }
+
+        private static TimeZoneInfo ResolvePacificTimeZone()
+        {
+            if (TimeZoneInfo.TryFindSystemTimeZoneById(PacificTimeZoneId, out var timeZone))
+            {
+                return timeZone;
+            }
+
+            return TryResolveIanaTimeZone();
+        }
+
+        private static TimeZoneInfo TryResolveIanaTimeZone()
+        {
+            foreach (var timeZoneId in PacificTimeZoneIanaIds)
+            {
+                if (TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out var timeZone))
+                {
+                    return timeZone;
+                }
+            }
+
+            return TimeZoneInfo.Utc;
         }
     }
 }

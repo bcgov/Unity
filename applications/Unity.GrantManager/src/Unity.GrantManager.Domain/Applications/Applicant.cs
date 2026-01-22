@@ -32,8 +32,5 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
     public decimal? MatchPercentage { get; set; }
     public string? NonRegOrgName { get; set; }
-    public bool? IsDuplicated { get; set; }
-    
-    [Obsolete("Stale field going forward, to be removed in a future release, use Application.ApplicantElectoralDistrict instead.")]
-    public string? ElectoralDistrict { get; set; }
+    public bool? IsDuplicated { get; set; }   
 }
