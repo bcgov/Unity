@@ -6,7 +6,6 @@ module.exports = {
     clean: [],
     mappings: {
         '@node_modules/formiojs/dist/': '@libs/formiojs',
-        '@node_modules/axios/dist/': '@libs/axios',
         '@node_modules/pubsub-js/src': '@libs/pubsub-js/src',
         '@node_modules/datatables.net-bs5/': '@libs/datatables.net-bs5/',
         '@node_modules/datatables.net-buttons/': '@libs/datatables.net-buttons/',
