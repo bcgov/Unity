@@ -50,17 +50,66 @@ $(function () {
         }
     }
 
+    function initializeShadowDOM() {
+        const formioContainer = document.getElementById('formio');
+
+        if (!formioContainer) {
+            console.error('Formio container not found');
+            return null;
+        }
+
+        // Check if shadow root already exists
+        if (formioContainer.shadowRoot) {
+            return formioContainer.shadowRoot;
+        }
+
+        // Create shadow DOM with open mode (allows external JS access)
+        const shadowRoot = formioContainer.attachShadow({mode: 'open'});
+
+        // Load form.io CSS inside shadow DOM
+        const formioStyle = document.createElement('link');
+        formioStyle.rel = 'stylesheet';
+        formioStyle.href = '/libs/formiojs/formio.form.css';
+        shadowRoot.appendChild(formioStyle);
+
+        // Load bootstrap CSS
+        const bootstrapStyle = document.createElement('link');
+        bootstrapStyle.rel = 'stylesheet';
+        bootstrapStyle.href = '/libs/bootstrap-4/dist/css/bootstrap.min.css';
+        shadowRoot.appendChild(bootstrapStyle);
+
+        // Load Details-shadow-dom.css into shadow DOM (CRITICAL for accordion, styling, etc.)
+        const detailsStyle = document.createElement('link');
+        detailsStyle.rel = 'stylesheet';
+        detailsStyle.href = '/Pages/GrantApplications/Details-shadow-dom.css';
+        shadowRoot.appendChild(detailsStyle);
+
+        return shadowRoot;
+    }
+
     function renderSubmission() {
+        // Initialize shadow DOM first
+        const shadowRoot = initializeShadowDOM();
+
         if (renderFormIoToHtml == 'False' || hasRenderedHtml == 'False') {
-            getSubmission();
+            getSubmission(shadowRoot);
         } else {
             $('.spinner-grow').hide();
-            addEventListeners();
+
+            // Inject pre-rendered HTML into shadow DOM
+            if (shadowRoot) {
+                const htmlContent = document.getElementById('ApplicationFormSubmissionHtml');
+                if (htmlContent && htmlContent.value) {
+                    shadowRoot.innerHTML += htmlContent.value;
+                }
+            }
+
+            addEventListeners(shadowRoot);
         }
     }
 
 
-    async function getSubmission() {
+    async function getSubmission(shadowRoot) {
         try {
             $('.spinner-grow').hide();
             let submissionDataString = document.getElementById(
@@ -98,8 +147,13 @@ $(function () {
                 evaluator.protectedEval = true;
             }
 
+            // Create container inside shadow DOM
+            const container = document.createElement('div');
+            container.id = 'formio-container';
+            shadowRoot.appendChild(container);
+
             await Formio.createForm(
-                document.getElementById('formio'),
+                container, // Render inside shadow DOM
                 formSchema,
                 {
                     readOnly: true,
@@ -108,18 +162,18 @@ $(function () {
                     noeval: true,
                 }
             ).then(function (form) {
-                handleForm(form, submissionData);
+                handleForm(form, submissionData, shadowRoot);
             });
         } catch (error) {
             console.error(error);
         }
     }
 
-    function handleForm(form, submission) {
+    function handleForm(form, submission, shadowRoot) {
         form.submission = submission;
         form.resetValue();
         form.refresh();
-        form.on('render', addEventListeners);
+        form.on('render', () => addEventListeners(shadowRoot));
 
         waitFor(() => isFormChanging(form)).then(() => {
             setTimeout(storeRenderedHtml, 2000);
@@ -130,7 +184,9 @@ $(function () {
         if (renderFormIoToHtml == 'False') {
             return;
         }
-        let innerHTML = document.getElementById('formio').innerHTML;
+        const formioContainer = document.getElementById('formio');
+        const shadowRoot = formioContainer.shadowRoot;
+        let innerHTML = shadowRoot ? shadowRoot.innerHTML : formioContainer.innerHTML;
         let submissionId = document.getElementById(
             'ApplicationFormSubmissionId'
         ).value;
@@ -152,7 +208,7 @@ $(function () {
     }
 
     // Wait for the DOM to be fully loaded
-    function addEventListeners() {
+    function addEventListeners(shadowRoot) {
         const cardHeaders = getCardHeaders();
         const cardBodies = getCardBodies();
 
@@ -170,14 +226,18 @@ $(function () {
 
     // Get all card headers
     function getCardHeaders() {
-        return document.querySelectorAll(
+        const formioContainer = document.getElementById('formio');
+        const root = formioContainer.shadowRoot || document;
+        return root.querySelectorAll(
             '.card-header:not(.card-body .card-header)'
         );
     }
 
     // Get all card bodies
     function getCardBodies() {
-        return document.querySelectorAll(
+        const formioContainer = document.getElementById('formio');
+        const root = formioContainer.shadowRoot || document;
+        return root.querySelectorAll(
             '.card-body:not(.card-body .card-body)'
         );
     }
@@ -359,10 +419,25 @@ $(function () {
         formioCSS.rel = 'stylesheet';
         formioCSS.href = '/libs/formiojs/formio.form.css';
 
+        // Add inline CSS to disable links (more reliable than JavaScript)
+        const inlineStyle = doc.createElement('style');
+        inlineStyle.textContent = `
+            a {
+                pointer-events: none !important;
+                cursor: default !important;
+                text-decoration: none !important;
+                color: black !important;
+            }
+            button {
+                display: none !important;
+            }
+        `;
+
         head.appendChild(jqueryScript);
         head.appendChild(formioScript);
         head.appendChild(bootstrapCSS);
         head.appendChild(formioCSS);
+        head.appendChild(inlineStyle);
 
         // BODY
         const body = doc.body;
