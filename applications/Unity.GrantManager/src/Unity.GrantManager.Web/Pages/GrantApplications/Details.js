@@ -100,7 +100,7 @@ $(function () {
             if (shadowRoot) {
                 const htmlContent = document.getElementById('ApplicationFormSubmissionHtml');
                 if (htmlContent && htmlContent.value) {
-                    shadowRoot.innerHTML += htmlContent.value;
+                    shadowRoot.innerHTML += DOMPurify.sanitize(htmlContent.value);
                 }
             }
 
