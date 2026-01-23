@@ -90,6 +90,13 @@ $(function () {
             }
 
             Formio.icons = 'fontawesome';
+            const evaluator =
+                (Formio.Utils && Formio.Utils.Evaluator) ||
+                Formio.Evaluator;
+            if (evaluator) {
+                evaluator.noeval = true;
+                evaluator.protectedEval = true;
+            }
 
             await Formio.createForm(
                 document.getElementById('formio'),
@@ -98,6 +105,7 @@ $(function () {
                     readOnly: true,
                     renderMode: 'form',
                     flatten: true,
+                    noeval: true,
                 }
             ).then(function (form) {
                 handleForm(form, submissionData);
