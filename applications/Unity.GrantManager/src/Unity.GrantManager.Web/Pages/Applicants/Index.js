@@ -511,7 +511,10 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 23, // Sort by creationTime (column 23) descending
+        defaultSortColumn: {
+            name: 'creationTime',
+            dir: 'desc'
+        },
         dataEndpoint: unity.grantManager.applicants.applicant.getList,
         data: {},
         responseCallback,

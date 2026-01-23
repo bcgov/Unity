@@ -151,7 +151,10 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 13,
+        defaultSortColumn: {
+            name: 'requestedOn',
+            dir: 'desc'
+        },
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
         data: {},
         responseCallback,

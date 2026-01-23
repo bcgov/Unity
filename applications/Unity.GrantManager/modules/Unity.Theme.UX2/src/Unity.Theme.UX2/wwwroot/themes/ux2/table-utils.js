@@ -221,6 +221,7 @@ function initializeDataTable(options) {
     // Process columns and visibility
     let tableColumns = assignColumnIndices(listColumns);
     let visibleColumns = getVisibleColumnIndexes(tableColumns, defaultVisibleColumns);
+    let defaultSortOrder = getDefaultSortOrder(tableColumns, defaultSortColumn);
 
     // Prepare action buttons
     let updatedActionButtons = prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect);
@@ -235,7 +236,7 @@ function initializeDataTable(options) {
     let iDt = new DataTable(dt, {
         serverSide: serverSideEnabled,
         paging: pagingEnabled,
-        order: [[defaultSortColumn, 'desc']],
+        order: defaultSortOrder,
         searching: true,
         scrollX: true,
         scrollCollapse: true,
@@ -650,7 +651,6 @@ function addDataTableFixCSS() {
     }
 }
 
-
 /**
  * Assigns sequential index values to columns that don't have one.
  * Preserves existing indices and continues numbering from the highest existing index.
@@ -853,4 +853,51 @@ $(document).keydown(function (e) {
         return false;
     }
 });
+
+/**
+ * Resolves a column index by its name or data field.
+ * @param {Array<Object>} columns - Column definitions
+ * @param {string} name - Column name or data field
+ * @returns {number|null} Column index or null if not found
+ */
+function resolveColumnIndexByName(columns, name) {
+    if (!name) return null;
+    const match = columns.find((col) => col.name === name || col.data === name);
+    return match?.index ?? null;
+}
+
+/**
+ * Builds a DataTables-compliant default sort order array from various input shapes.
+ * Supports numeric index, column name, or object with index/name and dir.
+ * @param {Array<Object>} columns - Column definitions (with assigned indices)
+ * @param {number|string|Object} defaultSortColumn - Sort descriptor
+ * @returns {Array<Array>|Object} DataTables OrderIdx array or OrderName object
+ */
+function getDefaultSortOrder(columns, defaultSortColumn) {
+    // Numeric index
+    if (typeof defaultSortColumn === 'number' && !Number.isNaN(defaultSortColumn)) {
+        debugger;
+        return [defaultSortColumn, 'desc'];
+    }
+
+    // Column name
+    if (typeof defaultSortColumn === 'string' && defaultSortColumn.trim() !== '') {
+        const resolved = resolveColumnIndexByName(columns, defaultSortColumn.trim());
+        debugger;
+        if (resolved !== null) {
+            return [defaultSortColumn, 'desc'];
+        }
+    }
+
+    // Object with index/name + dir or array
+    if (
+        defaultSortColumn &&
+        typeof defaultSortColumn === 'object'
+    ) {
+        debugger;
+        return defaultSortColumn;
+    }
+
+    return [];
+}
 
