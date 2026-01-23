@@ -99,7 +99,7 @@ $(function () {
             // Inject pre-rendered HTML into shadow DOM
             if (shadowRoot) {
                 const htmlContent = document.getElementById('ApplicationFormSubmissionHtml');
-                if (htmlContent && htmlContent.value) {
+                if (htmlContent?.value) {
                     shadowRoot.innerHTML += DOMPurify.sanitize(htmlContent.value);
                 }
             }
@@ -138,14 +138,7 @@ $(function () {
                 submissionData = submissionJson.submission;
             }
 
-            Formio.icons = 'fontawesome';
-            const evaluator =
-                Formio.Utils?.Evaluator ||
-                Formio.Evaluator;
-            if (evaluator) {
-                evaluator.noeval = true;
-                evaluator.protectedEval = true;
-            }
+            Formio.icons = 'fontawesome';            
 
             // Create container inside shadow DOM
             const container = document.createElement('div');
@@ -159,7 +152,6 @@ $(function () {
                     readOnly: true,
                     renderMode: 'form',
                     flatten: true,
-                    noeval: true,
                 }
             ).then(function (form) {
                 handleForm(form, submissionData, shadowRoot);

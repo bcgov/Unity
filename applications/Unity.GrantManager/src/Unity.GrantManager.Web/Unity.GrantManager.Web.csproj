@@ -55,8 +55,7 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="HtmlSanitizer" Version="9.0.889" />
+  <ItemGroup>    
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="9.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
       <PrivateAssets>all</PrivateAssets>
