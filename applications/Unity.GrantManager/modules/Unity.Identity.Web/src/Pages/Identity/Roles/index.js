@@ -150,10 +150,7 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 25,
-        defaultSortColumn: {
-            name: 'name',
-            dir: 'asc'
-        },
+        defaultSortColumn: 1,
         dataEndpoint: _identityRoleAppService.getList,
         data: {},
         responseCallback: function (result) {

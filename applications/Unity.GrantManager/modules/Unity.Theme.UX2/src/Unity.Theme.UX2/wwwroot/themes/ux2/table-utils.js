@@ -876,16 +876,14 @@ function resolveColumnIndexByName(columns, name) {
 function getDefaultSortOrder(columns, defaultSortColumn) {
     // Numeric index
     if (typeof defaultSortColumn === 'number' && !Number.isNaN(defaultSortColumn)) {
-        debugger;
-        return [[defaultSortColumn, 'desc']];
+        return [[defaultSortColumn, 'asc']];
     }
 
     // Column name
     if (typeof defaultSortColumn === 'string' && defaultSortColumn.trim() !== '') {
-        const resolved = resolveColumnIndexByName(columns, defaultSortColumn.trim());
-        debugger;
+        const resolved = resolveColumnIndexByName(columns, defaultSortColumn);
         if (resolved !== null) {
-            return [[defaultSortColumn, 'desc']];
+            return [[defaultSortColumn, 'asc']];
         }
     }
 
@@ -894,7 +892,6 @@ function getDefaultSortOrder(columns, defaultSortColumn) {
         defaultSortColumn &&
         typeof defaultSortColumn === 'object'
     ) {
-        debugger;
         return defaultSortColumn;
     }
 

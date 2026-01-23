@@ -254,10 +254,7 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 25,
-        defaultSortColumn: {
-            name: 'userName',
-            dir: 'asc'
-        },
+        defaultSortColumn: 1,
         dataEndpoint: _identityUserAppService.getList,
         data: {},
         responseCallback: tableResponseCallback,
