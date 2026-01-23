@@ -140,7 +140,7 @@ $(function () {
 
             Formio.icons = 'fontawesome';
             const evaluator =
-                (Formio.Utils && Formio.Utils.Evaluator) ||
+                Formio.Utils?.Evaluator ||
                 Formio.Evaluator;
             if (evaluator) {
                 evaluator.noeval = true;
