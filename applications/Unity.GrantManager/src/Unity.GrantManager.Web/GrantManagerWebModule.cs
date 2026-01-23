@@ -538,10 +538,14 @@ public class GrantManagerWebModule : AbpModule
         var env = context.GetEnvironment();
         var configuration = context.GetConfiguration();
 
-        if (!env.IsProduction())
+        // Environment-specific exception handling and PII logging
+        // Known environments: Development (DEV), Test (TEST), Staging (UAT), Production (PROD)
+        // - DEV & TEST: Developer exception pages with PII logging enabled (safe - uses mocked data)
+        // - UAT & PROD: Custom error pages with PII logging disabled (production-like behavior)
+        if (env.IsDevelopment() || env.IsEnvironment("Test"))
         {
             app.UseDeveloperExceptionPage();
-            IdentityModelEventSource.ShowPII = true;
+            IdentityModelEventSource.ShowPII = true; // Safe: Only enabled in non-production environments
         }
 
         app.UseAbpRequestLocalization();
