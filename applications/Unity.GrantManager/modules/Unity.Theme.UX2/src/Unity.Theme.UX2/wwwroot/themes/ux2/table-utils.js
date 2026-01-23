@@ -171,7 +171,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {jQuery} options.dt - jQuery element to initialize as DataTable
  * @param {Array<string>} [options.defaultVisibleColumns=[]] - Column names visible by default
  * @param {Array<Object>} options.listColumns - Column definitions with name, data, title, render, etc.
- * @param {number} options.defaultSortColumn - Index of column to sort by default
+ * @param {number|string|Object} options.defaultSortColumn - Index or name of column to sort by default
  * @param {string} options.dataEndpoint - API endpoint URL for fetching table data
  * @param {Function|Object} options.data - Data source or function returning request parameters
  * @param {Function} [options.responseCallback] - Custom callback to transform API response
@@ -877,7 +877,7 @@ function getDefaultSortOrder(columns, defaultSortColumn) {
     // Numeric index
     if (typeof defaultSortColumn === 'number' && !Number.isNaN(defaultSortColumn)) {
         debugger;
-        return [defaultSortColumn, 'desc'];
+        return [[defaultSortColumn, 'desc']];
     }
 
     // Column name
@@ -885,7 +885,7 @@ function getDefaultSortOrder(columns, defaultSortColumn) {
         const resolved = resolveColumnIndexByName(columns, defaultSortColumn.trim());
         debugger;
         if (resolved !== null) {
-            return [defaultSortColumn, 'desc'];
+            return [[defaultSortColumn, 'desc']];
         }
     }
 

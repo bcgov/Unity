@@ -15,6 +15,11 @@ $(function () {
         'redStop'
     ];
 
+    const defaultSortOrderColumn = {
+        name: 'creationTime',
+        dir: 'desc'
+    };
+
     // Get column definitions
     const listColumns = getColumns();
 
@@ -477,7 +482,7 @@ $(function () {
                         $('#search, .custom-filter-input').val('');
                         dt.columns().search('');
                         dt.search('');
-                        dt.order([23, 'desc']).draw(); // Sort by creationTime descending
+                        dt.order(defaultSortOrderColumn).draw(); // Sort by creationTime descending
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
@@ -511,10 +516,7 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: {
-            name: 'creationTime',
-            dir: 'desc'
-        },
+        defaultSortColumn: defaultSortOrderColumn,
         dataEndpoint: unity.grantManager.applicants.applicant.getList,
         data: {},
         responseCallback,

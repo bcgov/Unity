@@ -131,7 +131,10 @@ $(function () {
             defaultVisibleColumns,
             listColumns,
             maxRowsPerPage: 25,
-            defaultSortColumn: 0,
+            defaultSortColumn: {
+                name: 'userName',
+                dir: 'asc'
+            },
             dataEndpoint: unity.grantManager.payments.paymentSettings.getL2ApproversThresholds,
             data: {},
             responseCallback,
@@ -251,7 +254,10 @@ $(function () {
             defaultVisibleColumns,
             listColumns,
             maxRowsPerPage: 25,
-            defaultSortColumn: 0,
+            defaultSortColumn: {
+                name: 'ministryClient',
+                dir: 'asc'
+            },
             dataEndpoint: unity.grantManager.payments.accountCoding.getList,
             data: {},
             responseCallback,
