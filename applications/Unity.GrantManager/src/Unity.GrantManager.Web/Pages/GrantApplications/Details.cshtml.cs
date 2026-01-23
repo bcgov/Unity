@@ -1,5 +1,4 @@
-﻿using Ganss.Xss;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -86,7 +85,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public List<BoundWorksheet> CustomTabs { get; set; } = [];
 
         [BindProperty]
-        public HashSet<string> ZoneStateSet { get; set; } = [];        
+        public HashSet<string> ZoneStateSet { get; set; } = [];
 
         public DetailsModel(
             GrantApplicationAppService grantApplicationAppService,
