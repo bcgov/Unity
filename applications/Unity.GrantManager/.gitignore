@@ -261,6 +261,9 @@ src/Unity.GrantManager.DbMigrator/Logs/*
 src/Unity.GrantManager.Blazor.Server/Logs/*
 src/Unity.GrantManager.Blazor.Server.Tiered/Logs/*
 
+# Development settings with sensitive information
+**/appsettings.Development.json
+
 # Use abp install-libs to restore.
 **/wwwroot/libs/*
 
