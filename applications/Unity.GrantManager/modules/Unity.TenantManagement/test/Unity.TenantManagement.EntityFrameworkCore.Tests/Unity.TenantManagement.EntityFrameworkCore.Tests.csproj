@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Unity.TenantManagement.TestBase\Unity.TenantManagement.TestBase.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.5" />
     <PackageReference Include="System.Text.Json" Version="9.0.5" />

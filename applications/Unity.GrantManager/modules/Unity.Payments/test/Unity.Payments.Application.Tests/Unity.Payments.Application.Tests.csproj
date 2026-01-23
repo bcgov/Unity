@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\src\Unity.Payments.Shared\Unity.Payments.Shared.csproj" />
     <ProjectReference Include="..\..\src\Unity.Payments.Web\Unity.Payments.Web.csproj" />
     <ProjectReference Include="..\Unity.Payments.TestBase\Unity.Payments.TestBase.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.5" />
