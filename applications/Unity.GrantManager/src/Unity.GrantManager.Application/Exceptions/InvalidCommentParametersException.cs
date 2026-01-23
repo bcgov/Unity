@@ -1,23 +1,10 @@
-﻿using System;
-using System.Runtime.Serialization;
-using Volo.Abp.Validation;
+﻿using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Exceptions
 {
-    [Serializable]
-    public class InvalidCommentParametersException : AbpValidationException
+    public class InvalidCommentParametersException(string? message = null) 
+        : AbpValidationException([new(message ?? InvalidCommentMessage)])
     {
         private const string InvalidCommentMessage = "Invalid Comment Parameters";
-
-        public InvalidCommentParametersException(string? message = null)
-            : base([new(message ?? InvalidCommentMessage)])
-        {
-        }
-
-        // Fix: Adjust the constructor to match the base class signature
-        protected InvalidCommentParametersException(SerializationInfo serializationEntries, StreamingContext context)
-            : base([new(InvalidCommentMessage)])
-        {
-        }
     }
 }
