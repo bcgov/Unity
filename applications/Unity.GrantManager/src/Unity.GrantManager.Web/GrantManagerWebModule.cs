@@ -473,6 +473,13 @@ public class GrantManagerWebModule : AbpModule
     private static bool IsProfilingAllowed(IWebHostEnvironment env, IConfiguration configuration) =>
         !configuration.GetValue("MiniProfiler:Disabled", false) && (env.IsDevelopment() || env.IsEnvironment("Test"));
 
+    private static bool ShouldEnableDebugFeatures(IWebHostEnvironment env)
+    {
+        // Debug features (Developer Exception Page, PII logging) are only enabled in non-production environments
+        // Production environment will use custom error pages without PII exposure
+        return !env.IsProduction();
+    }
+
     private static void ConfigureMiniProfiler(ServiceConfigurationContext context, IConfiguration configuration)
     {
         if (!IsProfilingAllowed(context.Services.GetHostingEnvironment(), configuration))
@@ -538,14 +545,10 @@ public class GrantManagerWebModule : AbpModule
         var env = context.GetEnvironment();
         var configuration = context.GetConfiguration();
 
-        // Environment-specific exception handling and PII logging
-        // Known environments: Development (DEV), Test (TEST), Staging (UAT), Production (PROD)
-        // - DEV & TEST: Developer exception pages with PII logging enabled (safe - uses mocked data)
-        // - UAT & PROD: Custom error pages with PII logging disabled (production-like behavior)
-        if (env.IsDevelopment() || env.IsEnvironment("Test"))
+        if (ShouldEnableDebugFeatures(env))
         {
             app.UseDeveloperExceptionPage();
-            IdentityModelEventSource.ShowPII = true; // Safe: Only enabled in non-production environments
+            IdentityModelEventSource.ShowPII = true;
         }
 
         app.UseAbpRequestLocalization();
