@@ -88,6 +88,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty]
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
+        private static readonly HtmlSanitizer Sanitizer = CreateFormIoSanitizer();
+
         public DetailsModel(
             GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
@@ -165,9 +167,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             {
                 return string.Empty;
             }
-
-            var sanitizer = CreateFormIoSanitizer();
-            return sanitizer.Sanitize(html);
+            
+            return Sanitizer.Sanitize(html);
         }
 
         private static HtmlSanitizer CreateFormIoSanitizer()
@@ -181,7 +182,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 "em", "fieldset", "form", "h1", "h2", "h3", "h4", "h5", "h6", "hr",
                 "i", "img", "input", "label", "legend", "li", "ol", "option", "p",
                 "pre", "select", "small", "span", "strong", "table", "tbody", "td",
-                "textarea", "tfoot", "th", "thead", "tr", "u", "ul", "button",
+                "textarea", "tfoot", "th", "thead", "tr", "u", "ul", "button","style",
                 // Form.io required tags
                 "canvas", "cite", "del", "details", "ins", "kbd", "mark", "q", "s", "samp",
                 "section", "sub", "summary", "sup", "time", "var",
@@ -198,7 +199,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 "checked", "selected", "disabled", "readonly", "required", "multiple",
                 "min", "max", "step", "maxlength", "minlength", "size", "pattern", "style",
                 "colspan", "rowspan", "scope", "accept", "autocomplete", "target",
-                "rel", "download",
+                "rel", "download","ref", "key", "lang", "dir",
                 // Form sizing and structure
                 "rows", "cols", "width", "height", "open", "hidden", "datetime", "align", "valign",
                 // SVG attributes (CRITICAL for icons)
@@ -281,6 +282,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 "width",
                 "word-break",
                 "word-wrap",
+                "page-break-after", "page-break-before", "page-break-inside",    "table-layout",
                 // Critical layout and positioning
                 "background-image", "background-position", "background-repeat", "background-size",
                 "bottom", "float", "left", "letter-spacing", "list-style", "list-style-type",
