@@ -54,11 +54,6 @@ docker build \
   -f Unity.AI.Reporting.Frontend/Dockerfile \
   Unity.AI.Reporting.Frontend
 
-# Build Unity.AI.Assessment.Frontend
-docker build \
-  -t unity-ai-assessment-frontend:latest \
-  -f Unity.AI.Assessment.Frontend/Dockerfile \
-  Unity.AI.Assessment.Frontend
 ```
 
 **Build Args Explanation:**

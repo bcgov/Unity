@@ -347,7 +347,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 
 ## Files Referenced
 
-- `applications/documentation/unity-ai-reporting-verify-devTokenURL.ps1` - Token generation script (reads from .env)
+- `documentation/unity-ai-reporting-verify-QueryTokenURL.ps1` - Token generation script (reads from .env)
 - `applications/.env` - Environment configuration with JWT_SECRET (required by PowerShell script)
 - `Unity.AI.Reporting.Frontend/src/app/services/auth.service.ts` - Frontend authentication logic
 - `Unity.AI.Reporting.Frontend/src/app/guards/auth.guard.ts` - Route protection
