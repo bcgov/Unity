@@ -134,7 +134,8 @@
   border-top: 1px solid #e9ecef;
   padding: 12px;
   display: flex;
-  justify-content: space-between;
+  /* TEMPORARY MVP: Changed from space-between to flex-end while Report Bug button is hidden */
+  justify-content: flex-end;
   flex-shrink: 0;
   background: #fff;
 }
