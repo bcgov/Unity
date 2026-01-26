@@ -80,7 +80,7 @@ ORIGIN_URL=http://localhost
 # Multi-environment: ORIGIN_URL=https://prod.domain.com,https://test.domain.com,http://localhost
 ```
 
-See [Environment Configuration Guide](./documentation/environment-specific-configuration.md) for complete variable reference.
+See [Environment Configuration Guide](../documentation/unity-ai-reporting-environment-specific-configuration.md) for complete variable reference.
 
 ## Project Structure
 
@@ -151,7 +151,7 @@ The application supports multiple deployment environments with different configu
 - **UAT**: User acceptance testing (DB_ID=5, FLASK_ENV=staging)  
 - **Production**: Production environment (DB_ID=3, FLASK_ENV=production)
 
-See [Environment Configuration Guide](./documentation/environment-specific-configuration.md) for details.
+See [Environment Configuration Guide](../documentation/unity-ai-reporting-environment-specific-configuration.md) for details.
 
 ## Component Documentation
 
