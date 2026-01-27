@@ -2,13 +2,16 @@ using System.Text.Json.Serialization;
 
 namespace Unity.GrantManager.Contacts;
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum ContactType
+public static class ContactTypes
 {
-    SIGNING_AUTHORITY,
-    CONTACT_PERSON,
-    OFFICER,
-    SUBMITTER,
-    CONSULTANT,
-    GRANT_WRITER
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum ApplicantContactTypes
+    {
+        SIGNING_AUTHORITY,
+        CONTACT_PERSON,
+        OFFICER,
+        SUBMITTER,
+        CONSULTANT,
+        GRANT_WRITER
+    }
 }
