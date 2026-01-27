@@ -27,6 +27,9 @@ namespace Unity.Flex.Worksheets.Definitions
 
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("key")]
+        public string Key { get; set; } = string.Empty;
     }
 
     public enum DataGridDefinitionSummaryOption

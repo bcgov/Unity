@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -23,8 +24,13 @@ namespace Unity.Flex.Reporting.Configuration
         /// </summary>
         /// <param name="field">The custom field to parse</param>
         /// <param name="worksheet">The worksheet containing the field (for name context)</param>
+        /// <param name="formSchema">Optional form schema JSON string for resolving dynamic DataGrid columns</param>
+        /// <param name="submissionHeaderMapping">Optional submission header mapping (not used in current implementation)</param>
         /// <returns>List of component metadata items</returns>
-        public static List<WorksheetComponentMetaDataItemDto> ParseField(CustomField field, Worksheet worksheet)
+        public static List<WorksheetComponentMetaDataItemDto> ParseField(CustomField field, 
+            Worksheet worksheet, 
+            string? formSchema = null,
+            string? submissionHeaderMapping = null)
         {
             if (field == null)
                 return [];
@@ -34,7 +40,7 @@ namespace Unity.Flex.Reporting.Configuration
             switch (field.Type)
             {
                 case CustomFieldType.DataGrid:
-                    components.AddRange(ParseDataGridField(field, worksheet));
+                    components.AddRange(ParseDataGridField(field, worksheet, formSchema, submissionHeaderMapping));
                     break;
                 
                 case CustomFieldType.CheckboxGroup:
@@ -58,8 +64,12 @@ namespace Unity.Flex.Reporting.Configuration
         /// Parses all fields in a worksheet and returns flattened component metadata.
         /// </summary>
         /// <param name="worksheet">The worksheet to parse</param>
+        /// <param name="formSchema">Optional form schema JSON string for resolving dynamic DataGrid columns</param>
+        /// <param name="submissionHeaderMapping">Optional submission header mapping (not used in current implementation)</param>
         /// <returns>List of all component metadata items</returns>
-        public static List<WorksheetComponentMetaDataItemDto> ParseWorksheet(Worksheet worksheet)
+        public static List<WorksheetComponentMetaDataItemDto> ParseWorksheet(Worksheet worksheet, 
+            string? formSchema = null, 
+            string? submissionHeaderMapping = null)
         {
             if (worksheet?.Sections == null)
                 return [];
@@ -67,17 +77,23 @@ namespace Unity.Flex.Reporting.Configuration
             return [..worksheet.Sections
                 .Where(section => section.Fields != null)
                 .SelectMany(section => section.Fields)
-                .SelectMany(field => ParseField(field, worksheet))];                
+                .SelectMany(field => ParseField(field, worksheet, formSchema, submissionHeaderMapping))];                
         }
 
         /// <summary>
         /// Parses a DataGrid field and returns metadata for each column defined in the DataGrid definition.
-        /// If dynamic is true, creates a placeholder column for dynamically determined columns.
+        /// If dynamic is true, attempts to extract columns from the form schema. If form schema is not available
+        /// or parsing fails, creates a placeholder column for dynamically determined columns.
         /// </summary>
         /// <param name="field">The DataGrid field to parse</param>
         /// <param name="worksheet">The worksheet containing the field</param>
+        /// <param name="formSchema">Optional form schema JSON string for resolving dynamic DataGrid columns</param>
+        /// <param name="submissionHeaderMapping">Optional submission header mapping (not used in current implementation)</param>
         /// <returns>List of component metadata items for each DataGrid column</returns>
-        private static List<WorksheetComponentMetaDataItemDto> ParseDataGridField(CustomField field, Worksheet worksheet)
+        private static List<WorksheetComponentMetaDataItemDto> ParseDataGridField(CustomField field, 
+            Worksheet worksheet, 
+            string? formSchema = null, 
+            string? submissionHeaderMapping = null)
         {
             var components = new List<WorksheetComponentMetaDataItemDto>();
 
@@ -98,25 +114,68 @@ namespace Unity.Flex.Reporting.Configuration
                 var worksheetName = SanitizeName(worksheet.Name);
                 var dataGridName = SanitizeName(field.Key);
 
-                // If dynamic is true, create a placeholder for dynamically determined columns
+                // Track whether we successfully extracted columns from CHEFS schema
+                bool extractedFromChefs = false;
+
+                // If dynamic is true, try to extract columns from form schema
                 if (dataGridDefinition.Dynamic)
-                {
-                    var dynamicComponent = new WorksheetComponentMetaDataItemDto
-                    {
-                        Id = $"{field.Id}_dynamic",
-                        Key = "dynamic_columns",
-                        Label = "Dynamic Columns",
-                        Type = "Dynamic",
-                        Path = $"{worksheetName}->{sectionName}->{dataGridName}->dynamic_columns",
-                        TypePath = $"worksheet->section->datagrid->Dynamic",
-                        DataPath = $"({worksheetName}){dataGridName}->dynamic_columns"
-                    };
+                { 
+                    var headerMappingKey = MatchHeaderMapping(field.Name + ".DataGrid", submissionHeaderMapping);
+                    List<DataGridDefinitionColumn>? dynamicColumns = null;
                     
-                    components.Add(dynamicComponent);
+                    if (!string.IsNullOrWhiteSpace(headerMappingKey))
+                    {
+                        dynamicColumns = ExtractDynamicDataGridColumns(headerMappingKey, formSchema);
+                    }
+                    
+                    if (dynamicColumns != null && dynamicColumns.Count > 0)
+                    {
+                        // We found columns in the form schema, use them
+                        // CHEFS schema includes ALL columns (both static and dynamic), so we mark this as extracted
+                        extractedFromChefs = true;
+                        
+                        foreach (var column in dynamicColumns)
+                        {
+                            // Use the key for the component Key (becomes PropertyName), sanitize for ID
+                            var columnKey = !string.IsNullOrEmpty(column.Key) ? column.Key : column.Name;
+                            var sanitizedKey = SanitizeName(columnKey);
+                            
+                            var component = new WorksheetComponentMetaDataItemDto
+                            {
+                                Id = $"{field.Id}_{sanitizedKey}",
+                                Key = columnKey,
+                                Label = column.Name,
+                                Type = MapDataGridColumnType(column.Type),
+                                Path = $"{worksheetName}->{sectionName}->{dataGridName}->{columnKey}",
+                                TypePath = $"worksheet->section->datagrid->{MapDataGridColumnType(column.Type)}",
+                                DataPath = $"({worksheetName}){dataGridName}->{columnKey}"
+                            };
+                            
+                            components.Add(component);
+                        }
+                    }
+                    else
+                    {
+                        // Form schema not available or no columns found, create dynamic placeholder
+                        var dynamicComponent = new WorksheetComponentMetaDataItemDto
+                        {
+                            Id = $"{field.Id}_dynamic",
+                            Key = "dynamic_columns",
+                            Label = "Dynamic Columns",
+                            Type = "Dynamic",
+                            Path = $"{worksheetName}->{sectionName}->{dataGridName}->dynamic_columns",
+                            TypePath = $"worksheet->section->datagrid->Dynamic",
+                            DataPath = $"({worksheetName}){dataGridName}->dynamic_columns"
+                        };
+                        
+                        components.Add(dynamicComponent);
+                    }
                 }
 
-                // Process additional defined columns (if any)
-                if (dataGridDefinition.Columns != null && dataGridDefinition.Columns.Count > 0)
+                // Process additional defined columns only if we haven't already extracted them from CHEFS
+                // When dynamic is true and CHEFS extraction succeeded, the CHEFS schema already includes
+                // all columns (both static and dynamic), so we skip this to avoid duplicates
+                if (!extractedFromChefs && dataGridDefinition.Columns != null && dataGridDefinition.Columns.Count > 0)
                 {
                     // Create a component for each column in the DataGrid
                     foreach (var column in dataGridDefinition.Columns)
@@ -137,7 +196,7 @@ namespace Unity.Flex.Reporting.Configuration
                         components.Add(component);
                     }
                 }
-                else if (!dataGridDefinition.Dynamic)
+                else if (!dataGridDefinition.Dynamic && (dataGridDefinition.Columns == null || dataGridDefinition.Columns.Count == 0))
                 {
                     // If no columns defined and not dynamic, return the DataGrid itself as a component
                     return [CreateSimpleComponent(field, worksheet)];
@@ -151,6 +210,30 @@ namespace Unity.Flex.Reporting.Configuration
                 // If JSON parsing fails, return the field as a simple component
                 return [CreateSimpleComponent(field, worksheet)];
             }
+        }
+
+        private static string? MatchHeaderMapping(string keyToSearch, string? submissionHeaderMapping)
+        {
+            if (string.IsNullOrWhiteSpace(submissionHeaderMapping))
+                return null;
+
+            try
+            {
+                using var document = JsonDocument.Parse(submissionHeaderMapping);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty(keyToSearch, out var valueElement))
+                {
+                    return valueElement.GetString();
+                }
+            }
+            catch (JsonException)
+            {
+                // Failed to parse submission header mapping
+                return null;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -296,6 +379,161 @@ namespace Unity.Flex.Reporting.Configuration
             // Keep alphanumeric characters, underscores, and hyphens
             // Replace spaces with underscores
             return SantizedNameExpression().Replace(name.Trim().Replace(" ", "_"), "");
+        }
+
+        /// <summary>
+        /// Extracts DataGrid column definitions from a form schema JSON string.
+        /// Searches for a DataGrid component with the specified key in the form schema and returns its columns.
+        /// </summary>
+        /// <param name="dataGridKey">The key of the DataGrid field to find</param>
+        /// <param name="formSchema">The form schema JSON string to search</param>
+        /// <returns>List of DataGrid column definitions, or null if not found or schema is invalid</returns>
+        private static List<DataGridDefinitionColumn>? ExtractDynamicDataGridColumns(string dataGridKey, string? formSchema)
+        {
+            if (string.IsNullOrWhiteSpace(formSchema))
+                return null;
+
+            try
+            {
+                using var document = JsonDocument.Parse(formSchema);
+                var root = document.RootElement;
+
+                // CHEFS form schemas have a "components" array at the root
+                if (root.TryGetProperty("components", out var componentsElement))
+                {
+                    return FindDataGridInComponents(componentsElement, dataGridKey);
+                }
+            }
+            catch (JsonException)
+            {
+                // Failed to parse form schema
+                return null;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Recursively searches for a DataGrid component with the specified key in a components array.
+        /// </summary>
+        /// <param name="componentsElement">The JSON element representing a components array</param>
+        /// <param name="dataGridKey">The key of the DataGrid to find</param>
+        /// <returns>List of DataGrid column definitions, or null if not found</returns>
+        private static List<DataGridDefinitionColumn>? FindDataGridInComponents(JsonElement componentsElement, string dataGridKey)
+        {
+            if (componentsElement.ValueKind != JsonValueKind.Array)
+                return null;
+
+            foreach (var component in componentsElement.EnumerateArray())
+            {
+                // Check if this component matches the DataGrid key
+                if (component.TryGetProperty("key", out var keyElement) && 
+                    keyElement.GetString() == dataGridKey)
+                {
+                    // Check if it's a DataGrid type
+                    if (component.TryGetProperty("type", out var typeElement))
+                    {
+                        var type = typeElement.GetString();
+                        if (type == "datagrid" || type == "dataGrid")
+                        {
+                            // Extract columns from the DataGrid
+                            return ExtractColumnsFromDataGrid(component);
+                        }
+                    }
+                }
+
+                // Recursively search in nested components (for panels, columns, etc.)
+                if (component.TryGetProperty("components", out var nestedComponents))
+                {
+                    var result = FindDataGridInComponents(nestedComponents, dataGridKey);
+                    if (result != null)
+                        return result;
+                }
+
+                // Also check columns property (for layout components)
+                if (component.TryGetProperty("columns", out var columnsElement) && 
+                    columnsElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var column in columnsElement.EnumerateArray())
+                    {
+                        if (column.TryGetProperty("components", out var columnComponents))
+                        {
+                            var result = FindDataGridInComponents(columnComponents, dataGridKey);
+                            if (result != null)
+                                return result;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Extracts column definitions from a DataGrid component in the form schema.
+        /// </summary>
+        /// <param name="dataGridComponent">The JSON element representing a DataGrid component</param>
+        /// <returns>List of DataGrid column definitions</returns>
+        private static List<DataGridDefinitionColumn>? ExtractColumnsFromDataGrid(JsonElement dataGridComponent)
+        {
+            var columns = new List<DataGridDefinitionColumn>();
+
+            // CHEFS DataGrid components have a "components" property that contains the column definitions
+            if (dataGridComponent.TryGetProperty("components", out var componentsElement) && 
+                componentsElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var columnComponent in componentsElement.EnumerateArray())
+                {
+                    // Get the key (property name) from the column component
+                    var columnKey = columnComponent.TryGetProperty("key", out var keyElement)
+                        ? keyElement.GetString()
+                        : null;
+
+                    // Get the label (display name) from the column component
+                    var columnLabel = columnComponent.TryGetProperty("label", out var labelElement) 
+                        ? labelElement.GetString() 
+                        : columnKey;
+
+                    var columnType = columnComponent.TryGetProperty("type", out var typeElement)
+                        ? MapChefsTypeToDataGridType(typeElement.GetString())
+                        : "text";
+
+                    if (!string.IsNullOrEmpty(columnKey))
+                    {
+                        columns.Add(new DataGridDefinitionColumn
+                        {
+                            Key = columnKey,
+                            Name = columnLabel ?? columnKey,
+                            Type = columnType
+                        });
+                    }
+                }
+            }
+
+            return columns.Count > 0 ? columns : null;
+        }
+
+        /// <summary>
+        /// Maps CHEFS form component types to DataGrid column types.
+        /// </summary>
+        /// <param name="chefsType">The CHEFS component type</param>
+        /// <returns>Mapped DataGrid column type</returns>
+        private static string MapChefsTypeToDataGridType(string? chefsType)
+        {
+            return chefsType?.ToLowerInvariant() switch
+            {
+                "textfield" => "text",
+                "textarea" => "text",
+                "number" => "numeric",
+                "currency" => "currency",
+                "checkbox" => "checkbox",
+                "day" => "date",
+                "datetime" => "datetime",
+                "email" => "text",
+                "phoneNumber" => "text",
+                "url" => "text",
+                _ => "text" // Default to text for unknown types
+            };
         }
 
         [GeneratedRegex(@"[^a-zA-Z0-9_\-]")]

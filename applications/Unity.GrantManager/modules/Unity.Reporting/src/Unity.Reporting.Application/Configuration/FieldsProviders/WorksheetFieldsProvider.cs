@@ -37,7 +37,7 @@ namespace Unity.Reporting.Configuration.FieldProviders
 
             foreach (var link in links)
             {
-                var metadata = await worksheetsMetadataService.GetWorksheetSchemaMetaDataAsync(link.WorksheetId);
+                var metadata = await worksheetsMetadataService.GetWorksheetSchemaMetaDataAsync(link.WorksheetId, correlationId);
                 worksheetMetadata.Add(metadata);
 
                 // Add worksheet information to the metadata map
