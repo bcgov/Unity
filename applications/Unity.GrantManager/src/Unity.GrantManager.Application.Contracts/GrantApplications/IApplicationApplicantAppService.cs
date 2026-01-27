@@ -7,7 +7,7 @@ namespace Unity.GrantManager.GrantApplications
 {
     public interface IApplicationApplicantAppService : IApplicationService
     {
-        Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId);
+        Task<ApplicationApplicantInfoDto> GetApplicantInfoBasicAsync(Guid applicationId);
         Task<ApplicantInfoDto> GetApplicantInfoTabAsync(Guid applicationId);
         Task<GrantApplicationDto> UpdatePartialApplicantInfoAsync(Guid applicationId, PartialUpdateDto<UpdateApplicantInfoDto> input);
         Task<bool> GetSupplierNameMatchesCheck(Guid applicantId, string? supplierName);

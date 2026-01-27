@@ -136,7 +136,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             newApplicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
             newApplicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
             
-            newApplicantAgent.OidcSubUser = intakeMap.ApplicantAgent?.oidc_sub_user ?? string.Empty;              
+            newApplicantAgent.OidcSubUser = intakeMap.ApplicantAgent?.oidc_sub_user;              
             newApplicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
         }
 

@@ -171,7 +171,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {jQuery} options.dt - jQuery element to initialize as DataTable
  * @param {Array<string>} [options.defaultVisibleColumns=[]] - Column names visible by default
  * @param {Array<Object>} options.listColumns - Column definitions with name, data, title, render, etc.
- * @param {number} options.defaultSortColumn - Index of column to sort by default
+ * @param {number|string|Object} options.defaultSortColumn - Index or name of column to sort by default
  * @param {string} options.dataEndpoint - API endpoint URL for fetching table data
  * @param {Function|Object} options.data - Data source or function returning request parameters
  * @param {Function} [options.responseCallback] - Custom callback to transform API response
@@ -221,6 +221,7 @@ function initializeDataTable(options) {
     // Process columns and visibility
     let tableColumns = assignColumnIndices(listColumns);
     let visibleColumns = getVisibleColumnIndexes(tableColumns, defaultVisibleColumns);
+    let defaultSortOrder = getDefaultSortOrder(tableColumns, defaultSortColumn);
 
     // Prepare action buttons
     let updatedActionButtons = prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect);
@@ -235,11 +236,11 @@ function initializeDataTable(options) {
     let iDt = new DataTable(dt, {
         serverSide: serverSideEnabled,
         paging: pagingEnabled,
-        order: [[defaultSortColumn, 'desc']],
+        order: defaultSortOrder,
         searching: true,
         scrollX: true,
         scrollCollapse: true,
-        autoWidth: false,
+        autoWidth: true,
         deferRender: false,
         deferLoading: serverSideEnabled ? 0 : null,
         ajax: abp.libs.datatables.createAjax(
@@ -624,25 +625,6 @@ function resizeDataTableScrollBody(iDt) {
     try { iDt.columns.adjust(); } catch (e) { console.warn('resizeDataTableScrollBody: columns.adjust failed', e); }
 }
 
-/**
- * Attach ResizeObserver (preferred) or globalThis resize fallback for dynamic table resizing
- * @param {DataTable.Api} iDt
- */
-function attachResizeObserverToDataTable(iDt) {
-    const $wrapper = $(iDt.table().container());
-    const $container = $wrapper.closest('.dt-container, .dataTables_wrapper');
-    if (!$container.length) return;
-
-    if (typeof ResizeObserver === 'undefined') {
-        const resizeNs = 'resize.dt-' + iDt.settings()[0].sTableId;
-        $(globalThis).on(resizeNs, () => resizeDataTableScrollBody(iDt));
-        iDt.one('destroy', () => $(globalThis).off(resizeNs));
-    } else {
-        const observer = new ResizeObserver(() => resizeDataTableScrollBody(iDt));
-        observer.observe($container[0]);
-        iDt.settings()[0]._resizeObserver = observer;
-    }
-}
 
 // ============================================================================
 // Other previously existing functions (init, getSelectColumn, assignColumnIndices, etc.) remain unchanged
@@ -668,7 +650,6 @@ function addDataTableFixCSS() {
         $('<style id="dt-column-fix-css"> dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; max-height: 90%; } </style>').appendTo('head');
     }
 }
-
 
 /**
  * Assigns sequential index values to columns that don't have one.
@@ -741,30 +722,6 @@ function getVisibleColumnIndexes(columns, visibleColumnsArray) {
     }
 
     return indexes.sort((a, b) => a - b);
-}
-
-/**
- * Dynamically adjusts the table scroll body height based on viewport size.
- * Prevents tables from exceeding viewport height while maintaining usability.
- * @param {string} tableName - ID of the DataTable element (without wrapper suffix)
- */
-function setTableHeighDynamic(tableName) {
-    const dtContainer = $(`#${tableName}`).closest('.dt-container');
-    if (!dtContainer.length) return;
-
-    let tableHeight = dtContainer[0].clientHeight;
-    let docHeight = document.body.clientHeight;
-    let tableOffset = 425;
-
-    if (tableHeight + tableOffset > docHeight) {
-        dtContainer.find('.dt-scroll-body').css({
-            height: docHeight - tableOffset,
-        });
-    } else {
-        dtContainer.find('.dt-scroll-body').css({
-            height: tableHeight + 10,
-        });
-    }
 }
 
 /**
@@ -896,4 +853,48 @@ $(document).keydown(function (e) {
         return false;
     }
 });
+
+/**
+ * Resolves a column index by its name or data field.
+ * @param {Array<Object>} columns - Column definitions
+ * @param {string} name - Column name or data field
+ * @returns {number|null} Column index or null if not found
+ */
+function resolveColumnIndexByName(columns, name) {
+    if (!name) return null;
+    const match = columns.find((col) => col.name === name || col.data === name);
+    return match?.index ?? null;
+}
+
+/**
+ * Builds a DataTables-compliant default sort order array from various input shapes.
+ * Supports numeric index, column name, or object with index/name and dir.
+ * @param {Array<Object>} columns - Column definitions (with assigned indices)
+ * @param {number|string|Object} defaultSortColumn - Sort descriptor
+ * @returns {Array<Array>|Object} DataTables OrderIdx array or OrderName object
+ */
+function getDefaultSortOrder(columns, defaultSortColumn) {
+    // Numeric index
+    if (typeof defaultSortColumn === 'number' && !Number.isNaN(defaultSortColumn)) {
+        return [[defaultSortColumn, 'asc']];
+    }
+
+    // Column name
+    if (typeof defaultSortColumn === 'string' && defaultSortColumn.trim() !== '') {
+        const resolved = resolveColumnIndexByName(columns, defaultSortColumn);
+        if (resolved !== null) {
+            return [[defaultSortColumn, 'asc']];
+        }
+    }
+
+    // Object with index/name + dir or array
+    if (
+        defaultSortColumn &&
+        typeof defaultSortColumn === 'object'
+    ) {
+        return defaultSortColumn;
+    }
+
+    return [];
+}
 

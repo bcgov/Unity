@@ -1,23 +1,10 @@
-using System;
-using System.Runtime.Serialization;
 using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Exceptions
 {
-    [Serializable]
-    public class InvalidFormDataSubmissionException : AbpValidationException
+    public class InvalidFormDataSubmissionException(string? message = null)
+        : AbpValidationException([new(message ?? InvalidCommentMessage)])
     {
         private const string InvalidCommentMessage = "Invalid Form Submission Data";
-
-        public InvalidFormDataSubmissionException(string? message = null)
-            : base([new(message ?? InvalidCommentMessage)])
-        {
-        }
-
-        protected InvalidFormDataSubmissionException(SerializationInfo serializationEntries, StreamingContext context)
-            : base([new(InvalidCommentMessage)])
-        {
-            // Deserialize additional properties if needed
-        }
     }
 }

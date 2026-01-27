@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Unity.Reporting.Application\Unity.Reporting.Application.csproj" />
     <ProjectReference Include="..\Unity.Reporting.TestBase\Unity.Reporting.TestBase.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
   </ItemGroup>
 

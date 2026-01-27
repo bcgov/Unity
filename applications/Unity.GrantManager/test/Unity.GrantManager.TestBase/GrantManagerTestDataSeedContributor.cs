@@ -187,7 +187,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             {
                 ApplicationId = GrantManagerTestData.Application1_Id,
                 FileName = "test.pdf",
-                ChefsSumbissionId = "00000000-0000-0000-0000-000000000000",
+                ChefsSubmissionId = "00000000-0000-0000-0000-000000000000",
                 ChefsFileId = "00000000-0000-0000-0000-000000000000",
             },
             autoSave: true
