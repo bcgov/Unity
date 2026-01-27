@@ -1,0 +1,90 @@
+name: CI with SonarQube Analysis
+
+on:
+  push:
+    branches: [dev, test, main]
+  pull_request:
+    branches: [dev, test, main]
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  SONAR_PROJECT_KEY: 'UnityScanKey'
+  BUILD_CONFIGURATION: 'Release'
+
+jobs:
+  sonarqube-analysis:
+    runs-on: [self-hosted, unity-runners]
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Required for SonarQube analysis and branch detection
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Install SonarQube Scanner
+      run: dotnet tool install --global dotnet-sonarscanner --version 5.15.0
+
+    - name: Restore dependencies
+      run: dotnet restore applications/Unity.GrantManager/Unity.GrantManager.sln
+
+    - name: Begin SonarQube Analysis
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+      run: |
+        dotnet sonarscanner begin \
+          /k:"${{ env.SONAR_PROJECT_KEY }}" \
+          /d:sonar.host.url="${{ vars.SONAR_HOST_URL }}" \
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+          /d:sonar.cs.vscoveragexml.reportsPaths="TestResults/**/*.xml" \
+          /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx" \
+          /d:sonar.branch.name="${GITHUB_REF_NAME}" \
+          /d:sonar.qualitygate.wait=true \
+          /d:sonar.exclusions="applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**,applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/BatchPayments/Index.js,database/crunchy-postgres/templates/**" \
+          /d:sonar.coverage.exclusions="applications/Unity.GrantManager/modules/Volo.BasicTheme/**,database/**,openshift/**,applications/Unity.AutoUI/**" \
+          /d:sonar.cpd.exclusions="**/*.aspx,**/*.aspx.designer.cs,**/*.cshtml,**/*.html,**/*.js"
+
+    - name: Build solution
+      run: |
+        dotnet build applications/Unity.GrantManager/Unity.GrantManager.sln \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --no-restore \
+          --nodeReuse:false \
+          -p:Version="${GITHUB_RUN_NUMBER}" \
+          -p:SourceRevisionId="${GITHUB_SHA:0:7}"
+
+    - name: Run tests with coverage
+      run: |
+        mkdir -p TestResults
+        dotnet test applications/Unity.GrantManager/Unity.GrantManager.sln \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --no-build \
+          --collect:"XPlat Code Coverage" \
+          --logger "trx;LogFileName=TestResults.trx" \
+          --results-directory TestResults \
+          --verbosity normal
+
+    - name: Complete SonarQube Analysis
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ github.run_number }}
+        path: TestResults/
+        retention-days: 7
+
+    - name: Check Quality Gate Status
+      if: always()
+      run: |
+        echo "SonarQube analysis completed. Check quality gate status at:"
+        echo "${{ vars.SONAR_HOST_URL }}/dashboard?id=${{ env.SONAR_PROJECT_KEY }}"

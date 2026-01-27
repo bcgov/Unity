@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unity-github-runner
+  namespace: d18498-tools
+  labels:
+    app: unity-github-runner
+    app.kubernetes.io/name: github-runner
+    app.kubernetes.io/component: ci-cd
+    app.kubernetes.io/part-of: unity
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: unity-github-runner
+  template:
+    metadata:
+      labels:
+        app: unity-github-runner
+        app.kubernetes.io/name: github-runner
+        app.kubernetes.io/component: ci-cd
+        app.kubernetes.io/part-of: unity
+    spec:
+      containers:
+      - name: runner
+        image: myoung34/github-runner:latest
+        env:
+        - name: REPO_URL
+          value: "https://github.com/bcgov/Unity"
+        - name: ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-runner-token
+              key: token
+        - name: RUNNER_NAME_PREFIX
+          value: "openshift-runner"
+        - name: RUNNER_WORKDIR
+          value: "/tmp/runner/work"
+        - name: RUNNER_GROUP
+          value: "unity-runners"
+        - name: LABELS
+          value: "unity-runners,openshift,self-hosted"
+        - name: EPHEMERAL
+          value: "true"
+        - name: DISABLE_AUTOMATIC_DEREGISTRATION
+          value: "false"
+        volumeMounts:
+        - name: runner-data
+          mountPath: /tmp/runner
+        - name: docker-certs
+          mountPath: /certs/client
+          readOnly: true
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+            ephemeral-storage: "1Gi"
+          limits:
+            cpu: "4" 
+            memory: "8Gi"
+            ephemeral-storage: "10Gi"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: runner-data
+        emptyDir:
+          sizeLimit: "5Gi"
+      - name: docker-certs
+        emptyDir: {}
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault

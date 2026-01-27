@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: unity-github-runner-config
+  namespace: d18498-tools
+  labels:
+    app: unity-github-runner
+    app.kubernetes.io/name: github-runner
+    app.kubernetes.io/component: ci-cd
+    app.kubernetes.io/part-of: unity
+data:
+  # Repository configuration
+  repo_url: "https://github.com/bcgov/Unity"
+  runner_group: "unity-runners"
+  runner_labels: "unity-runners,openshift,self-hosted,dotnet"
+  
+  # SonarQube configuration  
+  sonar_host_url: "https://sonarqube.econ.gov.bc.ca/sonar"
+  sonar_project_key: "UnityScanKey"
+  
+  # Build configuration
+  dotnet_version: "9.0.x"
+  build_configuration: "Release"
+  
+  # Runner configuration
+  runner_workdir: "/tmp/runner/work"
+  ephemeral_mode: "true"
+  disable_auto_deregistration: "false"
