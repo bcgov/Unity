@@ -9,7 +9,7 @@ public class Contact : AuditedAggregateRoot<Guid>, IMultiTenant
     public bool Primary { get; set; } = false;
     public string CorrelationType { get; set; } = string.Empty;
     public Guid CorrelationId { get; set; }
-    public ContactType Type { get; set; }
+    public ContactTypes.ApplicantContactTypes? Type { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Title { get; set; }
     public string? Email { get; set; }
