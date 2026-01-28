@@ -15,8 +15,6 @@ namespace Unity.Payments.PaymentRequests;
 
 public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
 {
-    private readonly ICurrentUser _currentUser;
-    private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
     private readonly IPaymentRequestAppService _paymentRequestAppService;
     private readonly IPaymentRequestRepository _paymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
@@ -24,8 +22,6 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
 
     public PaymentRequestAppService_Tests()
     {
-        _currentUser = ServiceProvider.GetRequiredService<ICurrentUser>();
-        _externalUserLookupServiceProvider = GetRequiredService<IExternalUserLookupServiceProvider>();
         _paymentRequestAppService = GetRequiredService<IPaymentRequestAppService>();
         _paymentRequestRepository = GetRequiredService<IPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
@@ -42,8 +38,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         var newSupplier = new Supplier(Guid.NewGuid(),
             "Supplier",
             "123",
-            Guid.NewGuid(),
-            "Test",
+            new Modules.Shared.Correlation.Correlation(Guid.NewGuid(), "Test"),
             new MailingAddress(
             "Address1",
             "City",
@@ -64,7 +59,10 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
 
         _ = await _supplierRepository.InsertAsync(newSupplier, true);
 
-        List<CreatePaymentRequestDto> paymentRequests = new List<CreatePaymentRequestDto> { new CreatePaymentRequestDto() {
+        List<CreatePaymentRequestDto> paymentRequests =
+        [
+            new()
+            {
                Amount = 50,
                InvoiceNumber ="Test",
                ContractNumber ="",
@@ -73,7 +71,8 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
                PayeeName= "",
                SiteId= siteId,
                SupplierNumber = "",
-        } };
+            }
+        ];
         // Act        
         var insertedPaymentRequest = await _paymentRequestAppService
             .CreateAsync(paymentRequests);
@@ -89,21 +88,23 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
     {
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
-        var supplier = new Supplier(Guid.NewGuid(), "supp", "123", Guid.NewGuid(), "A");
+        var supplier = new Supplier(Guid.NewGuid(), "supp", "123", new Modules.Shared.Correlation.Correlation(Guid.NewGuid(), "A"));
         supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
         var addedSupplier = await _supplierRepository.InsertAsync(supplier);
-        CreatePaymentRequestDto paymentRequestDto = new CreatePaymentRequestDto();
-        paymentRequestDto.InvoiceNumber = "";
-        paymentRequestDto.Amount = 100;
-        paymentRequestDto.PayeeName = "Test";
-        paymentRequestDto.ContractNumber = "0000000000";
-        paymentRequestDto.SupplierNumber = "";
-        paymentRequestDto.SiteId = addedSupplier.Sites[0].Id;
-        paymentRequestDto.CorrelationId = Guid.NewGuid();
-        paymentRequestDto.CorrelationProvider = "";
-        paymentRequestDto.ReferenceNumber = "UP-XXXX-000000";
-        paymentRequestDto.BatchName = "UNITY_BATCH_1";
-        paymentRequestDto.BatchNumber = 1;
+        CreatePaymentRequestDto paymentRequestDto = new()
+        {
+            InvoiceNumber = "",
+            Amount = 100,
+            PayeeName = "Test",
+            ContractNumber = "0000000000",
+            SupplierNumber = "",
+            SiteId = addedSupplier.Sites[0].Id,
+            CorrelationId = Guid.NewGuid(),
+            CorrelationProvider = "",
+            ReferenceNumber = "UP-XXXX-000000",
+            BatchName = "UNITY_BATCH_1",
+            BatchNumber = 1
+        };
         _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
 
         // Act
@@ -122,10 +123,10 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
     {
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
-        var supplier = new Supplier(Guid.NewGuid(), "supp", "123", Guid.NewGuid(), "A");
+        var supplier = new Supplier(Guid.NewGuid(), "supp", "123", new Modules.Shared.Correlation.Correlation(Guid.NewGuid(), "A"));
         supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
         var addedSupplier = await _supplierRepository.InsertAsync(supplier);
-        CreatePaymentRequestDto paymentRequestDto = new CreatePaymentRequestDto
+        CreatePaymentRequestDto paymentRequestDto = new()
         {
             InvoiceNumber = "INV-001",
             Amount = 100,

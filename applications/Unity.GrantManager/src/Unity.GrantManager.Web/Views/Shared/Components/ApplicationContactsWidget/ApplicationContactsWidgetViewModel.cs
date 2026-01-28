@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
         public Guid ApplicationId { get; set; }
         public Boolean IsReadOnly { get; set; }
 
-        public String ContactTypeValue(String contactType)
+        public static String ContactTypeValue(String contactType)
         {
             return ApplicationContactOptionList.ContactTypeList.FirstOrDefault(c => c.Key == contactType).Value;
         } 

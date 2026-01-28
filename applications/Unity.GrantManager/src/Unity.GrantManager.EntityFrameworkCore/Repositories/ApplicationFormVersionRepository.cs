@@ -12,12 +12,8 @@ namespace Unity.GrantManager.Repositories
 
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(IApplicationFormVersionRepository))]
-    public class ApplicationFormVersionRepository : EfCoreRepository<GrantTenantDbContext, ApplicationFormVersion, Guid>, IApplicationFormVersionRepository
+    public class ApplicationFormVersionRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : EfCoreRepository<GrantTenantDbContext, ApplicationFormVersion, Guid>(dbContextProvider), IApplicationFormVersionRepository
     {
-        public ApplicationFormVersionRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
-
         public async Task<ApplicationFormVersion?> GetByChefsFormVersionAsync(Guid chefsFormVersionId)
         {
             var dbContext = await GetDbContextAsync();

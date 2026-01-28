@@ -68,12 +68,12 @@ namespace Unity.Reporting.Configuration
         public Task<FieldPathMetaMapDto> GetFieldsMetadataAsync(Guid correlationId, string correlationProvider);
 
         /// <summary>
-        /// Deletes a report mapping for a specific correlation and optionally deletes the associated database view.
+        /// Deletes a report mapping for a specific correlation and deletes the associated database view.
         /// </summary>
         /// <param name="correlationId">The unique identifier of the correlated entity whose mapping should be deleted.</param>
         /// <param name="correlationProvider">The provider type identifier (e.g., "worksheet", "scoresheet", "chefs").</param>
-        /// <param name="deleteView">Whether to also delete the associated database view if it exists. Defaults to true.</param>
-        public Task DeleteAsync(Guid correlationId, string correlationProvider, bool deleteView = true);
+        /// <returns>A DeleteResult indicating what was successfully deleted.</returns>
+        public Task<DeleteResult> DeleteAsync(Guid correlationId, string correlationProvider);
 
         /// <summary>
         /// Checks if a view name is available for use in the database by verifying it doesn't already exist.
@@ -185,5 +185,32 @@ namespace Unity.Reporting.Configuration
         /// Provides metadata about the structure of the returned data for UI generation.
         /// </summary>
         public string[] ColumnNames { get; set; } = [];
+    }
+    
+    /// <summary>
+    /// Represents the result of a delete operation indicating what was successfully removed.
+    /// Provides detailed information about configuration and view deletion for accurate user feedback.
+    /// </summary>
+    public class DeleteResult
+    {
+        /// <summary>
+        /// Gets or sets whether the report mapping configuration was successfully deleted.
+        /// </summary>
+        public bool ConfigurationDeleted { get; set; }
+        
+        /// <summary>
+        /// Gets or sets whether a database view was successfully deleted.
+        /// </summary>
+        public bool ViewDeleted { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the name of the view that was deleted, if any.
+        /// </summary>
+        public string? DeletedViewName { get; set; }
+        
+        /// <summary>
+        /// Gets or sets any warning or informational messages about the deletion process.
+        /// </summary>
+        public string? Message { get; set; }
     }
 }

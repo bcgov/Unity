@@ -18,7 +18,8 @@ namespace Unity.GrantManager.Events
     internal class EmailNotificationHandler(
             IEmailNotificationService emailNotificationService,
             IFeatureChecker featureChecker,
-            EmailAttachmentService emailAttachmentService,            
+            EmailAttachmentService emailAttachmentService,
+            IEmailLogsRepository emailLogsRepository,
             ICurrentTenant currentTenant,
             IUnitOfWorkManager unitOfWorkManager,
             ILogger<EmailNotificationHandler> logger) : ILocalEventHandler<EmailNotificationEvent>, ITransientDependency
@@ -135,7 +136,7 @@ namespace Unity.GrantManager.Events
                 case EmailAction.SendFsbNotification:
                 {
                     string fsbEmailToAddress = String.Join(",", eventData.EmailAddressList);
-                    return await InitializeEmailAndUploadAttachments(
+                    var emailLog = await InitializeEmailAndUploadAttachments(
                         fsbEmailToAddress,
                         eventData.Body,
                         eventData.Subject ?? "FSB Payment Notification",
@@ -145,6 +146,15 @@ namespace Unity.GrantManager.Events
                         null, // emailCC
                         null, // emailBCC
                         eventData.EmailAttachments);
+
+                    // Store payment request IDs for tracking
+                    if (eventData.PaymentRequestIds != null && eventData.PaymentRequestIds.Count != 0)
+                    {
+                        emailLog.PaymentRequestIds = string.Join(",", eventData.PaymentRequestIds);
+                        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                    }
+
+                    return emailLog;
                 }
                 case EmailAction.Retry:
                 default:

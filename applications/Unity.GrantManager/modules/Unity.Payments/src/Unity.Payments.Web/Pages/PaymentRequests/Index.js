@@ -326,6 +326,7 @@ $(function () {
             getTagsColumn(columnIndex++),
             getNoteColumn(columnIndex++),
             getAccountDistributionColumn(columnIndex++),
+            getFsbNotifiedColumn(columnIndex++),
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -686,6 +687,23 @@ $(function () {
         };
     }
 
+    function getFsbNotifiedColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:FsbApNotified'),
+            name: 'fsbApNotified',
+            data: 'fsbApNotified',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type, row) {                
+                if (data) {
+                    return data;
+                }
+                // Show placeholder for null/empty
+                return nullPlaceholder;
+            }
+        };
+    }
+
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
     }
@@ -695,10 +713,6 @@ $(function () {
             locale: abp.localization.currentCulture.name,
         }).toUTC().toLocaleString() : null;
     }
-
-    /* the resizer needs looking at again after ux2 refactor 
-     window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
-    */
 
     $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();

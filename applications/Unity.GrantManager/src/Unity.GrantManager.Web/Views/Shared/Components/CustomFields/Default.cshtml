@@ -1,0 +1,151 @@
+﻿@using Unity.GrantManager.Web.Views.Shared.Components.CustomFields @* Suppress:S1128 *@
+@model CustomFieldsViewModel
+
+@{
+    Layout = null;
+}
+
+<h4>Selected Form Version: @Model.Version</h4>
+<div id="custom-fields-div" class="custom-fields-container" >
+    <form method="post" asp-controller="CustomFields" asp-action="UpdateCustomFields" id="worksheet-config-form">
+        <abp-input type="hidden" id="ChefsFormVersionId" asp-for="@Model.ChefsFormVersionId" />
+        <abp-input type="hidden" id="AssessmentInfoSlotIds" asp-for="@Model.AssessmentInfoSlotIds" />
+        <abp-input type="hidden" id="ApplicantInfoSlotIds" asp-for="@Model.ApplicantInfoSlotIds" />
+        <abp-input type="hidden" id="ProjectInfoSlotIds" asp-for="@Model.ProjectInfoSlotIds" />
+        <abp-input type="hidden" id="PaymentInfoSlotIds" asp-for="@Model.PaymentInfoSlotIds" />
+        <abp-input type="hidden" id="FundingAgreementInfoSlotIds" asp-for="@Model.FundingAgreementInfoSlotIds" />
+        <abp-input type="hidden" id="CustomTabsSlotIds" asp-for="@Model.CustomTabsSlotIds" />
+
+        <div class="drop-layout">
+            <div class="published-forms-col">
+                <div class="slot-title">Available Worksheets:</div>
+                <div class="available-worksheets drag-target multi-target" draggable="false" data-target="worksheets">
+                    @foreach (var worksheet in Model.PublishedWorksheets!)
+                    {
+                        <div class="published-form draggable-card" draggable="true" data-worksheet-id="@worksheet.Id">
+                            <span class="published-form-title">
+                                @worksheet.Title (@worksheet.Name)
+                            </span>
+                        </div>
+                    }
+                </div>
+
+                <div class="scoresheets row">
+                    <div class="col-4">
+                        <input type="hidden" id="originalScoresheetId" value="@Model.ScoresheetId" />
+                        <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </div>
+                </div>
+                <div class="button-row row">
+                    <div class="col-12">
+                        <div class="buttons">
+                            <div class="buttons-div">
+                                <abp-button id="btn-save-worksheet-config"
+                                            text="Save"
+                                            type="submit"
+                                            icon-type="Other"                                
+                                            class="btn unt-btn-primary btn-primary mx-1"
+                                            style="pointer-events: all;"
+                                            abp-tooltip="Save the Worksheet associations to the Mapping of to the Available Unity Worksheet Fields"
+                                            button-type="Primary" />
+
+                                <abp-button id="btn-back-worksheet-config"
+                                            text="Back"
+                                            class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                                            abp-tooltip="Navigate back to the Forms" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slots-col">
+                <div class="slot-title">Assessment Info:</div>
+                <div class="multi-slot drag-target multi-target assessment-info-list" draggable="false" data-target="assessment-info">
+                    @if (Model.AssessmentInfoLinks != null)
+                    {
+                        @foreach (var assessmentInfo in Model.AssessmentInfoLinks.OrderBy(s => s.Order))
+                        {
+                            <div class="draggable-card" draggable="true" data-worksheet-id="@assessmentInfo.WorksheetId">
+                                <span class="published-form-title">
+                                    @assessmentInfo.Worksheet.Title (@assessmentInfo.Worksheet.Name)
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="slot-title">Project Info:</div>
+                <div class="multi-slot drag-target multi-target project-info-list" draggable="false" data-target="project-info">
+                    @if (Model.ProjectInfoLinks != null)
+                    {
+                        @foreach (var projectInfo in Model.ProjectInfoLinks.OrderBy(s => s.Order))
+                        {
+                            <div class="draggable-card" draggable="true" data-worksheet-id="@projectInfo.WorksheetId">
+                                <span class="published-form-title">
+                                    @projectInfo.Worksheet.Title (@projectInfo.Worksheet.Name)
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="slot-title">Applicant Info:</div>
+                <div class="multi-slot drag-target multi-target applicant-info-list" draggable="false" data-target="applicant-info">
+                    @if (Model.ApplicantInfoLinks != null)
+                    {
+                        @foreach (var applicantInfo in Model.ApplicantInfoLinks.OrderBy(s => s.Order))
+                        {
+                            <div class="draggable-card" draggable="true" data-worksheet-id="@applicantInfo.WorksheetId">
+                                <span class="published-form-title">
+                                    @applicantInfo.Worksheet.Title (@applicantInfo.Worksheet.Name)
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="slot-title">Payment Info:</div>
+                <div class="multi-slot drag-target multi-target payment-info-list" draggable="false" data-target="payment-info">
+                    @if (Model.PaymentInfoLinks != null)
+                    {
+                        @foreach (var paymentInfo in Model.PaymentInfoLinks.OrderBy(s => s.Order))
+                        {
+                            <div class="draggable-card" draggable="true" data-worksheet-id="@paymentInfo.WorksheetId">
+                                <span class="published-form-title">
+                                    @paymentInfo.Worksheet.Title (@paymentInfo.Worksheet.Name)
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="slot-title">Funding Agreement:</div>
+                <div class="multi-slot drag-target multi-target funding-agreement-info-list" draggable="false" data-target="funding-agreement-info">
+                    @if (Model.FundingAgreementInfoLinks != null)
+                    {
+                        @foreach (var fundingAgreementInfo in Model.FundingAgreementInfoLinks.OrderBy(s => s.Order))
+                        {
+                            <div class="draggable-card" draggable="true" data-worksheet-id="@fundingAgreementInfo.WorksheetId">
+                                <span class="published-form-title">
+                                    @fundingAgreementInfo.Worksheet.Title (@fundingAgreementInfo.Worksheet.Name)
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="slot-title">Additional Tabs:</div>
+                <div class="multi-slot drag-target multi-target custom-tabs-list" draggable="false" data-target="custom-tabs">
+                    @if (Model.CustomTabLinks != null)
+                    {
+                        @foreach (var customTab in Model.CustomTabLinks.OrderBy(s => s.Order))
+                        {
+                            <div class="draggable-card" draggable="true" data-worksheet-id="@customTab.WorksheetId">
+                                <span class="published-form-title">
+                                    @customTab.Worksheet.Title (@customTab.Worksheet.Name)
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

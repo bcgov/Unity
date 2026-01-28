@@ -43,19 +43,13 @@ $.extend(DataTable.ext.buttons, {
                         .trim();
                     
                     // Strip HTML comments if available
-                    if (DataTable.Buttons && DataTable.Buttons.stripHtmlComments) {
-                        title = DataTable.Buttons.stripHtmlComments(title);
-                    }
+                    title = DataTable.Buttons?.stripHtmlComments?.(title) || title;
                     
                     // Strip HTML if DataTable utility is available
-                    if (DataTable.util && DataTable.util.stripHtml) {
-                        title = DataTable.util.stripHtml(title).trim();
-                    }
+                    title = DataTable.util?.stripHtml?.(title)?.trim() || title;
                     
                     // Apply custom columnText function if provided
-                    if (conf.columnText) {
-                        title = conf.columnText(dt, idx, title);
-                    }
+                    title = conf.columnText?.(dt, idx, title) || title;
                     
                     return {
                         index: idx,
@@ -134,7 +128,7 @@ $.extend(DataTable.ext.buttons, {
                 }
 
                 // Use ColReorder's transpose to find where our original column now lives
-                if (dt.colReorder && dt.colReorder.transpose) {
+                if (dt.colReorder?.transpose) {
                     conf._currentColumnIndex = dt.colReorder.transpose(conf._originalColumnIndex, 'toCurrent');
                 }
                 

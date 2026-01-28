@@ -24,7 +24,7 @@ public abstract class LazyLoad_Tests<TStartupModule> : TenantManagementTestBase<
         using var uow = GetRequiredService<IUnitOfWorkManager>().Begin();
         var role = await TenantRepository.FindByNameAsync("ACME", includeDetails: false);
         role.ConnectionStrings.ShouldNotBeNull();
-        role.ConnectionStrings.Any().ShouldBeTrue();
+        role.ConnectionStrings.Count.ShouldBeGreaterThan(0);
 
         await uow.CompleteAsync();
     }

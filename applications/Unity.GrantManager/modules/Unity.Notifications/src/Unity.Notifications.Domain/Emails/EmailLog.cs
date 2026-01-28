@@ -27,8 +27,10 @@ public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? ChesMsgId { get; set; }
     public string ChesResponse { get; set; } = string.Empty;
     public string ChesStatus { get; set; } = string.Empty;
+    public string? ChesHttpStatusCode { get; set; }    
     public string Status { get; set; } = string.Empty;
     public DateTime? SendOnDateTime { get; set; }
     public DateTime? SentDateTime { get; set; }
     public string TemplateName { get; set; } = string.Empty;
+    public string PaymentRequestIds { get; set; } = string.Empty;
 }

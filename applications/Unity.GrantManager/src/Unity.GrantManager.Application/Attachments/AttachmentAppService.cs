@@ -190,10 +190,10 @@ public class AttachmentAppService(
     {
         // Get the attachment
         var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
-        
+
         // Get file content from CHEFS
         var fileDto = await submissionAppService.GetChefsFileAttachment(
-            Guid.Parse(attachment.ChefsSumbissionId ?? ""),
+            Guid.Parse(attachment.ChefsSubmissionId ?? ""),
             Guid.Parse(attachment.ChefsFileId ?? ""),
             attachment.FileName ?? "");
         

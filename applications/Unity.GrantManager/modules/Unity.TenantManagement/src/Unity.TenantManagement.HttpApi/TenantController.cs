@@ -11,14 +11,9 @@ namespace Unity.TenantManagement;
 [RemoteService(Name = TenantManagementRemoteServiceConsts.RemoteServiceName)]
 [Area(TenantManagementRemoteServiceConsts.ModuleName)]
 [Route("api/multi-tenancy/tenants")]
-public class TenantController : AbpControllerBase, ITenantAppService
+public class TenantController(ITenantAppService tenantAppService) : AbpControllerBase, ITenantAppService
 {
-    protected ITenantAppService TenantAppService { get; }
-
-    public TenantController(ITenantAppService tenantAppService)
-    {
-        TenantAppService = tenantAppService;
-    }
+    protected ITenantAppService TenantAppService { get; } = tenantAppService;
 
     [HttpGet]
     [Route("{id}")]
@@ -107,7 +102,7 @@ public class TenantController : AbpControllerBase, ITenantAppService
     }
 
     [HttpPut]
-    [Route("{id}/assign-manager")]
+    [Route("assign-manager")]
     public virtual Task AssignManagerAsync(TenantAssignManagerDto managerAssignment)
     {
         if (!ModelState.IsValid)

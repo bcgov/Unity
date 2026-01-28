@@ -50,7 +50,7 @@ namespace Unity.GrantManager.Components
             };
 
             // Arrange
-            var appService = Substitute.For<IGrantApplicationAppService>();
+            var appService = Substitute.For<IGrantApplicationsSummaryAppService>();
             var context = Substitute.For<IHttpContextAccessor>();
             var browserUtils = new BrowserUtils(context);
             appService.GetSummaryAsync(Arg.Any<Guid>()).Returns(summaryDto);

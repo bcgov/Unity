@@ -16,6 +16,7 @@ using Volo.Abp.Data;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 using Unity.Notifications.Emails;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;
 
@@ -25,6 +26,7 @@ public class EmailConsumer(
     EmailQueueService emailQueueService,
     IUnitOfWorkManager unitOfWorkManager,
     ICurrentTenant currentTenant,
+    ILocalEventBus localEventBus,
     ILogger<EmailConsumer> logger
 ) : IQueueConsumer<EmailMessages>
 {
@@ -118,7 +120,7 @@ public class EmailConsumer(
                 return;
             }
 
-            UpdateEmailLogStatus(emailLog, response);
+            await UpdateEmailLogStatus(emailLog, response);
 
             if (ShouldRetry(response.StatusCode))
             {
@@ -174,7 +176,7 @@ public class EmailConsumer(
     // -----------------------------
     //      STATUS UPDATE
     // -----------------------------
-    private static void UpdateEmailLogStatus(EmailLog log, HttpResponseMessage response)
+    private async Task UpdateEmailLogStatus(EmailLog log, HttpResponseMessage response)
     {
         log.ChesResponse = JsonConvert.SerializeObject(new
         {
@@ -183,11 +185,30 @@ public class EmailConsumer(
             Body = response.Content != null ? response.Content.ReadAsStringAsync().Result : null
         });
 
+        log.ChesHttpStatusCode = response.StatusCode.ToString("D");
+
         log.ChesStatus = response.StatusCode.ToString();
 
         log.Status = response.IsSuccessStatusCode
             ? EmailStatus.Sent
             : EmailStatus.Failed;
+
+        // Publish local event for successful FSB payment notifications
+        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(log.PaymentRequestIds))
+        {
+            var paymentIds = log.PaymentRequestIds
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(id => Guid.Parse(id))
+                .ToList();
+
+            await localEventBus.PublishAsync(new FsbEmailSentEto
+            {
+                EmailLogId = log.Id,
+                PaymentRequestIds = paymentIds,
+                SentDate = DateTime.UtcNow,
+                TenantId = log.TenantId
+            });
+        }
     }
 
     // -----------------------------

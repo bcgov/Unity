@@ -38,7 +38,7 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService,
     {
         WorksheetId = worksheetId;
         SectionId = sectionId;
-        UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
+        UpsertAction = Enum.Parse<WorksheetUpsertAction>(actionType);
 
         if (UpsertAction == WorksheetUpsertAction.Update)
         {

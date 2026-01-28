@@ -26,12 +26,6 @@ namespace Unity.GrantManager.Intakes.Handlers
                 return;
             }
 
-            if (eventData.OnlyLocationRetrofill)
-            {
-                logger.LogInformation("Skip report data generator handler.");
-                return;
-            }
-
             if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
             {
                 logger.LogInformation("Generating report data for application {ApplicationId}.", eventData.Application?.Id);

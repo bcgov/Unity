@@ -8,17 +8,37 @@ namespace Unity.GrantManager
 {
     public class FakeChannelProvider : IChannelProvider
     {
+        private bool _disposed;
+
         public IModel GetChannel() => new FakeModel();
 
         public void Dispose()
         {
+            Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                // Dispose managed resources here if needed
+            }
+
+            // Dispose unmanaged resources here if needed
+
+            _disposed = true;
         }
 
         public void ReturnChannel(IModel channel) { }
 
         public class FakeModel : IModel
         {
+            private bool _disposed;
+
             public int ChannelNumber => 1;
             public ShutdownEventArgs? CloseReason => null;
             public IBasicConsumer? DefaultConsumer { get; set; }
@@ -29,18 +49,18 @@ namespace Unity.GrantManager
             public TimeSpan ContinuationTimeout { get; set; } = TimeSpan.Zero;
 
             // Events (no-op) - this section is needed and unused
-            #pragma warning disable S1144 // Unused private code
-            #pragma warning disable CS0067 // Event is never used
+#pragma warning disable S1144 // Unused private code
+#pragma warning disable CS0067 // Event is never used
             public event EventHandler<BasicAckEventArgs>? BasicAcks;
-            
+
             public event EventHandler<BasicNackEventArgs>? BasicNacks;
             public event EventHandler<EventArgs>? BasicRecoverOk;
             public event EventHandler<BasicReturnEventArgs>? BasicReturn;
             public event EventHandler<CallbackExceptionEventArgs>? CallbackException;
             public event EventHandler<FlowControlEventArgs>? FlowControl;
             public event EventHandler<ShutdownEventArgs>? ModelShutdown;
-            #pragma warning restore CS0067 // Event is never used
-            #pragma warning restore S1144
+#pragma warning restore CS0067 // Event is never used
+#pragma warning restore S1144
 
             // --- Minimal stubs for queue + exchange setup ---
             public QueueDeclareOk QueueDeclare(string queue, bool durable, bool exclusive, bool autoDelete, IDictionary<string, object> arguments)
@@ -119,16 +139,33 @@ namespace Unity.GrantManager
             public void Abort(ushort replyCode, string replyText) { }
             public void Close() { }
             public void Close(ushort replyCode, string replyText) { }
-            public void Dispose() => GC.SuppressFinalize(this);
+            public void Dispose()
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (_disposed)
+                    return;
+
+                if (disposing)
+                {
+                    // Dispose managed resources here if needed
+                }
+
+                // Dispose unmanaged resources here if needed
+
+                _disposed = true;
+            }
         }
 
         // Fake BasicPublishBatch (so CreateBasicPublishBatch won’t explode if called)
         private class FakeBasicPublishBatch : IBasicPublishBatch
         {
-            public void Add(string exchange, string routingKey, bool mandatory, IBasicProperties basicProperties, byte[] body) { }
-            public static void Add(string exchange, string routingKey, bool mandatory, IBasicProperties basicProperties, ReadOnlyMemory<byte> body) { }
+            public void Add(string exchange, string routingKey, bool mandatory, IBasicProperties properties, byte[] body) { }
             public void Publish() { }
-            public static void Clear() { }
         }
 
         // Fake BasicProperties (so BasicPublish won’t explode if called)

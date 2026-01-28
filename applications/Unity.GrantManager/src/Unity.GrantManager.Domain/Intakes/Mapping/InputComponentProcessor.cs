@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Intakes
         // Method to initialize the logger (if needed)
         public static void InitializeLogger(ILoggerFactory loggerFactory)
         {
-            logger = loggerFactory.CreateLogger(typeof(InputComponentProcessor));
+            logger = loggerFactory.CreateLogger<InputComponentProcessor>();
         }
 
         private static readonly HashSet<string> allowableContainerTypes = new HashSet<string>
@@ -98,7 +98,7 @@ namespace Unity.GrantManager.Intakes
                 string? key = token["key"]?.ToString();
                 string? label = token["label"]?.ToString();
                 string? tokenType = token["type"]?.ToString();
-                string? tokenValues = token["values"]?.ToString();
+                string? tokenValues;
 
                 // Check if tokenType is in nestedKeyFields and extract values
                 if (key != null

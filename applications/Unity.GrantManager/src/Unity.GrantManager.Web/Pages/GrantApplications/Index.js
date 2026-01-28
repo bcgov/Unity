@@ -1,4 +1,10 @@
 ﻿$(function () {
+    // Check if createNumberFormatter exists
+    if (typeof createNumberFormatter !== 'function') {
+        console.error('createNumberFormatter is not defined. Ensure table-utils.js is loaded before Index.js');
+        return;
+    }
+
     const formatter = createNumberFormatter();
     const l = abp.localization.getResource('GrantManager');
     let dt = $('#GrantApplicationsTable');
@@ -259,8 +265,7 @@ const listColumns = getColumns();
             dt,
             defaultVisibleColumns,
             listColumns,
-            maxRowsPerPage: 10,
-            serverSideEnabled: true,   // Must be TRUE for ajax reloads to call server
+            maxRowsPerPage: 10,            
             defaultSortColumn: 4,
             dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
             data: function () {

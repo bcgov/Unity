@@ -816,9 +816,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<string>("ElectoralDistrict")
-                        .HasColumnType("text");
-
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1090,8 +1087,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationId")
                         .IsUnique();
-
-                    b.HasIndex("OidcSubUser");
 
                     b.ToTable("ApplicantAgents", (string)null);
                 });
@@ -1452,7 +1447,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("ChefsFileId")
                         .HasColumnType("text");
 
-                    b.Property<string>("ChefsSumbissionId")
+                    b.Property<string>("ChefsSubmissionId")
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -2649,6 +2644,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("PaymentRequestIds")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasColumnType("text");
@@ -3428,6 +3427,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<string>("FsbApNotified")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<Guid?>("FsbNotificationEmailLogId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FsbNotificationSentDate")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
                         .HasColumnType("text");
@@ -3500,6 +3509,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("AccountCodingId");
+
+                    b.HasIndex("FsbNotificationEmailLogId");
 
                     b.HasIndex("ReferenceNumber")
                         .IsUnique();
@@ -4008,11 +4019,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Applications.Application", "Application")
                         .WithOne("ApplicantAgent")
                         .HasForeignKey("Unity.GrantManager.Applications.ApplicantAgent", "ApplicationId");
-
-                    b.HasOne("Unity.GrantManager.Identity.Person", null)
-                        .WithMany()
-                        .HasForeignKey("OidcSubUser")
-                        .HasPrincipalKey("OidcSub");
 
                     b.Navigation("Application");
                 });

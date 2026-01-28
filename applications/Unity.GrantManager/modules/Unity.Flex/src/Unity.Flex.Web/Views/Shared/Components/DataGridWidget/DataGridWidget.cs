@@ -335,7 +335,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 
         private static DataGridDefinitionSummaryOption ConvertSummaryOption(DataGridDefinition dataGridDefinition)
         {
-            return (DataGridDefinitionSummaryOption)Enum.Parse(typeof(DataGridDefinitionSummaryOption), dataGridDefinition.SummaryOption);
+            return Enum.Parse<DataGridDefinitionSummaryOption>(dataGridDefinition.SummaryOption);
         }
 
         private static DataGridViewSummary GenerateDynamicPlaceholderSummary()

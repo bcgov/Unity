@@ -46,7 +46,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public ApplicationForm SetSuffixType(SuffixConfigType suffixType)
     {
-        if (!Enum.IsDefined(suffixType))
+        if (!Enum.IsDefined<SuffixConfigType>(suffixType))
         {
             throw new ArgumentOutOfRangeException(nameof(suffixType), "Invalid suffix type provided.");
         }
@@ -66,12 +66,11 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public ApplicationForm SetElectoralDistrictAddressType(AddressType addressType)
     {
-        if (!Enum.IsDefined(typeof(AddressType), addressType))
+        if (!Enum.IsDefined<AddressType>(addressType))
         {
             throw new ArgumentOutOfRangeException(nameof(addressType), "Invalid address type provided.");
         }
         ElectoralDistrictAddressType = addressType;
-
         return this;
     }
 

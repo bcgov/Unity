@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Settings;
 using Unity.Notifications;
@@ -53,9 +51,5 @@ public class GrantManagerDomainModule : AbpModule
         {
             options.Providers.Add<FormSettingManagementProvider>();
         });
-
-#if DEBUG
-        context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, NullEmailSender>());
-#endif
     }
 }

@@ -149,6 +149,7 @@
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
     "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
     "Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval": "Bulk Application Approval",
+    "Permission:GrantApplicationManagement.AIReporting.Default": "AI Reporting",
 
     "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",
