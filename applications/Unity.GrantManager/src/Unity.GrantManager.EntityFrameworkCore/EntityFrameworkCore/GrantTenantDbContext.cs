@@ -324,8 +324,10 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.Name).IsRequired().HasMaxLength(255);
                 b.Property(x => x.Email).HasMaxLength(255);
                 b.Property(x => x.Title).HasMaxLength(255);
+                b.Property(x => x.HomePhoneNumber).HasMaxLength(50);
                 b.Property(x => x.MobilePhoneNumber).HasMaxLength(50);
                 b.Property(x => x.WorkPhoneNumber).HasMaxLength(50);
+                b.Property(x => x.WorkPhoneExtension).HasMaxLength(50);
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();
