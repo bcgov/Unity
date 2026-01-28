@@ -7,8 +7,8 @@ namespace Unity.GrantManager.Contacts;
 public class Contact : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public bool IsPrimary { get; set; } = false;
-    public string ContactType { get; set; } = string.Empty;
-    public Guid ContactTypeId { get; set; }
+    public string RelatedEntityType { get; set; } = string.Empty;
+    public Guid RelatedEntityId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Title { get; set; }
     public string? Email { get; set; }
