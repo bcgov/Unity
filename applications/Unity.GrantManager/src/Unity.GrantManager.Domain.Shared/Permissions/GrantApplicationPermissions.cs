@@ -42,21 +42,21 @@ namespace Unity.GrantManager.Permissions
 
         public static class AI
         {
-            public const string GroupName = "AI";
+            public const string Default = "AI";
 
             public static class Reporting
             {
-                public const string Default = GroupName + ".Reporting";
+                public const string Default = AI.Default + ".Reporting";
             }
 
             public static class ApplicationAnalysis
             {
-                public const string Default = GroupName + ".ApplicationAnalysis";
+                public const string Default = AI.Default + ".ApplicationAnalysis";
             }
 
             public static class AttachmentSummary
             {
-                public const string Default = GroupName + ".AttachmentSummary";
+                public const string Default = AI.Default + ".AttachmentSummary";
             }
         }
 
