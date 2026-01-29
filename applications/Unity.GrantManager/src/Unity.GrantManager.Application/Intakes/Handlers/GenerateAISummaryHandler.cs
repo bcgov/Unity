@@ -121,7 +121,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                         {
                             // Get the file content from CHEFS (now accessible via [AllowAnonymous])
                             var fileDto = await _submissionAppService.GetChefsFileAttachment(
-                                Guid.Parse(attachment.ChefsSumbissionId ?? ""),
+                                Guid.Parse(attachment.ChefsSubmissionId ?? ""),
                                 Guid.Parse(attachment.ChefsFileId ?? ""),
                                 attachment.FileName ?? "");
 

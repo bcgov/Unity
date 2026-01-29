@@ -9,7 +9,6 @@ using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Features;
-using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Menus;
 
@@ -30,7 +29,6 @@ public class GrantManagerMenuContributor : IMenuContributor
     {
         var l = context.GetLocalizer<GrantManagerResource>();
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
-        var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
@@ -118,7 +116,7 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
-        if (await featureChecker.IsEnabledAsync("Unity.AIReporting") || currentUser.IsInRole(IdentityConsts.ITAdminRoleName))
+        if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
         {
             context.Menu.AddItem(
                 new ApplicationMenuItem(
@@ -126,6 +124,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                     l["Menu:AIReporting"],
                     "~/AIReporting",
                     icon: "fl fl-view-dashboard",
+                    requiredPermissionName: GrantApplicationPermissions.AI.Reporting.Default,
                     order: 9
                 )
             );

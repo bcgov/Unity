@@ -1,3 +1,8 @@
+/**
+ * Grant Application Details Page
+ * Dependencies: ai-analysis.js - handles AI analysis rendering and management
+ */
+
 $(function () {
     let selectedReviewDetails = null;
     let renderFormIoToHtml =
@@ -45,25 +50,66 @@ $(function () {
         }
     }
 
+    function initializeShadowDOM() {
+        const formioContainer = document.getElementById('formio');
+
+        if (!formioContainer) {
+            console.error('Formio container not found');
+            return null;
+        }
+
+        // Check if shadow root already exists
+        if (formioContainer.shadowRoot) {
+            return formioContainer.shadowRoot;
+        }
+
+        // Create shadow DOM with open mode (allows external JS access)
+        const shadowRoot = formioContainer.attachShadow({mode: 'open'});
+
+        // Load form.io CSS inside shadow DOM
+        const formioStyle = document.createElement('link');
+        formioStyle.rel = 'stylesheet';
+        formioStyle.href = '/libs/formiojs/formio.form.css';
+        shadowRoot.appendChild(formioStyle);
+
+        // Load bootstrap CSS
+        const bootstrapStyle = document.createElement('link');
+        bootstrapStyle.rel = 'stylesheet';
+        bootstrapStyle.href = '/libs/bootstrap-4/dist/css/bootstrap.min.css';
+        shadowRoot.appendChild(bootstrapStyle);
+
+        // Load Details-shadow-dom.css into shadow DOM (CRITICAL for accordion, styling, etc.)
+        const detailsStyle = document.createElement('link');
+        detailsStyle.rel = 'stylesheet';
+        detailsStyle.href = '/Pages/GrantApplications/Details-shadow-dom.css';
+        shadowRoot.appendChild(detailsStyle);
+
+        return shadowRoot;
+    }
+
     function renderSubmission() {
+        // Initialize shadow DOM first
+        const shadowRoot = initializeShadowDOM();
+
         if (renderFormIoToHtml == 'False' || hasRenderedHtml == 'False') {
-            getSubmission();
+            getSubmission(shadowRoot);
         } else {
             $('.spinner-grow').hide();
-            addEventListeners();
+
+            // Inject pre-rendered HTML into shadow DOM
+            if (shadowRoot) {
+                const htmlContent = document.getElementById('ApplicationFormSubmissionHtml');
+                if (htmlContent?.value) {
+                    shadowRoot.innerHTML += DOMPurify.sanitize(htmlContent.value);
+                }
+            }
+
+            addEventListeners(shadowRoot);
         }
     }
 
-    function waitFor(conditionFunction) {
-        const poll = (resolve) => {
-            if (conditionFunction()) resolve();
-            else setTimeout((_) => poll(resolve), 400);
-        };
 
-        return new Promise(poll);
-    }
-
-    async function getSubmission() {
+    async function getSubmission(shadowRoot) {
         try {
             $('.spinner-grow').hide();
             let submissionDataString = document.getElementById(
@@ -92,10 +138,15 @@ $(function () {
                 submissionData = submissionJson.submission;
             }
 
-            Formio.icons = 'fontawesome';
+            Formio.icons = 'fontawesome';            
+
+            // Create container inside shadow DOM
+            const container = document.createElement('div');
+            container.id = 'formio-container';
+            shadowRoot.appendChild(container);
 
             await Formio.createForm(
-                document.getElementById('formio'),
+                container, // Render inside shadow DOM
                 formSchema,
                 {
                     readOnly: true,
@@ -103,33 +154,31 @@ $(function () {
                     flatten: true,
                 }
             ).then(function (form) {
-                handleForm(form, submissionData);
+                handleForm(form, submissionData, shadowRoot);
             });
         } catch (error) {
             console.error(error);
         }
     }
 
-    function handleForm(form, submission) {
+    function handleForm(form, submission, shadowRoot) {
         form.submission = submission;
         form.resetValue();
         form.refresh();
-        form.on('render', addEventListeners);
+        form.on('render', () => addEventListeners(shadowRoot));
 
         waitFor(() => isFormChanging(form)).then(() => {
             setTimeout(storeRenderedHtml, 2000);
         });
     }
 
-    function isFormChanging(form) {
-        return form.changing === false;
-    }
-
     async function storeRenderedHtml() {
         if (renderFormIoToHtml == 'False') {
             return;
         }
-        let innerHTML = document.getElementById('formio').innerHTML;
+        const formioContainer = document.getElementById('formio');
+        const shadowRoot = formioContainer.shadowRoot;
+        let innerHTML = shadowRoot ? shadowRoot.innerHTML : formioContainer.innerHTML;
         let submissionId = document.getElementById(
             'ApplicationFormSubmissionId'
         ).value;
@@ -151,7 +200,7 @@ $(function () {
     }
 
     // Wait for the DOM to be fully loaded
-    function addEventListeners() {
+    function addEventListeners(shadowRoot) {
         const cardHeaders = getCardHeaders();
         const cardBodies = getCardBodies();
 
@@ -169,66 +218,23 @@ $(function () {
 
     // Get all card headers
     function getCardHeaders() {
-        return document.querySelectorAll(
+        const formioContainer = document.getElementById('formio');
+        const root = formioContainer.shadowRoot || document;
+        return root.querySelectorAll(
             '.card-header:not(.card-body .card-header)'
         );
     }
 
     // Get all card bodies
     function getCardBodies() {
-        return document.querySelectorAll(
+        const formioContainer = document.getElementById('formio');
+        const root = formioContainer.shadowRoot || document;
+        return root.querySelectorAll(
             '.card-body:not(.card-body .card-body)'
         );
     }
 
-    // Hide all card bodies initially
-    function hideAllCardBodies(cardBodies) {
-        cardBodies.forEach((body) => body.classList.add('hidden'));
-    }
-
-    // Handle the card header click event
-    function onCardHeaderClick(clickedHeader, cardHeaders) {
-        const clickedCardBody = getNextCardBody(clickedHeader);
-        const isVisible = toggleCardBodyVisibility(clickedCardBody);
-        toggleHeaderActiveClass(clickedHeader, isVisible);
-        hideOtherCardBodies(clickedHeader, cardHeaders);
-    }
-
-    // Get the next sibling card body
-    function getNextCardBody(header) {
-        return header.nextElementSibling;
-    }
-
-    // Toggle visibility of the card body
-    function toggleCardBodyVisibility(cardBody) {
-        return !cardBody.classList.toggle('hidden');
-    }
-
-    // Toggle active class for the header
-    function toggleHeaderActiveClass(header, isVisible) {
-        header.classList.toggle('custom-active', isVisible);
-    }
-
-    // Hide all other card bodies
-    function hideOtherCardBodies(currentHeader, cardHeaders) {
-        cardHeaders.forEach((otherHeader) => {
-            if (otherHeader !== currentHeader) {
-                const otherCardBody = getNextCardBody(otherHeader);
-                hideCardBody(otherCardBody);
-                removeHeaderActiveClass(otherHeader);
-            }
-        });
-    }
-
-    // Hide a specific card body
-    function hideCardBody(cardBody) {
-        cardBody.classList.add('hidden');
-    }
-
-    // Remove active class from a specific header
-    function removeHeaderActiveClass(header) {
-        header.classList.remove('custom-active');
-    }
+   
 
     $('#assessment_upload_btn').click(function () {
         $('#assessment_upload').trigger('click');
@@ -238,14 +244,7 @@ $(function () {
         $('#application_attachment_upload').trigger('click');
     });
 
-    function debounce(func, wait) {
-        let timeout;
-        return function (...args) {
-            const context = this;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(context, args), wait);
-        };
-    }
+
 
     const $recommendationSelect = $('#recommendation_select');
     const $recommendationResetBtn = $('#recommendation_reset_btn');
@@ -387,7 +386,7 @@ $(function () {
         data.submission.submission = submissionData;
 
         // Open a new tab
-        let newTab = window.open('', '_blank');
+        let newTab = globalThis.open('', '_blank');
 
         // Wait for the new tab's document to be available
         const doc = newTab.document;
@@ -412,10 +411,25 @@ $(function () {
         formioCSS.rel = 'stylesheet';
         formioCSS.href = '/libs/formiojs/formio.form.css';
 
+        // Add inline CSS to disable links (more reliable than JavaScript)
+        const inlineStyle = doc.createElement('style');
+        inlineStyle.textContent = `
+            a {
+                pointer-events: none !important;
+                cursor: default !important;
+                text-decoration: none !important;
+                color: black !important;
+            }
+            button {
+                display: none !important;
+            }
+        `;
+
         head.appendChild(jqueryScript);
         head.appendChild(formioScript);
         head.appendChild(bootstrapCSS);
         head.appendChild(formioCSS);
+        head.appendChild(inlineStyle);
 
         // BODY
         const body = doc.body;
@@ -446,7 +460,7 @@ $(function () {
     });
 
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
-        const newTab = window.open('', '_blank');
+        const newTab = globalThis.open('', '_blank');
         const doc = newTab.document;
         
         doc.open();
@@ -605,6 +619,13 @@ $(function () {
         $('#application_attachment_count').html(
             tabCounters.files + tabCounters.chefs
         );
+    });
+    
+    PubSub.subscribe('update_ai_analysis_count', (msg, data) => {
+        if (data.itemCount || data.itemCount === 0) {
+            tabCounters.ai_analysis = data.itemCount;
+        }
+        $('#ai_analysis_count').html(tabCounters.ai_analysis);
     });
 
     PubSub.subscribe('update_application_emails_count', (msg, data) => {
@@ -776,15 +797,86 @@ $(function () {
         recalcAndAdjustSplit();
     }
 
-    window.addEventListener('resize', windowResize);
+    globalThis.addEventListener('resize', windowResize);
 });
 
-// $(document).on('click', '#btnClearSupplierNo', function (e) {
-//     e.preventDefault();
 
-//     console.log('clicked');
-//     $('#SupplierNumber').val(null).trigger('change');
-// });
+// Handle the card header click event
+function onCardHeaderClick(clickedHeader, cardHeaders) {
+    const clickedCardBody = getNextCardBody(clickedHeader);
+    const isVisible = toggleCardBodyVisibility(clickedCardBody);
+    toggleHeaderActiveClass(clickedHeader, isVisible);
+    hideOtherCardBodies(clickedHeader, cardHeaders);
+}
+
+// Hide all other card bodies
+function hideOtherCardBodies(currentHeader, cardHeaders) {
+    cardHeaders.forEach((otherHeader) => {
+        if (otherHeader !== currentHeader) {
+            const otherCardBody = getNextCardBody(otherHeader);
+            hideCardBody(otherCardBody);
+            removeHeaderActiveClass(otherHeader);
+        }
+    });
+}
+
+// Hide a specific card body
+function hideCardBody(cardBody) {
+    cardBody.classList.add('hidden');
+}
+
+// Remove active class from a specific header
+function removeHeaderActiveClass(header) {
+    header.classList.remove('custom-active');
+}
+
+
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(
+            function () {
+                func.apply(this, args);
+            }.bind(this),
+            wait
+        );
+    };
+}
+
+function isFormChanging(form) {
+    return form.changing === false;
+}
+
+// Toggle active class for the header
+function toggleHeaderActiveClass(header, isVisible) {
+    header.classList.toggle('custom-active', isVisible);
+}
+
+// Get the next sibling card body
+function getNextCardBody(header) {
+    return header.nextElementSibling;
+}
+
+// Hide all card bodies initially
+function hideAllCardBodies(cardBodies) {
+    cardBodies.forEach((body) => body.classList.add('hidden'));
+}
+
+// Toggle visibility of the card body
+function toggleCardBodyVisibility(cardBody) {
+    return !cardBody.classList.toggle('hidden');
+}
+
+function waitFor(conditionFunction) {
+    const poll = (resolve) => {
+        if (conditionFunction()) resolve();
+        else setTimeout((_) => poll(resolve), 400);
+    };
+
+    return new Promise(poll);
+}
+
 
 function updateCustomForm(
     applicationId,
@@ -1133,12 +1225,12 @@ function formHasInvalidCurrencyCustomFields(formId) {
 
 function isValidCurrencyCustomField(input) {
     let originalValue = input.val();
-    let numericValue = parseFloat(originalValue.replace(/,/g, ''));
+    let numericValue = Number.parseFloat(originalValue.replaceAll(',', ''));
 
-    let minValue = parseFloat(input.attr('data-min'));
-    let maxValue = parseFloat(input.attr('data-max'));
+    let minValue = Number.parseFloat(input.attr('data-min'));
+    let maxValue = Number.parseFloat(input.attr('data-max'));
 
-    if (isNaN(numericValue)) {
+    if (Number.isNaN(numericValue)) {
         showCurrencyError(input, 'Please enter a valid number.');
         return false;
     } else if (numericValue < minValue) {
@@ -1169,360 +1261,4 @@ function clearCurrencyError(input) {
     let errorSpan = input.attr('id') + '-error';
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
-}
-
-function loadAIAnalysis() {
-    const urlParams = new URL(window.location.toLocaleString()).searchParams;
-    const applicationId = urlParams.get('ApplicationId');
-
-    if (!applicationId) {
-        renderDemoAIAnalysis();
-        return;
-    }
-
-    // Get the application data including AI analysis
-    unity.grantManager.grantApplications.grantApplication.get(applicationId)
-        .done(function(application) {
-            console.log('Application data received:', application);
-            console.log('AI Analysis field:', application.aiAnalysis);
-
-            // Use the camelCase version that should come from the API
-            const aiAnalysis = application.aiAnalysis;
-
-            if (application && aiAnalysis) {
-                try {
-                    console.log('Raw AI analysis:', aiAnalysis);
-
-                    // Clean the JSON response (remove markdown code blocks if present)
-                    let cleanedJson = aiAnalysis.trim();
-                    if (cleanedJson.startsWith('```json') || cleanedJson.startsWith('```')) {
-                        const startIndex = cleanedJson.indexOf('\n');
-                        if (startIndex >= 0) {
-                            cleanedJson = cleanedJson.substring(startIndex + 1);
-                        }
-                    }
-                    if (cleanedJson.endsWith('```')) {
-                        const lastIndex = cleanedJson.lastIndexOf('```');
-                        if (lastIndex > 0) {
-                            cleanedJson = cleanedJson.substring(0, lastIndex);
-                        }
-                    }
-                    cleanedJson = cleanedJson.trim();
-
-                    const analysisData = JSON.parse(cleanedJson);
-                    console.log('Parsed analysis data:', analysisData);
-                    renderRealAIAnalysis(analysisData);
-                } catch (e) {
-                    console.warn('Failed to parse AI analysis JSON, showing demo data:', e);
-                    renderDemoAIAnalysis();
-                }
-            } else {
-                console.log('No AI analysis found, showing demo');
-                renderDemoAIAnalysis();
-            }
-        })
-        .fail(function(error) {
-            console.warn('Failed to load application data, showing demo AI analysis', error);
-            renderDemoAIAnalysis();
-        });
-}
-
-// Simple hash function to create stable IDs from content
-function simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash).toString(36);
-}
-
-function renderRealAIAnalysis(analysisData) {
-    // Generate STABLE IDs based on content hash
-    const warnings = (analysisData.warnings || []).map((w, i) => ({
-        ...w,
-        id: w.id || 'warning-' + simpleHash((w.category || '') + (w.message || ''))
-    }));
-    const errors = (analysisData.errors || []).map((e, i) => ({
-        ...e,
-        id: e.id || 'error-' + simpleHash((e.category || '') + (e.message || ''))
-    }));
-    const recommendations = analysisData.recommendations || [];
-    const dismissedItems = new Set((analysisData.dismissed_items || []).filter(id => id));
-
-    // Get all valid IDs from current errors and warnings
-    const allValidIds = new Set([...errors.map(e => e.id), ...warnings.map(w => w.id)]);
-
-    // Filter dismissed items to only include IDs that exist in current errors/warnings
-    const validDismissedItems = new Set(
-        Array.from(dismissedItems).filter(id => allValidIds.has(id))
-    );
-
-    // Separate active and dismissed items
-    const activeErrors = errors.filter(e => !validDismissedItems.has(e.id));
-    const activeWarnings = warnings.filter(w => !validDismissedItems.has(w.id));
-    const dismissedErrors = errors.filter(e => validDismissedItems.has(e.id));
-    const dismissedWarnings = warnings.filter(w => validDismissedItems.has(w.id));
-
-    // Clear existing accordion list and rebuild
-    const $accordionList = $('#aiAnalysisAccordionList');
-    $accordionList.empty();
-
-    // Add errors section if there are any
-    if (activeErrors.length > 0) {
-        const errorsContent = activeErrors.map(error => {
-            const errorId = error.id || 'error-unknown-' + Date.now();
-            return `
-                <div class="ai-analysis-detail-item">
-                    <div class="ai-analysis-detail-header">
-                        <div class="ai-analysis-detail-category">${escapeHtml(error.category || 'Error')}</div>
-                        <button type="button" class="ai-analysis-dismiss-btn" data-id="${errorId}" data-type="error" title="Dismiss this error" onclick="event.stopPropagation(); dismissAIIssue('${errorId}'); return false;">
-                            <i class="fa fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="ai-analysis-detail-message">${escapeHtml(error.message || '')}</div>
-                </div>
-            `;
-        }).join('');
-
-        const accordionItem = createAccordionGroup(
-            'errors',
-            'error',
-            'fl-times-circle',
-            `Errors (${activeErrors.length})`,
-            errorsContent
-        );
-        $accordionList.append(accordionItem);
-    }
-
-    // Add warnings section if there are any
-    if (activeWarnings.length > 0) {
-        const warningsContent = activeWarnings.map(warning => {
-            const warningId = warning.id || 'warning-unknown-' + Date.now();
-            return `
-                <div class="ai-analysis-detail-item">
-                    <div class="ai-analysis-detail-header">
-                        <div class="ai-analysis-detail-category">${escapeHtml(warning.category || 'Warning')}</div>
-                        <button type="button" class="ai-analysis-dismiss-btn" data-id="${warningId}" data-type="warning" title="Dismiss this warning" onclick="event.stopPropagation(); dismissAIIssue('${warningId}'); return false;">
-                            <i class="fa fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="ai-analysis-detail-message">${escapeHtml(warning.message || '')}</div>
-                </div>
-            `;
-        }).join('');
-
-        const accordionItem = createAccordionGroup(
-            'warnings',
-            'warning',
-            'fl-exclamation-triangle',
-            `Warnings (${activeWarnings.length})`,
-            warningsContent
-        );
-        $accordionList.append(accordionItem);
-    }
-
-    // Add recommendations section if there are any
-    if (recommendations.length > 0) {
-        const recommendationsContent = recommendations.map(rec => {
-            // Handle both string and object formats
-            const category = typeof rec === 'object' ? (rec.category || 'Recommendation') : 'Recommendation';
-            const message = typeof rec === 'object' ? (rec.message || rec) : rec;
-
-            return `
-                <div class="ai-analysis-detail-item">
-                    <div class="ai-analysis-detail-category">${escapeHtml(category)}</div>
-                    <div class="ai-analysis-detail-message">${escapeHtml(message)}</div>
-                </div>
-            `;
-        }).join('');
-
-        const accordionItem = createAccordionGroup(
-            'recommendations',
-            'info',
-            'fl-info-circle',
-            `Recommendations (${recommendations.length})`,
-            recommendationsContent
-        );
-        $accordionList.append(accordionItem);
-    }
-
-    // Add dismissed items section if there are any
-    if (dismissedErrors.length > 0 || dismissedWarnings.length > 0) {
-        const dismissedContent = [
-            ...dismissedErrors.map(error => {
-                const errorId = error.id || 'error-dismissed-' + Date.now();
-                return `
-                <div class="ai-analysis-detail-item dismissed">
-                    <div class="ai-analysis-detail-header">
-                        <div class="ai-analysis-detail-category">${escapeHtml(error.category || 'Error')}</div>
-                        <button type="button" class="ai-analysis-restore-btn" data-id="${errorId}" data-type="error" title="Restore this error" onclick="event.stopPropagation(); restoreAIIssue('${errorId}'); return false;">
-                            <i class="fa fa-undo"></i>
-                        </button>
-                    </div>
-                    <div class="ai-analysis-detail-message">${escapeHtml(error.message || '')}</div>
-                </div>
-            `;
-            }),
-            ...dismissedWarnings.map(warning => {
-                const warningId = warning.id || 'warning-dismissed-' + Date.now();
-                return `
-                <div class="ai-analysis-detail-item dismissed">
-                    <div class="ai-analysis-detail-header">
-                        <div class="ai-analysis-detail-category">${escapeHtml(warning.category || 'Warning')}</div>
-                        <button type="button" class="ai-analysis-restore-btn" data-id="${warningId}" data-type="warning" title="Restore this warning" onclick="event.stopPropagation(); restoreAIIssue('${warningId}'); return false;">
-                            <i class="fa fa-undo"></i>
-                        </button>
-                    </div>
-                    <div class="ai-analysis-detail-message">${escapeHtml(warning.message || '')}</div>
-                </div>
-            `;
-            })
-        ].join('');
-
-        const accordionItem = createAccordionGroup(
-            'dismissed',
-            'dismissed',
-            'fl-eye-slash',
-            `Dismissed Items (${dismissedErrors.length + dismissedWarnings.length})`,
-            dismissedContent
-        );
-        $accordionList.append(accordionItem);
-    }
-
-    // If no items, show empty message
-    if (activeErrors.length === 0 && activeWarnings.length === 0 && recommendations.length === 0 && dismissedErrors.length === 0 && dismissedWarnings.length === 0) {
-        $accordionList.append('<div class="ai-analysis-empty">No analysis results available.</div>');
-    }
-
-    // Update tab badge with total count
-    const totalIssues = activeWarnings.length + activeErrors.length + recommendations.length;
-    $('#ai-analysis-tab').html(`<i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(${totalIssues})`);
-
-    // Remove all previous event handlers from accordion list
-    $accordionList.off('click');
-
-    // Use event delegation for dismiss buttons (highest priority)
-    $accordionList.on('click', '.ai-analysis-dismiss-btn', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        const issueId = $(this).data('id');
-        dismissAIIssue(issueId);
-        return false;
-    });
-
-    // Use event delegation for restore buttons (highest priority)
-    $accordionList.on('click', '.ai-analysis-restore-btn', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        const issueId = $(this).data('id');
-        restoreAIIssue(issueId);
-        return false;
-    });
-
-    // Add click event listener for accordion headers - check if target is not a button
-    $accordionList.on('click', '.ai-analysis-accordion-header', function(e) {
-        // Don't toggle if clicking on buttons or their children
-        if ($(e.target).closest('.ai-analysis-dismiss-btn, .ai-analysis-restore-btn').length === 0) {
-            toggleAccordionItem($(this));
-        }
-    });
-}
-
-function createAccordionGroup(id, type, iconClass, title, content) {
-    return `
-        <div class="ai-analysis-accordion-item">
-            <div class="ai-analysis-accordion-header ${type}" data-target="${id}">
-                <span class="ai-analysis-accordion-arrow"></span>
-                <i class="ai-analysis-accordion-icon fl ${iconClass}"></i>
-                <span class="ai-analysis-accordion-title">${title}</span>
-            </div>
-            <div class="ai-analysis-accordion-body ${type}" id="${id}">
-                ${content}
-            </div>
-        </div>
-    `;
-}
-
-window.dismissAIIssue = function(issueId) {
-    const applicationId = $('#DetailsViewApplicationId').val();
-
-    unity.grantManager.grantApplications.grantApplication
-        .dismissAIIssue(applicationId, issueId)
-        .then(function(updatedAnalysis) {
-            // Reload the AI analysis section with updated data
-            loadAIAnalysis();
-        })
-        .catch(function(error) {
-            abp.message.error('Failed to dismiss the issue. Please try again.');
-        });
-}
-
-window.restoreAIIssue = function(issueId) {
-    const applicationId = $('#DetailsViewApplicationId').val();
-
-    unity.grantManager.grantApplications.grantApplication
-        .restoreAIIssue(applicationId, issueId)
-        .then(function(updatedAnalysis) {
-            // Reload the AI analysis section with updated data
-            loadAIAnalysis();
-        })
-        .catch(function(error) {
-            abp.message.error('Failed to restore the issue. Please try again.');
-        });
-}
-
-function toggleAccordionItem($header) {
-    const targetId = $header.attr('data-target');
-    const $body = $('#' + targetId);
-
-    // Toggle active class on header
-    $header.toggleClass('active');
-
-    // Toggle body visibility
-    $body.slideToggle(300);
-}
-
-function renderDemoAIAnalysis() {
-    console.log('Using demo AI analysis data');
-
-    // Demo data
-    const demoData = {
-        errors: [
-            {
-                category: "Missing Required Documentation",
-                message: "The application is missing the required financial statements for the last fiscal year. This is a mandatory requirement for grant eligibility."
-            },
-            {
-                category: "Budget Calculation Error",
-                message: "The total project budget does not match the sum of individual line items. There is a discrepancy of $15,000 that needs to be resolved."
-            }
-        ],
-        warnings: [
-            {
-                category: "Incomplete Project Timeline",
-                message: "The project timeline section is missing specific milestone dates. While not mandatory, providing detailed timelines strengthens the application."
-            },
-            {
-                category: "Limited Partnership Details",
-                message: "Partnership letters are provided but lack specific commitment amounts or resource contributions from partners."
-            },
-            {
-                category: "Vague Impact Metrics",
-                message: "The expected outcomes section lacks specific, measurable impact metrics. Consider adding quantifiable targets and KPIs."
-            }
-        ],
-        recommendations: []
-    };
-
-    renderRealAIAnalysis(demoData);
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }

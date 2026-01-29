@@ -266,7 +266,10 @@ const listColumns = getColumns();
             defaultVisibleColumns,
             listColumns,
             maxRowsPerPage: 10,            
-            defaultSortColumn: 4,
+            defaultSortColumn: {
+                name: 'submissionDate',
+                dir: 'desc'
+            },
             dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
             data: function () {
                 return {

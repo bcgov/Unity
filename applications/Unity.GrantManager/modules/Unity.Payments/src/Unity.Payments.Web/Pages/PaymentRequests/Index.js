@@ -151,7 +151,10 @@ $(function () {
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 13,
+        defaultSortColumn: {
+            name: 'requestedOn',
+            dir: 'desc'
+        },
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
         data: {},
         responseCallback,
@@ -713,10 +716,6 @@ $(function () {
             locale: abp.localization.currentCulture.name,
         }).toUTC().toLocaleString() : null;
     }
-
-    /* the resizer needs looking at again after ux2 refactor 
-     window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
-    */
 
     $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();

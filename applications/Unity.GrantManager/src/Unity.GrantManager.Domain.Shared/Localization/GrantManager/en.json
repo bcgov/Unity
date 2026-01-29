@@ -149,6 +149,11 @@
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
     "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
     "Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval": "Bulk Application Approval",
+    "Permission:GrantApplicationManagement.AIReporting.Default": "AI Reporting",
+    "Permission:AI": "AI",
+    "Permission:AI.Reporting": "AI Reporting",
+    "Permission:AI.ApplicationAnalysis": "AI Application Analysis",
+    "Permission:AI.AttachmentSummary": "AI Attachment Summary",
 
     "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",

@@ -15,6 +15,7 @@ using Unity.Flex.EntityFrameworkCore;
 using Unity.Notifications.EntityFrameworkCore;
 using Unity.Reporting.EntityFrameworkCore;
 using Unity.GrantManager.GlobalTag;
+using Unity.GrantManager.Contacts;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -43,6 +44,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicationContact> ApplicationContacts { get; set; }
         public DbSet<ApplicationLink> ApplicationLinks { get; set; }
         public DbSet<Tag> Tags { get; set; }
+        public DbSet<Contact> Contacts { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -176,8 +178,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAgents",
                     GrantManagerConsts.DbSchema);
 
-                b.ConfigureByConvention(); //auto configure for the base class props                             
-                b.HasOne<Person>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired(false);
+                b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
@@ -310,7 +311,23 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention();
 
-               
+
+            });
+
+            modelBuilder.Entity<Contact>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Contacts",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+
+                b.Property(x => x.Name).IsRequired().HasMaxLength(255);
+                b.Property(x => x.Email).HasMaxLength(255);
+                b.Property(x => x.Title).HasMaxLength(255);
+                b.Property(x => x.HomePhoneNumber).HasMaxLength(50);
+                b.Property(x => x.MobilePhoneNumber).HasMaxLength(50);
+                b.Property(x => x.WorkPhoneNumber).HasMaxLength(50);
+                b.Property(x => x.WorkPhoneExtension).HasMaxLength(50);
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();

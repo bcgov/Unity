@@ -816,9 +816,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<string>("ElectoralDistrict")
-                        .HasColumnType("text");
-
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1090,8 +1087,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationId")
                         .IsUnique();
-
-                    b.HasIndex("OidcSubUser");
 
                     b.ToTable("ApplicantAgents", (string)null);
                 });
@@ -1452,7 +1447,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("ChefsFileId")
                         .HasColumnType("text");
 
-                    b.Property<string>("ChefsSumbissionId")
+                    b.Property<string>("ChefsSubmissionId")
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -2293,6 +2288,87 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("AssessmentComments", (string)null);
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Contacts.Contact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("HomePhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("MobilePhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("RelatedEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RelatedEntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("WorkPhoneExtension")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("WorkPhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Contacts", (string)null);
+                });
+
             modelBuilder.Entity("Unity.GrantManager.GlobalTag.Tag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2604,6 +2680,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("CC")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ChesHttpStatusCode")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("ChesMsgId")
@@ -4024,11 +4103,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Applications.Application", "Application")
                         .WithOne("ApplicantAgent")
                         .HasForeignKey("Unity.GrantManager.Applications.ApplicantAgent", "ApplicationId");
-
-                    b.HasOne("Unity.GrantManager.Identity.Person", null)
-                        .WithMany()
-                        .HasForeignKey("OidcSubUser")
-                        .HasPrincipalKey("OidcSub");
 
                     b.Navigation("Application");
                 });

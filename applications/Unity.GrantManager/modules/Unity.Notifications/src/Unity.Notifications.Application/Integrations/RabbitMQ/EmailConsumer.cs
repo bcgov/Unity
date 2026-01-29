@@ -185,6 +185,8 @@ public class EmailConsumer(
             Body = response.Content != null ? response.Content.ReadAsStringAsync().Result : null
         });
 
+        log.ChesHttpStatusCode = response.StatusCode.ToString("D");
+
         log.ChesStatus = response.StatusCode.ToString();
 
         log.Status = response.IsSuccessStatusCode
