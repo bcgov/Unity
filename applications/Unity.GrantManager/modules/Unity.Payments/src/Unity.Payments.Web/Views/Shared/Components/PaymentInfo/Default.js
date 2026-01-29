@@ -198,7 +198,10 @@
         defaultVisibleColumns,
         listColumns,
         maxRowsPerPage: 10,
-        defaultSortColumn: 3,
+        defaultSortColumn: {
+            name: 'requestedOn',
+            dir: 'desc'
+        },
         dataEndpoint:
             unity.payments.paymentRequests.paymentRequest
                 .getListByApplicationId,
