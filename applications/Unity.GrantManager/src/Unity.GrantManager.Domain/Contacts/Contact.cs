@@ -9,6 +9,7 @@ public class Contact : AuditedAggregateRoot<Guid>, IMultiTenant
     public bool IsPrimary { get; set; } = false;
     public string RelatedEntityType { get; set; } = string.Empty;
     public Guid RelatedEntityId { get; set; }
+    public string? RelatedEntitySubType { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Title { get; set; }
     public string? Email { get; set; }
