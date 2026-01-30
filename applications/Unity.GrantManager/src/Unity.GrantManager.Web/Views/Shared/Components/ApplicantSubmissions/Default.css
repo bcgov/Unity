@@ -1,0 +1,237 @@
+/* ApplicantSubmissions Widget Styles */
+
+.applicant-submissions-widget {
+    background-color: #fff;
+    border-radius: 4px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.submissions-action-bar {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+
+.submissions-action-bar .tbl-search {
+    min-width: 250px;
+    border-radius: 50rem !important;
+}
+
+#openSubmissionBtn {
+    min-width: 80px;
+}
+
+.submissions-table-container {
+    margin-top: 1rem;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+#ApplicantSubmissionsTable {
+    font-size: 0.875rem;
+    width: 100% !important;
+}
+
+#ApplicantSubmissionsTable thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 0.75rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+#ApplicantSubmissionsTable tbody td {
+    padding: 0.5rem 0.75rem;
+    vertical-align: middle;
+}
+
+#ApplicantSubmissionsTable tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+#ApplicantSubmissionsTable tbody tr.selected {
+    background-color: #e7f3ff !important;
+}
+
+#openSubmissionBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .submissions-action-bar {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    .submissions-action-bar > * {
+        max-width: 100% !important;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* DataTables filter row styles */
+.submissions-table-container .filter-row input {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Empty state */
+#ApplicantSubmissionsTable tbody td.dataTables_empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+/* Currency display */
+.currency-display {
+    text-align: right;
+}
+
+/* Multi-line cell styling */
+.multi-line {
+    white-space: normal !important;
+    word-wrap: break-word;
+}
+
+/* Override tab-content scrolling for Submissions tab - no scrolling */
+#detailsTab .tab-content:has(#SubmissionsWidget) {
+    overflow: hidden !important;
+}
+
+/* Make Submissions widget fill available space */
+#SubmissionsWidget {
+    padding: 0 !important;
+}
+
+/* Widget container - simple, no complex constraints */
+.applicant-submissions-widget {
+    padding: 1rem;
+}
+
+/* Table container - allow all content to be visible */
+.submissions-table-container {
+    overflow: visible !important;
+}
+
+/* DataTable wrapper - allow all content to be visible */
+#ApplicantSubmissionsTable_wrapper {
+    overflow: visible !important;
+}
+
+/* DataTable container - allow all content to be visible */
+.applicant-submissions-widget .dt-container {
+    overflow: visible !important;
+}
+
+/* Scroll body - dynamic height based on viewport that adapts to browser size */
+.applicant-submissions-widget .dt-scroll-body {
+    max-height: calc(100vh - 480px) !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+}
+
+/**CSS for dataTable stateRestore - Save View**/
+.applicant-submissions-widget .dtsr-background {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.cstm-save-view .dt-button-collection {
+    width: 230px;
+}
+
+.cstm-save-view .dt-button-split a {
+    line-height: 35px;
+}
+
+.cstm-save-view .dt-button-collection .dt-button-active.dt-button-split > *:first-child:after {
+    margin-top: -18px;
+}
+
+.applicant-submissions-widget .dtsr-creation .dtsr-creation-form .dtsr-form-row:nth-of-type(2) {
+    display: none;
+}
+
+.applicant-submissions-widget .dtsr-creation-title,
+.applicant-submissions-widget .dtsr-confirmation-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.applicant-submissions-widget .dtsr-confirmation .dtsr-creation-form .dtsr-form-row label,
+.applicant-submissions-widget .dtsr-creation .dtsr-creation-form .dtsr-form-row label {
+    width: 100%;
+    text-align: left;
+}
+
+.applicant-submissions-widget .dtsr-confirmation .dtsr-creation-form .dtsr-form-row .dtsr-input,
+.applicant-submissions-widget .dtsr-creation .dtsr-creation-form .dtsr-form-row .dtsr-input,
+.applicant-submissions-widget .dtsr-creation-form input[type=text] {
+    width: 100% !important;
+}
+
+.applicant-submissions-widget .dtsr-confirmation input[type=text],
+.applicant-submissions-widget .dtsr-creation input[type=text] {
+    padding: 0.375rem 0.75rem;
+    width: 100%;
+}
+
+.applicant-submissions-widget .dtsr-name-label {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.applicant-submissions-widget .dtsr-creation input,
+.applicant-submissions-widget .dtsr-rename-modal input {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: 4px !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+}
+
+.applicant-submissions-widget .dtsr-confirmation .dtsr-creation-form .dtsr-form-row,
+.applicant-submissions-widget .dtsr-creation .dtsr-creation-form .dtsr-form-row {
+    display: inherit;
+}
+
+.applicant-submissions-widget div.dtsr-confirmation div.dtsr-modal-foot,
+.applicant-submissions-widget div.dtsr-confirmation div.dtsr-confirmation-buttons,
+.applicant-submissions-widget div.dtsr-creation div.dtsr-modal-foot,
+.applicant-submissions-widget div.dtsr-creation div.dtsr-confirmation-buttons {
+    text-align: left;
+}
+
+.applicant-submissions-widget div.dtsr-confirmation button,
+.applicant-submissions-widget div.dtsr-creation button,
+.applicant-submissions-widget div.dtsr-confirmation-buttons button {
+    color: var(--bc-colors-white-primary-500);
+    background-color: var(--bc-colors-blue-primary);
+    --bs-btn-active-color: var(--bc-colors-blue-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-white-primary);
+    --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
+    --bs-btn-disabled-bg: var(--bc-colors-white-primary-500);
+}
+
+.applicant-submissions-widget .dtsr-confirmation button,
+.applicant-submissions-widget .dtsr-creation button:hover,
+.applicant-submissions-widget .dtsr-confirmation-buttons button:hover {
+    background-color: var(--bc-colors-primary-hover);
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
+    border-color: var(--bc-colors-blue-primary);
+}
+
+.applicant-submissions-widget .dt-button-split {
+    border-radius: inherit;
+}
+
+.dt-button-collection.shift-left {
+    left: unset !important;
+    right: 0px !important;
+}
+/**end**/
