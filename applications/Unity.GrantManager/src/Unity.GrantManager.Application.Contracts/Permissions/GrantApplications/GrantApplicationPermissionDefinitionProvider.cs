@@ -117,17 +117,17 @@ namespace Unity.GrantManager.Permissions.GrantApplications
                 L("Permission:AI"));
 
             aiPermissionsGroup.AddPermission(
-                GrantApplicationPermissions.AI.Reporting.Default,
+                GrantApplicationPermissions.AI.Reporting.Permission,
                 L("Permission:AI.Reporting"))
                 .RequireFeatures("Unity.AIReporting");
 
             aiPermissionsGroup.AddPermission(
-                GrantApplicationPermissions.AI.ApplicationAnalysis.Default,
+                GrantApplicationPermissions.AI.ApplicationAnalysis.Permission,
                 L("Permission:AI.ApplicationAnalysis"))
                 .RequireFeatures("Unity.AI.ApplicationAnalysis");
 
             aiPermissionsGroup.AddPermission(
-                GrantApplicationPermissions.AI.AttachmentSummary.Default,
+                GrantApplicationPermissions.AI.AttachmentSummary.Permission,
                 L("Permission:AI.AttachmentSummary"))
                 .RequireFeatures("Unity.AI.AttachmentSummaries");
         }

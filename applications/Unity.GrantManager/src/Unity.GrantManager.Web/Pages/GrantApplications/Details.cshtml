@@ -31,7 +31,7 @@
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
-        && await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.AI.ApplicationAnalysis.Default);
+        && await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.AI.ApplicationAnalysis.Permission);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles
