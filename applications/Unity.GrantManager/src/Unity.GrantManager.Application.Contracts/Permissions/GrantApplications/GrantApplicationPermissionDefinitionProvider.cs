@@ -113,7 +113,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             // AI Permission Group
             var aiPermissionsGroup = context.AddGroup(
-                GrantApplicationPermissions.AI.GroupName,
+                GrantApplicationPermissions.AI.Default,
                 L("Permission:AI"));
 
             aiPermissionsGroup.AddPermission(
