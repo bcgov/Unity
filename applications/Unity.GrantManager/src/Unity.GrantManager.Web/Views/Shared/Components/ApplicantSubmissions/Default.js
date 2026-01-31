@@ -52,7 +52,11 @@ $(function () {
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
-            id: "btn-toggle-filter"
+            id: "btn-toggle-filter",
+            action: function (e, dt, node, config) { },
+            attr: {
+                id: 'btn-toggle-filter'
+            }
         },
         {
             extend: 'savedStates',
@@ -116,12 +120,6 @@ $(function () {
     const submissionsDataJson = $('#ApplicantSubmissions_Data').val();
     const submissionsData = submissionsDataJson ? JSON.parse(submissionsDataJson) : [];
 
-    // Add rowCount for checkbox IDs
-    const formattedData = submissionsData.map((item, index) => ({
-        ...item,
-        rowCount: index
-    }));
-
     // Get all columns
     const listColumns = getColumns();
 
@@ -148,7 +146,7 @@ $(function () {
     // Must return a jQuery Deferred object (not native Promise) for ABP compatibility
     const mockDataService = {
         getList: function() {
-            var deferred = $.Deferred();
+            let deferred = $.Deferred();
             deferred.resolve({
                 items: submissionsData,
                 totalCount: submissionsData.length

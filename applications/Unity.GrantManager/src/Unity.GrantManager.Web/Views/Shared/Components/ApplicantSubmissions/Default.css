@@ -6,12 +6,21 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    padding: 1rem;
 }
 
 .submissions-action-bar {
     padding-bottom: 0.75rem;
     border-bottom: 1px solid #dee2e6;
     flex-shrink: 0;
+}
+
+.submissions-action-buttons {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
 }
 
 .submissions-action-bar .tbl-search {
@@ -26,8 +35,8 @@
 .submissions-table-container {
     margin-top: 1rem;
     flex: 1;
-    overflow: hidden;
     position: relative;
+    overflow: visible !important;
 }
 
 #ApplicantSubmissionsTable {
@@ -107,16 +116,6 @@
 /* Make Submissions widget fill available space */
 #SubmissionsWidget {
     padding: 0 !important;
-}
-
-/* Widget container - simple, no complex constraints */
-.applicant-submissions-widget {
-    padding: 1rem;
-}
-
-/* Table container - allow all content to be visible */
-.submissions-table-container {
-    overflow: visible !important;
 }
 
 /* DataTable wrapper - allow all content to be visible */

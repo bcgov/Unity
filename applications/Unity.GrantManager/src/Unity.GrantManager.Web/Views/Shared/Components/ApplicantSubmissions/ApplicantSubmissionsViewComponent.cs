@@ -32,13 +32,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
         {
-            // Handle empty GUID
             if (applicantId == Guid.Empty)
             {
                 return View(new ApplicantSubmissionsViewModel
                 {
                     ApplicantId = applicantId,
-                    Submissions = new System.Collections.Generic.List<GrantApplicationDto>()
+                    Submissions = []
                 });
             }
 
@@ -66,13 +65,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
                 dto.ContactCellPhone = app.ApplicantAgent?.Phone2;
 
                 // Map tags and assignees
-                if (app.ApplicationTags != null && app.ApplicationTags.Any())
+                if (app.ApplicationTags != null && app.ApplicationTags.Count != 0)
                 {
-                    dto.ApplicationTag = _objectMapper.Map<System.Collections.Generic.List<ApplicationTags>, System.Collections.Generic.List<ApplicationTagsDto>>(app.ApplicationTags.ToList());
+                    dto.ApplicationTag = _objectMapper.Map<System.Collections.Generic.List<ApplicationTags>, System.Collections.Generic.List<ApplicationTagsDto>>([.. app.ApplicationTags]);
                 }
                 else
                 {
-                    dto.ApplicationTag = new System.Collections.Generic.List<ApplicationTagsDto>();
+                    dto.ApplicationTag = [];
                 }
 
                 // Map owner
