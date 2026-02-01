@@ -5,9 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Payments;
+using Unity.Payments.Enums;
+using Unity.Payments.PaymentRequests;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.Features;
 using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
@@ -21,13 +25,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
     {
         private readonly IApplicationRepository _applicationRepository;
         private readonly IObjectMapper _objectMapper;
+        private readonly IFeatureChecker _featureChecker;
+        private readonly IPaymentRequestAppService _paymentRequestService;
 
         public ApplicantSubmissionsViewComponent(
             IApplicationRepository applicationRepository,
-            IObjectMapper objectMapper)
+            IObjectMapper objectMapper,
+            IFeatureChecker featureChecker,
+            IPaymentRequestAppService paymentRequestService)
         {
             _applicationRepository = applicationRepository;
             _objectMapper = objectMapper;
+            _featureChecker = featureChecker;
+            _paymentRequestService = paymentRequestService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
@@ -44,6 +54,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
             // Query applications
             var applications = await _applicationRepository.GetByApplicantIdAsync(applicantId);
 
+            var applicationIds = applications.Select(app => app.Id).ToList();
+            var paymentsFeatureEnabled = await _featureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+
+            Dictionary<Guid, decimal> paymentRequestsByApplication = [];
+            if (paymentsFeatureEnabled && applicationIds.Count > 0)
+            {
+                var paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+                paymentRequestsByApplication = paymentRequests
+                    .Where(pr => pr.Status == PaymentRequestStatus.Submitted)
+                    .GroupBy(pr => pr.CorrelationId)
+                    .ToDictionary(g => g.Key, g => g.Sum(pr => pr.Amount));
+            }
+
             // Map to DTOs (similar to GrantApplicationAppService.GetListAsync)
             var submissionDtos = applications.Select(app =>
             {
@@ -52,6 +75,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
                 // Map related entities
                 dto.Status = app.ApplicationStatus?.InternalStatus ?? string.Empty;
                 dto.Category = app.ApplicationForm?.Category ?? string.Empty;
+                dto.SubStatusDisplayValue = MapSubstatusDisplayValue(dto.SubStatus);
+                dto.DeclineRational = MapDeclineRationalDisplayValue(dto.DeclineRational);
                 dto.Applicant = app.Applicant != null
                     ? _objectMapper.Map<Applicant, GrantApplicationApplicantDto>(app.Applicant)
                     : new GrantApplicationApplicantDto();
@@ -106,6 +131,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
                 }
                 dto.Assignees = assigneeDtos;
 
+                if (paymentsFeatureEnabled && paymentRequestsByApplication.Count > 0)
+                {
+                    paymentRequestsByApplication.TryGetValue(app.Id, out var totalPaid);
+                    dto.PaymentInfo = new PaymentInfoDto
+                    {
+                        ApprovedAmount = app.ApprovedAmount,
+                        TotalPaid = totalPaid
+                    };
+                }
+
                 return dto;
             }).ToList();
 
@@ -116,6 +151,22 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
             };
 
             return View(viewModel);
+        }
+
+        private static string MapSubstatusDisplayValue(string subStatus)
+        {
+            if (string.IsNullOrWhiteSpace(subStatus)) return string.Empty;
+            return AssessmentResultsOptionsList.SubStatusActionList.TryGetValue(subStatus, out var value)
+                ? value ?? string.Empty
+                : string.Empty;
+        }
+
+        private static string MapDeclineRationalDisplayValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+            return AssessmentResultsOptionsList.DeclineRationalActionList.TryGetValue(value, out var displayValue)
+                ? displayValue ?? string.Empty
+                : string.Empty;
         }
     }
 

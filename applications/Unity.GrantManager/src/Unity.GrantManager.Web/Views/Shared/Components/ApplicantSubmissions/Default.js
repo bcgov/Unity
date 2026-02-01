@@ -205,6 +205,10 @@ $(function () {
     // Initialize button state
     updateOpenButtonState();
 
+    // For savedStates
+    $('.grp-savedStates').text('Save View');
+    $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
     // Column getter functions (from Application List)
     function getColumns() {
         let columnIndex = 0;
