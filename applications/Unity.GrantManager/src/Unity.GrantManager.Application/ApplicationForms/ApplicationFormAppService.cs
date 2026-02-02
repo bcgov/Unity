@@ -257,7 +257,6 @@ public class ApplicationFormAppService
         var query =
             from form in formsQueryable
             join version in versionsQueryable on form.Id equals version.ApplicationFormId
-            where version.Published
             select new { form, version };
 
         if (input.ExcludeFormId.HasValue)
