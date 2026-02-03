@@ -380,7 +380,8 @@
          */
         clearFilters: function () {
             let dt = this.s.dt;
-            let externalSearchId = dt.init().externalSearchInputId;
+            let dtInit = dt.init();
+            let externalSearchId = dtInit.externalSearchInputId;
 
             // Clear external search
             if (externalSearchId) {
@@ -394,7 +395,8 @@
             dt.search('').columns().search('').draw();
 
             // Clear order
-            dt.order([]).draw();
+            let initialSortOrder = (dtInit && dtInit.order) ? dtInit.order : [];
+            dt.order(initialSortOrder);
 
             // Reload data
             dt.ajax.reload();
