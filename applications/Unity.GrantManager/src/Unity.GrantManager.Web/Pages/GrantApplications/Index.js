@@ -60,6 +60,9 @@
                     text: "Reset to Default View",
                     action: function (e, dt, node, config)
                     {
+                        let dtInit = dt.init();
+                        let initialSortOrder = (dtInit && dtInit.order) ? dtInit.order : [];
+
                         dt.columns().visible(false);
 
                         // List of all columns not including default columns
@@ -87,7 +90,7 @@
                         $('#search, .custom-filter-input').val('');
                         dt.columns().search('');
                         dt.search('');
-                        dt.order([4, 'desc']).draw();
+                        dt.order(initialSortOrder).draw();
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
