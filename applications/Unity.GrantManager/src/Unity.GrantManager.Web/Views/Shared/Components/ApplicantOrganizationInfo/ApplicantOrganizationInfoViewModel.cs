@@ -15,6 +15,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
         public List<SelectListItem> OrganizationTypeList { get; set; } = [];
         public List<SelectListItem> FiscalDayList { get; set; } = [];
         public List<SelectListItem> FiscalMonthList { get; set; } = [];
+        public List<SelectListItem> OrganizationOperationLengthList { get; set; } = [];
         public List<SelectListItem> SectorList { get; set; } = [];
         public List<SelectListItem> SubSectorList { get; set; } = [];        
         public List<SectorDto> Sectors { get; set; } = [];
@@ -68,6 +69,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
 
         [Display(Name = "Fiscal Year End Day")]
         public string FiscalDay { get; set; } = string.Empty;
+
+        [Display(Name = "Organization Operation Length")]
+        public string OrganizationOperationLength { get; set; } = string.Empty;
 
         [Display(Name = "Red-Stop")]
         public bool RedStop { get; set; } = false;

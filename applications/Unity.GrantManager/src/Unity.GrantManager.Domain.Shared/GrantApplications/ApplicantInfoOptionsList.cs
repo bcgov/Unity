@@ -65,4 +65,11 @@ public static class ApplicantInfoOptionsList
           new KeyValuePair<string, string>("Dec", "December"),
     });
 
+    public static ImmutableDictionary<string, string> OrganizationOperationLengthList =>
+    ImmutableDictionary.CreateRange(
+    [
+          new KeyValuePair<string, string>("1 year or more", "1 year or more"),
+          new KeyValuePair<string, string>("Less than 12 months", "Less than 12 months"),
+    ]);
+
 }
