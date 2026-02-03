@@ -393,8 +393,8 @@
             // Clear DataTable searches
             dt.search('').columns().search('').draw();
 
-            // Clear order
-            dt.order([]).draw();
+            let initialSortOrder = dt.context?.[0]?.oInit?.order ?? [];
+            dt.order(initialSortOrder).draw();
 
             // Reload data
             dt.ajax.reload();
