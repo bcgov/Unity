@@ -61,7 +61,7 @@
                     action: function (e, dt, node, config)
                     {
                         let dtInit = dt.init();
-                        let initialSortOrder = (dtInit && dtInit.order) ? dtInit.order : [];
+                        let initialSortOrder = dtInit?.order ?? [];
 
                         dt.columns().visible(false);
 
