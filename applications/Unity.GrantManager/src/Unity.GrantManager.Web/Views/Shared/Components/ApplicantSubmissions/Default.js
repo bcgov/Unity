@@ -924,7 +924,7 @@ $(function () {
 
     function getUnityApplicationIdColumn(columnIndex) {
         return {
-            title: 'Unity Application Id',
+            title: 'Unity Application ID',
             name: 'unityApplicationId',
             data: 'unityApplicationId',
             className: 'data-table-header',
