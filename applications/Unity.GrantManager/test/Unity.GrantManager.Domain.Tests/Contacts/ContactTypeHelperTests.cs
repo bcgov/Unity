@@ -1,4 +1,3 @@
-using System.Linq;
 using Unity.GrantManager.Contacts;
 using Xunit;
 
@@ -40,7 +39,7 @@ namespace Unity.GrantManager.Domain.Tests.Contacts
             var result = ContactTypeHelper.GetApplicantContactTypes();
 
             // Assert
-            var signingAuthority = result.FirstOrDefault(x => x.Value == "SIGNING_AUTHORITY");
+            var signingAuthority = result.Find(x => x.Value == "SIGNING_AUTHORITY");
             Assert.NotNull(signingAuthority);
             Assert.Equal("Signing Authority", signingAuthority.Display);
         }
@@ -52,7 +51,7 @@ namespace Unity.GrantManager.Domain.Tests.Contacts
             var result = ContactTypeHelper.GetApplicantContactTypes();
 
             // Assert
-            var contactPerson = result.FirstOrDefault(x => x.Value == "CONTACT_PERSON");
+            var contactPerson = result.Find(x => x.Value == "CONTACT_PERSON");
             Assert.NotNull(contactPerson);
             Assert.Equal("Contact Person", contactPerson.Display);
         }
