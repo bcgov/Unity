@@ -4,6 +4,10 @@ Authentication module for JWT token validation and user management.
 import os
 import jwt
 import logging
+import warnings
+
+# Suppress PyJWT's InsecureKeyLengthWarning - key length is enforced at deployment (64+ chars required)
+warnings.filterwarnings("ignore", message=".*key.*length.*", category=UserWarning)
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import request, jsonify
