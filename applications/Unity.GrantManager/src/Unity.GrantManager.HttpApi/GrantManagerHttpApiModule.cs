@@ -47,7 +47,6 @@ public class GrantManagerHttpApiModule : AbpModule
 
     private static void ConfigureFilters(IServiceCollection services)
     {
-        services.AddScoped<BasicAuthenticationAuthorizationFilter>();
-        services.AddScoped<OAuth2ClientCredentialsAuthorizationFilter>();
+        services.AddScoped<ApiKeyAuthorizationFilter>();
     }
 }

@@ -7,17 +7,26 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Controllers
 {
-
     [ApiController]
-    [Route("api/portal/applicant")]
     [AllowAnonymous]
-    public class ApplicantProfileController : AbpControllerBase
+    [ServiceFilter(typeof(ApiKeyAuthorizationFilter))]
+    public class ApplicantProfileController(IApplicantProfileAppService applicantProfileAppService) : AbpControllerBase
     {
+
         [HttpGet]
-        [ServiceFilter(typeof(BasicAuthenticationAuthorizationFilter))]
-        public async Task<IActionResult> GetApplicantProfileAsync([FromQuery] ApplicantProfileRequest applicantProfileRequest)
+        [Route("api/profile")]
+        public async Task<IActionResult> GetApplicantProfileAsync([FromQuery] TenantedApplicantProfileRequest applicantProfileRequest)
         {
-            return Ok();
+            var profile = await applicantProfileAppService.GetApplicantProfileAsync(applicantProfileRequest);
+            return Ok(profile);
+        }
+
+        [HttpGet]
+        [Route("api/tenants")]
+        public async Task<IActionResult> GetApplicantProfileTenantsAsync([FromQuery] ApplicantProfileRequest applicantProfileRequest)
+        {
+            var tenants = await applicantProfileAppService.GetApplicantTenantsAsync(applicantProfileRequest);
+            return Ok(tenants);
         }
     }
 }
