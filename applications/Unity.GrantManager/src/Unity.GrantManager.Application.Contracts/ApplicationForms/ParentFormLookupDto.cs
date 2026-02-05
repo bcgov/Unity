@@ -20,8 +20,6 @@ public class ParentFormLookupRequestDto : PagedAndSortedResultRequestDto
 public class ParentFormLookupDto
 {
     public Guid ApplicationFormId { get; set; }
-    public Guid ApplicationFormVersionId { get; set; }
     public string ApplicationFormName { get; set; } = string.Empty;
-    public int? Version { get; set; }
 }
 

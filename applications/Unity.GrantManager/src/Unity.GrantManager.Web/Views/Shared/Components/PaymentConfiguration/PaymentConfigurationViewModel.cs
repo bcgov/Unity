@@ -34,7 +34,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
         public FormHierarchyType? FormHierarchy { get; set; }
 
         public Guid? ParentFormId { get; set; }
-        public Guid? ParentFormVersionId { get; set; }
         public string ParentFormDisplayName { get; set; } = string.Empty;
 
         public decimal? PaymentApprovalThreshold { get; set; }

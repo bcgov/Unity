@@ -43,18 +43,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
             model.AccountCode = applicationForm?.AccountCodingId;
             model.FormHierarchy = applicationForm?.FormHierarchy;
             model.ParentFormId = applicationForm?.ParentFormId;
-            model.ParentFormVersionId = applicationForm?.ParentFormVersionId;
             model.DefaultPaymentGroup = applicationForm?.DefaultPaymentGroup ?? (int)PaymentGroup.EFT;
 
             // Load parent form display name if parent form is selected
-            if (model.ParentFormId.HasValue && model.ParentFormVersionId.HasValue)
+            if (model.ParentFormId.HasValue)
             {
                 var parentForm = await applicationFormRepository.FindAsync(model.ParentFormId.Value);
-                var parentFormVersion = await applicationFormVersionRepository.FindAsync(model.ParentFormVersionId.Value);
 
-                if (parentForm != null && parentFormVersion != null)
+                if (parentForm != null)
                 {
-                    model.ParentFormDisplayName = $"{parentForm.ApplicationFormName} V{parentFormVersion.Version}.0";
+                    model.ParentFormDisplayName = parentForm.ApplicationFormName ?? string.Empty;
                 }
             }
 

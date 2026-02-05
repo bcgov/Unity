@@ -22,8 +22,7 @@
         formHierarchySection: $('#form-hierarchy-section'),
         formHierarchy: $('#FormHierarchy'),
         parentFormColumn: $('#parent-form-column'),
-        parentFormSelect: $('#ParentForm'),
-        parentFormId: $('#ParentFormId')
+        parentFormSelect: $('#ParentForm')
     };
 
     init();
@@ -65,7 +64,7 @@
         UIElements.parentFormSelect.select2({
             width: '100%',
             allowClear: true,
-            placeholder: UIElements.parentFormSelect.data('placeholder') || 'Please choose...(Form Name V1.0)',
+            placeholder: UIElements.parentFormSelect.data('placeholder') || 'Please choose a parent form',
             minimumInputLength: 2,
             ajax: {
                 transport: function (params, success, failure) {
@@ -82,9 +81,8 @@
                     params.page = params.page || 1;
                     const items = (data.items || []).map(function (item) {
                         return {
-                            id: item.applicationFormVersionId,
-                            text: `${item.applicationFormName}${formatVersion(item.version)}`,
-                            parentFormId: item.applicationFormId
+                            id: item.applicationFormId,
+                            text: item.applicationFormName
                         };
                     });
 
@@ -99,29 +97,14 @@
         });
 
         UIElements.parentFormSelect.on('select2:select', function (e) {
-            const data = e.params?.data ?? {};
-            setParentFormId(data.parentFormId);
             enableSaveButton();
         });
 
         UIElements.parentFormSelect.on('select2:clear', function () {
-            setParentFormId('');
             enableSaveButton();
         });
 
         UIElements.parentFormSelect.on('change', enableSaveButton);
-
-        applyInitialParentFormSelection();
-    }
-
-    function applyInitialParentFormSelection() {
-        const selectedOption = UIElements.parentFormSelect.find('option:selected');
-        if (selectedOption.length) {
-            const parentIdFromOption = selectedOption.data('parentFormId');
-            if (parentIdFromOption) {
-                setParentFormId(parentIdFromOption);
-            }
-        }
     }
 
     function toggleFormHierarchySection() {
@@ -160,11 +143,6 @@
 
     function resetParentFormSelection() {
         UIElements.parentFormSelect.val(null).trigger('change');
-        setParentFormId('');
-    }
-
-    function setParentFormId(value) {
-        UIElements.parentFormId.val(value || '');
     }
 
     function preventDecimalKeyPress(e) {
@@ -202,13 +180,8 @@
         }
 
         if (hierarchyValue === String(FormHierarchyType.Child)) {
-            if (!UIElements.parentFormId.val()) {
-                abp.notify.error(l('GrantManager:ChildFormRequiresParentForm'));
-                return false;
-            }
-
             if (!UIElements.parentFormSelect.val()) {
-                abp.notify.error(l('GrantManager:ChildFormRequiresParentFormVersion'));
+                abp.notify.error(l('GrantManager:ChildFormRequiresParentForm'));
                 return false;
             }
         }
@@ -223,7 +196,7 @@
 
         const hierarchyValue = UIElements.formHierarchy.val();
         const formHierarchy = hierarchyValue ? parseInt(hierarchyValue, 10) : null;
-        const parentFormVersionId = UIElements.parentFormSelect.val();
+        const parentFormId = UIElements.parentFormSelect.val();
         const defaultPaymentGroupValue = UIElements.payable.is(':checked')
             ? (UIElements.defaultPaymentGroup.val() || '1')
             : null;
@@ -236,8 +209,7 @@
                 payable: UIElements.payable.is(':checked'),
                 paymentApprovalThreshold: UIElements.paymentApprovalThreshold.val() === '' ? null : UIElements.paymentApprovalThreshold.val(),
                 formHierarchy: Number.isNaN(formHierarchy) ? null : formHierarchy,
-                parentFormId: UIElements.parentFormId.val() || null,
-                parentFormVersionId: parentFormVersionId || null,
+                parentFormId: parentFormId || null,
                 defaultPaymentGroup: defaultPaymentGroupValue
             })
             .then(() => {
@@ -286,7 +258,4 @@
         }
     }
 
-    function formatVersion(version) {
-        return version ? ` V${version}.0` : '';
-    }
 });

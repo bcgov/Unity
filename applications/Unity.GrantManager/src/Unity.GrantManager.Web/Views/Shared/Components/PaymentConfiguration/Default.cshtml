@@ -14,7 +14,6 @@
 <abp-input asp-for="@Model.HasEditFormPaymentConfiguration" type="hidden" />
 
 <form id="PaymentThresholdForm" class="payment-configuration-container px-3 pb-2">
-    <input type="hidden" id="ParentFormId" value="@(Model.ParentFormId?.ToString() ?? string.Empty)" />
     <div class="payment-configuration-scroll flex-grow-1">
         <fieldset name="Unity_GrantManager_ApplicationForms_Mapping_PaymentConfiguration" 
             class="unity-zone" @(Model.HasEditFormPaymentConfiguration ? string.Empty : "disabled")>
@@ -105,11 +104,11 @@
                     </abp-column>
                     <abp-column size-lg="_6" size-sm="_12" class="px-1 @(showParentForm ? string.Empty : "d-none")" id="parent-form-column">
                         <label class="form-label text-nowrap" for="ParentForm">Parent Form</label>
-                        <select id="ParentForm" class="form-select" data-placeholder="Please choose...(Form Name V1.0)">
-                            <option value="">Please choose...(Form Name V1.0)</option>
-                            @if (Model.ParentFormVersionId.HasValue)
+                        <select id="ParentForm" class="form-select" data-placeholder="Please choose a parent form">
+                            <option value="">Please choose a parent form</option>
+                            @if (Model.ParentFormId.HasValue)
                             {
-                                <option value="@Model.ParentFormVersionId" selected data-parent-form-id="@Model.ParentFormId">@Model.ParentFormDisplayName</option>
+                                <option value="@Model.ParentFormId" selected>@Model.ParentFormDisplayName</option>
                             }
                         </select>
                     </abp-column>

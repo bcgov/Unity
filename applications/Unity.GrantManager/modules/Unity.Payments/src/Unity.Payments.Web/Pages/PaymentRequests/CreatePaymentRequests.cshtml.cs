@@ -276,9 +276,8 @@ namespace Unity.Payments.Web.Pages.Payments
                 return (errors, parentReferenceNo); // No validation needed
             }
 
-            // Check if ParentFormId and ParentFormVersionId are set
-            if (!applicationForm.ParentFormId.HasValue ||
-                !applicationForm.ParentFormVersionId.HasValue)
+            // Check if ParentFormId is set
+            if (!applicationForm.ParentFormId.HasValue)
             {
                 // Configuration issue - should not happen if validation works
                 return (errors, parentReferenceNo);
@@ -303,11 +302,10 @@ namespace Unity.Payments.Web.Pages.Payments
             var parentApplication = await applicationService.GetAsync(parentLink.ApplicationId);
             parentReferenceNo = parentApplication.ReferenceNo;
 
-            // Validate both ParentFormId and ParentFormVersionId
+            // Validate ParentFormId matches
             bool formIdMatches = parentFormDetails.ApplicationFormId == applicationForm.ParentFormId.Value;
-            bool versionIdMatches = parentFormDetails.ApplicationFormVersionId == applicationForm.ParentFormVersionId.Value;
 
-            if (!formIdMatches || !versionIdMatches)
+            if (!formIdMatches)
             {
                 errors.Add("The selected parent form in Payment Configuration does not match the application's linked parent. Please verify and try again.");
                 return (errors, parentReferenceNo);
