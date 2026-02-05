@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Controllers.Authentication;
@@ -7,8 +6,7 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Controllers
 {
-    [ApiController]
-    [AllowAnonymous]
+    [ApiController]    
     [Route("api/app/applicant-profiles")]
     [ServiceFilter(typeof(ApiKeyAuthorizationFilter))]
     public class ApplicantProfileController(IApplicantProfileAppService applicantProfileAppService) : AbpControllerBase

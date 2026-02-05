@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
-using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 
 namespace Unity.GrantManager.Controllers.Authentication
