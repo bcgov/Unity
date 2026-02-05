@@ -11,6 +11,6 @@ namespace Unity.GrantManager.Applicants
 
     public class TenantedApplicantProfileRequest : ApplicantProfileRequest
     {
-        public string TenantIdendifier { get; set; } = string.Empty;
+        public Guid TenantId { get; set; }
     }
 }

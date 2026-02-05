@@ -7,9 +7,9 @@ using Unity.GrantManager.ApplicationForms;
 
 namespace Unity.GrantManager.Controllers.Authentication
 {
-    public class ApiKeyAuthorizationFilter(IConfiguration configuration) : IAsyncAuthorizationFilter
+    public class ApiKeyAuthorizationFilter(IConfiguration configuration) : IAuthorizationFilter
     {
-        public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+        public void OnAuthorization(AuthorizationFilterContext context)
         {
             if (!context.HttpContext.Request.Headers.TryGetValue(AuthConstants.ApiKeyHeader, out var extractedApiKey))
             {

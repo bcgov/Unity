@@ -19,10 +19,6 @@ namespace Unity.GrantManager.Applicants
     {
         public async Task<ApplicantProfileDto> GetApplicantProfileAsync(ApplicantProfileRequest request)
         {
-            // TODO: Implement profile retrieval logic
-            // This should query the applicant information based on the Subject and Issuer
-            // and return the applicant's profile details
-
             return await Task.FromResult(new ApplicantProfileDto
             {
                 ProfileId = request.ProfileId,
