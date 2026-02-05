@@ -1,0 +1,41 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
+@model ApplicantSubmissionsViewModel
+
+@if (Model.ApplicantId == Guid.Empty)
+{
+    <div class="alert alert-warning">Applicant information not found.</div>
+}
+else
+{
+    <div class="applicant-submissions-widget">
+        <!-- Action Bar -->
+        <div class="submissions-action-bar mb-3 d-flex align-items-center gap-2">
+            <div class="flex-grow-1" style="max-width: 400px;">
+                <input type="search"
+                       id="submissions-search"
+                       placeholder="Search submissions..."
+                       class="form-control tbl-search">
+            </div>
+
+            <div class="submissions-action-buttons">
+                <button id="openSubmissionBtn"
+                        class="btn btn-secondary"
+                        disabled
+                        style="display: none;">
+                    OPEN
+                </button>
+
+                <div id="submissionsDynamicButtonContainerId" class="d-inline-flex gap-2"></div>
+            </div>
+        </div>
+
+        <!-- DataTable -->
+        <div class="submissions-table-container">
+            <abp-table id="ApplicantSubmissionsTable" hoverable-rows="true" responsive-sm="true"></abp-table>
+        </div>
+    </div>
+
+    <!-- Hidden data for JavaScript -->
+    <input type="hidden" id="ApplicantSubmissions_Data" value='@Json.Serialize(Model.Submissions)' />
+    <input type="hidden" id="ApplicantSubmissions_ApplicantId" value="@Model.ApplicantId" />
+}

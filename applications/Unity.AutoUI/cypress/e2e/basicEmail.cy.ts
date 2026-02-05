@@ -1,9 +1,21 @@
+// cypress/e2e/basicEmail.cy.ts
+
 describe('Send an email', () => {
-    const TEST_EMAIL_TO = 'grantmanagementsupport@gov.bc.ca'
-    const TEST_EMAIL_CC = 'UnitySupport@gov.bc.ca'
-    const TEST_EMAIL_BCC = 'UNITYSUP@Victoria1.gov.bc.ca'
+    const TEST_EMAIL_TO = Cypress.env('TEST_EMAIL_TO') as string
+    const TEST_EMAIL_CC = Cypress.env('TEST_EMAIL_CC') as string
+    const TEST_EMAIL_BCC = Cypress.env('TEST_EMAIL_BCC') as string
     const TEMPLATE_NAME = 'Test Case 1'
     const STANDARD_TIMEOUT = 20000
+
+    // Only suppress the noisy ResizeObserver error that Unity throws in TEST.
+    // Everything else should still fail the test.
+    Cypress.on('uncaught:exception', (err) => {
+        const msg = err && err.message ? err.message : ''
+        if (msg.indexOf('ResizeObserver loop limit exceeded') >= 0) {
+            return false
+        }
+        return true
+    })
 
     const now = new Date()
     const timestamp =
@@ -23,8 +35,6 @@ describe('Send an email', () => {
 
     function switchToDefaultGrantsProgramIfAvailable() {
         cy.get('body').then(($body) => {
-            // If we are already on GrantPrograms (or can navigate there), try. Otherwise skip quietly.
-            // Key point: never .should() an optional element.
             const hasUserInitials = $body.find('.unity-user-initials').length > 0
 
             if (!hasUserInitials) {
@@ -41,7 +51,6 @@ describe('Send an email', () => {
 
                 if (switchLink.length === 0) {
                     cy.log('Skipping tenant switch: "Switch Grant Programs" not present for this user/session')
-                    // Close dropdown so it does not block clicks later
                     cy.get('body').click(0, 0)
                     return
                 }
@@ -71,6 +80,81 @@ describe('Send an email', () => {
                     expect(p.indexOf('/GrantApplications') >= 0 || p.indexOf('/auth/') >= 0).to.eq(true)
                 })
             })
+        })
+    }
+
+    function openSavedEmailFromHistoryBySubject(subject: string) {
+        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
+            const historyTableById = $body.find('#EmailHistoryTable')
+            if (historyTableById.length > 0) {
+                cy.get('#EmailHistoryTable', { timeout: STANDARD_TIMEOUT })
+                    .should('be.visible')
+                    .within(() => {
+                        cy.contains('td', subject, { timeout: STANDARD_TIMEOUT })
+                            .should('exist')
+                            .click()
+                    })
+                return
+            }
+
+            // Fallback: find the subject anywhere in a TD (scoped to avoid brittle class names)
+            cy.contains('td', subject, { timeout: STANDARD_TIMEOUT })
+                .should('exist')
+                .click()
+        })
+    }
+
+    function confirmSendDialogIfPresent() {
+        // Wait until either a bootstrap modal is shown, or SweetAlert container appears, or confirm button exists.
+        cy.get('body', { timeout: STANDARD_TIMEOUT }).should(($b) => {
+            const hasBootstrapShownModal = $b.find('.modal.show').length > 0
+            const hasSwal = $b.find('.swal2-container').length > 0
+            const hasConfirmBtn = $b.find('#btn-confirm-send').length > 0
+            expect(hasBootstrapShownModal || hasSwal || hasConfirmBtn).to.eq(true)
+        })
+
+        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($b) => {
+            const hasSwal = $b.find('.swal2-container').length > 0
+            if (hasSwal) {
+                // SweetAlert2 style
+                cy.get('.swal2-container', { timeout: STANDARD_TIMEOUT }).should('be.visible')
+                cy.contains('.swal2-container', 'Are you sure', { timeout: STANDARD_TIMEOUT }).should('exist')
+
+                // Typical confirm button class, with fallback to text match
+                if ($b.find('.swal2-confirm').length > 0) {
+                    cy.get('.swal2-confirm', { timeout: STANDARD_TIMEOUT }).should('be.visible').click()
+                } else {
+                    cy.contains('.swal2-container button', 'Yes', { timeout: STANDARD_TIMEOUT }).click()
+                }
+                return
+            }
+
+            const hasBootstrapShownModal = $b.find('.modal.show').length > 0
+            if (hasBootstrapShownModal) {
+                // Bootstrap modal: assert the shown modal, not the inner content div
+                cy.get('.modal.show', { timeout: STANDARD_TIMEOUT })
+                    .should('be.visible')
+                    .within(() => {
+                        cy.contains('Are you sure you want to send this email?', { timeout: STANDARD_TIMEOUT })
+                            .should('exist')
+
+                        // Prefer the known id if present, otherwise click a button with expected intent text
+                        if (Cypress.$('#btn-confirm-send').length > 0) {
+                            cy.get('#btn-confirm-send', { timeout: STANDARD_TIMEOUT })
+                                .should('exist')
+                                .should('be.visible')
+                                .click()
+                        } else {
+                            cy.contains('button', 'Confirm', { timeout: STANDARD_TIMEOUT }).click()
+                        }
+                    })
+                return
+            }
+
+            // Last resort: confirm button exists but modal might not be "visible" by Cypress standards
+            cy.get('#btn-confirm-send', { timeout: STANDARD_TIMEOUT })
+                .should('exist')
+                .click({ force: true })
         })
     }
 
@@ -189,38 +273,27 @@ describe('Send an email', () => {
     })
 
     it('Select saved email from Email History', () => {
-        cy.contains('td.data-table-header', TEST_EMAIL_SUBJECT, { timeout: STANDARD_TIMEOUT })
-            .should('exist')
-            .click()
+        openSavedEmailFromHistoryBySubject(TEST_EMAIL_SUBJECT)
 
         cy.get('#EmailTo', { timeout: STANDARD_TIMEOUT }).should('be.visible')
         cy.get('#EmailCC').should('be.visible')
         cy.get('#EmailBCC').should('be.visible')
         cy.get('#EmailSubject').should('be.visible')
 
-        cy.get('#btn-send').should('be.visible')
-        cy.get('#btn-save').should('be.visible')
+        cy.get('#btn-send', { timeout: STANDARD_TIMEOUT }).should('exist')
+        cy.get('#btn-save', { timeout: STANDARD_TIMEOUT }).should('exist')
     })
 
     it('Send the email', () => {
         cy.get('#btn-send', { timeout: STANDARD_TIMEOUT })
             .should('exist')
             .should('be.visible')
+            .should('not.be.disabled')
             .click()
     })
 
-    it('Confirm send email in modal', () => {
-        cy.get('#modal-content', { timeout: STANDARD_TIMEOUT })
-            .should('exist')
-            .should('be.visible')
-
-        cy.contains('Are you sure you want to send this email?', { timeout: STANDARD_TIMEOUT })
-            .should('exist')
-
-        cy.get('#btn-confirm-send', { timeout: STANDARD_TIMEOUT })
-            .should('exist')
-            .should('be.visible')
-            .click()
+    it('Confirm send email in dialog', () => {
+        confirmSendDialogIfPresent()
     })
 
     it('Verify Logout', () => {

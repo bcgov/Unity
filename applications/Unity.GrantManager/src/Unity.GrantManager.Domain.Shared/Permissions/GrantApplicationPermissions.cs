@@ -40,9 +40,24 @@ namespace Unity.GrantManager.Permissions
             public const string AssignApplicant = Default + ".AssignApplicant";
         }
 
-        public static class AIReporting
+        public static class AI
         {
-            public const string Default = GroupName + ".AIReporting";
+            public const string GroupName = "AI";
+
+            public static class Reporting
+            {
+                public const string Default = GroupName + ".Reporting";
+            }
+
+            public static class ApplicationAnalysis
+            {
+                public const string Default = GroupName + ".ApplicationAnalysis";
+            }
+
+            public static class AttachmentSummary
+            {
+                public const string Default = GroupName + ".AttachmentSummary";
+            }
         }
 
         public static class Assignments
