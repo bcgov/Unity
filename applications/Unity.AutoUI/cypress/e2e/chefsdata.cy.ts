@@ -14,11 +14,11 @@ describe("Unity Login and check data from CHEFS", () => {
     cy.fixture("chefsExpectedData.json").then((data) => {
       const environment = Cypress.env("environment");
       const envData = data.expectedData.find(
-        (d: any) => d.unityEnv.toLowerCase() === environment.toLowerCase()
+        (d: any) => d.unityEnv.toLowerCase() === environment.toLowerCase(),
       );
       if (!envData) {
         throw new Error(
-          `No expected data found for environment: ${environment}`
+          `No expected data found for environment: ${environment}`,
         );
       }
       expectedData = envData;
@@ -107,39 +107,39 @@ describe("Unity Login and check data from CHEFS", () => {
       // 19.) Verify Summary Panel data
       detailsPage.verifySummaryField(
         "Category",
-        expectedData.summaryPanel.category
+        expectedData.summaryPanel.category,
       );
       detailsPage.verifySummaryField(
         "OrganizationName",
-        expectedData.summaryPanel.organizationName
+        expectedData.summaryPanel.organizationName,
       );
       detailsPage.verifySummaryField(
         "OrganizationNumber",
-        expectedData.summaryPanel.organizationNumber
+        expectedData.summaryPanel.organizationNumber,
       );
       detailsPage.verifySummaryField(
         "EconomicRegion",
-        expectedData.summaryPanel.economicRegion
+        expectedData.summaryPanel.economicRegion,
       );
       detailsPage.verifySummaryField(
         "RegionalDistrict",
-        expectedData.summaryPanel.regionalDistrict
+        expectedData.summaryPanel.regionalDistrict,
       );
       detailsPage.verifySummaryField(
         "Community",
-        expectedData.summaryPanel.community
+        expectedData.summaryPanel.community,
       );
       detailsPage.verifySummaryField(
         "RequestedAmount",
-        expectedData.summaryPanel.requestedAmount
+        expectedData.summaryPanel.requestedAmount,
       );
       detailsPage.verifySummaryField(
         "ProjectBudget",
-        expectedData.summaryPanel.projectBudget
+        expectedData.summaryPanel.projectBudget,
       );
       detailsPage.verifySummaryField(
         "Sector",
-        expectedData.summaryPanel.sector
+        expectedData.summaryPanel.sector,
       );
 
       // Close summary panel if it's open
@@ -155,7 +155,7 @@ describe("Unity Login and check data from CHEFS", () => {
           cy.get("#externalLink").click();
         } else {
           cy.log(
-            "⚠️ External link not available - skipping detailed panel tests"
+            "⚠️ External link not available - skipping detailed panel tests",
           );
           return;
         }
@@ -163,107 +163,107 @@ describe("Unity Login and check data from CHEFS", () => {
 
       detailsPage.verifySummaryField(
         "Category",
-        expectedData.detailsPanel.category
+        expectedData.detailsPanel.category,
       );
       detailsPage.verifySummaryField(
         "OrganizationName",
-        expectedData.detailsPanel.organizationName
+        expectedData.detailsPanel.organizationName,
       );
       detailsPage.verifySummaryField(
         "OrganizationNumber",
-        expectedData.detailsPanel.organizationNumber
+        expectedData.detailsPanel.organizationNumber,
       );
       detailsPage.verifySummaryField(
         "EconomicRegion",
-        expectedData.detailsPanel.economicRegion
+        expectedData.detailsPanel.economicRegion,
       );
       detailsPage.verifySummaryField(
         "RegionalDistrict",
-        expectedData.detailsPanel.regionalDistrict
+        expectedData.detailsPanel.regionalDistrict,
       );
       detailsPage.verifySummaryField(
         "Community",
-        expectedData.detailsPanel.community
+        expectedData.detailsPanel.community,
       );
       detailsPage.verifySummaryField(
         "RequestedAmount",
-        expectedData.detailsPanel.requestedAmount
+        expectedData.detailsPanel.requestedAmount,
       );
       detailsPage.verifySummaryField(
         "ProjectBudget",
-        expectedData.detailsPanel.projectBudget
+        expectedData.detailsPanel.projectBudget,
       );
       detailsPage.verifySummaryField(
         "Sector",
-        expectedData.detailsPanel.sector
+        expectedData.detailsPanel.sector,
       );
 
       // 21.) Verify Review & Assessment tab
       detailsPage.goToReviewAssessmentTab();
       detailsPage.verifyReviewAssessmentRequestedAmount(
-        expectedData.reviewAssessment.requestedAmount
+        expectedData.reviewAssessment.requestedAmount,
       );
       detailsPage.verifyReviewAssessmentTotalBudget(
-        expectedData.reviewAssessment.totalBudget
+        expectedData.reviewAssessment.totalBudget,
       );
 
       // 22.) Verify Project Info tab
       detailsPage.goToProjectInfoTab();
       detailsPage.verifyProjectInfoField(
         "#ProjectInfo_ProjectName",
-        expectedData.projectInfo.projectName
+        expectedData.projectInfo.projectName,
       );
       detailsPage.verifyProjectInfoField(
         "#startDate",
-        expectedData.projectInfo.startDate
+        expectedData.projectInfo.startDate,
       );
       detailsPage.verifyProjectInfoField(
         "#ProjectInfo_ProjectEndDate",
-        expectedData.projectInfo.endDate
+        expectedData.projectInfo.endDate,
       );
       detailsPage.verifyProjectInfoField(
         "#RequestedAmountInputPI",
-        expectedData.projectInfo.requestedAmount
+        expectedData.projectInfo.requestedAmount,
       );
       detailsPage.verifyProjectInfoField(
         "#TotalBudgetInputPI",
-        expectedData.projectInfo.totalBudget
+        expectedData.projectInfo.totalBudget,
       );
       detailsPage.verifyProjectInfoField(
         "#ProjectInfo_Acquisition",
-        expectedData.projectInfo.acquisition
+        expectedData.projectInfo.acquisition,
       );
       detailsPage.verifyProjectInfoField(
         "#ProjectInfo_Forestry",
-        expectedData.projectInfo.forestry
+        expectedData.projectInfo.forestry,
       );
       detailsPage.verifyProjectInfoField(
         "#ProjectInfo_ForestryFocus",
-        expectedData.projectInfo.forestryFocus
+        expectedData.projectInfo.forestryFocus,
       );
       detailsPage.verifyProjectInfoField(
         "#economicRegions",
-        expectedData.projectInfo.economicRegion
+        expectedData.projectInfo.economicRegion,
       );
       detailsPage.verifyProjectInfoField(
         "#regionalDistricts",
-        expectedData.projectInfo.regionalDistrict
+        expectedData.projectInfo.regionalDistrict,
       );
       detailsPage.verifyProjectInfoField(
         "#communities",
-        expectedData.projectInfo.community
+        expectedData.projectInfo.community,
       );
       detailsPage.verifyProjectInfoField(
         "#ProjectInfo_CommunityPopulation",
-        expectedData.projectInfo.communityPopulation
+        expectedData.projectInfo.communityPopulation,
       );
       detailsPage.verifyProjectInfoField(
         "#ProjectInfo_ElectoralDistrict",
-        expectedData.projectInfo.electoralDistrict
+        expectedData.projectInfo.electoralDistrict,
       );
       detailsPage.verifyProjectInfoField(
         "#ProjectInfo_Place",
-        expectedData.projectInfo.place
+        expectedData.projectInfo.place,
       );
 
       // 23.) Verify Applicant Info tab
@@ -272,26 +272,11 @@ describe("Unity Login and check data from CHEFS", () => {
       const plainInputs: [string, string][] = [
         ["#ApplicantSummary_OrgName", expectedData.applicantInfo.orgName],
         ["#ApplicantSummary_OrgNumber", expectedData.applicantInfo.orgNumber],
-        [
-          "#ContactInfo_Name",
-          expectedData.applicantInfo.contactFullName,
-        ],
-        [
-          "#ContactInfo_Title",
-          expectedData.applicantInfo.contactTitle,
-        ],
-        [
-          "#ContactInfo_Email",
-          expectedData.applicantInfo.contactEmail,
-        ],
-        [
-          "#ContactInfo_Phone",
-          expectedData.applicantInfo.contactBusinessPhone,
-        ],
-        [
-          "#ContactInfo_Phone2",
-          expectedData.applicantInfo.contactCellPhone,
-        ],
+        ["#ContactInfo_Name", expectedData.applicantInfo.contactFullName],
+        ["#ContactInfo_Title", expectedData.applicantInfo.contactTitle],
+        ["#ContactInfo_Email", expectedData.applicantInfo.contactEmail],
+        ["#ContactInfo_Phone", expectedData.applicantInfo.contactBusinessPhone],
+        ["#ContactInfo_Phone2", expectedData.applicantInfo.contactCellPhone],
         [
           "#PhysicalAddress_Street",
           expectedData.applicantInfo.physicalAddressStreet,
@@ -324,14 +309,8 @@ describe("Unity Login and check data from CHEFS", () => {
           "#MailingAddress_Street2",
           expectedData.applicantInfo.mailingAddressStreet2,
         ],
-        [
-          "#MailingAddress_Unit",
-          expectedData.applicantInfo.mailingAddressUnit,
-        ],
-        [
-          "#MailingAddress_City",
-          expectedData.applicantInfo.mailingAddressCity,
-        ],
+        ["#MailingAddress_Unit", expectedData.applicantInfo.mailingAddressUnit],
+        ["#MailingAddress_City", expectedData.applicantInfo.mailingAddressCity],
         [
           "#MailingAddress_Province",
           expectedData.applicantInfo.mailingAddressProvince,
@@ -373,17 +352,18 @@ describe("Unity Login and check data from CHEFS", () => {
       // 24.) Verify Sector and Sub-sector dropdowns
       detailsPage.selectSector(expectedData.sectorSubsector.sector);
       detailsPage.verifySubSectorOptions(
-        expectedData.sectorSubsector.subSectorOptions
+        expectedData.sectorSubsector.subSectorOptions,
       );
 
       // 25.) Verify Payment Info tab
       detailsPage.goToPaymentInfoTab();
       detailsPage.verifyPaymentInfoRequestedAmount(
-        expectedData.paymentInfo.requestedAmount
+        expectedData.paymentInfo.requestedAmount,
       );
 
       // 26.) Verify Submission tab
       detailsPage.goToSubmissionTab();
+      cy.wait(2000); // Wait for tab to load
       detailsPage.verifySubmissionHeaders(expectedData.submissionHeaders);
     });
   });

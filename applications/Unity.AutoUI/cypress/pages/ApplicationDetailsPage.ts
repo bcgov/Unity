@@ -161,7 +161,7 @@ export class ApplicationDetailsPage extends BasePage {
       | "projectInfo"
       | "applicantInfo"
       | "fundingAgreement"
-      | "paymentInfo"
+      | "paymentInfo",
   ): void {
     const tabSelectors: Record<string, string> = {
       submission: this.tabs.submission,
@@ -262,8 +262,15 @@ export class ApplicationDetailsPage extends BasePage {
    * Verify submission section headers exist
    */
   verifySubmissionHeaders(headers: string[]): void {
+    // Wait for page to settle after tab navigation
+    cy.wait(3000);
+
     headers.forEach((header) => {
-      cy.contains("h4", header).should("exist").click();
+      cy.contains(header, { timeout: 20000, includeShadowDom: true })
+        .should("exist")
+        .scrollIntoView({ duration: 1000 })
+        .wait(500)
+        .should("be.visible");
     });
   }
 
@@ -392,7 +399,7 @@ export class ApplicationDetailsPage extends BasePage {
       | "close"
       | "withdraw"
       | "defer"
-      | "onHold"
+      | "onHold",
   ): void {
     const actionSelectors: Record<string, string> = {
       startReview: this.statusActions.startReview,
@@ -424,7 +431,7 @@ export class ApplicationDetailsPage extends BasePage {
       | "close"
       | "withdraw"
       | "defer"
-      | "onHold"
+      | "onHold",
   ): void {
     const actionSelectors: Record<string, string> = {
       startReview: this.statusActions.startReview,
