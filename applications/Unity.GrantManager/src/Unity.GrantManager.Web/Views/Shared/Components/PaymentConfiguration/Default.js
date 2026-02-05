@@ -64,7 +64,7 @@
         UIElements.parentFormSelect.select2({
             width: '100%',
             allowClear: true,
-            placeholder: UIElements.parentFormSelect.data('placeholder') || 'Please choose a parent form',
+            placeholder: UIElements.parentFormSelect.data('placeholder') || 'Please choose...',
             minimumInputLength: 2,
             ajax: {
                 transport: function (params, success, failure) {
@@ -80,9 +80,12 @@
                 processResults: function (data, params) {
                     params.page = params.page || 1;
                     const items = (data.items || []).map(function (item) {
+                        const displayText = item.category
+                            ? `${item.applicationFormName} - ${item.category}`
+                            : item.applicationFormName;
                         return {
                             id: item.applicationFormId,
-                            text: item.applicationFormName
+                            text: displayText
                         };
                     });
 

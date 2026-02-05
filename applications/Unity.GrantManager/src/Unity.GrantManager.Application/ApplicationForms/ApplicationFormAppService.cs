@@ -251,8 +251,10 @@ public class ApplicationFormAppService
         {
             var loweredFilter = normalizedFilter.ToLowerInvariant();
             query = query.Where(x =>
-                x.ApplicationFormName != null &&
-                x.ApplicationFormName.ToLower().Contains(loweredFilter));
+                (x.ApplicationFormName != null &&
+                 x.ApplicationFormName.ToLower().Contains(loweredFilter)) ||
+                (x.Category != null &&
+                 x.Category.ToLower().Contains(loweredFilter)));
         }
 
         var totalCount = await AsyncExecuter.CountAsync(query);
@@ -267,7 +269,8 @@ public class ApplicationFormAppService
         var results = items.Select(x => new ParentFormLookupDto
         {
             ApplicationFormId = x.Id,
-            ApplicationFormName = x.ApplicationFormName ?? string.Empty
+            ApplicationFormName = x.ApplicationFormName ?? string.Empty,
+            Category = x.Category
         }).ToList();
 
         return new PagedResultDto<ParentFormLookupDto>(totalCount, results);

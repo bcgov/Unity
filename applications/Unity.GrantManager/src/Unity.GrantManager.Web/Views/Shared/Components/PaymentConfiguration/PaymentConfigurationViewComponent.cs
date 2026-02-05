@@ -52,7 +52,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
 
                 if (parentForm != null)
                 {
-                    model.ParentFormDisplayName = parentForm.ApplicationFormName ?? string.Empty;
+                    var formName = parentForm.ApplicationFormName ?? string.Empty;
+                    var category = parentForm.Category;
+                    model.ParentFormDisplayName = !string.IsNullOrEmpty(category)
+                        ? $"{formName} - {category}"
+                        : formName;
                 }
             }
 

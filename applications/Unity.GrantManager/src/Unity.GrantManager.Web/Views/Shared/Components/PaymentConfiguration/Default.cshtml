@@ -104,8 +104,8 @@
                     </abp-column>
                     <abp-column size-lg="_6" size-sm="_12" class="px-1 @(showParentForm ? string.Empty : "d-none")" id="parent-form-column">
                         <label class="form-label text-nowrap" for="ParentForm">Parent Form</label>
-                        <select id="ParentForm" class="form-select" data-placeholder="Please choose a parent form">
-                            <option value="">Please choose a parent form</option>
+                        <select id="ParentForm" class="form-select" data-placeholder="Please choose...">
+                            <option value="">Please choose...</option>
                             @if (Model.ParentFormId.HasValue)
                             {
                                 <option value="@Model.ParentFormId" selected>@Model.ParentFormDisplayName</option>

@@ -21,5 +21,6 @@ public class ParentFormLookupDto
 {
     public Guid ApplicationFormId { get; set; }
     public string ApplicationFormName { get; set; } = string.Empty;
+    public string? Category { get; set; }
 }
 
