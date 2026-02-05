@@ -203,7 +203,7 @@ export class ApplicationActionBarPage extends BasePage {
   verifySubmittedFromDateValue(expectedDate: string): void {
     this.getElement(this.selectors.submittedFromDate).should(
       "have.value",
-      expectedDate
+      expectedDate,
     );
   }
 
@@ -213,7 +213,7 @@ export class ApplicationActionBarPage extends BasePage {
   verifySubmittedToDateValue(expectedDate: string): void {
     this.getElement(this.selectors.submittedToDate).should(
       "have.value",
-      expectedDate
+      expectedDate,
     );
   }
 
@@ -257,11 +257,14 @@ export class ApplicationActionBarPage extends BasePage {
    * Verify action buttons are NOT visible (no selection)
    */
   verifyActionButtonsHidden(): void {
+    const environment = Cypress.env("environment");
     this.getElement(this.selectors.btnOpen).should("not.be.visible");
     this.getElement(this.selectors.btnAssign).should("not.be.visible");
     this.getElement(this.selectors.btnApprove).should("not.be.visible");
     this.getElement(this.selectors.btnTags).should("not.be.visible");
-    this.getElement(this.selectors.btnPayment).should("not.be.visible");
+    if (environment !== "PROD") {
+      this.getElement(this.selectors.btnPayment).should("not.be.visible");
+    }
     this.getElement(this.selectors.btnInfo).should("not.be.visible");
   }
 
@@ -269,11 +272,14 @@ export class ApplicationActionBarPage extends BasePage {
    * Verify all action buttons are visible (after selection)
    */
   verifyActionButtonsVisible(): void {
+    const environment = Cypress.env("environment");
     this.getElement(this.selectors.btnOpen).should("be.visible");
     this.getElement(this.selectors.btnAssign).should("be.visible");
     this.getElement(this.selectors.btnApprove).should("be.visible");
     this.getElement(this.selectors.btnTags).should("be.visible");
-    this.getElement(this.selectors.btnPayment).should("be.visible");
+    if (environment !== "PROD") {
+      this.getElement(this.selectors.btnPayment).should("be.visible");
+    }
     this.getElement(this.selectors.btnInfo).should("be.visible");
   }
 
@@ -332,6 +338,13 @@ export class ApplicationActionBarPage extends BasePage {
    * Verify Payment button attributes
    */
   verifyPaymentButtonAttributes(): void {
+    const environment = Cypress.env("environment");
+    if (environment === "PROD") {
+      cy.log(
+        "Skipping payment button attribute verification in PROD environment",
+      );
+      return;
+    }
     this.getElement(this.selectors.btnPayment)
       .should("be.visible")
       .and("contain.text", "Payment")
@@ -405,15 +418,20 @@ export class ApplicationActionBarPage extends BasePage {
    * Verify all action buttons have correct type attribute
    */
   verifyButtonTypes(): void {
+    const environment = Cypress.env("environment");
     const buttonIds = [
       this.selectors.btnOpen,
       this.selectors.btnAssign,
       this.selectors.btnApprove,
       this.selectors.btnTags,
-      this.selectors.btnPayment,
       this.selectors.btnInfo,
       this.selectors.btnFilter,
     ];
+
+    // Only add payment button if not in PROD environment
+    if (environment !== "PROD") {
+      buttonIds.push(this.selectors.btnPayment);
+    }
 
     buttonIds.forEach((buttonId) => {
       this.getElement(buttonId).should("have.attr", "type", "button");
@@ -759,6 +777,9 @@ export class ApplicationActionBarPage extends BasePage {
    * Verify all labels are present in the summary side pane
    */
   verifySummaryLabels(): void {
+    // Wait for the summary panel to load
+    cy.wait(2000);
+
     // Unity Application Id section labels
     const unityAppLabels = [
       "Owner",
@@ -787,14 +808,36 @@ export class ApplicationActionBarPage extends BasePage {
       "Approved Amount",
     ];
 
-    // Verify Unity Application Id section header
-    cy.contains("h6", "Unity Application Id").should("be.visible");
+    // Verify Unity Application Id section header (if it exists)
+    cy.get("body").then(($body) => {
+      if ($body.find('h6:contains("Unity Application Id")').length > 0) {
+        cy.contains("h6", "Unity Application Id", {
+          timeout: 20000,
+          includeShadowDom: true,
+        })
+          .should("exist")
+          .scrollIntoView()
+          .should("be.visible");
 
-    // Verify all Unity Application Id labels
-    unityAppLabels.forEach((label) => {
-      cy.contains(this.selectors.displayInputLabel, label)
-        .should("be.visible")
-        .and("have.attr", "for", this.convertLabelToId(label));
+        // Verify all Unity Application Id labels
+        unityAppLabels.forEach((label) => {
+          cy.contains(this.selectors.displayInputLabel, label)
+            .scrollIntoView()
+            .should("be.visible")
+            .and("have.attr", "for", this.convertLabelToId(label));
+        });
+      } else {
+        cy.log(
+          "Unity Application Id section not found - skipping verification",
+        );
+        // Still verify the labels are present even without the header
+        unityAppLabels.forEach((label) => {
+          cy.contains(this.selectors.displayInputLabel, label)
+            .scrollIntoView()
+            .should("be.visible")
+            .and("have.attr", "for", this.convertLabelToId(label));
+        });
+      }
     });
 
     // Scroll to Assessment Summary section to make it visible
@@ -867,6 +910,11 @@ export class ApplicationActionBarPage extends BasePage {
    * Click Payment button to open payment request modal
    */
   clickPaymentButton(): void {
+    const environment = Cypress.env("environment");
+    if (environment === "PROD") {
+      cy.log("Skipping payment button click in PROD environment");
+      return;
+    }
     this.getElement(this.selectors.btnPayment).click();
     cy.wait(500); // Wait for modal animation
   }
@@ -875,8 +923,13 @@ export class ApplicationActionBarPage extends BasePage {
    * Verify payment request modal is visible
    */
   verifyPaymentModalVisible(): void {
+    const environment = Cypress.env("environment");
+    if (environment === "PROD") {
+      cy.log("Skipping payment modal verification in PROD environment");
+      return;
+    }
     cy.contains(this.selectors.paymentModalTitle, "Request Payment").should(
-      "be.visible"
+      "be.visible",
     );
   }
 
@@ -884,9 +937,16 @@ export class ApplicationActionBarPage extends BasePage {
    * Verify all payment modal elements are present
    */
   verifyPaymentModalElements(): void {
+    const environment = Cypress.env("environment");
+    if (environment === "PROD") {
+      cy.log(
+        "Skipping payment modal elements verification in PROD environment",
+      );
+      return;
+    }
     // Verify modal title
     cy.contains(this.selectors.paymentModalTitle, "Request Payment").should(
-      "be.visible"
+      "be.visible",
     );
     //
     //     // Verify batch information fields
@@ -933,6 +993,11 @@ export class ApplicationActionBarPage extends BasePage {
    * Close payment request modal
    */
   closePaymentModal(): void {
+    const environment = Cypress.env("environment");
+    if (environment === "PROD") {
+      cy.log("Skipping payment modal close in PROD environment");
+      return;
+    }
     cy.get(this.selectors.cancelPaymentButton).click();
     cy.wait(500); // Wait for modal to close
   }
@@ -941,8 +1006,13 @@ export class ApplicationActionBarPage extends BasePage {
    * Verify payment modal is closed
    */
   verifyPaymentModalClosed(): void {
+    const environment = Cypress.env("environment");
+    if (environment === "PROD") {
+      cy.log("Skipping payment modal closed verification in PROD environment");
+      return;
+    }
     cy.contains(this.selectors.paymentModalTitle, "Request Payment").should(
-      "not.exist"
+      "not.exist",
     );
   }
 

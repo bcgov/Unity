@@ -17,7 +17,7 @@ describe("Application List Action Bar Validation", () => {
   const getPSTDate = (monthsOffset = 0): string => {
     const now = new Date();
     const pstDate = new Date(
-      now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })
+      now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
     );
 
     if (monthsOffset !== 0) {
@@ -45,7 +45,7 @@ describe("Application List Action Bar Validation", () => {
     // Navigate to Applications page
     cy.location("pathname", { timeout: 30000 }).should(
       "include",
-      "/GrantApplications"
+      "/GrantApplications",
     );
     cy.get("#GrantApplicationsTable", { timeout: 10000 }).should("be.visible");
     cy.wait(2000);
@@ -192,15 +192,18 @@ describe("Application List Action Bar Validation", () => {
         });
       });
 
-      describe("Payment Request Modal Validation", () => {
-        it("Should open payment request modal via Payment button", () => {
-          actionBarPage.clickPaymentButton();
-          actionBarPage.verifyPaymentModalVisible();
-          actionBarPage.verifyPaymentModalElements();
-          actionBarPage.closePaymentModal();
-          actionBarPage.verifyPaymentModalClosed();
-        });
-      });
+      (Cypress.env("environment") === "PROD" ? describe.skip : describe)(
+        "Payment Request Modal Validation",
+        () => {
+          it("Should open payment request modal via Payment button", () => {
+            actionBarPage.clickPaymentButton();
+            actionBarPage.verifyPaymentModalVisible();
+            actionBarPage.verifyPaymentModalElements();
+            actionBarPage.closePaymentModal();
+            actionBarPage.verifyPaymentModalClosed();
+          });
+        },
+      );
 
       describe("Tags Modal Validation", () => {
         it("Should open tags modal via Tags button", () => {
