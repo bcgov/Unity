@@ -21,5 +21,6 @@ public class ApplicantSummaryDto
     public string? UnityApplicantId { get; set; }
     public string? FiscalDay { get; set; }
     public string? FiscalMonth { get; set; }
+    public string? OrganizationOperationLength { get; set; }
     public string? ElectoralDistrict { get; set; }
 }

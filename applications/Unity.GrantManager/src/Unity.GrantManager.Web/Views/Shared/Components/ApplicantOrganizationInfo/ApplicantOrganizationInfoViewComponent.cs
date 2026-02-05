@@ -67,7 +67,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
 
                     // Financial Information
                     FiscalMonth = applicant.FiscalMonth ?? string.Empty,
-                    FiscalDay = applicant.FiscalDay?.ToString() ?? string.Empty,                    
+                    FiscalDay = applicant.FiscalDay?.ToString() ?? string.Empty,
+                    OrganizationOperationLength = applicant.OrganizationOperationLength ?? string.Empty,
                     RedStop = applicant.RedStop == true
                 };
 
@@ -89,11 +90,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
                 .OrderBy(item => int.Parse(item.Text, CultureInfo.InvariantCulture))];
             model.FiscalMonthList = [.. FormatOptionsList(ApplicantInfoOptionsList.FiscalMonthList)
                 .OrderBy(item => DateTime.ParseExact(item.Text, "MMMM", CultureInfo.InvariantCulture).Month)];
+            model.OrganizationOperationLengthList = FormatOptionsList(ApplicantInfoOptionsList.OrganizationOperationLengthList);
 
             AddDefaultOption(model.OrgStatusList);
             AddDefaultOption(model.OrganizationTypeList);
             AddDefaultOption(model.FiscalDayList);
             AddDefaultOption(model.FiscalMonthList);
+            AddDefaultOption(model.OrganizationOperationLengthList);
 
             IList<SectorDto> sectors = await _sectorService.GetListAsync();
             model.Sectors = [.. sectors];

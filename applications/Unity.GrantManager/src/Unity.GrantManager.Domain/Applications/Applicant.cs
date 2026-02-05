@@ -25,6 +25,7 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? FiscalMonth { get; set; }
     public string? BusinessNumber { get; set; }
     public int? FiscalDay { get; set; }
+    public string? OrganizationOperationLength { get; set; }
     public DateOnly? StartedOperatingDate { get; set; }
     public Guid? TenantId { get; set; }
     public Guid? SupplierId { get; set; }
