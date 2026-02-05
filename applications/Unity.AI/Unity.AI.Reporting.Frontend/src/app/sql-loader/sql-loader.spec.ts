@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SqlLoader } from './sql-loader';
+import { SqlLoaderComponent } from './sql-loader';
 
 describe('SqlLoader', () => {
-  let component: SqlLoader;
-  let fixture: ComponentFixture<SqlLoader>;
+  let component: SqlLoaderComponent;
+  let fixture: ComponentFixture<SqlLoaderComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SqlLoader]
+      imports: [SqlLoaderComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(SqlLoader);
+    fixture = TestBed.createComponent(SqlLoaderComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
