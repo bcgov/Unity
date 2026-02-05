@@ -23,8 +23,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
         AutoInitialize = true)]
     public class PaymentConfigurationViewComponent(
         IAccountCodingRepository accountCodingRepository,
-        IApplicationFormRepository applicationFormRepository,
-        IApplicationFormVersionRepository applicationFormVersionRepository,
+        IApplicationFormRepository applicationFormRepository,        
         IPermissionChecker permissionChecker,
         PaymentConfigurationAppService paymentConfigurationAppService) : AbpViewComponent
     {
