@@ -9,12 +9,13 @@ namespace Unity.GrantManager.Controllers
 {
     [ApiController]
     [AllowAnonymous]
+    [Route("api/app/applicant-profiles")]
     [ServiceFilter(typeof(ApiKeyAuthorizationFilter))]
     public class ApplicantProfileController(IApplicantProfileAppService applicantProfileAppService) : AbpControllerBase
     {
 
         [HttpGet]
-        [Route("api/profile")]
+        [Route("profile")]
         public async Task<IActionResult> GetApplicantProfileAsync([FromQuery] TenantedApplicantProfileRequest applicantProfileRequest)
         {
             var profile = await applicantProfileAppService.GetApplicantProfileAsync(applicantProfileRequest);
@@ -22,7 +23,7 @@ namespace Unity.GrantManager.Controllers
         }
 
         [HttpGet]
-        [Route("api/tenants")]
+        [Route("tenants")]
         public async Task<IActionResult> GetApplicantProfileTenantsAsync([FromQuery] ApplicantProfileRequest applicantProfileRequest)
         {
             var tenants = await applicantProfileAppService.GetApplicantTenantsAsync(applicantProfileRequest);
