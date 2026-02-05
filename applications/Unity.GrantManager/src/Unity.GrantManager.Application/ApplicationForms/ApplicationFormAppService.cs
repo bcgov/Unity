@@ -250,11 +250,14 @@ public class ApplicationFormAppService
         if (!string.IsNullOrWhiteSpace(normalizedFilter))
         {
             var loweredFilter = normalizedFilter.ToLowerInvariant();
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+                               // Need to suppress this because EF Core does not support StringComparison
             query = query.Where(x =>
                 (x.ApplicationFormName != null &&
                  x.ApplicationFormName.ToLower().Contains(loweredFilter)) ||
                 (x.Category != null &&
                  x.Category.ToLower().Contains(loweredFilter)));
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
         }
 
         var totalCount = await AsyncExecuter.CountAsync(query);
