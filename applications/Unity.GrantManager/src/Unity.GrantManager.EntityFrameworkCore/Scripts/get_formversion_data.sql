@@ -155,9 +155,13 @@ BEGIN
         FOR i IN 0..(jsonb_array_length(mapping_rows) - 1) LOOP
             row_data := mapping_rows->i;
             
-            -- Skip parent rows and datagrid rows
-            IF (row_data->>'Parent')::boolean = true OR 
-               (row_data->>'TypePath') IS NOT NULL AND (row_data->>'TypePath') LIKE '%datagrid%' THEN
+            -- Skip parent rows
+            IF (row_data->>'Parent')::boolean = true THEN
+                CONTINUE;
+            END IF;
+            
+            -- Skip datagrid rows
+            IF (row_data->>'TypePath') IS NOT NULL AND (row_data->>'TypePath') LIKE '%datagrid%' THEN
                 CONTINUE;
             END IF;
             
@@ -315,53 +319,54 @@ BEGIN
             END IF;
             
             -- Replace the NULL placeholder with the actual value
+            -- Use a more specific pattern to avoid partial matches with similar column names
             IF use_text_fallback AND (column_type_conflicts ? column_name) THEN
-                legacy_select_clause := replace(legacy_select_clause, 
-                    format('NULL::TEXT AS %I', column_name),
-                    format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name)
+                legacy_select_clause := regexp_replace(legacy_select_clause, 
+                    format('NULL::TEXT AS %I([^_A-Za-z0-9]|$)', column_name),
+                    format('%s AS %I\1', replace(data_path, '{}', legacy_source_prefix), column_name)
                 );
-                current_select_clause := replace(current_select_clause,
-                    format('NULL::TEXT AS %I', column_name),
-                    format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
+                current_select_clause := regexp_replace(current_select_clause,
+                    format('NULL::TEXT AS %I([^_A-Za-z0-9]|$)', column_name),
+                    format('%s AS %I\1', replace(data_path, '{}', current_source_prefix), column_name)
                 );
             ELSE
                 -- Replace with proper typed placeholder
                 CASE column_type
                     WHEN 'number' THEN
-                        legacy_select_clause := replace(legacy_select_clause,
-                            format('NULL::NUMERIC AS %I', column_name),
-                            format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name)
+                        legacy_select_clause := regexp_replace(legacy_select_clause,
+                            format('NULL::NUMERIC AS %I([^_A-Za-z0-9]|$)', column_name),
+                            format('%s AS %I\1', replace(data_path, '{}', legacy_source_prefix), column_name)
                         );
-                        current_select_clause := replace(current_select_clause,
-                            format('NULL::NUMERIC AS %I', column_name),
-                            format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
+                        current_select_clause := regexp_replace(current_select_clause,
+                            format('NULL::NUMERIC AS %I([^_A-Za-z0-9]|$)', column_name),
+                            format('%s AS %I\1', replace(data_path, '{}', current_source_prefix), column_name)
                         );
                     WHEN 'currency' THEN
-                        legacy_select_clause := replace(legacy_select_clause,
-                            format('NULL::DECIMAL(18,2) AS %I', column_name),
-                            format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name)
+                        legacy_select_clause := regexp_replace(legacy_select_clause,
+                            format('NULL::DECIMAL\(18,2\) AS %I([^_A-Za-z0-9]|$)', column_name),
+                            format('%s AS %I\1', replace(data_path, '{}', legacy_source_prefix), column_name)
                         );
-                        current_select_clause := replace(current_select_clause,
-                            format('NULL::DECIMAL(18,2) AS %I', column_name),
-                            format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
+                        current_select_clause := regexp_replace(current_select_clause,
+                            format('NULL::DECIMAL\(18,2\) AS %I([^_A-Za-z0-9]|$)', column_name),
+                            format('%s AS %I\1', replace(data_path, '{}', current_source_prefix), column_name)
                         );
                     WHEN 'option', 'checkbox', 'radio' THEN
-                        legacy_select_clause := replace(legacy_select_clause,
-                            format('NULL::BOOLEAN AS %I', column_name),
-                            format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name)
+                        legacy_select_clause := regexp_replace(legacy_select_clause,
+                            format('NULL::BOOLEAN AS %I([^_A-Za-z0-9]|$)', column_name),
+                            format('%s AS %I\1', replace(data_path, '{}', legacy_source_prefix), column_name)
                         );
-                        current_select_clause := replace(current_select_clause,
-                            format('NULL::BOOLEAN AS %I', column_name),
-                            format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
+                        current_select_clause := regexp_replace(current_select_clause,
+                            format('NULL::BOOLEAN AS %I([^_A-Za-z0-9]|$)', column_name),
+                            format('%s AS %I\1', replace(data_path, '{}', current_source_prefix), column_name)
                         );
                     ELSE
-                        legacy_select_clause := replace(legacy_select_clause,
-                            format('NULL::TEXT AS %I', column_name),
-                            format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name)
+                        legacy_select_clause := regexp_replace(legacy_select_clause,
+                            format('NULL::TEXT AS %I([^_A-Za-z0-9]|$)', column_name),
+                            format('%s AS %I\1', replace(data_path, '{}', legacy_source_prefix), column_name)
                         );
-                        current_select_clause := replace(current_select_clause,
-                            format('NULL::TEXT AS %I', column_name),
-                            format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
+                        current_select_clause := regexp_replace(current_select_clause,
+                            format('NULL::TEXT AS %I([^_A-Za-z0-9]|$)', column_name),
+                            format('%s AS %I\1', replace(data_path, '{}', current_source_prefix), column_name)
                         );
                 END CASE;
             END IF;
@@ -421,9 +426,11 @@ BEGIN
             FOR i IN 0..(jsonb_array_length(mapping_rows) - 1) LOOP
                 row_data := mapping_rows->i;
                 
-                -- Skip parent rows and non-datagrid rows
+                type_path := row_data->>'TypePath';
+                
+                -- Skip parent rows and non-datagrid rows (only check TypePath)
                 IF (row_data->>'Parent')::boolean = true OR 
-                   (row_data->>'TypePath') IS NULL OR NOT ((row_data->>'TypePath') LIKE '%datagrid%') THEN
+                   type_path IS NULL OR NOT (type_path LIKE '%datagrid%') THEN
                     CONTINUE;
                 END IF;
                 

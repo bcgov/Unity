@@ -1,9 +1,9 @@
 // cypress/e2e/basicEmail.cy.ts
 
 describe('Send an email', () => {
-    const TEST_EMAIL_TO = 'grantmanagementsupport@gov.bc.ca'
-    const TEST_EMAIL_CC = 'UnitySupport@gov.bc.ca'
-    const TEST_EMAIL_BCC = 'UNITYSUP@Victoria1.gov.bc.ca'
+    const TEST_EMAIL_TO = Cypress.env('TEST_EMAIL_TO') as string
+    const TEST_EMAIL_CC = Cypress.env('TEST_EMAIL_CC') as string
+    const TEST_EMAIL_BCC = Cypress.env('TEST_EMAIL_BCC') as string
     const TEMPLATE_NAME = 'Test Case 1'
     const STANDARD_TIMEOUT = 20000
 

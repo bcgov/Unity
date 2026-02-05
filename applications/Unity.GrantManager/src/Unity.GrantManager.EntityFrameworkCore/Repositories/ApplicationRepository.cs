@@ -185,6 +185,16 @@ public class ApplicationRepository
             .ToListAsync();
     }
 
+    public async Task<List<Application>> GetByApplicantIdAsync(Guid applicantId)
+    {
+        var query = await BuildBaseQueryAsync();
+
+        return await query
+            .Where(a => a.ApplicantId == applicantId)
+            .OrderByDescending(a => a.SubmissionDate)
+            .ToListAsync();
+    }
+
     private static IQueryable<Application> ApplySorting(
         IQueryable<Application> query,
         string? sorting)
