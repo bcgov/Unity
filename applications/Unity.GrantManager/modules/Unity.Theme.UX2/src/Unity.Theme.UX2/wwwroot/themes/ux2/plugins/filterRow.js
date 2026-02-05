@@ -380,7 +380,9 @@
          */
         clearFilters: function () {
             let dt = this.s.dt;
-            let externalSearchId = dt.init().externalSearchInputId;
+            let dtInit = dt.init();
+            let externalSearchId = dtInit.externalSearchInputId;
+            let initialSortOrder = (dtInit && dtInit.order) ? dtInit.order : [];
 
             // Clear external search
             if (externalSearchId) {
@@ -391,10 +393,10 @@
             $('.custom-filter-input').val('');
 
             // Clear DataTable searches
-            dt.search('').columns().search('').draw();
+            dt.search('').columns().search('');
 
             // Clear order
-            dt.order([]).draw();
+            dt.order(initialSortOrder);
 
             // Reload data
             dt.ajax.reload();

@@ -43,7 +43,8 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
             new EmailTempateVariableDto { Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" },
             new EmailTempateVariableDto { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" },
             new EmailTempateVariableDto { Name = "Requested Amount", Token = "requested_amount", MapTo = "requestedAmount" },
-            new EmailTempateVariableDto { Name = "Recommended Amount", Token = "recommended_amount", MapTo = "recommendedAmount" }
+            new EmailTempateVariableDto { Name = "Recommended Amount", Token = "recommended_amount", MapTo = "recommendedAmount" },
+            new EmailTempateVariableDto { Name = "Unity Application ID", Token = "unity_application_id", MapTo = "unityApplicationId" }
         };
 
         try
