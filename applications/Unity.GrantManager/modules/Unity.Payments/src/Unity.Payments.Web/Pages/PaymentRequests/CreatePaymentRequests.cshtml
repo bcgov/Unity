@@ -163,6 +163,8 @@
     (function () {
         if (window.jQuery) {
             $('.unity-currency-input').maskMoney();
+            // Validate payment amounts on initial page load
+            validateAllPaymentAmounts();
         }
     })();
 </script>

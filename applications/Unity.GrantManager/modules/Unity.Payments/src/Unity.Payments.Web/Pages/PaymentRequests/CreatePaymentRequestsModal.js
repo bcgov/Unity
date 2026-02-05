@@ -221,11 +221,11 @@ function validateParentChildAmounts(correlationId) {
         let errorMessage = $(`#parent_child_error_message_${memberId}`);
 
         if (hasError) {
-            let message = `Parent-child total (${formatCurrency(
+            let message = `The payment amount (${formatCurrency(
                 groupTotal
-            )}) exceeds maximum allowed by parent (${formatCurrency(
+            )}) exceeds the parent's approved amount (${formatCurrency(
                 maximumAllowed
-            )})`;
+            )}).`;
             errorMessage.text(message);
             errorDiv.css('display', 'block');
         } else {

@@ -214,9 +214,28 @@ namespace Unity.Payments.Web.Pages.Payments
             {
                 decimal approvedAmmount = application.ApprovedAmount;
                 decimal totalFutureRequested = await paymentRequestAppService.GetTotalPaymentRequestAmountByCorrelationIdAsync(application.Id);
-                if (approvedAmmount > totalFutureRequested)
+
+                // If this application has children, include their paid/pending amounts too
+                decimal childrenTotalPaidPending = 0;
+                var applicationLinks = await applicationLinksService.GetListByApplicationAsync(application.Id);
+                var childLinks = applicationLinks.Where(link => link.LinkType == ApplicationLinkType.Child).ToList();
+
+                if (childLinks.Count > 0)
                 {
-                    remainingAmount = approvedAmmount - totalFutureRequested;
+                    // This is a parent application, sum up all children's paid/pending payments
+                    foreach (var childLink in childLinks)
+                    {
+                        decimal childTotal = await paymentRequestAppService
+                            .GetTotalPaymentRequestAmountByCorrelationIdAsync(childLink.ApplicationId);
+                        childrenTotalPaidPending += childTotal;
+                    }
+                }
+
+                // Calculate remaining: Approved - (Parent Paid/Pending + Children Paid/Pending)
+                decimal totalConsumed = totalFutureRequested + childrenTotalPaidPending;
+                if (approvedAmmount > totalConsumed)
+                {
+                    remainingAmount = approvedAmmount - totalConsumed;
                 }
             }
 
