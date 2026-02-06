@@ -74,18 +74,12 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         {
             await applicantRepository.EnsureExistsAsync(applicantId);
 
-            var applicant = await applicantRepository.GetAsync(applicantId);
-            var supplierId = applicant.SupplierId; // Store the supplier ID before clearing
+            var applicant = await applicantRepository.GetAsync(applicantId);            
             
             // Clear the applicant references first
             applicant.SupplierId = null;
             applicant.SiteId = null;
             await applicantRepository.UpdateAsync(applicant);
-
-             if (supplierId.HasValue)
-            {
-                await supplierAppService.DeleteAsync(supplierId.Value);
-            }
         }
     }
 
