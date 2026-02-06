@@ -2,7 +2,7 @@ import { PageFactory } from "../utilities/PageFactory";
 
 describe("Send an email", () => {
   const loginPage = PageFactory.getLoginPage();
-  const applicationsPage = PageFactory.getApplicationsPage();
+  const navigationPage = PageFactory.getNavigationPage();
   const emailsPage = PageFactory.getEmailsPage();
 
   const TEST_EMAIL_TO = Cypress.env("TEST_EMAIL_TO") as string;
@@ -11,97 +11,25 @@ describe("Send an email", () => {
   const TEMPLATE_NAME = "Test Case 1";
   const STANDARD_TIMEOUT = 20000;
 
-  // Only suppress the noisy ResizeObserver error that Unity throws in TEST.
-  // Everything else should still fail the test.
-  Cypress.on("uncaught:exception", (err) => {
-    const msg = err && err.message ? err.message : "";
-    if (msg.indexOf("ResizeObserver loop limit exceeded") >= 0) {
-      return false;
-    }
-    return true;
-  });
-
-  const now = new Date();
-  const timestamp =
-    now.getFullYear() +
-    "-" +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(now.getDate()).padStart(2, "0") +
-    " " +
-    String(now.getHours()).padStart(2, "0") +
-    ":" +
-    String(now.getMinutes()).padStart(2, "0") +
-    ":" +
-    String(now.getSeconds()).padStart(2, "0");
-
-  const TEST_EMAIL_SUBJECT = `Smoke Test Email ${timestamp}`;
-
-  function switchToDefaultGrantsProgramIfAvailable() {
-    cy.get("body").then(($body) => {
-      const hasUserInitials = $body.find(".unity-user-initials").length > 0;
-
-      if (!hasUserInitials) {
-        cy.log("Skipping tenant switch: no user initials menu found");
-        return;
-      }
-
-      cy.get(".unity-user-initials").click();
-
-      cy.get("body").then(($body2) => {
-        const switchLink = $body2
-          .find("#user-dropdown a.dropdown-item")
-          .filter((_, el) => {
-            return (el.textContent || "").trim() === "Switch Grant Programs";
-          });
-
-        if (switchLink.length === 0) {
-          cy.log(
-            'Skipping tenant switch: "Switch Grant Programs" not present for this user/session',
-          );
-          cy.get("body").click(0, 0);
-          return;
-        }
-
-        cy.wrap(switchLink.first()).click();
-
-        cy.url({ timeout: STANDARD_TIMEOUT }).should(
-          "include",
-          "/GrantPrograms",
-        );
-
-        cy.get("#search-grant-programs", { timeout: STANDARD_TIMEOUT })
-          .should("be.visible")
-          .clear()
-          .type("Default Grants Program");
-
-        cy.get("#UserGrantProgramsTable", { timeout: STANDARD_TIMEOUT })
-          .should("be.visible")
-          .within(() => {
-            cy.contains("tbody tr", "Default Grants Program", {
-              timeout: STANDARD_TIMEOUT,
-            })
-              .should("exist")
-              .within(() => {
-                cy.contains("button", "Select").should("be.enabled").click();
-              });
-          });
-
-        cy.location("pathname", { timeout: STANDARD_TIMEOUT }).should((p) => {
-          expect(
-            p.indexOf("/GrantApplications") >= 0 || p.indexOf("/auth/") >= 0,
-          ).to.eq(true);
-        });
-      });
-    });
+  function buildTimestamp(): string {
+    const now = new Date();
+    const yyyy = String(now.getFullYear());
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const hh = String(now.getHours()).padStart(2, "0");
+    const min = String(now.getMinutes()).padStart(2, "0");
+    const ss = String(now.getSeconds()).padStart(2, "0");
+    return yyyy + "-" + mm + "-" + dd + " " + hh + ":" + min + ":" + ss;
   }
 
+  const TEST_EMAIL_SUBJECT = "Smoke Test Email " + buildTimestamp();
+
   it("Login", () => {
-    loginPage.login();
+    loginPage.quickLogin();
   });
 
   it("Switch to Default Grants Program if available", () => {
-    switchToDefaultGrantsProgramIfAvailable();
+    navigationPage.switchToTenantIfAvailable("Default Grants Program");
   });
 
   it("Handle IDIR if required", () => {
@@ -123,11 +51,8 @@ describe("Send an email", () => {
     cy.get(
       '#GrantApplicationsTable tbody a[href^="/GrantApplications/Details?ApplicationId="]',
       { timeout: STANDARD_TIMEOUT },
-    ).should("have.length.greaterThan", 0);
-
-    cy.get(
-      '#GrantApplicationsTable tbody a[href^="/GrantApplications/Details?ApplicationId="]',
     )
+      .should("have.length.greaterThan", 0)
       .first()
       .click();
 
@@ -174,11 +99,11 @@ describe("Send an email", () => {
     emailsPage.sendEmail(STANDARD_TIMEOUT);
   });
 
-  it("Confirm send email in dialog", () => {
+  it("Confirm send email in modal", () => {
     emailsPage.confirmSendEmail(STANDARD_TIMEOUT);
   });
 
   it("Verify Logout", () => {
-    loginPage.logout();
+    loginPage.quickLogout();
   });
 });

@@ -44,7 +44,7 @@ describe("Grant Manager Login and Logout", () => {
     // Verify we landed in the authenticated app
     cy.location("pathname", { timeout: 30000 }).should(
       "include",
-      "/GrantApplications"
+      "/GrantApplications",
     );
 
     // Verify Default Grant Program tenant is selected

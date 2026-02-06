@@ -25,7 +25,7 @@ describe("Grant Manager Login and List Navigation (POM)", () => {
 
     cy.location("pathname", { timeout: 30000 }).should(
       "include",
-      "/GrantApplications"
+      "/GrantApplications",
     );
   });
 
@@ -38,7 +38,7 @@ describe("Grant Manager Login and List Navigation (POM)", () => {
     // Find and select the first application (click the link directly)
     cy.get(
       '#GrantApplicationsTable tbody a[href^="/GrantApplications/Details?ApplicationId="]',
-      { timeout: 20000 }
+      { timeout: 20000 },
     )
       .should("have.length.greaterThan", 0)
       .first()
@@ -56,7 +56,7 @@ describe("Grant Manager Login and List Navigation (POM)", () => {
         applicationDetailsPage.clickStartAssessment();
       } else {
         cy.log(
-          "Start Assessment button is disabled - application may already be in assessment or wrong status"
+          "Start Assessment button is disabled - application may already be in assessment or wrong status",
         );
         // Just verify the page loaded correctly
         cy.get(".application-details-container").should("exist");

@@ -49,7 +49,7 @@ describe("Grant Manager Login and List Navigation", () => {
 
     cy.location("pathname", { timeout: 30000 }).should(
       "include",
-      "/GrantApplications"
+      "/GrantApplications",
     );
   });
 
@@ -66,7 +66,7 @@ describe("Grant Manager Login and List Navigation", () => {
 
     cy.location("pathname", { timeout: 30000 }).should(
       "include",
-      "/GrantApplications"
+      "/GrantApplications",
     );
   });
 
