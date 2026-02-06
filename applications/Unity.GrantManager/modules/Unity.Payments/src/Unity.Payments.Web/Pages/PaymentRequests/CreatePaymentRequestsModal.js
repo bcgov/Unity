@@ -228,6 +228,7 @@ function validateParentChildAmounts(correlationId) {
     let hasError = groupTotal > maximumAllowed;
 
     // Show/hide error once at the group level
+    let groupWrapper = $(`.parent-child-group[data-group-key="${groupKey}"]`);
     let groupErrorDiv = $(`#group_error_${groupKey}`);
     let groupErrorMessage = $(`#group_error_message_${groupKey}`);
 
@@ -239,7 +240,9 @@ function validateParentChildAmounts(correlationId) {
         )}).  Please reduce the amount to continue.`;
         groupErrorMessage.text(message);
         groupErrorDiv.css('display', 'block');
+        groupWrapper.addClass('has-error');
     } else {
         groupErrorDiv.css('display', 'none');
+        groupWrapper.removeClass('has-error');
     }
 }

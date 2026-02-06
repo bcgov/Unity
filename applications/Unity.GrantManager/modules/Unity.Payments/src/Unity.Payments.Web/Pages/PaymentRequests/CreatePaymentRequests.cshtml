@@ -28,19 +28,21 @@
     }
 
     .parent-child-group {
-        border: 2px solid #e91e8c;
-        border-radius: 8px;
         padding: 0;
         margin-bottom: 16px;
         overflow: hidden;
     }
 
-    .parent-child-group .single-payment {
+    .parent-child-group.has-error {
+        border: 2px solid #e91e8c;
+    }
+
+    .parent-child-group.has-error .single-payment {
         border: none;
         border-bottom: 1px solid var(--bs-border-color);
     }
 
-    .parent-child-group .single-payment:last-of-type {
+    .parent-child-group.has-error .single-payment:last-of-type {
         border-bottom: none;
     }
 
