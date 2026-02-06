@@ -169,8 +169,14 @@ function validateParentChildAmounts(correlationId) {
     let maximumAllowedInput = $(
         `input[name="ApplicationPaymentRequestForm[${index}].MaximumAllowedAmount"]`
     ).val();
+    let parentApprovedAmount = $(
+        `input[name="ApplicationPaymentRequestForm[${index}].ParentApprovedAmount"]`
+    ).val();
     let maximumAllowed = maximumAllowedInput
         ? parseFloat(maximumAllowedInput)
+        : 0;
+    let approvedAmount = parentApprovedAmount
+        ? parseFloat(parentApprovedAmount)
         : 0;
 
     // Determine if this is a parent or child
@@ -223,9 +229,11 @@ function validateParentChildAmounts(correlationId) {
         if (hasError) {
             let message = `The payment amount (${formatCurrency(
                 groupTotal
-            )}) exceeds the parent's approved amount (${formatCurrency(
+            )}) exceeds the remaining balance (${formatCurrency(
                 maximumAllowed
-            )}).`;
+            )}) of the approved amount (${formatCurrency(
+                approvedAmount
+            )}) for the application or its parent application.`;
             errorMessage.text(message);
             errorDiv.css('display', 'block');
         } else {

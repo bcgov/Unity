@@ -471,6 +471,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 {
                     child.MaximumAllowedAmount = maximumPaymentAmount;
                     child.IsPartOfParentChildGroup = true;
+                    child.ParentApprovedAmount = approvedAmount;
                 }
 
                 // Apply validation data to parent if in submission
@@ -478,6 +479,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 {
                     parentInSubmission.MaximumAllowedAmount = maximumPaymentAmount;
                     parentInSubmission.IsPartOfParentChildGroup = true;
+                    parentInSubmission.ParentApprovedAmount = approvedAmount;
                 }
             }
         }
