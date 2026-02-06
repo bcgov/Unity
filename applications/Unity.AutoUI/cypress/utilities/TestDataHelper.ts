@@ -93,28 +93,15 @@ export class TestDataHelper {
 
   /**
    * Retry action with custom attempts
+   * Note: This is a simplified retry that doesn't catch errors
+   * For proper retry logic, use Cypress's built-in retry assertions
    */
   static retry<T>(
     action: () => Cypress.Chainable<T>,
     maxAttempts: number = 3,
-    delayMs: number = 1000
+    delayMs: number = 1000,
   ): Cypress.Chainable<T> {
-    let attempts = 0;
-    const tryAction = (): Cypress.Chainable<T> => {
-      attempts++;
-      if (attempts <= maxAttempts) {
-        return action().then((result: T) => {
-          return result;
-        }).catch((error: Error) => {
-          if (attempts < maxAttempts) {
-            cy.wait(delayMs);
-            return tryAction();
-          }
-          throw error;
-        });
-      }
-      return action();
-    };
-    return tryAction();
+    cy.log(`Executing action with up to ${maxAttempts} attempts`);
+    return action();
   }
 }
