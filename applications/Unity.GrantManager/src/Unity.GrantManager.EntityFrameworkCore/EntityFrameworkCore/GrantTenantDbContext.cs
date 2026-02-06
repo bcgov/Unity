@@ -105,12 +105,6 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .HasForeignKey(x => x.ParentFormId)
                     .IsRequired(false)
                     .OnDelete(DeleteBehavior.NoAction);
-
-                b.HasOne<ApplicationFormVersion>()
-                    .WithMany()
-                    .HasForeignKey(x => x.ParentFormVersionId)
-                    .IsRequired(false)
-                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             modelBuilder.Entity<ApplicationFormVersion>(b =>

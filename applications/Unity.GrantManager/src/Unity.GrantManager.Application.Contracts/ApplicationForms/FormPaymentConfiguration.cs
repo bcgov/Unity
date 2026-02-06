@@ -13,7 +13,6 @@ namespace Unity.GrantManager.ApplicationForms
         public decimal? PaymentApprovalThreshold { get; set; }
         public FormHierarchyType? FormHierarchy { get; set; }
         public Guid? ParentFormId { get; set; }
-        public Guid? ParentFormVersionId { get; set; }
         public PaymentGroup? DefaultPaymentGroup { get; set; }
     }
 }

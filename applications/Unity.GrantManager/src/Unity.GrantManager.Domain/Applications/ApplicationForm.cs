@@ -31,7 +31,6 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public int? DefaultPaymentGroup { get; set; }
     public FormHierarchyType? FormHierarchy { get; set; }
     public Guid? ParentFormId { get; set; }
-    public Guid? ParentFormVersionId { get; set; }
     public bool RenderFormIoToHtml { get; set; } = false;
     public bool IsDirectApproval { get; set; } = false;
     public string? Prefix { get; set; }

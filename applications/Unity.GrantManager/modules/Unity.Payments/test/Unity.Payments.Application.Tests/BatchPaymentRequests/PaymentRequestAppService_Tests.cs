@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
+﻿using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -8,7 +7,6 @@ using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Unity.Payments.Enums;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 using Xunit;
 
 namespace Unity.Payments.PaymentRequests;
