@@ -91,16 +91,22 @@
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
                         var item = Model.ApplicationPaymentRequestForm[i];
+                        var itemParentReference = !string.IsNullOrEmpty(item.ParentReferenceNo)
+                            ? item.ParentReferenceNo
+                            : item.SubmissionConfirmationCode;
                         string? itemGroupKey = item.IsPartOfParentChildGroup
-                            ? (!string.IsNullOrEmpty(item.ParentReferenceNo) ? item.ParentReferenceNo : item.SubmissionConfirmationCode)
+                            ? itemParentReference
                             : null;
 
                         string? nextGroupKey = null;
                         if (i + 1 < Model.ApplicationPaymentRequestForm.Count)
                         {
                             var next = Model.ApplicationPaymentRequestForm[i + 1];
+                            var nextParentReference = !string.IsNullOrEmpty(next.ParentReferenceNo)
+                                ? next.ParentReferenceNo
+                                : next.SubmissionConfirmationCode;
                             nextGroupKey = next.IsPartOfParentChildGroup
-                                ? (!string.IsNullOrEmpty(next.ParentReferenceNo) ? next.ParentReferenceNo : next.SubmissionConfirmationCode)
+                                ? nextParentReference
                                 : null;
                         }
 

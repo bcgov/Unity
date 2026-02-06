@@ -191,7 +191,6 @@ function validateParentChildAmounts(correlationId) {
 
     // Find all payments in this parent-child group
     let groupTotal = 0;
-    let groupMembers = [];
 
     $('input[name*=".CorrelationId"]').each(function () {
         let itemCorrelationId = $(this).val();
@@ -220,7 +219,6 @@ function validateParentChildAmounts(correlationId) {
             );
             let amount = parseFloat(amountInput.val().replace(/,/g, '')) || 0;
             groupTotal += amount;
-            groupMembers.push(itemCorrelationId);
         }
     });
 
@@ -233,11 +231,13 @@ function validateParentChildAmounts(correlationId) {
     let groupErrorMessage = $(`#group_error_message_${groupKey}`);
 
     if (hasError) {
-        let message = `The total payment amount for the highlighted records (${formatCurrency(
+        let message = `The total payment amount (${formatCurrency(
             groupTotal
         )}) exceeds the remaining balance (${formatCurrency(
             maximumAllowed
-        )}).  Please reduce the amount to continue.`;
+        )}) of the approved amount (${formatCurrency(
+            approvedAmount
+        )}) for the application or its parent application.`;
         groupErrorMessage.text(message);
         groupErrorDiv.css('display', 'block');
         groupWrapper.addClass('has-error');
