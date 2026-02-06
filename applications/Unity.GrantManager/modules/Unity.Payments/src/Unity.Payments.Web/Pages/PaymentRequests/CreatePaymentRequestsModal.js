@@ -2,6 +2,7 @@
 
 function removeApplicationPaymentRequest(applicationId) {
     let $container = $('#' + applicationId);
+    let $parentGroup = $container.closest('.parent-child-group');
     $container.remove();
 
     $('#' + applicationId).remove();
@@ -17,6 +18,11 @@ function removeApplicationPaymentRequest(applicationId) {
         $('#payment-modal').find('#btnSubmitPayment').prop('disabled', true);
     } else {
         $('#no-payment-msg').css('display', 'none');
+    }
+
+    // Clean up empty group wrappers
+    if ($parentGroup.length && $parentGroup.find('.single-payment').length === 0) {
+        $parentGroup.remove();
     }
 
     // Always recalculate the total after removal
@@ -221,23 +227,19 @@ function validateParentChildAmounts(correlationId) {
     // Validate: groupTotal <= maximumAllowed
     let hasError = groupTotal > maximumAllowed;
 
-    // Show/hide errors for ALL members of the group
-    groupMembers.forEach(function (memberId) {
-        let errorDiv = $(`#column_${memberId}_parent_child_error`);
-        let errorMessage = $(`#parent_child_error_message_${memberId}`);
+    // Show/hide error once at the group level
+    let groupErrorDiv = $(`#group_error_${groupKey}`);
+    let groupErrorMessage = $(`#group_error_message_${groupKey}`);
 
-        if (hasError) {
-            let message = `The payment amount (${formatCurrency(
-                groupTotal
-            )}) exceeds the remaining balance (${formatCurrency(
-                maximumAllowed
-            )}) of the approved amount (${formatCurrency(
-                approvedAmount
-            )}) for the application or its parent application.`;
-            errorMessage.text(message);
-            errorDiv.css('display', 'block');
-        } else {
-            errorDiv.css('display', 'none');
-        }
-    });
+    if (hasError) {
+        let message = `The total payment amount for the highlighted records (${formatCurrency(
+            groupTotal
+        )}) exceeds the remaining balance (${formatCurrency(
+            maximumAllowed
+        )}).  Please reduce the amount to continue.`;
+        groupErrorMessage.text(message);
+        groupErrorDiv.css('display', 'block');
+    } else {
+        groupErrorDiv.css('display', 'none');
+    }
 }

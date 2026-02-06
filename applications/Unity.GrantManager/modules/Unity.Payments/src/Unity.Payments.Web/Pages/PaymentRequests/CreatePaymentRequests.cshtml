@@ -26,6 +26,28 @@
         color: var(--lpx-danger);
         border-color: var(--lpx-danger);
     }
+
+    .parent-child-group {
+        border: 2px solid #e91e8c;
+        border-radius: 8px;
+        padding: 0;
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+
+    .parent-child-group .single-payment {
+        border: none;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .parent-child-group .single-payment:last-of-type {
+        border-bottom: none;
+    }
+
+    .parent-child-group-error {
+        padding: 4px 12px 4px 12px;
+        background-color: #FEEAEA;
+    }
 </style>
 
 <form method="post" asp-page-handler="OnPostAsync" id="paymentform">
@@ -60,24 +82,48 @@
                 </abp-card>
             <abp-card class="pt-0">
                 <abp-card-body class="payment-card">
+                    @{
+                        string? currentGroupKey = null;
+                        bool groupOpen = false;
+                    }
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
-                        <div id="@($"{Model.ApplicationPaymentRequestForm[i].CorrelationId}_container")" class="single-payment payment-item">
+                        var item = Model.ApplicationPaymentRequestForm[i];
+                        string? itemGroupKey = item.IsPartOfParentChildGroup
+                            ? (!string.IsNullOrEmpty(item.ParentReferenceNo) ? item.ParentReferenceNo : item.SubmissionConfirmationCode)
+                            : null;
+
+                        string? nextGroupKey = null;
+                        if (i + 1 < Model.ApplicationPaymentRequestForm.Count)
+                        {
+                            var next = Model.ApplicationPaymentRequestForm[i + 1];
+                            nextGroupKey = next.IsPartOfParentChildGroup
+                                ? (!string.IsNullOrEmpty(next.ParentReferenceNo) ? next.ParentReferenceNo : next.SubmissionConfirmationCode)
+                                : null;
+                        }
+
+                        if (itemGroupKey != null && itemGroupKey != currentGroupKey)
+                        {
+                            @:<div class="parent-child-group" data-group-key="@itemGroupKey">
+                            groupOpen = true;
+                        }
+
+                        <div id="@($"{item.CorrelationId}_container")" class="single-payment payment-item">
                             <abp-row class="m-0 p-2">
                                 <abp-column size="_12" class="d-flex justify-content-between align-items-center px-1">
                                     <h6 class="single-payment-card-application-name mb-0">
-                                        <span class="fw-bold">@Model.ApplicationPaymentRequestForm[i].ApplicantName/@Model.ApplicationPaymentRequestForm[i].InvoiceNumber</span>
-                                        @if (!string.IsNullOrEmpty(Model.ApplicationPaymentRequestForm[i].ParentReferenceNo))
+                                        <span class="fw-bold">@item.ApplicantName/@item.InvoiceNumber</span>
+                                        @if (!string.IsNullOrEmpty(item.ParentReferenceNo))
                                         {
-                                            <span>&nbsp;&nbsp;(Parent Id: <strong>@Model.ApplicationPaymentRequestForm[i].ParentReferenceNo</strong>)</span>
+                                            <span>&nbsp;&nbsp;(Parent Id: <strong>@item.ParentReferenceNo</strong>)</span>
                                         }
                                     </h6>
-                                    <abp-button onclick='removeApplicationPaymentRequest("@Model.ApplicationPaymentRequestForm[i].CorrelationId" + "_container")'
+                                    <abp-button onclick='removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
                                                 size="Small"
                                                 icon-type="Other"
                                                 class="m-0 p-0 remove-single-payment"
                                                 icon="fa fa-times"
-                                                data-parameter="@Model.ApplicationPaymentRequestForm[i].CorrelationId" />
+                                                data-parameter="@item.CorrelationId" />
                                 </abp-column>
                             </abp-row>
 
@@ -98,38 +144,45 @@
 
                             <abp-row class="m-0 p-3">
                                 <abp-column size="_2" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@item.DisableFields"/>
                                 </abp-column>
                                 <abp-column size="_2" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" 
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount"
                                             class="amount unity-currency-input"
-                                               disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"
-                                               onchange='checkMaxValueRequest("@Model.ApplicationPaymentRequestForm[i].CorrelationId",this, @Model.ApplicationPaymentRequestForm[i].RemainingAmount)' />
+                                               disabled="@item.DisableFields"
+                                               onchange='checkMaxValueRequest("@item.CorrelationId",this, @item.RemainingAmount)' />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].SiteName" alt="@Model.ApplicationPaymentRequestForm[i].SiteName" disabled="true"/>
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].SiteName" alt="@item.SiteName" disabled="true"/>
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" alt="@Model.ApplicationPaymentRequestForm[i].Description" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" alt="@item.Description" disabled="@item.DisableFields"/>
                                 </abp-column>
 
-                                <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_remaining_error")" style="display: none;">
-                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @Model.ApplicationPaymentRequestForm[i].RemainingAmount</span>
+                                <abp-column size="_12" class="payment-error-column" id="@($"column_{item.CorrelationId}_remaining_error")" style="display: none;">
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @item.RemainingAmount</span>
                                 </abp-column>
 
-                                <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_parent_child_error")" style="display: none;">
-                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; <span id="@($"parent_child_error_message_{Model.ApplicationPaymentRequestForm[i].CorrelationId}")"></span></span>
-                                </abp-column>
-
-                                @for (var j = 0; j < Model.ApplicationPaymentRequestForm[i].ErrorList?.Count; j++)
+                                @for (var j = 0; j < item.ErrorList?.Count; j++)
                                 {
                                 <abp-column size="_12" class="payment-error-column">
-                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @Model.ApplicationPaymentRequestForm[i].ErrorList[j]</span>
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @item.ErrorList[j]</span>
                                 </abp-column>
                                 }
 
                             </abp-row>
                         </div>
+
+                        if (groupOpen && nextGroupKey != itemGroupKey)
+                        {
+                            @:<div class="parent-child-group-error payment-error-column" id="group_error_@(itemGroupKey)" style="display: none;">
+                            @:    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; <span id="group_error_message_@(itemGroupKey)"></span></span>
+                            @:</div>
+                            @:</div>
+                            groupOpen = false;
+                        }
+
+                        currentGroupKey = itemGroupKey;
                     }
                     <abp-row class="m-0 p-2 no-payment-msg text-center" id="no-payment-msg" style="display: none;">
                         <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>
