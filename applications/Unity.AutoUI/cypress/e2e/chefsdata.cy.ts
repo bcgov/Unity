@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import { PageFactory } from "../utilities/PageFactory";
+import { loginIfNeeded } from "../support/auth";
 
 describe("Unity Login and check data from CHEFS", () => {
   const loginPage = PageFactory.getLoginPage();
@@ -23,40 +24,12 @@ describe("Unity Login and check data from CHEFS", () => {
       }
       expectedData = envData;
     });
+    loginIfNeeded();
   });
 
   it("Verify Login", () => {
-    cy.visit(Cypress.env("webapp.url"));
-
-    // Decide auth path based on visible UI
-    cy.get("body").then(($body) => {
-      // Already authenticated
-      if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
-        cy.contains("VIEW APPLICATIONS").click();
-        return;
-      }
-
-      // Not authenticated
-      if ($body.find('button:contains("LOGIN")').length > 0) {
-        cy.contains("LOGIN").should("be.visible").click();
-        cy.contains("IDIR").should("be.visible").click();
-
-        cy.get("body").then(($loginBody) => {
-          if ($loginBody.find("#user").length) {
-            cy.get("#user").type(Cypress.env("test1username"));
-            cy.get("#password").type(Cypress.env("test1password"));
-            cy.contains("Continue").should("exist").click();
-          } else {
-            cy.log("Already logged in");
-          }
-        });
-        return;
-      }
-
-      throw new Error("Unable to determine authentication state");
-    });
-
-    cy.url().should("include", "/GrantApplications");
+    // Use the new robust login helper
+    loginIfNeeded();
   });
 
   it("Verify the UI is populated with valid data from CHEFS", () => {

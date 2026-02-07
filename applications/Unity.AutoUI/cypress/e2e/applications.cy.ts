@@ -3,6 +3,7 @@
  * Tests for verifying all lists are populated with data
  */
 
+import { loginIfNeeded } from "../support/auth";
 import {
   LoginPageInstance,
   ApplicationDetailsPageInstance,
@@ -12,21 +13,8 @@ describe("Grant Manager Login and List Navigation (POM)", () => {
   const loginPage = LoginPageInstance();
   const applicationDetailsPage = ApplicationDetailsPageInstance();
 
-  it("Verify Login", () => {
-    loginPage.quickLogin();
-  });
-
-  it("Handle IDIR if required", () => {
-    cy.get("body").then(($body) => {
-      if ($body.find("#social-idir").length > 0) {
-        cy.get("#social-idir").should("be.visible").click();
-      }
-    });
-
-    cy.location("pathname", { timeout: 30000 }).should(
-      "include",
-      "/GrantApplications",
-    );
+  before(() => {
+    loginIfNeeded();
   });
 
   it("Validate selecting application will show new menu items", () => {

@@ -1,4 +1,5 @@
 import { PageFactory } from "../utilities/PageFactory";
+import { loginIfNeeded } from "../support/auth";
 
 describe("Send an email", () => {
   const loginPage = PageFactory.getLoginPage();
@@ -24,21 +25,10 @@ describe("Send an email", () => {
 
   const TEST_EMAIL_SUBJECT = "Smoke Test Email " + buildTimestamp();
 
-  it("Login", () => {
-    loginPage.quickLogin();
-  });
-
-  it("Switch to Default Grants Program if available", () => {
+  before(() => {
+    loginIfNeeded();
     navigationPage.switchToTenantIfAvailable("Default Grants Program");
-  });
-
-  it("Handle IDIR if required", () => {
-    cy.get("body").then(($body) => {
-      if ($body.find("#social-idir").length > 0) {
-        cy.get("#social-idir").should("be.visible").click();
-      }
-    });
-
+    // loginIfNeeded() already handles Keycloak IDIR selection - no need for redundant check
     cy.location("pathname", { timeout: 30000 }).should(
       "include",
       "/GrantApplications",

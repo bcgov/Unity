@@ -4,6 +4,7 @@
  * Validates search bar, date filters, and all menu items
  */
 
+import { loginIfNeeded } from "cypress/support/auth";
 import {
   LoginPageInstance,
   ApplicationActionBarPageInstance,
@@ -32,15 +33,7 @@ describe("Application List Action Bar Validation", () => {
   };
 
   before(() => {
-    // Login once before all tests
-    loginPage.quickLogin();
-
-    // Handle IDIR if required
-    cy.get("body").then(($body) => {
-      if ($body.find("#social-idir").length > 0) {
-        cy.get("#social-idir").should("be.visible").click();
-      }
-    });
+    loginIfNeeded();
 
     // Navigate to Applications page
     cy.location("pathname", { timeout: 30000 }).should(
@@ -48,7 +41,6 @@ describe("Application List Action Bar Validation", () => {
       "/GrantApplications",
     );
     cy.get("#GrantApplicationsTable", { timeout: 10000 }).should("be.visible");
-    cy.wait(2000);
   });
 
   // ==================== TESTS WITHOUT APPLICATION SELECTION ====================
