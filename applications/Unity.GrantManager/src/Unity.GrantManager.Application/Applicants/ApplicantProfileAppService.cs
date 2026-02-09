@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applications;
 using Volo.Abp;
@@ -59,14 +60,14 @@ namespace Unity.GrantManager.Applicants
             using (currentTenant.Change(null))
             {
                 var queryable = await applicantTenantMapRepository.GetQueryableAsync();
-                var mappings = queryable
+                var mappings = await queryable
                     .Where(m => m.OidcSubUsername == subUsername)
                     .Select(m => new ApplicantTenantDto
                     {
                         TenantId = m.TenantId,
                         TenantName = m.TenantName
                     })
-                    .ToList();
+                    .ToListAsync();
 
                 return mappings;
             }
@@ -96,11 +97,11 @@ namespace Unity.GrantManager.Applicants
                     using (currentTenant.Change(tenant.Id))
                     {
                         var submissionQueryable = await applicationFormSubmissionRepository.GetQueryableAsync();
-                        var distinctOidcSubs = submissionQueryable
+                        var distinctOidcSubs = await submissionQueryable
                             .Where(s => !string.IsNullOrEmpty(s.OidcSub))
                             .Select(s => s.OidcSub)
                             .Distinct()
-                            .ToList();
+                            .ToListAsync();
 
                         // For each distinct OidcSub, ensure mapping exists in host database
                         using (currentTenant.Change(null))
@@ -112,8 +113,8 @@ namespace Unity.GrantManager.Applicants
                                     : oidcSub.ToUpper();
 
                                 var mapQueryable = await applicantTenantMapRepository.GetQueryableAsync();
-                                var existingMapping = mapQueryable
-                                    .FirstOrDefault(m => m.OidcSubUsername == subUsername && m.TenantId == tenant.Id);
+                                var existingMapping = await mapQueryable
+                                    .FirstOrDefaultAsync(m => m.OidcSubUsername == subUsername && m.TenantId == tenant.Id);
 
                                 if (existingMapping != null)
                                 {

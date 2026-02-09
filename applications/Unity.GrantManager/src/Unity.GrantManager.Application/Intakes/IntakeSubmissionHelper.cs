@@ -54,11 +54,11 @@ namespace Unity.GrantManager.Intakes
                 
                 if (atIndex > 0)
                 {
-                    return sub[..atIndex].ToUpper();
+                    return sub[..atIndex].ToUpperInvariant();
                 }
 
                 // No @ symbol found, return the whole sub uppercased
-                return sub.ToUpper();
+                return sub.ToUpperInvariant();
             }
             catch
             {

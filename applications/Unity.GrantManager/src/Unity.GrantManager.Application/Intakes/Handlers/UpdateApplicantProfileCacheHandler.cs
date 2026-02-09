@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Intakes.Events;
@@ -66,8 +67,8 @@ namespace Unity.GrantManager.Intakes.Handlers
 
                     // Check if mapping already exists
                     var queryable = await applicantTenantMapRepository.GetQueryableAsync();
-                    var existingMapping = queryable
-                        .FirstOrDefault(m => m.OidcSubUsername == subUsername && m.TenantId == tenantId.Value);
+                    var existingMapping = await queryable
+                        .FirstOrDefaultAsync(m => m.OidcSubUsername == subUsername && m.TenantId == tenantId.Value);
 
                     if (existingMapping != null)
                     {

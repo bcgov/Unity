@@ -11,30 +11,18 @@ This dual-integration approach provides both immediate data access (API) and rel
 
 ## Architecture
 
-``` code
-???????????????????????
-? Applicant Portal    ?
-? (External System)   ?
-???????????????????????
-           ? HTTPS + API Key
-           ???? GET /api/app/applicant-profiles/profile
-           ???? GET /api/app/applicant-profiles/tenants
-           ?
-???????????????????????
-? Unity Grant Manager ?
-? HttpApi Layer       ?
-???????????????????????
-           ?
-???????????????????????????????????
-? ApplicantProfileAppService      ?
-? (Business Logic)                ?
-???????????????????????????????????
-           ?
-???????????????????????????????????
-? Host Database                   ?
-? AppApplicantTenantMaps Table    ?
-? (Centralized Lookup)            ?
-???????????????????????????????????
+```mermaid
+graph TD
+    A[Applicant Portal<br/>External System] -->|HTTPS + API Key| B[Unity Grant Manager<br/>HttpApi Layer]
+    B -->|GET /api/app/applicant-profiles/profile| B
+    B -->|GET /api/app/applicant-profiles/tenants| B
+    B --> C[ApplicantProfileAppService<br/>Business Logic]
+    C --> D[Host Database<br/>AppApplicantTenantMaps Table<br/>Centralized Lookup]
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e6
+    style C fill:#f3e5f5
+    style D fill:#e8f5e9
 ```
 
 ### Data Synchronization Flow
@@ -88,23 +76,23 @@ Retrieves basic profile information for an applicant.
 **Query Parameters**:
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `ProfileId` | `string` | Yes | Unique identifier for the applicant profile |
+| `ProfileId` | `Guid` | Yes | Unique identifier for the applicant profile |
 | `Subject` | `string` | Yes | OIDC subject identifier (e.g., `user@idp`) |
 | `TenantId` | `Guid` | Yes | The tenant ID to query within |
 
 **Request Example**:
 ```http
-GET /api/app/applicant-profiles/profile?ProfileId=abc123&Subject=smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299&TenantId=3fa85f64-5717-4562-b3fc-2c963f66afa6
+GET /api/app/applicant-profiles/profile?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299&TenantId=7c9e6679-7425-40de-944b-e07fc1f90ae7
 X-API-Key: your-api-key-here
 ```
 
 **Response Example** (200 OK):
 ```json
 {
-  "profileId": "abc123",
+  "profileId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "subject": "smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299",
-  "email": "",
-  "displayName": ""
+  "email": "applicant@example.com",
+  "displayName": "John Doe"
 }
 ```
 
@@ -112,7 +100,7 @@ X-API-Key: your-api-key-here
 ```csharp
 public class ApplicantProfileDto
 {
-    public string ProfileId { get; set; }
+    public Guid ProfileId { get; set; }
     public string Subject { get; set; }
     public string Email { get; set; }
     public string DisplayName { get; set; }
@@ -130,12 +118,12 @@ Retrieves the list of tenants (grant programs) the applicant has submitted appli
 **Query Parameters**:
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `ProfileId` | `string` | Yes | Unique identifier for the applicant profile |
+| `ProfileId` | `Guid` | Yes | Unique identifier for the applicant profile |
 | `Subject` | `string` | Yes | OIDC subject identifier (e.g., `user@idp`) |
 
 **Request Example**:
 ``` http
-GET /api/app/applicant-profiles/tenants?ProfileId=abc123&Subject=smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299
+GET /api/app/applicant-profiles/tenants?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299
 X-API-Key: your-api-key-here
 ```
 
@@ -246,32 +234,21 @@ public class ApplicantTenantMap : CreationAuditedAggregateRoot<Guid>
 **Trigger**: `ApplicationProcessEvent` (fires when a submission is received)
 
 **Flow**:
-```
-Submission Received
-    ?
-ApplicationProcessEvent Fired
-    ?
-UpdateApplicantProfileCacheHandler
-    ?
-Extract OidcSub from submission
-    ?
-Normalize to uppercase username
-    ?
-Query Host DB for existing mapping
-    ?
-???????????????????
-? Mapping Exists? ?
-???????????????????
-     ?        ?
-    Yes      No
-     ?        ?
-     ?        ?
-Update      Create
-LastUpdated  New Mapping
-     ?        ?
-     ??????????
-          ?
-      Success
+```mermaid
+graph TD
+    A[Submission Received] --> B[ApplicationProcessEvent Fired]
+    B --> C[UpdateApplicantProfileCacheHandler]
+    C --> D[Extract OidcSub from submission]
+    D --> E[Normalize to uppercase username]
+    E --> F[Query Host DB for existing mapping]
+    F --> G{Mapping Exists?}
+    G -->|Yes| H[Update LastUpdated]
+    G -->|No| I[Create New Mapping]
+    H --> J[Success]
+    I --> J
+    
+    style A fill:#e3f2fd
+    style J fill:#c8e6c9
 ```
 
 **Code Example**:
@@ -321,32 +298,23 @@ public async Task HandleEventAsync(ApplicationProcessEvent eventData)
 **Configurable via**: `GrantManager.BackgroundJobs.ApplicantTenantMapReconciliation_Expression`
 
 **Flow**:
-```
-Scheduled Trigger (2 AM PST)
-    ?
-For each Tenant:
-    ?
-Get all distinct OidcSub values from tenant submissions
-    ?
-For each OidcSub:
-    ?
-Check if mapping exists in Host DB
-    ?
-???????????????????
-? Mapping Exists? ?
-???????????????????
-     ?        ?
-    Yes      No
-     ?        ?
-     ?        ?
-Update      Create
-LastUpdated  New Mapping
-     ?        ?
-     ??????????
-          ?
-Next OidcSub/Tenant
-    ?
-Log Statistics (Created/Updated counts)
+```mermaid
+graph TD
+    A[Scheduled Trigger<br/>2 AM PST] --> B[For each Tenant]
+    B --> C[Get all distinct OidcSub values<br/>from tenant submissions]
+    C --> D[For each OidcSub]
+    D --> E[Check if mapping exists<br/>in Host DB]
+    E --> F{Mapping Exists?}
+    F -->|Yes| G[Update LastUpdated]
+    F -->|No| H[Create New Mapping]
+    G --> I[Next OidcSub/Tenant]
+    H --> I
+    I --> J{More Records?}
+    J -->|Yes| D
+    J -->|No| K[Log Statistics<br/>Created/Updated counts]
+    
+    style A fill:#fff9c4
+    style K fill:#c8e6c9
 ```
 
 **Purpose**:
@@ -460,39 +428,39 @@ In addition to REST API endpoints, Unity Grant Manager and the Applicant Portal 
 
 The Applicant Portal implements the **Transactional Outbox** and **Inbox** patterns for reliable message processing:
 
-```
-?????????????????????????????????????????
-?     Applicant Portal                  ?
-?                                       ?
-?  ???????????????    ???????????????? ?
-?  ?   Outbox    ?    ?    Inbox     ? ?
-?  ?   Table     ?    ?    Table     ? ?
-?  ???????????????    ???????????????? ?
-?         ?                  ?         ?
-?    ???????????????????????????????   ?
-?    ?  Background Workers         ?   ?
-?    ?  • Outbox Publisher         ?   ?
-?    ?  • Inbox Consumer           ?   ?
-?    ???????????????????????????????   ?
-????????????????????????????????????????
-          ?               ?
-   ???????????????????????????????
-   ?      RabbitMQ Broker        ?
-   ?                             ?
-   ?  • applicant-portal.commands?
-   ?  • unity.events             ?
-   ?  • applicant-portal.dlq     ?
-   ???????????????????????????????
-          ?              ?
-???????????????????????????????????????
-?     Unity Grant Manager              ?
-?                                      ?
-?  ?????????????????????????????????  ?
-?  ?  Message Handlers             ?  ?
-?  ?  • Command Handlers           ?  ?
-?  ?  • Event Publishers           ?  ?
-?  ?????????????????????????????????  ?
-????????????????????????????????????????
+```mermaid
+graph TB
+    subgraph Portal[Applicant Portal]
+        POT[Outbox Table]
+        PIT[Inbox Table]
+        PWO[Background Worker:<br/>Outbox Publisher]
+        PWI[Background Worker:<br/>Inbox Consumer]
+    end
+    
+    subgraph Broker[RabbitMQ Broker]
+        QC[applicant-portal.commands]
+        QE[unity.events]
+        QD[applicant-portal.dlq]
+    end
+    
+    subgraph Unity[Unity Grant Manager]
+        UCH[Command Handlers]
+        UEP[Event Publishers]
+    end
+    
+    POT --> PWO
+    PWO -->|Publish| QC
+    QC --> UCH
+    UCH -->|Publish| QE
+    QE --> PWI
+    PWI --> PIT
+    
+    QC -.->|Failed| QD
+    QE -.->|Failed| QD
+    
+    style Portal fill:#e1f5ff
+    style Broker fill:#fff4e6
+    style Unity fill:#f3e5f5
 ```
 
 **Key Benefits**:
@@ -509,26 +477,26 @@ The Applicant Portal implements the **Transactional Outbox** and **Inbox** patte
 Commands represent requests from the Applicant Portal for Unity to perform an action.
 
 **Flow**:
-```
-Portal Business Logic
-    ?
-Save to Outbox Table (Transaction)
-    ?
-Commit Transaction
-    ?
-Background Worker Polls Outbox
-    ?
-Publish to RabbitMQ Queue
-    ?
-Mark as Sent in Outbox
-    ?
-Unity Consumes from Queue
-    ?
-Save to Unity Inbox (if using inbox pattern)
-    ?
-Process Command
-    ?
-Acknowledge Message
+```mermaid
+sequenceDiagram
+    participant PBL as Portal Business Logic
+    participant OT as Outbox Table
+    participant BW as Background Worker
+    participant RMQ as RabbitMQ Queue
+    participant UIT as Unity Inbox
+    participant UC as Unity Command Handler
+    
+    PBL->>OT: Save to Outbox (Transaction)
+    PBL->>OT: Commit Transaction
+    BW->>OT: Poll for pending messages
+    BW->>RMQ: Publish to Queue
+    BW->>OT: Mark as Sent
+    RMQ->>UIT: Consume from Queue
+    UIT->>UIT: Save to Inbox
+    UIT->>UC: Process Command
+    UC->>RMQ: Acknowledge Message
+    
+    Note over OT,UC: At-Least-Once Delivery
 ```
 
 **Example Commands** (Future Implementation):
@@ -550,24 +518,27 @@ Acknowledge Message
 Events represent notifications about things that have happened in Unity.
 
 **Flow**:
-```
-Unity Business Logic
-    ?
-Domain Event Raised
-    ?
-Event Handler Publishes to RabbitMQ
-    ?
-Portal Consumes from Queue
-    ?
-Save to Portal Inbox Table (Transaction)
-    ?
-Acknowledge Message
-    ?
-Background Worker Polls Inbox
-    ?
-Process Event
-    ?
-Mark as Processed in Inbox
+```mermaid
+sequenceDiagram
+    participant UBL as Unity Business Logic
+    participant DE as Domain Event
+    participant EH as Event Handler
+    participant RMQ as RabbitMQ
+    participant PC as Portal Consumer
+    participant PIT as Portal Inbox Table
+    participant BW as Background Worker
+    
+    UBL->>DE: Raise Domain Event
+    DE->>EH: Trigger Event Handler
+    EH->>RMQ: Publish to Queue
+    RMQ->>PC: Consume from Queue
+    PC->>PIT: Save to Inbox (Transaction)
+    PC->>RMQ: Acknowledge Message
+    BW->>PIT: Poll Inbox
+    BW->>BW: Process Event
+    BW->>PIT: Mark as Processed
+    
+    Note over UBL,BW: Reliable Event Delivery
 ```
 
 **Example Events** (Future Implementation):
@@ -1132,19 +1103,19 @@ public class EncryptedMessage
 #### Saga Pattern
 
 For complex workflows spanning both systems:
-```
-Application Submission Saga:
-  Portal: InitiateApplicationSubmission
-    ?
-  Unity: ValidateApplicationCommand
-    ?
-  Unity: ApplicationValidatedEvent
-    ?
-  Portal: ConfirmSubmissionCommand
-    ?
-  Unity: ApplicationSubmittedEvent
-    ?
-  Portal: NotifyApplicantCommand
+```mermaid
+sequenceDiagram
+    participant Portal as Applicant Portal
+    participant Unity as Unity Grant Manager
+    
+    Portal->>Unity: InitiateApplicationSubmission
+    Unity->>Unity: ValidateApplicationCommand
+    Unity->>Portal: ApplicationValidatedEvent
+    Portal->>Unity: ConfirmSubmissionCommand
+    Unity->>Portal: ApplicationSubmittedEvent
+    Portal->>Portal: NotifyApplicantCommand
+    
+    Note over Portal,Unity: Application Submission Saga
 ```
 
 #### Event Sourcing
@@ -1347,7 +1318,7 @@ HTTP/1.1 200 OK
 
 **1. Test Tenant Lookup**:
 ```bash
-curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?ProfileId=test&Subject=TESTUSER@idp" \
+curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=TESTUSER@idp" \
   -H "X-API-Key: your-dev-api-key"
 ```
 
@@ -1355,7 +1326,7 @@ curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?Pr
 ```json
 [
   {
-    "tenantId": "guid-here",
+    "tenantId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
     "tenantName": "Test Tenant"
   }
 ]
@@ -1363,13 +1334,13 @@ curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?Pr
 
 **2. Test Profile Retrieval**:
 ```bash
-curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/profile?ProfileId=test&Subject=TESTUSER@idp&TenantId=guid-here" \
+curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/profile?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=TESTUSER@idp&TenantId=7c9e6679-7425-40de-944b-e07fc1f90ae7" \
   -H "X-API-Key: your-dev-api-key"
 ```
 
 **3. Test Invalid API Key**:
 ```bash
-curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?ProfileId=test&Subject=TESTUSER@idp" \
+curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=TESTUSER@idp" \
   -H "X-API-Key: invalid-key"
 ```
 

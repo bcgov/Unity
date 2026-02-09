@@ -260,5 +260,82 @@ namespace Unity.GrantManager.Intakes
             // Assert - Should use first path value
             result.ShouldBe("FIRST-PATH");
         }
+
+        [Fact]
+        public void ExtractOidcSub_WithHiddenApplicantAgent_ReturnsUppercaseSubWithoutIdpSuffix()
+        {
+            // Arrange - Create a mock dynamic object matching the hiddenApplicantAgent path
+            dynamic submission = new ExpandoObject();
+            submission.submission = new ExpandoObject();
+            submission.submission.data = new ExpandoObject();
+            submission.submission.data.hiddenApplicantAgent = new ExpandoObject();
+            submission.submission.data.hiddenApplicantAgent.sub = "hidden-agent-123@idir";
+
+            // Act
+            string result = IntakeSubmissionHelper.ExtractOidcSub(submission);
+
+            // Assert
+            result.ShouldBe("HIDDEN-AGENT-123");
+        }
+
+        [Fact]
+        public void ExtractOidcSub_FallbackOrdering_ApplicantAgentTakesPrecedenceOverHiddenApplicantAgent()
+        {
+            // Arrange - Both applicantAgent and hiddenApplicantAgent exist
+            // applicantAgent should take precedence
+            dynamic submission = new ExpandoObject();
+            submission.submission = new ExpandoObject();
+            submission.submission.data = new ExpandoObject();
+            submission.submission.data.applicantAgent = new ExpandoObject();
+            submission.submission.data.applicantAgent.sub = "applicant-agent@idir";
+            submission.submission.data.hiddenApplicantAgent = new ExpandoObject();
+            submission.submission.data.hiddenApplicantAgent.sub = "hidden-agent@idir";
+
+            // Act
+            string result = IntakeSubmissionHelper.ExtractOidcSub(submission);
+
+            // Assert - Should use applicantAgent, not hiddenApplicantAgent
+            result.ShouldBe("APPLICANT-AGENT");
+        }
+
+        [Fact]
+        public void ExtractOidcSub_FallbackOrdering_HiddenApplicantAgentTakesPrecedenceOverCreatedBy()
+        {
+            // Arrange - Both hiddenApplicantAgent and createdBy exist
+            // hiddenApplicantAgent should take precedence
+            dynamic submission = new ExpandoObject();
+            submission.submission = new ExpandoObject();
+            submission.submission.data = new ExpandoObject();
+            submission.submission.data.hiddenApplicantAgent = new ExpandoObject();
+            submission.submission.data.hiddenApplicantAgent.sub = "hidden-agent@bceid";
+            submission.createdBy = "created-by-user@bceid";
+
+            // Act
+            string result = IntakeSubmissionHelper.ExtractOidcSub(submission);
+
+            // Assert - Should use hiddenApplicantAgent, not createdBy
+            result.ShouldBe("HIDDEN-AGENT");
+        }
+
+        [Fact]
+        public void ExtractOidcSub_FallbackOrdering_ValidatesCompleteChain()
+        {
+            // Arrange - All three paths exist, should use first one (applicantAgent)
+            dynamic submission = new ExpandoObject();
+            submission.submission = new ExpandoObject();
+            submission.submission.data = new ExpandoObject();
+            submission.submission.data.applicantAgent = new ExpandoObject();
+            submission.submission.data.applicantAgent.sub = "first-priority@idir";
+            submission.submission.data.hiddenApplicantAgent = new ExpandoObject();
+            submission.submission.data.hiddenApplicantAgent.sub = "second-priority@idir";
+            submission.createdBy = "third-priority@bceid";
+
+            // Act
+            string result = IntakeSubmissionHelper.ExtractOidcSub(submission);
+
+            // Assert - Should use applicantAgent (highest priority)
+            result.ShouldBe("FIRST-PRIORITY");
+        }
     }
 }
+
