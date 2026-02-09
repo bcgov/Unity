@@ -277,6 +277,14 @@ namespace Unity.Payments.Suppliers
                 };
         }
 
+        public async Task ClearCorrelationAsync(Guid supplierId)
+        {
+            var supplier = await supplierRepository.GetAsync(supplierId);
+            supplier.CorrelationId = Guid.Empty;
+            supplier.CorrelationProvider = string.Empty;
+            await supplierRepository.UpdateAsync(supplier);
+        }
+
         private async Task<PaymentGroup> ResolveDefaultPaymentGroupForApplicantAsync(Guid applicantId, Guid? applicationId = null)
         {
             const PaymentGroup fallbackPaymentGroup = PaymentGroup.EFT;
