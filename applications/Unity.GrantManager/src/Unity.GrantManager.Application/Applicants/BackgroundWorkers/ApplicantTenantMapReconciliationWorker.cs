@@ -33,7 +33,8 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers
             _applicantProfileAppService = applicantProfileAppService;
             _logger = logger;
 
-            string cronExpression = "0 0 10 1/1 * ? *"; // Default to 2AM PST daily;            
+            // 2 AM PST = 10 AM UTC
+            string cronExpression = "0 0 10 1/1 * ? *";            
 
             try
             {
@@ -41,9 +42,9 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers
                     .GetSettingsValue(settingManager,
                         SettingsConstants.BackgroundJobs.ApplicantTenantMapReconciliation_Expression);
             }
-            catch
+            catch (Exception ex)
             {
-                _logger.LogWarning("Error reading cron setting for tenant maps, reverting to default {expression}", cronExpression);
+                _logger.LogWarning("Error reading cron setting for tenant maps, reverting to default {CronExpression} {ex}", cronExpression, ex);
             }
 
             if (!cronExpression.IsNullOrEmpty())
