@@ -58,7 +58,7 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         
             var supplier = await GetSupplierByApplicantIdAsync(applicantId);
 
-            if (supplier != null && string.Compare(supplierNumber, supplier?.Number, true) == 0)
+            if (supplier != null && string.Compare(supplierNumber, supplier.Number, true) == 0)
             {
                 return; // No change in supplier number, so no action needed
             }
