@@ -964,7 +964,6 @@ public class GrantApplicationAppService(
             List<ApplicationActionDto>>(externalActionsList);
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
-        // TODO: Replace placeholder loop with authorization handler mapped to permissions
         // AUTHORIZATION HANDLING
         actionDtos.ForEach(async item =>
         {
