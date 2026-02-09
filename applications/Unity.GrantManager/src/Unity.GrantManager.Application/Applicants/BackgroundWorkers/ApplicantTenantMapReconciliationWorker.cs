@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Error reading cron setting for tenant maps, reverting to default {CronExpression} {ex}", cronExpression, ex);
+                _logger.LogWarning(ex, "Error reading cron setting for tenant maps, reverting to default {CronExpression}", cronExpression);
             }
 
             if (!cronExpression.IsNullOrEmpty())
