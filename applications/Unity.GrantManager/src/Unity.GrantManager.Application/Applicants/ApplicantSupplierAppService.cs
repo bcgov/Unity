@@ -58,7 +58,7 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         
             var supplier = await GetSupplierByApplicantIdAsync(applicantId);
 
-            if (supplier != null && string.Compare(supplierNumber, supplier?.Number, true) == 0)
+            if (supplier != null && string.Compare(supplierNumber, supplier.Number, true) == 0)
             {
                 return; // No change in supplier number, so no action needed
             }
@@ -74,12 +74,36 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         {
             await applicantRepository.EnsureExistsAsync(applicantId);
 
-            var applicant = await applicantRepository.GetAsync(applicantId);            
-            
+            var applicant = await applicantRepository.GetAsync(applicantId);
+            var supplierId = applicant.SupplierId;
+
             // Clear the applicant references first
             applicant.SupplierId = null;
             applicant.SiteId = null;
             await applicantRepository.UpdateAsync(applicant);
+
+            if (supplierId.HasValue)
+            {
+                await supplierAppService.ClearCorrelationAsync(supplierId.Value);
+            }
+            else
+            {
+                // Handle existing data where SupplierId was already cleared
+                // but the supplier's correlation was never removed
+                var supplier = await supplierAppService.GetByCorrelationAsync(
+                    new GetSupplierByCorrelationDto()
+                    {
+                        CorrelationId = applicantId,
+                        CorrelationProvider = CorrelationConsts.Applicant,
+                        IncludeDetails = false
+                    });
+
+                if (supplier != null)
+                {
+                    await supplierAppService.ClearCorrelationAsync(supplier.Id);
+                }
+            }
+
         }
     }
 
