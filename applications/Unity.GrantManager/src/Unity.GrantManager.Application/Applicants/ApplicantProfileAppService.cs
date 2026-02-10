@@ -53,8 +53,8 @@ namespace Unity.GrantManager.Applicants
         {
             // Extract the username part from the OIDC sub (part before '@')
             var subUsername = request.Subject.Contains('@')
-                ? request.Subject[..request.Subject.IndexOf('@')].ToUpper()
-                : request.Subject.ToUpper();
+                ? request.Subject[..request.Subject.IndexOf('@')].ToUpperInvariant()
+                : request.Subject.ToUpperInvariant();
 
             // Query the ApplicantTenantMaps table in the host database
             using (currentTenant.Change(null))
@@ -75,76 +75,95 @@ namespace Unity.GrantManager.Applicants
 
         /// <summary>
         /// Reconciles ApplicantTenantMaps by scanning all tenants for submissions
-        /// and ensuring mappings exist in the host database
+        /// and ensuring mappings exist in the host database.
+        /// Phase 1: Collects all distinct OidcSub-to-tenant associations into memory.
+        /// Phase 2: Switches to host DB once and reconciles all mappings.
         /// </summary>
         /// <returns>Tuple of (created count, updated count)</returns>
         public async Task<(int Created, int Updated)> ReconcileApplicantTenantMapsAsync()
         {
             Logger.LogInformation("Starting ApplicantTenantMap reconciliation...");
 
-            int totalMappingsCreated = 0;
-            int totalMappingsUpdated = 0;
-
+            // Phase 1: Collect all OidcSub-to-tenant associations from each tenant DB
+            var desiredMappings = new List<(string SubUsername, Guid TenantId, string TenantName)>();
             var tenants = await tenantRepository.GetListAsync();
 
             foreach (var tenant in tenants)
             {
                 try
                 {
-                    Logger.LogDebug("Processing tenant: {TenantName}", tenant.Name);
+                    Logger.LogDebug("Collecting submissions from tenant: {TenantName}", tenant.Name);
 
-                    // Get distinct OidcSub values from this tenant's submissions
                     using (currentTenant.Change(tenant.Id))
                     {
                         var submissionQueryable = await applicationFormSubmissionRepository.GetQueryableAsync();
                         var distinctOidcSubs = await submissionQueryable
-                            .Where(s => !string.IsNullOrEmpty(s.OidcSub))
+                            .Where(s => !string.IsNullOrWhiteSpace(s.OidcSub) && s.OidcSub != Guid.Empty.ToString())
                             .Select(s => s.OidcSub)
                             .Distinct()
                             .ToListAsync();
 
-                        // For each distinct OidcSub, ensure mapping exists in host database
-                        using (currentTenant.Change(null))
+                        foreach (var oidcSub in distinctOidcSubs)
                         {
-                            foreach (var oidcSub in distinctOidcSubs)
-                            {
-                                var subUsername = oidcSub.Contains('@')
-                                    ? oidcSub[..oidcSub.IndexOf('@')].ToUpper()
-                                    : oidcSub.ToUpper();
+                            var subUsername = oidcSub.Contains('@')
+                                ? oidcSub[..oidcSub.IndexOf('@')].ToUpperInvariant()
+                                : oidcSub.ToUpperInvariant();
 
-                                var mapQueryable = await applicantTenantMapRepository.GetQueryableAsync();
-                                var existingMapping = await mapQueryable
-                                    .FirstOrDefaultAsync(m => m.OidcSubUsername == subUsername && m.TenantId == tenant.Id);
-
-                                if (existingMapping != null)
-                                {
-                                    // Update LastUpdated
-                                    existingMapping.LastUpdated = DateTime.UtcNow;
-                                    await applicantTenantMapRepository.UpdateAsync(existingMapping);
-                                    totalMappingsUpdated++;
-                                }
-                                else
-                                {
-                                    // Create new mapping
-                                    var newMapping = new ApplicantTenantMap
-                                    {
-                                        OidcSubUsername = subUsername,
-                                        TenantId = tenant.Id,
-                                        TenantName = tenant.Name,
-                                        LastUpdated = DateTime.UtcNow
-                                    };
-                                    await applicantTenantMapRepository.InsertAsync(newMapping);
-                                    totalMappingsCreated++;
-                                    Logger.LogInformation("Created missing ApplicantTenantMap for {SubUsername} in tenant {TenantName}",
-                                        subUsername, tenant.Name);
-                                }
-                            }
+                            desiredMappings.Add((subUsername, tenant.Id, tenant.Name));
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Error reconciling ApplicantTenantMaps for tenant {TenantName}", tenant.Name);
+                    Logger.LogError(ex, "Error collecting submissions for tenant {TenantName}", tenant.Name);
+                }
+            }
+
+            if (desiredMappings.Count == 0)
+            {
+                Logger.LogInformation("ApplicantTenantMap reconciliation completed. No submissions found across tenants.");
+                return (0, 0);
+            }
+
+            // Phase 2: Switch to host DB once, load existing mappings, and reconcile
+            int totalMappingsCreated = 0;
+            int totalMappingsUpdated = 0;
+
+            using (currentTenant.Change(null))
+            {
+                var allSubUsernames = desiredMappings.Select(m => m.SubUsername).Distinct().ToList();
+
+                var mapQueryable = await applicantTenantMapRepository.GetQueryableAsync();
+                var existingMappings = await mapQueryable
+                    .Where(m => allSubUsernames.Contains(m.OidcSubUsername))
+                    .ToListAsync();
+
+                var existingByKey = existingMappings
+                    .ToDictionary(m => (m.OidcSubUsername, m.TenantId));
+
+                foreach (var (subUsername, tenantId, tenantName) in desiredMappings)
+                {
+                    if (existingByKey.TryGetValue((subUsername, tenantId), out var existing))
+                    {
+                        existing.LastUpdated = DateTime.UtcNow;
+                        await applicantTenantMapRepository.UpdateAsync(existing);
+                        totalMappingsUpdated++;
+                    }
+                    else
+                    {
+                        var newMapping = new ApplicantTenantMap
+                        {
+                            OidcSubUsername = subUsername,
+                            TenantId = tenantId,
+                            TenantName = tenantName,
+                            LastUpdated = DateTime.UtcNow
+                        };
+                        await applicantTenantMapRepository.InsertAsync(newMapping);
+                        existingByKey[(subUsername, tenantId)] = newMapping;
+                        totalMappingsCreated++;
+                        Logger.LogInformation("Created missing ApplicantTenantMap for {SubUsername} in tenant {TenantName}",
+                            subUsername, tenantName);
+                    }
                 }
             }
 

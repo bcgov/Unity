@@ -42,7 +42,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 var submission = eventData.ApplicationFormSubmission;
                 var subUsername = submission.OidcSub.Contains('@')
                     ? submission.OidcSub[..submission.OidcSub.IndexOf('@')].ToUpper()
-                    : submission.OidcSub.ToUpper();
+                    : submission.OidcSub.ToUpperInvariant();
 
                 if (string.IsNullOrWhiteSpace(subUsername))
                 {

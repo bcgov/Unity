@@ -48,20 +48,20 @@ https://{unity-host}/api/app/applicant-profiles
 ```
 
 ### Authentication
-All endpoints require API Key authentication using the `X-API-Key` header.
+All endpoints require API Key authentication using the `X-Api-Key` header.
 
 **Request Header**:
 ```
-X-API-Key: {your-api-key}
+X-Api-Key: {your-api-key}
 ```
 
 **Error Response** (401 Unauthorized):
 ```json
 {
-  "error": {
-    "code": "Unauthorized",
-    "message": "Invalid or missing API key"
-  }
+  "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "API Key missing"
 }
 ```
 
@@ -83,7 +83,7 @@ Retrieves basic profile information for an applicant.
 **Request Example**:
 ```http
 GET /api/app/applicant-profiles/profile?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299&TenantId=7c9e6679-7425-40de-944b-e07fc1f90ae7
-X-API-Key: your-api-key-here
+X-Api-Key: your-api-key-here
 ```
 
 **Response Example** (200 OK):
@@ -124,7 +124,7 @@ Retrieves the list of tenants (grant programs) the applicant has submitted appli
 **Request Example**:
 ``` http
 GET /api/app/applicant-profiles/tenants?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299
-X-API-Key: your-api-key-here
+X-Api-Key: your-api-key-here
 ```
 
 **Response Example** (200 OK):
@@ -189,7 +189,7 @@ The system extracts and normalizes OIDC subject identifiers as follows:
 
 **Table Schema**:
 ```sql
-CREATE TABLE "AppApplicantTenantMaps" (
+CREATE TABLE "ApplicantTenantMaps" (
     "Id" UUID PRIMARY KEY,
     "OidcSubUsername" VARCHAR NOT NULL,
     "TenantId" UUID NOT NULL,
@@ -202,7 +202,7 @@ CREATE TABLE "AppApplicantTenantMaps" (
 );
 
 CREATE INDEX "IX_ApplicantTenantMaps_OidcSubUsername" 
-    ON "AppApplicantTenantMaps" ("OidcSubUsername");
+    ON "ApplicantTenantMaps" ("OidcSubUsername");
 ```
 
 **Entity**: `ApplicantTenantMap`
@@ -364,20 +364,20 @@ graph TD
 **appsettings.json**:
 ```json
 {
-  "ApiKeys": {
-    "ApplicantPortal": "your-secure-api-key-here"
+  "B2BAuth": {
+    "ApiKey": "your-secure-api-key-here"
   }
 }
 ```
 
 **Environment Variable** (Recommended for production):
 ```bash
-ApiKeys__ApplicantPortal=your-secure-api-key-here
+B2BAuth__ApiKey=your-secure-api-key-here
 ```
 
 **User Secrets** (Development):
 ```bash
-dotnet user-secrets set "ApiKeys:ApplicantPortal" "your-secure-api-key-here"
+dotnet user-secrets set "B2BAuth:ApiKey" "your-secure-api-key-here"
 ```
 
 ### Usage
@@ -398,13 +398,13 @@ public class ApplicantProfileController : AbpControllerBase
 
 **Header**:
 ```
-X-API-Key: your-secure-api-key-here
+X-Api-Key: your-secure-api-key-here
 ```
 
 **cURL Example**:
 ```bash
-curl -X GET "https://unity.example.com/api/app/applicant-profiles/tenants?ProfileId=abc123&Subject=user@idp" \
-  -H "X-API-Key: your-secure-api-key-here"
+curl -X GET "https://unity.example.com/api/app/applicant-profiles/tenants?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=user@idp" \
+  -H "X-Api-Key: your-secure-api-key-here"
 ```
 
 ### Security Best Practices
@@ -1227,13 +1227,14 @@ public async Task<IActionResult> ReprocessDeadLetterQueue([FromQuery] string que
 
 ### Error Response Format
 
+The API returns [RFC 7807 Problem Details](https://tools.ietf.org/html/rfc7807) responses:
+
 ```json
 {
-  "error": {
-    "code": "ErrorCode",
-    "message": "Human-readable error message",
-    "details": "Additional context (optional)"
-  }
+  "type": "string (URI reference)",
+  "title": "string",
+  "status": 0,
+  "detail": "string"
 }
 ```
 
@@ -1244,22 +1245,46 @@ public async Task<IActionResult> ReprocessDeadLetterQueue([FromQuery] string que
 HTTP/1.1 401 Unauthorized
 
 {
-  "error": {
-    "code": "Unauthorized",
-    "message": "API key is missing"
-  }
+  "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "API Key missing"
 }
 ```
 
-**2. Invalid Subject Format**:
+**2. Invalid API Key**:
+```http
+HTTP/1.1 401 Unauthorized
+
+{
+  "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Invalid API Key"
+}
+```
+
+**3. API Key Not Configured on Server**:
+```http
+HTTP/1.1 401 Unauthorized
+
+{
+  "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "API Key not configured"
+}
+```
+
+**4. Invalid Subject Format**:
 ```http
 HTTP/1.1 400 Bad Request
 
 {
-  "error": {
-    "code": "BadRequest",
-    "message": "Subject parameter is required"
-  }
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "Subject parameter is required"
 }
 ```
 
@@ -1319,7 +1344,7 @@ HTTP/1.1 200 OK
 **1. Test Tenant Lookup**:
 ```bash
 curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=TESTUSER@idp" \
-  -H "X-API-Key: your-dev-api-key"
+  -H "X-Api-Key: your-dev-api-key"
 ```
 
 **Expected Response**:
@@ -1335,13 +1360,13 @@ curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?Pr
 **2. Test Profile Retrieval**:
 ```bash
 curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/profile?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=TESTUSER@idp&TenantId=7c9e6679-7425-40de-944b-e07fc1f90ae7" \
-  -H "X-API-Key: your-dev-api-key"
+  -H "X-Api-Key: your-dev-api-key"
 ```
 
 **3. Test Invalid API Key**:
 ```bash
 curl -X GET "https://unity-dev.example.com/api/app/applicant-profiles/tenants?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=TESTUSER@idp" \
-  -H "X-API-Key: invalid-key"
+  -H "X-Api-Key: invalid-key"
 ```
 
 **Expected Response**: 401 Unauthorized
@@ -1421,7 +1446,7 @@ dotnet ef migrations list
 
 ### Configuration Checklist
 
-- [ ] API key configured in production secrets
+- [ ] `B2BAuth:ApiKey` configured in production secrets
 - [ ] Background job cron expression verified (2 AM PST = 10 AM UTC)
 - [ ] Database migration applied to Host database
 - [ ] Initial data populated (via reconciliation)
@@ -1459,13 +1484,13 @@ SELECT "OidcSub" FROM "AppApplicationFormSubmissions" WHERE "OidcSub" LIKE '%use
 **Symptoms**: API returns 401 error
 
 **Possible Causes**:
-1. Missing `X-API-Key` header
+1. Missing `X-Api-Key` header
 2. Invalid API key value
-3. API key not configured on server
+3. `B2BAuth:ApiKey` not configured on server
 
 **Resolution**:
-- Verify header is included: `X-API-Key: your-key`
-- Check server configuration has correct API key
+- Verify header is included: `X-Api-Key: your-key`
+- Check server configuration has `B2BAuth:ApiKey` set correctly
 - Review logs for authentication failures
 
 ### Issue: Background Job Not Running

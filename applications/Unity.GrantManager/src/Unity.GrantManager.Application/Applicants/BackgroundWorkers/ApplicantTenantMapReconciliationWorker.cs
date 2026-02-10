@@ -34,17 +34,31 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers
             _logger = logger;
 
             // 2 AM PST = 10 AM UTC
-            string cronExpression = "0 0 10 1/1 * ? *";            
+            const string defaultCronExpression = "0 0 10 1/1 * ? *";
+            string cronExpression = defaultCronExpression;
 
             try
             {
-                cronExpression = SettingDefinitions
+                var settingsValue = SettingDefinitions
                     .GetSettingsValue(settingManager,
                         SettingsConstants.BackgroundJobs.ApplicantTenantMapReconciliation_Expression);
+
+                if (!settingsValue.IsNullOrEmpty())
+                {
+                    if (CronExpression.IsValidExpression(settingsValue))
+                    {
+                        cronExpression = settingsValue;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Invalid cron expression '{CronExpression}' for tenant map reconciliation, reverting to default '{DefaultCronExpression}'",
+                            settingsValue, defaultCronExpression);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error reading cron setting for tenant maps, reverting to default {CronExpression}", cronExpression);
+                _logger.LogWarning(ex, "Error reading cron setting for tenant maps, reverting to default '{CronExpression}'", defaultCronExpression);
             }
 
             if (!cronExpression.IsNullOrEmpty())
