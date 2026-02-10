@@ -131,7 +131,6 @@ def ready():
     """
     try:
         # Check database connection
-        db_status = "healthy"
         try:
             # Test database connection
             db_manager.get_connection()

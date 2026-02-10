@@ -76,8 +76,6 @@ export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initializeGrid() {
-    const canvas = this.canvasRef.nativeElement;
-    
     for (let i = 0; i < this.gridCols; i++) {
       this.dots[i] = [];
       for (let j = 0; j < this.gridRows; j++) {

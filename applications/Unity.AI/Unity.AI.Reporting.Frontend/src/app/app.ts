@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { SafeResourceUrl } from '@angular/platform-browser';
 
 import { Embed } from './embed';
 import { Turn } from './turn';
@@ -308,12 +308,11 @@ export class App implements OnInit, OnDestroy {
 
   async changeDisplay(turn: Turn, mode: string) {
     try {
-      const res = await firstValueFrom(
+      await firstValueFrom(
         this.apiService.changeDisplay<Embed>(turn.embed.card_id, mode, turn.embed.x_field, turn.embed.y_field)
       );
       // Update the current visualization in the embed
       turn.embed.current_visualization = mode;
-      // turn.embed = res;
     } catch (error) {
       // Handle error silently
     } finally {
