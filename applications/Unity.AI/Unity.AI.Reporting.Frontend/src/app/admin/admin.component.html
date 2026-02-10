@@ -33,138 +33,167 @@
         </div>
       </div>
 
-      <div class="feedback-summary" *ngIf="feedbackSummary">
-        <div class="summary-stat">
-          <span class="summary-number">{{feedbackSummary.total}}</span>
-          <span class="summary-label">Total</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-number">{{feedbackSummary.open}}</span>
-          <span class="summary-label">Open</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-number">{{feedbackSummary.inProgress}}</span>
-          <span class="summary-label">In Progress</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-number">{{feedbackSummary.resolved}}</span>
-          <span class="summary-label">Resolved</span>
-        </div>
-      </div>
-
-      <div class="feedback-list" *ngIf="!isLoading">
-        <div class="feedback-item" *ngFor="let feedback of filteredFeedback" [class]="'status-' + feedback.status">
-          <div class="feedback-header">
-            <div class="feedback-meta">
-              <span class="feedback-id">{{feedback.feedback_id.substring(0, 8)}}</span>
-              <span class="feedback-type badge badge-{{feedback.feedback_type}}">{{feedback.feedback_type}}</span>
-              <span class="feedback-status badge badge-{{feedback.status}}">{{feedback.status}}</span>
-              <span class="feedback-date">{{formatDate(feedback.created_at)}}</span>
-            </div>
-            <div class="feedback-actions">
-              <select
-                [value]="feedback.status"
-                (change)="updateFeedbackStatus(feedback.feedback_id, $event)"
-                class="status-select">
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
-              </select>
-            </div>
+      @if (feedbackSummary) {
+        <div class="feedback-summary">
+          <div class="summary-stat">
+            <span class="summary-number">{{feedbackSummary.total}}</span>
+            <span class="summary-label">Total</span>
           </div>
-
-          <div class="feedback-content">
-            <div class="feedback-details">
-              <div class="feedback-info">
-                <strong>User:</strong> {{feedback.user_id}}<br>
-                <strong>Tenant:</strong> {{feedback.tenant_id}}<br>
-                <strong>Chat:</strong>
-                <span class="chat-title" *ngIf="feedback.chat_title"> {{feedback.chat_title}}</span>
-                <span class="chat-id" *ngIf="!feedback.chat_title"> {{feedback.chat_id.substring(0, 8)}}</span>
-              </div>
-              <div class="feedback-message" *ngIf="feedback.message">
-                <strong>User Comment:</strong>
-                <p>{{feedback.message}}</p>
-              </div>
-
-              <div class="feedback-context" *ngIf="feedback.current_question || feedback.previous_question">
-                <details open>
-                  <summary>Question & SQL Context</summary>
-
-                  <!-- Token Usage (Admin Only) -->
-                  <div class="token-info" *ngIf="getTokenInfo(feedback)">
-                    <strong>🪙 Token Usage:</strong> {{formatTokens(getTokenInfo(feedback))}}
-                  </div>
-
-                  <div class="context-info">
-                    <!-- Current Question -->
-                    <div class="context-section" *ngIf="feedback.current_question">
-                      <h4>Current Question</h4>
-                      <div class="question-text">{{feedback.current_question}}</div>
-
-                      <div *ngIf="feedback.current_sql" class="sql-section">
-                        <h5>Generated SQL</h5>
-                        <pre class="sql-code">{{feedback.current_sql}}</pre>
-                      </div>
-
-                      <div *ngIf="feedback.current_sql_explanation" class="sql-explanation">
-                        <h5>SQL Explanation</h5>
-                        <p>{{feedback.current_sql_explanation}}</p>
-                      </div>
-                    </div>
-
-                    <!-- Previous Question (if exists) -->
-                    <div class="context-section" *ngIf="feedback.previous_question">
-                      <h4>Previous Question</h4>
-                      <div class="question-text">{{feedback.previous_question}}</div>
-
-                      <div *ngIf="feedback.previous_sql" class="sql-section">
-                        <h5>Generated SQL</h5>
-                        <pre class="sql-code">{{feedback.previous_sql}}</pre>
-                      </div>
-
-                      <div *ngIf="feedback.previous_sql_explanation" class="sql-explanation">
-                        <h5>SQL Explanation</h5>
-                        <p>{{feedback.previous_sql_explanation}}</p>
-                      </div>
-                    </div>
-                  </div>
-                </details>
-              </div>
-
-              <div class="feedback-technical" *ngIf="feedback.user_agent || feedback.metadata">
-                <details>
-                  <summary>Technical Details</summary>
-                  <div class="technical-info">
-                    <div *ngIf="feedback.user_agent">
-                      <strong>User Agent:</strong> {{feedback.user_agent}}
-                    </div>
-                    <div *ngIf="feedback.metadata">
-                      <strong>Metadata:</strong>
-                      <pre>{{formatMetadata(feedback.metadata)}}</pre>
-                    </div>
-                  </div>
-                </details>
-              </div>
-            </div>
+          <div class="summary-stat">
+            <span class="summary-number">{{feedbackSummary.open}}</span>
+            <span class="summary-label">Open</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-number">{{feedbackSummary.inProgress}}</span>
+            <span class="summary-label">In Progress</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-number">{{feedbackSummary.resolved}}</span>
+            <span class="summary-label">Resolved</span>
           </div>
         </div>
+      }
 
-        <div class="no-feedback" *ngIf="filteredFeedback.length === 0">
-          <p>No feedback items match the selected filters.</p>
+      @if (!isLoading) {
+        <div class="feedback-list">
+          @for (feedback of filteredFeedback; track feedback) {
+            <div class="feedback-item" [class]="'status-' + feedback.status">
+              <div class="feedback-header">
+                <div class="feedback-meta">
+                  <span class="feedback-id">{{feedback.feedback_id.substring(0, 8)}}</span>
+                  <span class="feedback-type badge badge-{{feedback.feedback_type}}">{{feedback.feedback_type}}</span>
+                  <span class="feedback-status badge badge-{{feedback.status}}">{{feedback.status}}</span>
+                  <span class="feedback-date">{{formatDate(feedback.created_at)}}</span>
+                </div>
+                <div class="feedback-actions">
+                  <select
+                    [value]="feedback.status"
+                    (change)="updateFeedbackStatus(feedback.feedback_id, $event)"
+                    class="status-select">
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+              </div>
+              <div class="feedback-content">
+                <div class="feedback-details">
+                  <div class="feedback-info">
+                    <strong>User:</strong> {{feedback.user_id}}<br>
+                    <strong>Tenant:</strong> {{feedback.tenant_id}}<br>
+                    <strong>Chat:</strong>
+                    @if (feedback.chat_title) {
+                      <span class="chat-title"> {{feedback.chat_title}}</span>
+                    }
+                    @if (!feedback.chat_title) {
+                      <span class="chat-id"> {{feedback.chat_id.substring(0, 8)}}</span>
+                    }
+                  </div>
+                  @if (feedback.message) {
+                    <div class="feedback-message">
+                      <strong>User Comment:</strong>
+                      <p>{{feedback.message}}</p>
+                    </div>
+                  }
+                  @if (feedback.current_question || feedback.previous_question) {
+                    <div class="feedback-context">
+                      <details open>
+                        <summary>Question & SQL Context</summary>
+                        <!-- Token Usage (Admin Only) -->
+                        @if (getTokenInfo(feedback)) {
+                          <div class="token-info">
+                            <strong>🪙 Token Usage:</strong> {{formatTokens(getTokenInfo(feedback))}}
+                          </div>
+                        }
+                        <div class="context-info">
+                          <!-- Current Question -->
+                          @if (feedback.current_question) {
+                            <div class="context-section">
+                              <h4>Current Question</h4>
+                              <div class="question-text">{{feedback.current_question}}</div>
+                              @if (feedback.current_sql) {
+                                <div class="sql-section">
+                                  <h5>Generated SQL</h5>
+                                  <pre class="sql-code">{{feedback.current_sql}}</pre>
+                                </div>
+                              }
+                              @if (feedback.current_sql_explanation) {
+                                <div class="sql-explanation">
+                                  <h5>SQL Explanation</h5>
+                                  <p>{{feedback.current_sql_explanation}}</p>
+                                </div>
+                              }
+                            </div>
+                          }
+                          <!-- Previous Question (if exists) -->
+                          @if (feedback.previous_question) {
+                            <div class="context-section">
+                              <h4>Previous Question</h4>
+                              <div class="question-text">{{feedback.previous_question}}</div>
+                              @if (feedback.previous_sql) {
+                                <div class="sql-section">
+                                  <h5>Generated SQL</h5>
+                                  <pre class="sql-code">{{feedback.previous_sql}}</pre>
+                                </div>
+                              }
+                              @if (feedback.previous_sql_explanation) {
+                                <div class="sql-explanation">
+                                  <h5>SQL Explanation</h5>
+                                  <p>{{feedback.previous_sql_explanation}}</p>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </details>
+                    </div>
+                  }
+                  @if (feedback.user_agent || feedback.metadata) {
+                    <div class="feedback-technical">
+                      <details>
+                        <summary>Technical Details</summary>
+                        <div class="technical-info">
+                          @if (feedback.user_agent) {
+                            <div>
+                              <strong>User Agent:</strong> {{feedback.user_agent}}
+                            </div>
+                          }
+                          @if (feedback.metadata) {
+                            <div>
+                              <strong>Metadata:</strong>
+                              <pre>{{formatMetadata(feedback.metadata)}}</pre>
+                            </div>
+                          }
+                        </div>
+                      </details>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+          @if (filteredFeedback.length === 0) {
+            <div class="no-feedback">
+              <p>No feedback items match the selected filters.</p>
+            </div>
+          }
         </div>
-      </div>
+      }
 
-      <div class="loading-state" *ngIf="isLoading">
-        <div class="loading-spinner"></div>
-        <p>Loading feedback...</p>
-      </div>
+      @if (isLoading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading feedback...</p>
+        </div>
+      }
 
-      <div class="error-state" *ngIf="errorMessage">
-        <p class="error-message">{{errorMessage}}</p>
-        <button class="btn btn-secondary" (click)="loadFeedback()">Retry</button>
-      </div>
+      @if (errorMessage) {
+        <div class="error-state">
+          <p class="error-message">{{errorMessage}}</p>
+          <button class="btn btn-secondary" (click)="loadFeedback()">Retry</button>
+        </div>
+      }
     </div>
 
     <div class="admin-section">

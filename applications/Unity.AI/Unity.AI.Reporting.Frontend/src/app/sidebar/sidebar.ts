@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
@@ -18,7 +18,7 @@ export interface Chat {
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule, FormsModule, AlertComponent],
+  imports: [FormsModule, AlertComponent],
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css']
 })

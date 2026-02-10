@@ -66,8 +66,10 @@ export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
     canvas.width = parent.clientWidth;
     canvas.height = parent.clientHeight;
     
-    this.ctx = canvas.getContext('2d')!;
-    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    this.ctx = ctx;
+
     // Calculate grid dimensions to fill screen
     this.gridCols = Math.ceil(canvas.width / this.dotSpacing) + 2;
     this.gridRows = Math.ceil(canvas.height / this.dotSpacing) + 2;
@@ -240,8 +242,9 @@ export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private animate() {
+    if (!this.ctx) return;
     const canvas = this.canvasRef.nativeElement;
-    
+
     // Clear with white background
     this.ctx.fillStyle = 'rgb(255, 255, 255)';
     this.ctx.fillRect(0, 0, canvas.width, canvas.height);

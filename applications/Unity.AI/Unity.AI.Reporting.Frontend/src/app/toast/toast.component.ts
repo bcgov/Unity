@@ -1,11 +1,11 @@
 import { Component, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { ToastService, Toast } from '../services/toast.service';
 
 @Component({
   selector: 'app-toast',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './toast.component.html',
   styleUrls: ['./toast.component.css']
 })

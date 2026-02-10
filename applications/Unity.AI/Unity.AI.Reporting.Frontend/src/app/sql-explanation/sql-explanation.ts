@@ -1,19 +1,23 @@
 import { Component, Input, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-sql-explanation',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
-    <div class="sql-explanation-bubble" *ngIf="displayedText || isWaiting">
-      <div class="bubble-content">
-        <span>{{ displayedText }}</span>
-        <span class="cursor" *ngIf="showCursor">█</span>
+    @if (displayedText || isWaiting) {
+      <div class="sql-explanation-bubble">
+        <div class="bubble-content">
+          <span>{{ displayedText }}</span>
+          @if (showCursor) {
+            <span class="cursor">█</span>
+          }
+        </div>
+        <div class="bubble-tail"></div>
       </div>
-      <div class="bubble-tail"></div>
-    </div>
-  `,
+    }
+    `,
   styles: [`
     .sql-explanation-bubble {
       position: relative;

@@ -8,33 +8,40 @@
   </div>
 
   <div class="sidebar-content">
-    <div *ngIf="loading" class="loading">
-      Loading reports...
-    </div>
-
-    <div *ngIf="!loading && chats.length === 0" class="empty-state">
-      No reports yet. Start a new one!
-    </div>
-
-    <div class="chat-list" *ngIf="!loading && chats.length > 0">
-      <div 
-        *ngFor="let chat of chats" 
-        class="chat-item"
-        [class.active]="currentChatId === chat.id"
-        (click)="onChatSelect(chat)"
-      >
-        <div class="chat-title">{{ chat.title }}</div>
-        <button 
-          class="delete-chat-btn" 
-          (click)="deleteChat(chat, $event)"
-          title="Delete chat"
-        >
-          ×
-        </button>
+    @if (loading) {
+      <div class="loading">
+        Loading reports...
       </div>
-    </div>
+    }
+
+    @if (!loading && chats.length === 0) {
+      <div class="empty-state">
+        No reports yet. Start a new one!
+      </div>
+    }
+
+    @if (!loading && chats.length > 0) {
+      <div class="chat-list">
+        @for (chat of chats; track chat) {
+          <div
+            class="chat-item"
+            [class.active]="currentChatId === chat.id"
+            (click)="onChatSelect(chat)"
+            >
+            <div class="chat-title">{{ chat.title }}</div>
+            <button
+              class="delete-chat-btn"
+              (click)="deleteChat(chat, $event)"
+              title="Delete chat"
+              >
+              ×
+            </button>
+          </div>
+        }
+      </div>
+    }
   </div>
-  
+
   <div class="sidebar-footer">
     <!-- TEMPORARY MVP: Report Bug button hidden - uncomment to restore
     <button class="footer-btn feedback-btn" title="Feedback" (click)="openFeedbackModal()">
@@ -88,49 +95,48 @@
 -->
 
 <!-- Information Modal -->
-<div class="info-modal-overlay" *ngIf="showInfoModal" (click)="closeInfoModal()">
-  <div class="info-modal" (click)="$event.stopPropagation()">
-    <div class="info-modal-header">
-      <h3>About Unity AI Reporting</h3>
-      <button class="info-modal-close" (click)="closeInfoModal()">×</button>
-    </div>
-    <div class="info-modal-body">
-      <div class="info-section">
-        <h4>What is this tool?</h4>
-        <p>Unity AI Reporting is an intelligent report generation tool that converts your natural language questions into data visualizations and reports.</p>
+@if (showInfoModal) {
+  <div class="info-modal-overlay" (click)="closeInfoModal()">
+    <div class="info-modal" (click)="$event.stopPropagation()">
+      <div class="info-modal-header">
+        <h3>About Unity AI Reporting</h3>
+        <button class="info-modal-close" (click)="closeInfoModal()">×</button>
       </div>
-      
-      <div class="info-section">
-        <h4>How to use:</h4>
-        <ul>
-          <li><strong>Ask questions</strong> in plain English about your data</li>
-          <li><strong>View reports</strong> generated automatically from your questions</li>
-          <li><strong>Switch views</strong> between table, charts, and other visualizations</li>
-          <li><strong>Save reports</strong> - they're automatically saved to your sidebar</li>
-          <!-- TEMPORARY MVP: Flag issues hidden - uncomment to restore
-          <li><strong>Flag issues</strong> using the flag button to report bugs or problems</li>
-          -->
-        </ul>
+      <div class="info-modal-body">
+        <div class="info-section">
+          <h4>What is this tool?</h4>
+          <p>Unity AI Reporting is an intelligent report generation tool that converts your natural language questions into data visualizations and reports.</p>
+        </div>
+        <div class="info-section">
+          <h4>How to use:</h4>
+          <ul>
+            <li><strong>Ask questions</strong> in plain English about your data</li>
+            <li><strong>View reports</strong> generated automatically from your questions</li>
+            <li><strong>Switch views</strong> between table, charts, and other visualizations</li>
+            <li><strong>Save reports</strong> - they're automatically saved to your sidebar</li>
+            <!-- TEMPORARY MVP: Flag issues hidden - uncomment to restore
+            <li><strong>Flag issues</strong> using the flag button to report bugs or problems</li>
+            -->
+          </ul>
+        </div>
+        <div class="info-section">
+          <h4>Tips:</h4>
+          <ul>
+            <li>Be specific about the data you want to see</li>
+            <li>Ask follow-up questions to refine your reports</li>
+            <li>Use the visualization dropdown to change chart types</li>
+            <li>Click the external link button to view reports in Metabase</li>
+          </ul>
+        </div>
+        <div class="info-section">
+          <h4>Version Information</h4>
+          <p><strong>Build Version:</strong> {{ version }}</p>
+          <p><strong>Environment:</strong> {{ environment }}</p>
+        </div>
       </div>
-      
-      <div class="info-section">
-        <h4>Tips:</h4>
-        <ul>
-          <li>Be specific about the data you want to see</li>
-          <li>Ask follow-up questions to refine your reports</li>
-          <li>Use the visualization dropdown to change chart types</li>
-          <li>Click the external link button to view reports in Metabase</li>
-        </ul>
+      <div class="info-modal-footer">
+        <button class="info-btn-close" (click)="closeInfoModal()">Got it</button>
       </div>
-
-      <div class="info-section">
-        <h4>Version Information</h4>
-        <p><strong>Build Version:</strong> {{ version }}</p>
-        <p><strong>Environment:</strong> {{ environment }}</p>
-      </div>
-    </div>
-    <div class="info-modal-footer">
-      <button class="info-btn-close" (click)="closeInfoModal()">Got it</button>
     </div>
   </div>
-</div>
+}

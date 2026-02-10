@@ -1,8 +1,8 @@
-import { Component, ViewChild, ElementRef, NgZone, OnInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
+
 import { Embed } from './embed';
 import { Turn } from './turn';
 import { SqlExplanationComponent } from './sql-explanation/sql-explanation';
@@ -18,7 +18,7 @@ import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, SqlExplanationComponent, SidebarComponent, ToastComponent],
+  imports: [FormsModule, SqlExplanationComponent, SidebarComponent, ToastComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
