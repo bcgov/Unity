@@ -577,10 +577,10 @@ sequenceDiagram
 
 | Queue Name | Direction | Purpose | DLQ |
 |------------|-----------|---------|-----|
-| `applicant-portal.commands` | Portal ? Unity | Commands from portal | `applicant-portal.commands.dlq` |
-| `unity.events.application` | Unity ? Portal | Application-related events | `unity.events.application.dlq` |
-| `unity.events.payment` | Unity ? Portal | Payment-related events | `unity.events.payment.dlq` |
-| `unity.events.notification` | Unity ? Portal | Notification events | `unity.events.notification.dlq` |
+| `applicant-portal.commands` | Portal -> Unity | Commands from portal | `applicant-portal.commands.dlq` |
+| `unity.events.application` | Unity -> Portal | Application-related events | `unity.events.application.dlq` |
+| `unity.events.payment` | Unity -> Portal | Payment-related events | `unity.events.payment.dlq` |
+| `unity.events.notification` | Unity -> Portal | Notification events | `unity.events.notification.dlq` |
 
 **Dead Letter Queues (DLQ)**:
 - Messages that fail processing after retry attempts

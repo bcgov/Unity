@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             {
                 var submission = eventData.ApplicationFormSubmission;
                 var subUsername = submission.OidcSub.Contains('@')
-                    ? submission.OidcSub[..submission.OidcSub.IndexOf('@')].ToUpper()
+                    ? submission.OidcSub[..submission.OidcSub.IndexOf('@')].ToUpperInvariant()
                     : submission.OidcSub.ToUpperInvariant();
 
                 if (string.IsNullOrWhiteSpace(subUsername))
@@ -94,7 +94,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error updating ApplicantTenantMap for submission {SubmissionId}", 
-                    eventData.ApplicationFormSubmission?.Id);
+                    eventData.ApplicationFormSubmission.Id);
             }
         }
     }
