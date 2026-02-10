@@ -1,0 +1,179 @@
+/// <reference types="cypress" />
+
+// cypress/e2e/chefsdata.cy.ts
+
+describe('Unity Login and check data from CHEFS', () => {
+    const STANDARD_TIMEOUT = 20000
+
+    function switchToDefaultGrantsProgramIfAvailable() {
+        cy.get('body').then(($body) => {
+            const hasUserInitials = $body.find('.unity-user-initials').length > 0
+
+            if (!hasUserInitials) {
+                cy.log('Skipping tenant switch: no user initials menu found')
+                return
+            }
+
+            cy.get('.unity-user-initials').click()
+
+            cy.get('body').then(($body2) => {
+                const switchLink = $body2.find('#user-dropdown a.dropdown-item').filter((_, el) => {
+                    return (el.textContent || '').trim() === 'Switch Grant Programs'
+                })
+
+                if (switchLink.length === 0) {
+                    cy.log('Skipping tenant switch: "Switch Grant Programs" not present for this user/session')
+                    cy.get('body').click(0, 0)
+                    return
+                }
+
+                cy.wrap(switchLink.first()).click()
+
+                cy.url({ timeout: STANDARD_TIMEOUT }).should('include', '/GrantPrograms')
+
+                cy.get('#search-grant-programs', { timeout: STANDARD_TIMEOUT })
+                    .should('be.visible')
+                    .clear()
+                    .type('Default Grants Program')
+
+                cy.get('#UserGrantProgramsTable', { timeout: STANDARD_TIMEOUT })
+                    .should('be.visible')
+                    .within(() => {
+                        cy.contains('tbody tr', 'Default Grants Program', { timeout: STANDARD_TIMEOUT })
+                            .should('exist')
+                            .within(() => {
+                                cy.contains('button', 'Select')
+                                    .should('be.enabled')
+                                    .click()
+                            })
+                    })
+
+                cy.location('pathname', { timeout: STANDARD_TIMEOUT }).should((p) => {
+                    expect(p.indexOf('/GrantApplications') >= 0 || p.indexOf('/auth/') >= 0).to.eq(true)
+                })
+            })
+        })
+    }
+
+
+    // TEST renders the Submission tab inside an open shadow root (Form.io).
+    // Enabling this makes cy.get / cy.contains pierce shadow DOM consistently across envs.
+    before(() => {
+        Cypress.config('includeShadowDom', true)
+    })
+
+    it('Verify Login', () => {
+        // 1.) Always start from the base URL
+        cy.visit(Cypress.env('webapp.url'))
+
+        // 2.) Decide auth path based on visible UI
+        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
+            // Already authenticated
+            if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
+                cy.contains('VIEW APPLICATIONS', { timeout: STANDARD_TIMEOUT }).click({ force: true })
+                return
+            }
+
+            // Not authenticated
+            if ($body.find('button:contains("LOGIN")').length > 0) {
+                cy.contains('LOGIN', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+                cy.contains('IDIR', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+
+                cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($loginBody) => {
+                    // Perform IDIR login only if prompted
+                    if ($loginBody.find('#user').length > 0) {
+                        cy.get('#user', { timeout: STANDARD_TIMEOUT }).type(Cypress.env('test1username'))
+                        cy.get('#password', { timeout: STANDARD_TIMEOUT }).type(Cypress.env('test1password'))
+                        cy.contains('Continue', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+                    } else {
+                        cy.log('Already logged in')
+                    }
+                })
+
+                return
+            }
+
+            // Fail loudly if neither state is detectable
+            throw new Error('Unable to determine authentication state')
+        })
+
+        // 3.) Post-condition check
+        cy.url({ timeout: STANDARD_TIMEOUT }).should('include', '/GrantApplications')
+    })
+
+    it('Switch to Default Grants Program if available', () => {
+        switchToDefaultGrantsProgramIfAvailable()
+    })
+
+    it('Handle IDIR if required', () => {
+        cy.get('body').then(($body) => {
+            if ($body.find('#social-idir').length > 0) {
+                cy.get('#social-idir').should('be.visible').click()
+            }
+        })
+
+        cy.location('pathname', { timeout: 30000 }).should('include', '/GrantApplications')
+    })
+
+    it('Tests the existence and functionality of the Submitted Date From and Submitted Date To filters', () => {
+
+        const pad2 = (n: number) => String(n).padStart(2, '0');
+
+        const todayIsoLocal = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        };
+
+        const waitForRefresh = () => {
+            // If the spinner shows, wait for it to finish. If it never shows, at least ensure it's not visible.
+            cy.get('div.spinner-grow[role="status"]', { timeout: STANDARD_TIMEOUT })
+                .then(($s) => {
+                    const isHiddenNow = $s.attr('style') && $s.attr('style')!.includes('display: none');
+                    if (!isHiddenNow) {
+                        cy.wrap($s).should('have.attr', 'style').and('contain', 'display: none');
+                    } else {
+                        cy.wrap($s).should('have.attr', 'style').and('contain', 'display: none');
+                    }
+                });
+        };
+
+        // --- Submitted Date From ---
+        cy.get('input#submittedFromDate', { timeout: STANDARD_TIMEOUT })
+            .click({ force: true })
+            .clear({ force: true })
+            .type('2022-01-01', { force: true })
+            .trigger('change', { force: true })
+            .blur({ force: true })
+            .should('have.value', '2022-01-01');
+
+        waitForRefresh();
+
+        // --- Submitted Date To ---
+        const today = todayIsoLocal();
+
+        cy.get('input#submittedToDate', { timeout: STANDARD_TIMEOUT })
+            .click({ force: true })
+            .clear({ force: true })
+            .type(today, { force: true })
+            .trigger('change', { force: true })
+            .blur({ force: true })
+            .should('have.value', today);
+
+        waitForRefresh();
+
+    });
+
+    //  With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
+    it('Open an application from the list', () => {
+
+    })
+
+    //  With one row selected verify the visibility of Filter, Export, Save View, and Columns.
+    it('Open an application from the list', () => {
+
+    })
+
+    it('Verify Logout', () => {
+        cy.logout()
+    })
+})
