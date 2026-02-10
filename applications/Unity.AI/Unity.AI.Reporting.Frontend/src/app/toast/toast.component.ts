@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, ChangeDetectorRef } from '@angular/core';
 
 import { Subscription } from 'rxjs';
 import { ToastService, Toast } from '../services/toast.service';
@@ -13,9 +13,10 @@ export class ToastComponent implements OnDestroy {
   toasts: Toast[] = [];
   private subscription: Subscription;
 
-  constructor(private toastService: ToastService) {
+  constructor(private toastService: ToastService, private cdr: ChangeDetectorRef) {
     this.subscription = this.toastService.toasts$.subscribe(toasts => {
       this.toasts = toasts;
+      this.cdr.markForCheck();
     });
   }
 

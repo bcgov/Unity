@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -39,7 +39,8 @@ export class App implements OnInit, OnDestroy {
     private readonly toastService: ToastService,
     private readonly logger: LoggerService,
     private readonly iframeDetector: IframeDetectorService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   @ViewChild('turnsContainer') private turnsContainer!: ElementRef<HTMLDivElement>;
@@ -90,6 +91,7 @@ export class App implements OnInit, OnDestroy {
     // If click is outside the dropdown, close it
     if (!dropdownElement && this.visualizationDropdownOpen) {
       this.visualizationDropdownOpen = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -172,6 +174,7 @@ export class App implements OnInit, OnDestroy {
 
     // Save the chat to persist the visibility state
     await this.saveChat();
+    this.cdr.markForCheck();
   }
 
   async redirectToMB(turn: Turn): Promise<Window | null> {
@@ -293,11 +296,13 @@ export class App implements OnInit, OnDestroy {
       
       // Show success toast for individual question deletion
       this.toastService.success('Question deleted successfully');
-      
+
     } catch (error) {
       // Show error toast
       this.logger.error('Error deleting question:', error);
       this.toastService.error('Failed to delete question. Please try again.');
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 
@@ -311,6 +316,8 @@ export class App implements OnInit, OnDestroy {
       // turn.embed = res;
     } catch (error) {
       // Handle error silently
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 
@@ -351,6 +358,8 @@ export class App implements OnInit, OnDestroy {
       turn.iframeLoaded = true;
       turn.safeUrl = "failure";
       // Error is handled by setting failure state
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 
@@ -412,6 +421,8 @@ export class App implements OnInit, OnDestroy {
       this.scrollToBottomInstant();
     } catch (error) {
       // Handle error silently
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 

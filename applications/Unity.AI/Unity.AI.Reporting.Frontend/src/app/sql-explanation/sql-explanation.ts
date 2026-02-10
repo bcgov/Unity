@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
 
 
 @Component({
@@ -80,6 +80,7 @@ export class SqlExplanationComponent implements OnChanges, OnDestroy {
   isWaiting: boolean = false;
   private streamingInterval: any;
   private delayTimeout: any;
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['explanation']) {
@@ -120,6 +121,7 @@ export class SqlExplanationComponent implements OnChanges, OnDestroy {
         this.showCursor = false;
         clearInterval(this.streamingInterval);
       }
+      this.cdr.markForCheck();
     }, 10); // 15ms delay between each letter
   }
 

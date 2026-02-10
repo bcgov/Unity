@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -49,7 +49,8 @@ export class SidebarComponent {
     private apiService: ApiService,
     private configService: ConfigService,
     private toastService: ToastService,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -70,6 +71,7 @@ export class SidebarComponent {
       this.chats = [];
     } finally {
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -139,6 +141,7 @@ export class SidebarComponent {
     }
 
     this.cancelDelete();
+    this.cdr.markForCheck();
   }
 
   cancelDelete(): void {
@@ -197,6 +200,8 @@ export class SidebarComponent {
       
       this.toastService.error(errorMessage);
       // Keep the modal open so user can retry
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 

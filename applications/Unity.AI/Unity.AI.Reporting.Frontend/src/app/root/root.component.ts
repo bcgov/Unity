@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 
 import { Router, RouterOutlet } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -59,7 +59,8 @@ export class RootComponent implements OnInit {
     private readonly router: Router,
     private readonly apiService: ApiService,
     private readonly authService: AuthService,
-    private readonly logger: LoggerService
+    private readonly logger: LoggerService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -93,6 +94,7 @@ export class RootComponent implements OnInit {
       this.router.navigate(['/app']);
     } finally {
       this.isLoading = false;
+      this.cdr.markForCheck();
     }
   }
 }
