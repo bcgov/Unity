@@ -1,25 +1,24 @@
-import { APP_INITIALIZER, ApplicationInitStatus, provideZonelessChangeDetection  } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { App } from './app';
-import { initializeApp } from './app.config';
 import { ConfigService } from './services/config.service';
 
+const mockConfigService = {
+  loadConfig: () => Promise.resolve(),
+  loadIframeOrigins: () => Promise.resolve(),
+  getConfig: () => ({ apiUrl: '/api', environment: 'test', version: '1.0.0' }),
+  apiUrl: '/api',
+  environment: 'test',
+  version: '1.0.0',
+  isProduction: false,
+  iframeOriginUrls: [],
+  iframeOriginsLoaded: true,
+};
+
 describe('App', () => {
-  const token = '/?token=REPLACE_WITH_JWT_TOKEN';
-  let originalUrl: string;
-
-  beforeAll(() => {
-    // Save the real URL so we can restore it later (useful when running multiple specs)
-    originalUrl = window.location.pathname + window.location.search + window.location.hash;
-    // Set the test URL BEFORE Angular APP_INITIALIZER runs
-    history.pushState({}, '', token);
-  });
-
-  afterAll(() => {
-    // Restore to avoid cross-test pollution
-    history.pushState({}, '', originalUrl || '/');
-  });
+  let httpTesting: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -27,31 +26,30 @@ describe('App', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideHttpClient(),
-        ConfigService,
-        {
-          provide: APP_INITIALIZER,
-          useFactory: initializeApp,
-          deps: [ConfigService],
-          multi: true
-        }
+        provideHttpClientTesting(),
+        { provide: ConfigService, useValue: mockConfigService },
       ]
     }).compileComponents();
+
+    httpTesting = TestBed.inject(HttpTestingController);
   });
 
-  it('should create the app', async () => {
-    // Wait for all APP_INITIALIZERs to finish
-    await TestBed.inject(ApplicationInitStatus).donePromise;
+  afterEach(() => {
+    httpTesting.verify();
+  });
 
+  it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render title', async () => {
-    await TestBed.inject(ApplicationInitStatus).donePromise;
-
+  it('should render title', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
+
+    // Flush sidebar chat list request triggered by SidebarComponent.ngOnInit()
+    httpTesting.match('/api/chats').forEach(req => req.flush([]));
+
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('What would you like to know?');
   });
