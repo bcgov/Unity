@@ -39,7 +39,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZGV2LXVzZXItMTIzIi...
 
 ### 2. Token Generation
 
-**PowerShell Script:** `unity-ai-reporting-verify-devTokenURL.ps1`
+**PowerShell Script:** `unity-ai-reporting-verify-QueryTokenURL.ps1`
 
 **Process:**
 1. Reads JWT_SECRET from applications/.env file
@@ -51,19 +51,19 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZGV2LXVzZXItMTIzIi...
 **Usage:**
 ```powershell
 # Run from applications folder
-.\documentation\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'user@gov.bc.ca'
+.\documentation\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'user@gov.bc.ca'
 
 # Run from documentation folder  
-.\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'user@gov.bc.ca'
+.\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'user@gov.bc.ca'
 
 # Admin user token  
-.\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'admin@gov.bc.ca' -IsAdmin $true
+.\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'admin@gov.bc.ca' -IsAdmin $true
 
 # Custom parameters
-.\unity-ai-reporting-verify-devTokenURL.ps1 -UserId "test-user" -Tenant "demo" -ExpiresInMinutes 120
+.\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "test-user" -Tenant "demo" -ExpiresInMinutes 120
 
 # Quick testing with 1-minute expiration
-.\unity-ai-reporting-verify-devTokenURL.ps1 -UserId "test-user" -ExpiresInMinutes 1
+.\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "test-user" -ExpiresInMinutes 1
 ```
 
 **Security:** The script automatically reads the JWT_SECRET from your .env file, ensuring consistency with your application configuration without hardcoding secrets.
@@ -269,9 +269,9 @@ checkAdmin<{ is_admin: boolean; user_id: string }>()
 **Multi-User Scenarios:**
 ```powershell
 # Different users get separate data spaces
-.\documentation\unity-ai-reporting-verify-devTokenURL.ps1 -UserId "alice@gov.bc.ca"
-.\documentation\unity-ai-reporting-verify-devTokenURL.ps1 -UserId "bob@gov.bc.ca"  
-.\documentation\unity-ai-reporting-verify-devTokenURL.ps1 -UserId "admin@gov.bc.ca" -IsAdmin $true
+.\documentation\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "alice@gov.bc.ca"
+.\documentation\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "bob@gov.bc.ca"  
+.\documentation\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "admin@gov.bc.ca" -IsAdmin $true
 ```
 
 Each `user_id` creates a completely separate workspace with their own chat history, feedback, and access permissions. The application treats this as a proper multi-tenant system where users are fully isolated from each other's data.

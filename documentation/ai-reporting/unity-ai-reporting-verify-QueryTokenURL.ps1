@@ -115,13 +115,13 @@ if ($IsAdmin) {
 
 Write-Host "Usage Examples:" -ForegroundColor Green
 Write-Host "Regular User:"
-Write-Host "  .\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'user@gov.bc.ca'"
+Write-Host "  .\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'user@gov.bc.ca'"
 Write-Host ""
 Write-Host "Admin User:"
-Write-Host "  .\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'admin@gov.bc.ca' -IsAdmin `$true"
+Write-Host "  .\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'admin@gov.bc.ca' -IsAdmin `$true"
 Write-Host ""
 Write-Host "Quick Testing (1 minute expiration):"
-Write-Host "  .\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'user@gov.bc.ca' -ExpiresInMinutes 1"
+Write-Host "  .\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'user@gov.bc.ca' -ExpiresInMinutes 1"
 Write-Host ""
 Write-Host "Instructions:" -ForegroundColor Green
 Write-Host "Local Testing:"
