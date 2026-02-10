@@ -314,7 +314,9 @@ export class App implements OnInit, OnDestroy {
       // Update the current visualization in the embed
       turn.embed.current_visualization = mode;
     } catch (error) {
-      // Handle error silently
+      // Log the error and notify the user
+      this.logger.error('Error changing display mode:', error);
+      this.toastService.error('Failed to change display mode. Please try again.');
     } finally {
       this.cdr.markForCheck();
     }
@@ -419,7 +421,13 @@ export class App implements OnInit, OnDestroy {
       // Scroll to bottom instantly after loading chat
       this.scrollToBottomInstant();
     } catch (error) {
-      // Handle error silently
+      // Log the error and provide non-intrusive user feedback
+      if (this.logger && typeof this.logger.error === 'function') {
+        this.logger.error('Failed to load chat', error);
+      }
+      if (this.toastService && typeof (this.toastService as any).showError === 'function') {
+        (this.toastService as any).showError('Failed to load chat. Please try again.');
+      }
     } finally {
       this.cdr.markForCheck();
     }
@@ -454,7 +462,9 @@ export class App implements OnInit, OnDestroy {
         this.sidebar.loadChats();
       }
     } catch (error) {
-      // Handle error silently
+      // Log the error and provide user feedback instead of handling it silently
+      this.logger.error('Failed to save chat', error);
+      this.toastService.error('Failed to save chat. Please try again.');
     }
   }
 
