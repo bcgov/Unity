@@ -7,5 +7,7 @@ namespace Unity.GrantManager.Applicants
     {
         Task<ApplicantProfileDto> GetApplicantProfileAsync(ApplicantProfileRequest request);
         Task<List<ApplicantTenantDto>> GetApplicantTenantsAsync(ApplicantProfileRequest request);
+        Task<(int Created, int Updated)> ReconcileApplicantTenantMapsAsync();
     }
 }
+
