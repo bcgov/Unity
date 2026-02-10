@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
@@ -36,7 +38,7 @@ namespace Unity.GrantManager.Controllers.Authentication
                 return;
             }
 
-            if (apiKey != extractedApiKey)
+            if (!IsKeyValid(apiKey, extractedApiKey!))
             {
                 context.Result = new UnauthorizedObjectResult(new ProblemDetails
                 {
@@ -46,6 +48,13 @@ namespace Unity.GrantManager.Controllers.Authentication
                     Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
                 });
             }
+        }
+
+        private static bool IsKeyValid(string expected, string actual)
+        {
+            var expectedBytes = Encoding.UTF8.GetBytes(expected);
+            var actualBytes = Encoding.UTF8.GetBytes(actual);
+            return CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
         }
     }
 }
