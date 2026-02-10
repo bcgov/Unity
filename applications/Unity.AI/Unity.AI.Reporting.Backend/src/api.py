@@ -485,7 +485,12 @@ def delete_question():
         if not card_id:
             return abort(400, "card_id is required")
 
-        success = metabase_client.delete_card(card_id, tenant_id=tenant_id)
+        # Validate and sanitize card_id
+        safe_card_id = _sanitize_card_id(card_id)
+        if not safe_card_id:
+            return abort(400, "Invalid card_id parameter")
+
+        success = metabase_client.delete_card(safe_card_id, tenant_id=tenant_id)
         return {"success": success}
 
     except Exception as e:
