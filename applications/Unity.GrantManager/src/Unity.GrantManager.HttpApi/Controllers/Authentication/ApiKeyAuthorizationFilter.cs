@@ -38,7 +38,9 @@ namespace Unity.GrantManager.Controllers.Authentication
                 return;
             }
 
-            if (!IsKeyValid(apiKey, extractedApiKey!))
+            var actualApiKey = extractedApiKey.ToString();
+
+            if (string.IsNullOrEmpty(actualApiKey) || !IsKeyValid(apiKey, actualApiKey))
             {
                 context.Result = new UnauthorizedObjectResult(new ProblemDetails
                 {
