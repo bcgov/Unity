@@ -103,7 +103,7 @@ def get_column_example(table, column):
     instance = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     try:
         return instance["rows"][0][0]
-    except:
+    except (KeyError, IndexError, TypeError):
         return None
 
 def get_views_schemas():

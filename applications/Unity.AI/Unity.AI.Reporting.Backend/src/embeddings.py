@@ -41,8 +41,8 @@ class SchemaExtractor:
             result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
             if result["rows"]:
                 return str(result["rows"][0][0])
-        except:
-            pass
+        except (KeyError, IndexError, TypeError):
+            pass  # No example value available for this column
         return None
     
     def extract_schemas(self, db_id: int, schema_type: str = "public",
@@ -159,7 +159,8 @@ class EmbeddingManager:
                         time.sleep(0.5 * (attempt + 1))  # Exponential backoff
                         continue
                 raise
-    
+        return None
+
     def embed_schemas(self, db_id: int, schema_types: Optional[List[str]] = None,
                       tenant_id: Optional[str] = None):
         """

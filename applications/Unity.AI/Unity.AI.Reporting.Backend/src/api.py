@@ -81,8 +81,8 @@ def _sanitize_card_id(card_id):
             return card_id
             
     except (ValueError, TypeError):
-        pass
-    
+        pass  # Invalid card_id — fall through to return None
+
     return None
 
 
