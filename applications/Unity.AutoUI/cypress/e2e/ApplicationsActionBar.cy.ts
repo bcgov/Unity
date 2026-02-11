@@ -36,16 +36,13 @@ describe('Unity Login and check data from CHEFS', () => {
                     .clear()
                     .type('Default Grants Program')
 
-                cy.get('#UserGrantProgramsTable', { timeout: STANDARD_TIMEOUT })
-                    .should('be.visible')
+                // Flatten nested `within` usage to satisfy S2004 (limit nesting depth)
+                cy.contains('#UserGrantProgramsTable tbody tr', 'Default Grants Program', { timeout: STANDARD_TIMEOUT })
+                    .should('exist')
                     .within(() => {
-                        cy.contains('tbody tr', 'Default Grants Program', { timeout: STANDARD_TIMEOUT })
-                            .should('exist')
-                            .within(() => {
-                                cy.contains('button', 'Select')
-                                    .should('be.enabled')
-                                    .click()
-                            })
+                        cy.contains('button', 'Select')
+                            .should('be.enabled')
+                            .click()
                     })
 
                 cy.location('pathname', { timeout: STANDARD_TIMEOUT }).should((p) => {
@@ -125,15 +122,10 @@ describe('Unity Login and check data from CHEFS', () => {
         };
 
         const waitForRefresh = () => {
-            // If the spinner shows, wait for it to finish. If it never shows, at least ensure it's not visible.
+            // S3923 fix: remove identical branches; assert spinner is hidden when present.
             cy.get('div.spinner-grow[role="status"]', { timeout: STANDARD_TIMEOUT })
                 .then(($s) => {
-                    const isHiddenNow = $s.attr('style') && $s.attr('style')!.includes('display: none');
-                    if (!isHiddenNow) {
-                        cy.wrap($s).should('have.attr', 'style').and('contain', 'display: none');
-                    } else {
-                        cy.wrap($s).should('have.attr', 'style').and('contain', 'display: none');
-                    }
+                    cy.wrap($s).should('have.attr', 'style').and('contain', 'display: none');
                 });
         };
 
@@ -216,13 +208,12 @@ describe('Unity Login and check data from CHEFS', () => {
             }
         });
 
-        // Try footer Cancel if available
+        // Try footer Cancel if available (avoid .catch on Cypress chainable)
         cy.contains('#payment-modal .modal-footer button', 'Cancel', { timeout: STANDARD_TIMEOUT })
             .then(($btn) => {
                 if ($btn && $btn.length > 0) {
                     cy.wrap($btn).scrollIntoView().click({ force: true });
                 } else {
-                    // Skip gracefully if Cancel isn’t present
                     cy.log('Cancel button not present, proceeding to hard-close fallback');
                 }
             });
