@@ -122,7 +122,7 @@ describe('Unity Login and check data from CHEFS', () => {
         };
 
         const waitForRefresh = () => {
-            // S3923 fix: remove identical branches; assert spinner is hidden when present.
+            // assert spinner is hidden when present.
             cy.get('div.spinner-grow[role="status"]', { timeout: STANDARD_TIMEOUT })
                 .then(($s) => {
                     cy.wrap($s).should('have.attr', 'style').and('contain', 'display: none');
@@ -155,7 +155,7 @@ describe('Unity Login and check data from CHEFS', () => {
 
     });
 
-    it('Clicks Payment and force-closes the modal', () => {
+    it('Verifies the expected action buttons are visible when two rows are selected', () => {
         const BUTTON_TIMEOUT = 60000;
 
         // Ensure table has rows
@@ -248,12 +248,41 @@ describe('Unity Login and check data from CHEFS', () => {
     });
 
     //  With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
-    it('Verify the action buttons are visible with no rows selected', () => {
+    it('Verifies the expected action buttons are visible when no rows are selected', () => {
+        cy.get('#GrantApplicationsTable', { timeout: STANDARD_TIMEOUT }).should('exist')
 
+        // Ensure we start from a clean selection state (0 selected)
+        // (Using same "select all / deselect all" toggle approach as the working 1-row test)
+        cy.get('div.dt-scroll-head thead input', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .click({ force: true })
+            .click({ force: true })
+
+        cy.get('#GrantApplicationsTable tbody tr.selected', { timeout: STANDARD_TIMEOUT })
+            .should('have.length', 0)
+
+        // Filter button (left action bar group)
+        cy.get('#btn-toggle-filter', { timeout: STANDARD_TIMEOUT }).should('be.visible')
+
+        // Right-side buttons
+        cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Export', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+        cy.contains('#dynamicButtonContainerId button.grp-savedStates', 'Save View', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+        cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Columns', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+
+        // Optional sanity: action buttons that require selection should be disabled when none selected
+        cy.get('#externalLink', { timeout: STANDARD_TIMEOUT }).should('be.disabled')               // Open
+        cy.get('#assignApplication', { timeout: STANDARD_TIMEOUT }).should('be.disabled')         // Assign
+        cy.get('#approveApplications', { timeout: STANDARD_TIMEOUT }).should('be.disabled')       // Approve
+        cy.get('#tagApplication', { timeout: STANDARD_TIMEOUT }).should('be.disabled')            // Tags
+        cy.get('#applicationPaymentRequest', { timeout: STANDARD_TIMEOUT }).should('be.disabled') // Payment
+        cy.get('#applicationLink', { timeout: STANDARD_TIMEOUT }).should('be.disabled')           // Info
     })
 
     // With one row selected verify the visibility of Open, Assign, Approve, Tags, Payment, Info, Filter, Export, Save View, and Columns.
-    it('Verify the action buttons are visible with one row selected', () => {
+    it('Verifies the expected action buttons are visible when only one row is selected', () => {
         cy.get('#GrantApplicationsTable', { timeout: STANDARD_TIMEOUT }).should('exist')
 
         //Ensure we start from a clean selection state (0 selected)
@@ -304,7 +333,7 @@ describe('Unity Login and check data from CHEFS', () => {
     })
 
     // Walk the Columns menu and toggle each column on, verifying the column is visibile.
-    it('Verify all columns in the menu are visible when and toggled on.', () => {
+    it('Verify all expected columns in the menu are visible when each column is toggled on.', () => {
         const clickColumnsItem = (label: string) => {
             cy.contains('a.dropdown-item', label, { timeout: STANDARD_TIMEOUT })
                 .should('exist')
