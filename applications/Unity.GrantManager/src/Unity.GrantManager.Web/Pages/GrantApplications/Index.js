@@ -1057,7 +1057,7 @@ const listColumns = getColumns();
                 const linkNames = Array.from(new Set((data || [])
                     .filter(x => x?.linkType)
                     .map(x => x.linkType)
-                    .sort(x => x.linkType))); 
+                    .sort((a, b) => a.localeCompare(b)))); 
                 return linkNames.join(', ');
             },
             index: columnIndex
