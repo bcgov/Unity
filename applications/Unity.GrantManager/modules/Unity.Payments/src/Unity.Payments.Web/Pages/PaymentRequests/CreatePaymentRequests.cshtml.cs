@@ -160,7 +160,7 @@ namespace Unity.Payments.Web.Pages.Payments
             bool missingFields = false;
 
             List<string> errorList = [];
-            if (supplier == null || site == null || supplier.Number == null)
+            if (supplier == null || site == null || string.IsNullOrWhiteSpace(supplier.Number))
             {
                 missingFields = true;
             }
@@ -306,6 +306,15 @@ namespace Unity.Payments.Web.Pages.Payments
             if (validationErrors.Count != 0)
             {
                 throw new UserFriendlyException(string.Join(" ", validationErrors));
+            }
+
+            foreach (var payment in ApplicationPaymentRequestForm)
+            {
+                if (string.IsNullOrWhiteSpace(payment.SupplierNumber))
+                {
+                    throw new UserFriendlyException(
+                        "Cannot submit payment request: Supplier number is missing for one or more applications.");
+                }
             }
 
             var payments = MapPaymentRequests();
