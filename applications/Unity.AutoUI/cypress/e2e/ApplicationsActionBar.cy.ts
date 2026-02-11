@@ -187,6 +187,30 @@ describe('Unity Login and check data from CHEFS', () => {
                 .click({ force: true })
         }
 
+        const getVisibleHeaderTitles = () => {
+            return cy.get('.dt-scroll-head span.dt-column-title', { timeout: STANDARD_TIMEOUT }).then(($els) => {
+                const titles = Cypress.$($els)
+                    .toArray()
+                    .map((el) => (el.textContent || '').replace(/\s+/g, ' ').trim())
+                    .filter((t) => t.length > 0)
+                return titles
+            })
+        }
+
+        const assertVisibleHeadersInclude = (expected: string[]) => {
+            getVisibleHeaderTitles().then((titles) => {
+                expected.forEach((e) => {
+                    expect(titles, `visible headers should include "${e}"`).to.include(e)
+                })
+            })
+        }
+
+        const scrollX = (x: number) => {
+            cy.get('.dt-scroll-body', { timeout: STANDARD_TIMEOUT })
+                .should('exist')
+                .scrollTo(x, 0, { duration: 0, ensureScrollable: false })
+        }
+
         // Open the "Save View" dropdown
         cy.get('button.grp-savedStates', { timeout: STANDARD_TIMEOUT })
             .should('be.visible')
@@ -310,7 +334,97 @@ describe('Unity Login and check data from CHEFS', () => {
             .click({ force: true })
 
         cy.get('div.dt-button-background', { timeout: STANDARD_TIMEOUT }).should('not.exist')
+
+        // Assertions by horizontal scroll segments (human-style scan)
+        scrollX(0)
+        assertVisibleHeadersInclude([
+            'Applicant Name',
+            'Category',
+            'Submission #',
+            'Submission Date',
+            'Status',
+            'Sub-Status',
+            'Community',
+            'Requested Amount',
+            'Approved Amount',
+            'Project Name',
+            'Applicant Id',
+        ])
+
+        scrollX(1500)
+        assertVisibleHeadersInclude([
+            'Tags',
+            'Assignee',
+            'SubSector',
+            'Economic Region',
+            'Regional District',
+            'Registered Organization Number',
+            'Org Book Status',
+        ])
+
+        scrollX(3000)
+        assertVisibleHeadersInclude([
+            'Project Start Date',
+            'Project End Date',
+            'Projected Funding Total',
+            'Total Paid Amount $',
+            'Project Electoral District',
+            'Applicant Electoral District',
+        ])
+
+        scrollX(4500)
+        assertVisibleHeadersInclude([
+            'Forestry or Non-Forestry',
+            'Forestry Focus',
+            'Acquisition',
+            'City',
+            'Community Population',
+            'Likelihood of Funding',
+            'Total Score',
+        ])
+
+        scrollX(6000)
+        assertVisibleHeadersInclude([
+            'Assessment Result',
+            'Recommended Amount',
+            'Due Date',
+            'Owner',
+            'Decision Date',
+            'Project Summary',
+            'Organization Type',
+            'Business Number',
+        ])
+
+        scrollX(7500)
+        assertVisibleHeadersInclude([
+            'Due Diligence Status',
+            'Decline Rationale',
+            'Contact Full Name',
+            'Contact Title',
+            'Contact Email',
+            'Contact Business Phone',
+            'Contact Cell Phone',
+        ])
+
+        scrollX(9000)
+        assertVisibleHeadersInclude([
+            'Signing Authority Full Name',
+            'Signing Authority Title',
+            'Signing Authority Email',
+            'Signing Authority Business Phone',
+            'Signing Authority Cell Phone',
+            'Place',
+            'Risk Ranking',
+            'Notes',
+            'Red-Stop',
+            'Indigenous',
+            'FYE Day',
+            'FYE Month',
+            'Payout',
+            'Unity Application Id',
+        ])
     })
+
 
     it('Verify Logout', () => {
         cy.logout()
