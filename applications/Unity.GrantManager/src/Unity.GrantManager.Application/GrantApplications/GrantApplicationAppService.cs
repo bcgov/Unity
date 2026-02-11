@@ -99,6 +99,7 @@ public class GrantApplicationAppService(
             appDto.ContactTitle = app.ApplicantAgent?.Title;
             appDto.ContactBusinessPhone = app.ApplicantAgent?.Phone;
             appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
+            appDto.ApplicationLinks = ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(app.ApplicationLinks?.ToList() ?? []);
 
             if (paymentsFeatureEnabled && paymentRequestsByApplication.Count > 0)
             {
