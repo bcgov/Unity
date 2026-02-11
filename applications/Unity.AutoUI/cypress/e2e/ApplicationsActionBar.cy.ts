@@ -155,16 +155,6 @@ describe('Unity Login and check data from CHEFS', () => {
 
     });
 
-    //  With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
-    it('Verify the action buttons are visible with no rows selected', () => {
-
-    })
-
-    //  With one row selected verify the visibility of Filter, Export, Save View, and Columns.
-    it('Verify the action buttons are visible with one row selected', () => {
-
-    })
-
     it('Clicks Payment and force-closes the modal', () => {
         const BUTTON_TIMEOUT = 60000;
 
@@ -257,6 +247,61 @@ describe('Unity Login and check data from CHEFS', () => {
         cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Columns', { timeout: STANDARD_TIMEOUT }).should('be.visible');
     });
 
+    //  With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
+    it('Verify the action buttons are visible with no rows selected', () => {
+
+    })
+
+    // With one row selected verify the visibility of Open, Assign, Approve, Tags, Payment, Info, Filter, Export, Save View, and Columns.
+    it('Verify the action buttons are visible with one row selected', () => {
+        cy.get('#GrantApplicationsTable', { timeout: STANDARD_TIMEOUT }).should('exist')
+
+        //Ensure we start from a clean selection state (0 selected)
+        cy.get('div.dt-scroll-head thead input', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .click({ force: true })
+            .click({ force: true })
+
+        cy.get('#GrantApplicationsTable tbody tr.selected', { timeout: STANDARD_TIMEOUT })
+            .should('have.length', 0)
+
+        // Select exactly 1 row (click a non-link cell, matching your earlier helper logic)
+        cy.get('#GrantApplicationsTable tbody tr', { timeout: STANDARD_TIMEOUT })
+            .should('have.length.greaterThan', 0)
+            .first()
+            .find('td')
+            .not(':has(a)')
+            .first()
+            .click({ force: true })
+
+        cy.get('#GrantApplicationsTable tbody tr.selected', { timeout: STANDARD_TIMEOUT })
+            .should('have.length', 1)
+
+        // Action bar (left group)
+        cy.get('#app_custom_buttons', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .scrollIntoView()
+
+        // Left-side action buttons (actual IDs on this page)
+        cy.get('#externalLink', { timeout: STANDARD_TIMEOUT }).should('be.visible')               // Open
+        cy.get('#assignApplication', { timeout: STANDARD_TIMEOUT }).should('be.visible')         // Assign
+        cy.get('#approveApplications', { timeout: STANDARD_TIMEOUT }).should('be.visible')       // Approve
+        cy.get('#tagApplication', { timeout: STANDARD_TIMEOUT }).should('be.visible')            // Tags
+        cy.get('#applicationPaymentRequest', { timeout: STANDARD_TIMEOUT }).should('be.visible') // Payment
+        cy.get('#applicationLink', { timeout: STANDARD_TIMEOUT }).should('be.visible')           // Info
+
+
+        // Filter button
+        cy.get('#btn-toggle-filter', { timeout: STANDARD_TIMEOUT }).should('be.visible')
+
+        // Right-side buttons
+        cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Export', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+        cy.contains('#dynamicButtonContainerId button.grp-savedStates', 'Save View', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+        cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Columns', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+    })
 
     // Walk the Columns menu and toggle each column on, verifying the column is visibile.
     it('Verify all columns in the menu are visible when and toggled on.', () => {
