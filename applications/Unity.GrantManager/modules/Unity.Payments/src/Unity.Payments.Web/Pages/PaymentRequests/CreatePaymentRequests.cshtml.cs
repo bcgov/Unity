@@ -178,7 +178,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
             if (missingFields)
             {
-                errorList.Add("Some payment information is missing for this applicant, please make sure Supplier info is provided and default site is selected.");
+                errorList.Add("Some payment information is missing for this applicant.  Please make sure supplier information is provided and default site is selected.");
             }
 
             if (application.StatusCode != GrantApplicationState.GRANT_APPROVED)
