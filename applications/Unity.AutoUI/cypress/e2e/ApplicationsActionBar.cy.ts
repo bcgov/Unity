@@ -164,13 +164,152 @@ describe('Unity Login and check data from CHEFS', () => {
     });
 
     //  With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
-    it('Open an application from the list', () => {
+    it('Verify the action buttons are visible with no rows selected', () => {
 
     })
 
     //  With one row selected verify the visibility of Filter, Export, Save View, and Columns.
-    it('Open an application from the list', () => {
+    it('Verify the action buttons are visible with one row selected', () => {
 
+    })
+
+    //  With one row selected verify the visibility of Filter, Export, Save View, and Columns.
+    it('Verify the action buttons are visible with two rows selected', () => {
+
+    })
+
+    // Walk the Columns menu and toggle each column on, verifying the column is visibile.
+    it('Verify all columns in the menu are visible when and toggled on.', () => {
+        const clickColumnsItem = (label: string) => {
+            cy.contains('a.dropdown-item', label, { timeout: STANDARD_TIMEOUT })
+                .should('exist')
+                .scrollIntoView()
+                .click({ force: true })
+        }
+
+        // Open the "Save View" dropdown
+        cy.get('button.grp-savedStates', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+            .and('contain.text', 'Save View')
+            .click()
+
+        // Click "Reset to Default View"
+        cy.contains('a.dropdown-item', 'Reset to Default View', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .click({ force: true })
+
+        // Open Columns menu
+        cy.contains('span', 'Columns', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+            .click()
+
+        clickColumnsItem('% of Total Project Budget')
+        clickColumnsItem('Acquisition')
+        clickColumnsItem('Applicant Electoral District')
+
+        clickColumnsItem('Applicant Id')
+        clickColumnsItem('Applicant Id')
+
+        clickColumnsItem('Applicant Name')
+        clickColumnsItem('Applicant Name')
+
+        clickColumnsItem('Approved Amount')
+        clickColumnsItem('Approved Amount')
+
+        clickColumnsItem('Assessment Result')
+
+        clickColumnsItem('Assignee')
+        clickColumnsItem('Assignee')
+
+        clickColumnsItem('Business Number')
+
+        clickColumnsItem('Category')
+        clickColumnsItem('Category')
+
+        clickColumnsItem('City')
+
+        clickColumnsItem('Community')
+        clickColumnsItem('Community')
+
+        clickColumnsItem('Community Population')
+        clickColumnsItem('Contact Business Phone')
+        clickColumnsItem('Contact Cell Phone')
+        clickColumnsItem('Contact Email')
+        clickColumnsItem('Contact Full Name')
+        clickColumnsItem('Contact Title')
+        clickColumnsItem('Decision Date')
+        clickColumnsItem('Decline Rationale')
+        clickColumnsItem('Due Date')
+        clickColumnsItem('Due Diligence Status')
+        clickColumnsItem('Economic Region')
+        clickColumnsItem('Forestry Focus')
+        clickColumnsItem('Forestry or Non-Forestry')
+        clickColumnsItem('FYE Day')
+        clickColumnsItem('FYE Month')
+        clickColumnsItem('Indigenous')
+        clickColumnsItem('Likelihood of Funding')
+        clickColumnsItem('Non-Registered Organization Name')
+        clickColumnsItem('Notes')
+        clickColumnsItem('Org Book Status')
+        clickColumnsItem('Organization Type')
+        clickColumnsItem('Other Sector/Sub/Industry Description')
+        clickColumnsItem('Owner')
+        clickColumnsItem('Payout')
+        clickColumnsItem('Place')
+        clickColumnsItem('Project Electoral District')
+        clickColumnsItem('Project End Date')
+
+        clickColumnsItem('Project Name')
+        clickColumnsItem('Project Name')
+
+        clickColumnsItem('Project Start Date')
+        clickColumnsItem('Project Summary')
+        clickColumnsItem('Projected Funding Total')
+        clickColumnsItem('Recommended Amount')
+        clickColumnsItem('Red-Stop')
+        clickColumnsItem('Regional District')
+        clickColumnsItem('Registered Organization Name')
+        clickColumnsItem('Registered Organization Number')
+
+        clickColumnsItem('Requested Amount')
+        clickColumnsItem('Requested Amount')
+
+        clickColumnsItem('Risk Ranking')
+        clickColumnsItem('Sector')
+        clickColumnsItem('Signing Authority Business Phone')
+        clickColumnsItem('Signing Authority Cell Phone')
+        clickColumnsItem('Signing Authority Email')
+        clickColumnsItem('Signing Authority Full Name')
+        clickColumnsItem('Signing Authority Title')
+
+        clickColumnsItem('Status')
+        clickColumnsItem('Status')
+
+        clickColumnsItem('Sub-Status')
+        clickColumnsItem('Sub-Status')
+
+        clickColumnsItem('Submission #')
+        clickColumnsItem('Submission #')
+
+        clickColumnsItem('Submission Date')
+        clickColumnsItem('Submission Date')
+
+        clickColumnsItem('SubSector')
+
+        clickColumnsItem('Tags')
+        clickColumnsItem('Tags')
+
+        clickColumnsItem('Total Paid Amount $')
+        clickColumnsItem('Total Project Budget')
+        clickColumnsItem('Total Score')
+        clickColumnsItem('Unity Application Id')
+
+        // Close the menu and wait until the overlay is gone
+        cy.get('div.dt-button-background', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .click({ force: true })
+
+        cy.get('div.dt-button-background', { timeout: STANDARD_TIMEOUT }).should('not.exist')
     })
 
     it('Verify Logout', () => {
