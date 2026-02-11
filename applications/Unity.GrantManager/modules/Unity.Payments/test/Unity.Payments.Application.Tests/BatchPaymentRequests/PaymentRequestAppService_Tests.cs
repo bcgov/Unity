@@ -70,10 +70,10 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
                Description = "",
                PayeeName= "",
                SiteId= siteId,
-               SupplierNumber = "",
+               SupplierNumber = "SUP-TEST",
             }
         ];
-        // Act        
+        // Act
         var insertedPaymentRequest = await _paymentRequestAppService
             .CreateAsync(paymentRequests);
 
@@ -97,7 +97,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
             Amount = 100,
             PayeeName = "Test",
             ContractNumber = "0000000000",
-            SupplierNumber = "",
+            SupplierNumber = "SUP-TEST",
             SiteId = addedSupplier.Sites[0].Id,
             CorrelationId = Guid.NewGuid(),
             CorrelationProvider = "",
