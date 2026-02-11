@@ -205,6 +205,10 @@ namespace Unity.Payments.Domain.PaymentRequests
                 throw new BusinessException(ErrorConsts.ZeroPayment);
             }
 
+            if (string.IsNullOrWhiteSpace(SupplierNumber))
+            {
+                throw new BusinessException(ErrorConsts.MissingSupplierNumber);
+            }
 
             return this;
         }

@@ -160,7 +160,7 @@ namespace Unity.Payments.Web.Pages.Payments
             bool missingFields = false;
 
             List<string> errorList = [];
-            if (supplier == null || site == null || supplier.Number == null)
+            if (supplier == null || site == null || string.IsNullOrWhiteSpace(supplier.Number))
             {
                 missingFields = true;
             }
@@ -178,7 +178,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
             if (missingFields)
             {
-                errorList.Add("Some payment information is missing for this applicant, please make sure Supplier info is provided and default site is selected.");
+                errorList.Add("Some payment information is missing for this applicant.  Please make sure supplier information is provided and default site is selected.");
             }
 
             if (application.StatusCode != GrantApplicationState.GRANT_APPROVED)
@@ -306,6 +306,12 @@ namespace Unity.Payments.Web.Pages.Payments
             if (validationErrors.Count != 0)
             {
                 throw new UserFriendlyException(string.Join(" ", validationErrors));
+            }
+
+            if (ApplicationPaymentRequestForm.Exists(payment => string.IsNullOrWhiteSpace(payment.SupplierNumber)))
+            {
+                throw new UserFriendlyException(
+                    "Cannot submit payment request: Supplier number is missing for one or more applications.");
             }
 
             var payments = MapPaymentRequests();
