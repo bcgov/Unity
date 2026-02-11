@@ -15,6 +15,11 @@ from auth import require_auth, get_user_from_token
 from static_routes import add_static_routes
 import re
 
+# Define constants
+ADMIN_PRIVILEGES_REQUIRED = "Admin privileges required"
+INTERNAL_SERVER_ERROR = "Internal server error"
+CHAT_NOT_FOUND = "Chat not found"
+
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -84,6 +89,39 @@ def _sanitize_card_id(card_id):
         pass  # Invalid card_id — fall through to return None
 
     return None
+
+
+def _classify_sql_generation_error(error):
+    """Classify an SQL generation error and return an appropriate (response, status) tuple."""
+    error_str = str(error)
+    error_lower = error_str.lower()
+    logger.error(f"SQL generation failed with error: {error}", exc_info=True)
+    logger.debug(f"Error type: {type(error)}")
+
+    # Check if it's a rate limit
+    if "429" in error_str or "rate limit" in error_lower:
+        logger.warning("Azure OpenAI rate limit exceeded")
+        return jsonify({
+            "error": "Rate limit exceeded",
+            "message": "Azure OpenAI rate limit exceeded. Please try again in a few moments.",
+            "url": "rate_limit"
+        }), 429
+
+    # Check if it's a connection error
+    if "connection aborted" in error_lower or "remotedisconnected" in error_lower:
+        logger.error("Connection error during SQL generation")
+        return jsonify({
+            "error": "Connection error",
+            "message": "Connection error during SQL generation. Please try again.",
+            "url": "connection_error"
+        }), 503
+
+    logger.error("Unknown error during SQL generation")
+    return jsonify({
+        "error": "SQL generation failed",
+        "message": "Unable to generate SQL query. Please try again.",
+        "url": "fail"
+    }), 500
 
 
 def create_app():
@@ -282,7 +320,7 @@ def get_feedback_for_admin():
     # Check if user is admin
     is_admin = user_data.get("is_it_admin", False)
     if not is_admin:
-        return jsonify({"error": "Admin privileges required"}), 403
+        return jsonify({"error": ADMIN_PRIVILEGES_REQUIRED}), 403
 
     # Get pagination parameters
     try:
@@ -336,72 +374,40 @@ def ask():
 
         logger.info(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
 
+        # Extract past questions from conversation
+        past_questions = chat_manager.extract_past_questions(conversation)
+        logger.debug(f"Extracted {len(past_questions)} past questions")
+
+        # Generate SQL from natural language
+        logger.info("Starting SQL generation...")
         try:
-            # Extract past questions from conversation
-            past_questions = chat_manager.extract_past_questions(conversation)
-            logger.debug(f"Extracted {len(past_questions)} past questions")
+            sql, metadata, sql_tokens = await sql_generator.generate_sql(
+                question, past_questions, db_id, tenant_id=tenant_id
+            )
+        except Exception as e:
+            return _classify_sql_generation_error(e)
 
-            # Generate SQL from natural language
-            logger.info("Starting SQL generation...")
-            try:
-                sql, metadata, sql_tokens = await sql_generator.generate_sql(
-                    question, past_questions, db_id, tenant_id=tenant_id
-                )
-                logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
-                logger.debug(f"SQL generation tokens: {sql_tokens}")
-            except Exception as sql_error:
-                logger.error(f"SQL generation failed with error: {sql_error}", exc_info=True)
-                logger.debug(f"Error type: {type(sql_error)}")
-                # Check if it's a rate limit or connection error
-                if "429" in str(sql_error) or "rate limit" in str(sql_error).lower():
-                    logger.warning("Azure OpenAI rate limit exceeded")
-                    return jsonify({
-                        "error": "Rate limit exceeded", 
-                        "message": "Azure OpenAI rate limit exceeded. Please try again in a few moments.",
-                        "url": "rate_limit"
-                    }), 429
-                elif "Connection aborted" in str(sql_error) or "RemoteDisconnected" in str(sql_error):
-                    logger.error("Connection error during SQL generation")
-                    return jsonify({
-                        "error": "Connection error",
-                        "message": "Connection error during SQL generation. Please try again.",
-                        "url": "connection_error"
-                    }), 503
-                else:
-                    logger.error("Unknown error during SQL generation")
-                    return jsonify({
-                        "error": "SQL generation failed",
-                        "message": "Unable to generate SQL query. Please try again.",
-                        "url": "fail"
-                    }), 500
+        logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
+        logger.debug(f"SQL generation tokens: {sql_tokens}")
 
-            if not sql or not metadata:
-                logger.warning("SQL generation failed - returning fail response")
-                return {"url": "fail", "card_id": 0, "x_field": "", "y_field": ""}, 200
+        if not sql or not metadata:
+            logger.warning("SQL generation failed - returning fail response")
+            return {"url": "fail", "card_id": 0, "x_field": "", "y_field": ""}, 200
 
-            logger.debug(f"SQL: {sql}")
-            logger.debug(f"Metadata: {metadata}")
-            logger.info("About to create Metabase card...")
-            logger.debug(f"Metabase client type: {type(metabase_client)}")
+        logger.debug(f"SQL: {sql}")
+        logger.debug(f"Metadata: {metadata}")
+        logger.info("About to create Metabase card...")
+        logger.debug(f"Metabase client type: {type(metabase_client)}")
 
-            # Create Metabase card
-            logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
-            try:
-                logger.debug("Calling metabase_client.create_card...")
-                card_id = metabase_client.create_card(
-                    sql, db_id, collection_id, metadata['title'],
-                    tenant_id=tenant_id
-                )
-                logger.info(f"Card created successfully with ID: {card_id}")
-            except Exception as card_error:
-                logger.error(f"Error during card creation: {card_error}", exc_info=True)
-                logger.debug(f"Card error type: {type(card_error)}")
-                raise card_error
+        # Create Metabase card
+        logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
+        logger.debug("Calling metabase_client.create_card...")
+        card_id = metabase_client.create_card(
+            sql, db_id, collection_id, metadata['title'],
+            tenant_id=tenant_id
+        )
+        logger.info(f"Card created successfully with ID: {card_id}")
 
-        except Exception as step_error:
-            logger.error(f"Error in specific step: {step_error}", exc_info=True)
-            raise step_error
-        
         return {
             "card_id": card_id,
             "x_field": metadata.get('x_axis', []),
@@ -416,7 +422,7 @@ def ask():
         return asyncio.run(async_ask())
     except Exception as e:
         logger.error(f"Error in /api/ask: {e}", exc_info=True)
-        return abort(500, "Internal server error")
+        return abort(500, INTERNAL_SERVER_ERROR)
 
 
 @app.route("/api/change_display", methods=["POST"])
@@ -468,7 +474,7 @@ def change_display():
 
     except Exception as e:
         logger.error(f"Error in /api/change_display: {e}", exc_info=True)
-        return abort(500, "Internal server error")
+        return abort(500, INTERNAL_SERVER_ERROR)
 
 
 @app.route("/api/delete", methods=["POST"])
@@ -545,7 +551,7 @@ def get_chats():
 
     except Exception as e:
         logger.error(f"Error getting chats: {e}", exc_info=True)
-        return abort(500, "Internal server error")
+        return abort(500, INTERNAL_SERVER_ERROR)
 
 
 @app.route("/api/chats/<chat_id>", methods=["POST"])
@@ -560,13 +566,13 @@ def get_chat(chat_id):
         chat_data = chat_manager.get_chat_with_card_validation(chat_id, user_id)
         
         if not chat_data:
-            return abort(404, "Chat not found")
+            return abort(404, CHAT_NOT_FOUND)
 
         return jsonify(chat_data), 200
 
     except Exception as e:
         logger.error(f"Error getting chat: {e}", exc_info=True)
-        return abort(500, "Internal server error")
+        return abort(500, INTERNAL_SERVER_ERROR)
 
 
 @app.route("/api/chats/save", methods=["POST"])
@@ -596,7 +602,7 @@ def save_chat():
 
     except Exception as e:
         logger.error(f"Error saving chat: {e}", exc_info=True)
-        return abort(500, "Internal server error")
+        return abort(500, INTERNAL_SERVER_ERROR)
 
 
 @app.route("/api/chats/<chat_id>", methods=["DELETE"])
@@ -612,13 +618,13 @@ def delete_chat(chat_id):
         success = chat_manager.delete_chat(chat_id, user_id)
 
         if not success:
-            return abort(404, "Chat not found")
+            return abort(404, CHAT_NOT_FOUND)
 
         return {"success": True}, 200
 
     except Exception as e:
         logger.error(f"Error deleting chat: {e}", exc_info=True)
-        return abort(500, "Internal server error")
+        return abort(500, INTERNAL_SERVER_ERROR)
 
 
 # Feedback endpoints
@@ -664,7 +670,7 @@ def submit_feedback():
         # Validate that the chat exists and belongs to the user
         chat_data = chat_repository.get_chat(chat_id, user_id)
         if not chat_data:
-            return abort(404, "Chat not found")
+            return abort(404, CHAT_NOT_FOUND)
         
         # Submit feedback
         feedback_id = feedback_repository.submit_feedback(
@@ -693,7 +699,7 @@ def submit_feedback():
 
     except Exception as e:
         logger.error(f"Error submitting feedback: {e}", exc_info=True)
-        return abort(500, "Internal server error")
+        return abort(500, INTERNAL_SERVER_ERROR)
 
 
 @app.route("/api/feedback/<feedback_id>", methods=["GET"])
@@ -708,7 +714,7 @@ def get_feedback(feedback_id):
     # Check if user is admin
     is_admin = user_data.get("is_it_admin", False)
     if not is_admin:
-        return jsonify({"error": "Admin privileges required"}), 403
+        return jsonify({"error": ADMIN_PRIVILEGES_REQUIRED}), 403
 
     try:
         feedback_data = feedback_repository.get_feedback(feedback_id)
@@ -720,7 +726,7 @@ def get_feedback(feedback_id):
 
     except Exception as e:
         logger.error(f"Error getting feedback: {e}", exc_info=True)
-        return abort(500, "Internal server error")
+        return abort(500, INTERNAL_SERVER_ERROR)
 
 
 @app.route("/api/admin/feedback/<feedback_id>/status", methods=["PUT"])
@@ -735,7 +741,7 @@ def update_feedback_status(feedback_id):
     # Check if user is admin
     is_admin = user_data.get("is_it_admin", False)
     if not is_admin:
-        return jsonify({"error": "Admin privileges required"}), 403
+        return jsonify({"error": ADMIN_PRIVILEGES_REQUIRED}), 403
 
     data = request.get_json()
     new_status = data.get("status")

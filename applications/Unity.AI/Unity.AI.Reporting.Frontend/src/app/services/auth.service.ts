@@ -20,15 +20,13 @@ export class AuthService {
   private tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();
 
-  private _initializationPromise: Promise<void>;
+  private _initializationPromise: Promise<void> | null = null;
 
   constructor(
     private logger: LoggerService,
     private configService: ConfigService
   ) {
     this.initializeFromUrl();
-    // Start initialization but don't block constructor
-    this._initializationPromise = this.initializeAsync();
   }
 
   private async initializeAsync(): Promise<void> {
@@ -48,12 +46,14 @@ export class AuthService {
   }
 
   /**
-   * Ensure initialization is complete before proceeding
+   * Ensure initialization is complete before proceeding.
+   * Lazily triggers async initialization on first call.
    */
   private async ensureInitialized(): Promise<void> {
-    if (this._initializationPromise) {
-      await this._initializationPromise;
+    if (!this._initializationPromise) {
+      this._initializationPromise = this.initializeAsync();
     }
+    await this._initializationPromise;
   }
 
   private initializeFromUrl(): void {
@@ -99,118 +99,139 @@ export class AuthService {
   private initializePostMessageListener(): void {
     console.log('AUTH SERVICE: Registering postMessage listener');
     // Listen for token from parent window (when embedded in iframe)
-    
-    window.addEventListener('message', (event: MessageEvent) => {
-      console.log('AI Reporting: Received postMessage from origin:', event.origin);
-      
-      // Validate origin against configured iframe origins
-      const allowedOrigins = this.configService.iframeOriginUrls;
-      const originsLoaded = this.configService.iframeOriginsLoaded;
-      const currentOrigin = window.location.origin;
-      
-      console.log('🔍 AUTH SERVICE ORIGIN VALIDATION:');
-      console.log('  Event origin:', event.origin);
-      console.log('  Current origin:', currentOrigin);
-      console.log('  Allowed origins:', allowedOrigins);
-      console.log('  Allowed origins length:', allowedOrigins.length);
-      console.log('  Origins loaded:', originsLoaded);
-      console.log('  Origin included in allowed list:', allowedOrigins.includes(event.origin));
-      
-      // Reject self-origin postMessages (prevents security bypass)
-      if (event.origin === currentOrigin) {
-        console.log('❌ AI Reporting AUTH SERVICE: Rejected self-origin postMessage (security bypass attempt)');
-        return;
-      }
-      
-      // If origins are not loaded yet, reject for security (fail-secure)
-      if (!originsLoaded) {
-        console.log('❌ AI Reporting AUTH SERVICE: Origins not loaded yet - rejecting for security');
-        return;
-      }
-      
-      // If origins are loaded and configured, validate
-      if (allowedOrigins.length > 0 && !allowedOrigins.includes(event.origin)) {
-        console.log('❌ AI Reporting AUTH SERVICE: Rejected token from unconfigured origin:', event.origin);
-        console.log('❌ AI Reporting AUTH SERVICE: Allowed origins:', allowedOrigins);
-        return;
-      } else {
-        console.log('✅ AI Reporting AUTH SERVICE: Origin validation passed');
-      }
-      
-      // Check if this is an AUTH_TOKEN message
-      if (event.data && event.data.type === 'AUTH_TOKEN' && event.data.token) {
-        console.log('AI Reporting: Received JWT token via postMessage');
-        
-        this.setToken(event.data.token, true); // Mark as authorized from postMessage
+    window.addEventListener('message', (event: MessageEvent) => this.handlePostMessage(event));
+  }
 
-        // Send acknowledgment back to parent
-        if (event.source && typeof (event.source as Window).postMessage === 'function') {
-          (event.source as Window).postMessage(
-            { type: 'AUTH_TOKEN_RECEIVED', success: true },
-            event.origin
-          );
+  private handlePostMessage(event: MessageEvent): void {
+    console.log('AI Reporting: Received postMessage from origin:', event.origin);
+
+    if (!this.isAllowedOrigin(event.origin)) {
+      return;
+    }
+
+    if (!event.data?.type) {
+      return;
+    }
+
+    switch (event.data.type) {
+      case 'AUTH_TOKEN':
+        if (event.data.token) {
+          this.handleAuthToken(event);
         }
-        
-        console.log('AI Reporting: Token stored and acknowledgment sent');
-        
-        // Navigate to main app route to trigger auth guard re-evaluation
-        if (window.location.pathname === '/' || window.location.pathname.includes('access-denied')) {
-          console.log('AI Reporting: Navigating to /app after token receipt');
-          // Force a re-evaluation by the auth guard without triggering logout detection
-          setTimeout(() => {
-            // Use Angular router if available, otherwise use location API carefully
-            try {
-              // Try to get Angular router from the global window object
-              const windowAny = window as any;
-              if (windowAny.ng && windowAny.ng.getComponent) {
-                // Use Angular navigation if possible
-                console.log('AI Reporting: Using Angular navigation to /app');
-                window.location.hash = '#/app';
-              } else {
-                // Fallback: use pushState to avoid page reload
-                console.log('AI Reporting: Using pushState navigation to /app');
-                window.history.pushState(null, '', '/app');
-                // Manually trigger a route check
-                window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
-              }
-            } catch (error) {
-              console.error('AI Reporting: Navigation failed, forcing reload:', error);
-              // Last resort: reload the page (but token should persist)
-              window.location.href = '/app';
-            }
-          }, 200);
-        }
-      }
-      
-      // Check if this is a LOGOUT message from parent
-      if (event.data && event.data.type === 'LOGOUT') {
+        break;
+      case 'LOGOUT':
+        // Check if this is a LOGOUT message from parent
         console.log('🚪 AI Reporting: Received LOGOUT signal from Unity Grant Manager');
         this.clearToken();
         console.log('🚪 AI Reporting: Token cleared due to LOGOUT signal');
-        
         // Redirect to access denied or home page
-        setTimeout(() => {
-          window.location.href = '/access-denied';
-        }, 100);
-      }
-      
-      // Check if this is a parent logout detection
-      if (event.data && event.data.type === 'PARENT_LOGOUT') {
+        setTimeout(() => { window.location.href = '/access-denied'; }, 100);
+        break;
+      case 'PARENT_LOGOUT':
+        // Check if this is a parent logout detection
         console.log('🚪 AI Reporting: Received PARENT_LOGOUT signal');
         this.clearToken();
         window.location.href = '/access-denied';
+        break;
+    }
+  }
+
+  private isAllowedOrigin(origin: string): boolean {
+    // Validate origin against configured iframe origins
+    const allowedOrigins = this.configService.iframeOriginUrls;
+    const originsLoaded = this.configService.iframeOriginsLoaded;
+    const currentOrigin = window.location.origin;
+
+    console.log('🔍 AUTH SERVICE ORIGIN VALIDATION:');
+    console.log('  Event origin:', origin);
+    console.log('  Current origin:', currentOrigin);
+    console.log('  Allowed origins:', allowedOrigins);
+    console.log('  Allowed origins length:', allowedOrigins.length);
+    console.log('  Origins loaded:', originsLoaded);
+    console.log('  Origin included in allowed list:', allowedOrigins.includes(origin));
+
+    // Reject self-origin postMessages (prevents security bypass)
+    if (origin === currentOrigin) {
+      console.log('❌ AI Reporting AUTH SERVICE: Rejected self-origin postMessage (security bypass attempt)');
+      return false;
+    }
+
+    // If origins are not loaded yet, reject for security (fail-secure)
+    if (!originsLoaded) {
+      console.log('❌ AI Reporting AUTH SERVICE: Origins not loaded yet - rejecting for security');
+      return false;
+    }
+
+    // If origins are loaded and configured, validate
+    if (allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
+      console.log('❌ AI Reporting AUTH SERVICE: Rejected token from unconfigured origin:', origin);
+      console.log('❌ AI Reporting AUTH SERVICE: Allowed origins:', allowedOrigins);
+      return false;
+    }
+
+    console.log('✅ AI Reporting AUTH SERVICE: Origin validation passed');
+    return true;
+  }
+
+  private handleAuthToken(event: MessageEvent): void {
+    console.log('AI Reporting: Received JWT token via postMessage');
+
+    this.setToken(event.data.token, true); // Mark as authorized from postMessage
+
+    // Send acknowledgment back to parent
+    if (event.source && typeof (event.source as Window).postMessage === 'function') {
+      (event.source as Window).postMessage(
+        { type: 'AUTH_TOKEN_RECEIVED', success: true },
+        event.origin
+      );
+    }
+
+    console.log('AI Reporting: Token stored and acknowledgment sent');
+
+    // Navigate to main app route to trigger auth guard re-evaluation
+    if (window.location.pathname === '/' || window.location.pathname.includes('access-denied')) {
+      this.navigateToApp();
+    }
+  }
+
+  private navigateToApp(): void {
+    console.log('AI Reporting: Navigating to /app after token receipt');
+    // Force a re-evaluation by the auth guard without triggering logout detection
+    setTimeout(() => {
+      // Use Angular router if available, otherwise use location API carefully
+      try {
+        // Try to get Angular router from the global window object
+        const windowAny = window as any;
+        if (windowAny.ng && windowAny.ng.getComponent) {
+          // Use Angular navigation if possible
+          console.log('AI Reporting: Using Angular navigation to /app');
+          window.location.hash = '#/app';
+        } else {
+          // Fallback: use pushState to avoid page reload
+          console.log('AI Reporting: Using pushState navigation to /app');
+          window.history.pushState(null, '', '/app');
+          // Manually trigger a route check
+          window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+        }
+      } catch (error) {
+        console.error('AI Reporting: Navigation failed, forcing reload:', error);
+        // Last resort: reload the page (but token should persist)
+        window.location.href = '/app';
       }
-    });
+    }, 200);
   }
 
   private sendReadyMessageToParent(): void {
     // Only send READY message if we're in an iframe
     if (window.self !== window.top && window.parent) {
       try {
-        // Send READY message to parent to request authentication token
-        window.parent.postMessage({ type: 'READY' }, '*');
-        this.logger.info('Sent READY message to parent window');
-        
+        // Send READY message to parent using configured origins for security
+        const allowedOrigins = this.configService.iframeOriginUrls;
+        for (const origin of allowedOrigins) {
+          window.parent.postMessage({ type: 'READY' }, origin);
+        }
+        this.logger.info(`Sent READY message to ${allowedOrigins.length} allowed origin(s)`);
+
         // Set up parent window logout detection
         this.setupParentLogoutDetection();
       } catch (error) {

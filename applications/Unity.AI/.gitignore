@@ -232,11 +232,7 @@ orleans.codegen.cs
 .localhistory/
 
 # VS Code files for those working with them
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode/
 *.code-workspace
 
 # Local History for Visual Studio Code

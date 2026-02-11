@@ -77,54 +77,70 @@ class ChatManager:
         """
         # Get all existing card IDs from Metabase
         existing_card_ids = self.metabase.get_all_cards(tenant_id=tenant_id)
-        updated_conversation = []
-        
+
         for turn in conversation:
-            if 'embed' in turn and turn['embed'] and 'card_id' in turn['embed']:
-                card_id = turn['embed']['card_id']
-                
-                # If card doesn't exist, recreate it
-                if card_id not in existing_card_ids:
-                    embed_data = turn['embed']
-                    sql = embed_data.get('SQL', '')
-                    title = embed_data.get('title', 'Untitled')
-                    
-                    if sql:
-                        try:
-                            # Create new card
-                            new_card_id = self.metabase.create_card(
-                                sql, db_id, collection_id, title,
-                                tenant_id=tenant_id
-                            )
-                            
-                            # Apply visualization settings if available
-                            viz_type = embed_data.get('current_visualization')
-                            x_fields = embed_data.get('x_field', [])
-                            y_fields = embed_data.get('y_field', [])
-                            
-                            if viz_type and x_fields and y_fields:
-                                try:
-                                    self.metabase.update_card_visualization(
-                                        new_card_id, viz_type, x_fields, y_fields,
-                                        tenant_id=tenant_id
-                                    )
-                                except Exception as e:
-                                    logger.error(f"Error updating visualization: {e}", exc_info=True)
+            self._recreate_card_if_missing(turn, existing_card_ids, db_id, collection_id,
+                                           tenant_id=tenant_id)
 
-                            # Generate new embed URL
-                            new_embed_url = self.metabase.generate_embed_url(new_card_id)
+        return conversation
 
-                            # Update turn with new card info
-                            turn['embed']['card_id'] = new_card_id
-                            turn['embed']['url'] = new_embed_url
+    def _recreate_card_if_missing(self, turn: Dict, existing_card_ids: List,
+                                  db_id: int, collection_id: int,
+                                  tenant_id: Optional[str] = None) -> None:
+        """Recreate a Metabase card for a turn if it no longer exists."""
+        embed_data = turn.get('embed')
+        if not embed_data or 'card_id' not in embed_data:
+            return
 
-                            logger.info(f"Recreated card {card_id} as {new_card_id}")
-                        except Exception as e:
-                            logger.error(f"Error recreating card {card_id}: {e}", exc_info=True)
-            
-            updated_conversation.append(turn)
-        
-        return updated_conversation
+        card_id = embed_data['card_id']
+
+        # Card still exists — nothing to do
+        if card_id in existing_card_ids:
+            return
+
+        sql = embed_data.get('SQL', '')
+        if not sql:
+            return
+
+        title = embed_data.get('title', 'Untitled')
+        try:
+            # Create new card
+            new_card_id = self.metabase.create_card(
+                sql, db_id, collection_id, title,
+                tenant_id=tenant_id
+            )
+
+            # Apply visualization settings if available
+            self._apply_visualization(new_card_id, embed_data, tenant_id=tenant_id)
+
+            # Generate new embed URL
+            new_embed_url = self.metabase.generate_embed_url(new_card_id)
+
+            # Update turn with new card info
+            embed_data['card_id'] = new_card_id
+            embed_data['url'] = new_embed_url
+
+            logger.info(f"Recreated card {card_id} as {new_card_id}")
+        except Exception as e:
+            logger.error(f"Error recreating card {card_id}: {e}", exc_info=True)
+
+    def _apply_visualization(self, card_id: int, embed_data: Dict,
+                             tenant_id: Optional[str] = None) -> None:
+        """Apply visualization settings to a card if all fields are present."""
+        viz_type = embed_data.get('current_visualization')
+        x_fields = embed_data.get('x_field', [])
+        y_fields = embed_data.get('y_field', [])
+
+        if not (viz_type and x_fields and y_fields):
+            return
+
+        try:
+            self.metabase.update_card_visualization(
+                card_id, viz_type, x_fields, y_fields,
+                tenant_id=tenant_id
+            )
+        except Exception as e:
+            logger.error(f"Error updating visualization: {e}", exc_info=True)
     
     def save_chat(self, user_id: str, tenant_id: str, metabase_url: str,
                   title: str, conversation: List[Dict], 
