@@ -308,13 +308,10 @@ namespace Unity.Payments.Web.Pages.Payments
                 throw new UserFriendlyException(string.Join(" ", validationErrors));
             }
 
-            foreach (var payment in ApplicationPaymentRequestForm)
+            if (ApplicationPaymentRequestForm.Exists(payment => string.IsNullOrWhiteSpace(payment.SupplierNumber)))
             {
-                if (string.IsNullOrWhiteSpace(payment.SupplierNumber))
-                {
-                    throw new UserFriendlyException(
-                        "Cannot submit payment request: Supplier number is missing for one or more applications.");
-                }
+                throw new UserFriendlyException(
+                    "Cannot submit payment request: Supplier number is missing for one or more applications.");
             }
 
             var payments = MapPaymentRequests();
