@@ -173,9 +173,50 @@ describe('Unity Login and check data from CHEFS', () => {
 
     })
 
-    //  With one row selected verify the visibility of Filter, Export, Save View, and Columns.
+    //  With two rows selected verify the visibility of Filter, Export, Save View, and Columns.
     it('Verify the action buttons are visible with two rows selected', () => {
+        // Select first two applications (checkboxes are dynamic ids like row_874)
+        cy.get('input.checkbox-select.chkbox[title="Select Application"]', { timeout: STANDARD_TIMEOUT })
+            .should('have.length.greaterThan', 1)
+            .then(($boxes) => {
+                cy.wrap($boxes.eq(0)).check({ force: true })
+                cy.wrap($boxes.eq(1)).check({ force: true })
+            })
 
+        // Assert the buttons directly
+        cy.get('#assignApplication', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .and('be.visible')
+            .and('contain.text', 'Assign')
+
+        cy.get('#approveApplications', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .and('be.visible')
+            .and('contain.text', 'Approve')
+
+        cy.get('#tagApplication', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .and('be.visible')
+            .and('contain.text', 'Tags')
+
+        cy.get('#btn-toggle-filter', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .and('be.visible')
+            .and('contain.text', 'Filter')
+
+        cy.get('#dynamicButtonContainerId', { timeout: STANDARD_TIMEOUT }).should('exist')
+
+        cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Export', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .and('be.visible')
+
+        cy.contains('#dynamicButtonContainerId button.grp-savedStates', 'Save View', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .and('be.visible')
+
+        cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Columns', { timeout: STANDARD_TIMEOUT })
+            .should('exist')
+            .and('be.visible')
     })
 
     // Walk the Columns menu and toggle each column on, verifying the column is visibile.
