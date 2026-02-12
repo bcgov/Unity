@@ -140,16 +140,13 @@ function performLogin(options: LoginOptions = {}): void {
 
   cy.get("body", { timeout }).then(($body) => {
     // Check if already logged in
-    if (
-      $body.find('button:contains("VIEW APPLICATIONS")').length > 0 ||
-      $body.find("#GrantApplicationsTable").length > 0
-    ) {
+    if (isLoggedIn($body)) {
       cy.log("✓ Already logged in");
       return;
     }
 
     // Click LOGIN button if on landing page
-    if ($body.find('button:contains("LOGIN")').length > 0) {
+    if (isLoginPage($body)) {
       cy.log("Clicking LOGIN button");
       cy.contains("button", "LOGIN", { timeout }).click();
     }
@@ -157,11 +154,7 @@ function performLogin(options: LoginOptions = {}): void {
 
   // Handle Keycloak login if needed
   cy.get("body", { timeout }).then(($body) => {
-    if (
-      $body.find(".login-pf-page").length > 0 ||
-      $body.find("#social-idir").length > 0 ||
-      $body.find("#social-azureidir").length > 0
-    ) {
+    if (isKeycloakPage($body)) {
       handleKeycloakLogin(options, useMfa, timeout);
     }
   });
@@ -196,16 +189,10 @@ export function loginIfNeeded(
       },
       {
         validate() {
-          // Visit the base URL and check if we're logged in
-          cy.visit(baseUrl, { failOnStatusCode: false });
-          // If we see the GrantApplicationsTable or VIEW APPLICATIONS, we're logged in
-          return cy.get("body", { timeout: 10000 }).then(($body) => {
-            const isLoggedIn =
-              $body.find("#GrantApplicationsTable").length > 0 ||
-              $body.find('button:contains("VIEW APPLICATIONS")').length > 0;
-
-            if (!isLoggedIn) {
-              throw new Error("Session expired - not logged in");
+          // Lightweight validation: check auth cookies exist without visiting
+          return cy.getCookie(".AspNetCore.Cookies").then((cookie) => {
+            if (!cookie) {
+              throw new Error("Session expired - auth cookie missing");
             }
           });
         },
@@ -216,28 +203,4 @@ export function loginIfNeeded(
       cy.visit(baseUrl);
       ensureGrantApplicationsPage(options.timeout || 20000);
     });
-}
-
-/**
- * Quick logout helper
- */
-export function logout(): void {
-  cy.log("🚪 Logging out");
-  const baseUrl = Cypress.env("webapp.url") as string;
-
-  cy.clearCookies();
-  cy.clearLocalStorage();
-
-  cy.request({
-    method: "GET",
-    url: baseUrl + "Account/Logout",
-    failOnStatusCode: false,
-  });
-
-  cy.visit(baseUrl);
-
-  // Verify we're logged out
-  cy.get('button:contains("LOGIN")', { timeout: 10000 }).should("be.visible");
-
-  cy.log("✓ Logged out");
 }

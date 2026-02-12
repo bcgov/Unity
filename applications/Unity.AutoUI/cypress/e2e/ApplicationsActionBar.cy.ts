@@ -67,9 +67,6 @@ describe("Unity Login and check data from CHEFS", () => {
   // Enabling this makes cy.get / cy.contains pierce shadow DOM consistently across envs.
   before(() => {
     Cypress.config("includeShadowDom", true);
-  });
-
-  it("Verify Login", () => {
     loginIfNeeded({ timeout: STANDARD_TIMEOUT });
   });
 
@@ -295,11 +292,10 @@ describe("Unity Login and check data from CHEFS", () => {
       .should("exist")
       .click({ force: true });
 
-    // Wait for table to rebuild after reset
-    cy.get(".dt-scroll-head", { timeout: STANDARD_TIMEOUT }).should(
-      "be.visible",
-    );
-    cy.wait(500); // Allow DataTables to fully rebuild
+    // Wait for table to rebuild after reset - check for default columns
+    cy.get(".dt-scroll-head span.dt-column-title", {
+      timeout: STANDARD_TIMEOUT,
+    }).should("have.length.gt", 5);
 
     // Open Columns menu
     cy.contains("span", "Columns", { timeout: STANDARD_TIMEOUT })
@@ -309,7 +305,7 @@ describe("Unity Login and check data from CHEFS", () => {
     // Wait for columns dropdown to be fully populated
     cy.get("a.dropdown-item", { timeout: STANDARD_TIMEOUT }).should(
       "have.length.gt",
-      10,
+      50,
     );
 
     clickColumnsItem("% of Total Project Budget");
