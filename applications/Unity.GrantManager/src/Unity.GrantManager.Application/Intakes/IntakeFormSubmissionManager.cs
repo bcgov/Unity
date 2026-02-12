@@ -63,7 +63,7 @@ namespace Unity.GrantManager.Intakes
 
             var newSubmission = new ApplicationFormSubmission
             {
-                OidcSub = Guid.Empty.ToString(),
+                OidcSub = IntakeSubmissionHelper.ExtractOidcSub(formSubmission.submission),
                 ApplicantId = application.ApplicantId,
                 ApplicationFormId = applicationForm.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",

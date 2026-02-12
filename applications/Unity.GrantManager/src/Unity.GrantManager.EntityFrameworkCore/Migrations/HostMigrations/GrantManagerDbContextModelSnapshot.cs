@@ -467,7 +467,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.ToTable("qrtz_triggers", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Integrations.CasClientCode", b =>
+            modelBuilder.Entity("Unity.GrantManager.Applicants.ApplicantTenantMap", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -501,25 +501,28 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("timestamp without time zone");
 
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<DateTimeOffset?>("LastUpdatedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("MinistryPrefix")
+                    b.Property<string>("OidcSubUsername")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TenantName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("CasClientCodes");
+                    b.HasIndex("OidcSubUsername");
+
+                    b.HasIndex("OidcSubUsername", "TenantId")
+                        .IsUnique();
+
+                    b.ToTable("ApplicantTenantMaps", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Integrations.DynamicUrl", b =>

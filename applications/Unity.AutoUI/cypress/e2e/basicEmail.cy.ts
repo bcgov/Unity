@@ -33,12 +33,55 @@ describe('Send an email', () => {
 
     const TEST_EMAIL_SUBJECT = `Smoke Test Email ${timestamp}`
 
+    function ensureLoggedInToGrantApplications() {
+        // Headless runs specs sequentially in the same browser process.
+        // Do not assume logged-out or logged-in. Detect UI state like chefsdata.cy.ts does.
+        cy.visit(Cypress.env('webapp.url'))
+
+        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
+            // Already authenticated
+            if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
+                cy.contains('VIEW APPLICATIONS', { timeout: STANDARD_TIMEOUT }).click({ force: true })
+                return
+            }
+
+            // Not authenticated
+            if ($body.find('button:contains("LOGIN")').length > 0) {
+                cy.contains('LOGIN', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+
+                cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($loginBody) => {
+                    // IDIR chooser may or may not appear
+                    if ($loginBody.find(':contains("IDIR")').length > 0) {
+                        cy.contains('IDIR', { timeout: STANDARD_TIMEOUT }).click({ force: true })
+                    }
+
+                    cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($authBody) => {
+                        // Only type creds if the login form is actually present
+                        if ($authBody.find('#user').length > 0) {
+                            cy.get('#user', { timeout: STANDARD_TIMEOUT }).type(Cypress.env('test1username'))
+                            cy.get('#password', { timeout: STANDARD_TIMEOUT }).type(Cypress.env('test1password'))
+                            cy.contains('Continue', { timeout: STANDARD_TIMEOUT }).click({ force: true })
+                        } else {
+                            cy.log('Already authenticated')
+                        }
+                    })
+                })
+
+                return
+            }
+
+            throw new Error('Unable to determine authentication state')
+        })
+
+        cy.location('pathname', { timeout: 30000 }).should('include', '/GrantApplications')
+    }
+
     function switchToDefaultGrantsProgramIfAvailable() {
         cy.get('body').then(($body) => {
             const hasUserInitials = $body.find('.unity-user-initials').length > 0
 
             if (!hasUserInitials) {
-                cy.log('Skipping tenant switch: no user initials menu found')
+                cy.log('Skipping tenant: no user initials menu found')
                 return
             }
 
@@ -50,7 +93,7 @@ describe('Send an email', () => {
                 })
 
                 if (switchLink.length === 0) {
-                    cy.log('Skipping tenant switch: "Switch Grant Programs" not present for this user/session')
+                    cy.log('Skipping tenant: "Switch Grant Programs" not present for this user/session')
                     cy.get('body').click(0, 0)
                     return
                 }
@@ -97,7 +140,6 @@ describe('Send an email', () => {
                 return
             }
 
-            // Fallback: find the subject anywhere in a TD (scoped to avoid brittle class names)
             cy.contains('td', subject, { timeout: STANDARD_TIMEOUT })
                 .should('exist')
                 .click()
@@ -105,7 +147,6 @@ describe('Send an email', () => {
     }
 
     function confirmSendDialogIfPresent() {
-        // Wait until either a bootstrap modal is shown, or SweetAlert container appears, or confirm button exists.
         cy.get('body', { timeout: STANDARD_TIMEOUT }).should(($b) => {
             const hasBootstrapShownModal = $b.find('.modal.show').length > 0
             const hasSwal = $b.find('.swal2-container').length > 0
@@ -116,11 +157,9 @@ describe('Send an email', () => {
         cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($b) => {
             const hasSwal = $b.find('.swal2-container').length > 0
             if (hasSwal) {
-                // SweetAlert2 style
                 cy.get('.swal2-container', { timeout: STANDARD_TIMEOUT }).should('be.visible')
                 cy.contains('.swal2-container', 'Are you sure', { timeout: STANDARD_TIMEOUT }).should('exist')
 
-                // Typical confirm button class, with fallback to text match
                 if ($b.find('.swal2-confirm').length > 0) {
                     cy.get('.swal2-confirm', { timeout: STANDARD_TIMEOUT }).should('be.visible').click()
                 } else {
@@ -131,14 +170,12 @@ describe('Send an email', () => {
 
             const hasBootstrapShownModal = $b.find('.modal.show').length > 0
             if (hasBootstrapShownModal) {
-                // Bootstrap modal: assert the shown modal, not the inner content div
                 cy.get('.modal.show', { timeout: STANDARD_TIMEOUT })
                     .should('be.visible')
                     .within(() => {
                         cy.contains('Are you sure you want to send this email?', { timeout: STANDARD_TIMEOUT })
                             .should('exist')
 
-                        // Prefer the known id if present, otherwise click a button with expected intent text
                         if (Cypress.$('#btn-confirm-send').length > 0) {
                             cy.get('#btn-confirm-send', { timeout: STANDARD_TIMEOUT })
                                 .should('exist')
@@ -151,7 +188,6 @@ describe('Send an email', () => {
                 return
             }
 
-            // Last resort: confirm button exists but modal might not be "visible" by Cypress standards
             cy.get('#btn-confirm-send', { timeout: STANDARD_TIMEOUT })
                 .should('exist')
                 .click({ force: true })
@@ -159,7 +195,7 @@ describe('Send an email', () => {
     }
 
     it('Login', () => {
-        cy.login()
+        ensureLoggedInToGrantApplications()
     })
 
     it('Switch to Default Grants Program if available', () => {

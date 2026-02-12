@@ -40,7 +40,7 @@ public class ApplicationManager : DomainService, IApplicationManager
 
     public  void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine, bool isDirectApproval = false)
     {
-        // TODO: ENSURE APPLICATION STATE MACHINE MATCHES WORKFLOW IN AB#8375
+        // NOTE: ENSURE APPLICATION STATE MACHINE MATCHES WORKFLOW IN AB#8375
         stateMachine.Configure(GrantApplicationState.OPEN)
             .InitialTransition(GrantApplicationState.SUBMITTED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)                             // 2.2 - Withdraw;          Role: Reviewer

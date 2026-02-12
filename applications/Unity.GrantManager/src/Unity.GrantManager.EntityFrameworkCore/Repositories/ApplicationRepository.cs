@@ -78,6 +78,7 @@ public class ApplicationRepository
             .Include(a => a.ApplicationTags!)
                 .ThenInclude(x => x.Tag)
             .Include(a => a.Owner)
+            .Include(a => a.ApplicationLinks)
             .Include(a => a.ApplicationAssignments!)
                 .ThenInclude(aa => aa.Assignee);
     }
@@ -116,6 +117,7 @@ public class ApplicationRepository
                 .ThenInclude(aa => aa.Assignee)
             .Include(a => a.Applicant)
             .Include(a => a.ApplicantAgent)
+            .Include(a => a.ApplicationLinks)
             .FirstOrDefaultAsync(a => a.Id == id);
     }
 
