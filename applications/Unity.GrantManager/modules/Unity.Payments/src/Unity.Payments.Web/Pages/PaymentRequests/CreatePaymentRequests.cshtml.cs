@@ -218,7 +218,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 // If this application has children, include their paid/pending amounts too
                 decimal childrenTotalPaidPending = 0;
                 var applicationLinks = await applicationLinksService.GetListByApplicationAsync(application.Id);
-                var childLinks = applicationLinks.Where(link => link.LinkType == ApplicationLinkType.Child).ToList();
+                var childLinks = applicationLinks.Where(link => link.LinkType == ApplicationLinkType.Child && link.ApplicationId != application.Id).ToList();
 
                 if (childLinks.Count > 0)
                 {
