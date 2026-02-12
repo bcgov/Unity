@@ -112,6 +112,10 @@ namespace Unity.Payments.Integrations.Cas
                 supplierEto.ApplicationId = applicationId;
                 await localEventBus.PublishAsync(supplierEto);
             }
+            catch (UserFriendlyException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "An exception occurred updating the supplier: {ExceptionMessage}", ex.Message);
@@ -128,6 +132,13 @@ namespace Unity.Payments.Integrations.Cas
 
             string lastUpdated = GetProp("lastupdated");
             string suppliernumber = GetProp("suppliernumber");
+
+            if (string.IsNullOrWhiteSpace(suppliernumber))
+            {
+                throw new UserFriendlyException(
+                    "CAS integration returned an empty Supplier Number. Please verify the supplier information in CAS.");
+            }
+
             string suppliername = GetProp("suppliername");
             string subcategory = GetProp("subcategory");
             string providerid = GetProp("providerid");

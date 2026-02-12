@@ -52,6 +52,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual Collection<Assessment>? Assessments { get; set; }
     public virtual Collection<ApplicationTags>? ApplicationTags { get; set; }
     public virtual Collection<ApplicationAssignment>? ApplicationAssignments { get; set; }
+    public virtual Collection<ApplicationLink>? ApplicationLinks { get; set; }
 
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;

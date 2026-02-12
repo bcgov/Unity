@@ -297,7 +297,10 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention();
-                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+                b.HasOne<Application>()
+                    .WithMany(a => a.ApplicationLinks)
+                    .HasForeignKey(x => x.ApplicationId)
+                    .IsRequired();
                 
                 b.Property(x => x.LinkType)
                     .IsRequired()

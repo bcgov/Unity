@@ -99,6 +99,7 @@ public class GrantApplicationAppService(
             appDto.ContactTitle = app.ApplicantAgent?.Title;
             appDto.ContactBusinessPhone = app.ApplicantAgent?.Phone;
             appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
+            appDto.ApplicationLinks = ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(app.ApplicationLinks?.ToList() ?? []);
 
             if (paymentsFeatureEnabled && paymentRequestsByApplication.Count > 0)
             {
@@ -963,7 +964,6 @@ public class GrantApplicationAppService(
             List<ApplicationActionDto>>(externalActionsList);
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
-        // TODO: Replace placeholder loop with authorization handler mapped to permissions
         // AUTHORIZATION HANDLING
         actionDtos.ForEach(async item =>
         {

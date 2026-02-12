@@ -12,7 +12,8 @@ $(function () {
         'orgStatus',
         'organizationType',
         'status',
-        'redStop'
+        'redStop',
+        'creationTime'
     ];
 
     const defaultSortOrderColumn = {
