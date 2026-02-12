@@ -238,7 +238,7 @@ describe("Unity Login and check data from CHEFS", () => {
     ).should("be.visible");
   });
 
-  // Walk the Columns menu and toggle each column on, verifying the column is visibile.
+  // Walk the Columns menu and toggle each column on, verifying the column is visible.
   it("Verify all columns in the menu are visible when and toggled on.", () => {
     const clickColumnsItem = (label: string) => {
       cy.contains("a.dropdown-item", label, { timeout: STANDARD_TIMEOUT })
