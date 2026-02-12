@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using Unity.GrantManager.Applications;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Integrations
 {
-    [AllowAnonymous]
+    [RemoteService(false)]
     public class CasClientCodeLookupService(ICasClientCodeRepository repository) : ApplicationService, ICasClientCodeLookupService
     {
 

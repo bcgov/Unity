@@ -34,7 +34,6 @@
                         <option value="@option.Code" data-ministry="@option.Ministry">@option.DisplayName</option>
                     }
                 </select>
-                <input type="hidden" id="selected-ministry" name="SelectedMinistry" />
             </div>
 
             @foreach (var propertyInfo in ObjectExtensionManager.Instance.GetProperties<EditModalModel.TenantInfoModel>())

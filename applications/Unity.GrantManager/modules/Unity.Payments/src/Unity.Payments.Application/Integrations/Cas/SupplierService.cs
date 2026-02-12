@@ -20,6 +20,7 @@ using Unity.GrantManager.Integrations;
 
 namespace Unity.Payments.Integrations.Cas
 {
+    [RemoteService(false)]
     [AllowAnonymous]
     [IntegrationService]
     [ExposeServices(typeof(SupplierService), typeof(ISupplierService))]

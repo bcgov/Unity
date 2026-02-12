@@ -130,10 +130,10 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
 
         // Add the tenant management mapping here
         CreateMap<Tenant, TenantManagement.TenantDto>()
-            .ForMember(dest => dest.CasClientCode, opt => opt.MapFrom(src => GetExtraPropertyAsString(src, "CasClientCode")))
-            .ForMember(dest => dest.Division, opt => opt.MapFrom(src => GetExtraPropertyAsString(src, "Division")))
-            .ForMember(dest => dest.Branch, opt => opt.MapFrom(src => GetExtraPropertyAsString(src, "Branch")))
-            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => GetExtraPropertyAsString(src, "Description")));
+            .ForMember(dest => dest.CasClientCode, opt => opt.MapFrom(src => src.ExtraProperties.ContainsKey("CasClientCode") ? (string?)src.ExtraProperties["CasClientCode"] : null))
+            .ForMember(dest => dest.Division, opt => opt.MapFrom(src => src.ExtraProperties.ContainsKey("Division") ? (string?)src.ExtraProperties["Division"] : null))
+            .ForMember(dest => dest.Branch, opt => opt.MapFrom(src => src.ExtraProperties.ContainsKey("Branch") ? (string?)src.ExtraProperties["Branch"] : null))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.ExtraProperties.ContainsKey("Description") ? (string?)src.ExtraProperties["Description"] : null));
     }
 
     private static bool? ConvertIndigenousOrgIndToBool(string indigenousOrgInd)
@@ -156,14 +156,6 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         };
     }
 
-    private static string GetExtraPropertyAsString(Tenant tenant, string propertyName)
-    {
-        if (tenant.ExtraProperties?.ContainsKey(propertyName) == true)
-        {
-            return tenant.ExtraProperties[propertyName]?.ToString() ?? string.Empty;
-        }
-        return string.Empty;
-    }
 }
 
 // Extension methods for reusable mapping configurations

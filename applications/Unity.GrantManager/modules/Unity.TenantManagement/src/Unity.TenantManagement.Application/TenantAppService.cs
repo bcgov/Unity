@@ -5,17 +5,19 @@ using Microsoft.AspNetCore.Authorization;
 using Unity.TenantManagement.Abstractions;
 using Unity.TenantManagement.Application;
 using Unity.TenantManagement.Application.Contracts;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.ObjectExtending;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Uow;
+using Volo.Abp.DependencyInjection;
 
 namespace Unity.TenantManagement;
 
 [Authorize(TenantManagementPermissions.Tenants.Default)]
+[ExposeServices(typeof(ITenantAppService), typeof(TenantAppService))]
 public class TenantAppService(
      ICurrentTenant currentTenant,
     ITenantRepository tenantRepository,
@@ -65,10 +67,13 @@ public class TenantAppService(
             tenant.ConnectionStrings
                 .Add(new TenantConnectionString(tenant.Id,
                     UnityTenantManagementConsts.TenantConnectionStringName,
-                    tenantConnectionStringBuilder.Build(tenant.Name)));                    
+                    tenantConnectionStringBuilder.Build(tenant.Name)));
 
-            // This does not seem to work as intended?
-            input.MapExtraPropertiesTo(tenant);
+            // Set ExtraProperties from input
+            tenant.ExtraProperties["Division"] = input.Division ?? string.Empty;
+            tenant.ExtraProperties["Branch"] = input.Branch ?? string.Empty;
+            tenant.ExtraProperties["Description"] = input.Description ?? string.Empty;
+            tenant.ExtraProperties["CasClientCode"] = input.CasClientCode ?? string.Empty;
 
             await tenantRepository.InsertAsync(tenant);
 
@@ -100,13 +105,11 @@ public class TenantAppService(
 
         tenant.SetConcurrencyStampIfNotNull(input.ConcurrencyStamp);
         
-        // Store custom properties using the ExtraProperties system
-        tenant.SetProperty("Division", input.Division ?? string.Empty);
-        tenant.SetProperty("Branch", input.Branch ?? string.Empty);  
-        tenant.SetProperty("Description", input.Description ?? string.Empty);
-        tenant.SetProperty("CasClientCode", input.CasClientCode ?? string.Empty);
-        
-        input.MapExtraPropertiesTo(tenant);
+        // Update ExtraProperties from input
+        tenant.ExtraProperties["Division"] = input.Division ?? string.Empty;
+        tenant.ExtraProperties["Branch"] = input.Branch ?? string.Empty;
+        tenant.ExtraProperties["Description"] = input.Description ?? string.Empty;
+        tenant.ExtraProperties["CasClientCode"] = input.CasClientCode ?? string.Empty;
 
         await tenantRepository.UpdateAsync(tenant);
 
@@ -148,8 +151,9 @@ public class TenantAppService(
         await tenantRepository.UpdateAsync(tenant);
     }
 
+    [RemoteService(false)]    
     [AllowAnonymous]
-    public async Task<string> GetCurrentTenantCasClientClientCode(Guid tenantId)
+    public async Task<string> GetCurrentTenantCasClientCodeAsync(Guid tenantId)
     {
         var tenant = tenantId != Guid.Empty ? await tenantRepository.GetAsync(tenantId) : null;
         return tenant?.ExtraProperties.TryGetValue("CasClientCode", out var value) == true ? value?.ToString() : null;
@@ -159,7 +163,7 @@ public class TenantAppService(
     {
         var tenantId = currentTenant.GetId();
         var tenant = tenantId != Guid.Empty ? await tenantRepository.GetAsync(tenantId) : null;        
-        return tenant.Name ?? string.Empty;
+        return tenant?.Name ?? string.Empty;
     }
 
     public async Task AssignManagerAsync(TenantAssignManagerDto managerAssignment)

@@ -20,6 +20,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.Payments.Integrations.Cas
 {
+    [RemoteService(false)]
     [AllowAnonymous]
     [IntegrationService]
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]

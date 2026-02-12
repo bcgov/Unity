@@ -10,20 +10,18 @@ using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Caching;
 using Unity.GrantManager.Integrations.Css;
-using Unity.TenantManagement;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.MultiTenancy;
+using Volo.Abp.TenantManagement;
 namespace Unity.Payments.Integrations.Cas
 {
-    [AllowAnonymous]
+    [RemoteService(false)]
     [IntegrationService]
     [ExposeServices(typeof(CasTokenService), typeof(ICasTokenService))]
-
     public class CasTokenService(
         IConfiguration configuration,
         ICasClientCodeLookupService casClientCodeLookupService,
         IEndpointManagementAppService endpointManagementAppService,
-        ITenantAppService tenantAppService,
+        ITenantRepository tenantRepository,
         IHttpClientFactory httpClientFactory,
         IDistributedCache<TokenValidationResponse, string> chesTokenCache
     ) : ApplicationService, ICasTokenService
@@ -31,36 +29,34 @@ namespace Unity.Payments.Integrations.Cas
         private const string OAUTH_PATH = "oauth/token";
         private const string CAS_API_KEY = "CasApiKey";
 
+        [AllowAnonymous]
         public async Task<string> GetAuthTokenAsync(Guid tenantId)
         {
-                if (tenantId == Guid.Empty)
-                {
-                    throw new UserFriendlyException("Tenant ID cannot be empty.");
-                }
+            var caseBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
 
-                var caseBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
-                var casClientCode = await tenantAppService.GetCurrentTenantCasClientClientCode(tenantId);
+            var tenant = await tenantRepository.GetAsync(tenantId);
+            var casClientCode = tenant.ExtraProperties?["CasClientCode"]?.ToString();
 
-                if (string.IsNullOrEmpty(casClientCode))
-                {
-                    throw new UserFriendlyException("No CAS client code configured for the current tenant. Please contact your administrator.");
-                }
+            if (string.IsNullOrEmpty(casClientCode))
+            {
+                throw new UserFriendlyException("No CAS client code configured for the current tenant. Please contact your administrator.");
+            }
 
-                var casClientId = await casClientCodeLookupService.GetClientIdByCasClientCodeAsync(casClientCode)
-                    ?? throw new UserFriendlyException($"No CAS client configuration found for CAS client code: {casClientCode}");
+            var casClientId = await casClientCodeLookupService.GetClientIdByCasClientCodeAsync(casClientCode)
+                ?? throw new UserFriendlyException($"No CAS client configuration found for CAS client code: {casClientCode}");
 
-                var casApiKeys = configuration.GetSection("CAS_API_KEYS").Get<Dictionary<string, string>>() ?? [];
-                var clientSecret = casApiKeys.TryGetValue($"CAS_API_KEY_{casClientCode}".ToUpper(), out var value)
-                    ? value
-                    : throw new UserFriendlyException($"No CAS API key configured for CAS client code: {casClientCode}.");
+            var casApiKeys = configuration.GetSection("CAS_API_KEYS").Get<Dictionary<string, string>>() ?? [];
+            var clientSecret = casApiKeys.TryGetValue($"CAS_API_KEY_{casClientCode.ToUpper()}", out var value)
+                ? value
+                : throw new UserFriendlyException($"No CAS API key configured for CAS client code: {casClientCode}. Expected configuration key: CAS_API_KEY_{casClientCode.ToUpper()}");
 
-                return await new TokenService(httpClientFactory, chesTokenCache, Logger).GetAuthTokenAsync(new ClientOptions
-                {
-                    Url = $"{caseBaseUrl}/{OAUTH_PATH}",
-                    ClientId = casClientId,
-                    ClientSecret = clientSecret,
-                    ApiKey = CAS_API_KEY,
-                });            
+            return await new TokenService(httpClientFactory, chesTokenCache, Logger).GetAuthTokenAsync(new ClientOptions
+            {
+                Url = $"{caseBaseUrl}/{OAUTH_PATH}",
+                ClientId = casClientId,
+                ClientSecret = clientSecret,
+                ApiKey = CAS_API_KEY,
+            });            
         }
     }
 }

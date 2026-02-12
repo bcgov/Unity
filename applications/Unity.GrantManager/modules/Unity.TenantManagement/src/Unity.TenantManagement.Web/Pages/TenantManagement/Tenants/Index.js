@@ -279,15 +279,29 @@
         });
     });
     
-    $(document).ready(function () {
-        $('.cas-client-select').on('change', function () {
-            const selectedOption = $(this).find('option:selected');
-            const ministryValue = selectedOption.data('ministry') || '';
-            const targetInput = $($(this).data('ministry-target'));
-            
-            if (targetInput.length) {
-                targetInput.val(ministryValue);
+    // Use event delegation to handle dynamically loaded elements
+    $(document).on('change', '.cas-client-select', function() {
+        const $select = $(this);
+        const selectedOption = $select.find('option:selected');
+        
+        // Handle ministry field update
+        const ministryValue = selectedOption.data('ministry') || '';
+        const ministryTarget = $select.data('ministry-target');
+        if (ministryTarget) {
+            const $targetInput = $(ministryTarget);
+            if ($targetInput.length) {
+                $targetInput.val(ministryValue);
             }
-        });
+        }
+        
+        // Handle CAS client code update
+        const casClientCode = selectedOption.data('cas-client-code');
+        if (casClientCode) {
+            const $container = $select.closest('form, .modal-body');
+            const $hiddenField = $container.find('input[name="CasClientCode"]');
+            if ($hiddenField.length) {
+                $hiddenField.val(casClientCode);
+            }
+        }
     });
 })();

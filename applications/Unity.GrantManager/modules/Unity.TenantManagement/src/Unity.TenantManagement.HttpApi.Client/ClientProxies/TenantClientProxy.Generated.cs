@@ -77,9 +77,4 @@ public partial class TenantClientProxy : ClientProxyBase<ITenantAppService>, ITe
             { typeof(Guid), id }
         });
     }
-
-    public Task<string> GetCurrentTenantCasClientClientCode(Guid tenantId)
-    {
-        throw new NotImplementedException();
-    }
 }
