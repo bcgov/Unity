@@ -1,23 +1,26 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.Application;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.TenantManagement;
 
-namespace Unity.TenantManagement;
-
-[DependsOn(typeof(AbpTenantManagementDomainModule))]
-[DependsOn(typeof(AbpTenantManagementApplicationModule))]
-[DependsOn(typeof(UnityTenantManagementApplicationContractsModule))]
-[DependsOn(typeof(AbpDddApplicationModule))]
-public class UnityTenantManagementApplicationModule : AbpModule
+namespace Unity.TenantManagement
 {
-    public override void ConfigureServices(ServiceConfigurationContext context)
+    [DependsOn(
+        typeof(AbpTenantManagementDomainModule),
+        typeof(UnityTenantManagementApplicationContractsModule),
+        typeof(AbpTenantManagementApplicationModule),
+        typeof(AbpAutoMapperModule)
+    )]
+    public class UnityTenantManagementApplicationModule : AbpModule
     {
-        context.Services.AddAutoMapperObjectMapper<UnityTenantManagementApplicationModule>();
-        Configure<AbpAutoMapperOptions>(options =>
+        public override void ConfigureServices(ServiceConfigurationContext context)
         {
-            options.AddProfile<UnityTenantManagementApplicationAutoMapperProfile>(validate: true);
-        });
+            context.Services.AddAutoMapperObjectMapper<UnityTenantManagementApplicationModule>();
+            
+            Configure<AbpAutoMapperOptions>(options =>
+            {
+                options.AddMaps<UnityTenantManagementApplicationModule>(validate: true);
+            });
+        }
     }
 }
