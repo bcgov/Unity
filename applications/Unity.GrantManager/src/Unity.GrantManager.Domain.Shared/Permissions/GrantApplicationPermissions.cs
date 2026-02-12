@@ -115,9 +115,9 @@ namespace Unity.GrantManager.Permissions
             public static class PaymentRequests
             {
                 public const string Default = Payments.Default + ".PaymentRequests";
-                public const string Create = Default + Operation.Create;
-                public const string Update = Default + Operation.Update;
-                public const string Delete = Default + Operation.Delete;
+                public const string CreatePaymentRequest = Default + ".Create";
+                public const string EditPaymentRequest = Default + ".Edit";
+                public const string DeletePaymentRequest = Default + ".Delete";
             }
         }
 
