@@ -226,9 +226,10 @@ function validateParentChildAmounts(correlationId) {
     let hasError = groupTotal > maximumAllowed;
 
     // Show/hide error once at the group level
-    let groupWrapper = $(`.parent-child-group[data-group-key="${groupKey}"]`);
-    let groupErrorDiv = $(`#group_error_${groupKey}`);
-    let groupErrorMessage = $(`#group_error_message_${groupKey}`);
+    if (groupKey == null) return;
+    let groupWrapper = $(`.parent-child-group[data-group-key="${CSS.escape(groupKey)}"]`);
+    let groupErrorDiv = groupWrapper.find('[data-role="group-error"]');
+    let groupErrorMessage = groupWrapper.find('[data-role="group-error-message"]');
 
     if (hasError) {
         let message = `The total payment amount (${formatCurrency(

@@ -179,8 +179,8 @@
 
                         if (groupOpen && nextGroupKey != itemGroupKey)
                         {
-                            @:<div class="parent-child-group-error payment-error-column" id="group_error_@(itemGroupKey)" style="display: none;">
-                            @:    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; <span id="group_error_message_@(itemGroupKey)"></span></span>
+                            @:<div class="parent-child-group-error payment-error-column" id="group_error_@(itemGroupKey)" data-role="group-error" style="display: none;">
+                            @:    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; <span id="group_error_message_@(itemGroupKey)" data-role="group-error-message"></span></span>
                             @:</div>
                             @:</div>
                             groupOpen = false;
