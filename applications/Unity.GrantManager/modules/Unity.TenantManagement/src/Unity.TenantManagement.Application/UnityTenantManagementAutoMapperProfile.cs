@@ -1,3 +1,5 @@
+#nullable enable
+
 using AutoMapper;
 using Volo.Abp.TenantManagement;
 

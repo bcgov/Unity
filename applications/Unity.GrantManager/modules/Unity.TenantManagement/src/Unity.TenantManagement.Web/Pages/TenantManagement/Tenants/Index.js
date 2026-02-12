@@ -117,8 +117,8 @@
                         render: function (data, type, row) {
                             if (type === 'display') {
                                 const code = row.casClientCode || '';
-                                const displayValue = globalThis.casClientCodeHash && globalThis.casClientCodeHash[code] ? globalThis.casClientCodeHash[code] : '';
-                                return displayValue || '';
+                                const displayValue = globalThis.casClientCodeHash?.[code] || '';
+                                return displayValue;
                             }
                             return data;
                         }

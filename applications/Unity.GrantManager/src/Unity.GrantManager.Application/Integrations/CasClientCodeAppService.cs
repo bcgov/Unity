@@ -34,10 +34,9 @@ namespace Unity.GrantManager.Integrations
                 return null;
             }
 
-            var normalizedCode = casClientCode.Trim().ToUpper();
             var queryable = await repository.GetQueryableAsync();
             var code = await AsyncExecuter.FirstOrDefaultAsync(
-                queryable.Where(x => x.ClientCode.ToUpper() == normalizedCode)
+                queryable.Where(x => x.ClientCode == casClientCode)
             );
 
             return code?.ClientId;
