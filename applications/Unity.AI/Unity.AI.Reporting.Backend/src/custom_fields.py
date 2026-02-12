@@ -4,14 +4,22 @@ import dotenv
 import textwrap
 import requests
 import logging
+from config import config
 
 dotenv.load_dotenv()
 
 # Configure logging
 logger = logging.getLogger(__name__)
-headers = {"x-api-key": os.getenv("METABASE_KEY")}
 
-def get_sql(sql, db_id, metabase_url):
+
+def _get_headers(tenant_id=None):
+    """Get Metabase API headers, using tenant-specific key if available."""
+    if tenant_id:
+        return config.get_tenant_metabase_headers(tenant_id)
+    return config.metabase_headers
+
+
+def get_sql(sql, db_id, metabase_url, tenant_id=None):
     ds_req = {
         "database": db_id,
         "type": "native",
@@ -19,7 +27,7 @@ def get_sql(sql, db_id, metabase_url):
     }
     r = requests.post(
         f"{metabase_url}/api/dataset",
-        headers=headers,
+        headers=_get_headers(tenant_id),
         json=ds_req,
     )
     r.raise_for_status()
@@ -101,7 +109,7 @@ def get_column_example(table, column):
 def get_views_schemas():
     schema = requests.get(
         f"{os.getenv('MB_URL')}/api/database/{os.getenv('MB_EMBED_ID')}/metadata",
-        headers=headers
+        headers=_get_headers()
     ).json()
 
     junk_cols = {

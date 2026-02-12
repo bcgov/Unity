@@ -29,33 +29,36 @@ class SchemaExtractor:
         }
         self.junk_tables = {"ApplicationFormSubmissions", "__EFMigrationsHistory"}
     
-    def get_column_example(self, is_text: bool, schema: str, table: str, 
-                          column: str, db_id: int) -> Optional[str]:
+    def get_column_example(self, is_text: bool, schema: str, table: str,
+                          column: str, db_id: int,
+                          tenant_id: Optional[str] = None) -> Optional[str]:
         """Get an example value for a column"""
         sql = f'SELECT "{column}" FROM "{schema}"."{table}" WHERE "{column}" IS NOT null'
         if is_text:
             sql += f' and "{column}" <> \'\''
-        
+
         try:
-            result = self.metabase.execute_sql(sql, db_id)
+            result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
             if result["rows"]:
                 return str(result["rows"][0][0])
         except:
             pass
         return None
     
-    def extract_schemas(self, db_id: int, schema_type: str = "public") -> List[str]:
+    def extract_schemas(self, db_id: int, schema_type: str = "public",
+                        tenant_id: Optional[str] = None) -> List[str]:
         """
         Extract table schemas from database.
-        
+
         Args:
             db_id: Database ID in Metabase
             schema_type: Type of schema ('public' or 'custom')
-            
+            tenant_id: Optional tenant ID for tenant-specific Metabase API key
+
         Returns:
             List of formatted schema descriptions
         """
-        metadata = self.metabase.get_database_metadata(db_id)
+        metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
         docs = []
         
         for table in metadata["tables"]:
@@ -80,16 +83,17 @@ class SchemaExtractor:
             sql = f'SELECT * FROM "{schema_name}"."{table["name"]}" LIMIT 1'
             
             try:
-                result = self.metabase.execute_sql(sql, db_id)
+                result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
                 if result["rows"]:
                     # Build schema description with examples
                     page = f'# "{schema_name}"."{table["name"]}"'
-                    
+
                     for col in columns:
                         col_name = col.split(' ')[0]
                         is_text = 'Text' in col
                         example = self.get_column_example(
-                            is_text, schema_name, table["name"], col_name, db_id
+                            is_text, schema_name, table["name"], col_name, db_id,
+                            tenant_id=tenant_id
                         )
                         if example:
                             truncated = example[:50] + '...' if len(example) > 50 else example
@@ -156,13 +160,15 @@ class EmbeddingManager:
                         continue
                 raise
     
-    def embed_schemas(self, db_id: int, schema_types: Optional[List[str]] = None):
+    def embed_schemas(self, db_id: int, schema_types: Optional[List[str]] = None,
+                      tenant_id: Optional[str] = None):
         """
         Embed database schemas for a specific database.
-        
+
         Args:
             db_id: Database ID to embed schemas for
             schema_types: List of schema types to embed (e.g., ['public', 'custom'])
+            tenant_id: Optional tenant ID for tenant-specific Metabase API key
         """
         # Default schema types if not specified
         if schema_types is None:
@@ -177,7 +183,7 @@ class EmbeddingManager:
 
         # Extract and embed schemas for each type
         for schema_type in schema_types:
-            schemas = self.schema_extractor.extract_schemas(db_id, schema_type)
+            schemas = self.schema_extractor.extract_schemas(db_id, schema_type, tenant_id=tenant_id)
 
             # Create documents with metadata
             documents = [

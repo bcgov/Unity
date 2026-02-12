@@ -49,7 +49,7 @@ class ChatManager:
         
         # Check and recreate cards if needed
         updated_conversation = self._validate_and_recreate_cards(
-            conversation, metabase_url, db_id, collection_id
+            conversation, metabase_url, db_id, collection_id, tenant_id=tenant_id
         )
         
         # Update database if cards were recreated
@@ -58,23 +58,25 @@ class ChatManager:
         
         return {"conversation": updated_conversation}
     
-    def _validate_and_recreate_cards(self, conversation: List[Dict], 
-                                    metabase_url: str, db_id: int, 
-                                    collection_id: int) -> List[Dict]:
+    def _validate_and_recreate_cards(self, conversation: List[Dict],
+                                    metabase_url: str, db_id: int,
+                                    collection_id: int,
+                                    tenant_id: Optional[str] = None) -> List[Dict]:
         """
         Validate and recreate missing Metabase cards in conversation.
-        
+
         Args:
             conversation: Chat conversation with card references
             metabase_url: Metabase URL
             db_id: Database ID
             collection_id: Collection ID
-            
+            tenant_id: Optional tenant ID for tenant-specific Metabase API key
+
         Returns:
             Updated conversation with recreated cards
         """
         # Get all existing card IDs from Metabase
-        existing_card_ids = self.metabase.get_all_cards()
+        existing_card_ids = self.metabase.get_all_cards(tenant_id=tenant_id)
         updated_conversation = []
         
         for turn in conversation:
@@ -91,7 +93,8 @@ class ChatManager:
                         try:
                             # Create new card
                             new_card_id = self.metabase.create_card(
-                                sql, db_id, collection_id, title
+                                sql, db_id, collection_id, title,
+                                tenant_id=tenant_id
                             )
                             
                             # Apply visualization settings if available
@@ -102,7 +105,8 @@ class ChatManager:
                             if viz_type and x_fields and y_fields:
                                 try:
                                     self.metabase.update_card_visualization(
-                                        new_card_id, viz_type, x_fields, y_fields
+                                        new_card_id, viz_type, x_fields, y_fields,
+                                        tenant_id=tenant_id
                                     )
                                 except Exception as e:
                                     logger.error(f"Error updating visualization: {e}", exc_info=True)
