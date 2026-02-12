@@ -100,6 +100,30 @@
                         data: 'name',
                     },
                     {
+                        title: l("Division"),
+                        data: 'division',
+                    },
+                    {
+                        title: l("Branch"),
+                        data: 'branch',
+                    },
+                    {
+                        title: l("Description"),
+                        data: 'description',
+                    },
+                    {
+                        title: "CAS Client Code",
+                        data: 'casClientCode',
+                        render: function (data, type, row) {
+                            if (type === 'display') {
+                                const code = row.casClientCode || '';
+                                const displayValue = globalThis.casClientCodeHash && globalThis.casClientCodeHash[code] ? globalThis.casClientCodeHash[code] : '';
+                                return displayValue || '';
+                            }
+                            return data;
+                        }
+                    },
+                    {
                         title: l("Id"),
                         data: 'id',
                     }
@@ -252,6 +276,18 @@
         $('#AbpContentToolbar button[name=CreateTenant]').click(function (e) {
             e.preventDefault();
             _createModal.open();
+        });
+    });
+    
+    $(document).ready(function () {
+        $('.cas-client-select').on('change', function () {
+            const selectedOption = $(this).find('option:selected');
+            const ministryValue = selectedOption.data('ministry') || '';
+            const targetInput = $($(this).data('ministry-target'));
+            
+            if (targetInput.length) {
+                targetInput.val(ministryValue);
+            }
         });
     });
 })();

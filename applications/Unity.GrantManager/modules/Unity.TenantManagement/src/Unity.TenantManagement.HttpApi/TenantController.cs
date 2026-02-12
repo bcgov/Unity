@@ -111,4 +111,9 @@ public class TenantController(ITenantAppService tenantAppService) : AbpControlle
         }
         return TenantAppService.AssignManagerAsync(managerAssignment);
     }
+
+    public Task<string> GetCurrentTenantCasClientClientCode(Guid tenantId)
+    {
+        throw new NotImplementedException();
+    }
 }

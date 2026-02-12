@@ -1,5 +1,8 @@
 ﻿using AutoMapper;
 using System;
+using System.Collections.Generic;
+using Unity.TenantManagement;
+using Volo.Abp.TenantManagement;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -124,6 +127,13 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<UpdateApplicantAddressDto, ApplicantAddress>()
             .ForMember(dest => dest.Postal, opt => opt.MapFrom(src => src.PostalCode))
             .IgnoreNullAndDefaultValues();
+
+        // Add the tenant management mapping here
+        CreateMap<Tenant, TenantManagement.TenantDto>()
+            .ForMember(dest => dest.CasClientCode, opt => opt.MapFrom(src => GetExtraPropertyAsString(src, "CasClientCode")))
+            .ForMember(dest => dest.Division, opt => opt.MapFrom(src => GetExtraPropertyAsString(src, "Division")))
+            .ForMember(dest => dest.Branch, opt => opt.MapFrom(src => GetExtraPropertyAsString(src, "Branch")))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => GetExtraPropertyAsString(src, "Description")));
     }
 
     private static bool? ConvertIndigenousOrgIndToBool(string indigenousOrgInd)
@@ -144,6 +154,15 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             false => "No",
             _ => null
         };
+    }
+
+    private static string GetExtraPropertyAsString(Tenant tenant, string propertyName)
+    {
+        if (tenant.ExtraProperties?.ContainsKey(propertyName) == true)
+        {
+            return tenant.ExtraProperties[propertyName]?.ToString() ?? string.Empty;
+        }
+        return string.Empty;
     }
 }
 

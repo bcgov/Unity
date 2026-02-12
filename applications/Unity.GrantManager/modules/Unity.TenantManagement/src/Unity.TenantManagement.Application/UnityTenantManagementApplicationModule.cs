@@ -7,6 +7,7 @@ using Volo.Abp.TenantManagement;
 namespace Unity.TenantManagement;
 
 [DependsOn(typeof(AbpTenantManagementDomainModule))]
+[DependsOn(typeof(AbpTenantManagementApplicationModule))]
 [DependsOn(typeof(UnityTenantManagementApplicationContractsModule))]
 [DependsOn(typeof(AbpDddApplicationModule))]
 public class UnityTenantManagementApplicationModule : AbpModule
