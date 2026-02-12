@@ -13,7 +13,7 @@ export interface Toast {
   providedIn: 'root'
 })
 export class ToastService {
-  private toastsSubject = new BehaviorSubject<Toast[]>([]);
+  private readonly toastsSubject = new BehaviorSubject<Toast[]>([]);
   public toasts$ = this.toastsSubject.asObservable();
 
   private generateId(): string {

@@ -31,12 +31,12 @@ export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
   private ctx!: CanvasRenderingContext2D;
   private animationId: number = 0;
   private dots: Dot[][] = [];
-  private waveSources: WaveSource[] = [];
+  private readonly waveSources: WaveSource[] = [];
   private time: number = 0;
   
   private gridCols: number = 0;
   private gridRows: number = 0;
-  private dotSpacing: number = 8;  // Much smaller spacing for more dots
+  private readonly dotSpacing: number = 8;  // Much smaller spacing for more dots
   private readonly NUM_WAVE_SOURCES = 3;
   private readonly WAVE_HEIGHT = 40;
 

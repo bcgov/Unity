@@ -16,7 +16,7 @@ export interface AppConfig {
 export class ConfigService {
   private config: AppConfig | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   /**
    * Load configuration from build-info.json

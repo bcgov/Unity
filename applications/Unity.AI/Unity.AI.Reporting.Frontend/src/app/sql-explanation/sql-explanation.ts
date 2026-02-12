@@ -79,7 +79,7 @@ export class SqlExplanationComponent implements OnChanges, OnDestroy {
   showCursor: boolean = false;
   isWaiting: boolean = false;
   private streamingInterval: any;
-  private delayTimeout: any;
+  private readonly delayTimeout: any;
   private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnChanges(changes: SimpleChanges): void {

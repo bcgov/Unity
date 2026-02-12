@@ -24,7 +24,7 @@ def list_card_creators():
 
         cards = response.json()
 
-        logger.info(f"\nMetabase Cards - Created/Updated By Report")
+        logger.info("\nMetabase Cards - Created/Updated By Report")
         logger.info(f"Total cards: {len(cards)}")
         logger.info(f"{'='*80}\n")
 

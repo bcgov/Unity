@@ -17,14 +17,14 @@ export interface JwtPayload {
   providedIn: 'root'
 })
 export class AuthService {
-  private tokenSubject = new BehaviorSubject<string | null>(null);
+  private readonly tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();
 
   private _initializationPromise: Promise<void> | null = null;
 
   constructor(
-    private logger: LoggerService,
-    private configService: ConfigService
+    private readonly logger: LoggerService,
+    private readonly configService: ConfigService
   ) {
     this.initializeFromUrl();
   }
@@ -50,9 +50,7 @@ export class AuthService {
    * Lazily triggers async initialization on first call.
    */
   private async ensureInitialized(): Promise<void> {
-    if (!this._initializationPromise) {
-      this._initializationPromise = this.initializeAsync();
-    }
+    this._initializationPromise ??= this.initializeAsync();
     await this._initializationPromise;
   }
 
@@ -202,7 +200,7 @@ export class AuthService {
       try {
         // Try to get Angular router from the global window object
         const windowAny = window as any;
-        if (windowAny.ng && windowAny.ng.getComponent) {
+        if (windowAny.ng?.getComponent) {
           // Use Angular navigation if possible
           console.log('AI Reporting: Using Angular navigation to /app');
           window.location.hash = '#/app';
@@ -251,7 +249,7 @@ export class AuthService {
         const checkParentStatus = () => {
           try {
             // Try to access parent - if this fails consistently, parent might be gone
-            if (window.parent && window.parent.location) {
+            if (window.parent?.location) {
               parentCheckCount = 0; // Reset counter if parent is accessible
             }
           } catch (e) {

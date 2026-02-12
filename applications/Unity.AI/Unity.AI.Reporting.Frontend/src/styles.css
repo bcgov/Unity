@@ -28,7 +28,7 @@ button, input {
   position: fixed;
   box-sizing: border-box;   /* include padding in width calc */
   z-index: 200;
-  background: white;
+  background: #fff;
   top: 0;
   width: 100vw;
   justify-content: space-between;
@@ -36,8 +36,8 @@ button, input {
   border-bottom: 1px solid var(--mb-gray-200);
   padding-left: 50px;
   padding-right: 50px;
+  box-shadow:0 2px 4px rgba(0,0,0,.06);
 }
-.header{ background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.06);}
 .header button {
   background: var(--mb-blue-600);
   color: #fff;

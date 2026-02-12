@@ -39,7 +39,6 @@ class ChatManager:
             return None
         
         conversation = chat_data["conversation"]
-        metabase_url = chat_data["metabase_url"]
         tenant_id = chat_data["tenant_id"]
         
         # Get tenant configuration
@@ -49,7 +48,7 @@ class ChatManager:
         
         # Check and recreate cards if needed
         updated_conversation = self._validate_and_recreate_cards(
-            conversation, metabase_url, db_id, collection_id, tenant_id=tenant_id
+            conversation, db_id, collection_id, tenant_id=tenant_id
         )
         
         # Update database if cards were recreated
@@ -59,7 +58,7 @@ class ChatManager:
         return {"conversation": updated_conversation}
     
     def _validate_and_recreate_cards(self, conversation: List[Dict],
-                                    metabase_url: str, db_id: int,
+                                    db_id: int,
                                     collection_id: int,
                                     tenant_id: Optional[str] = None) -> List[Dict]:
         """
@@ -67,7 +66,6 @@ class ChatManager:
 
         Args:
             conversation: Chat conversation with card references
-            metabase_url: Metabase URL
             db_id: Database ID
             collection_id: Collection ID
             tenant_id: Optional tenant ID for tenant-specific Metabase API key

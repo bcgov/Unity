@@ -11,10 +11,10 @@ import { LoggerService } from './logger.service';
 })
 export class ApiService {
   constructor(
-    private http: HttpClient,
-    private authService: AuthService,
-    private configService: ConfigService,
-    private logger: LoggerService
+    private readonly http: HttpClient,
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+    private readonly logger: LoggerService
   ) {
     this.logger.info('ApiService initialized');
     this.logConnectionDetails();

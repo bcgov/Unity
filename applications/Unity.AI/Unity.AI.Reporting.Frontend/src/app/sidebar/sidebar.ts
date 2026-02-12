@@ -46,11 +46,11 @@ export class SidebarComponent {
   showInfoModal: boolean = false;
 
   constructor(
-    private apiService: ApiService,
-    private configService: ConfigService,
-    private toastService: ToastService,
-    private logger: LoggerService,
-    private cdr: ChangeDetectorRef
+    private readonly apiService: ApiService,
+    private readonly configService: ConfigService,
+    private readonly toastService: ToastService,
+    private readonly logger: LoggerService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {

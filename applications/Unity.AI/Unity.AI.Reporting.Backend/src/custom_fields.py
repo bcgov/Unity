@@ -34,7 +34,7 @@ def get_sql(sql, db_id, metabase_url, tenant_id=None):
     return r.json()["data"]
 
 def get_worksheets():
-    sql = f'SELECT "Worksheets"."Name", "Worksheets"."Id" FROM "Flex"."Worksheets"'
+    sql = 'SELECT "Worksheets"."Name", "Worksheets"."Id" FROM "Flex"."Worksheets"'
     data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     return [{"name": r[0], "id": r[1]} for r in data["rows"]]
 

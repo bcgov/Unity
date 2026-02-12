@@ -43,9 +43,9 @@ export class App implements OnInit, OnDestroy {
     private readonly cdr: ChangeDetectorRef
   ) {}
 
-  @ViewChild('turnsContainer') private turnsContainer!: ElementRef<HTMLDivElement>;
-  @ViewChild('sqlAnimationContainer') private sqlAnimationContainer!: ElementRef<HTMLDivElement>;
-  @ViewChild('sidebar') private sidebar!: SidebarComponent;
+  @ViewChild('turnsContainer') private readonly turnsContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('sqlAnimationContainer') private readonly sqlAnimationContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('sidebar') private readonly sidebar!: SidebarComponent;
 
   async ngOnInit(): Promise<void> {
     console.log('🔧 APP COMPONENT: Initialized (postMessage handling done by AuthService)');
@@ -81,8 +81,8 @@ export class App implements OnInit, OnDestroy {
   }
 
   private resizeTimeout: any;
-  private resizeListener = () => this.onWindowResize();
-  private handleDocumentClick = (event: Event) => this.onDocumentClick(event);
+  private readonly resizeListener = () => this.onWindowResize();
+  private readonly handleDocumentClick = (event: Event) => this.onDocumentClick(event);
 
   private onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
@@ -521,7 +521,7 @@ export class App implements OnInit, OnDestroy {
     // If we have a current turn, apply the visualization change immediately
     if (this.conversation.length > 0 && this.currentTurnIndex >= 0 && this.currentTurnIndex < this.conversation.length) {
       const currentTurn = this.conversation[this.currentTurnIndex];
-      if (currentTurn.embed && currentTurn.embed.card_id) {
+      if (currentTurn.embed?.card_id) {
         await this.changeDisplay(currentTurn, type);
         // Save the chat to persist the visualization change
         await this.saveChat();

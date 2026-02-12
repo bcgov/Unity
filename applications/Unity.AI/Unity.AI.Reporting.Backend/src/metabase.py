@@ -176,7 +176,7 @@ class MetabaseClient:
 
         if r.status_code != 200:
             logger.error(f"Metabase API error - Status: {r.status_code}, Response: {r.text}")
-            raise Exception(f"HTTP {r.status_code}: {r.text}")
+            raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
 
         try:
             response_json = r.json()
@@ -234,7 +234,7 @@ class MetabaseClient:
         )
 
         if r.status_code != 200:
-            raise Exception(f"HTTP {r.status_code}: {r.text}")
+            raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
 
     def delete_card(self, card_id: int, tenant_id: Optional[str] = None) -> bool:
         """Delete a Metabase card"""
@@ -254,7 +254,7 @@ class MetabaseClient:
                 headers=headers
             )
             if r.status_code != 200:
-                raise Exception(f"HTTP {r.status_code}: {r.text}")
+                raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
 
             cards = r.json()
             return [card["id"] for card in cards]

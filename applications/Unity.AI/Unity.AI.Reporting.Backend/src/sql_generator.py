@@ -51,7 +51,8 @@ class SQLGenerator:
             return match.group(1).strip()
         
         # Fallback: look for '### SQL:' header
-        sql_header = re.search(r"### SQL:\s*([\s\S]+?)(?:\n###|\Z)", text)
+        # Reluctant quantifier is intentional: match shortest content up to next section header or end
+        sql_header = re.search(r"### SQL:\s*(.+?)(?:\n###|\Z)", text, re.DOTALL) # NOSONAR
         if sql_header:
             return sql_header.group(1).strip()
         
@@ -319,7 +320,7 @@ class SQLGenerator:
             print("Parsed Schema:", parsed_schema[0])
 
             if parsed_schema[0] == "NSFW":
-                logger.error(f"Error: NSFW or irrelevant question.", exc_info=True)
+                logger.error("Error: NSFW or irrelevant question.", exc_info=True)
                 return None, None, None
 
             # Build prompt
