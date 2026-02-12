@@ -409,6 +409,7 @@ const listColumns = getColumns();
             getPayoutColumn(columnIndex++),
             getNonRegisteredOrganizationNameColumn(columnIndex++),
             getUnityApplicationIdColumn(columnIndex++),
+            getLinkRelationshipType(columnIndex++),
         ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
             .sort((a, b) => a.index - b.index);
         return sortedColumns;
@@ -1041,6 +1042,23 @@ const listColumns = getColumns();
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getLinkRelationshipType(columnIndex) {
+        return {
+            title: 'Application Links',
+            name: 'applicationLinks',
+            data: 'applicationLinks',
+            className: 'data-table-header',
+            render: function (data) {
+                const linkNames = Array.from(new Set((data || [])
+                    .filter(x => x?.linkType)
+                    .map(x => x.linkType)
+                    .sort((a, b) => a.localeCompare(b)))); 
+                return linkNames.join(', ');
             },
             index: columnIndex
         }
