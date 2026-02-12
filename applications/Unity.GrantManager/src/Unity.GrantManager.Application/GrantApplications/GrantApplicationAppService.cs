@@ -121,7 +121,6 @@ public class GrantApplicationAppService(
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
 
-
     private static string MapSubstatusDisplayValue(string subStatus)
     {
         if (subStatus == null) { return string.Empty; }
