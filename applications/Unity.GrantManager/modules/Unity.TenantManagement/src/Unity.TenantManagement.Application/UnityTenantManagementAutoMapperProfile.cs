@@ -9,12 +9,20 @@ namespace Unity.TenantManagement
     {
         public UnityTenantManagementAutoMapperProfile()
         {
-       // Add the tenant management mapping here
-        CreateMap<Tenant, TenantDto>()
-            .ForMember(dest => dest.CasClientCode, opt => opt.MapFrom(src => src.ExtraProperties.ContainsKey("CasClientCode") ? (string?)src.ExtraProperties["CasClientCode"] : null))
-            .ForMember(dest => dest.Division, opt => opt.MapFrom(src => src.ExtraProperties.ContainsKey("Division") ? (string?)src.ExtraProperties["Division"] : null))
-            .ForMember(dest => dest.Branch, opt => opt.MapFrom(src => src.ExtraProperties.ContainsKey("Branch") ? (string?)src.ExtraProperties["Branch"] : null))
-            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.ExtraProperties.ContainsKey("Description") ? (string?)src.ExtraProperties["Description"] : null));
+            CreateMap<Tenant, TenantDto>()
+                .ForMember(dest => dest.CasClientCode, opt => opt.MapFrom(src => 
+                    GetExtraProperty(src, "CasClientCode")))
+                .ForMember(dest => dest.Division, opt => opt.MapFrom(src => 
+                    GetExtraProperty(src, "Division")))
+                .ForMember(dest => dest.Branch, opt => opt.MapFrom(src => 
+                    GetExtraProperty(src, "Branch")))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => 
+                    GetExtraProperty(src, "Description")));
+        }
+
+        private static string? GetExtraProperty(Tenant tenant, string key)
+        {
+            return tenant.ExtraProperties.TryGetValue(key, out var value) ? value?.ToString() : null;
         }
     }
 }
