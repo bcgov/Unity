@@ -1,13 +1,19 @@
 {
-  "Demo Org": {
+  "default": {
     "db_id": 5,
-    "collection_id": 19,
+    "collection_id": 16,
     "schema_types": ["public"],
     "api_key": ""
   },
-  "default": {
+  "REDIP": {
+    "db_id": 9,
+    "collection_id": 93,
+    "schema_types": ["public"],
+    "api_key": ""
+  },
+  "Default Grants Program": {
     "db_id": 5,
-    "collection_id": 19,
+    "collection_id": 16,
     "schema_types": ["public"],
     "api_key": ""
   }

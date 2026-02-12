@@ -346,7 +346,7 @@ def ask():
             logger.info("Starting SQL generation...")
             try:
                 sql, metadata, sql_tokens = await sql_generator.generate_sql(
-                    question, past_questions, db_id
+                    question, past_questions, db_id, tenant_id=tenant_id
                 )
                 logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
                 logger.debug(f"SQL generation tokens: {sql_tokens}")
@@ -390,7 +390,8 @@ def ask():
             try:
                 logger.debug("Calling metabase_client.create_card...")
                 card_id = metabase_client.create_card(
-                    sql, db_id, collection_id, metadata['title']
+                    sql, db_id, collection_id, metadata['title'],
+                    tenant_id=tenant_id
                 )
                 logger.info(f"Card created successfully with ID: {card_id}")
             except Exception as card_error:
@@ -424,8 +425,10 @@ def ask():
 def change_display():
     """Update visualization type for a Metabase card"""
     data = request.get_json()
-    
+    user_data = get_user_from_token()
+
     try:
+        tenant_id = user_data["tenant"]
         mode = data.get("mode")
         card_id = data.get("card_id")
         x_field = data.get("x_field", [])
@@ -450,8 +453,9 @@ def change_display():
         safe_visualization_options = _sanitize_field_array(visualization_options) if isinstance(visualization_options, list) else []
         
         # Update card visualization
-        metabase_client.update_card_visualization(safe_card_id, safe_mode, safe_x_field, safe_y_field)
-        
+        metabase_client.update_card_visualization(safe_card_id, safe_mode, safe_x_field, safe_y_field,
+                                                    tenant_id=tenant_id)
+
         # Generate new embed URL
         embed_url = metabase_client.generate_embed_url(safe_card_id)
         
@@ -473,14 +477,16 @@ def change_display():
 def delete_question():
     """Delete a Metabase card"""
     data = request.get_json()
-    
+    user_data = get_user_from_token()
+
     try:
+        tenant_id = user_data["tenant"]
         card_id = data.get("card_id")
-        
+
         if not card_id:
             return abort(400, "card_id is required")
-        
-        success = metabase_client.delete_card(card_id)
+
+        success = metabase_client.delete_card(card_id, tenant_id=tenant_id)
         return {"success": success}
 
     except Exception as e:

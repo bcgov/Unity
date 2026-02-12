@@ -1,6 +1,6 @@
-import os
 import logging
 import requests
+from config import config
 
 # Configure logging
 logging.basicConfig(
@@ -9,8 +9,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-metabase_url = "https://test-unity-reporting.apps.silver.devops.gov.bc.ca"
-headers = {"x-api-key": os.getenv("METABASE_KEY")}
+metabase_url = config.metabase.url
+headers = config.metabase_headers
 
 def list_card_creators():
     """List who created and updated each card in Metabase"""

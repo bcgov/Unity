@@ -130,33 +130,41 @@ class Config:
         Load tenant to database/collection mappings from JSON file.
         Falls back to default configuration if file is not found.
         """
-        
-        config_file = "/app/backend/src/tenant_config.json"
 
-        try:
-            with open(config_file, 'r') as f:
-                mappings = json.load(f)
-                if "default" not in mappings.keys():
-                    mappings = {"default": mappings}
+        # Try Docker path first, then local path (same directory as this file)
+        config_paths = [
+            "/app/backend/src/tenant_config.json",  # Docker container path
+            Path(__file__).parent / "tenant_config.json"  # Local development path
+        ]
 
-            print(f"Loaded tenant mappings: {mappings}")
+        for config_file in config_paths:
+            try:
+                with open(config_file, 'r') as f:
+                    mappings = json.load(f)
+                    if "default" not in mappings.keys():
+                        mappings = {"default": mappings}
 
-            # Override default db_id with environment variable if set
-            if "default" in mappings:
-                env_db_id = os.getenv("DEFAULT_EMBED_DB_ID")
-                if env_db_id:
-                    mappings["default"]["db_id"] = int(env_db_id)
+                print(f"Loaded tenant mappings from {config_file}: {mappings}")
 
-            return mappings
-        except FileNotFoundError:
-            # Fallback to hardcoded defaults if file not found
-            return {
-                "default": {
-                    "db_id": int(os.getenv("DEFAULT_EMBED_DB_ID", "5")),
-                    "collection_id": 16,
-                    "schema_types": ["public"]
-                }
+                # Override default db_id with environment variable if set
+                if "default" in mappings:
+                    env_db_id = os.getenv("DEFAULT_EMBED_DB_ID")
+                    if env_db_id:
+                        mappings["default"]["db_id"] = int(env_db_id)
+
+                return mappings
+            except FileNotFoundError:
+                continue
+
+        # Fallback to hardcoded defaults if no config file found
+        print("No tenant_config.json found, using hardcoded defaults")
+        return {
+            "default": {
+                "db_id": int(os.getenv("DEFAULT_EMBED_DB_ID", "5")),
+                "collection_id": 16,
+                "schema_types": ["public"]
             }
+        }
     
     def get_tenant_config(self, tenant_id: str) -> Dict[str, Any]:
         """Get configuration for a specific tenant"""

@@ -67,14 +67,14 @@ class SQLGenerator:
         except json.JSONDecodeError:
             return None
     
-    def fingerprint_results(self, sql: str, db_id: int) -> Tuple[str, Tuple[str, ...], str]:
+    def fingerprint_results(self, sql: str, db_id: int, tenant_id: Optional[str] = None) -> Tuple[str, Tuple[str, ...], str]:
         """
         Create a fingerprint of SQL results for comparison.
-        
+
         Returns:
             Tuple of (row_count, column_names, hash_of_first_5_rows)
         """
-        data = self.metabase.execute_sql(sql, db_id)
+        data = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
         rows = data["rows"]
         cols = tuple(
             c["name"] if isinstance(c, dict) else c
@@ -209,7 +209,7 @@ class SQLGenerator:
         return prompt
     
     async def generate_sql(self, question: str, past_questions: List[Dict],
-                          db_id: int) -> Tuple[Optional[str], Optional[Dict], Optional[Dict]]:
+                          db_id: int, tenant_id: Optional[str] = None) -> Tuple[Optional[str], Optional[Dict], Optional[Dict]]:
         """
         Generate SQL from natural language question using majority voting.
 
@@ -217,6 +217,7 @@ class SQLGenerator:
             question: Natural language question
             past_questions: List of past questions and SQL
             db_id: Database ID
+            tenant_id: Optional tenant ID for tenant-specific Metabase API key
 
         Returns:
             Tuple of (sql, metadata, token_usage) or (None, None, None) if generation fails
@@ -287,14 +288,14 @@ class SQLGenerator:
                 continue
             
             # Validate SQL
-            is_valid, error = self.metabase.validate_sql(sql, db_id)
+            is_valid, error = self.metabase.validate_sql(sql, db_id, tenant_id=tenant_id)
             if not is_valid:
                 logger.warning(f"SQL validation failed: {error}\nFor sql: {sql}")
                 continue
 
             # Generate fingerprint
             try:
-                fingerprint = self.fingerprint_results(sql, db_id)
+                fingerprint = self.fingerprint_results(sql, db_id, tenant_id=tenant_id)
                 candidates.append((fingerprint, sql, metadata))
             except Exception as e:
                 logger.error(f"Error generating fingerprint: {e}", exc_info=True)
