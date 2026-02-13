@@ -6,7 +6,7 @@ import { ApplicationsListPage } from "../pages/ApplicationDetailsPage";
 describe("Unity Login and check data from CHEFS", () => {
   const page = new ApplicationsListPage();
 
-  // Column visibility test data - organized by scroll position
+  // Column visibility test data - organized by scroll position for maintainability
   const COLUMN_VISIBILITY_DATA = {
     scrollPosition0: [
       "Applicant Name",
@@ -84,8 +84,9 @@ describe("Unity Login and check data from CHEFS", () => {
     ],
   };
 
-  // Columns to toggle during the test - organized for maintainability
+  // Columns to toggle during the test - organized for scalability
   const COLUMNS_TO_TOGGLE = {
+    // Columns that need single toggle (off by default, turn on)
     singleToggle: [
       "% of Total Project Budget",
       "Acquisition",
@@ -141,6 +142,7 @@ describe("Unity Login and check data from CHEFS", () => {
       "Total Score",
       "Unity Application Id",
     ],
+    // Columns that need double toggle (on by default, toggle off then on)
     doubleToggle: [
       "Applicant Id",
       "Applicant Name",
@@ -170,7 +172,7 @@ describe("Unity Login and check data from CHEFS", () => {
   });
 
   it("Tests the existence and functionality of the Submitted Date From and Submitted Date To filters", () => {
-    // Set date filters and verify table refresh
+    // Set date filters using page object methods
     page
       .setSubmittedFromDate("2022-01-01")
       .waitForTableRefresh()
@@ -178,18 +180,18 @@ describe("Unity Login and check data from CHEFS", () => {
       .waitForTableRefresh();
   });
 
-  //  With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
+  // With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
   it("Verify the action buttons are visible with no rows selected", () => {
     // Placeholder for future implementation
   });
 
-  //  With one row selected verify the visibility of Filter, Export, Save View, and Columns.
+  // With one row selected verify the visibility of Filter, Export, Save View, and Columns.
   it("Verify the action buttons are visible with one row selected", () => {
     // Placeholder for future implementation
   });
 
   it("Clicks Payment and force-closes the modal", () => {
-    // Ensure table has data and select two rows
+    // Ensure table has data and select two rows using page object
     page
       .verifyTableHasData()
       .selectMultipleRows([0, 1])
@@ -212,7 +214,7 @@ describe("Unity Login and check data from CHEFS", () => {
     // Reset to default view and open columns menu
     page.closeOpenDropdowns().resetToDefaultView().openColumnsMenu();
 
-    // Toggle all single-toggle columns
+    // Toggle all single-toggle columns (off by default, turn on)
     page.toggleColumns(COLUMNS_TO_TOGGLE.singleToggle);
 
     // Toggle all double-toggle columns (toggle twice to ensure visibility)
@@ -223,7 +225,7 @@ describe("Unity Login and check data from CHEFS", () => {
     // Close the columns menu
     page.closeColumnsMenu();
 
-    // Verify columns by scrolling through the table
+    // Verify columns by scrolling through the table horizontally
     page
       .scrollTableHorizontally(0)
       .assertVisibleHeadersInclude(COLUMN_VISIBILITY_DATA.scrollPosition0);
