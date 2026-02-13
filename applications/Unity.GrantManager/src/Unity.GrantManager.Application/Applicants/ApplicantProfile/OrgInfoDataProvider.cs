@@ -10,8 +10,7 @@ namespace Unity.GrantManager.Applicants.ApplicantProfile
         public string Key => ApplicantProfileKeys.OrgInfo;
 
         public Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request)
-        {
-            // TODO: Implement organization info retrieval
+        {            
             return Task.FromResult<ApplicantProfileDataDto>(new ApplicantOrgInfoDto());
         }
     }
