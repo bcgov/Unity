@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface AppConfig {
   apiUrl?: string;
@@ -32,8 +33,8 @@ export class ConfigService {
         this.http.get<AppConfig>('/build-info.json')
       );
 
-      // Use default /api if not specified (for combined container)
-      this.config.apiUrl ??= '/api';
+      // Use environment apiUrl if not specified in build-info.json
+      this.config.apiUrl ??= environment.apiUrl;
 
       console.log('✓ Configuration loaded successfully from /build-info.json');
       console.log('  API URL:', this.config.apiUrl);
@@ -44,10 +45,10 @@ export class ConfigService {
       console.log('=========================================');
     } catch (error) {
       console.error('✗ Failed to load configuration from /build-info.json:', error);
-      // Fallback to default config
+      // Fallback to environment config
       this.config = {
-        apiUrl: '/api',
-        environment: 'production',
+        apiUrl: environment.apiUrl,
+        environment: environment.production ? 'production' : 'development',
         version: 'unknown'
       };
       console.warn('Using fallback configuration:');
@@ -72,7 +73,7 @@ export class ConfigService {
    * Get the API URL
    */
   get apiUrl(): string {
-    return this.getConfig().apiUrl ?? '/api';
+    return this.getConfig().apiUrl ?? environment.apiUrl;
   }
 
   /**
