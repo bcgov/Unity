@@ -47,12 +47,16 @@ export class App implements OnInit, OnDestroy {
   @ViewChild('sqlAnimationContainer') private readonly sqlAnimationContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('sidebar') private readonly sidebar!: SidebarComponent;
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
+    this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
     console.log('🔧 APP COMPONENT: Initialized (postMessage handling done by AuthService)');
-    
+
     // Add iframe-specific styling
     this.iframeDetector.addIframeClass();
-    
+
     // Check if running in iframe and authenticated
     if (this.iframeDetector.isInIframe()) {
       const isAuthenticated = await this.authService.isAuthenticated();
@@ -65,7 +69,7 @@ export class App implements OnInit, OnDestroy {
 
     // Add window resize listener to maintain scroll position
     window.addEventListener('resize', this.resizeListener);
-    
+
     // Add click listener to close dropdown when clicking outside
     document.addEventListener('click', this.handleDocumentClick);
   }

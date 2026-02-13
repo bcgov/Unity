@@ -46,7 +46,7 @@ if (-not $envFile) {
 $jwtSecret = $null
 Get-Content $envFile | ForEach-Object {
     if ($_ -match '^JWT_SECRET="(.+)"$') {
-        $jwtSecret = $matches[1]
+        $script:jwtSecret = $matches[1]
     }
 }
 
@@ -85,7 +85,6 @@ $signature = [Convert]::ToBase64String($hashBytes).Replace('+', '-').Replace('/'
 
 # Assemble JWT
 $jwt = "$headerB64.$payloadB64.$signature"
-$bearerToken = "Bearer $jwt"
 
 # Display results
 Write-Host ""

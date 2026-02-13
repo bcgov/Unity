@@ -62,7 +62,11 @@ export class RootComponent implements OnInit {
     private readonly cdr: ChangeDetectorRef
   ) {}
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
+    this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
     try {
       // Check if user is authenticated
       if (!await this.authService.isAuthenticated()) {

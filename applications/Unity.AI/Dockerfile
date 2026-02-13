@@ -25,8 +25,12 @@ COPY Unity.AI.Reporting.Frontend/ ./
 # Build the Angular application
 RUN npm run build -- --configuration=production
 
-# Create build-info.json 
-RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"environment\":\"${UAI_TARGET_ENVIRONMENT}\"}" > dist/recap/browser/build-info.json
+# Create build-info.json
+RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\"," \
+         "\"revision\":\"${UAI_BUILD_REVISION}\"," \
+         "\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"," \
+         "\"environment\":\"${UAI_TARGET_ENVIRONMENT}\"}" \
+         > dist/recap/browser/build-info.json
 
 # Stage 2: Runtime - Python/Flask only (serves static + API)
 FROM python:3.11-slim

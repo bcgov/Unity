@@ -65,8 +65,8 @@ export class AdminComponent implements OnInit {
     private readonly cdr: ChangeDetectorRef
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    await this.loadFeedback();
+  ngOnInit(): void {
+    this.loadFeedback();
   }
 
   async loadFeedback(): Promise<void> {
