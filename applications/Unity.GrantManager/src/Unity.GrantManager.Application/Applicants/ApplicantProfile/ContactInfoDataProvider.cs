@@ -10,8 +10,7 @@ namespace Unity.GrantManager.Applicants.ApplicantProfile
         public string Key => ApplicantProfileKeys.ContactInfo;
 
         public Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request)
-        {
-            // TODO: Implement contact info retrieval
+        {            
             return Task.FromResult<ApplicantProfileDataDto>(new ApplicantContactInfoDto());
         }
     }

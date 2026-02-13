@@ -10,8 +10,7 @@ namespace Unity.GrantManager.Applicants.ApplicantProfile
         public string Key => ApplicantProfileKeys.SubmissionInfo;
 
         public Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request)
-        {
-            // TODO: Implement submission info retrieval
+        {            
             return Task.FromResult<ApplicantProfileDataDto>(new ApplicantSubmissionInfoDto());
         }
     }

@@ -10,8 +10,7 @@ namespace Unity.GrantManager.Applicants.ApplicantProfile
         public string Key => ApplicantProfileKeys.PaymentInfo;
 
         public Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request)
-        {
-            // TODO: Implement payment info retrieval
+        {            
             return Task.FromResult<ApplicantProfileDataDto>(new ApplicantPaymentInfoDto());
         }
     }
