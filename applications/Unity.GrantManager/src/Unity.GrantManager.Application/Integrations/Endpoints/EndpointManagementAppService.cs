@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Distributed;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -64,6 +65,8 @@ namespace Unity.GrantManager.Integrations.Endpoints
         }
 
         [UnitOfWork]
+        [RemoteService(false)]
+        [AllowAnonymous]
         public async Task<string> GetChefsApiBaseUrlAsync()
         {
             var url = await GetUrlByKeyNameInternalAsync(DynamicUrlKeyNames.INTAKE_API_BASE, tenantSpecific: false);
@@ -75,6 +78,8 @@ namespace Unity.GrantManager.Integrations.Endpoints
         }
 
         [UnitOfWork]
+        [RemoteService(false)]
+        [AllowAnonymous]
         public async Task<string> GetUgmUrlByKeyNameAsync(string keyName)
         {
             var url = await GetUrlByKeyNameInternalAsync(keyName, tenantSpecific: false);
