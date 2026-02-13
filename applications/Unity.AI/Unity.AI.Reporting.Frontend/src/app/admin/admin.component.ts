@@ -163,9 +163,9 @@ export class AdminComponent implements OnInit {
     const feedbackWithTokens = feedback as any;
     if (feedbackWithTokens.tokens) {
       return {
-        prompt: feedbackWithTokens.tokens.prompt_tokens || 0,
-        completion: feedbackWithTokens.tokens.completion_tokens || 0,
-        total: feedbackWithTokens.tokens.total_tokens || 0
+        prompt: feedbackWithTokens.tokens.prompt_tokens ?? 0,
+        completion: feedbackWithTokens.tokens.completion_tokens ?? 0,
+        total: feedbackWithTokens.tokens.total_tokens ?? 0
       };
     }
     return null;

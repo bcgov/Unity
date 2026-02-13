@@ -33,16 +33,14 @@ export class ConfigService {
       );
 
       // Use default /api if not specified (for combined container)
-      if (!this.config.apiUrl) {
-        this.config.apiUrl = '/api';
-      }
+      this.config.apiUrl ??= '/api';
 
       console.log('✓ Configuration loaded successfully from /build-info.json');
       console.log('  API URL:', this.config.apiUrl);
       console.log('  Environment:', this.config.environment);
       console.log('  Version:', this.config.version);
-      console.log('  Revision:', this.config.revision || 'N/A');
-      console.log('  Build Date:', this.config.buildDate || 'N/A');
+      console.log('  Revision:', this.config.revision ?? 'N/A');
+      console.log('  Build Date:', this.config.buildDate ?? 'N/A');
       console.log('=========================================');
     } catch (error) {
       console.error('✗ Failed to load configuration from /build-info.json:', error);
@@ -74,7 +72,7 @@ export class ConfigService {
    * Get the API URL
    */
   get apiUrl(): string {
-    return this.getConfig().apiUrl || '/api';
+    return this.getConfig().apiUrl ?? '/api';
   }
 
   /**
@@ -122,7 +120,7 @@ export class ConfigService {
       const response = await firstValueFrom(
         this.http.get<{iframe_origins: string[]}>('/api/iframe-origins')
       );
-      this._iframeOrigins = response.iframe_origins || [];
+      this._iframeOrigins = response.iframe_origins ?? [];
     } catch (error) {
       console.error('✗ Failed to load iframe origins:', error);
       // No fallback - if API fails, no origins are allowed (fail secure)

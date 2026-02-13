@@ -90,7 +90,8 @@ export class AuthService {
     try {
       return window.self !== window.top;
     } catch (e) {
-      return true; // If we can't check, assume we're in an iframe for security
+      console.warn('Could not determine iframe status, assuming iframe for security:', e);
+      return true;
     }
   }
 
@@ -253,6 +254,7 @@ export class AuthService {
               parentCheckCount = 0; // Reset counter if parent is accessible
             }
           } catch (e) {
+            console.debug('AUTH SERVICE: Parent window access failed:', e);
             parentCheckCount++;
             // Only clear token after multiple failed attempts (parent likely closed)
             if (parentCheckCount >= 3) {
@@ -267,7 +269,7 @@ export class AuthService {
         setInterval(checkParentStatus, 10000);
       }
     } catch (error) {
-      console.log('⚠️ AUTH SERVICE: Cannot access parent window for logout detection');
+      console.warn('AUTH SERVICE: Cannot access parent window for logout detection:', error);
     }
     
     // Method 2: Removed blur detection as it's too sensitive
@@ -318,7 +320,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return this.tokenSubject.value || localStorage.getItem('ai_reporting');
+    return this.tokenSubject.value ?? localStorage.getItem('ai_reporting');
   }
 
   clearToken(): void {
@@ -344,7 +346,7 @@ export class AuthService {
     const token = this.getToken();
     console.log('🔍 Token retrieved:', {
       hasToken: !!token,
-      tokenLength: token?.length || 0,
+      tokenLength: token?.length ?? 0,
       tokenPreview: token?.substring(0, 20) + '...' || 'none'
     });
 
@@ -508,7 +510,7 @@ export class AuthService {
     const token = this.getToken();
     console.log('🔍 validateTokenWithBackend() starting:', {
       hasToken: !!token,
-      tokenLength: token?.length || 0
+      tokenLength: token?.length ?? 0
     });
     
     if (!token) {
@@ -552,7 +554,7 @@ export class AuthService {
           const errorData = await response.text();
           console.log('❌ Backend validation error response:', errorData);
         } catch (e) {
-          console.log('❌ Could not read error response body');
+          console.warn('Could not read error response body:', e);
         }
       }
 
@@ -565,7 +567,7 @@ export class AuthService {
   }
 
   decodeToken(token?: string): JwtPayload | null {
-    const jwtToken = token || this.getToken();
+    const jwtToken = token ?? this.getToken();
     
     // Strict validation
     if (!jwtToken || jwtToken.trim() === '') {
@@ -616,12 +618,12 @@ export class AuthService {
 
   getTenantId(): string | null {
     const payload = this.decodeToken();
-    return payload?.tenant || null;
+    return payload?.tenant ?? null;
   }
 
   getUserId(): string | null {
     const payload = this.decodeToken();
-    return payload?.user_id || null;
+    return payload?.user_id ?? null;
   }
 
   /**
@@ -633,7 +635,7 @@ export class AuthService {
     
     return {
       hasToken: !!token,
-      tokenLength: token?.length || 0,
+      tokenLength: token?.length ?? 0,
       isAuthorized: localStorage.getItem('ai_reporting_authorized') === 'true',
       originsLoaded: this.configService.iframeOriginsLoaded,
       allowedOrigins: this.configService.iframeOriginUrls,

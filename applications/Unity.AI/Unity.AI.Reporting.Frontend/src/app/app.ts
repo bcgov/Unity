@@ -356,9 +356,9 @@ export class App implements OnInit, OnDestroy {
 
       await this.saveChat();
     } catch (error) {
+      console.error('Failed to process question:', error);
       turn.iframeLoaded = true;
       turn.safeUrl = "failure";
-      // Error is handled by setting failure state
     } finally {
       this.cdr.markForCheck();
     }
@@ -409,7 +409,7 @@ export class App implements OnInit, OnDestroy {
       this.conversation = chatData.conversation.map(turn => ({
         ...turn,
         iframeLoaded: true, // No iframe anymore, always mark as loaded
-        sql_explanation_visible: turn.sql_explanation_visible || false // Preserve visibility state or default to false
+        sql_explanation_visible: turn.sql_explanation_visible ?? false // Preserve visibility state or default to false
       }));
       
       this.currentChatId = chatId;

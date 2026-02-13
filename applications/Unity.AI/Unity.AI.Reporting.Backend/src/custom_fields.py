@@ -38,8 +38,8 @@ def get_worksheets():
     data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     return [{"name": r[0], "id": r[1]} for r in data["rows"]]
 
-def get_worksheet_instances(worksheetId):
-    sql = f'SELECT "WorksheetInstances"."CurrentValue", "WorksheetInstances"."WorksheetCorrelationId" FROM "Flex"."WorksheetInstances" WHERE "WorksheetInstances"."WorksheetId" = \'{worksheetId}\''
+def get_worksheet_instances(worksheet_id):
+    sql = f'SELECT "WorksheetInstances"."CurrentValue", "WorksheetInstances"."WorksheetCorrelationId" FROM "Flex"."WorksheetInstances" WHERE "WorksheetInstances"."WorksheetId" = \'{worksheet_id}\''
     data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     return data
 

@@ -173,7 +173,7 @@ def ready():
             # Test database connection
             db_manager.get_connection()
             db_status = "healthy"
-        except Exception as e:
+        except Exception:
             db_status = "unhealthy"
             
         # Check JWT secret configuration
@@ -182,7 +182,7 @@ def ready():
             from auth import auth_manager
             if not auth_manager.jwt_secret:
                 jwt_status = "unhealthy: JWT_SECRET not configured"
-        except Exception as e:
+        except Exception:
             jwt_status = "unhealthy"
             
         # Check environment configuration
@@ -190,7 +190,7 @@ def ready():
         try:
             # Test basic config access
             config.app.debug  # This will fail if config is broken
-        except Exception as e:
+        except Exception:
             config_status = "unhealthy"
             
         # Determine overall readiness

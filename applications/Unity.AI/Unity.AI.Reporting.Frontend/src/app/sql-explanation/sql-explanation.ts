@@ -109,7 +109,7 @@ export class SqlExplanationComponent implements OnChanges, OnDestroy {
 
   private streamText(): void {
     let currentIndex = 0;
-    const fullText = this.explanation || '';
+    const fullText = this.explanation ?? '';
     
     // Stream letter by letter with a small delay
     this.streamingInterval = setInterval(() => {

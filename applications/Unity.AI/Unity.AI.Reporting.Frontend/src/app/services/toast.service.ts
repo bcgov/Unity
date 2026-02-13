@@ -17,7 +17,7 @@ export class ToastService {
   public toasts$ = this.toastsSubject.asObservable();
 
   private generateId(): string {
-    return Math.random().toString(36).substr(2, 9);
+    return Math.random().toString(36).substring(2, 11);
   }
 
   show(message: string, type: Toast['type'] = 'info', duration: number = 2500): string {
