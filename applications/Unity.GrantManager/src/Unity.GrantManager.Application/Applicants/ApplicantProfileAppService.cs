@@ -48,7 +48,7 @@ namespace Unity.GrantManager.Applicants
             }
             else
             {
-                Logger.LogWarning("Unknown applicant profile key: {Key}", request.Key);
+                Logger.LogWarning("Unknown applicant profile key provided");
             }
 
             return dto;
