@@ -4,7 +4,7 @@
 
 
 # Stage 1: Build Angular Frontend
-FROM node:22-alpine AS frontend-build
+FROM node:24-alpine AS frontend-build
 
 # Declare ARGs in the stage they are used
 ARG UAI_BUILD_VERSION=0.0.0
@@ -33,7 +33,7 @@ RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\"," \
          > dist/recap/browser/build-info.json
 
 # Stage 2: Runtime - Python/Flask only (serves static + API)
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Create a non-root user for OpenShift compatibility and necessary directories
 RUN groupadd -g 1001 appuser && \

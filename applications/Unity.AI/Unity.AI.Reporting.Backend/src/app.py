@@ -15,13 +15,8 @@ from api import app
 logger = logging.getLogger(__name__)
 
 
-<<<<<<< HEAD
-def embed_schemas_command(db_id: int = None):
-    """Command to embed database schemas for a single db_id"""
-=======
 def embed_schemas_command(db_id: Optional[int] = None):
-    """Command to embed database schemas"""
->>>>>>> d470351 (Fixed Pylance issues)
+    """Command to embed database schemas for a single db_id"""
     if db_id is None:
         db_id = config.metabase.default_db_id
 
