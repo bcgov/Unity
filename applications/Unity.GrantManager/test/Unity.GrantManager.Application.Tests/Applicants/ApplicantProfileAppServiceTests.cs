@@ -1,41 +1,20 @@
-using NSubstitute;
 using Shouldly;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applicants.ApplicantProfile;
 using Unity.GrantManager.Applicants.ProfileData;
-using Unity.GrantManager.Applications;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.MultiTenancy;
-using Volo.Abp.TenantManagement;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Unity.GrantManager.Applicants
 {
-    public class ApplicantProfileAppServiceTests
+    public class ApplicantProfileAppServiceTests : GrantManagerApplicationTestBase
     {
-        private readonly ICurrentTenant _currentTenant;
-        private readonly ITenantRepository _tenantRepository;
-        private readonly IRepository<ApplicantTenantMap, Guid> _applicantTenantMapRepository;
-        private readonly IRepository<ApplicationFormSubmission, Guid> _applicationFormSubmissionRepository;
+        private readonly ApplicantProfileAppService _service;
 
-        public ApplicantProfileAppServiceTests()
+        public ApplicantProfileAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
-            _currentTenant = Substitute.For<ICurrentTenant>();
-            _tenantRepository = Substitute.For<ITenantRepository>();
-            _applicantTenantMapRepository = Substitute.For<IRepository<ApplicantTenantMap, Guid>>();
-            _applicationFormSubmissionRepository = Substitute.For<IRepository<ApplicationFormSubmission, Guid>>();
-        }
-
-        private ApplicantProfileAppService CreateService(IEnumerable<IApplicantProfileDataProvider> providers)
-        {
-            return new ApplicantProfileAppService(
-                _currentTenant,
-                _tenantRepository,
-                _applicantTenantMapRepository,
-                _applicationFormSubmissionRepository,
-                providers);
+            _service = GetRequiredService<ApplicantProfileAppService>();
         }
 
         private static ApplicantProfileInfoRequest CreateRequest(string key) => new()
@@ -52,39 +31,50 @@ namespace Unity.GrantManager.Applicants
         [InlineData(ApplicantProfileKeys.AddressInfo)]
         [InlineData(ApplicantProfileKeys.SubmissionInfo)]
         [InlineData(ApplicantProfileKeys.PaymentInfo)]
-        public async Task GetApplicantProfileAsync_WithValidKey_ShouldReturnDataFromProvider(string key)
+        public async Task GetApplicantProfileAsync_WithValidKey_ShouldReturnData(string key)
         {
             // Arrange
-            var expectedData = Substitute.For<ApplicantProfileDataDto>();
-            var mockProvider = Substitute.For<IApplicantProfileDataProvider>();
-            mockProvider.Key.Returns(key);
-            mockProvider.GetDataAsync(Arg.Any<ApplicantProfileInfoRequest>()).Returns(expectedData);
-
-            var service = CreateService([mockProvider]);
             var request = CreateRequest(key);
 
             // Act
-            var result = await service.GetApplicantProfileAsync(request);
+            var result = await _service.GetApplicantProfileAsync(request);
 
             // Assert
             result.ShouldNotBeNull();
             result.Key.ShouldBe(key);
-            result.Data.ShouldBe(expectedData);
+            result.Data.ShouldNotBeNull();
             result.ProfileId.ShouldBe(request.ProfileId);
             result.Subject.ShouldBe(request.Subject);
             result.TenantId.ShouldBe(request.TenantId);
-            await mockProvider.Received(1).GetDataAsync(Arg.Is<ApplicantProfileInfoRequest>(r => r.Key == key));
+        }
+
+        [Theory]
+        [InlineData(ApplicantProfileKeys.ContactInfo, typeof(ApplicantContactInfoDto))]
+        [InlineData(ApplicantProfileKeys.OrgInfo, typeof(ApplicantOrgInfoDto))]
+        [InlineData(ApplicantProfileKeys.AddressInfo, typeof(ApplicantAddressInfoDto))]
+        [InlineData(ApplicantProfileKeys.SubmissionInfo, typeof(ApplicantSubmissionInfoDto))]
+        [InlineData(ApplicantProfileKeys.PaymentInfo, typeof(ApplicantPaymentInfoDto))]
+        public async Task GetApplicantProfileAsync_WithValidKey_ShouldReturnCorrectDataType(string key, Type expectedType)
+        {
+            // Arrange
+            var request = CreateRequest(key);
+
+            // Act
+            var result = await _service.GetApplicantProfileAsync(request);
+
+            // Assert
+            result.Data.ShouldNotBeNull();
+            result.Data.ShouldBeOfType(expectedType);
         }
 
         [Fact]
         public async Task GetApplicantProfileAsync_WithUnknownKey_ShouldReturnNullData()
         {
             // Arrange
-            var service = CreateService([]);
             var request = CreateRequest("UNKNOWNKEY");
 
             // Act
-            var result = await service.GetApplicantProfileAsync(request);
+            var result = await _service.GetApplicantProfileAsync(request);
 
             // Assert
             result.ShouldNotBeNull();
@@ -96,52 +86,20 @@ namespace Unity.GrantManager.Applicants
         public async Task GetApplicantProfileAsync_KeyLookupIsCaseInsensitive()
         {
             // Arrange
-            var expectedData = Substitute.For<ApplicantProfileDataDto>();
-            var mockProvider = Substitute.For<IApplicantProfileDataProvider>();
-            mockProvider.Key.Returns(ApplicantProfileKeys.ContactInfo);
-            mockProvider.GetDataAsync(Arg.Any<ApplicantProfileInfoRequest>()).Returns(expectedData);
-
-            var service = CreateService([mockProvider]);
             var request = CreateRequest("contactinfo");
 
             // Act
-            var result = await service.GetApplicantProfileAsync(request);
+            var result = await _service.GetApplicantProfileAsync(request);
 
             // Assert
-            result.Data.ShouldBe(expectedData);
-        }
-
-        [Fact]
-        public async Task GetApplicantProfileAsync_WithMultipleProviders_ShouldDispatchToCorrectOne()
-        {
-            // Arrange
-            var contactData = new ApplicantContactInfoDto();
-            var orgData = new ApplicantOrgInfoDto();
-
-            var contactProvider = Substitute.For<IApplicantProfileDataProvider>();
-            contactProvider.Key.Returns(ApplicantProfileKeys.ContactInfo);
-            contactProvider.GetDataAsync(Arg.Any<ApplicantProfileInfoRequest>()).Returns(contactData);
-
-            var orgProvider = Substitute.For<IApplicantProfileDataProvider>();
-            orgProvider.Key.Returns(ApplicantProfileKeys.OrgInfo);
-            orgProvider.GetDataAsync(Arg.Any<ApplicantProfileInfoRequest>()).Returns(orgData);
-
-            var service = CreateService([contactProvider, orgProvider]);
-
-            // Act
-            var result = await service.GetApplicantProfileAsync(CreateRequest(ApplicantProfileKeys.OrgInfo));
-
-            // Assert
-            result.Data.ShouldBeOfType<ApplicantOrgInfoDto>();
-            await contactProvider.DidNotReceive().GetDataAsync(Arg.Any<ApplicantProfileInfoRequest>());
-            await orgProvider.Received(1).GetDataAsync(Arg.Any<ApplicantProfileInfoRequest>());
+            result.Data.ShouldNotBeNull();
+            result.Data.ShouldBeOfType<ApplicantContactInfoDto>();
         }
 
         [Fact]
         public async Task GetApplicantProfileAsync_AlwaysReturnsRequestFieldsOnDto()
         {
             // Arrange
-            var service = CreateService([]);
             var request = new ApplicantProfileInfoRequest
             {
                 ProfileId = Guid.NewGuid(),
@@ -151,7 +109,7 @@ namespace Unity.GrantManager.Applicants
             };
 
             // Act
-            var result = await service.GetApplicantProfileAsync(request);
+            var result = await _service.GetApplicantProfileAsync(request);
 
             // Assert
             result.ProfileId.ShouldBe(request.ProfileId);
