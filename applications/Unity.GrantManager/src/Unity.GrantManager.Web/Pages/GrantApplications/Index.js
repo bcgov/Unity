@@ -1049,15 +1049,21 @@ const listColumns = getColumns();
 
     function getLinkRelationshipType(columnIndex) {
         return {
-            title: 'Application Links',
+            title: 'Link Types',
             name: 'applicationLinks',
             data: 'applicationLinks',
             className: 'data-table-header',
             render: function (data) {
                 const linkNames = Array.from(new Set((data || [])
                     .filter(x => x?.linkType)
-                    .map(x => x.linkType)
-                    .sort((a, b) => a.localeCompare(b)))); 
+                    .map(x => {
+                        // If this app has child links, display it as a parent (and vice versa) in the Application List.
+                        // Not elegant but avoids additional database queries
+                        if (x.linkType === "Parent") return "Child";
+                        else if (x.linkType === "Child") return "Parent";
+                        else return x.linkType;
+                    })
+                    .sort((a, b) => a.localeCompare(b))));
                 return linkNames.join(', ');
             },
             index: columnIndex
