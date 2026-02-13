@@ -7,6 +7,7 @@ import time
 from typing import List, Optional
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
+from pydantic import SecretStr
 from langchain_postgres import PGVector
 from config import config
 from database import db_manager
@@ -129,14 +130,14 @@ class EmbeddingManager:
         if config.ai.use_azure:
             self.embedding_model = AzureOpenAIEmbeddings(
                 azure_endpoint=config.ai.azure_endpoint,
-                api_key=config.ai.azure_api_key,
+                api_key=SecretStr(config.ai.azure_api_key),
                 azure_deployment=config.ai.azure_embedding_deployment,
                 api_version=config.ai.azure_api_version
             )
         else:
             self.embedding_model = OpenAIEmbeddings(
                 model=config.ai.embedding_model,
-                api_key=config.ai.completion_key
+                api_key=SecretStr(config.ai.completion_key)
             )
 
         self.vector_store = PGVector(
@@ -240,7 +241,8 @@ class EmbeddingManager:
                 k=k_public,
                 filter={"db_id": db_id, "schema_type": "public"}
             )
-            retrieved.extend(public_results)
+            if public_results:
+                retrieved.extend(public_results)
 
         # Get custom schemas if enabled with retry
         if k_custom > 0 and config.app.embed_worksheets:
@@ -250,7 +252,8 @@ class EmbeddingManager:
                 k=k_custom,
                 filter={"db_id": db_id, "schema_type": "custom"}
             )
-            retrieved.extend(custom_results)
+            if custom_results:
+                retrieved.extend(custom_results)
 
         return retrieved
     

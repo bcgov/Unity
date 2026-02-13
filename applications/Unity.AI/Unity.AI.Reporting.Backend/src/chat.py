@@ -23,7 +23,7 @@ class ChatManager:
         """Get all chats for a user"""
         return self.repository.get_user_chats(user_id, tenant_id)
     
-    def get_chat_with_card_validation(self, chat_id: str, user_id: str) -> Dict[str, Any]:
+    def get_chat_with_card_validation(self, chat_id: str, user_id: str) -> Optional[Dict[str, Any]]:
         """
         Get a chat and recreate any missing Metabase cards.
         
@@ -111,12 +111,8 @@ class ChatManager:
             # Apply visualization settings if available
             self._apply_visualization(new_card_id, embed_data, tenant_id=tenant_id)
 
-            # Generate new embed URL
-            new_embed_url = self.metabase.generate_embed_url(new_card_id)
-
             # Update turn with new card info
             embed_data['card_id'] = new_card_id
-            embed_data['url'] = new_embed_url
 
             logger.info(f"Recreated card {card_id} as {new_card_id}")
         except Exception as e:

@@ -316,6 +316,10 @@ class SQLGenerator:
                                   <schema>{schemas}</schema>
                                   In the case that the question is NSFW or completely unrelated please return NSFW''', session, 0)
 
+            if not parsed_schema:
+                logger.error("Schema parsing failed — no completion returned")
+                return None, None, None
+
             print("Schema:", schemas)
             print("Parsed Schema:", parsed_schema[0])
 
@@ -457,7 +461,7 @@ ORDER BY a."RegionalDistrict" ASC;''',
                     "visualization_options": ["bar", "pie", "map"]
                 }
             ),
-            "For indegenous organizations only": (
+            "For indigenous organizations only": (
                 '''SELECT "public"."Applications"."RegionalDistrict" AS "RegionalDistrict",
 SUM("public"."Applications"."ApprovedAmount") AS "sum"
 FROM

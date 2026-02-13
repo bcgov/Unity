@@ -201,7 +201,10 @@ class ChatRepository:
                         RETURNING chat_id
                     """, (user_id, tenant_id, metabase_url, title, json.dumps(conversation)))
                     
-                    result_chat_id = str(cur.fetchone()[0])
+                    row = cur.fetchone()
+                    if not row:
+                        raise ValueError("Failed to create chat")
+                    result_chat_id = str(row[0])
                 
                 conn.commit()
                 return result_chat_id
@@ -238,11 +241,11 @@ class FeedbackRepository:
         self.db = db_manager
     
     def submit_feedback(self, chat_id: str, user_id: str, tenant_id: str,
-                       feedback_type: str, message: str, user_agent: str = None,
-                       metadata: Dict = None, current_question: str = None,
-                       current_sql: str = None, current_sql_explanation: str = None,
-                       previous_question: str = None, previous_sql: str = None,
-                       previous_sql_explanation: str = None) -> str:
+                       feedback_type: str, message: str, user_agent: Optional[str] = None,
+                       metadata: Optional[Dict] = None, current_question: Optional[str] = None,
+                       current_sql: Optional[str] = None, current_sql_explanation: Optional[str] = None,
+                       previous_question: Optional[str] = None, previous_sql: Optional[str] = None,
+                       previous_sql_explanation: Optional[str] = None) -> str:
         """Submit feedback for a chat"""
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
@@ -257,7 +260,10 @@ class FeedbackRepository:
                       current_question, current_sql, current_sql_explanation,
                       previous_question, previous_sql, previous_sql_explanation))
                 
-                feedback_id = str(cur.fetchone()[0])
+                row = cur.fetchone()
+                if not row:
+                    raise ValueError("Failed to submit feedback")
+                feedback_id = str(row[0])
                 conn.commit()
                 return feedback_id
     

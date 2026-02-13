@@ -212,7 +212,7 @@ def ready():
         
         return jsonify(response_data), 200 if all_healthy else 503
         
-    except Exception as e:
+    except Exception:
         return jsonify({
             "status": "not ready",
             "service": "unity-ai-backend",
@@ -460,12 +460,8 @@ def change_display():
         # Update card visualization
         metabase_client.update_card_visualization(safe_card_id, safe_mode, safe_x_field, safe_y_field,
                                                     tenant_id=tenant_id)
-
-        # Generate new embed URL
-        embed_url = metabase_client.generate_embed_url(safe_card_id)
         
         return jsonify({
-            "url": embed_url,
             "card_id": safe_card_id,
             "x_field": safe_x_field,
             "y_field": safe_y_field,
@@ -645,7 +641,7 @@ def submit_feedback():
         chat_id = data.get("chat_id")
         feedback_type = data.get("feedback_type", "bug_report")
         message = data.get("message", "").strip()
-        user_agent = request.headers.get("User-Agent")
+        user_agent = request.headers.get("User-Agent", "")
 
         current_question = data.get("current_question")
         current_sql = data.get("current_sql")

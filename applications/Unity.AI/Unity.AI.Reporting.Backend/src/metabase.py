@@ -187,13 +187,6 @@ class MetabaseClient:
             logger.error(f"Response text: {r.text}")
             raise ValueError(f"Error parsing Metabase response: {e}")
 
-        except requests.exceptions.Timeout:
-            logger.error("Metabase embedding enable request timed out")
-            raise requests.exceptions.Timeout("Metabase embedding enable request timed out")
-        except requests.exceptions.ConnectionError as e:
-            logger.error(f"Connection error enabling embedding: {e}", exc_info=True)
-            raise requests.exceptions.ConnectionError(f"Connection error enabling embedding: {e}")
-        
         return card_id
     
     def update_card_visualization(self, card_id: int, display_mode: str,
@@ -210,7 +203,7 @@ class MetabaseClient:
             tenant_id: Optional tenant ID to use tenant-specific API key
         """
         headers = self._get_headers(tenant_id)
-        visualization_settings = {
+        visualization_settings: Dict[str, Any] = {
             "graph.dimensions": x_fields,
             "graph.metrics": y_fields,
         }
