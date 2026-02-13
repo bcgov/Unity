@@ -22,8 +22,7 @@ namespace Unity.Modules.Shared.Integrations
 
         public async Task<string> GetAuthTokenAsync(ClientOptions clientOptions)
         {
-            logger.LogError("Getting auth token for {Url} with client id {ClientId}", clientOptions.Url, clientOptions.ClientId);
-            logger.LogError("Getting auth token for {Url} with client id {ClientSecret}", clientOptions.Url, clientOptions.ClientSecret);
+            logger.LogError("Getting auth token for {Url} with client id {ClientId} Client Secret {ClientSecret}", clientOptions.Url, clientOptions.ClientId, clientOptions.ClientSecret);
             var tokenResponse = await GetAccessTokenAsync(clientOptions) ?? throw new UserFriendlyException("GetAuthTokenAsync: Error retrieving Token");
             return tokenResponse.AccessToken ?? throw new UserFriendlyException("GetAuthTokenAsync: Error retrieving Access Token");
         }
