@@ -45,10 +45,7 @@ namespace Unity.Payments.Integrations.Cas
             var casClientId = await casClientCodeLookupService.GetClientIdByCasClientCodeAsync(casClientCode)
                 ?? throw new UserFriendlyException($"No CAS client configuration found for CAS client code: {casClientCode}");
 
-            var casApiKeys = configuration.GetSection("CAS_API_KEYS").Get<Dictionary<string, string>>() ?? [];
-            var clientSecret = casApiKeys.TryGetValue($"CAS_API_KEY_{casClientCode.ToUpper()}", out var value)
-                ? value
-                : throw new UserFriendlyException($"No CAS API key configured for CAS client code: {casClientCode}. Expected configuration key: CAS_API_KEY_{casClientCode.ToUpper()}");
+            var clientSecret = configuration.GetValue<string>($"CAS_API_KEY_{casClientCode.ToUpper()}") ?? string.Empty;
 
             return await new TokenService(httpClientFactory, chesTokenCache, Logger).GetAuthTokenAsync(new ClientOptions
             {
