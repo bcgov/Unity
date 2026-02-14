@@ -4,6 +4,7 @@ Handles environment variables and application settings.
 """
 import os
 import json
+from pathlib import Path
 from typing import Dict, Any
 from dataclasses import dataclass
 from dotenv import load_dotenv
