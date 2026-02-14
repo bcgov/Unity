@@ -22,6 +22,7 @@
         'SectorSubSectorIndustryDesc',
         'FiscalMonth',
         'FiscalDay',
+        'StartedOperatingDate',
         'RedStop'
     ]);
 

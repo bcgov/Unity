@@ -14,7 +14,7 @@ namespace Unity.GrantManager.Controllers
 
         [HttpGet]
         [Route("profile")]
-        public async Task<IActionResult> GetApplicantProfileAsync([FromQuery] TenantedApplicantProfileRequest applicantProfileRequest)
+        public async Task<IActionResult> GetApplicantProfileAsync([FromQuery] ApplicantProfileInfoRequest applicantProfileRequest)
         {
             var profile = await applicantProfileAppService.GetApplicantProfileAsync(applicantProfileRequest);
             return Ok(profile);

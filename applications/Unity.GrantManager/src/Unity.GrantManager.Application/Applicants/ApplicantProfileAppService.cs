@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Unity.GrantManager.Applicants.ApplicantProfile;
 using Unity.GrantManager.Applications;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -18,9 +19,12 @@ namespace Unity.GrantManager.Applicants
             ICurrentTenant currentTenant,
             ITenantRepository tenantRepository,
             IRepository<ApplicantTenantMap, Guid> applicantTenantMapRepository,
-            IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository)
+            IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
+            IEnumerable<IApplicantProfileDataProvider> dataProviders)
         : ApplicationService, IApplicantProfileAppService
     {
+        private readonly Dictionary<string, IApplicantProfileDataProvider> _providersByKey
+            = dataProviders.ToDictionary(p => p.Key, StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Retrieves the applicant's profile information based on the specified request.
@@ -28,15 +32,26 @@ namespace Unity.GrantManager.Applicants
         /// <param name="request">An object containing the criteria used to identify the applicant profile to retrieve. Must not be null.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains an <see
         /// cref="ApplicantProfileDto"/> with the applicant's profile data.</returns>
-        public async Task<ApplicantProfileDto> GetApplicantProfileAsync(ApplicantProfileRequest request)
+        public async Task<ApplicantProfileDto> GetApplicantProfileAsync(ApplicantProfileInfoRequest request)
         {
-            return await Task.FromResult(new ApplicantProfileDto
+            var dto = new ApplicantProfileDto
             {
                 ProfileId = request.ProfileId,
-                Subject = request.Subject,                
-                Email = string.Empty,
-                DisplayName = string.Empty
-            });
+                Subject = request.Subject,
+                TenantId = request.TenantId,
+                Key = request.Key
+            };
+
+            if (_providersByKey.TryGetValue(request.Key, out var provider))
+            {
+                dto.Data = await provider.GetDataAsync(request);
+            }
+            else
+            {
+                Logger.LogWarning("Unknown applicant profile key provided");
+            }
+
+            return dto;
         }
 
         /// <summary>

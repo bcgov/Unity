@@ -1660,9 +1660,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("ParentFormId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ParentFormVersionId")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("Payable")
                         .HasColumnType("boolean");
 
@@ -1696,8 +1693,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("IntakeId");
 
                     b.HasIndex("ParentFormId");
-
-                    b.HasIndex("ParentFormVersionId");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -4255,11 +4250,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
                         .WithMany()
                         .HasForeignKey("ParentFormId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationFormVersion", null)
-                        .WithMany()
-                        .HasForeignKey("ParentFormVersionId")
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
