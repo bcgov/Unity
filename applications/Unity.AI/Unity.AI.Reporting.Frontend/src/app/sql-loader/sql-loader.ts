@@ -31,12 +31,12 @@ export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
   private ctx!: CanvasRenderingContext2D;
   private animationId: number = 0;
   private dots: Dot[][] = [];
-  private waveSources: WaveSource[] = [];
+  private readonly waveSources: WaveSource[] = [];
   private time: number = 0;
   
   private gridCols: number = 0;
   private gridRows: number = 0;
-  private dotSpacing: number = 8;  // Much smaller spacing for more dots
+  private readonly dotSpacing: number = 8;  // Much smaller spacing for more dots
   private readonly NUM_WAVE_SOURCES = 3;
   private readonly WAVE_HEIGHT = 40;
 
@@ -66,16 +66,16 @@ export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
     canvas.width = parent.clientWidth;
     canvas.height = parent.clientHeight;
     
-    this.ctx = canvas.getContext('2d')!;
-    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    this.ctx = ctx;
+
     // Calculate grid dimensions to fill screen
     this.gridCols = Math.ceil(canvas.width / this.dotSpacing) + 2;
     this.gridRows = Math.ceil(canvas.height / this.dotSpacing) + 2;
   }
 
   private initializeGrid() {
-    const canvas = this.canvasRef.nativeElement;
-    
     for (let i = 0; i < this.gridCols; i++) {
       this.dots[i] = [];
       for (let j = 0; j < this.gridRows; j++) {
@@ -240,8 +240,9 @@ export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private animate() {
+    if (!this.ctx) return;
     const canvas = this.canvasRef.nativeElement;
-    
+
     // Clear with white background
     this.ctx.fillStyle = 'rgb(255, 255, 255)';
     this.ctx.fillRect(0, 0, canvas.width, canvas.height);

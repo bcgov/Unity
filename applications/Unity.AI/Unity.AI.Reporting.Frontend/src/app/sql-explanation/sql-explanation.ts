@@ -1,19 +1,23 @@
-import { Component, Input, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, OnChanges, SimpleChanges, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
+
 
 @Component({
   selector: 'app-sql-explanation',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
-    <div class="sql-explanation-bubble" *ngIf="displayedText || isWaiting">
-      <div class="bubble-content">
-        <span>{{ displayedText }}</span>
-        <span class="cursor" *ngIf="showCursor">█</span>
+    @if (displayedText || isWaiting) {
+      <div class="sql-explanation-bubble">
+        <div class="bubble-content">
+          <span>{{ displayedText }}</span>
+          @if (showCursor) {
+            <span class="cursor">█</span>
+          }
+        </div>
+        <div class="bubble-tail"></div>
       </div>
-      <div class="bubble-tail"></div>
-    </div>
-  `,
+    }
+    `,
   styles: [`
     .sql-explanation-bubble {
       position: relative;
@@ -75,7 +79,8 @@ export class SqlExplanationComponent implements OnChanges, OnDestroy {
   showCursor: boolean = false;
   isWaiting: boolean = false;
   private streamingInterval: any;
-  private delayTimeout: any;
+  private readonly delayTimeout: any;
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['explanation']) {
@@ -104,7 +109,7 @@ export class SqlExplanationComponent implements OnChanges, OnDestroy {
 
   private streamText(): void {
     let currentIndex = 0;
-    const fullText = this.explanation || '';
+    const fullText = this.explanation ?? '';
     
     // Stream letter by letter with a small delay
     this.streamingInterval = setInterval(() => {
@@ -116,6 +121,7 @@ export class SqlExplanationComponent implements OnChanges, OnDestroy {
         this.showCursor = false;
         clearInterval(this.streamingInterval);
       }
+      this.cdr.markForCheck();
     }, 10); // 15ms delay between each letter
   }
 

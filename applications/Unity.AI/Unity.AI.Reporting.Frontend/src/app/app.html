@@ -15,165 +15,177 @@
   <div class="container" #scrollBox>
 
     <!-- Empty state -->
-    <div *ngIf="conversation.length === 0" class="empty-chat-container">
-      <div class="welcome-content">
-        <h1 class="welcome-title">What would you like to know?</h1>
-        <div class="ask-row-container welcome-ask-row">
-          <div class="ask-row">
-            <input type="text"
-                  [(ngModel)]="question"
-                  placeholder="Type a prompt to generate a report..."
-                  (keyup.enter)="askQuestion()" />
-            <button class="ask-question-btn" (click)="askQuestion()">
-              <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Chat conversation -->
-    <div *ngIf="conversation.length > 0" class="chat-container">
-      <div class="turns" #turnsContainer>
-
-        <div *ngFor="let turn of conversation" class="turn">
-          <div class="bubble bot">
-            <div *ngIf="turn.iframeLoaded == false" class="sql-loader-container">
-              <div class="loading-animation-overlay">
-                <div class="loading-dots">
-                  <div class="loading-dot"></div>
-                  <div class="loading-dot"></div>
-                  <div class="loading-dot"></div>
-                </div>
-                <div class="loading-text">Generating Report...</div>
-              </div>
-            </div>
-            <div *ngIf="turn.safeUrl == 'failure'" class="failure-container">
-              <div class="failure-content">
-                <div class="failure-icon">⚠️</div>
-                <div class="failure-title">Unable to Generate Report</div>
-                <div class="failure-message">Sorry, I couldn't process your request. Please try rephrasing your question or check if the data you're looking for exists.</div>
-                <div class="failure-actions">
-                  <button class="retry-btn" (click)="retryQuestion(turn)">Try Again</button>
-                </div>
-              </div>
-            </div>
-            <div class="bot-inner" *ngIf="turn.safeUrl != 'loading' && turn.safeUrl != 'failure' " [class.loaded]="turn.iframeLoaded">
-
-              <app-sql-explanation *ngIf="turn.sql_explanation_visible" [explanation]="turn.embed.sql_explanation"></app-sql-explanation>
-
-              <div class="metabase-view-container">
-                <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    @if (conversation.length === 0) {
+      <div class="empty-chat-container">
+        <div class="welcome-content">
+          <h1 class="welcome-title">What would you like to know?</h1>
+          <div class="ask-row-container welcome-ask-row">
+            <div class="ask-row">
+              <input type="text"
+                [(ngModel)]="question"
+                placeholder="Type a prompt to generate a report..."
+                (keyup.enter)="askQuestion()" />
+                <button class="ask-question-btn" (click)="askQuestion()">
+                  <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                  <span>View Full Report in Metabase</span>
                 </button>
               </div>
-
-              <div class="sql-panel" *ngIf="turn.sqlPanelOpen">
-                <div class="sql-panel-header">Generated SQL</div>
-                <pre class="sql-code">{{turn.embed.SQL}}</pre>
-              </div>
             </div>
           </div>
-          <span #bottomAnchor></span>
         </div>
-      </div>
+      }
 
-      <div class="ask-row-container">
-        <div class="ask-row">
-          <input type="text"
+      <!-- Chat conversation -->
+      @if (conversation.length > 0) {
+        <div class="chat-container">
+          <div class="turns" #turnsContainer>
+            @for (turn of conversation; track turn) {
+              <div class="turn">
+                <div class="bubble bot">
+                  @if (turn.iframeLoaded == false) {
+                    <div class="sql-loader-container">
+                      <div class="loading-animation-overlay">
+                        <div class="loading-dots">
+                          <div class="loading-dot"></div>
+                          <div class="loading-dot"></div>
+                          <div class="loading-dot"></div>
+                        </div>
+                        <div class="loading-text">Generating Report...</div>
+                      </div>
+                    </div>
+                  }
+                  @if (turn.safeUrl == 'failure') {
+                    <div class="failure-container">
+                      <div class="failure-content">
+                        <div class="failure-icon">⚠️</div>
+                        <div class="failure-title">Unable to Generate Report</div>
+                        <div class="failure-message">Sorry, I couldn't process your request. Please try rephrasing your question or check if the data you're looking for exists.</div>
+                        <div class="failure-actions">
+                          <button class="retry-btn" (click)="retryQuestion(turn)">Try Again</button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                  @if (turn.safeUrl != 'loading' && turn.safeUrl != 'failure' ) {
+                    <div class="bot-inner" [class.loaded]="turn.iframeLoaded">
+                      @if (turn.sql_explanation_visible) {
+                        <app-sql-explanation [explanation]="turn.embed.sql_explanation"></app-sql-explanation>
+                      }
+                      <div class="metabase-view-container">
+                        <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                          <span>View Full Report in Metabase</span>
+                        </button>
+                      </div>
+                      @if (turn.sqlPanelOpen) {
+                        <div class="sql-panel">
+                          <div class="sql-panel-header">Generated SQL</div>
+                          <pre class="sql-code">{{turn.embed.SQL}}</pre>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+                <span #bottomAnchor></span>
+              </div>
+            }
+          </div>
+          <div class="ask-row-container">
+            <div class="ask-row">
+              <input type="text"
                 [(ngModel)]="question"
                 placeholder="Refine the report..."
                 (keyup.enter)="askQuestion()" />
-        </div>
-        <div class="ask-row-bottom">
-          <div class="bottom-left-controls">
-            <div class="visualization-dropdown" [class.open]="visualizationDropdownOpen">
-              <button class="dropdown-trigger" 
+              </div>
+              <div class="ask-row-bottom">
+                <div class="bottom-left-controls">
+                  <div class="visualization-dropdown" [class.open]="visualizationDropdownOpen">
+                    <button class="dropdown-trigger"
                       (click)="toggleVisualizationDropdown()"
                       [class.disabled]="!hasOtherVisualizationOptions()">
-                <span>{{ getVisualizationDisplayName(selectedVisualization) }}</span>
-              </button>
-              <div class="dropdown-menu" *ngIf="visualizationDropdownOpen">
-                <button 
-                  *ngFor="let option of getAvailableVisualizationOptions()" 
-                  class="dropdown-item" 
-                  [hidden]="option === selectedVisualization"
-                  (click)="selectVisualization(option)">
-                  {{ getVisualizationDisplayName(option) }}
+                      <span>{{ getVisualizationDisplayName(selectedVisualization) }}</span>
+                    </button>
+                    @if (visualizationDropdownOpen) {
+                      <div class="dropdown-menu">
+                        @for (option of getAvailableVisualizationOptions(); track option) {
+                          <button
+                            class="dropdown-item"
+                            [hidden]="option === selectedVisualization"
+                            (click)="selectVisualization(option)">
+                            {{ getVisualizationDisplayName(option) }}
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                  @if (conversation.length > 0 && currentTurnIndex >= 0 && currentTurnIndex < conversation.length) {
+                    <div class="action-buttons">
+                      <button class="action-button" (click)="redirectToMB(conversation[currentTurnIndex])" title="View in Metabase">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button class="action-button" (click)="toggleSqlPanel(conversation[currentTurnIndex])" title="Show/Hide SQL">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button class="action-button" (click)="generateSqlExplanation(conversation[currentTurnIndex])" title="Generate SQL Explanation">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M9 9C9 7.34315 10.3431 6 12 6C13.6569 6 15 7.34315 15 9C15 10.6569 13.6569 12 12 12V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="currentColor"/>
+                        </svg>
+                      </button>
+                      <button class="action-button delete-action" (click)="deleteQuestion(conversation[currentTurnIndex])" title="Delete Card">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M6 7H12H18V18C18 19.6569 16.6569 21 15 21H9C7.34315 21 6 19.6569 6 18V7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  }
+                  @if (conversation.length > 1) {
+                    <div class="nav-controls">
+                      <button class="action-button nav-button" (click)="scrollToPreviousTurn()" [disabled]="currentTurnIndex <= 0" title="Previous Report">
+                        <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <span class="turn-counter">{{currentTurnIndex + 1}} / {{conversation.length}}</span>
+                      <button class="action-button nav-button" (click)="scrollToNextTurn()" [disabled]="currentTurnIndex >= conversation.length - 1" title="Next Report">
+                        <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(180deg);">
+                          <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  }
+                </div>
+                <button class="ask-question-btn" (click)="askQuestion()">
+                  <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
                 </button>
               </div>
             </div>
-            
-            <div *ngIf="conversation.length > 0 && currentTurnIndex >= 0 && currentTurnIndex < conversation.length" class="action-buttons">
-              <button class="action-button" (click)="redirectToMB(conversation[currentTurnIndex])" title="View in Metabase">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              
-              <button class="action-button" (click)="toggleSqlPanel(conversation[currentTurnIndex])" title="Show/Hide SQL">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              
-              <button class="action-button" (click)="generateSqlExplanation(conversation[currentTurnIndex])" title="Generate SQL Explanation">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M9 9C9 7.34315 10.3431 6 12 6C13.6569 6 15 7.34315 15 9C15 10.6569 13.6569 12 12 12V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="currentColor"/>
-                </svg>
-              </button>
-              
-              <button class="action-button delete-action" (click)="deleteQuestion(conversation[currentTurnIndex])" title="Delete Card">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M6 7H12H18V18C18 19.6569 16.6569 21 15 21H9C7.34315 21 6 19.6569 6 18V7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-            </div>
-            
-            <div *ngIf="conversation.length > 1" class="nav-controls">
-              <button class="action-button nav-button" (click)="scrollToPreviousTurn()" [disabled]="currentTurnIndex <= 0" title="Previous Report">
-                <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              <span class="turn-counter">{{currentTurnIndex + 1}} / {{conversation.length}}</span>
-              <button class="action-button nav-button" (click)="scrollToNextTurn()" [disabled]="currentTurnIndex >= conversation.length - 1" title="Next Report">
-                <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(180deg);">
-                  <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-            </div>
           </div>
-          
-          <button class="ask-question-btn" (click)="askQuestion()">
-            <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
+        }
       </div>
     </div>
-  </div>
-</div>
 
-<!-- Toast notifications -->
-<app-toast></app-toast>
+    <!-- Toast notifications -->
+    <app-toast></app-toast>

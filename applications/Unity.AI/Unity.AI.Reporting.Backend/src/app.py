@@ -5,6 +5,7 @@ Handles initialization and command-line interface.
 import sys
 import logging
 import os
+from typing import Optional
 from config import config
 from database import db_manager
 from embeddings import embedding_manager
@@ -14,7 +15,7 @@ from api import app
 logger = logging.getLogger(__name__)
 
 
-def embed_schemas_command(db_id: int = None):
+def embed_schemas_command(db_id: Optional[int] = None):
     """Command to embed database schemas for a single db_id"""
     if db_id is None:
         db_id = config.metabase.default_db_id

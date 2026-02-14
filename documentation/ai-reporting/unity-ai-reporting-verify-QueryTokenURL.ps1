@@ -46,7 +46,7 @@ if (-not $envFile) {
 $jwtSecret = $null
 Get-Content $envFile | ForEach-Object {
     if ($_ -match '^JWT_SECRET="(.+)"$') {
-        $jwtSecret = $matches[1]
+        $script:jwtSecret = $matches[1]
     }
 }
 
@@ -85,7 +85,6 @@ $signature = [Convert]::ToBase64String($hashBytes).Replace('+', '-').Replace('/'
 
 # Assemble JWT
 $jwt = "$headerB64.$payloadB64.$signature"
-$bearerToken = "Bearer $jwt"
 
 # Display results
 Write-Host ""
@@ -115,13 +114,13 @@ if ($IsAdmin) {
 
 Write-Host "Usage Examples:" -ForegroundColor Green
 Write-Host "Regular User:"
-Write-Host "  .\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'user@gov.bc.ca'"
+Write-Host "  .\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'user@gov.bc.ca'"
 Write-Host ""
 Write-Host "Admin User:"
-Write-Host "  .\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'admin@gov.bc.ca' -IsAdmin `$true"
+Write-Host "  .\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'admin@gov.bc.ca' -IsAdmin `$true"
 Write-Host ""
 Write-Host "Quick Testing (1 minute expiration):"
-Write-Host "  .\unity-ai-reporting-verify-devTokenURL.ps1 -UserId 'user@gov.bc.ca' -ExpiresInMinutes 1"
+Write-Host "  .\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'user@gov.bc.ca' -ExpiresInMinutes 1"
 Write-Host ""
 Write-Host "Instructions:" -ForegroundColor Green
 Write-Host "Local Testing:"

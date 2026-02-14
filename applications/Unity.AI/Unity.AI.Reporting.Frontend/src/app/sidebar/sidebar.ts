@@ -1,5 +1,5 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
@@ -18,7 +18,7 @@ export interface Chat {
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule, FormsModule, AlertComponent],
+  imports: [FormsModule, AlertComponent],
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css']
 })
@@ -46,10 +46,11 @@ export class SidebarComponent {
   showInfoModal: boolean = false;
 
   constructor(
-    private apiService: ApiService,
-    private configService: ConfigService,
-    private toastService: ToastService,
-    private logger: LoggerService
+    private readonly apiService: ApiService,
+    private readonly configService: ConfigService,
+    private readonly toastService: ToastService,
+    private readonly logger: LoggerService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -67,9 +68,11 @@ export class SidebarComponent {
         this.apiService.getChats<Chat[]>()
       );
     } catch (error) {
+      console.error('Failed to load chats:', error);
       this.chats = [];
     } finally {
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -102,7 +105,8 @@ export class SidebarComponent {
       
       return date.toLocaleString('en-US', options);
     } catch (error) {
-      return dateString.toString(); // Fallback to original string
+      console.warn('Failed to format date:', error);
+      return dateString.toString();
     }
   }
 
@@ -134,11 +138,12 @@ export class SidebarComponent {
       this.toastService.success(`Report "${chatTitle}" deleted successfully`);
       
     } catch (error) {
-      // Show error toast
+      console.error('Failed to delete report:', error);
       this.toastService.error('Failed to delete report. Please try again.');
     }
 
     this.cancelDelete();
+    this.cdr.markForCheck();
   }
 
   cancelDelete(): void {
@@ -197,6 +202,8 @@ export class SidebarComponent {
       
       this.toastService.error(errorMessage);
       // Keep the modal open so user can retry
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 
@@ -224,7 +231,7 @@ export class SidebarComponent {
       const currentTurn = this.conversation[this.currentTurnIndex];
       context.currentQuestion = currentTurn.question;
       context.currentSql = currentTurn.embed?.SQL;
-      context.currentSqlExplanation = currentTurn.sql_explanation || currentTurn.embed?.sql_explanation;
+      context.currentSqlExplanation = currentTurn.sql_explanation ?? currentTurn.embed?.sql_explanation;
     }
 
     // Get previous turn data (if exists)
@@ -232,7 +239,7 @@ export class SidebarComponent {
       const previousTurn = this.conversation[this.currentTurnIndex - 1];
       context.previousQuestion = previousTurn.question;
       context.previousSql = previousTurn.embed?.SQL;
-      context.previousSqlExplanation = previousTurn.sql_explanation || previousTurn.embed?.sql_explanation;
+      context.previousSqlExplanation = previousTurn.sql_explanation ?? previousTurn.embed?.sql_explanation;
     }
 
     return context;

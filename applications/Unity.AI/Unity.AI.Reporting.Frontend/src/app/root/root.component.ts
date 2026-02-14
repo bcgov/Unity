@@ -1,21 +1,24 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+
 import { Router, RouterOutlet } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { LoggerService } from '../services/logger.service';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet],
+  imports: [RouterOutlet],
   template: `
-    <div class="loading-container" *ngIf="isLoading">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">Checking authentication...</div>
-    </div>
-    <router-outlet *ngIf="!isLoading"></router-outlet>
-  `,
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Checking authentication...</div>
+      </div>
+    }
+    @if (!isLoading) {
+      <router-outlet></router-outlet>
+    }
+    `,
   styles: [`
     .loading-container {
       display: flex;
@@ -55,10 +58,15 @@ export class RootComponent implements OnInit {
     private readonly router: Router,
     private readonly apiService: ApiService,
     private readonly authService: AuthService,
-    private readonly logger: LoggerService
+    private readonly logger: LoggerService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
+    this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
     try {
       // Check if user is authenticated
       if (!await this.authService.isAuthenticated()) {
@@ -89,6 +97,7 @@ export class RootComponent implements OnInit {
       this.router.navigate(['/app']);
     } finally {
       this.isLoading = false;
+      this.cdr.markForCheck();
     }
   }
 }

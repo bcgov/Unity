@@ -4,7 +4,7 @@
 
 
 # Stage 1: Build Angular Frontend
-FROM node:22-alpine AS frontend-build
+FROM node:24-alpine AS frontend-build
 
 # Declare ARGs in the stage they are used
 ARG UAI_BUILD_VERSION=0.0.0
@@ -25,18 +25,20 @@ COPY Unity.AI.Reporting.Frontend/ ./
 # Build the Angular application
 RUN npm run build -- --configuration=production
 
-# Create build-info.json 
-RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\",\"revision\":\"${UAI_BUILD_REVISION}\",\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"environment\":\"${UAI_TARGET_ENVIRONMENT}\"}" > dist/recap/browser/build-info.json
+# Create build-info.json
+RUN echo "{\"version\":\"${UAI_BUILD_VERSION}\"," \
+         "\"revision\":\"${UAI_BUILD_REVISION}\"," \
+         "\"buildDate\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"," \
+         "\"environment\":\"${UAI_TARGET_ENVIRONMENT}\"}" \
+         > dist/recap/browser/build-info.json
 
 # Stage 2: Runtime - Python/Flask only (serves static + API)
-FROM python:3.11-slim
+FROM python:3.13-slim
 
-# Create a non-root user for OpenShift compatibility
+# Create a non-root user for OpenShift compatibility and necessary directories
 RUN groupadd -g 1001 appuser && \
-    useradd -r -u 1001 -g appuser -d /app -s /sbin/nologin appuser
-
-# Create necessary directories
-RUN mkdir -p /app/backend \
+    useradd -r -u 1001 -g appuser -d /app -s /sbin/nologin appuser && \
+    mkdir -p /app/backend \
              /app/frontend \
              /tmp && \
     chmod -R 777 /tmp
@@ -51,17 +53,13 @@ COPY Unity.AI.Reporting.Backend/src/ /app/backend/src/
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 
-# Install Python dependencies
+# Install Python dependencies, set up entrypoint, and fix ownership
 WORKDIR /app/backend
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
-
-# Convert line endings and make entrypoint executable (777 for OpenShift compatibility)
-RUN sed -i 's/\r$//' /entrypoint.sh && \
+RUN pip install --no-cache-dir -r requirements.txt gunicorn && \
+    sed -i 's/\r$//' /entrypoint.sh && \
     chmod 777 /entrypoint.sh && \
-    chown appuser:appuser /entrypoint.sh
-
-# Change ownership
-RUN chown -R appuser:appuser /app
+    chown appuser:appuser /entrypoint.sh && \
+    chown -R appuser:appuser /app
 
 # Expose port 8080
 EXPOSE 8080

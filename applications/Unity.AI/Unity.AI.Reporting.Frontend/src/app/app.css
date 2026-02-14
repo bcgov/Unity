@@ -177,9 +177,9 @@
 .toolbar button:hover {
   filter: brightness(1.08);
   box-shadow: var(--mb-shadow-sm);
+  /* Hover raise on toolbar buttons */
+  transform:translateY(-1px);
 }
-/* Hover raise on toolbar buttons */
-.toolbar button:hover{transform:translateY(-1px);}
 
 /* ask bar */
 .ask-row-container {
@@ -415,8 +415,6 @@
 
 .ask-row input[type="text"] {
   flex: 1 1 0;
-  /* padding: 10px 14px; */
-  /* border: 1px solid var(--mb-gray-200); */
   border: none;
   border-radius: var(--mb-radius); 
   transition: border-color .15s;
@@ -425,9 +423,6 @@
 
 .ask-row input[type="text"]:focus {
   outline: none;
-  /* border-color: var(--mb-blue-600);
-  box-shadow: inset 0 0 0 1px var(--mb-blue-600); */
-
 }
 
 .ask-question-btn {

@@ -17,9 +17,11 @@ from embeddings import embedding_manager
 from metabase import metabase_client
 import time
 
+# Define constants
+CONTENT_TYPE = "application/json"
+
 # Configure logging
 logger = logging.getLogger(__name__)
-
 
 class SQLGenerator:
     """Generates SQL from natural language queries"""
@@ -49,7 +51,8 @@ class SQLGenerator:
             return match.group(1).strip()
         
         # Fallback: look for '### SQL:' header
-        sql_header = re.search(r"### SQL:\s*([\s\S]+?)(?:\n###|\Z)", text)
+        # Reluctant quantifier is intentional: match shortest content up to next section header or end
+        sql_header = re.search(r"### SQL:\s*(.+?)(?:\n###|\Z)", text, re.DOTALL) # NOSONAR
         if sql_header:
             return sql_header.group(1).strip()
         
@@ -106,7 +109,7 @@ class SQLGenerator:
             # Use Azure OpenAI
             headers = {
                 "api-key": self.config.azure_api_key,
-                "Content-Type": "application/json"
+                "Content-Type": CONTENT_TYPE
             }
             
             endpoint = f"{self.config.azure_endpoint}/openai/deployments/{self.config.azure_deployment}/chat/completions?api-version={self.config.azure_api_version}"
@@ -122,7 +125,7 @@ class SQLGenerator:
             # Use standard OpenAI
             headers = {
                 "Authorization": f"Bearer {self.config.completion_key}",
-                "Content-Type": "application/json"
+                "Content-Type": CONTENT_TYPE
             }
             
             endpoint = self.config.completion_endpoint
@@ -208,6 +211,78 @@ class SQLGenerator:
         
         return prompt
     
+    def _process_completion(self, completion_result, db_id: int,
+                           tenant_id: Optional[str] = None) -> Optional[Tuple]:
+        """Process a single LLM completion, returning (fingerprint, sql, metadata) or None."""
+        if not completion_result:
+            return None
+
+        raw, _usage = completion_result
+        logger.debug(f"Raw completion:\n{raw}")
+
+        sql = self.extract_sql(raw)
+        if not sql:
+            logger.debug("No SQL found in completion")
+            return None
+
+        metadata = self.extract_metadata(raw)
+        if not metadata:
+            logger.debug("No metadata found in completion")
+            return None
+
+        # Validate SQL
+        is_valid, error = self.metabase.validate_sql(sql, db_id, tenant_id=tenant_id)
+        if not is_valid:
+            logger.warning(f"SQL validation failed: {error}\nFor sql: {sql}")
+            return None
+
+        # Generate fingerprint
+        try:
+            fingerprint = self.fingerprint_results(sql, db_id, tenant_id=tenant_id)
+            return (fingerprint, sql, metadata)
+        except Exception as e:
+            logger.error(f"Error generating fingerprint: {e}", exc_info=True)
+            return None
+
+    def _aggregate_token_usage(self, completions) -> Dict[str, int]:
+        """Sum token usage across all completions."""
+        total_prompt = 0
+        total_completion = 0
+        total = 0
+        for result in completions:
+            if not result:
+                continue
+
+            # Unpack the tuple (text, usage)
+            raw, usage = result
+            logger.debug(f"Raw completion:\n{raw}")
+
+            # Aggregate tokens
+            total_prompt += usage.get('prompt_tokens', 0)
+            total_completion += usage.get('completion_tokens', 0)
+            total += usage.get('total_tokens', 0)
+        return {
+            "prompt_tokens": total_prompt,
+            "completion_tokens": total_completion,
+            "total_tokens": total
+        }
+
+    def _select_best_candidate(self, candidates: List[Tuple]) -> Tuple[str, Dict]:
+        """Pick the majority-vote winner or fall back to the first candidate."""
+        fingerprints = [fp for fp, _, _ in candidates]
+        winner_fp = self.find_majority(fingerprints)
+
+        if winner_fp:
+            # Return the first candidate with winning fingerprint
+            for fp, sql, metadata in candidates:
+                if fp == winner_fp:
+                    logger.info(f"Majority vote winner: {sql[:100]}...")
+                    return sql, metadata
+
+        # Fallback to first valid candidate
+        logger.info("No majority, using first candidate")
+        return candidates[0][1], candidates[0][2]
+
     async def generate_sql(self, question: str, past_questions: List[Dict],
                           db_id: int, tenant_id: Optional[str] = None) -> Tuple[Optional[str], Optional[Dict], Optional[Dict]]:
         """
@@ -230,7 +305,7 @@ class SQLGenerator:
             # Hardcoded examples have no token usage
             sql, metadata = hardcoded
             return sql, metadata, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
-        
+
         # Get relevant schemas
         schemas = self.embeddings.get_formatted_schemas(question, db_id)
 
@@ -241,11 +316,15 @@ class SQLGenerator:
                                   <schema>{schemas}</schema>
                                   In the case that the question is NSFW or completely unrelated please return NSFW''', session, 0)
 
+            if not parsed_schema:
+                logger.error("Schema parsing failed — no completion returned")
+                return None, None, None
+
             print("Schema:", schemas)
             print("Parsed Schema:", parsed_schema[0])
 
             if parsed_schema[0] == "NSFW":
-                logger.error(f"Error: NSFW or irrelevant question.", exc_info=True)
+                logger.error("Error: NSFW or irrelevant question.", exc_info=True)
                 return None, None, None
 
             # Build prompt
@@ -258,74 +337,21 @@ class SQLGenerator:
             completions = await asyncio.gather(*tasks)
 
         # Aggregate token usage from all completions
-        total_prompt_tokens = 0
-        total_completion_tokens = 0
-        total_tokens = 0
+        token_usage = self._aggregate_token_usage(completions)
 
         # Process completions and extract valid candidates
-        candidates = []
-        for completion_result in completions:
-            if not completion_result:
-                continue
+        candidates = [
+            c for completion_result in completions
+            if (c := self._process_completion(completion_result, db_id, tenant_id=tenant_id)) is not None
+        ]
 
-            # Unpack the tuple (text, usage)
-            raw, usage = completion_result
-            logger.debug(f"Raw completion:\n{raw}")
-
-            # Aggregate tokens
-            total_prompt_tokens += usage.get('prompt_tokens', 0)
-            total_completion_tokens += usage.get('completion_tokens', 0)
-            total_tokens += usage.get('total_tokens', 0)
-
-            sql = self.extract_sql(raw)
-            if not sql:
-                logger.debug("No SQL found in completion")
-                continue
-
-            metadata = self.extract_metadata(raw)
-            if not metadata:
-                logger.debug("No metadata found in completion")
-                continue
-            
-            # Validate SQL
-            is_valid, error = self.metabase.validate_sql(sql, db_id, tenant_id=tenant_id)
-            if not is_valid:
-                logger.warning(f"SQL validation failed: {error}\nFor sql: {sql}")
-                continue
-
-            # Generate fingerprint
-            try:
-                fingerprint = self.fingerprint_results(sql, db_id, tenant_id=tenant_id)
-                candidates.append((fingerprint, sql, metadata))
-            except Exception as e:
-                logger.error(f"Error generating fingerprint: {e}", exc_info=True)
-                continue
-        
-        # Prepare token usage dict
-        token_usage = {
-            "prompt_tokens": total_prompt_tokens,
-            "completion_tokens": total_completion_tokens,
-            "total_tokens": total_tokens
-        }
+        if not candidates:
+            logger.warning("No valid candidates generated")
+            return None, None, token_usage
 
         # Majority voting on fingerprints
-        if candidates:
-            fingerprints = [fp for fp, _, _ in candidates]
-            winner_fp = self.find_majority(fingerprints)
-
-            if winner_fp:
-                # Return the first candidate with winning fingerprint
-                for fp, sql, metadata in candidates:
-                    if fp == winner_fp:
-                        logger.info(f"Majority vote winner: {sql[:100]}...")
-                        return sql, metadata, token_usage
-
-            # Fallback to first valid candidate
-            logger.info("No majority, using first candidate")
-            return candidates[0][1], candidates[0][2], token_usage
-
-        logger.warning("No valid candidates generated")
-        return None, None, token_usage
+        sql, metadata = self._select_best_candidate(candidates)
+        return sql, metadata, token_usage
     
     def _check_hardcoded_examples(self, question: str) -> Optional[Tuple[str, Dict]]:
         """Check for hardcoded example queries (for demo/testing)"""
@@ -435,7 +461,7 @@ ORDER BY a."RegionalDistrict" ASC;''',
                     "visualization_options": ["bar", "pie", "map"]
                 }
             ),
-            "For indegenous organizations only": (
+            "For indigenous organizations only": (
                 '''SELECT "public"."Applications"."RegionalDistrict" AS "RegionalDistrict",
 SUM("public"."Applications"."ApprovedAmount") AS "sum"
 FROM
@@ -490,7 +516,7 @@ ORDER BY
                 # Use Azure OpenAI
                 headers = {
                     "api-key": self.config.azure_api_key,
-                    "Content-Type": "application/json"
+                    "Content-Type": CONTENT_TYPE
                 }
                 
                 endpoint = f"{self.config.azure_endpoint}/openai/deployments/{self.config.azure_deployment}/chat/completions?api-version={self.config.azure_api_version}"
@@ -506,7 +532,7 @@ ORDER BY
                 # Use standard OpenAI
                 headers = {
                     "Authorization": f"Bearer {self.config.completion_key}",
-                    "Content-Type": "application/json"
+                    "Content-Type": CONTENT_TYPE
                 }
                 
                 endpoint = self.config.completion_endpoint

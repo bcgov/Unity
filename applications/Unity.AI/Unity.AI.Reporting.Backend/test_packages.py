@@ -52,7 +52,7 @@ print()
 print('Testing aiohttp...')
 import asyncio
 async def test_aiohttp():
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession():
         print('ClientSession created successfully')
     return True
 asyncio.run(test_aiohttp())

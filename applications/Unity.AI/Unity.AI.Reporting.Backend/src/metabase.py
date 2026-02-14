@@ -176,7 +176,7 @@ class MetabaseClient:
 
         if r.status_code != 200:
             logger.error(f"Metabase API error - Status: {r.status_code}, Response: {r.text}")
-            raise Exception(f"HTTP {r.status_code}: {r.text}")
+            raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
 
         try:
             response_json = r.json()
@@ -187,13 +187,6 @@ class MetabaseClient:
             logger.error(f"Response text: {r.text}")
             raise ValueError(f"Error parsing Metabase response: {e}")
 
-        except requests.exceptions.Timeout:
-            logger.error("Metabase embedding enable request timed out")
-            raise requests.exceptions.Timeout("Metabase embedding enable request timed out")
-        except requests.exceptions.ConnectionError as e:
-            logger.error(f"Connection error enabling embedding: {e}", exc_info=True)
-            raise requests.exceptions.ConnectionError(f"Connection error enabling embedding: {e}")
-        
         return card_id
     
     def update_card_visualization(self, card_id: int, display_mode: str,
@@ -210,7 +203,7 @@ class MetabaseClient:
             tenant_id: Optional tenant ID to use tenant-specific API key
         """
         headers = self._get_headers(tenant_id)
-        visualization_settings = {
+        visualization_settings: Dict[str, Any] = {
             "graph.dimensions": x_fields,
             "graph.metrics": y_fields,
         }
@@ -234,7 +227,7 @@ class MetabaseClient:
         )
 
         if r.status_code != 200:
-            raise Exception(f"HTTP {r.status_code}: {r.text}")
+            raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
 
     def delete_card(self, card_id: int, tenant_id: Optional[str] = None) -> bool:
         """Delete a Metabase card"""
@@ -254,7 +247,7 @@ class MetabaseClient:
                 headers=headers
             )
             if r.status_code != 200:
-                raise Exception(f"HTTP {r.status_code}: {r.text}")
+                raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
 
             cards = r.json()
             return [card["id"] for card in cards]

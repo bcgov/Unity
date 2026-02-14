@@ -34,12 +34,12 @@ def get_sql(sql, db_id, metabase_url, tenant_id=None):
     return r.json()["data"]
 
 def get_worksheets():
-    sql = f'SELECT "Worksheets"."Name", "Worksheets"."Id" FROM "Flex"."Worksheets"'
+    sql = 'SELECT "Worksheets"."Name", "Worksheets"."Id" FROM "Flex"."Worksheets"'
     data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     return [{"name": r[0], "id": r[1]} for r in data["rows"]]
 
-def get_worksheet_instances(worksheetId):
-    sql = f'SELECT "WorksheetInstances"."CurrentValue", "WorksheetInstances"."WorksheetCorrelationId" FROM "Flex"."WorksheetInstances" WHERE "WorksheetInstances"."WorksheetId" = \'{worksheetId}\''
+def get_worksheet_instances(worksheet_id):
+    sql = f'SELECT "WorksheetInstances"."CurrentValue", "WorksheetInstances"."WorksheetCorrelationId" FROM "Flex"."WorksheetInstances" WHERE "WorksheetInstances"."WorksheetId" = \'{worksheet_id}\''
     data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     return data
 
@@ -103,8 +103,20 @@ def get_column_example(table, column):
     instance = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
     try:
         return instance["rows"][0][0]
-    except:
+    except (KeyError, IndexError, TypeError):
         return None
+
+def _format_table_schema(table_name, cols):
+    """Format a table's schema with column examples into a documentation string."""
+    page = f"# Reporting: {table_name}"
+    for c in cols:
+        col_name = c.split(' ')[0]
+        example = get_column_example(table_name, col_name)
+        if example is not None:
+            truncated = example[:50]
+            suffix = '...' if len(example) > 50 else ''
+            page += f"\n - {c}: '{truncated}{suffix}'"
+    return page
 
 def get_views_schemas():
     schema = requests.get(
@@ -129,20 +141,16 @@ def get_views_schemas():
             if c["name"] not in junk_cols
         ]
 
-        # Find out if there are non-blank rows 
+        # Find out if there are non-blank rows
         sql = f"SELECT * FROM \"Reporting\".\"{tbl['name']}\" "
         instance = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
         rows = [r for r in instance["rows"] if set(r[3:]) != set([''])]
-        if len(rows) > 0:
+        if not rows:
+            continue
 
-            # page = f"# Reporting: {tbl['name']}({', '.join(cols)})"
-            page = f"# Reporting: {tbl['name']}"
-            for c in cols:
-                example = get_column_example(tbl['name'], c.split(' ')[0])
-                if example is not None:
-                    page += f"\n - {c}: '{example[:50]}{'...' if len(example) > 50 else ''}'"
-            docs.append(page)
-            logger.debug(page)
+        page = _format_table_schema(tbl['name'], cols)
+        docs.append(page)
+        logger.debug(page)
 
     return docs
 

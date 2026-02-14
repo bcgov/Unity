@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -44,7 +44,7 @@ interface FeedbackSummary {
 
 @Component({
   selector: 'app-admin',
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.css']
 })
@@ -61,11 +61,12 @@ export class AdminComponent implements OnInit {
     private readonly router: Router,
     private readonly authService: AuthService,
     private readonly apiService: ApiService,
-    private readonly logger: LoggerService
+    private readonly logger: LoggerService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    await this.loadFeedback();
+  ngOnInit(): void {
+    this.loadFeedback();
   }
 
   async loadFeedback(): Promise<void> {
@@ -87,6 +88,7 @@ export class AdminComponent implements OnInit {
       this.errorMessage = 'Failed to load feedback. Please try again.';
     } finally {
       this.isLoading = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -136,6 +138,8 @@ export class AdminComponent implements OnInit {
         this.filterFeedback();
       }
       this.errorMessage = 'Failed to update feedback status. Please try again.';
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 
@@ -159,9 +163,9 @@ export class AdminComponent implements OnInit {
     const feedbackWithTokens = feedback as any;
     if (feedbackWithTokens.tokens) {
       return {
-        prompt: feedbackWithTokens.tokens.prompt_tokens || 0,
-        completion: feedbackWithTokens.tokens.completion_tokens || 0,
-        total: feedbackWithTokens.tokens.total_tokens || 0
+        prompt: feedbackWithTokens.tokens.prompt_tokens ?? 0,
+        completion: feedbackWithTokens.tokens.completion_tokens ?? 0,
+        total: feedbackWithTokens.tokens.total_tokens ?? 0
       };
     }
     return null;

@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-alert',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './alert.html',
   styleUrls: ['./alert.css']
 })

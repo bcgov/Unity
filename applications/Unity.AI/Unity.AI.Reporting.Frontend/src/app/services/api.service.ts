@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { ConfigService } from './config.service';
 import { LoggerService } from './logger.service';
@@ -11,10 +11,10 @@ import { LoggerService } from './logger.service';
 })
 export class ApiService {
   constructor(
-    private http: HttpClient,
-    private authService: AuthService,
-    private configService: ConfigService,
-    private logger: LoggerService
+    private readonly http: HttpClient,
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+    private readonly logger: LoggerService
   ) {
     this.logger.info('ApiService initialized');
     this.logConnectionDetails();

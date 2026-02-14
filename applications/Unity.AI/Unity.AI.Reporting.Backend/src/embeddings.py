@@ -7,6 +7,7 @@ import time
 from typing import List, Optional
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
+from pydantic import SecretStr
 from langchain_postgres import PGVector
 from config import config
 from database import db_manager
@@ -41,10 +42,42 @@ class SchemaExtractor:
             result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
             if result["rows"]:
                 return str(result["rows"][0][0])
-        except:
-            pass
+        except (KeyError, IndexError, TypeError):
+            pass  # No example value available for this column
         return None
     
+    def _should_skip_table(self, table: dict, schema_type: str) -> bool:
+        """Check if a table should be excluded based on schema type and exclusion rules."""
+        if table["name"] in self.junk_tables:
+            return True
+        if schema_type == "public" and table["schema"] != "public":
+            return True
+        if schema_type == "custom" and "Worksheet" not in table["name"]:
+            return True
+        return False
+
+    def _has_data(self, schema_name: str, table_name: str, db_id: int,
+                  tenant_id: Optional[str] = None) -> bool:
+        """Check if a table has at least one row of data."""
+        sql = f'SELECT * FROM "{schema_name}"."{table_name}" LIMIT 1'
+        result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
+        return bool(result["rows"])
+
+    def _format_schema_with_examples(self, schema_name: str, table_name: str,
+                                     columns: List[str], db_id: int,
+                                     tenant_id: Optional[str] = None) -> str:
+        """Build a schema description string with example values for each column."""
+        page = f'# "{schema_name}"."{table_name}"'
+        for col in columns:
+            col_name = col.split(' ')[0]
+            is_text = 'Text' in col
+            example = self.get_column_example(is_text, schema_name, table_name, col_name, db_id,
+                                              tenant_id=tenant_id)
+            if example:
+                truncated = example[:50] + '...' if len(example) > 50 else example
+                page += f"\n - {col}: '{truncated}'"
+        return page
+
     def extract_schemas(self, db_id: int, schema_type: str = "public",
                         tenant_id: Optional[str] = None) -> List[str]:
         """
@@ -60,50 +93,32 @@ class SchemaExtractor:
         """
         metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
         docs = []
-        
+        schema_name = "Reporting" if schema_type == "custom" else "public"
+
         for table in metadata["tables"]:
             # Filter tables based on schema type and exclusion rules
-            if table["name"] in self.junk_tables:
+            if self._should_skip_table(table, schema_type):
                 continue
-            
-            if schema_type == "public" and table["schema"] != "public":
-                continue
-            elif schema_type == "custom" and "Worksheet" not in table["name"]:
-                continue
-            
+
             # Extract non-junk columns
             columns = [
                 f"{field['name']} ({field['base_type']})"
                 for field in table["fields"]
                 if field["name"] not in self.junk_columns
             ]
-            
-            # Check if table has data
-            schema_name = "Reporting" if schema_type == "custom" else "public"
-            sql = f'SELECT * FROM "{schema_name}"."{table["name"]}" LIMIT 1'
-            
-            try:
-                result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
-                if result["rows"]:
-                    # Build schema description with examples
-                    page = f'# "{schema_name}"."{table["name"]}"'
 
-                    for col in columns:
-                        col_name = col.split(' ')[0]
-                        is_text = 'Text' in col
-                        example = self.get_column_example(
-                            is_text, schema_name, table["name"], col_name, db_id,
-                            tenant_id=tenant_id
-                        )
-                        if example:
-                            truncated = example[:50] + '...' if len(example) > 50 else example
-                            page += f"\n - {col}: '{truncated}'"
-                    
-                    docs.append(page)
-                    logger.debug(f"Extracted schema for {table['name']}")
+            try:
+                # Check if table has data
+                if not self._has_data(schema_name, table["name"], db_id, tenant_id=tenant_id):
+                    continue
+                # Build schema description with examples
+                page = self._format_schema_with_examples(schema_name, table["name"], columns, db_id,
+                                                         tenant_id=tenant_id)
+                docs.append(page)
+                logger.debug(f"Extracted schema for {table['name']}")
             except Exception as e:
                 logger.error(f"Error processing table {table['name']}: {e}", exc_info=True)
-        
+
         return docs
 
 
@@ -115,14 +130,14 @@ class EmbeddingManager:
         if config.ai.use_azure:
             self.embedding_model = AzureOpenAIEmbeddings(
                 azure_endpoint=config.ai.azure_endpoint,
-                api_key=config.ai.azure_api_key,
+                api_key=SecretStr(config.ai.azure_api_key),
                 azure_deployment=config.ai.azure_embedding_deployment,
                 api_version=config.ai.azure_api_version
             )
         else:
             self.embedding_model = OpenAIEmbeddings(
                 model=config.ai.embedding_model,
-                api_key=config.ai.completion_key
+                api_key=SecretStr(config.ai.completion_key)
             )
 
         self.vector_store = PGVector(
@@ -159,7 +174,8 @@ class EmbeddingManager:
                         time.sleep(0.5 * (attempt + 1))  # Exponential backoff
                         continue
                 raise
-    
+        return None
+
     def embed_schemas(self, db_id: int, schema_types: Optional[List[str]] = None,
                       tenant_id: Optional[str] = None):
         """
@@ -225,7 +241,8 @@ class EmbeddingManager:
                 k=k_public,
                 filter={"db_id": db_id, "schema_type": "public"}
             )
-            retrieved.extend(public_results)
+            if public_results:
+                retrieved.extend(public_results)
 
         # Get custom schemas if enabled with retry
         if k_custom > 0 and config.app.embed_worksheets:
@@ -235,7 +252,8 @@ class EmbeddingManager:
                 k=k_custom,
                 filter={"db_id": db_id, "schema_type": "custom"}
             )
-            retrieved.extend(custom_results)
+            if custom_results:
+                retrieved.extend(custom_results)
 
         return retrieved
     

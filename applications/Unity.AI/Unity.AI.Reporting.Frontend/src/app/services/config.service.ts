@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface AppConfig {
   apiUrl?: string;
@@ -16,7 +17,7 @@ export interface AppConfig {
 export class ConfigService {
   private config: AppConfig | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   /**
    * Load configuration from build-info.json
@@ -32,24 +33,22 @@ export class ConfigService {
         this.http.get<AppConfig>('/build-info.json')
       );
 
-      // Use default /api if not specified (for combined container)
-      if (!this.config.apiUrl) {
-        this.config.apiUrl = '/api';
-      }
+      // Use environment apiUrl if not specified in build-info.json
+      this.config.apiUrl ??= environment.apiUrl;
 
       console.log('✓ Configuration loaded successfully from /build-info.json');
       console.log('  API URL:', this.config.apiUrl);
       console.log('  Environment:', this.config.environment);
       console.log('  Version:', this.config.version);
-      console.log('  Revision:', this.config.revision || 'N/A');
-      console.log('  Build Date:', this.config.buildDate || 'N/A');
+      console.log('  Revision:', this.config.revision ?? 'N/A');
+      console.log('  Build Date:', this.config.buildDate ?? 'N/A');
       console.log('=========================================');
     } catch (error) {
       console.error('✗ Failed to load configuration from /build-info.json:', error);
-      // Fallback to default config
+      // Fallback to environment config
       this.config = {
-        apiUrl: '/api',
-        environment: 'production',
+        apiUrl: environment.apiUrl,
+        environment: environment.production ? 'production' : 'development',
         version: 'unknown'
       };
       console.warn('Using fallback configuration:');
@@ -74,7 +73,7 @@ export class ConfigService {
    * Get the API URL
    */
   get apiUrl(): string {
-    return this.getConfig().apiUrl || '/api';
+    return this.getConfig().apiUrl ?? environment.apiUrl;
   }
 
   /**
@@ -122,7 +121,7 @@ export class ConfigService {
       const response = await firstValueFrom(
         this.http.get<{iframe_origins: string[]}>('/api/iframe-origins')
       );
-      this._iframeOrigins = response.iframe_origins || [];
+      this._iframeOrigins = response.iframe_origins ?? [];
     } catch (error) {
       console.error('✗ Failed to load iframe origins:', error);
       // No fallback - if API fails, no origins are allowed (fail secure)

@@ -13,11 +13,11 @@ export interface Toast {
   providedIn: 'root'
 })
 export class ToastService {
-  private toastsSubject = new BehaviorSubject<Toast[]>([]);
+  private readonly toastsSubject = new BehaviorSubject<Toast[]>([]);
   public toasts$ = this.toastsSubject.asObservable();
 
   private generateId(): string {
-    return Math.random().toString(36).substr(2, 9);
+    return Math.random().toString(36).substring(2, 11);
   }
 
   show(message: string, type: Toast['type'] = 'info', duration: number = 2500): string {

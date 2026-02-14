@@ -15,6 +15,36 @@ if os.path.exists(os.path.join(FRONTEND_DIR, 'browser')):
     FRONTEND_DIR = os.path.join(FRONTEND_DIR, 'browser')
 
 
+def _is_path_traversal(path):
+    """Security: Check if a path attempts directory traversal."""
+    return '..' in path or path.startswith('/')
+
+
+def _try_serve_file(path):
+    """Try to serve a specific static file, returning a response or None."""
+    try:
+        # Verify the resolved path is within FRONTEND_DIR
+        # send_from_directory has built-in path traversal protection
+        requested_path = os.path.join(FRONTEND_DIR, path)
+        real_path = os.path.realpath(requested_path)
+        real_frontend = os.path.realpath(FRONTEND_DIR)
+
+        if real_path.startswith(real_frontend) and os.path.isfile(real_path):
+            return send_from_directory(FRONTEND_DIR, path)
+    except (OSError, ValueError) as e:
+        logger.warning(f"Error serving file {path}: {e}")
+        # Fall through to serve index.html
+    return None
+
+
+def _serve_index():
+    """Serve index.html for Angular client-side routing."""
+    index_path = os.path.join(FRONTEND_DIR, 'index.html')
+    if os.path.exists(index_path):
+        return send_file(index_path)
+    return f"Error: index.html not found at {index_path}", 500
+
+
 def add_static_routes(app):
     """Add routes to serve static frontend files"""
 
@@ -30,30 +60,17 @@ def add_static_routes(app):
             return None  # Let Flask handle 404
 
         # Security: Validate path to prevent directory traversal
-        if path and ('..' in path or path.startswith('/')):
+        if path and _is_path_traversal(path):
             logger.warning(f"Rejected potentially malicious path: {path}")
             return "Invalid path", 400
 
         # Try to serve the requested file
-        # send_from_directory has built-in path traversal protection
         if path:
-            try:
-                # Verify the resolved path is within FRONTEND_DIR
-                requested_path = os.path.join(FRONTEND_DIR, path)
-                real_path = os.path.realpath(requested_path)
-                real_frontend = os.path.realpath(FRONTEND_DIR)
-
-                if real_path.startswith(real_frontend) and os.path.isfile(real_path):
-                    return send_from_directory(FRONTEND_DIR, path)
-            except (OSError, ValueError) as e:
-                logger.warning(f"Error serving file {path}: {e}")
-                # Fall through to serve index.html
+            response = _try_serve_file(path)
+            if response:
+                return response
 
         # For Angular routes, always serve index.html
-        index_path = os.path.join(FRONTEND_DIR, 'index.html')
-        if os.path.exists(index_path):
-            return send_file(index_path)
-        else:
-            return f"Error: index.html not found at {index_path}", 500
+        return _serve_index()
 
     logger.info(f"Static file routes configured. Serving from: {FRONTEND_DIR}")
