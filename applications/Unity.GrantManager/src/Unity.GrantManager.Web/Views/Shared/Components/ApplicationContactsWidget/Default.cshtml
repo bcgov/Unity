@@ -16,6 +16,11 @@
     <abp-script src="/Pages/ApplicationContact/EditContactModal.js" />
 }
 
+@{
+    bool IsAdditionalContactAddable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Create);
+    bool IsAdditionalContactEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update);
+}
+
 <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
 <input id="ApplicationContactsWidget_ApplicationId" value="@Model.ApplicationId" type="hidden"/>
 @if (Model.ApplicationContacts.Count > 0) {
@@ -52,10 +57,12 @@
                     </div>
                 }
             </div>
-            @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update))
+            @if (IsAdditionalContactEditable)
             {
                 <div class="pe-2">
-                    <abp-button id="@contact.Id" data-id="@contact.Id" class="contact-edit-btn" icon-type="Other" icon="fl fl-edit"
+                    <abp-button id="@contact.Id" data-id="@contact.Id" class="contact-edit-btn"
+                        icon-type="Other"
+                        icon="fl fl-edit"
                         button-type="Light" />
                 </div>
             }
@@ -64,7 +71,7 @@
     </div>
 }
 
-@if (await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Create))
+@if (IsAdditionalContactAddable)
 {
     <div class="d-flex justify-content-end">
         <abp-button text="Add Contact" id="CreateContactButton" class="create_contact_btn" 

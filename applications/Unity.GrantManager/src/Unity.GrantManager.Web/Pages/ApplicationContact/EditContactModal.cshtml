@@ -10,9 +10,9 @@
     Layout = null;
 }
 
-@section scripts {
-    <abp-script src="/Pages/ApplicationContact/EditContactModal.js" />
-}
+
+@* NOTE: Dependency /Pages/ApplicationContact/EditContactModal.js is included through ApplicationContactsWidget *@
+
 
 <abp-dynamic-form abp-model="ContactForm" asp-page="/ApplicationContact/EditContactModal" >
     <abp-modal>

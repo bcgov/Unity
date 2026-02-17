@@ -30,7 +30,6 @@
         });
 
     bool IsViewEditable = !updatePermissionResult.AllProhibited;
-    bool IsAdditionalContactAddable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Create);
     bool IsAdditionalContactEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update);
     bool IsAssignApplicant = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.AssignApplicant);
     bool IsLookupEnabled = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.Summary.Update);

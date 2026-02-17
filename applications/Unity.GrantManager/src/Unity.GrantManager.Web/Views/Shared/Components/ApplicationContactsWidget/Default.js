@@ -11,7 +11,7 @@
     _createContactModal.onResult(function () {
         PubSub.publish("refresh_application_contacts");
         abp.notify.success(
-            'The application contact have been successfully added.',
+            'The application contact has been successfully added.',
             'Application Contacts'
         );
     });
@@ -19,7 +19,7 @@
     _editContactModal.onResult(function () {
         PubSub.publish("refresh_application_contacts");
         abp.notify.success(
-            'The application contact have been successfully updated.',
+            'The application contact has been successfully updated.',
             'Application Contacts'
         );
     });
@@ -59,7 +59,6 @@
                     applicantContactsWidgetToken = null;
                 }
 
-                // Subscribe to the applicant_info_merged event and store the token
                 applicantContactsWidgetToken = PubSub.subscribe(
                     'refresh_application_contacts',
                     () => {
@@ -67,15 +66,20 @@
                     }
                 );
 
+                // Prevent duplicate delegated click handlers on re-init by removing any
+                // existing handlers in this widget's namespace before re-binding.
+                $wrapper.off('click.ApplicationContactsWidget', '#CreateContactButton');
+                $wrapper.off('click.ApplicationContactsWidget', '.contact-edit-btn');
+
                 // Handle Add Contact button click
-                $wrapper.on('click', '#CreateContactButton', function (e) {
+                $wrapper.on('click.ApplicationContactsWidget', '#CreateContactButton', function (e) {
                     e.preventDefault();
                     _createContactModal.open({
-                        applicationId: $('#ApplicationContactsWidget_ApplicationId').val()
+                        applicationId: self.applicationId || $wrapper.find('#ApplicationContactsWidget_ApplicationId').val()
                     });
                 });
 
-                $wrapper.on('click', '.contact-edit-btn', function (e) {
+                $wrapper.on('click.ApplicationContactsWidget', '.contact-edit-btn', function (e) {
                     e.preventDefault();
                     let itemId = $(this).data('id');
                     _editContactModal.open({
@@ -90,12 +94,7 @@
 
     // Initialize the ApplicationContactsWidget manager with filter callback
     let applicationContactsWidgetManager = new abp.WidgetManager({
-        wrapper: '.abp-widget-wrapper[data-widget-name="ApplicationContactsWidget"]',
-        filterCallback: function () {
-            return {
-                'applicationId': $('#ApplicationContactsWidget_ApplicationId').val()
-            };
-        }
+        wrapper: '.abp-widget-wrapper[data-widget-name="ApplicationContactsWidget"]'
     });
 
     // Initialize the widget
