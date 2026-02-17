@@ -13,7 +13,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
         RefreshUrl = "Widgets/ApplicationContacts/RefreshApplicationContacts",
         ScriptTypes = new[] { typeof(ApplicationContactsWidgetScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicationContactsWidgetStyleBundleContributor) },
-        AutoInitialize = true)]
+        AutoInitialize = false)]
     public class ApplicationContactsWidgetViewComponent : AbpViewComponent
     {
         private readonly IApplicationContactService _applicationContactService;
@@ -23,13 +23,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
             _applicationContactService = applicationContactService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Boolean isReadOnly)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
             List<ApplicationContactDto> applicationContacts = await _applicationContactService.GetListByApplicationAsync(applicationId);
             ApplicationContactsWidgetViewModel model = new() {
                 ApplicationContacts = applicationContacts,
-                ApplicationId = applicationId,
-                IsReadOnly = isReadOnly
+                ApplicationId = applicationId
             };
 
             return View(model);
@@ -52,7 +51,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
             context.Files
               .AddIfNotContains("/Views/Shared/Components/ApplicationContactsWidget/Default.js");
             context.Files
-              .AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
+              .AddIfNotContains("/Pages/ApplicationContact/EditContactModal.js");
         }
     }
 }

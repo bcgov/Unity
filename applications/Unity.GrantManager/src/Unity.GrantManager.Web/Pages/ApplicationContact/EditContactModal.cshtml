@@ -10,6 +10,10 @@
     Layout = null;
 }
 
+@section scripts {
+    <abp-script src="/Pages/ApplicationContact/EditContactModal.js" />
+}
+
 <abp-dynamic-form abp-model="ContactForm" asp-page="/ApplicationContact/EditContactModal" >
     <abp-modal>
         <abp-modal-header title="@L["ApplicationContact:EditTitle"].Value"></abp-modal-header>

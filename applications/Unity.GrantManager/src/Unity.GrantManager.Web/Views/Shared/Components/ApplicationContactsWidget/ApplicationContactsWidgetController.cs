@@ -15,14 +15,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
 
         [HttpGet]
         [Route("RefreshApplicationContacts")]
-        public IActionResult ApplicationContacts(Guid applicationId, Boolean isReadOnly = false)
+        public IActionResult ApplicationContacts(Guid applicationId)
         { 
             if (!ModelState.IsValid)
             {
                 logger.LogWarning("Invalid model state for ApplicationContactsWidgetController: RefreshApplicationContacts");
                 return ViewComponent("ApplicationContactsWidget");
             }
-            return ViewComponent("ApplicationContactsWidget", new { applicationId, isReadOnly });
+            return ViewComponent("ApplicationContactsWidget", new { applicationId });
         }
     }
 }
