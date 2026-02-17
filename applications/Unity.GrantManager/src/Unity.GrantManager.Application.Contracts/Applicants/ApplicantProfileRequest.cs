@@ -4,12 +4,13 @@ namespace Unity.GrantManager.Applicants
 {
     public class ApplicantProfileRequest
     {
-        public Guid ProfileId { get; set; } = Guid.NewGuid();
-        public string Subject { get; set; } = string.Empty;
+        public Guid ProfileId { get; set; } = Guid.Empty;
+        public string Subject { get; set; } = string.Empty;        
     }
 
-    public class TenantedApplicantProfileRequest : ApplicantProfileRequest
+    public class ApplicantProfileInfoRequest : ApplicantProfileRequest
     {
-        public Guid TenantId { get; set; }
+        public Guid TenantId { get; set; } = Guid.Empty;
+        public string Key { get; set; } = string.Empty;
     }
 }

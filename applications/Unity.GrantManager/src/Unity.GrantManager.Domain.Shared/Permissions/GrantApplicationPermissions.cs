@@ -105,6 +105,22 @@ namespace Unity.GrantManager.Permissions
             public const string DeleteAdditionalContact = Default + ".AdditionalContact" + Operation.Delete;
         }
 
+        public static class Payments
+        {
+            public const string Default = GroupName + ".Payments";
+            public const string Create = Default + ".Create";
+            public const string Edit = Default + ".Edit";
+            public const string Delete = Default + ".Delete";
+            
+            public static class PaymentRequests
+            {
+                public const string PaymentRequestDefault = Payments.Default + ".PaymentRequests";
+                public const string CreatePaymentRequest = Default + ".Create";
+                public const string EditPaymentRequest = Default + ".Edit";
+                public const string DeletePaymentRequest = Default + ".Delete";
+            }
+        }
+
         public static string[] GetAll()
         {
             return ReflectionHelper.GetPublicConstantsRecursively(typeof(GrantApplicationPermissions));
