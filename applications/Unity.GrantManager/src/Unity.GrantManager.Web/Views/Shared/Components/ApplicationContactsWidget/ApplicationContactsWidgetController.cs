@@ -20,7 +20,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
             if (!ModelState.IsValid)
             {
                 logger.LogWarning("Invalid model state for ApplicationContactsWidgetController: RefreshApplicationContacts");
-                return ViewComponent("ApplicationContactsWidget");
+                return ViewComponent("ApplicationContactsWidget", new { applicationId });
             }
             return ViewComponent("ApplicationContactsWidget", new { applicationId });
         }
