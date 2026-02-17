@@ -64,7 +64,7 @@ namespace Unity.GrantManager.Components
             };
 
             //Act
-            var result = await viewComponent.InvokeAsync(applicationId, true) as ViewViewComponentResult;
+            var result = await viewComponent.InvokeAsync(applicationId) as ViewViewComponentResult;
             ApplicationContactsWidgetViewModel? resultModel;
 
             resultModel = result!.ViewData!.Model! as ApplicationContactsWidgetViewModel;
