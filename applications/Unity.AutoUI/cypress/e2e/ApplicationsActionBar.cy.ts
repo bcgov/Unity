@@ -1,512 +1,261 @@
 /// <reference types="cypress" />
 
-// cypress/e2e/chefsdata.cy.ts
+import { loginIfNeeded } from "../support/auth";
+import { ApplicationsListPage } from "../pages/ApplicationDetailsPage";
 
-describe('Unity Login and check data from CHEFS', () => {
-    const STANDARD_TIMEOUT = 20000
+describe("Unity Login and check data from CHEFS", () => {
+  const page = new ApplicationsListPage();
 
-    function switchToDefaultGrantsProgramIfAvailable() {
-        cy.get('body').then(($body) => {
-            const hasUserInitials = $body.find('.unity-user-initials').length > 0
+  // Column visibility test data - organized by scroll position for maintainability
+  const COLUMN_VISIBILITY_DATA = {
+    scrollPosition0: [
+      "Applicant Name",
+      "Category",
+      "Submission #",
+      "Submission Date",
+      "Status",
+      "Sub-Status",
+      "Community",
+      "Requested Amount",
+      "Approved Amount",
+      "Project Name",
+      "Applicant Id",
+    ],
+    scrollPosition1500: [
+      "Tags",
+      "Assignee",
+      "SubSector",
+      "Economic Region",
+      "Regional District",
+      "Registered Organization Number",
+      "Org Book Status",
+    ],
+    scrollPosition3000: [
+      "Project Start Date",
+      "Project End Date",
+      "Projected Funding Total",
+      "Total Paid Amount $",
+      "Project Electoral District",
+      "Applicant Electoral District",
+    ],
+    scrollPosition4500: [
+      "Forestry or Non-Forestry",
+      "Forestry Focus",
+      "Acquisition",
+      "City",
+      "Community Population",
+      "Likelihood of Funding",
+      "Total Score",
+    ],
+    scrollPosition6000: [
+      "Assessment Result",
+      "Recommended Amount",
+      "Due Date",
+      "Owner",
+      "Decision Date",
+      "Project Summary",
+      "Organization Type",
+      "Business Number",
+    ],
+    scrollPosition7500: [
+      "Due Diligence Status",
+      "Decline Rationale",
+      "Contact Full Name",
+      "Contact Title",
+      "Contact Email",
+      "Contact Business Phone",
+      "Contact Cell Phone",
+    ],
+    scrollPosition9000: [
+      "Signing Authority Full Name",
+      "Signing Authority Title",
+      "Signing Authority Email",
+      "Signing Authority Business Phone",
+      "Signing Authority Cell Phone",
+      "Place",
+      "Risk Ranking",
+      "Notes",
+      "Red-Stop",
+      "Indigenous",
+      "FYE Day",
+      "FYE Month",
+      "Payout",
+      "Unity Application Id",
+    ],
+  };
 
-            if (!hasUserInitials) {
-                cy.log('Skipping tenant switch: no user initials menu found')
-                return
-            }
+  // Columns to toggle during the test - organized for scalability
+  const COLUMNS_TO_TOGGLE = {
+    // Columns that need single toggle (off by default, turn on)
+    singleToggle: [
+      "% of Total Project Budget",
+      "Acquisition",
+      "Applicant Electoral District",
+      "Assessment Result",
+      "Business Number",
+      "City",
+      "Community Population",
+      "Contact Business Phone",
+      "Contact Cell Phone",
+      "Contact Email",
+      "Contact Full Name",
+      "Contact Title",
+      "Decision Date",
+      "Decline Rationale",
+      "Due Date",
+      "Due Diligence Status",
+      "Economic Region",
+      "Forestry Focus",
+      "Forestry or Non-Forestry",
+      "FYE Day",
+      "FYE Month",
+      "Indigenous",
+      "Likelihood of Funding",
+      "Non-Registered Organization Name",
+      "Notes",
+      "Org Book Status",
+      "Organization Type",
+      "Other Sector/Sub/Industry Description",
+      "Owner",
+      "Payout",
+      "Place",
+      "Project Electoral District",
+      "Project End Date",
+      "Project Start Date",
+      "Project Summary",
+      "Projected Funding Total",
+      "Recommended Amount",
+      "Red-Stop",
+      "Regional District",
+      "Registered Organization Name",
+      "Registered Organization Number",
+      "Risk Ranking",
+      "Sector",
+      "Signing Authority Business Phone",
+      "Signing Authority Cell Phone",
+      "Signing Authority Email",
+      "Signing Authority Full Name",
+      "Signing Authority Title",
+      "SubSector",
+      "Total Paid Amount $",
+      "Total Project Budget",
+      "Total Score",
+      "Unity Application Id",
+    ],
+    // Columns that need double toggle (on by default, toggle off then on)
+    doubleToggle: [
+      "Applicant Id",
+      "Applicant Name",
+      "Approved Amount",
+      "Assignee",
+      "Category",
+      "Community",
+      "Project Name",
+      "Requested Amount",
+      "Status",
+      "Sub-Status",
+      "Submission #",
+      "Submission Date",
+      "Tags",
+    ],
+  };
 
-            cy.get('.unity-user-initials').click()
+  // TEST renders the Submission tab inside an open shadow root (Form.io).
+  // Enabling this makes cy.get / cy.contains pierce shadow DOM consistently across envs.
+  before(() => {
+    Cypress.config("includeShadowDom", true);
+    loginIfNeeded({ timeout: 20000 });
+  });
 
-            cy.get('body').then(($body2) => {
-                const switchLink = $body2.find('#user-dropdown a.dropdown-item').filter((_, el) => {
-                    return (el.textContent || '').trim() === 'Switch Grant Programs'
-                })
+  it("Switch to Default Grants Program if available", () => {
+    page.switchToGrantProgram("Default Grants Program");
+  });
 
-                if (switchLink.length === 0) {
-                    cy.log('Skipping tenant switch: "Switch Grant Programs" not present for this user/session')
-                    cy.get('body').click(0, 0)
-                    return
-                }
+  it("Tests the existence and functionality of the Submitted Date From and Submitted Date To filters", () => {
+    // Set date filters using page object methods
+    page
+      .setSubmittedFromDate("2022-01-01")
+      .waitForTableRefresh()
+      .setSubmittedToDate(page.getTodayIsoLocal())
+      .waitForTableRefresh();
+  });
 
-                cy.wrap(switchLink.first()).click()
+  // With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
+  it("Verify the action buttons are visible with no rows selected", () => {
+    // Placeholder for future implementation
+  });
 
-                cy.url({ timeout: STANDARD_TIMEOUT }).should('include', '/GrantPrograms')
+  // With one row selected verify the visibility of Filter, Export, Save View, and Columns.
+  it("Verify the action buttons are visible with one row selected", () => {
+    // Placeholder for future implementation
+  });
 
-                cy.get('#search-grant-programs', { timeout: STANDARD_TIMEOUT })
-                    .should('be.visible')
-                    .clear()
-                    .type('Default Grants Program')
+  it("Clicks Payment and force-closes the modal", () => {
+    // Ensure table has data and select two rows using page object
+    page
+      .verifyTableHasData()
+      .selectMultipleRows([0, 1])
+      .verifyActionBarExists()
+      .clickPaymentButton()
+      .waitForPaymentModalVisible()
+      .closePaymentModal()
+      .verifyPaymentModalClosed();
 
-                // Flatten nested `within` usage to satisfy S2004 (limit nesting depth)
-                cy.contains('#UserGrantProgramsTable tbody tr', 'Default Grants Program', { timeout: STANDARD_TIMEOUT })
-                    .should('exist')
-                    .within(() => {
-                        cy.contains('button', 'Select')
-                            .should('be.enabled')
-                            .click()
-                    })
+    // Verify right-side buttons are still usable
+    page
+      .verifyDynamicButtonContainerExists()
+      .verifyExportButtonVisible()
+      .verifySaveViewButtonVisible()
+      .verifyColumnsButtonVisible();
+  });
 
-                cy.location('pathname', { timeout: STANDARD_TIMEOUT }).should((p) => {
-                    expect(p.indexOf('/GrantApplications') >= 0 || p.indexOf('/auth/') >= 0).to.eq(true)
-                })
-            })
-        })
-    }
+  // Walk the Columns menu and toggle each column on, verifying the column is visible.
+  it("Verify all columns in the menu are visible when and toggled on.", () => {
+    // Reset to default view and open columns menu
+    page.closeOpenDropdowns().resetToDefaultView().openColumnsMenu();
 
+    // Toggle all single-toggle columns (off by default, turn on)
+    page.toggleColumns(COLUMNS_TO_TOGGLE.singleToggle);
 
-    // TEST renders the Submission tab inside an open shadow root (Form.io).
-    // Enabling this makes cy.get / cy.contains pierce shadow DOM consistently across envs.
-    before(() => {
-        Cypress.config('includeShadowDom', true)
-    })
-
-    it('Verify Login', () => {
-        // 1.) Always start from the base URL
-        cy.visit(Cypress.env('webapp.url'))
-
-        // 2.) Decide auth path based on visible UI
-        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
-            // Already authenticated
-            if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
-                cy.contains('VIEW APPLICATIONS', { timeout: STANDARD_TIMEOUT }).click({ force: true })
-                return
-            }
-
-            // Not authenticated
-            if ($body.find('button:contains("LOGIN")').length > 0) {
-                cy.contains('LOGIN', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
-                cy.contains('IDIR', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
-
-                cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($loginBody) => {
-                    // Perform IDIR login only if prompted
-                    if ($loginBody.find('#user').length > 0) {
-                        cy.get('#user', { timeout: STANDARD_TIMEOUT }).type(Cypress.env('test1username'))
-                        cy.get('#password', { timeout: STANDARD_TIMEOUT }).type(Cypress.env('test1password'))
-                        cy.contains('Continue', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
-                    } else {
-                        cy.log('Already logged in')
-                    }
-                })
-
-                return
-            }
-
-            // Fail loudly if neither state is detectable
-            throw new Error('Unable to determine authentication state')
-        })
-
-        // 3.) Post-condition check
-        cy.url({ timeout: STANDARD_TIMEOUT }).should('include', '/GrantApplications')
-    })
-
-    it('Switch to Default Grants Program if available', () => {
-        switchToDefaultGrantsProgramIfAvailable()
-    })
-
-    it('Handle IDIR if required', () => {
-        cy.get('body').then(($body) => {
-            if ($body.find('#social-idir').length > 0) {
-                cy.get('#social-idir').should('be.visible').click()
-            }
-        })
-
-        cy.location('pathname', { timeout: 30000 }).should('include', '/GrantApplications')
-    })
-
-    it('Tests the existence and functionality of the Submitted Date From and Submitted Date To filters', () => {
-
-        const pad2 = (n: number) => String(n).padStart(2, '0');
-
-        const todayIsoLocal = () => {
-            const d = new Date();
-            return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-        };
-
-        const waitForRefresh = () => {
-            // S3923 fix: remove identical branches; assert spinner is hidden when present.
-            cy.get('div.spinner-grow[role="status"]', { timeout: STANDARD_TIMEOUT })
-                .then(($s) => {
-                    cy.wrap($s).should('have.attr', 'style').and('contain', 'display: none');
-                });
-        };
-
-        // --- Submitted Date From ---
-        cy.get('input#submittedFromDate', { timeout: STANDARD_TIMEOUT })
-            .click({ force: true })
-            .clear({ force: true })
-            .type('2022-01-01', { force: true })
-            .trigger('change', { force: true })
-            .blur({ force: true })
-            .should('have.value', '2022-01-01');
-
-        waitForRefresh();
-
-        // --- Submitted Date To ---
-        const today = todayIsoLocal();
-
-        cy.get('input#submittedToDate', { timeout: STANDARD_TIMEOUT })
-            .click({ force: true })
-            .clear({ force: true })
-            .type(today, { force: true })
-            .trigger('change', { force: true })
-            .blur({ force: true })
-            .should('have.value', today);
-
-        waitForRefresh();
-
+    // Toggle all double-toggle columns (toggle twice to ensure visibility)
+    COLUMNS_TO_TOGGLE.doubleToggle.forEach((column) => {
+      page.clickColumnsItem(column).clickColumnsItem(column);
     });
 
-    //  With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
-    it('Verify the action buttons are visible with no rows selected', () => {
+    // Close the columns menu
+    page.closeColumnsMenu();
 
-    })
+    // Verify columns by scrolling through the table horizontally
+    page
+      .scrollTableHorizontally(0)
+      .assertVisibleHeadersInclude(COLUMN_VISIBILITY_DATA.scrollPosition0);
 
-    //  With one row selected verify the visibility of Filter, Export, Save View, and Columns.
-    it('Verify the action buttons are visible with one row selected', () => {
+    page
+      .scrollTableHorizontally(1500)
+      .assertVisibleHeadersInclude(COLUMN_VISIBILITY_DATA.scrollPosition1500);
 
-    })
+    page
+      .scrollTableHorizontally(3000)
+      .assertVisibleHeadersInclude(COLUMN_VISIBILITY_DATA.scrollPosition3000);
 
-    it('Clicks Payment and force-closes the modal', () => {
-        const BUTTON_TIMEOUT = 60000;
+    page
+      .scrollTableHorizontally(4500)
+      .assertVisibleHeadersInclude(COLUMN_VISIBILITY_DATA.scrollPosition4500);
 
-        // Ensure table has rows
-        cy.get('.dt-scroll-body tbody tr', { timeout: STANDARD_TIMEOUT })
-            .should('have.length.greaterThan', 1);
+    page
+      .scrollTableHorizontally(6000)
+      .assertVisibleHeadersInclude(COLUMN_VISIBILITY_DATA.scrollPosition6000);
 
-        // Select two rows using non-link cells
-        const clickSelectableCell = (rowIdx: number, withCtrl = false) => {
-            cy.get('.dt-scroll-body tbody tr', { timeout: STANDARD_TIMEOUT })
-                .eq(rowIdx)
-                .find('td')
-                .not(':has(a)')
-                .first()
-                .click({ force: true, ctrlKey: withCtrl });
-        };
-        clickSelectableCell(0);
-        clickSelectableCell(1, true);
+    page
+      .scrollTableHorizontally(7500)
+      .assertVisibleHeadersInclude(COLUMN_VISIBILITY_DATA.scrollPosition7500);
 
-        // ActionBar
-        cy.get('#app_custom_buttons', { timeout: STANDARD_TIMEOUT })
-            .should('exist')
-            .scrollIntoView();
+    page
+      .scrollTableHorizontally(9000)
+      .assertVisibleHeadersInclude(COLUMN_VISIBILITY_DATA.scrollPosition9000);
+  });
 
-        // Click Payment
-        cy.get('#applicationPaymentRequest', { timeout: BUTTON_TIMEOUT })
-            .should('be.visible')
-            .and('not.be.disabled')
-            .click({ force: true });
-
-        // Wait until modal is shown
-        cy.get('#payment-modal', { timeout: STANDARD_TIMEOUT })
-            .should('be.visible')
-            .and('have.class', 'show');
-
-        // Attempt graceful closes first
-        cy.get('body').type('{esc}', { force: true }); // Bootstrap listens to ESC
-        cy.get('.modal-backdrop', { timeout: STANDARD_TIMEOUT }).then(($bd) => {
-            if ($bd.length) {
-                cy.wrap($bd).click('topLeft', { force: true });
-            }
-        });
-
-        // Try footer Cancel if available (avoid .catch on Cypress chainable)
-        cy.contains('#payment-modal .modal-footer button', 'Cancel', { timeout: STANDARD_TIMEOUT })
-            .then(($btn) => {
-                if ($btn && $btn.length > 0) {
-                    cy.wrap($btn).scrollIntoView().click({ force: true });
-                } else {
-                    cy.log('Cancel button not present, proceeding to hard-close fallback');
-                }
-            });
-
-        // Use window API (if present), then hard-close fallback
-        cy.window().then((win: any) => {
-            try {
-                if (typeof win.closePaymentModal === 'function') {
-                    win.closePaymentModal();
-                }
-            } catch { /* ignore */ }
-
-            // HARD CLOSE: forcibly hide modal and remove backdrop
-            const $ = (win as any).jQuery || (win as any).$;
-            if ($) {
-                try {
-                    $('#payment-modal')
-                        .removeClass('show')
-                        .attr('aria-hidden', 'true')
-                        .css('display', 'none');
-                    $('.modal-backdrop').remove();
-                    $('body').removeClass('modal-open').css('overflow', ''); // restore scroll
-                } catch { /* ignore */ }
-            }
-        });
-
-        // Verify modal/backdrop gone (be tolerant: assert non-interference instead of visibility only)
-        cy.get('#payment-modal', { timeout: STANDARD_TIMEOUT }).should(($m) => {
-            const isHidden = !$m.is(':visible') || !$m.hasClass('show');
-            expect(isHidden, 'payment-modal hidden or not shown').to.eq(true);
-        });
-        cy.get('.modal-backdrop', { timeout: STANDARD_TIMEOUT }).should('not.exist');
-
-        // Right-side buttons usable
-        cy.get('#dynamicButtonContainerId', { timeout: STANDARD_TIMEOUT })
-            .should('exist')
-            .scrollIntoView();
-
-        cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Export', { timeout: STANDARD_TIMEOUT }).should('be.visible');
-        cy.contains('#dynamicButtonContainerId button.grp-savedStates', 'Save View', { timeout: STANDARD_TIMEOUT }).should('be.visible');
-        cy.contains('#dynamicButtonContainerId .dt-buttons button span', 'Columns', { timeout: STANDARD_TIMEOUT }).should('be.visible');
-    });
-
-
-    // Walk the Columns menu and toggle each column on, verifying the column is visibile.
-    it('Verify all columns in the menu are visible when and toggled on.', () => {
-        const clickColumnsItem = (label: string) => {
-            cy.contains('a.dropdown-item', label, { timeout: STANDARD_TIMEOUT })
-                .should('exist')
-                .scrollIntoView()
-                .click({ force: true })
-        }
-
-        const getVisibleHeaderTitles = () => {
-            return cy.get('.dt-scroll-head span.dt-column-title', { timeout: STANDARD_TIMEOUT }).then(($els) => {
-                const titles = Cypress.$($els)
-                    .toArray()
-                    .map((el) => (el.textContent || '').replace(/\s+/g, ' ').trim())
-                    .filter((t) => t.length > 0)
-                return titles
-            })
-        }
-
-        const assertVisibleHeadersInclude = (expected: string[]) => {
-            getVisibleHeaderTitles().then((titles) => {
-                expected.forEach((e) => {
-                    expect(titles, `visible headers should include "${e}"`).to.include(e)
-                })
-            })
-        }
-
-        const scrollX = (x: number) => {
-            cy.get('.dt-scroll-body', { timeout: STANDARD_TIMEOUT })
-                .should('exist')
-                .scrollTo(x, 0, { duration: 0, ensureScrollable: false })
-        }
-
-        // Open the "Save View" dropdown
-        cy.get('button.grp-savedStates', { timeout: STANDARD_TIMEOUT })
-            .should('be.visible')
-            .and('contain.text', 'Save View')
-            .click()
-
-        // Click "Reset to Default View"
-        cy.contains('a.dropdown-item', 'Reset to Default View', { timeout: STANDARD_TIMEOUT })
-            .should('exist')
-            .click({ force: true })
-
-        // Open Columns menu
-        cy.contains('span', 'Columns', { timeout: STANDARD_TIMEOUT })
-            .should('be.visible')
-            .click()
-
-        clickColumnsItem('% of Total Project Budget')
-        clickColumnsItem('Acquisition')
-        clickColumnsItem('Applicant Electoral District')
-
-        clickColumnsItem('Applicant Id')
-        clickColumnsItem('Applicant Id')
-
-        clickColumnsItem('Applicant Name')
-        clickColumnsItem('Applicant Name')
-
-        clickColumnsItem('Approved Amount')
-        clickColumnsItem('Approved Amount')
-
-        clickColumnsItem('Assessment Result')
-
-        clickColumnsItem('Assignee')
-        clickColumnsItem('Assignee')
-
-        clickColumnsItem('Business Number')
-
-        clickColumnsItem('Category')
-        clickColumnsItem('Category')
-
-        clickColumnsItem('City')
-
-        clickColumnsItem('Community')
-        clickColumnsItem('Community')
-
-        clickColumnsItem('Community Population')
-        clickColumnsItem('Contact Business Phone')
-        clickColumnsItem('Contact Cell Phone')
-        clickColumnsItem('Contact Email')
-        clickColumnsItem('Contact Full Name')
-        clickColumnsItem('Contact Title')
-        clickColumnsItem('Decision Date')
-        clickColumnsItem('Decline Rationale')
-        clickColumnsItem('Due Date')
-        clickColumnsItem('Due Diligence Status')
-        clickColumnsItem('Economic Region')
-        clickColumnsItem('Forestry Focus')
-        clickColumnsItem('Forestry or Non-Forestry')
-        clickColumnsItem('FYE Day')
-        clickColumnsItem('FYE Month')
-        clickColumnsItem('Indigenous')
-        clickColumnsItem('Likelihood of Funding')
-        clickColumnsItem('Non-Registered Organization Name')
-        clickColumnsItem('Notes')
-        clickColumnsItem('Org Book Status')
-        clickColumnsItem('Organization Type')
-        clickColumnsItem('Other Sector/Sub/Industry Description')
-        clickColumnsItem('Owner')
-        clickColumnsItem('Payout')
-        clickColumnsItem('Place')
-        clickColumnsItem('Project Electoral District')
-        clickColumnsItem('Project End Date')
-
-        clickColumnsItem('Project Name')
-        clickColumnsItem('Project Name')
-
-        clickColumnsItem('Project Start Date')
-        clickColumnsItem('Project Summary')
-        clickColumnsItem('Projected Funding Total')
-        clickColumnsItem('Recommended Amount')
-        clickColumnsItem('Red-Stop')
-        clickColumnsItem('Regional District')
-        clickColumnsItem('Registered Organization Name')
-        clickColumnsItem('Registered Organization Number')
-
-        clickColumnsItem('Requested Amount')
-        clickColumnsItem('Requested Amount')
-
-        clickColumnsItem('Risk Ranking')
-        clickColumnsItem('Sector')
-        clickColumnsItem('Signing Authority Business Phone')
-        clickColumnsItem('Signing Authority Cell Phone')
-        clickColumnsItem('Signing Authority Email')
-        clickColumnsItem('Signing Authority Full Name')
-        clickColumnsItem('Signing Authority Title')
-
-        clickColumnsItem('Status')
-        clickColumnsItem('Status')
-
-        clickColumnsItem('Sub-Status')
-        clickColumnsItem('Sub-Status')
-
-        clickColumnsItem('Submission #')
-        clickColumnsItem('Submission #')
-
-        clickColumnsItem('Submission Date')
-        clickColumnsItem('Submission Date')
-
-        clickColumnsItem('SubSector')
-
-        clickColumnsItem('Tags')
-        clickColumnsItem('Tags')
-
-        clickColumnsItem('Total Paid Amount $')
-        clickColumnsItem('Total Project Budget')
-        clickColumnsItem('Total Score')
-        clickColumnsItem('Unity Application Id')
-
-        // Close the menu and wait until the overlay is gone
-        cy.get('div.dt-button-background', { timeout: STANDARD_TIMEOUT })
-            .should('exist')
-            .click({ force: true })
-
-        cy.get('div.dt-button-background', { timeout: STANDARD_TIMEOUT }).should('not.exist')
-
-        // Assertions by horizontal scroll segments (human-style scan)
-        scrollX(0)
-        assertVisibleHeadersInclude([
-            'Applicant Name',
-            'Category',
-            'Submission #',
-            'Submission Date',
-            'Status',
-            'Sub-Status',
-            'Community',
-            'Requested Amount',
-            'Approved Amount',
-            'Project Name',
-            'Applicant Id',
-        ])
-
-        scrollX(1500)
-        assertVisibleHeadersInclude([
-            'Tags',
-            'Assignee',
-            'SubSector',
-            'Economic Region',
-            'Regional District',
-            'Registered Organization Number',
-            'Org Book Status',
-        ])
-
-        scrollX(3000)
-        assertVisibleHeadersInclude([
-            'Project Start Date',
-            'Project End Date',
-            'Projected Funding Total',
-            'Total Paid Amount $',
-            'Project Electoral District',
-            'Applicant Electoral District',
-        ])
-
-        scrollX(4500)
-        assertVisibleHeadersInclude([
-            'Forestry or Non-Forestry',
-            'Forestry Focus',
-            'Acquisition',
-            'City',
-            'Community Population',
-            'Likelihood of Funding',
-            'Total Score',
-        ])
-
-        scrollX(6000)
-        assertVisibleHeadersInclude([
-            'Assessment Result',
-            'Recommended Amount',
-            'Due Date',
-            'Owner',
-            'Decision Date',
-            'Project Summary',
-            'Organization Type',
-            'Business Number',
-        ])
-
-        scrollX(7500)
-        assertVisibleHeadersInclude([
-            'Due Diligence Status',
-            'Decline Rationale',
-            'Contact Full Name',
-            'Contact Title',
-            'Contact Email',
-            'Contact Business Phone',
-            'Contact Cell Phone',
-        ])
-
-        scrollX(9000)
-        assertVisibleHeadersInclude([
-            'Signing Authority Full Name',
-            'Signing Authority Title',
-            'Signing Authority Email',
-            'Signing Authority Business Phone',
-            'Signing Authority Cell Phone',
-            'Place',
-            'Risk Ranking',
-            'Notes',
-            'Red-Stop',
-            'Indigenous',
-            'FYE Day',
-            'FYE Month',
-            'Payout',
-            'Unity Application Id',
-        ])
-    })
-
-
-    it('Verify Logout', () => {
-        cy.logout()
-    })
-})
+  it("Verify Logout", () => {
+    cy.logout();
+  });
+});

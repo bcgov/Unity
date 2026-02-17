@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.MultiTenancy;
 using System.Net.Http;
 using Unity.Modules.Shared.Http;
 using Volo.Abp.EventBus.Local;
@@ -12,12 +13,15 @@ using Unity.Payments.Suppliers;
 using Unity.Modules.Shared.Correlation;
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Unity.GrantManager.Integrations;
 
 namespace Unity.Payments.Integrations.Cas
 {
+    [RemoteService(false)]
+    [AllowAnonymous]
     [IntegrationService]
     [ExposeServices(typeof(SupplierService), typeof(ISupplierService))]
     public class SupplierService : ApplicationService, ISupplierService
@@ -28,6 +32,8 @@ namespace Unity.Payments.Integrations.Cas
         private readonly ILocalEventBus localEventBus;
         private readonly IResilientHttpRequest resilientHttpRequest;
         private readonly ICasTokenService iTokenService;
+        protected new ICurrentTenant CurrentTenant => LazyServiceProvider.LazyGetRequiredService<ICurrentTenant>();
+
         public SupplierService(ILocalEventBus localEventBus,
                                 IEndpointManagementAppService endpointManagementAppService,
                                 IResilientHttpRequest resilientHttpRequest,
@@ -239,7 +245,7 @@ namespace Unity.Payments.Integrations.Cas
         {
             if (!string.IsNullOrEmpty(resource))
             {
-                var authToken = await iTokenService.GetAuthTokenAsync();
+                var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
                 try
                 {
                     using var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);
