@@ -3,7 +3,7 @@
     let _createContactModal = new abp.ModalManager(abp.appPath + 'ApplicationContact/CreateContactModal');
     let _editContactModal = new abp.ModalManager({
         viewUrl: abp.appPath + 'ApplicationContact/EditContactModal',
-        scriptUrl: '/Pages/ApplicationContact/EditContactModal.js',
+        scriptUrl: abp.appPath + 'Pages/ApplicationContact/EditContactModal.js',
         modalClass: "editOrDeleteContactModal"
     });
 
