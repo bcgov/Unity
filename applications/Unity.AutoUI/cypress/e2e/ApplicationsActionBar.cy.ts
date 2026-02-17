@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { loginIfNeeded } from "../support/auth";
-import { ApplicationsListPage } from "../pages/ApplicationDetailsPage";
+import { ApplicationsListPage } from "../pages/ApplicationsListPage";
 
 describe("Unity Login and check data from CHEFS", () => {
   const page = new ApplicationsListPage();
@@ -196,7 +196,7 @@ describe("Unity Login and check data from CHEFS", () => {
       .verifyTableHasData()
       .selectMultipleRows([0, 1])
       .verifyActionBarExists()
-      .clickPaymentButton()
+      .clickPaymentButtonWithWait()
       .waitForPaymentModalVisible()
       .closePaymentModal()
       .verifyPaymentModalClosed();

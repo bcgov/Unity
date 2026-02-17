@@ -176,31 +176,31 @@ function performLogin(options: LoginOptions = {}): void {
  */
 export function loginIfNeeded(
   options: LoginOptions = {},
-): Cypress.Chainable<void> {
+): void {
   const username = options.username || (Cypress.env("test1username") as string);
   const baseUrl = options.baseUrl || (Cypress.env("webapp.url") as string);
   const sessionId = `unity-${baseUrl}-${username}`;
 
-  return cy
-    .session(
-      sessionId,
-      () => {
-        performLogin(options);
+  cy.session(
+    sessionId,
+    () => {
+      performLogin(options);
+    },
+    {
+      validate() {
+        // Lightweight validation: check auth cookies exist without visiting
+        cy.getCookie(".AspNetCore.Cookies").then((cookie) => {
+          if (!cookie) {
+            throw new Error("Session expired - auth cookie missing");
+          }
+        });
       },
-      {
-        validate() {
-          // Lightweight validation: check auth cookies exist without visiting
-          return cy.getCookie(".AspNetCore.Cookies").then((cookie) => {
-            if (!cookie) {
-              throw new Error("Session expired - auth cookie missing");
-            }
-          });
-        },
-        cacheAcrossSpecs: true,
-      },
-    )
-    .then(() => {
-      cy.visit(baseUrl);
-      ensureGrantApplicationsPage(options.timeout || 20000);
-    });
+      cacheAcrossSpecs: true,
+    },
+  );
+
+  cy.then(() => {
+    cy.visit(baseUrl);
+    ensureGrantApplicationsPage(options.timeout || 20000);
+  });
 }
