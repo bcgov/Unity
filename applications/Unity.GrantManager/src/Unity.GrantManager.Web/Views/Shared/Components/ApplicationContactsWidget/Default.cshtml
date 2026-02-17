@@ -12,10 +12,6 @@
     Layout = null;
 }
 
-@section scripts {
-    <abp-script src="/Pages/ApplicationContact/EditContactModal.js" />
-}
-
 @{
     bool IsAdditionalContactAddable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Create);
     bool IsAdditionalContactEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update);
