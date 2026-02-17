@@ -1,7 +1,7 @@
 using System;
-using Unity.GrantManager.Applicants.ProfileData;
+using Unity.GrantManager.ApplicantProfile.ProfileData;
 
-namespace Unity.GrantManager.Applicants
+namespace Unity.GrantManager.ApplicantProfile
 {
     public class ApplicantProfileDto
     {

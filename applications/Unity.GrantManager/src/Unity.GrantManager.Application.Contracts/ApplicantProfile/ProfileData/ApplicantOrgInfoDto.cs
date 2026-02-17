@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.Applicants.ProfileData
+namespace Unity.GrantManager.ApplicantProfile.ProfileData
 {
     public class ApplicantOrgInfoDto : ApplicantProfileDataDto
     {

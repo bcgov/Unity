@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
-using Unity.GrantManager.Applicants.ProfileData;
+using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.GrantManager.Applicants.ApplicantProfile
+namespace Unity.GrantManager.ApplicantProfile
 {
     [ExposeServices(typeof(IApplicantProfileDataProvider))]
     public class SubmissionInfoDataProvider : IApplicantProfileDataProvider, ITransientDependency
