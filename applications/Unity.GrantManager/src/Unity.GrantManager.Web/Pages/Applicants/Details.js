@@ -31,6 +31,7 @@ function initializeApplicantDetailsPage() {
     setTimeout(function () {
         $('#main-loading').fadeOut(300, function () {
             $('.fade-in-load').addClass('visible');
+            applyTabHeightOffset();
         });
     }, 500);
 
@@ -82,6 +83,18 @@ function adjustVisibleTablesInContainer(containerId) {
     });
 }
 
+function applyTabHeightOffset() {
+    const detailsTab = document.getElementById('detailsTab');
+    if (!detailsTab) return;
+    const tabNav = detailsTab.querySelector('ul.nav-tabs, ul.nav');
+    const tabContent = detailsTab.querySelector('.tab-content');
+    if (!tabNav || !tabContent) return;
+    const baseOffset = 175;
+    const totalOffset = baseOffset + tabNav.clientHeight;
+    tabContent.style.height = `calc(100vh - ${totalOffset}px)`;
+    tabContent.style.overflowY = 'auto';
+}
+
 function initializeResizableDivider() {
     const divider = document.getElementById('main-divider');
     const leftPanel = document.getElementById('main-left');
@@ -114,6 +127,7 @@ function initializeResizableDivider() {
 
             // Resize DataTables during panel resize
             debouncedResizeAwareDataTables();
+            applyTabHeightOffset();
             localStorage.setItem(storageKey, leftPercentage.toString());
         }
     };
@@ -150,6 +164,7 @@ function initializeResizableDivider() {
     });
 
     window.addEventListener('resize', restoreDividerPosition);
+    window.addEventListener('resize', applyTabHeightOffset);
 }
 
 
