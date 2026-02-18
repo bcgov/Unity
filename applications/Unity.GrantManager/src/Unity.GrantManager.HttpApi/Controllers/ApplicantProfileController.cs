@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicantProfile;
-using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Controllers.Authentication;
 using Volo.Abp.AspNetCore.Mvc;
 

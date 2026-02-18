@@ -1,4 +1,3 @@
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Collections.Generic;
@@ -23,7 +22,7 @@ namespace Unity.GrantManager.Swagger
             };
 
             var oneOfSchemas = new List<OpenApiSchema>();
-            foreach (var (discriminatorValue, subType) in subTypes)
+            foreach (var (_, subType) in subTypes)
             {
                 var subSchema = context.SchemaGenerator.GenerateSchema(subType, context.SchemaRepository);
                 oneOfSchemas.Add(subSchema);
