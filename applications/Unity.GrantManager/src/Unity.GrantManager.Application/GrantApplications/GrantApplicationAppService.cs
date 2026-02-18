@@ -23,7 +23,7 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
-using Unity.Payments.Enums;
+using Unity.Payments.Codes;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -52,7 +52,7 @@ public class GrantApplicationAppService(
 {
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        // 1️⃣ Fetch applications with filters + paging in DB
+        // 1️ Fetch applications with filters + paging in DB
         var applications = await applicationRepository.WithFullDetailsAsync(
             input.SkipCount,
             input.MaxResultCount,
@@ -72,13 +72,14 @@ public class GrantApplicationAppService(
             paymentRequests = await paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
         }
 
-        // 2️⃣ Pre-aggregate payment amounts for O(1) lookup
+        // 2️ Pre-aggregate payment amounts for O(1) lookup
         var paymentRequestsByApplication = paymentRequests
-            .Where(pr => pr.Status == PaymentRequestStatus.Submitted)
+            .Where(pr => !string.IsNullOrWhiteSpace(pr.PaymentStatus)
+                      && pr.PaymentStatus.Trim().Equals(CasPaymentRequestStatus.FullyPaid, StringComparison.OrdinalIgnoreCase))
             .GroupBy(pr => pr.CorrelationId)
             .ToDictionary(g => g.Key, g => g.Sum(pr => pr.Amount));
 
-        // 3️⃣ Map applications to DTOs
+        // 3️ Map applications to DTOs
         var appDtos = applications.Select(app =>
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
@@ -113,7 +114,7 @@ public class GrantApplicationAppService(
 
         }).ToList();
 
-        // 4️⃣ Get total count using same filters
+        // 4️ Get total count using same filters
         var totalCount = await applicationRepository.GetCountAsync(
             input.SubmittedFromDate,
             input.SubmittedToDate

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.Payments.Codes;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.AspNetCore.Mvc;
@@ -101,7 +102,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
 
             var paidAmount = requestsList
                 .Where(e => !string.IsNullOrWhiteSpace(e.PaymentStatus)
-                         && e.PaymentStatus.Trim().Equals("Fully Paid", StringComparison.OrdinalIgnoreCase))
+                         && e.PaymentStatus.Trim().Equals(CasPaymentRequestStatus.FullyPaid, StringComparison.OrdinalIgnoreCase))
                 .Sum(e => e.Amount);
 
             var pendingAmount = requestsList
