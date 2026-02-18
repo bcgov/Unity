@@ -1,11 +1,12 @@
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Contacts;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 
@@ -77,7 +78,7 @@ public class ApplicantProfileContactService(
                 Email = appContact.ContactEmail,
                 MobilePhoneNumber = appContact.ContactMobilePhone,
                 WorkPhoneNumber = appContact.ContactWorkPhone,
-                Role = appContact.ContactType,
+                Role = ApplicationContactOptionList.ContactTypeList[appContact.ContactType],
                 ContactType = "Application",
                 IsPrimary = false,
                 IsEditable = false,
