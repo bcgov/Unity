@@ -106,5 +106,5 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   // Included or excluded files or folders... https://www.typescriptlang.org/tsconfig
-  "include": ["cypress/support/**/*.ts","cypress/e2e/**/*.ts"]
+  "include": ["cypress/support/**/*.ts", "cypress/e2e/**/*.ts", "cypress/pages/**/*.ts"]
 }
