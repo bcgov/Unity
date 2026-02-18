@@ -77,7 +77,8 @@ public class ApplicantProfileContactService(
                 Email = appContact.ContactEmail,
                 MobilePhoneNumber = appContact.ContactMobilePhone,
                 WorkPhoneNumber = appContact.ContactWorkPhone,
-                ContactType = appContact.ContactType,
+                Role = appContact.ContactType,
+                ContactType = "Application",
                 IsPrimary = false,
                 IsEditable = false,
                 ApplicationId = appContact.ApplicationId
