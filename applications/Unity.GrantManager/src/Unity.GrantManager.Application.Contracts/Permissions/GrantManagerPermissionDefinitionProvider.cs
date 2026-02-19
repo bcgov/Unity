@@ -19,11 +19,6 @@ public class GrantManagerPermissionDefinitionProvider : PermissionDefinitionProv
         grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.Intakes.Default, L("Permission:GrantManagerManagement.Intakes.Default"));
 
         grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.ApplicationForms.Default, L("Permission:GrantManagerManagement.ApplicationForms.Default"));
-
-        var contactPermissions = grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.Contacts.Default, L("Permission:GrantManagerManagement.Contacts.Default"));
-        contactPermissions.AddChild(GrantManagerPermissions.Contacts.Create, L("Permission:GrantManagerManagement.Contacts.Create"));
-        contactPermissions.AddChild(GrantManagerPermissions.Contacts.Read, L("Permission:GrantManagerManagement.Contacts.Read"));
-        contactPermissions.AddChild(GrantManagerPermissions.Contacts.Update, L("Permission:GrantManagerManagement.Contacts.Update"));
     }
 
     private static LocalizableString L(string name)

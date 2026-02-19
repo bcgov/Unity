@@ -78,7 +78,7 @@ public class ApplicantProfileContactService(
                 Email = appContact.ContactEmail,
                 MobilePhoneNumber = appContact.ContactMobilePhone,
                 WorkPhoneNumber = appContact.ContactWorkPhone,
-                Role = ApplicationContactOptionList.ContactTypeList[appContact.ContactType],
+                Role = GetMatchingRole(appContact.ContactType),
                 ContactType = "Application",
                 IsPrimary = false,
                 IsEditable = false,
@@ -86,5 +86,11 @@ public class ApplicantProfileContactService(
             }).ToListAsync();
 
         return applicationContacts;
+    }
+
+    private static string GetMatchingRole(string contactType)
+    {
+        return ApplicationContactOptionList.ContactTypeList.TryGetValue(contactType, out string? value)
+                    ? value : contactType;
     }
 }
