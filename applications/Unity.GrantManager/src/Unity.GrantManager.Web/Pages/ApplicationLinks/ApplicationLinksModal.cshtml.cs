@@ -142,8 +142,10 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                                 success = false,
                                 //Updates have occurred while this window has been opened
                                 message = string.Join(", ", linkValidationResult.ErrorMessages.Select(kvp => $"[{kvp.Key}]: {kvp.Value}"))
-                        });
+                            });
                         }
+                        // Replace the links with what is currently in the database to ensure we are working with the most up to date data
+                        linkedApplications = databaseLinkedApplications;
                     }
 
 
