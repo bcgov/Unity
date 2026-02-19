@@ -359,10 +359,34 @@ export class App implements OnInit, OnDestroy {
       turn.safeUrl = null; // No iframe URL needed anymore
 
       await this.saveChat();
-    } catch (error) {
-      console.error('Failed to process question:', error);
+    } catch (error: any) {
+      this.logger.error('Failed to process question:', error);
       turn.iframeLoaded = true;
       turn.safeUrl = "failure";
+
+      // Classify the error using the stable backend schema, falling back to HTTP status
+      const errorType = error?.error?.error_type;
+      const errorMsg = error?.error?.message;
+
+      if (error?.message === 'Not authenticated') {
+        turn.errorType = 'unknown';
+        turn.errorMessage = 'Your session has expired. Please sign in again.';
+      } else if (errorType === 'rate_limit' || error?.status === 429) {
+        turn.errorType = 'rate_limit';
+        turn.errorMessage = errorMsg || 'Rate limit exceeded. Please wait a moment and try again.';
+      } else if (errorType === 'connection_error' || error?.status === 503) {
+        turn.errorType = 'connection_error';
+        turn.errorMessage = errorMsg || 'Connection error. The service may be temporarily unavailable.';
+      } else if (errorType === 'ai_failure' || error?.status === 422) {
+        turn.errorType = 'ai_failure';
+        turn.errorMessage = errorMsg || "I couldn't generate a report from that question. Try rephrasing or adding more detail.";
+      } else if (errorType === 'server_error' || (error?.status && error.status >= 500)) {
+        turn.errorType = 'server_error';
+        turn.errorMessage = errorMsg || 'Something went wrong on our end. Please try again.';
+      } else {
+        turn.errorType = 'unknown';
+        turn.errorMessage = errorMsg || 'Something went wrong. Please try again.';
+      }
     } finally {
       this.cdr.markForCheck();
     }
@@ -373,7 +397,7 @@ export class App implements OnInit, OnDestroy {
     turn.safeUrl = "loading";
     turn.iframeLoaded = false;
     turn.sqlPanelOpen = false;
-    
+
     // Retry the question with the existing turn
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);

@@ -91,6 +91,20 @@ def _sanitize_card_id(card_id):
     return None
 
 
+def _error_response(error_type, message, status, detail=None):
+    """Build a consistent error JSON response.
+
+    Schema:
+        error_type  – machine-readable key (rate_limit | connection_error | ai_failure | server_error)
+        message     – user-facing text
+        detail      – optional developer-facing detail (not shown to users)
+    """
+    body = {"error_type": error_type, "message": message}
+    if detail:
+        body["detail"] = detail
+    return jsonify(body), status
+
+
 def _classify_sql_generation_error(error):
     """Classify an SQL generation error and return an appropriate (response, status) tuple."""
     error_str = str(error)
@@ -101,27 +115,36 @@ def _classify_sql_generation_error(error):
     # Check if it's a rate limit
     if "429" in error_str or "rate limit" in error_lower:
         logger.warning("Azure OpenAI rate limit exceeded")
-        return jsonify({
-            "error": "Rate limit exceeded",
-            "message": "Azure OpenAI rate limit exceeded. Please try again in a few moments.",
-            "url": "rate_limit"
-        }), 429
+        return _error_response(
+            "rate_limit",
+            "Azure OpenAI rate limit exceeded. Please try again in a few moments.",
+            429,
+            detail=error_str
+        )
 
-    # Check if it's a connection error
-    if "connection aborted" in error_lower or "remotedisconnected" in error_lower:
+    # Check if it's a connection / network / config error
+    connection_keywords = [
+        "connection aborted", "remotedisconnected", "connection error",
+        "connectionerror", "invalidurl", "invalid url", "name or service not known",
+        "nodename nor servname", "getaddrinfo failed", "timeout",
+        "cannot connect", "connection refused", "unreachable"
+    ]
+    if any(kw in error_lower for kw in connection_keywords):
         logger.error("Connection error during SQL generation")
-        return jsonify({
-            "error": "Connection error",
-            "message": "Connection error during SQL generation. Please try again.",
-            "url": "connection_error"
-        }), 503
+        return _error_response(
+            "connection_error",
+            "Connection error during SQL generation. Please try again.",
+            503,
+            detail=error_str
+        )
 
     logger.error("Unknown error during SQL generation")
-    return jsonify({
-        "error": "SQL generation failed",
-        "message": "Unable to generate SQL query. Please try again.",
-        "url": "fail"
-    }), 500
+    return _error_response(
+        "ai_failure",
+        "Unable to generate SQL query. Please try again.",
+        500,
+        detail=error_str
+    )
 
 
 def create_app():
@@ -392,7 +415,11 @@ def ask():
 
         if not sql or not metadata:
             logger.warning("SQL generation failed - returning fail response")
-            return {"url": "fail", "card_id": 0, "x_field": "", "y_field": ""}, 200
+            return _error_response(
+                "ai_failure",
+                "I couldn't generate a report from that question. Try rephrasing it or providing more detail.",
+                422
+            )
 
         logger.debug(f"SQL: {sql}")
         logger.debug(f"Metadata: {metadata}")
@@ -422,7 +449,12 @@ def ask():
         return asyncio.run(async_ask())
     except Exception as e:
         logger.error(f"Error in /api/ask: {e}", exc_info=True)
-        return abort(500, INTERNAL_SERVER_ERROR)
+        return _error_response(
+            "server_error",
+            "Something went wrong on our end. Please try again.",
+            500,
+            detail=str(e)
+        )
 
 
 @app.route("/api/change_display", methods=["POST"])
