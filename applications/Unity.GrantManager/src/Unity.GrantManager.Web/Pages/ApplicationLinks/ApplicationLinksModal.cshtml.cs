@@ -140,7 +140,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                             return new JsonResult(new
                             {
                                 success = false,
-                                //Updates have occured while this window has been opened
+                                //Updates have occurred while this window has been opened
                                 message = string.Join(", ", linkValidationResult.ErrorMessages.Select(kvp => $"[{kvp.Key}]: {kvp.Value}"))
                         });
                         }
