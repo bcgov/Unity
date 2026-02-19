@@ -65,7 +65,9 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
             // 24 = 1 am   So 24 + 8 UTC = 9
             { PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression, "0 0 9 1/1 * ? *" },
             // Run hourly
-            { SettingsConstants.BackgroundJobs.DataHealthCheckMonitor_Expression, "0 0 * 1/1 * ? *" }
+            { SettingsConstants.BackgroundJobs.DataHealthCheckMonitor_Expression, "0 0 * 1/1 * ? *" },
+            // 2 AM PST = 10 AM UTC
+            { SettingsConstants.BackgroundJobs.ApplicantTenantMapReconciliation_Expression, "0 0 10 1/1 * ? *" }
         };
 
         foreach (var setting in backGroundSchedules)

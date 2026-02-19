@@ -11,13 +11,17 @@ using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Unity.Modules.Shared.Http;
 using Unity.GrantManager.Integrations;
 using Unity.Payments.Domain.Services;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.Payments.Integrations.Cas
 {
+    [RemoteService(false)]
+    [AllowAnonymous]
     [IntegrationService]
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
     public class InvoiceService(
@@ -27,6 +31,7 @@ namespace Unity.Payments.Integrations.Cas
                     IInvoiceManager invoiceManager) : ApplicationService, IInvoiceService
     {
         private const string CFS_APINVOICE = "cfs/apinvoice";
+        protected new ICurrentTenant CurrentTenant => LazyServiceProvider.LazyGetRequiredService<ICurrentTenant>();
 
         private readonly Dictionary<int, string> CASPaymentGroup = new()
         {
@@ -106,8 +111,8 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
-            string jsonString = JsonSerializer.Serialize(casAPInvoice);
-            var authToken = await iTokenService.GetAuthTokenAsync();
+            string jsonString = JsonSerializer.Serialize(casAPInvoice);            
+            var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
             string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/";
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Post, resource, jsonString, authToken);
@@ -139,7 +144,7 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode)
         {
-            var authToken = await iTokenService.GetAuthTokenAsync();
+            var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
             var casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);
@@ -160,7 +165,7 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string invoiceNumber, string supplierNumber, string siteNumber)
         {
-            var authToken = await iTokenService.GetAuthTokenAsync();
+            var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
             var casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);

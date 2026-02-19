@@ -60,6 +60,9 @@
                     text: "Reset to Default View",
                     action: function (e, dt, node, config)
                     {
+                        let dtInit = dt.init();
+                        let initialSortOrder = dtInit?.order ?? [];
+
                         dt.columns().visible(false);
 
                         // List of all columns not including default columns
@@ -87,7 +90,7 @@
                         $('#search, .custom-filter-input').val('');
                         dt.columns().search('');
                         dt.search('');
-                        dt.order([4, 'desc']).draw();
+                        dt.order(initialSortOrder).draw();
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
@@ -266,7 +269,10 @@ const listColumns = getColumns();
             defaultVisibleColumns,
             listColumns,
             maxRowsPerPage: 10,            
-            defaultSortColumn: 4,
+            defaultSortColumn: {
+                name: 'submissionDate',
+                dir: 'desc'
+            },
             dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
             data: function () {
                 return {
@@ -403,6 +409,7 @@ const listColumns = getColumns();
             getPayoutColumn(columnIndex++),
             getNonRegisteredOrganizationNameColumn(columnIndex++),
             getUnityApplicationIdColumn(columnIndex++),
+            getLinkRelationshipType(columnIndex++),
         ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
             .sort((a, b) => a.index - b.index);
         return sortedColumns;
@@ -1029,12 +1036,35 @@ const listColumns = getColumns();
 
     function getUnityApplicationIdColumn(columnIndex) {
         return {
-            title: 'Unity Application Id',
+            title: 'Unity Application ID',
             name: 'unityApplicationId',
             data: 'unityApplicationId',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getLinkRelationshipType(columnIndex) {
+        return {
+            title: 'Link Types',
+            name: 'applicationLinks',
+            data: 'applicationLinks',
+            className: 'data-table-header',
+            render: function (data) {
+                const linkNames = Array.from(new Set((data || [])
+                    .filter(x => x?.linkType)
+                    .map(x => {
+                        // If this app has child links, display it as a parent (and vice versa) in the Application List.
+                        // Not elegant but avoids additional database queries
+                        if (x.linkType === "Parent") return "Child";
+                        else if (x.linkType === "Child") return "Parent";
+                        else return x.linkType;
+                    })
+                    .sort((a, b) => a.localeCompare(b))));
+                return linkNames.join(', ');
             },
             index: columnIndex
         }

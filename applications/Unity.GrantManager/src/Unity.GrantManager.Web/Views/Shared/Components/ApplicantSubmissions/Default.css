@@ -1,0 +1,136 @@
+/* ApplicantSubmissions Widget Styles */
+
+.applicant-submissions-widget {
+    background-color: #fff;
+    border-radius: 4px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.submissions-action-bar {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+
+.submissions-action-buttons {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.submissions-action-bar .tbl-search {
+    min-width: 250px;
+    border-radius: 50rem !important;
+}
+
+#openSubmissionBtn {
+    min-width: 80px;
+}
+
+.submissions-table-container {
+    margin-top: 1rem;
+    flex: 1;
+    position: relative;
+    overflow: visible !important;
+}
+
+#ApplicantSubmissionsTable {
+    font-size: 0.875rem;
+    width: 100% !important;
+}
+
+#ApplicantSubmissionsTable thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 0.75rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+#ApplicantSubmissionsTable tbody td {
+    padding: 0.5rem 0.75rem;
+    vertical-align: middle;
+}
+
+#ApplicantSubmissionsTable tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+#ApplicantSubmissionsTable tbody tr.selected {
+    background-color: #e7f3ff !important;
+}
+
+#openSubmissionBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .submissions-action-bar {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    .submissions-action-bar > * {
+        max-width: 100% !important;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* DataTables filter row styles */
+.submissions-table-container .filter-row input {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Empty state */
+#ApplicantSubmissionsTable tbody td.dataTables_empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+/* Currency display */
+.currency-display {
+    text-align: right;
+}
+
+/* Multi-line cell styling */
+.multi-line {
+    white-space: normal !important;
+    word-wrap: break-word;
+}
+
+/* Override tab-content scrolling for Submissions tab - no scrolling */
+#detailsTab .tab-content:has(#SubmissionsWidget) {
+    overflow: hidden !important;
+}
+
+/* Make Submissions widget fill available space */
+#SubmissionsWidget {
+    padding: 0 !important;
+}
+
+/* DataTable wrapper - allow all content to be visible */
+#ApplicantSubmissionsTable_wrapper {
+    overflow: visible !important;
+}
+
+/* DataTable container - allow all content to be visible */
+.applicant-submissions-widget .dt-container {
+    overflow: visible !important;
+}
+
+/* Scroll body - dynamic height based on viewport that adapts to browser size */
+.applicant-submissions-widget .dt-scroll-body {
+    max-height: calc(100vh - 480px) !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+}

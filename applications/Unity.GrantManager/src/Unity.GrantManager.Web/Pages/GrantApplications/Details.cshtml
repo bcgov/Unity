@@ -4,6 +4,7 @@
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
+@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar
@@ -29,7 +30,8 @@
     PageLayout.Content.Title = L["Grants"].Value;
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
-    var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
+    var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
+        && await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.AI.ApplicationAnalysis.Default);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles

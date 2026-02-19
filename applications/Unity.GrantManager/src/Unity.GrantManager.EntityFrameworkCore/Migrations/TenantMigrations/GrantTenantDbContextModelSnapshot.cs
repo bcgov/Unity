@@ -1660,9 +1660,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("ParentFormId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ParentFormVersionId")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("Payable")
                         .HasColumnType("boolean");
 
@@ -1696,8 +1693,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("IntakeId");
 
                     b.HasIndex("ParentFormId");
-
-                    b.HasIndex("ParentFormVersionId");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -2288,6 +2283,144 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("AssessmentComments", (string)null);
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Contacts.Contact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("HomePhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("MobilePhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("WorkPhoneExtension")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("WorkPhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Contacts", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Contacts.ContactLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("RelatedEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RelatedEntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Role")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RelatedEntityType", "RelatedEntityId");
+
+                    b.HasIndex("ContactId", "RelatedEntityType", "RelatedEntityId");
+
+                    b.ToTable("ContactLinks", (string)null);
+                });
+
             modelBuilder.Entity("Unity.GrantManager.GlobalTag.Tag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2599,6 +2732,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("CC")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ChesHttpStatusCode")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("ChesMsgId")
@@ -4115,11 +4251,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .WithMany()
                         .HasForeignKey("ParentFormId")
                         .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationFormVersion", null)
-                        .WithMany()
-                        .HasForeignKey("ParentFormVersionId")
-                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormSubmission", b =>
@@ -4226,6 +4357,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("CommenterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Contacts.ContactLink", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Contacts.Contact", null)
+                        .WithMany()
+                        .HasForeignKey("ContactId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
