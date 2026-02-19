@@ -942,7 +942,7 @@ $(function () {
                     let errorMessage = 'Error updating application links.';
 
                     // Try to extract error message from response
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                    if (xhr.responseJSON?.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
 
