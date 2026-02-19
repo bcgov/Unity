@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Quartz;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.Settings;
 using Unity.Modules.Shared.Utils;
 using Volo.Abp.BackgroundWorkers.Quartz;

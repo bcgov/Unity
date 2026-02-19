@@ -1,9 +1,12 @@
+using NSubstitute;
 using Shouldly;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applicants.ApplicantProfile;
-using Unity.GrantManager.Applicants.ProfileData;
+using Unity.GrantManager.ApplicantProfile;
+using Unity.GrantManager.ApplicantProfile.ProfileData;
+using Volo.Abp.MultiTenancy;
 using Xunit;
 
 namespace Unity.GrantManager.Applicants
@@ -18,17 +21,29 @@ namespace Unity.GrantManager.Applicants
             Key = key
         };
 
+        private static ContactInfoDataProvider CreateContactInfoDataProvider()
+        {
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
+            var applicantProfileContactService = Substitute.For<IApplicantProfileContactService>();
+            applicantProfileContactService.GetProfileContactsAsync(Arg.Any<Guid>())
+                .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
+            applicantProfileContactService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
+                .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
+            return new ContactInfoDataProvider(currentTenant, applicantProfileContactService);
+        }
+
         [Fact]
         public void ContactInfoDataProvider_Key_ShouldMatchExpected()
         {
-            var provider = new ContactInfoDataProvider();
+            var provider = CreateContactInfoDataProvider();
             provider.Key.ShouldBe(ApplicantProfileKeys.ContactInfo);
         }
 
         [Fact]
         public async Task ContactInfoDataProvider_GetDataAsync_ShouldReturnContactInfoDto()
         {
-            var provider = new ContactInfoDataProvider();
+            var provider = CreateContactInfoDataProvider();
             var result = await provider.GetDataAsync(CreateRequest(ApplicantProfileKeys.ContactInfo));
             result.ShouldNotBeNull();
             result.ShouldBeOfType<ApplicantContactInfoDto>();
@@ -103,7 +118,7 @@ namespace Unity.GrantManager.Applicants
         {
             IApplicantProfileDataProvider[] providers =
             [
-                new ContactInfoDataProvider(),
+                CreateContactInfoDataProvider(),
                 new OrgInfoDataProvider(),
                 new AddressInfoDataProvider(),
                 new SubmissionInfoDataProvider(),

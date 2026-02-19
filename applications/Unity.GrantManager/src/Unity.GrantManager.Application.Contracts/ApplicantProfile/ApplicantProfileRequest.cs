@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Unity.GrantManager.Applicants
+namespace Unity.GrantManager.ApplicantProfile
 {
     public class ApplicantProfileRequest
     {

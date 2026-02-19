@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.Applicants.ApplicantProfile
+﻿namespace Unity.GrantManager.ApplicantProfile
 {
     public static class ApplicantProfileKeys
     {
