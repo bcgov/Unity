@@ -139,7 +139,7 @@ namespace Unity.GrantManager.Contacts
                     ContactEmail = "jane@example.com",
                     ContactMobilePhone = "444-4444",
                     ContactWorkPhone = "555-5555",
-                    ContactType = "Signing Authority"
+                    ContactType = "ADDITIONAL_SIGNING_AUTHORITY"
                 }, appContactId)
             }.AsAsyncQueryable();
 
@@ -158,7 +158,8 @@ namespace Unity.GrantManager.Contacts
             contact.Email.ShouldBe("jane@example.com");
             contact.MobilePhoneNumber.ShouldBe("444-4444");
             contact.WorkPhoneNumber.ShouldBe("555-5555");
-            contact.ContactType.ShouldBe("Signing Authority");
+            contact.ContactType.ShouldBe("Application");
+            contact.Role.ShouldBe("Additional Signing Authority");
             contact.IsPrimary.ShouldBeFalse();
             contact.IsEditable.ShouldBeFalse();
             contact.ApplicationId.ShouldBe(applicationId);
@@ -186,7 +187,8 @@ namespace Unity.GrantManager.Contacts
                 WithId(new ApplicationContact
                 {
                     ApplicationId = applicationId,
-                    ContactFullName = "Case Test"
+                    ContactFullName = "Case Test",
+                    ContactType = "ADDITIONAL_CONTACT"
                 }, Guid.NewGuid())
             }.AsAsyncQueryable();
 
@@ -222,7 +224,8 @@ namespace Unity.GrantManager.Contacts
                 WithId(new ApplicationContact
                 {
                     ApplicationId = applicationId,
-                    ContactFullName = "Domain Strip Test"
+                    ContactFullName = "Domain Strip Test",
+                    ContactType = "ADDITIONAL_CONTACT"
                 }, Guid.NewGuid())
             }.AsAsyncQueryable();
 
@@ -259,7 +262,8 @@ namespace Unity.GrantManager.Contacts
                 WithId(new ApplicationContact
                 {
                     ApplicationId = applicationId,
-                    ContactFullName = "Plain User Contact"
+                    ContactFullName = "Plain User Contact",
+                    ContactType = "ADDITIONAL_CONTACT"
                 }, Guid.NewGuid())
             }.AsAsyncQueryable();
 
@@ -355,12 +359,14 @@ namespace Unity.GrantManager.Contacts
                 WithId(new ApplicationContact
                 {
                     ApplicationId = appId1,
-                    ContactFullName = "Contact App 1"
+                    ContactFullName = "Contact App 1",
+                    ContactType = "ADDITIONAL_CONTACT"
                 }, Guid.NewGuid()),
                 WithId(new ApplicationContact
                 {
                     ApplicationId = appId2,
-                    ContactFullName = "Contact App 2"
+                    ContactFullName = "Contact App 2",
+                    ContactType = "ADDITIONAL_SIGNING_AUTHORITY"
                 }, Guid.NewGuid())
             }.AsAsyncQueryable();
 

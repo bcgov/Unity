@@ -45,11 +45,24 @@ namespace Unity.GrantManager.TestHelpers
 
         public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
-            var resultType = typeof(TResult).GetGenericArguments()[0];
-            var result = inner.Execute(expression);
-            return (TResult)typeof(Task).GetMethod(nameof(Task.FromResult))!
-                .MakeGenericMethod(resultType)
-                .Invoke(null, [result])!;
+            // TResult is typically Task<T> for async operations
+            var resultType = typeof(TResult);
+            
+            // Get the actual result synchronously
+            var syncResult = inner.Execute(expression);
+            
+            // If TResult is Task<T>, extract T and wrap the result
+            if (resultType.IsGenericType && resultType.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                var taskResultType = resultType.GetGenericArguments()[0];
+                var taskFromResult = typeof(Task)
+                    .GetMethod(nameof(Task.FromResult))!
+                    .MakeGenericMethod(taskResultType);
+                return (TResult)taskFromResult.Invoke(null, new[] { syncResult })!;
+            }
+
+            // For non-generic Task or other types, just return as-is
+            return (TResult)(object)Task.CompletedTask;
         }
     }
 
