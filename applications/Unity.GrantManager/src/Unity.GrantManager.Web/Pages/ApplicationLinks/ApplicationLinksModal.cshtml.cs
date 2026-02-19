@@ -119,7 +119,33 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                 {
                     List<LinkWithType>? selectedLinksWithTypes = JsonConvert.DeserializeObject<List<LinkWithType>>(LinksWithTypes);
                     List<GrantApplicationLiteDto>? grantApplications = JsonConvert.DeserializeObject<List<GrantApplicationLiteDto>>(GrantApplicationsList!);
-                    List<ApplicationLinksInfoDto>? linkedApplications = JsonConvert.DeserializeObject<List<ApplicationLinksInfoDto>>(LinkedApplicationsList!);
+                    List<ApplicationLinksInfoDto>? linkedApplications = JsonConvert.DeserializeObject<List<ApplicationLinksInfoDto>>(LinkedApplicationsList!) ?? [];
+
+                    // Refresh from database instead of deserializing stale client data coming in to catch race conditions added.
+                    var allLinks = await _applicationLinksService.GetListByApplicationAsync(CurrentApplicationId ?? Guid.Empty);
+                    // Filter out the reverse links
+                    var databaseLinkedApplications = allLinks.Where(item => item.ApplicationId != CurrentApplicationId).ToList();
+
+                    // We only care if the data in the database is different to do the validation.
+                    var listsAreEqual = new HashSet<ApplicationLinksInfoDto>(linkedApplications, new ApplicationLinksInfoDtoComparer()).SetEquals(databaseLinkedApplications);
+                    if (!listsAreEqual)
+                    {
+                        var linkValidationResult = await ValidateOnPostLinks(
+                            selectedLinksWithTypes ?? [],
+                            grantApplications ?? [],
+                            databaseLinkedApplications);
+
+                        if (linkValidationResult.HasErrors)
+                        {
+                            return new JsonResult(new
+                            {
+                                success = false,
+                                //Updates have occured while this window has been opened
+                                message = string.Join(", ", linkValidationResult.ErrorMessages.Select(kvp => $"[{kvp.Key}]: {kvp.Value}"))
+                        });
+                        }
+                    }
+
 
                     if (selectedLinksWithTypes != null && grantApplications != null && linkedApplications != null)
                     {
@@ -127,49 +153,13 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
                         foreach (var linkWithType in selectedLinksWithTypes)
                         {
                             var existingLink = linkedApplications.Find(app => app.ReferenceNumber == linkWithType.ReferenceNumber);
-                            
                             if (existingLink == null)
                             {
-                                // Add new link
-                                var targetApplication = grantApplications.Find(app => app.ReferenceNo == linkWithType.ReferenceNumber);
-                                if (targetApplication != null)
-                                {
-                                    var linkedApplicationId = targetApplication.Id;
-
-                                    // For CurrentApplication -> LinkedApplication
-                                    await _applicationLinksService.CreateAsync(new ApplicationLinksDto
-                                    {
-                                        ApplicationId = CurrentApplicationId ?? Guid.Empty,
-                                        LinkedApplicationId = linkedApplicationId,
-                                        LinkType = linkWithType.LinkType
-                                    });
-
-                                    // For LinkedApplication -> CurrentApplication (reverse link with appropriate type)
-                                    var reverseLinkType = GetReverseLinkType(linkWithType.LinkType);
-                                    await _applicationLinksService.CreateAsync(new ApplicationLinksDto
-                                    {
-                                        ApplicationId = linkedApplicationId,
-                                        LinkedApplicationId = CurrentApplicationId ?? Guid.Empty,
-                                        LinkType = reverseLinkType
-                                    });
-                                }
+                                await AddLink(linkWithType, grantApplications);
                             }
                             else
                             {
-                                // Check if the link type has changed
-                                if (existingLink.LinkType != linkWithType.LinkType)
-                                {
-                                    // Update the existing link's type
-                                    await _applicationLinksService.UpdateLinkTypeAsync(existingLink.Id, linkWithType.LinkType);
-                                    
-                                    // Also update the reverse link
-                                    var reverseLink = await _applicationLinksService.GetLinkedApplicationAsync(CurrentApplicationId ?? Guid.Empty, existingLink.ApplicationId);
-                                    var reverseLinkType = GetReverseLinkType(linkWithType.LinkType);
-                                    await _applicationLinksService.UpdateLinkTypeAsync(reverseLink.Id, reverseLinkType);
-                                    
-                                    Logger.LogInformation("Updated link type for {ReferenceNumber} from {OldType} to {NewType}", 
-                                        linkWithType.ReferenceNumber, existingLink.LinkType, linkWithType.LinkType);
-                                }
+                                await UpdateLink(linkWithType, existingLink);
                             }
                         }
 
@@ -192,9 +182,108 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
             {
                 Logger.LogError(ex, message: "Error updating application links");
             }
-
             return new JsonResult(new { success = true });
         }
+
+        /// <summary>
+        /// Comparer to check for Application, LinkType and ProjectName when comparing data thats currently stored in the running
+        /// window versus what is stored in the database. Used to assist with race conditions prior to submitting from the modal.
+        /// </summary>
+        private sealed class ApplicationLinksInfoDtoComparer : IEqualityComparer<ApplicationLinksInfoDto>
+        {
+            public bool Equals(ApplicationLinksInfoDto? x, ApplicationLinksInfoDto? y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null || y is null) return false;
+                return x.ApplicationId == y.ApplicationId && x.LinkType == y.LinkType && x.ProjectName == y.ProjectName;
+            }
+
+            public int GetHashCode(ApplicationLinksInfoDto obj) => obj.ApplicationId.GetHashCode();
+        }
+
+        /// <summary>
+        /// If there is an inequality between what is in the application modal for links and the database, re-run the 
+        /// validation checks to compare what is stored in the database rather than the local user window
+        /// </summary>
+        /// <param name="newLinks">Link change the user is requesting</param>
+        /// <param name="currentApplications">List of applications to retrieve their reference numbers for generating links</param>
+        /// <param name="existingLinks">Existing links to compare against for validation</param>
+        /// <seealso cref="ApplicationLinksAppService.ValidateApplicationLinksAsync(Guid, List{ApplicationLinkValidationRequest})"/>
+        /// <returns>List of ApplicationLinkValidationResult</returns>
+        private async Task<ApplicationLinkValidationResult> ValidateOnPostLinks(
+            List<LinkWithType> newLinks,
+            List<GrantApplicationLiteDto> currentApplications,
+            List<ApplicationLinksInfoDto> existingLinks)
+        {
+            var validateAllLinks = new List<ApplicationLinkValidationRequest>();
+
+            validateAllLinks.AddRange([.. newLinks.Select(link =>
+                new ApplicationLinkValidationRequest
+                {
+                    TargetApplicationId = currentApplications!.Single(app => app.ReferenceNo == link.ReferenceNumber).Id,
+                    ReferenceNumber = link.ReferenceNumber,
+                    LinkType = link.LinkType
+                })]);
+
+            validateAllLinks.AddRange([.. existingLinks.Select(app =>
+                new ApplicationLinkValidationRequest
+                {
+                    TargetApplicationId = app.ApplicationId,
+                    ReferenceNumber = app.ReferenceNumber,
+                    LinkType = app.LinkType
+                }
+            )]);
+
+            return await _applicationLinksService.ValidateApplicationLinksAsync(CurrentApplicationId ?? Guid.Empty, validateAllLinks);
+        }
+
+
+        private async Task AddLink(LinkWithType linkWithType, List<GrantApplicationLiteDto> grantApplications)
+        {
+            // Add new link
+            var targetApplication = grantApplications.Find(app => app.ReferenceNo == linkWithType.ReferenceNumber);
+            if (targetApplication != null)
+            {
+                var linkedApplicationId = targetApplication.Id;
+
+                // For CurrentApplication -> LinkedApplication
+                await _applicationLinksService.CreateAsync(new ApplicationLinksDto
+                {
+                    ApplicationId = CurrentApplicationId ?? Guid.Empty,
+                    LinkedApplicationId = linkedApplicationId,
+                    LinkType = linkWithType.LinkType
+                });
+
+                // For LinkedApplication -> CurrentApplication (reverse link with appropriate type)
+                var reverseLinkType = GetReverseLinkType(linkWithType.LinkType);
+                await _applicationLinksService.CreateAsync(new ApplicationLinksDto
+                {
+                    ApplicationId = linkedApplicationId,
+                    LinkedApplicationId = CurrentApplicationId ?? Guid.Empty,
+                    LinkType = reverseLinkType
+                });
+            }
+        }
+
+
+        private async Task UpdateLink(LinkWithType linkWithType, ApplicationLinksInfoDto existingLink)
+        {
+            // Check if the link type has changed
+            if (existingLink.LinkType != linkWithType.LinkType)
+            {
+                // Update the existing link's type
+                await _applicationLinksService.UpdateLinkTypeAsync(existingLink.Id, linkWithType.LinkType);
+
+                // Also update the reverse link
+                var reverseLink = await _applicationLinksService.GetLinkedApplicationAsync(CurrentApplicationId ?? Guid.Empty, existingLink.ApplicationId);
+                var reverseLinkType = GetReverseLinkType(linkWithType.LinkType);
+                await _applicationLinksService.UpdateLinkTypeAsync(reverseLink.Id, reverseLinkType);
+
+                Logger.LogInformation("Updated link type for {ReferenceNumber} from {OldType} to {NewType}",
+                    linkWithType.ReferenceNumber, existingLink.LinkType, linkWithType.LinkType);
+            }
+        }
+
 
         private static ApplicationLinkType GetReverseLinkType(ApplicationLinkType linkType)
         {
