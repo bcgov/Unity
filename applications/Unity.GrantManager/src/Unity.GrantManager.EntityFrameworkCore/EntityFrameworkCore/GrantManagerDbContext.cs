@@ -34,6 +34,7 @@ public class GrantManagerDbContext :
 
     public DbSet<ApplicantTenantMap> ApplicantTenantMaps { get; set; }
     public DbSet<DynamicUrl> DynamicUrls { get; set; }
+    public DbSet<CasClientCode> CasClientCodes { get; set; }
     public DbSet<Sector> Sectors { get; set; }
     public DbSet<SubSector> SubSectors { get; set; }
     public DbSet<EconomicRegion> EconomicRegion { get; set; }
@@ -94,6 +95,13 @@ public class GrantManagerDbContext :
         modelBuilder.AddQuartz(builder => builder.UsePostgreSql("qrtz_", null));
 
         /* Configure your own tables/entities inside here */
+        modelBuilder.Entity<CasClientCode>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "CasClientCodes",
+                GrantManagerConsts.DbSchema);    
+            b.ConfigureByConvention();
+        });
+
         modelBuilder.Entity<DynamicUrl>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "DynamicUrls",

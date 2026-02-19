@@ -246,8 +246,6 @@
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
     "GrantManager:PayableFormRequiresHierarchy": "Please select a form hierarchy before saving a payable form.",
     "GrantManager:ChildFormRequiresParentForm": "Please select a parent form when the form hierarchy is set to Child.",
-    "GrantManager:ChildFormRequiresParentFormVersion": "Please select a parent form version when the form hierarchy is set to Child.",
-    "GrantManager:ParentFormVersionMismatch": "The selected parent form version does not belong to the chosen parent form.",
     "GrantManager:ChildFormCannotReferenceSelf": "A form cannot reference itself as the parent.",
 
     "AssessmentResultsView:ApprovalTitle": "Approval",

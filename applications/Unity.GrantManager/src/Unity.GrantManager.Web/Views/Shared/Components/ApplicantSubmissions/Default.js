@@ -8,28 +8,6 @@ $(function () {
     const formatter = createNumberFormatter();
     const l = abp.localization.getResource('GrantManager');
 
-    // Language configuration for SavedStates
-    let languageSetValues = {
-        buttons: {
-            stateRestore: 'View %d'
-        },
-        stateRestore: {
-            creationModal: {
-                title: 'Create View',
-                name: 'Name',
-                button: 'Save',
-            },
-            emptyStates: 'No saved views',
-            renameTitle: 'Rename View',
-            renameLabel: 'New name for "%s"',
-            removeTitle: 'Delete View',
-            removeConfirm: 'Are you sure you want to delete "%s"?',
-            removeSubmit: 'Delete',
-            duplicateError: 'A view with this name already exists.',
-            removeError: 'Failed to remove view.',
-        }
-    };
-
     // Default visible columns
     const defaultVisibleColumns = [
         'select',
@@ -57,62 +35,6 @@ $(function () {
             attr: {
                 id: 'btn-toggle-filter'
             }
-        },
-        {
-            extend: 'savedStates',
-            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
-            config: {
-                creationModal: true,
-                splitSecondaries: [
-                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk"></i> Update'},
-                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square"></i> Rename'},
-                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can"></i> Delete'}
-                ]
-            },
-            buttons: [
-                { extend: 'createState', text: 'Save As View' },
-                {
-                    text: "Reset to Default View",
-                    action: function (e, dt, node, config) {
-                        dt.columns().visible(false);
-
-                        // List of all columns not including default columns
-                        const allColumnNames = dt.settings()[0].aoColumns.map(col => col.name).filter(colName => !defaultVisibleColumns.includes(colName));
-                        const orderedIndexes = [];
-
-                        // Set the visible columns, and collect id's for the reorder
-                        defaultVisibleColumns.forEach((colName) => {
-                            const colIdx = dt.column(`${colName}:name`).index();
-                            if (colIdx !== undefined && colIdx !== -1) {
-                                dt.column(colIdx).visible(true);
-                                orderedIndexes.push(colIdx);
-                            }
-                        });
-
-                        // Column reorder only works if all columns included in new order, so get the rest of the columns
-                        allColumnNames.forEach((colName) => {
-                            const colIdx = dt.column(`${colName}:name`).index();
-                            if (colIdx !== undefined && colIdx !== -1) {
-                                orderedIndexes.push(colIdx);
-                            }
-                        });
-                        dt.colReorder.order(orderedIndexes);
-
-                        $('#submissions-search, .custom-filter-input').val('');
-                        dt.columns().search('');
-                        dt.search('');
-                        dt.order([[3, 'desc']]).draw(); // submissionDate column
-
-                        // Close the dropdown
-                        dt.buttons('.grp-savedStates')
-                            .container()
-                            .find('.dt-button-collection')
-                            .hide();
-                        $('div.dt-button-background').trigger('click');
-                    }
-                },
-                { extend: 'removeAllStates', text: 'Delete All Views' }
-            ]
         }
     ];
 
@@ -171,7 +93,6 @@ $(function () {
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: true,
-        languageSetValues: languageSetValues,
         dataTableName: 'ApplicantSubmissionsTable',
         dynamicButtonContainerId: 'submissionsDynamicButtonContainerId'
     });
@@ -204,10 +125,6 @@ $(function () {
 
     // Initialize button state
     updateOpenButtonState();
-
-    // For savedStates
-    $('.grp-savedStates').text('Save View');
-    $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
 
     // Column getter functions (from Application List)
     function getColumns() {

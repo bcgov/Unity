@@ -69,6 +69,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
         [Display(Name = "Fiscal Year End Day")]
         public string FiscalDay { get; set; } = string.Empty;
 
+        [Display(Name = "Started Operating Date")]
+        public DateTime? StartedOperatingDate { get; set; }
+
         [Display(Name = "Red-Stop")]
         public bool RedStop { get; set; } = false;
     }
