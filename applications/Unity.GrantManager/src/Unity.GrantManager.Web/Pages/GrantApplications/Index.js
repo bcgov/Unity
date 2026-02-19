@@ -7,6 +7,8 @@
 
     const formatter = createNumberFormatter();
     const l = abp.localization.getResource('GrantManager');
+    const defaultQuickDateRange = 'last6months';
+
     let dt = $('#GrantApplicationsTable');
     let dataTable;
 
@@ -92,6 +94,22 @@
                         dt.search('');
                         dt.order(initialSortOrder).draw();
 
+                        // Reset date range filters
+                        $('#quickDateRange').val(defaultQuickDateRange);
+                        toggleCustomDateInputs(defaultQuickDateRange === 'custom');
+
+                        const range = getDateRange(defaultQuickDateRange);
+                        if (range) {
+                            UIElements.submittedFromInput.val(range.fromDate);
+                            UIElements.submittedToInput.val(range.toDate);
+                            grantTableFilters.submittedFromDate = range.fromDate;
+                            grantTableFilters.submittedToDate = range.toDate;
+
+                            localStorage.setItem('GrantApplications_FromDate', range.fromDate);
+                            localStorage.setItem('GrantApplications_ToDate', range.toDate);
+                            localStorage.setItem('GrantApplications_QuickRange', defaultQuickDateRange);
+                        }
+
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')
                             .container()
@@ -164,50 +182,41 @@ const listColumns = getColumns();
     }
 
     function initializeSubmittedFilterDates() {
-
         const fromDate = localStorage.getItem('GrantApplications_FromDate');
         const toDate = localStorage.getItem('GrantApplications_ToDate');
+        const savedRange = localStorage.getItem('GrantApplications_QuickRange') || defaultQuickDateRange;
 
-        // Check if localStorage has values and use them
+        // Set the dropdown value
+        $('#quickDateRange').val(savedRange);
+
+        // Show/hide custom date inputs based on saved selection
+        toggleCustomDateInputs(savedRange === 'custom');
+
+        // If we have saved dates, use them
         if (fromDate && toDate) {
             UIElements.submittedFromInput.val(fromDate);
             UIElements.submittedToInput.val(toDate);
             grantTableFilters.submittedFromDate = fromDate;
             grantTableFilters.submittedToDate = toDate;
-            return;
+        } else {
+            const range = getDateRange(defaultQuickDateRange);
+            if (range && range.fromDate && range.toDate) {
+                UIElements.submittedFromInput.val(range.fromDate);
+                UIElements.submittedToInput.val(range.toDate);
+                grantTableFilters.submittedFromDate = range.fromDate;
+                grantTableFilters.submittedToDate = range.toDate;
+            }
         }
 
-        let dtToday = new Date();
-        let month = dtToday.getMonth() + 1;
-        let day = dtToday.getDate();
-        let year = dtToday.getFullYear();
-        if (month < 10)
-            month = '0' + month.toString();
-        if (day < 10)
-            day = '0' + day.toString();
-        let todayDate = year + '-' + month + '-' + day;
-        
-        let dtSixMonthsAgo = new Date();
-        dtSixMonthsAgo.setMonth(dtSixMonthsAgo.getMonth() - 6);
-        let minMonth = dtSixMonthsAgo.getMonth() + 1;
-        let minDay = dtSixMonthsAgo.getDate();
-        let minYear = dtSixMonthsAgo.getFullYear();
-        if (minMonth < 10)
-            minMonth = '0' + minMonth.toString();
-        if (minDay < 10)
-            minDay = '0' + minDay.toString();
-        let suggestedMinDate = minYear + '-' + minMonth + '-' + minDay;
-        
-        UIElements.submittedToInput.attr({ 'max': todayDate });
-        UIElements.submittedToInput.val(todayDate);
-        UIElements.submittedFromInput.attr({ 'max': todayDate });
-        UIElements.submittedFromInput.val(suggestedMinDate);
-        grantTableFilters.submittedFromDate = suggestedMinDate;
-        grantTableFilters.submittedToDate = todayDate;
+        // Set max date to today for both inputs
+        const today = formatDate(new Date());
+        UIElements.submittedToInput.attr({ 'max': today });
+        UIElements.submittedFromInput.attr({ 'max': today });
     }
 
     function bindUIEvents() {
-        UIElements.inputFilter.on('change', handleInputFilterChange);       
+        UIElements.inputFilter.on('change', handleInputFilterChange); 
+        $('#quickDateRange').on('change', handleQuickDateRangeChange);
     }
 
     function validateDate(dateValue, element) {
@@ -243,6 +252,55 @@ const listColumns = getColumns();
         return true;
     }
 
+    // Returns a formated { fromDate, toDate } for the filter fields. 
+    // Null if 'custom' or no input provided (assumes custom is default break)
+    function getDateRange(rangeType) {
+        let today = new Date();
+        const toDate = formatDate(new Date());
+        let fromDate;
+
+        switch (rangeType) {
+            case 'today':
+                fromDate = toDate;
+                break;
+            case 'last7days': 
+                fromDate = formatDate(new Date(today.setDate(today.getDate() - 7)));
+                break;
+            case 'last30days':
+                fromDate = formatDate(new Date(today.setDate(today.getDate() - 30)));
+                break;
+            case 'last3months':
+                fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 3)));
+                break;
+            case 'last6months':
+                fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
+                break;
+            case 'alltime':
+                fromDate = null;
+                return { fromDate: null, toDate: null };
+            case 'custom':    
+            default:
+                return null; // Don't modify dates for custom
+        }
+
+        return { fromDate, toDate };
+    }
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function toggleCustomDateInputs(show) {
+        if (show) {
+            $('#customDateInputs').show();
+        } else {
+            $('#customDateInputs').hide();
+        }
+    }
+
+
     // =====================
     // Input filter change handler
     // =====================
@@ -255,12 +313,57 @@ const listColumns = getColumns();
         grantTableFilters.submittedFromDate = UIElements.submittedFromInput.val();
         grantTableFilters.submittedToDate = UIElements.submittedToInput.val();
 
+        //If the values for FromDate and ToDate are being set outside of the
+        //quick drop down handler, custom SHOULD be shown, but set just in case
+        $('#quickDateRange').val('custom');
+        localStorage.setItem('GrantApplications_QuickRange', 'custom');
+
         const dtInstance = $('#GrantApplicationsTable').DataTable();
 
         localStorage.setItem("GrantApplications_FromDate", grantTableFilters.submittedFromDate);
         localStorage.setItem("GrantApplications_ToDate", grantTableFilters.submittedToDate);
 
         dtInstance.ajax.reload(null, true);
+    }
+
+    function handleQuickDateRangeChange() {
+        const selectedRange = $(this).val();
+
+        localStorage.setItem('GrantApplications_QuickRange', selectedRange);
+
+        if (selectedRange === 'custom') {
+            // Show the custom date inputs and don't modify their values
+            toggleCustomDateInputs(true);
+            return;
+        }
+
+        // Hide custom date inputs for preset ranges
+        toggleCustomDateInputs(false);
+
+        // Get the date range for the selected option
+        const range = getDateRange(selectedRange);
+
+        if (range) {
+            // Populate the hidden date fields
+            UIElements.submittedFromInput.val(range.fromDate || '');
+            UIElements.submittedToInput.val(range.toDate || '');
+            grantTableFilters.submittedFromDate = range.fromDate;
+            grantTableFilters.submittedToDate = range.toDate;
+
+            // Save to localStorage
+            if (range.fromDate && range.toDate) {
+                localStorage.setItem('GrantApplications_FromDate', range.fromDate);
+                localStorage.setItem('GrantApplications_ToDate', range.toDate);
+            } else {
+                // For "All time", clear the date filters
+                localStorage.removeItem('GrantApplications_FromDate');
+                localStorage.removeItem('GrantApplications_ToDate');
+            }
+
+            // Reload the table with new filters
+            const dtInstance = $('#GrantApplicationsTable').DataTable();
+            dtInstance.ajax.reload(null, true);
+        }
     }
    
     function initializeDataTableAndEvents() {
