@@ -518,20 +518,28 @@ input.form-control-currency {
 
     input.form-control:disabled, textarea.form-control:disabled, .form-select:disabled, input.form-control-currency:disabled {
         color: var(--bc-colors-grey-text-200);
-        pointer-events: none;
         background-color: var(--bc-colors-grey-hover) !important;
         opacity: var(--bs-btn-disabled-opacity);
         background-blend-mode: difference;
         border: var(--bs-border-width) solid var(--bs-border-color);
+
+        pointer-events: auto;
+        user-select: text;
+        -webkit-user-select: text;
+        cursor: text;
     }
 
     input.form-control-currency:disabled {
         color: var(--bc-colors-grey-text-200);
-        pointer-events: none;
         background-color: var(--bc-colors-grey-hover) !important;
         opacity: var(--bs-btn-disabled-opacity);
         background-blend-mode: difference;
         border: var(--bs-border-width) solid var(--bs-border-color);
+
+        pointer-events: auto;
+        user-select: text;
+        -webkit-user-select: text;
+        cursor: text;
     }
 
     textarea.form-control:disabled {
