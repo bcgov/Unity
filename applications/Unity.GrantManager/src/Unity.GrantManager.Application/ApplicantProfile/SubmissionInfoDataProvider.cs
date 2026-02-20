@@ -13,6 +13,12 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.ApplicantProfile
 {
+    /// <summary>
+    /// Provides submission information for the applicant profile by querying
+    /// application form submissions linked to the applicant's OIDC subject.
+    /// Resolves actual submission timestamps from CHEFS JSON data and derives
+    /// the form view URL from the INTAKE_API_BASE dynamic URL setting.
+    /// </summary>
     [ExposeServices(typeof(IApplicantProfileDataProvider))]
     public class SubmissionInfoDataProvider(
         ICurrentTenant currentTenant,
@@ -23,8 +29,10 @@ namespace Unity.GrantManager.ApplicantProfile
         ILogger<SubmissionInfoDataProvider> logger)
         : IApplicantProfileDataProvider, ITransientDependency
     {
+        /// <inheritdoc />
         public string Key => ApplicantProfileKeys.SubmissionInfo;
 
+        /// <inheritdoc />
         public async Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request)
         {
             var dto = new ApplicantSubmissionInfoDto
