@@ -40,9 +40,10 @@ namespace Unity.GrantManager.ApplicantProfile
                 Submissions = []
             };
 
-            var normalizedSubject = request.Subject.Contains('@')
-                    ? request.Subject[..request.Subject.IndexOf('@')].ToUpperInvariant()
-                    : request.Subject.ToUpperInvariant();
+            var subject = request.Subject ?? string.Empty;
+            var normalizedSubject = subject.Contains('@')
+                    ? subject[..subject.IndexOf('@')].ToUpperInvariant()
+                    : subject.ToUpperInvariant();
 
             dto.LinkSource = await ResolveFormViewUrlAsync();
 
