@@ -200,7 +200,7 @@ const listColumns = getColumns();
             grantTableFilters.submittedToDate = toDate;
         } else {
             const range = getDateRange(defaultQuickDateRange);
-            if (range && range.fromDate && range.toDate) {
+            if (range?.fromDate && range?.toDate) {
                 UIElements.submittedFromInput.val(range.fromDate);
                 UIElements.submittedToInput.val(range.toDate);
                 grantTableFilters.submittedFromDate = range.fromDate;
