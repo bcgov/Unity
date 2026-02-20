@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Unity.GrantManager.Applicants.ApplicantProfile;
+using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Applications;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -12,7 +12,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 
-namespace Unity.GrantManager.Applicants
+namespace Unity.GrantManager.ApplicantProfile
 {
     [RemoteService(false)]
     public class ApplicantProfileAppService(

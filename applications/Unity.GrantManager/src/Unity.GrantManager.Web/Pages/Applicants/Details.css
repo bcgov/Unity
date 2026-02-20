@@ -21,7 +21,7 @@
 
 /* Left panel tabs scrolling */
 #detailsTab .tab-content {
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
     height: calc(100vh - 220px);
 }

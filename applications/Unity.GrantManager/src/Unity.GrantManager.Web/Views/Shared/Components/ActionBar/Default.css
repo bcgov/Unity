@@ -37,3 +37,9 @@
     margin-bottom: -10px;
     padding-bottom: 0px !important;
 }
+
+.custom-date-range-container-div {
+    display: inline-block;
+    padding: 0px;
+    margin: 0px;
+}

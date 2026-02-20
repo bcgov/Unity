@@ -29,5 +29,17 @@ public static class GrantManagerPermissions
         public const string Default = GroupName + ".Endpoints";
         public const string ManageEndpoints = Default + ".ManageEndpoints";
     }
+
+    /// <summary>
+    /// Permission constants for the generic contacts service.
+    /// These are pre-wired for future HTTP endpoint exposure.
+    /// </summary>
+    public static class Contacts
+    {
+        public const string Default = GroupName + ".Contacts";
+        public const string Create = Default + ".Create";
+        public const string Read = Default + ".Read";
+        public const string Update = Default + ".Update";
+    }
 }
 #pragma warning restore S3218 // Inner class members should not shadow outer class "static" or type members

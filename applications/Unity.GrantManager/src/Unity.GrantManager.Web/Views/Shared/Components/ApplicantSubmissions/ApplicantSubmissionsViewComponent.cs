@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Payments;
-using Unity.Payments.Enums;
+using Unity.Payments.Codes;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
@@ -62,7 +62,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
             {
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
                 paymentRequestsByApplication = paymentRequests
-                    .Where(pr => pr.Status == PaymentRequestStatus.Submitted)
+                    .Where(pr => !string.IsNullOrWhiteSpace(pr.PaymentStatus)
+                              && pr.PaymentStatus.Trim().Equals(CasPaymentRequestStatus.FullyPaid, StringComparison.OrdinalIgnoreCase))
                     .GroupBy(pr => pr.CorrelationId)
                     .ToDictionary(g => g.Key, g => g.Sum(pr => pr.Amount));
             }

@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
-using Unity.GrantManager.Applicants.ProfileData;
+using Unity.GrantManager.ApplicantProfile.ProfileData;
 
-namespace Unity.GrantManager.Applicants.ApplicantProfile
+namespace Unity.GrantManager.ApplicantProfile
 {
     /// <summary>
     /// Defines a contract for components that can provide applicant profile data
