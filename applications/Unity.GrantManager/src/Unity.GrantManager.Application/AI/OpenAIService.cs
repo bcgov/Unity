@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 
@@ -21,7 +22,10 @@ namespace Unity.GrantManager.AI
 
         private string? ApiKey => _configuration["AI:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
+        private bool LogPayloads => _configuration.GetValue<bool?>("AI:Logging:LogPayloads") ?? false;
         private readonly string NoKeyError = "OpenAI API key is not configured";
+        private const string AiPromptLogRelativePath = "logs/ai-prompts.log";
+        private static int _aiPromptLogInitialized;
 
         public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService)
         {
@@ -50,7 +54,7 @@ namespace Unity.GrantManager.AI
                 return "AI analysis not available - service not configured.";
             }
 
-            _logger.LogDebug("Calling OpenAI with prompt: {Prompt}", content);
+            _logger.LogDebug("Calling OpenAI chat completions. PromptLength: {PromptLength}, MaxTokens: {MaxTokens}", content?.Length ?? 0, maxTokens);
 
             try
             {
@@ -76,7 +80,10 @@ namespace Unity.GrantManager.AI
                 var response = await _httpClient.PostAsync(ApiUrl, httpContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
-                _logger.LogDebug("Response: {Response}", responseContent);
+                _logger.LogDebug(
+                    "OpenAI chat completions response received. StatusCode: {StatusCode}, ResponseLength: {ResponseLength}",
+                    response.StatusCode,
+                    responseContent?.Length ?? 0);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -125,7 +132,10 @@ namespace Unity.GrantManager.AI
                     prompt = "Please analyze this document and provide a concise summary of its content, purpose, and key information, for use by your fellow grant analysts. It should be 1-2 sentences long and about 46 tokens.";
                 }
 
-                return await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
+                LogPromptInput("AttachmentSummary", prompt, contentToAnalyze);
+                var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
+                LogPromptOutput("AttachmentSummary", modelOutput);
+                return modelOutput;
             }
             catch (Exception ex)
             {
@@ -202,7 +212,9 @@ Evaluate the quality, clarity, and appropriateness of all application content. B
 
 Respond only with valid JSON in the exact format requested.";
 
+                LogPromptInput("ApplicationAnalysis", systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
+                LogPromptOutput("ApplicationAnalysis", rawAnalysis);
 
                 // Post-process the AI response to add unique IDs to errors and warnings
                 return AddIdsToAnalysisItems(rawAnalysis);
@@ -320,7 +332,10 @@ Analyze the provided application and generate appropriate answers for the scores
 Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+                LogPromptInput("ScoresheetAll", systemPrompt, analysisContent);
+                var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+                LogPromptOutput("ScoresheetAll", modelOutput);
+                return modelOutput;
             }
             catch (Exception ex)
             {
@@ -394,13 +409,154 @@ Always provide citations that reference specific parts of the application conten
 Be honest about your confidence level - if information is missing or unclear, reflect this in a lower confidence score.
 Respond only with valid JSON in the exact format requested.";
 
-                return await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+                LogPromptInput("ScoresheetSection", systemPrompt, analysisContent);
+                var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+                LogPromptOutput("ScoresheetSection", modelOutput);
+                return modelOutput;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", sectionName);
                 return "{}";
             }
+        }
+
+        private void LogPromptInput(string promptType, string? systemPrompt, string userPrompt)
+        {
+            if (!LogPayloads)
+            {
+                return;
+            }
+
+            var formattedInput = FormatPromptInputForLog(systemPrompt, userPrompt);
+            _logger.LogDebug("AI {PromptType} input payload: {PromptInput}", promptType, formattedInput);
+            WriteAiPromptLog(promptType, "INPUT", formattedInput);
+        }
+
+        private void LogPromptOutput(string promptType, string output)
+        {
+            if (!LogPayloads)
+            {
+                return;
+            }
+
+            var formattedOutput = FormatPromptOutputForLog(output);
+            _logger.LogDebug("AI {PromptType} model output payload: {ModelOutput}", promptType, formattedOutput);
+            WriteAiPromptLog(promptType, "OUTPUT", formattedOutput);
+        }
+
+        private void WriteAiPromptLog(string promptType, string payloadType, string payload)
+        {
+            if (!LogPayloads)
+            {
+                return;
+            }
+
+            try
+            {
+                var now = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz");
+                var logPath = Path.Combine(AppContext.BaseDirectory, AiPromptLogRelativePath);
+                EnsureAiPromptLogInitialized(logPath);
+
+                var entry = $"{now} [{promptType}] {payloadType}\n{payload}\n\n";
+                File.AppendAllText(logPath, entry);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to write AI prompt log file.");
+            }
+        }
+
+        private static void EnsureAiPromptLogInitialized(string logPath)
+        {
+            var directory = Path.GetDirectoryName(logPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            if (Interlocked.Exchange(ref _aiPromptLogInitialized, 1) == 0)
+            {
+                File.WriteAllText(logPath, string.Empty);
+            }
+        }
+
+        private static string FormatPromptInputForLog(string? systemPrompt, string userPrompt)
+        {
+            var normalizedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt) ? string.Empty : systemPrompt.Trim();
+            var normalizedUserPrompt = string.IsNullOrWhiteSpace(userPrompt) ? string.Empty : userPrompt.Trim();
+            return $"SYSTEM_PROMPT\n{normalizedSystemPrompt}\n\nUSER_PROMPT\n{normalizedUserPrompt}";
+        }
+
+        private static string FormatPromptOutputForLog(string output)
+        {
+            if (string.IsNullOrWhiteSpace(output))
+            {
+                return string.Empty;
+            }
+
+            if (TryParseJsonObjectFromResponse(output, out var jsonObject))
+            {
+                return JsonSerializer.Serialize(jsonObject, new JsonSerializerOptions { WriteIndented = true });
+            }
+
+            return output.Trim();
+        }
+
+        private static bool TryParseJsonObjectFromResponse(string response, out JsonElement objectElement)
+        {
+            objectElement = default;
+            var cleaned = CleanJsonResponse(response);
+            if (string.IsNullOrWhiteSpace(cleaned))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(cleaned);
+                if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    return false;
+                }
+
+                objectElement = doc.RootElement.Clone();
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static string CleanJsonResponse(string response)
+        {
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                return string.Empty;
+            }
+
+            var cleaned = response.Trim();
+
+            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase) || cleaned.StartsWith("```"))
+            {
+                var startIndex = cleaned.IndexOf('\n');
+                if (startIndex >= 0)
+                {
+                    cleaned = cleaned[(startIndex + 1)..];
+                }
+            }
+
+            if (cleaned.EndsWith("```", StringComparison.Ordinal))
+            {
+                var lastIndex = cleaned.LastIndexOf("```", StringComparison.Ordinal);
+                if (lastIndex > 0)
+                {
+                    cleaned = cleaned[..lastIndex];
+                }
+            }
+
+            return cleaned.Trim();
         }
     }
 }
