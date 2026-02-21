@@ -16,14 +16,15 @@ using System.Text;
 
 namespace Unity.GrantManager.Intakes.Handlers
 {
-    public class GenerateAiSummaryHandler : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
+    public class GenerateAIContentHandler : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
     {
+        private const string DefaultContentType = "application/octet-stream";
         private readonly IAIService _aiService;
         private readonly ISubmissionAppService _submissionAppService;
         private readonly IApplicationChefsFileAttachmentRepository _attachmentRepository;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
-        private readonly ILogger<GenerateAiSummaryHandler> _logger;
+        private readonly ILogger<GenerateAIContentHandler> _logger;
         private readonly IScoresheetRepository _scoresheetRepository;
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
@@ -40,13 +41,13 @@ namespace Unity.GrantManager.Intakes.Handlers
             WriteIndented = true
         };
 
-        public GenerateAiSummaryHandler(
+        public GenerateAIContentHandler(
             IAIService aiService,
             ISubmissionAppService submissionAppService,
             IApplicationChefsFileAttachmentRepository attachmentRepository,
             IApplicationRepository applicationRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-            ILogger<GenerateAiSummaryHandler> logger,
+            ILogger<GenerateAIContentHandler> logger,
             IScoresheetRepository scoresheetRepository,
             IApplicationFormRepository applicationFormRepository,
             IApplicationFormVersionRepository applicationFormVersionRepository,
@@ -73,7 +74,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         {
             if (eventData?.Application == null)
             {
-                _logger.LogWarning("Event data or application is null in GenerateAiSummaryHandler.");
+                _logger.LogWarning("Event data or application is null in GenerateAIContentHandler.");
                 return;
             }
 
@@ -105,83 +106,8 @@ namespace Unity.GrantManager.Intakes.Handlers
                 if (attachmentSummariesEnabled)
                 {
                     foreach (var attachment in attachments)
-                {
-                    try
                     {
-                        // Skip if already has an AI summary (don't regenerate)
-                        if (!string.IsNullOrEmpty(attachment.AISummary))
-                        {
-                            _logger.LogDebug("Skipping AI summary for attachment {FileName} - already has summary", attachment.FileName);
-                            continue;
-                        }
-
-                        _logger.LogDebug("Generating AI summary for attachment {FileName}", attachment.FileName);
-
-                        try
-                        {
-                            // Get the file content from CHEFS (now accessible via [AllowAnonymous])
-                            var fileDto = await _submissionAppService.GetChefsFileAttachment(
-                                Guid.Parse(attachment.ChefsSubmissionId ?? ""),
-                                Guid.Parse(attachment.ChefsFileId ?? ""),
-                                attachment.FileName ?? "");
-
-                            if (fileDto?.Content != null)
-                            {
-                                _logger.LogDebug("Processing {FileName} ({ContentType}, {Size} bytes) for AI summary generation",
-                                    attachment.FileName, fileDto.ContentType, fileDto.Content.Length);
-
-                                // Generate AI summary with text extraction and file content analysis
-                                var summary = await _aiService.GenerateAttachmentSummaryAsync(
-                                    attachment.FileName ?? "",
-                                    fileDto.Content,
-                                    fileDto.ContentType);
-
-                                // Update the attachment with the AI summary
-                                attachment.AISummary = summary;
-                                await _attachmentRepository.UpdateAsync(attachment);
-
-                                    var preview = summary is { Length: > 0 } s
-                                    ? string.Concat(s.AsSpan(0, Math.Min(100, s.Length)), "...")
-                                    : "...";
-
-                                    _logger.LogDebug("Successfully generated AI summary for attachment {FileName}: {SummaryPreview}",
-                                    attachment.FileName, preview);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Could not retrieve content for attachment {FileName}", attachment.FileName);
-
-                                // Generate summary from filename only as fallback
-                                var summary = await _aiService.GenerateAttachmentSummaryAsync(
-                                    attachment.FileName ?? "",
-                                    Array.Empty<byte>(),
-                                    "application/octet-stream");
-
-                                attachment.AISummary = summary;
-                                await _attachmentRepository.UpdateAsync(attachment);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Could not access CHEFS file {FileName}. Generating summary from filename only.", attachment.FileName);
-
-                            // Fallback: Generate summary from filename only
-                            var summary = await _aiService.GenerateAttachmentSummaryAsync(
-                                attachment.FileName ?? "",
-                                Array.Empty<byte>(),
-                                "application/octet-stream");
-
-                            attachment.AISummary = summary;
-                            await _attachmentRepository.UpdateAsync(attachment);
-
-                            _logger.LogDebug("Generated fallback AI summary for attachment {FileName} from filename only", attachment.FileName);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error generating AI summary for attachment {FileName} in application {ApplicationId}",
-                            attachment.FileName, eventData.Application.Id);
-                        // Continue processing other attachments even if one fails
+                        await ProcessAttachmentSummaryAsync(attachment, eventData.Application.Id);
                     }
                 }
                 }
@@ -201,6 +127,84 @@ namespace Unity.GrantManager.Intakes.Handlers
                 _logger.LogError(ex, "Error generating AI content for application {ApplicationId}", eventData.Application.Id);
                 // Don't throw - this should not break the main submission processing
             }
+        }
+
+        private async Task ProcessAttachmentSummaryAsync(ApplicationChefsFileAttachment attachment, Guid applicationId)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(attachment.AISummary))
+                {
+                    _logger.LogDebug("Skipping AI summary for attachment {FileName} - already has summary", attachment.FileName);
+                    return;
+                }
+
+                var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
+                _logger.LogDebug("Generating AI summary for attachment {FileName}", fileName);
+
+                var (fileContent, contentType) = await GetAttachmentContentForSummaryAsync(attachment, fileName);
+                var summary = await _aiService.GenerateAttachmentSummaryAsync(fileName, fileContent, contentType);
+                await SaveAttachmentSummaryAsync(attachment, fileName, summary, fileContent.Length == 0);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating AI summary for attachment {FileName} in application {ApplicationId}",
+                    attachment.FileName, applicationId);
+                // Continue processing other attachments even if one fails
+            }
+        }
+
+        private async Task<(byte[] Content, string ContentType)> GetAttachmentContentForSummaryAsync(ApplicationChefsFileAttachment attachment, string fileName)
+        {
+            if (!Guid.TryParse(attachment.ChefsSubmissionId, out var submissionId) ||
+                !Guid.TryParse(attachment.ChefsFileId, out var fileId))
+            {
+                _logger.LogWarning("Attachment {FileName} has invalid CHEFS IDs. Falling back to metadata-only summary.", fileName);
+                return (Array.Empty<byte>(), DefaultContentType);
+            }
+
+            try
+            {
+                var fileDto = await _submissionAppService.GetChefsFileAttachment(submissionId, fileId, fileName);
+                if (fileDto?.Content == null)
+                {
+                    _logger.LogWarning("Could not retrieve content for attachment {FileName}. Falling back to metadata-only summary.", fileName);
+                    return (Array.Empty<byte>(), DefaultContentType);
+                }
+
+                _logger.LogDebug(
+                    "Processing {FileName} ({ContentType}, {Size} bytes) for AI summary generation",
+                    fileName,
+                    fileDto.ContentType,
+                    fileDto.Content.Length);
+
+                var resolvedContentType = string.IsNullOrWhiteSpace(fileDto.ContentType)
+                    ? DefaultContentType
+                    : fileDto.ContentType;
+                return (fileDto.Content, resolvedContentType);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not access CHEFS file {FileName}. Falling back to metadata-only summary.", fileName);
+                return (Array.Empty<byte>(), DefaultContentType);
+            }
+        }
+
+        private async Task SaveAttachmentSummaryAsync(ApplicationChefsFileAttachment attachment, string fileName, string summary, bool usedMetadataFallback)
+        {
+            attachment.AISummary = summary;
+            await _attachmentRepository.UpdateAsync(attachment);
+
+            if (usedMetadataFallback)
+            {
+                _logger.LogDebug("Generated fallback AI summary for attachment {FileName} from metadata only", fileName);
+                return;
+            }
+
+            var preview = summary is { Length: > 0 } s
+                ? string.Concat(s.AsSpan(0, Math.Min(100, s.Length)), "...")
+                : "...";
+            _logger.LogDebug("Successfully generated AI summary for attachment {FileName}: {SummaryPreview}", fileName, preview);
         }
 
         private async Task GenerateApplicationAnalysisAsync(Application application, List<ApplicationChefsFileAttachment> attachments)
