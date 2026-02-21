@@ -3,17 +3,6 @@
  * Handles rendering and management of AI-generated analysis results
  */
 
-// Simple hash function to create stable IDs from content
-function simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.codePointAt(i) || 0;
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash).toString(36);
-}
-
 /**
  * Helper function to create an item from a template
  * @param {string} templateName - Name of the template to clone
@@ -71,18 +60,48 @@ function createAccordionGroup(id, type, iconClass, title, content) {
     return $group;
 }
 
+function getFindingDetailText(item) {
+    if (!item || typeof item !== 'object') {
+        return '';
+    }
+
+    const raw = item.detail ?? '';
+    if (typeof raw === 'string') {
+        return raw;
+    }
+
+    try {
+        return JSON.stringify(raw);
+    } catch {
+        return String(raw);
+    }
+}
+
 function renderRealAIAnalysis(analysisData) {
-    // Generate STABLE IDs based on content hash
-    const warnings = (analysisData.warnings || []).map((w, i) => ({
-        ...w,
-        id: w.id || 'warning-' + simpleHash((w.category || '') + (w.message || ''))
+    const rawWarnings = analysisData.warnings || [];
+    const rawErrors = analysisData.errors || [];
+    const rawSummaries = analysisData.summaries || analysisData.recommendations || [];
+    const warnings = rawWarnings
+        .filter(w => w)
+        .map((w, i) => ({
+            ...w,
+            id: w.id || `warning-${i}`,
+            title: w.title || w.category || 'Warning',
+            detail: w.detail || w.message || ''
+        }));
+    const errors = rawErrors
+        .filter(e => e)
+        .map((e, i) => ({
+            ...e,
+            id: e.id || `error-${i}`,
+            title: e.title || e.category || 'Error',
+            detail: e.detail || e.message || ''
+        }));
+    const summaries = rawSummaries.map((s) => ({
+        title: s?.title || s?.category || 'Summary',
+        detail: s?.detail || s?.message || s || ''
     }));
-    const errors = (analysisData.errors || []).map((e, i) => ({
-        ...e,
-        id: e.id || 'error-' + simpleHash((e.category || '') + (e.message || ''))
-    }));
-    const recommendations = analysisData.recommendations || [];
-    const dismissedItems = new Set((analysisData.dismissed_items || []).filter(Boolean));
+    const dismissedItems = new Set((analysisData.dismissed || analysisData.dismissed_items || []).filter(Boolean));
 
     // Get all valid IDs from current errors and warnings
     const allValidIds = new Set([...errors.map(e => e.id), ...warnings.map(w => w.id)]);
@@ -105,11 +124,10 @@ function renderRealAIAnalysis(analysisData) {
     // Add errors section if there are any
     if (activeErrors.length > 0) {
         const errorItems = activeErrors.map(error => {
-            const errorId = error.id || 'error-unknown-' + Date.now();
             return createItemFromTemplate('dismissible-item', {
-                category: error.category || 'Error',
-                message: error.message || '',
-                'dismiss-btn': { id: errorId, type: 'error' }
+                category: error.title || 'Error',
+                message: getFindingDetailText(error),
+                'dismiss-btn': { id: error.id, type: 'error' }
             });
         });
 
@@ -129,11 +147,10 @@ function renderRealAIAnalysis(analysisData) {
     // Add warnings section if there are any
     if (activeWarnings.length > 0) {
         const warningItems = activeWarnings.map(warning => {
-            const warningId = warning.id || 'warning-unknown-' + Date.now();
             return createItemFromTemplate('dismissible-item', {
-                category: warning.category || 'Warning',
-                message: warning.message || '',
-                'dismiss-btn': { id: warningId, type: 'warning' }
+                category: warning.title || 'Warning',
+                message: getFindingDetailText(warning),
+                'dismiss-btn': { id: warning.id, type: 'warning' }
             });
         });
 
@@ -150,27 +167,27 @@ function renderRealAIAnalysis(analysisData) {
         $accordionList.append(accordionItem);
     }
 
-    // Add recommendations section if there are any
-    if (recommendations.length > 0) {
-        const recommendationItems = recommendations.map(rec => {
-            const category = typeof rec === 'object' ? (rec.category || 'Recommendation') : 'Recommendation';
-            const message = typeof rec === 'object' ? (rec.message || rec) : rec;
+    // Add summary section if there are any
+    if (summaries.length > 0) {
+        const summaryItems = summaries.map(rec => {
+            const category = typeof rec === 'object' ? (rec.title || 'Summary') : 'Summary';
+            const message = typeof rec === 'object' ? getFindingDetailText(rec) : rec;
             
-            return createItemFromTemplate('recommendation-item', {
+            return createItemFromTemplate('summary-item', {
                 category: category,
                 message: message
             });
         });
 
-        const $recommendationsContainer = $('<div>');
-        recommendationItems.forEach(item => $recommendationsContainer.append(item));
+        const $summaryContainer = $('<div>');
+        summaryItems.forEach(item => $summaryContainer.append(item));
         
         const accordionItem = createAccordionGroup(
-            'recommendations',
+            'summary',
             'info',
             'fl-info-circle',
-            `Recommendations (${recommendations.length})`,
-            $recommendationsContainer
+            `Summary (${summaries.length})`,
+            $summaryContainer
         );
         $accordionList.append(accordionItem);
     }
@@ -179,19 +196,17 @@ function renderRealAIAnalysis(analysisData) {
     if (dismissedErrors.length > 0 || dismissedWarnings.length > 0) {
         const dismissedItems = [
             ...dismissedErrors.map(error => {
-                const errorId = error.id || 'error-dismissed-' + Date.now();
                 return createItemFromTemplate('dismissed-item', {
-                    category: error.category || 'Error',
-                    message: error.message || '',
-                    'restore-btn': { id: errorId, type: 'error' }
+                    category: error.title || 'Error',
+                    message: getFindingDetailText(error),
+                    'restore-btn': { id: error.id, type: 'error' }
                 });
             }),
             ...dismissedWarnings.map(warning => {
-                const warningId = warning.id || 'warning-dismissed-' + Date.now();
                 return createItemFromTemplate('dismissed-item', {
-                    category: warning.category || 'Warning',
-                    message: warning.message || '',
-                    'restore-btn': { id: warningId, type: 'warning' }
+                    category: warning.title || 'Warning',
+                    message: getFindingDetailText(warning),
+                    'restore-btn': { id: warning.id, type: 'warning' }
                 });
             })
         ];
@@ -208,7 +223,7 @@ function renderRealAIAnalysis(analysisData) {
         );
 
         $accordionList.append(accordionItem);
-        let totalLength = recommendations.length + activeWarnings.length + activeErrors.length;
+        let totalLength = summaries.length + activeWarnings.length + activeErrors.length;
         PubSub.publish('update_ai_analysis_count', {
             itemCount: totalLength,
         });
@@ -216,7 +231,7 @@ function renderRealAIAnalysis(analysisData) {
 
     // If no items, show the no-data message; otherwise hide it
     const $noDataMessage = $('#aiAnalysisNoData');
-    if (activeErrors.length === 0 && activeWarnings.length === 0 && recommendations.length === 0 && dismissedErrors.length === 0 && dismissedWarnings.length === 0) {
+    if (activeErrors.length === 0 && activeWarnings.length === 0 && summaries.length === 0 && dismissedErrors.length === 0 && dismissedWarnings.length === 0) {
         $noDataMessage.show();
         $accordionList.hide();
     } else {
@@ -225,7 +240,7 @@ function renderRealAIAnalysis(analysisData) {
     }
 
     // Update tab badge with total count
-    const totalIssues = activeWarnings.length + activeErrors.length + recommendations.length;
+    const totalIssues = activeWarnings.length + activeErrors.length + summaries.length;
     $('#ai-analysis-tab').html(`<i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(${totalIssues})`);
 
     // Remove all previous event handlers from accordion list
@@ -300,7 +315,7 @@ function toggleAccordionItem($header) {
 }
 
 function loadAIAnalysis() {
-    if($('#AIAnalysisFeatureEnabled') == 'False') {
+    if ($('#AIAnalysisFeatureEnabled').val() === 'False') {
         return;
     }
     const urlParams = new URL(globalThis.location.toLocaleString()).searchParams;
@@ -313,52 +328,35 @@ function loadAIAnalysis() {
     // Get the application data including AI analysis
     unity.grantManager.grantApplications.grantApplication.get(applicationId)
         .done(function(application) {
-            console.debug('Application data received:', application);
-            console.debug('AI Analysis field:', application.aiAnalysis);
-
-            // Use the camelCase version that should come from the API
-            const aiAnalysis = application.aiAnalysis;
-
-            if (application && aiAnalysis) {
+            let aiAnalysisData = application.aiAnalysisData;
+            if (!aiAnalysisData && application.aiAnalysis) {
                 try {
-                    console.debug('Raw AI analysis:', aiAnalysis);
-
-                    // Clean the JSON response (remove markdown code blocks if present)
-                    let cleanedJson = aiAnalysis.trim();
-                    if (cleanedJson.startsWith('```json') || cleanedJson.startsWith('```')) {
-                        const startIndex = cleanedJson.indexOf('\n');
-                        if (startIndex >= 0) {
-                            cleanedJson = cleanedJson.substring(startIndex + 1);
+                    let cleaned = String(application.aiAnalysis).trim();
+                    if (cleaned.startsWith('```json') || cleaned.startsWith('```')) {
+                        const firstBreak = cleaned.indexOf('\n');
+                        if (firstBreak >= 0) {
+                            cleaned = cleaned.substring(firstBreak + 1);
                         }
                     }
-                    if (cleanedJson.endsWith('```')) {
-                        const lastIndex = cleanedJson.lastIndexOf('```');
-                        if (lastIndex > 0) {
-                            cleanedJson = cleanedJson.substring(0, lastIndex);
-                        }
+                    if (cleaned.endsWith('```')) {
+                        cleaned = cleaned.substring(0, cleaned.lastIndexOf('```'));
                     }
-                    cleanedJson = cleanedJson.trim();
-
-                    // Remove trailing commas before closing brackets/braces (common JSON error from AI)
-                    cleanedJson = cleanedJson.replaceAll(/,(\s*[}\]])/g, '$1');
-
-                    const analysisData = JSON.parse(cleanedJson);
-                    console.debug('Parsed analysis data:', analysisData);
-                    renderRealAIAnalysis(analysisData);
-                } catch (e) {
-                    console.warn('Failed to parse AI analysis JSON, showing demo data:', e);
+                    cleaned = cleaned.replaceAll(/,(\s*[}\]])/g, '$1').trim();
+                    aiAnalysisData = JSON.parse(cleaned);
+                } catch (parseError) {
+                    console.warn('Failed to parse aiAnalysis JSON fallback:', parseError);
                 }
-            } else {
-                console.debug('No AI analysis found, showing demo');             
+            }
+
+            if (application && aiAnalysisData) {
+                try {
+                    renderRealAIAnalysis(aiAnalysisData);
+                } catch (e) {
+                    console.warn('Failed to render AI analysis data:', e);
+                }
             }
         })
         .fail(function(error) {
-            console.warn('Failed to load application data, showing demo AI analysis', error);
+            console.warn('Failed to load application data', error);
         });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
