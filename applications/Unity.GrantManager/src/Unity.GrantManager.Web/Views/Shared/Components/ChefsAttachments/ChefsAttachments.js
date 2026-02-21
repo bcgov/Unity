@@ -176,7 +176,7 @@ $(function () {
                         .append(
                             $(
                                 '<td colspan="4" style="font-size: 1em; color: #6c757d; font-style: italic;">'
-                            ).html(data.aiSummary)
+                            ).text(data.aiSummary)
                         );
                     $(row).after(summaryRow);
                 }
@@ -335,7 +335,7 @@ $(function () {
             const $text = $button.contents().filter(function () {
                 return this.nodeType === 3;
             });
-            $icon.removeClass('fl-chevron-up').addClass('fa-wand-sparkles');
+            $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
             $text.replaceWith('Show Summaries');
             $button.attr('title', 'Show AI Summaries');
             allAISummariesExpanded = false;
@@ -343,12 +343,13 @@ $(function () {
     });
 
     function formatAISummary(data) {
+        const safeSummary = escapeHtml(data.aiSummary || 'No summary available');
         return (
             '<div class="ai-summary-row">' +
             '<div class="ai-summary-content">' +
             '<strong><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i> Summary:</strong> ' +
             '<p class="mt-2">' +
-            (data.aiSummary || 'No summary available') +
+            safeSummary +
             '</p>' +
             '</div>' +
             '</div>'
@@ -513,6 +514,12 @@ $(function () {
     });
 });
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function downloadChefsFile(event) {
     const button = event.currentTarget;
     const chefsFileId = button.getAttribute('chefs-data');
@@ -586,3 +593,4 @@ function showChefsAPIAccessError() {
         },
     });
 }
+
