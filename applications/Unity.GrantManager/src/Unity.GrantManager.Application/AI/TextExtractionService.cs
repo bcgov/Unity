@@ -3,12 +3,14 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using UglyToad.PdfPig;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
 {
     public class TextExtractionService : ITextExtractionService, ITransientDependency
     {
+        private const int MaxExtractedTextLength = 50000;
         private readonly ILogger<TextExtractionService> _logger;
 
         public TextExtractionService(ILogger<TextExtractionService> logger)
@@ -43,9 +45,7 @@ namespace Unity.GrantManager.AI
                 // Handle PDF files
                 if (normalizedContentType.Contains("pdf") || extension == ".pdf")
                 {
-                    // For now, return empty string - can be enhanced with PDF parsing library
-                    _logger.LogDebug("PDF text extraction not yet implemented for {FileName}", fileName);
-                    return string.Empty;
+                    return await Task.FromResult(ExtractTextFromPdfFile(fileName, fileContent));
                 }
 
                 // Handle Word documents
@@ -97,12 +97,11 @@ namespace Unity.GrantManager.AI
                     text = Encoding.ASCII.GetString(fileContent);
                 }
 
-                // Limit the extracted text to a reasonable size (e.g., first 50,000 characters)
-                const int maxLength = 50000;
-                if (text.Length > maxLength)
+                // Limit the extracted text to a reasonable size.
+                if (text.Length > MaxExtractedTextLength)
                 {
-                    text = text.Substring(0, maxLength);
-                    _logger.LogDebug("Truncated text content to {MaxLength} characters", maxLength);
+                    text = text.Substring(0, MaxExtractedTextLength);
+                    _logger.LogDebug("Truncated text content to {MaxLength} characters", MaxExtractedTextLength);
                 }
 
                 return await Task.FromResult(text);
@@ -110,6 +109,42 @@ namespace Unity.GrantManager.AI
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error decoding text file");
+                return string.Empty;
+            }
+        }
+
+        private string ExtractTextFromPdfFile(string fileName, byte[] fileContent)
+        {
+            try
+            {
+                using var stream = new MemoryStream(fileContent, writable: false);
+                using var document = PdfDocument.Open(stream);
+                var builder = new StringBuilder();
+
+                foreach (var page in document.GetPages())
+                {
+                    if (builder.Length >= MaxExtractedTextLength)
+                    {
+                        break;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(page.Text))
+                    {
+                        builder.AppendLine(page.Text);
+                    }
+                }
+
+                var text = builder.ToString();
+                if (text.Length > MaxExtractedTextLength)
+                {
+                    text = text.Substring(0, MaxExtractedTextLength);
+                }
+
+                return text;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "PDF text extraction failed for {FileName}", fileName);
                 return string.Empty;
             }
         }
