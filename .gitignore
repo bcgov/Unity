@@ -7,6 +7,7 @@
 *.rsuser
 *.userosscache
 *.sln.docstates
+*.code-workspace
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -23,6 +24,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+*.log
 
 # Visual Studio cache/options directory
 .vs/
@@ -117,3 +119,6 @@ appsettings.json
 /applications/Orchestrator
 *.env
 /applications/Unity.GrantManager/src/Unity.GrantManager.Web/package-lock.json
+
+# Local dev artifacts
+/AGENTS.md
