@@ -54,6 +54,60 @@ namespace Unity.GrantManager.AI
             return Task.FromResult(true);
         }
 
+        public Task<string> GenerateCompletionAsync(AICompletionRequest request)
+        {
+            return GenerateSummaryAsync(
+                request?.UserPrompt ?? string.Empty,
+                request?.SystemPrompt,
+                request?.MaxTokens ?? 150);
+        }
+
+        public Task<string> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
+        {
+            return GenerateAttachmentSummaryAsync(
+                request?.FileName ?? string.Empty,
+                request?.FileContent ?? Array.Empty<byte>(),
+                request?.ContentType ?? "application/octet-stream");
+        }
+
+        public Task<string> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
+        {
+            var dataJson = JsonSerializer.Serialize(request.Data, new JsonSerializerOptions { WriteIndented = true });
+            var schemaJson = JsonSerializer.Serialize(request.Schema, new JsonSerializerOptions { WriteIndented = true });
+
+            var attachmentSummaries = request.Attachments
+                .Select(a => $"{a.Name}: {a.Summary}")
+                .ToList();
+
+            var applicationContent = $@"DATA
+{dataJson}";
+
+            var formFieldConfiguration = $@"SCHEMA
+{schemaJson}";
+
+            return AnalyzeApplicationAsync(
+                applicationContent,
+                attachmentSummaries,
+                request.Rubric ?? string.Empty,
+                formFieldConfiguration);
+        }
+
+        public Task<string> GenerateScoresheetSectionAnswersAsync(ScoresheetSectionRequest request)
+        {
+            var dataJson = JsonSerializer.Serialize(request.Data, new JsonSerializerOptions { WriteIndented = true });
+            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, new JsonSerializerOptions { WriteIndented = true });
+
+            var attachmentSummaries = request.Attachments
+                .Select(a => $"{a.Name}: {a.Summary}")
+                .ToList();
+
+            return GenerateScoresheetSectionAnswersAsync(
+                dataJson,
+                attachmentSummaries,
+                sectionJson,
+                request.SectionName);
+        }
+
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
         {
             if (string.IsNullOrEmpty(ApiKey))
