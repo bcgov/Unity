@@ -96,6 +96,9 @@ namespace Unity.Payments.Repositories
                         .ToListAsync();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", 
+            "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", 
+            Justification = "EF Core does not support StringComparison - https://github.com/dotnet/efcore/issues/1222")]
         public async Task<List<ApplicationPaymentSummaryDto>> GetPaymentSummariesByCorrelationIdsAsync(List<Guid> correlationIds)
         {
             var dbSet = await GetDbSetAsync();
@@ -108,7 +111,7 @@ namespace Unity.Payments.Repositories
                     ApplicationId = g.Key,
                     TotalPaid = g
                         .Where(p => p.PaymentStatus != null
-                            && p.PaymentStatus.Trim() == CasPaymentRequestStatus.FullyPaid)
+                            && p.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
                         .Sum(p => p.Amount),
                     TotalPending = g
                         .Where(p => p.Status == PaymentRequestStatus.L1Pending
