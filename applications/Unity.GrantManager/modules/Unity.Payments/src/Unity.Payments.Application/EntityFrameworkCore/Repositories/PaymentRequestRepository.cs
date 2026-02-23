@@ -96,8 +96,8 @@ namespace Unity.Payments.Repositories
                         .ToListAsync();
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", 
-            "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance",
+            "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons",
             Justification = "EF Core does not support StringComparison - https://github.com/dotnet/efcore/issues/1222")]
         public async Task<List<ApplicationPaymentSummaryDto>> GetPaymentSummariesByCorrelationIdsAsync(List<Guid> correlationIds)
         {

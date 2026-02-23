@@ -331,7 +331,7 @@ namespace Unity.Payments.ViewComponents
             };
 
             var viewComponent = new PaymentInfoViewComponent(
-                appService, 
+                appService,
                 paymentRequestService,
                 featureChecker)
             {

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Services;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.PaymentRequests;

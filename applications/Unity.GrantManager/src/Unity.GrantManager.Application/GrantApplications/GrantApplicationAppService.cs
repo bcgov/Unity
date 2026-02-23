@@ -39,10 +39,10 @@ namespace Unity.GrantManager.GrantApplications;
 public class GrantApplicationAppService(
     IApplicationManager applicationManager,
     IApplicationRepository applicationRepository,
-    IApplicationStatusRepository applicationStatusRepository,    
+    IApplicationStatusRepository applicationStatusRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
-    IApplicationFormRepository applicationFormRepository,    
+    IApplicationFormRepository applicationFormRepository,
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
@@ -209,7 +209,7 @@ public class GrantApplicationAppService(
     public async Task<ApplicationForm?> GetApplicationFormAsync(Guid applicationFormId)
     {
         return await (await applicationFormRepository.GetQueryableAsync()).FirstOrDefaultAsync(s => s.Id == applicationFormId);
-    }  
+    }
 
     [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
@@ -665,7 +665,7 @@ public class GrantApplicationAppService(
         }
 
         return await applicantAgentRepository.UpdateAsync(applicantAgent);
-    }    
+    }
 
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task UpdateMergedApplicantAsync(Guid applicationId, CreateUpdateApplicantInfoDto input)
@@ -810,7 +810,7 @@ public class GrantApplicationAppService(
                 Debug.WriteLine(ex.ToString());
             }
         }
-    }   
+    }
 
     public async Task<List<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
     {

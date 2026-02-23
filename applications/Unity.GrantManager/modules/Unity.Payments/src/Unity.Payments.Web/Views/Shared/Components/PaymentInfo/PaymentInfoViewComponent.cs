@@ -45,7 +45,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                     ApplicationFormVersionId = applicationFormVersionId,
                     ApplicantId = application.Applicant.Id
                 };
-                
+
                 var summary = await _paymentRequestService.GetApplicationPaymentSummaryAsync(applicationId);
                 model.TotalPaid = summary.TotalPaid;
                 model.TotalPendingAmounts = summary.TotalPending;
