@@ -96,6 +96,30 @@ public class ApplicationLinksAppService : CrudAppService<
         return resultList;
     }
 
+    public async Task<List<ApplicationLinksDto>> GetApplicationLinksByType(Guid applicationId, ApplicationLinkType linkType)
+    {
+        var applicationLinksQuery = await ApplicationLinksRepository
+            .GetListAsync(al => al.ApplicationId == applicationId && al.LinkType == linkType);
+
+        return ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(applicationLinksQuery);
+    }
+
+    public async Task<List<ApplicationLinksDto>> GetChildApplications(Guid applicationId)
+    {
+        return await GetApplicationLinksByType(applicationId, ApplicationLinkType.Child);
+    }
+
+    public async Task<Dictionary<Guid, List<Guid>>> GetChildApplicationIdsByParentIdsAsync(List<Guid> parentApplicationIds)
+    {
+        var links = await ApplicationLinksRepository
+            .GetListAsync(al => parentApplicationIds.Contains(al.ApplicationId)
+                             && al.LinkType == ApplicationLinkType.Child);
+
+        return links
+            .GroupBy(l => l.ApplicationId)
+            .ToDictionary(g => g.Key, g => g.Select(l => l.LinkedApplicationId).ToList());
+    }
+
     public async Task<ApplicationLinksInfoDto> GetLinkedApplicationAsync(Guid currentApplicationId, Guid linkedApplicationId)
     {
         var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();

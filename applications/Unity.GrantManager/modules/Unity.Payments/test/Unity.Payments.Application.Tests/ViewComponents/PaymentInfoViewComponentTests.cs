@@ -665,8 +665,7 @@ namespace Unity.Payments.ViewComponents
             var viewComponent = new PaymentInfoViewComponent(
                 appService, 
                 paymentRequestService,
-                featureChecker,
-                applicationLinksService)
+                featureChecker)
             {
                 ViewComponentContext = viewComponentContext,
                 LazyServiceProvider = _lazyServiceProvider

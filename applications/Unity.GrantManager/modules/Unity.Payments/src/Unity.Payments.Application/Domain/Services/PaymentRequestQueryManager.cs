@@ -88,8 +88,10 @@ namespace Unity.Payments.Domain.Services
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdsAsync(List<Guid> applicationIds)
         {
             var paymentsQueryable = await paymentRequestRepository.GetQueryableAsync();
-            var payments = await paymentsQueryable.Include(pr => pr.Site).ToListAsync();
-            var filteredPayments = payments.Where(pr => applicationIds.Contains(pr.CorrelationId)).ToList();
+            var filteredPayments = await paymentsQueryable
+                .Include(pr => pr.Site)
+                .Where(pr => applicationIds.Contains(pr.CorrelationId))
+                .ToListAsync();
 
             return objectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments);
         }
@@ -97,8 +99,10 @@ namespace Unity.Payments.Domain.Services
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
         {
             var paymentsQueryable = await paymentRequestRepository.GetQueryableAsync();
-            var payments = await paymentsQueryable.Include(pr => pr.Site).ToListAsync();
-            var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
+            var filteredPayments = await paymentsQueryable
+                .Include(pr => pr.Site)
+                .Where(e => e.CorrelationId == applicationId)
+                .ToListAsync();
 
             return objectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments);
         }
@@ -217,6 +221,75 @@ namespace Unity.Payments.Domain.Services
         {
             var payments = await paymentRequestRepository.GetPaymentPendingListByCorrelationIdAsync(applicationId);
             return objectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments);
+        }
+
+        public async Task<ApplicationPaymentSummaryDto> GetApplicationPaymentSummaryAsync(Guid applicationId, List<Guid> childApplicationIds)
+        {
+            var allCorrelationIds = new List<Guid> { applicationId };
+            allCorrelationIds.AddRange(childApplicationIds);
+
+            var summaries = await paymentRequestRepository.GetPaymentSummariesByCorrelationIdsAsync(allCorrelationIds);
+
+            return new ApplicationPaymentSummaryDto
+            {
+                ApplicationId = applicationId,
+                TotalPaid = summaries.Sum(s => s.TotalPaid),
+                TotalPending = summaries.Sum(s => s.TotalPending)
+            };
+        }
+
+        public async Task<Dictionary<Guid, ApplicationPaymentSummaryDto>> GetApplicationPaymentSummariesAsync(
+            List<Guid> applicationIds,
+            Dictionary<Guid, List<Guid>> childApplicationIdsByParent)
+        {
+            // Collect all unique correlation IDs (parents + all children) for a single DB query
+            var allCorrelationIds = new HashSet<Guid>(applicationIds);
+            foreach (var childIds in childApplicationIdsByParent.Values)
+            {
+                foreach (var childId in childIds)
+                {
+                    allCorrelationIds.Add(childId);
+                }
+            }
+
+            var summaries = await paymentRequestRepository.GetPaymentSummariesByCorrelationIdsAsync(allCorrelationIds.ToList());
+            var summaryLookup = summaries.ToDictionary(s => s.ApplicationId);
+
+            var result = new Dictionary<Guid, ApplicationPaymentSummaryDto>();
+            foreach (var applicationId in applicationIds)
+            {
+                decimal totalPaid = 0;
+                decimal totalPending = 0;
+
+                // Add the parent application's own amounts
+                if (summaryLookup.TryGetValue(applicationId, out var parentSummary))
+                {
+                    totalPaid += parentSummary.TotalPaid;
+                    totalPending += parentSummary.TotalPending;
+                }
+
+                // Add child application amounts
+                if (childApplicationIdsByParent.TryGetValue(applicationId, out var childIds))
+                {
+                    foreach (var childId in childIds)
+                    {
+                        if (summaryLookup.TryGetValue(childId, out var childSummary))
+                        {
+                            totalPaid += childSummary.TotalPaid;
+                            totalPending += childSummary.TotalPending;
+                        }
+                    }
+                }
+
+                result[applicationId] = new ApplicationPaymentSummaryDto
+                {
+                    ApplicationId = applicationId,
+                    TotalPaid = totalPaid,
+                    TotalPending = totalPending
+                };
+            }
+
+            return result;
         }
     }
 }

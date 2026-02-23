@@ -17,6 +17,7 @@ using Volo.Abp.Features;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Users;
 using Unity.Payments.PaymentRequests.Notifications;
+using Unity.GrantManager.GrantApplications;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -29,7 +30,8 @@ namespace Unity.Payments.PaymentRequests
                 IPaymentsManager paymentsManager,
                 FsbPaymentNotifier fsbPaymentNotifier,
                 IPaymentRequestQueryManager paymentRequestQueryManager,
-                IPaymentRequestConfigurationManager paymentRequestConfigurationManager) : PaymentsAppService, IPaymentRequestAppService
+                IPaymentRequestConfigurationManager paymentRequestConfigurationManager,
+                IApplicationLinksService applicationLinksService) : PaymentsAppService, IPaymentRequestAppService
 
     {
         public async Task<Guid?> GetDefaultAccountCodingId()
@@ -327,6 +329,19 @@ namespace Unity.Payments.PaymentRequests
         public async Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId)
         {
             return await paymentRequestQueryManager.GetPaymentPendingListByCorrelationIdAsync(applicationId);
+        }
+
+        public async Task<ApplicationPaymentSummaryDto> GetApplicationPaymentSummaryAsync(Guid applicationId)
+        {
+            var childLinks = await applicationLinksService.GetChildApplications(applicationId);
+            var childApplicationIds = childLinks.Select(l => l.LinkedApplicationId).ToList();
+            return await paymentRequestQueryManager.GetApplicationPaymentSummaryAsync(applicationId, childApplicationIds);
+        }
+
+        public async Task<Dictionary<Guid, ApplicationPaymentSummaryDto>> GetApplicationPaymentSummariesAsync(List<Guid> applicationIds)
+        {
+            var childApplicationIdsByParent = await applicationLinksService.GetChildApplicationIdsByParentIdsAsync(applicationIds);
+            return await paymentRequestQueryManager.GetApplicationPaymentSummariesAsync(applicationIds, childApplicationIdsByParent);
         }
     }
 }

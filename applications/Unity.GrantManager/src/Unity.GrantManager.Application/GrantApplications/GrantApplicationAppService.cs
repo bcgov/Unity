@@ -23,7 +23,6 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
-using Unity.Payments.Codes;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -65,19 +64,12 @@ public class GrantApplicationAppService(
 
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-        List<PaymentDetailsDto> paymentRequests = [];
+        Dictionary<Guid, ApplicationPaymentSummaryDto> paymentSummaries = [];
 
         if (paymentsFeatureEnabled && applicationIds.Count > 0)
         {
-            paymentRequests = await paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+            paymentSummaries = await paymentRequestService.GetApplicationPaymentSummariesAsync(applicationIds);
         }
-
-        // 2️ Pre-aggregate payment amounts for O(1) lookup
-        var paymentRequestsByApplication = paymentRequests
-            .Where(pr => !string.IsNullOrWhiteSpace(pr.PaymentStatus)
-                      && pr.PaymentStatus.Trim().Equals(CasPaymentRequestStatus.FullyPaid, StringComparison.OrdinalIgnoreCase))
-            .GroupBy(pr => pr.CorrelationId)
-            .ToDictionary(g => g.Key, g => g.Sum(pr => pr.Amount));
 
         // 3️ Map applications to DTOs
         var appDtos = applications.Select(app =>
@@ -102,12 +94,13 @@ public class GrantApplicationAppService(
             appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
             appDto.ApplicationLinks = ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(app.ApplicationLinks?.ToList() ?? []);
 
-            if (paymentsFeatureEnabled && paymentRequestsByApplication.Count > 0)
+            if (paymentsFeatureEnabled && paymentSummaries.Count > 0)
             {
+                paymentSummaries.TryGetValue(app.Id, out var summary);
                 appDto.PaymentInfo = new PaymentInfoDto
                 {
                     ApprovedAmount = app.ApprovedAmount,
-                    TotalPaid = paymentRequestsByApplication.GetValueOrDefault(app.Id)
+                    TotalPaid = summary?.TotalPaid ?? 0
                 };
             }
             return appDto;
