@@ -62,13 +62,14 @@ public class GrantApplicationAppService(
 
         var applicationIds = applications.Select(a => a.Id).ToList();
 
+        // 2️ Fetch payment rollup batch if feature enabled
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-        Dictionary<Guid, ApplicationPaymentSummaryDto> paymentSummaries = [];
+        Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
 
         if (paymentsFeatureEnabled && applicationIds.Count > 0)
         {
-            paymentSummaries = await paymentRequestService.GetApplicationPaymentSummariesAsync(applicationIds);
+            paymentRollupBatch = await paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
         }
 
         // 3️ Map applications to DTOs
@@ -94,13 +95,13 @@ public class GrantApplicationAppService(
             appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
             appDto.ApplicationLinks = ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(app.ApplicationLinks?.ToList() ?? []);
 
-            if (paymentsFeatureEnabled && paymentSummaries.Count > 0)
+            if (paymentsFeatureEnabled && paymentRollupBatch.Count > 0)
             {
-                paymentSummaries.TryGetValue(app.Id, out var summary);
+                paymentRollupBatch.TryGetValue(app.Id, out var rollup);
                 appDto.PaymentInfo = new PaymentInfoDto
                 {
                     ApprovedAmount = app.ApprovedAmount,
-                    TotalPaid = summary?.TotalPaid ?? 0
+                    TotalPaid = rollup?.TotalPaid ?? 0
                 };
             }
             return appDto;

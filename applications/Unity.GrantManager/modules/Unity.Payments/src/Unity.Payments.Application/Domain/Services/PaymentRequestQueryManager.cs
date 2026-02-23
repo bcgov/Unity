@@ -223,14 +223,25 @@ namespace Unity.Payments.Domain.Services
             return objectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments);
         }
 
-        public async Task<ApplicationPaymentSummaryDto> GetApplicationPaymentSummaryAsync(Guid applicationId, List<Guid> childApplicationIds)
+        /// <summary>
+        /// Retrieves a payment rollup for the specified application and its associated child applications.
+        /// </summary>
+        /// <remarks>This method combines payment information from both the main application and its child
+        /// applications, providing an overall view of payment status. Use this method to obtain a single rollup when
+        /// displaying applications with related child records.</remarks>
+        /// <param name="applicationId">The unique identifier of the main application for which the payment rollup is requested.</param>
+        /// <param name="childApplicationIds">A list of unique identifiers representing child applications whose payment data will be included in the
+        /// rollup. Cannot be null.</param>
+        /// <returns>An instance of <see cref="ApplicationPaymentRollupDto"/> containing the aggregated total paid and pending
+        /// amounts for the main application and its child applications.</returns>
+        public async Task<ApplicationPaymentRollupDto> GetApplicationPaymentRollupAsync(Guid applicationId, List<Guid> childApplicationIds)
         {
             var allCorrelationIds = new List<Guid> { applicationId };
             allCorrelationIds.AddRange(childApplicationIds);
 
-            var summaries = await paymentRequestRepository.GetPaymentSummariesByCorrelationIdsAsync(allCorrelationIds);
+            var summaries = await paymentRequestRepository.GetBatchPaymentRollupsByCorrelationIdsAsync(allCorrelationIds);
 
-            return new ApplicationPaymentSummaryDto
+            return new ApplicationPaymentRollupDto
             {
                 ApplicationId = applicationId,
                 TotalPaid = summaries.Sum(s => s.TotalPaid),
@@ -238,7 +249,20 @@ namespace Unity.Payments.Domain.Services
             };
         }
 
-        public async Task<Dictionary<Guid, ApplicationPaymentSummaryDto>> GetApplicationPaymentSummariesAsync(
+        /// <summary>
+        /// Retrieves batch payment rollup information for the specified application IDs, aggregating totals
+        /// for both paid and pending amounts from parent and child applications.
+        /// </summary>
+        /// <remarks>This method performs a single database query to efficiently aggregate payment data
+        /// for all specified parent and child applications. The results include all relevant payment information
+        /// for each application ID provided.</remarks>
+        /// <param name="applicationIds">A list of unique identifiers for the applications whose payment rollups are to be retrieved. Cannot be
+        /// null or empty.</param>
+        /// <param name="childApplicationIdsByParent">A dictionary that maps each parent application ID to a list of its child application IDs. Must not be null
+        /// and should contain valid GUIDs.</param>
+        /// <returns>A dictionary where each key is an application ID and the value is an <see cref="ApplicationPaymentRollupDto"/> containing
+        /// the total paid and pending amounts for that application, including amounts from any child applications.</returns>
+        public async Task<Dictionary<Guid, ApplicationPaymentRollupDto>> GetApplicationPaymentRollupBatchAsync(
             List<Guid> applicationIds,
             Dictionary<Guid, List<Guid>> childApplicationIdsByParent)
         {
@@ -252,20 +276,20 @@ namespace Unity.Payments.Domain.Services
                 }
             }
 
-            var summaries = await paymentRequestRepository.GetPaymentSummariesByCorrelationIdsAsync(allCorrelationIds.ToList());
-            var summaryLookup = summaries.ToDictionary(s => s.ApplicationId);
+            var paymentRollups = await paymentRequestRepository.GetBatchPaymentRollupsByCorrelationIdsAsync(allCorrelationIds.ToList());
+            var rollupLookup = paymentRollups.ToDictionary(s => s.ApplicationId);
 
-            var result = new Dictionary<Guid, ApplicationPaymentSummaryDto>();
+            var result = new Dictionary<Guid, ApplicationPaymentRollupDto>();
             foreach (var applicationId in applicationIds)
             {
                 decimal totalPaid = 0;
                 decimal totalPending = 0;
 
                 // Add the parent application's own amounts
-                if (summaryLookup.TryGetValue(applicationId, out var parentSummary))
+                if (rollupLookup.TryGetValue(applicationId, out var parentRollup))
                 {
-                    totalPaid += parentSummary.TotalPaid;
-                    totalPending += parentSummary.TotalPending;
+                    totalPaid += parentRollup.TotalPaid;
+                    totalPending += parentRollup.TotalPending;
                 }
 
                 // Add child application amounts
@@ -273,15 +297,15 @@ namespace Unity.Payments.Domain.Services
                 {
                     foreach (var childId in childIds)
                     {
-                        if (summaryLookup.TryGetValue(childId, out var childSummary))
+                        if (rollupLookup.TryGetValue(childId, out var childApplicationRollup))
                         {
-                            totalPaid += childSummary.TotalPaid;
-                            totalPending += childSummary.TotalPending;
+                            totalPaid += childApplicationRollup.TotalPaid;
+                            totalPending += childApplicationRollup.TotalPending;
                         }
                     }
                 }
 
-                result[applicationId] = new ApplicationPaymentSummaryDto
+                result[applicationId] = new ApplicationPaymentRollupDto
                 {
                     ApplicationId = applicationId,
                     TotalPaid = totalPaid,

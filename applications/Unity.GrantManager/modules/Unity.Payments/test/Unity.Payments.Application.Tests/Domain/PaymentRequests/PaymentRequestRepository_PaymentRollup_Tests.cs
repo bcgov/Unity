@@ -12,13 +12,13 @@ using Xunit;
 namespace Unity.Payments.Domain.PaymentRequests;
 
 [Category("Integration")]
-public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplicationTestBase
+public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationTestBase
 {
     private readonly IPaymentRequestRepository _paymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
-    public PaymentRequestRepository_PaymentSummary_Tests()
+    public PaymentRequestRepository_PaymentRollup_Tests()
     {
         _paymentRequestRepository = GetRequiredService<IPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
@@ -41,7 +41,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -63,7 +63,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -84,7 +84,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -105,7 +105,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -132,7 +132,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -153,7 +153,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -182,7 +182,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -205,7 +205,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -230,7 +230,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -255,7 +255,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -292,7 +292,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([correlationId]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
 
         // Assert
         results.Count.ShouldBe(1);
@@ -302,7 +302,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task Should_Return_Summaries_For_Multiple_CorrelationIds()
+    public async Task Should_Return_Rollup_For_Multiple_CorrelationIds()
     {
         // Arrange
         var app1Id = Guid.NewGuid();
@@ -323,20 +323,20 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
 
         // Act
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([app1Id, app2Id]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([app1Id, app2Id]);
 
         // Assert
         results.Count.ShouldBe(2);
 
-        var app1Summary = results.Find(r => r.ApplicationId == app1Id);
-        app1Summary.ShouldNotBeNull();
-        app1Summary!.TotalPaid.ShouldBe(1000m);
-        app1Summary.TotalPending.ShouldBe(500m);
+        var app1Rollup = results.Find(r => r.ApplicationId == app1Id);
+        app1Rollup.ShouldNotBeNull();
+        app1Rollup!.TotalPaid.ShouldBe(1000m);
+        app1Rollup.TotalPending.ShouldBe(500m);
 
-        var app2Summary = results.Find(r => r.ApplicationId == app2Id);
-        app2Summary.ShouldNotBeNull();
-        app2Summary!.TotalPaid.ShouldBe(2000m);
-        app2Summary.TotalPending.ShouldBe(300m);
+        var app2Rollup = results.Find(r => r.ApplicationId == app2Id);
+        app2Rollup.ShouldNotBeNull();
+        app2Rollup!.TotalPaid.ShouldBe(2000m);
+        app2Rollup.TotalPending.ShouldBe(300m);
     }
 
     [Fact]
@@ -346,7 +346,7 @@ public class PaymentRequestRepository_PaymentSummary_Tests : PaymentsApplication
         // Arrange & Act
         using var uow = _unitOfWorkManager.Begin();
         var results = await _paymentRequestRepository
-            .GetPaymentSummariesByCorrelationIdsAsync([Guid.NewGuid()]);
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([Guid.NewGuid()]);
 
         // Assert
         results.ShouldBeEmpty();

@@ -331,17 +331,37 @@ namespace Unity.Payments.PaymentRequests
             return await paymentRequestQueryManager.GetPaymentPendingListByCorrelationIdAsync(applicationId);
         }
 
-        public async Task<ApplicationPaymentSummaryDto> GetApplicationPaymentSummaryAsync(Guid applicationId)
+        /// <summary>
+        /// Retrieves the payment rollup for the specified application, including any linked child
+        /// applications.
+        /// </summary>
+        /// <remarks>This method first obtains any child applications associated with the given
+        /// application ID and then queries the payment rollup for both the application and its children. Use this
+        /// method to obtain a comprehensive payment overview when applications may be linked together.</remarks>
+        /// <param name="applicationId">The unique identifier of the application for which the payment rollup is requested.</param>
+        /// <returns>An instance of <see cref="ApplicationPaymentRollupDto"/> containing the payment rollup details for the
+        /// specified application and its linked child applications.</returns>
+        public async Task<ApplicationPaymentRollupDto> GetApplicationPaymentRollupAsync(Guid applicationId)
         {
             var childLinks = await applicationLinksService.Value.GetChildApplications(applicationId);
             var childApplicationIds = childLinks.Select(l => l.LinkedApplicationId).ToList();
-            return await paymentRequestQueryManager.GetApplicationPaymentSummaryAsync(applicationId, childApplicationIds);
+            return await paymentRequestQueryManager.GetApplicationPaymentRollupAsync(applicationId, childApplicationIds);
         }
 
-        public async Task<Dictionary<Guid, ApplicationPaymentSummaryDto>> GetApplicationPaymentSummariesAsync(List<Guid> applicationIds)
+        /// <summary>
+        /// Retrieves batch payment rollup information for the specified applications and their child applications.
+        /// </summary>
+        /// <remarks>This method asynchronously resolves child applications linked to the provided
+        /// application identifiers before fetching a batch of payment rollups. Ensure that all application identifiers are valid
+        /// and exist in the system.</remarks>
+        /// <param name="applicationIds">A list of application identifiers for which payment rollups are requested. This parameter cannot be null
+        /// or empty.</param>
+        /// <returns>A dictionary mapping each application identifier to its corresponding <see cref="ApplicationPaymentRollupDto"/>. The dictionary
+        /// includes entries for both the specified applications and their child applications.</returns>
+        public async Task<Dictionary<Guid, ApplicationPaymentRollupDto>> GetApplicationPaymentRollupBatchAsync(List<Guid> applicationIds)
         {
             var childApplicationIdsByParent = await applicationLinksService.Value.GetChildApplicationIdsByParentIdsAsync(applicationIds);
-            return await paymentRequestQueryManager.GetApplicationPaymentSummariesAsync(applicationIds, childApplicationIdsByParent);
+            return await paymentRequestQueryManager.GetApplicationPaymentRollupBatchAsync(applicationIds, childApplicationIdsByParent);
         }
     }
 }

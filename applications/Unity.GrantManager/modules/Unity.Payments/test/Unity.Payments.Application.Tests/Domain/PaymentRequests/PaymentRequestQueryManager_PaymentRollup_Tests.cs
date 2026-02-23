@@ -14,18 +14,18 @@ using Xunit;
 namespace Unity.Payments.Domain.PaymentRequests;
 
 [Category("Domain")]
-public class PaymentRequestQueryManager_PaymentSummary_Tests
+public class PaymentRequestQueryManager_PaymentRollup_Tests
 {
-    #region GetApplicationPaymentSummaryAsync (Single Application)
+    #region GetApplicationPaymentRollupAsync (Single Application)
 
     [Fact]
-    public async Task Should_Return_Summary_For_Single_Application_With_NoChildren()
+    public async Task Should_Return_Rollup_For_Single_Application_With_NoChildren()
     {
         // Arrange
         var appId = Guid.NewGuid();
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 new() { ApplicationId = appId, TotalPaid = 1500m, TotalPending = 2000m }
             });
@@ -33,7 +33,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummaryAsync(appId, []);
+        var result = await manager.GetApplicationPaymentRollupAsync(appId, []);
 
         // Assert
         result.ShouldNotBeNull();
@@ -42,12 +42,12 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         result.TotalPending.ShouldBe(2000m);
 
         // Verify repo was called with only the parent ID
-        await repo.Received(1).GetPaymentSummariesByCorrelationIdsAsync(
+        await repo.Received(1).GetBatchPaymentRollupsByCorrelationIdsAsync(
             Arg.Is<List<Guid>>(ids => ids.Count == 1 && ids.Contains(appId)));
     }
 
     [Fact]
-    public async Task Should_Aggregate_Summary_From_Parent_And_Children()
+    public async Task Should_Aggregate_Rollup_From_Parent_And_Children()
     {
         // Arrange
         var parentId = Guid.NewGuid();
@@ -55,8 +55,8 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var child2Id = Guid.NewGuid();
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 new() { ApplicationId = parentId, TotalPaid = 1000m, TotalPending = 500m },
                 new() { ApplicationId = child1Id, TotalPaid = 300m, TotalPending = 200m },
@@ -66,7 +66,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummaryAsync(parentId, [child1Id, child2Id]);
+        var result = await manager.GetApplicationPaymentRollupAsync(parentId, [child1Id, child2Id]);
 
         // Assert
         result.ShouldNotBeNull();
@@ -75,7 +75,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         result.TotalPending.ShouldBe(800m);  // 500 + 200 + 100
 
         // Verify all IDs were sent to the repository
-        await repo.Received(1).GetPaymentSummariesByCorrelationIdsAsync(
+        await repo.Received(1).GetBatchPaymentRollupsByCorrelationIdsAsync(
             Arg.Is<List<Guid>>(ids => ids.Count == 3
                 && ids.Contains(parentId) && ids.Contains(child1Id) && ids.Contains(child2Id)));
     }
@@ -86,13 +86,13 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         // Arrange
         var appId = Guid.NewGuid();
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>());
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>());
 
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummaryAsync(appId, []);
+        var result = await manager.GetApplicationPaymentRollupAsync(appId, []);
 
         // Assert
         result.ShouldNotBeNull();
@@ -109,8 +109,8 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var childId = Guid.NewGuid();
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 new() { ApplicationId = parentId, TotalPaid = 500m, TotalPending = 0m }
                 // childId has no payments - not returned by repository
@@ -119,7 +119,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummaryAsync(parentId, [childId]);
+        var result = await manager.GetApplicationPaymentRollupAsync(parentId, [childId]);
 
         // Assert
         result.TotalPaid.ShouldBe(500m);  // Only parent amount
@@ -134,8 +134,8 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var childId = Guid.NewGuid();
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 new() { ApplicationId = parentId, TotalPaid = 1000m, TotalPending = 0m },
                 new() { ApplicationId = childId, TotalPaid = 500m, TotalPending = 300m }
@@ -144,7 +144,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummaryAsync(parentId, [childId]);
+        var result = await manager.GetApplicationPaymentRollupAsync(parentId, [childId]);
 
         // Assert
         result.ApplicationId.ShouldBe(parentId);
@@ -154,10 +154,10 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
 
     #endregion
 
-    #region GetApplicationPaymentSummariesAsync (Batch)
+    #region GetApplicationPaymentRollupsAsync (Batch)
 
     [Fact]
-    public async Task Should_Return_Batch_Summaries_For_Multiple_Applications_Without_Children()
+    public async Task Should_Return_Batch_Rollups_For_Multiple_Applications_Without_Children()
     {
         // Arrange
         var app1Id = Guid.NewGuid();
@@ -165,8 +165,8 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var app3Id = Guid.NewGuid();
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 new() { ApplicationId = app1Id, TotalPaid = 1000m, TotalPending = 200m },
                 new() { ApplicationId = app2Id, TotalPaid = 500m, TotalPending = 100m },
@@ -176,7 +176,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummariesAsync(
+        var result = await manager.GetApplicationPaymentRollupBatchAsync(
             [app1Id, app2Id, app3Id],
             new Dictionary<Guid, List<Guid>>());
 
@@ -191,7 +191,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
     }
 
     [Fact]
-    public async Task Should_Aggregate_Child_Amounts_In_Batch_Summaries()
+    public async Task Should_Aggregate_Child_Amounts_In_Batch_Rollup()
     {
         // Arrange
         var parentAId = Guid.NewGuid();
@@ -207,8 +207,8 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         };
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 new() { ApplicationId = parentAId, TotalPaid = 1000m, TotalPending = 100m },
                 new() { ApplicationId = childA1Id, TotalPaid = 200m, TotalPending = 50m },
@@ -220,7 +220,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummariesAsync(
+        var result = await manager.GetApplicationPaymentRollupBatchAsync(
             [parentAId, parentBId], childMap);
 
         // Assert
@@ -238,15 +238,15 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
     }
 
     [Fact]
-    public async Task Should_Handle_Application_With_No_Matching_Summary_In_Batch()
+    public async Task Should_Handle_Application_With_No_Matching_Rollup_In_Batch()
     {
         // Arrange
         var app1Id = Guid.NewGuid();
         var app2Id = Guid.NewGuid();
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 // Only app1 has payment data, app2 doesn't
                 new() { ApplicationId = app1Id, TotalPaid = 1000m, TotalPending = 500m }
@@ -255,7 +255,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummariesAsync(
+        var result = await manager.GetApplicationPaymentRollupBatchAsync(
             [app1Id, app2Id],
             new Dictionary<Guid, List<Guid>>());
 
@@ -285,8 +285,8 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         };
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 new() { ApplicationId = parentAId, TotalPaid = 100m, TotalPending = 0m },
                 new() { ApplicationId = parentBId, TotalPaid = 200m, TotalPending = 0m },
@@ -296,12 +296,12 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummariesAsync(
+        var result = await manager.GetApplicationPaymentRollupBatchAsync(
             [parentAId, parentBId], childMap);
 
         // Assert
         // Verify repository was called with deduplicated IDs (3 unique, not 4)
-        await repo.Received(1).GetPaymentSummariesByCorrelationIdsAsync(
+        await repo.Received(1).GetBatchPaymentRollupsByCorrelationIdsAsync(
             Arg.Is<List<Guid>>(ids => ids.Distinct().Count() == 3));
 
         // Both parents should include the shared child's amounts
@@ -325,16 +325,16 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         };
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>());
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>());
 
         var manager = CreateManager(repo);
 
         // Act
-        await manager.GetApplicationPaymentSummariesAsync([app1Id, app2Id], childMap);
+        await manager.GetApplicationPaymentRollupBatchAsync([app1Id, app2Id], childMap);
 
         // Assert - should only call repository once (batch optimization)
-        await repo.Received(1).GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>());
+        await repo.Received(1).GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>());
     }
 
     [Fact]
@@ -342,13 +342,13 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
     {
         // Arrange
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>());
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>());
 
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummariesAsync(
+        var result = await manager.GetApplicationPaymentRollupBatchAsync(
             [], new Dictionary<Guid, List<Guid>>());
 
         // Assert
@@ -371,8 +371,8 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         };
 
         var repo = Substitute.For<IPaymentRequestRepository>();
-        repo.GetPaymentSummariesByCorrelationIdsAsync(Arg.Any<List<Guid>>())
-            .Returns(new List<ApplicationPaymentSummaryDto>
+        repo.GetBatchPaymentRollupsByCorrelationIdsAsync(Arg.Any<List<Guid>>())
+            .Returns(new List<ApplicationPaymentRollupDto>
             {
                 new() { ApplicationId = app1Id, TotalPaid = 1000m, TotalPending = 0m },
                 new() { ApplicationId = childId, TotalPaid = 500m, TotalPending = 100m },
@@ -382,7 +382,7 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
         var manager = CreateManager(repo);
 
         // Act
-        var result = await manager.GetApplicationPaymentSummariesAsync(
+        var result = await manager.GetApplicationPaymentRollupBatchAsync(
             [app1Id, app2Id], childMap);
 
         // Assert
@@ -403,8 +403,8 @@ public class PaymentRequestQueryManager_PaymentSummary_Tests
             repo,
             Substitute.For<ISiteRepository>(),
             Substitute.For<IExternalUserLookupServiceProvider>(),
-            null!, // CasPaymentRequestCoordinator - not used by summary methods
-            null!  // IObjectMapper - not used by summary methods
+            null!, // CasPaymentRequestCoordinator - not used by Rollup methods
+            null!  // IObjectMapper - not used by Rollup methods
         );
     }
 

@@ -56,10 +56,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
             var applicationIds = applications.Select(app => app.Id).ToList();
             var paymentsFeatureEnabled = await _featureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-            Dictionary<Guid, ApplicationPaymentSummaryDto> paymentSummaries = [];
+            Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
             if (paymentsFeatureEnabled && applicationIds.Count > 0)
             {
-                paymentSummaries = await _paymentRequestService.GetApplicationPaymentSummariesAsync(applicationIds);
+                paymentRollupBatch = await _paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
             }
 
             // Map to DTOs (similar to GrantApplicationAppService.GetListAsync)
@@ -126,13 +126,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
                 }
                 dto.Assignees = assigneeDtos;
 
-                if (paymentsFeatureEnabled && paymentSummaries.Count > 0)
+                if (paymentsFeatureEnabled && paymentRollupBatch.Count > 0)
                 {
-                    paymentSummaries.TryGetValue(app.Id, out var summary);
+                    paymentRollupBatch.TryGetValue(app.Id, out var paymentRollup);
                     dto.PaymentInfo = new PaymentInfoDto
                     {
                         ApprovedAmount = app.ApprovedAmount,
-                        TotalPaid = summary?.TotalPaid ?? 0
+                        TotalPaid = paymentRollup?.TotalPaid ?? 0
                     };
                 }
 

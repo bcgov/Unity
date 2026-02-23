@@ -21,7 +21,7 @@ namespace Unity.Payments.PaymentRequests
         Task<decimal?> GetUserPaymentThresholdAsync();
         Task ManuallyAddPaymentRequestsToReconciliationQueue(List<Guid> paymentRequestIds);
         Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId);
-        Task<ApplicationPaymentSummaryDto> GetApplicationPaymentSummaryAsync(Guid applicationId);
-        Task<Dictionary<Guid, ApplicationPaymentSummaryDto>> GetApplicationPaymentSummariesAsync(List<Guid> applicationIds);
+        Task<ApplicationPaymentRollupDto> GetApplicationPaymentRollupAsync(Guid applicationId);
+        Task<Dictionary<Guid, ApplicationPaymentRollupDto>> GetApplicationPaymentRollupBatchAsync(List<Guid> applicationIds);
     }
 }

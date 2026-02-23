@@ -24,7 +24,7 @@ namespace Unity.Payments.ViewComponents
         }
 
         [Fact]
-        public async Task PaymentInfo_Should_Display_TotalPaid_And_TotalPending_From_Summary()
+        public async Task PaymentInfo_Should_Display_TotalPaid_And_TotalPending_From_Rollup()
         {
             // Arrange
             var applicationId = Guid.NewGuid();
@@ -40,7 +40,7 @@ namespace Unity.Payments.ViewComponents
                 Applicant = new GrantApplicationApplicantDto { Id = applicantId }
             };
 
-            var summary = new ApplicationPaymentSummaryDto
+            var rollup = new ApplicationPaymentRollupDto
             {
                 ApplicationId = applicationId,
                 TotalPaid = 1500m,
@@ -52,7 +52,7 @@ namespace Unity.Payments.ViewComponents
             var featureChecker = Substitute.For<IFeatureChecker>();
 
             appService.GetAsync(applicationId).Returns(applicationDto);
-            paymentRequestService.GetApplicationPaymentSummaryAsync(applicationId).Returns(summary);
+            paymentRequestService.GetApplicationPaymentRollupAsync(applicationId).Returns(rollup);
             featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
 
             var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker);
@@ -83,7 +83,7 @@ namespace Unity.Payments.ViewComponents
                 Applicant = new GrantApplicationApplicantDto { Id = applicantId }
             };
 
-            var summary = new ApplicationPaymentSummaryDto
+            var rollup = new ApplicationPaymentRollupDto
             {
                 ApplicationId = applicationId,
                 TotalPaid = 3500m,
@@ -95,7 +95,7 @@ namespace Unity.Payments.ViewComponents
             var featureChecker = Substitute.For<IFeatureChecker>();
 
             appService.GetAsync(applicationId).Returns(applicationDto);
-            paymentRequestService.GetApplicationPaymentSummaryAsync(applicationId).Returns(summary);
+            paymentRequestService.GetApplicationPaymentRollupAsync(applicationId).Returns(rollup);
             featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
 
             var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker);
@@ -110,10 +110,10 @@ namespace Unity.Payments.ViewComponents
         }
 
         [Fact]
-        public async Task PaymentInfo_Should_Include_Child_Application_Amounts_Via_Summary()
+        public async Task PaymentInfo_Should_Include_Child_Application_Amounts_By_Rollup()
         {
             // The ViewComponent now delegates child aggregation to the service layer.
-            // This test verifies it correctly uses the pre-aggregated summary.
+            // This test verifies it correctly uses the pre-aggregated rollup.
             // Arrange
             var parentAppId = Guid.NewGuid();
             var applicationFormVersionId = Guid.NewGuid();
@@ -126,8 +126,8 @@ namespace Unity.Payments.ViewComponents
                 Applicant = new GrantApplicationApplicantDto { Id = applicantId }
             };
 
-            // Summary includes parent + child amounts (pre-aggregated by service)
-            var summary = new ApplicationPaymentSummaryDto
+            // Rollup includes parent + child amounts (pre-aggregated by service)
+            var rollup = new ApplicationPaymentRollupDto
             {
                 ApplicationId = parentAppId,
                 TotalPaid = 2300m,   // e.g., 1000 (parent) + 500 (child1) + 800 (child2)
@@ -139,7 +139,7 @@ namespace Unity.Payments.ViewComponents
             var featureChecker = Substitute.For<IFeatureChecker>();
 
             appService.GetAsync(parentAppId).Returns(applicationDto);
-            paymentRequestService.GetApplicationPaymentSummaryAsync(parentAppId).Returns(summary);
+            paymentRequestService.GetApplicationPaymentRollupAsync(parentAppId).Returns(rollup);
             featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
 
             var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker);
@@ -170,7 +170,7 @@ namespace Unity.Payments.ViewComponents
                 Applicant = new GrantApplicationApplicantDto { Id = applicantId }
             };
 
-            var summary = new ApplicationPaymentSummaryDto
+            var rollup = new ApplicationPaymentRollupDto
             {
                 ApplicationId = appId,
                 TotalPaid = 0m,
@@ -182,7 +182,7 @@ namespace Unity.Payments.ViewComponents
             var featureChecker = Substitute.For<IFeatureChecker>();
 
             appService.GetAsync(appId).Returns(applicationDto);
-            paymentRequestService.GetApplicationPaymentSummaryAsync(appId).Returns(summary);
+            paymentRequestService.GetApplicationPaymentRollupAsync(appId).Returns(rollup);
             featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
 
             var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker);
@@ -215,7 +215,7 @@ namespace Unity.Payments.ViewComponents
                 Applicant = new GrantApplicationApplicantDto { Id = applicantId }
             };
 
-            var summary = new ApplicationPaymentSummaryDto
+            var rollup = new ApplicationPaymentRollupDto
             {
                 ApplicationId = appId,
                 TotalPaid = 0m,
@@ -227,7 +227,7 @@ namespace Unity.Payments.ViewComponents
             var featureChecker = Substitute.For<IFeatureChecker>();
 
             appService.GetAsync(appId).Returns(applicationDto);
-            paymentRequestService.GetApplicationPaymentSummaryAsync(appId).Returns(summary);
+            paymentRequestService.GetApplicationPaymentRollupAsync(appId).Returns(rollup);
             featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
 
             var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker);
@@ -273,11 +273,11 @@ namespace Unity.Payments.ViewComponents
 
             // Verify no service calls were made
             await appService.DidNotReceive().GetAsync(Arg.Any<Guid>());
-            await paymentRequestService.DidNotReceive().GetApplicationPaymentSummaryAsync(Arg.Any<Guid>());
+            await paymentRequestService.DidNotReceive().GetApplicationPaymentRollupAsync(Arg.Any<Guid>());
         }
 
         [Fact]
-        public async Task PaymentInfo_Should_Call_GetApplicationPaymentSummaryAsync_With_ApplicationId()
+        public async Task PaymentInfo_Should_Call_GetApplicationPaymentRollupAsync_With_ApplicationId()
         {
             // Arrange
             var appId = Guid.NewGuid();
@@ -291,7 +291,7 @@ namespace Unity.Payments.ViewComponents
                 Applicant = new GrantApplicationApplicantDto { Id = applicantId }
             };
 
-            var summary = new ApplicationPaymentSummaryDto
+            var rollup = new ApplicationPaymentRollupDto
             {
                 ApplicationId = appId,
                 TotalPaid = 100m,
@@ -303,7 +303,7 @@ namespace Unity.Payments.ViewComponents
             var featureChecker = Substitute.For<IFeatureChecker>();
 
             appService.GetAsync(appId).Returns(applicationDto);
-            paymentRequestService.GetApplicationPaymentSummaryAsync(appId).Returns(summary);
+            paymentRequestService.GetApplicationPaymentRollupAsync(appId).Returns(rollup);
             featureChecker.IsEnabledAsync("Unity.Payments").Returns(true);
 
             var viewComponent = CreateViewComponent(appService, paymentRequestService, featureChecker);
@@ -312,7 +312,7 @@ namespace Unity.Payments.ViewComponents
             await viewComponent.InvokeAsync(appId, applicationFormVersionId);
 
             // Assert - Verify the correct service method was called with the right ID
-            await paymentRequestService.Received(1).GetApplicationPaymentSummaryAsync(appId);
+            await paymentRequestService.Received(1).GetApplicationPaymentRollupAsync(appId);
         }
 
         private PaymentInfoViewComponent CreateViewComponent(

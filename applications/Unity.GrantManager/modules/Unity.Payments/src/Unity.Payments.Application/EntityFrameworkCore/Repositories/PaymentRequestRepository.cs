@@ -96,17 +96,27 @@ namespace Unity.Payments.Repositories
                         .ToListAsync();
         }
 
+        /// <summary>
+        /// Asynchronously retrieves payment rollup information for each specified correlation ID.
+        /// </summary>
+        /// <remarks>This method queries the database for payment records associated with the provided
+        /// correlation IDs and aggregates payment amounts based on their status. Ensure that the correlation IDs are
+        /// valid to avoid empty results.</remarks>
+        /// <param name="correlationIds">A list of correlation IDs used to filter payment records. Each ID must be a valid GUID.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a list of
+        /// ApplicationPaymentRollupDto objects, each summarizing the total paid and total pending amounts for the
+        /// corresponding correlation ID.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance",
             "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons",
             Justification = "EF Core does not support StringComparison - https://github.com/dotnet/efcore/issues/1222")]
-        public async Task<List<ApplicationPaymentSummaryDto>> GetPaymentSummariesByCorrelationIdsAsync(List<Guid> correlationIds)
+        public async Task<List<ApplicationPaymentRollupDto>> GetBatchPaymentRollupsByCorrelationIdsAsync(List<Guid> correlationIds)
         {
             var dbSet = await GetDbSetAsync();
 
             var results = await dbSet
                 .Where(p => correlationIds.Contains(p.CorrelationId))
                 .GroupBy(p => p.CorrelationId)
-                .Select(g => new ApplicationPaymentSummaryDto
+                .Select(g => new ApplicationPaymentRollupDto
                 {
                     ApplicationId = g.Key,
                     TotalPaid = g
