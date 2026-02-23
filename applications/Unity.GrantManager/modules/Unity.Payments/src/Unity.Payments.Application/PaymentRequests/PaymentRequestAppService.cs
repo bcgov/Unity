@@ -31,7 +31,7 @@ namespace Unity.Payments.PaymentRequests
                 FsbPaymentNotifier fsbPaymentNotifier,
                 IPaymentRequestQueryManager paymentRequestQueryManager,
                 IPaymentRequestConfigurationManager paymentRequestConfigurationManager,
-                IApplicationLinksService applicationLinksService) : PaymentsAppService, IPaymentRequestAppService
+                Lazy<IApplicationLinksService> applicationLinksService) : PaymentsAppService, IPaymentRequestAppService
 
     {
         public async Task<Guid?> GetDefaultAccountCodingId()
@@ -333,14 +333,14 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<ApplicationPaymentSummaryDto> GetApplicationPaymentSummaryAsync(Guid applicationId)
         {
-            var childLinks = await applicationLinksService.GetChildApplications(applicationId);
+            var childLinks = await applicationLinksService.Value.GetChildApplications(applicationId);
             var childApplicationIds = childLinks.Select(l => l.LinkedApplicationId).ToList();
             return await paymentRequestQueryManager.GetApplicationPaymentSummaryAsync(applicationId, childApplicationIds);
         }
 
         public async Task<Dictionary<Guid, ApplicationPaymentSummaryDto>> GetApplicationPaymentSummariesAsync(List<Guid> applicationIds)
         {
-            var childApplicationIdsByParent = await applicationLinksService.GetChildApplicationIdsByParentIdsAsync(applicationIds);
+            var childApplicationIdsByParent = await applicationLinksService.Value.GetChildApplicationIdsByParentIdsAsync(applicationIds);
             return await paymentRequestQueryManager.GetApplicationPaymentSummariesAsync(applicationIds, childApplicationIdsByParent);
         }
     }
