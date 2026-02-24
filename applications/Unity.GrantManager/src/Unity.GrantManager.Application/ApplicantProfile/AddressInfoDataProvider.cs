@@ -93,7 +93,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 }).ToList();
 
                 // If no address is marked as primary, mark the most recent one as primary
-                if (addressDtos.Any() && !addressDtos.Any(a => a.IsPrimary))
+                if (addressDtos.Count > 0 && !addressDtos.Any(a => a.IsPrimary))
                 {
                     var mostRecent = deduplicated.OrderByDescending(r => r.CreationTime).First();
                     var mostRecentDto = addressDtos.First(a => a.Id == mostRecent.address.Id);
