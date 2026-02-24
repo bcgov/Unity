@@ -7,7 +7,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 
@@ -22,14 +21,20 @@ namespace Unity.GrantManager.AI
 
         private string? ApiKey => _configuration["AI:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
-        private bool LogPayloads => _configuration.GetValue<bool?>("AI:Logging:LogPayloads") ?? false;
-        private readonly string NoKeyError = "OpenAI API key is not configured";
-        private const string AiPromptLogRelativePath = "logs/ai-prompts.log";
-        private static readonly SemaphoreSlim AiPromptLogWriteSemaphore = new(1, 1);
-        private static bool _aiPromptLogInitialized;
-        private static readonly JsonSerializerOptions IndentedJsonLogOptions = new() { WriteIndented = true };
+        private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
 
-        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService)
+        private const string PromptLogDirectoryName = "logs";
+        private static readonly string PromptLogFileName = $"ai-prompts-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Environment.ProcessId}.log";
+        private bool IsPayloadLoggingEnabled => _configuration.GetValue<bool?>("AI:Logging:LogPayloads") ?? false;
+        private bool IsPromptFileLoggingEnabled => _configuration.GetValue<bool?>("AI:Logging:EnablePromptFileLog") ?? false;
+
+        private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
+
+        public OpenAIService(
+            HttpClient httpClient,
+            IConfiguration configuration,
+            ILogger<OpenAIService> logger,
+            ITextExtractionService textExtractionService)
         {
             _httpClient = httpClient;
             _configuration = configuration;
@@ -41,7 +46,7 @@ namespace Unity.GrantManager.AI
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("Error: {Message}", NoKeyError);
+                _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
                 return Task.FromResult(false);
             }
 
@@ -52,7 +57,7 @@ namespace Unity.GrantManager.AI
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("Error: {Message}", NoKeyError);
+                _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
                 return "AI analysis not available - service not configured.";
             }
 
@@ -134,9 +139,9 @@ namespace Unity.GrantManager.AI
                     prompt = "Please analyze this document and provide a concise summary of its content, purpose, and key information, for use by your fellow grant analysts. It should be 1-2 sentences long and about 46 tokens.";
                 }
 
-                await LogPromptInput("AttachmentSummary", prompt, contentToAnalyze);
+                await LogPromptInputAsync("AttachmentSummary", prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
-                await LogPromptOutput("AttachmentSummary", modelOutput);
+                await LogPromptOutputAsync("AttachmentSummary", modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -150,7 +155,7 @@ namespace Unity.GrantManager.AI
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("{Message}", NoKeyError);
+                _logger.LogWarning("{Message}", MissingApiKeyMessage);
                 return "AI analysis not available - service not configured.";
             }
 
@@ -214,9 +219,9 @@ Evaluate the quality, clarity, and appropriateness of all application content. B
 
 Respond only with valid JSON in the exact format requested.";
 
-                await LogPromptInput("ApplicationAnalysis", systemPrompt, analysisContent);
+                await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
-                await LogPromptOutput("ApplicationAnalysis", rawAnalysis);
+                await LogPromptOutputAsync("ApplicationAnalysis", rawAnalysis);
 
                 // Post-process the AI response to add unique IDs to errors and warnings
                 return AddIdsToAnalysisItems(rawAnalysis);
@@ -293,7 +298,7 @@ Respond only with valid JSON in the exact format requested.";
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("{Message}", NoKeyError); 
+                _logger.LogWarning("{Message}", MissingApiKeyMessage); 
                 return "{}";
             }
 
@@ -334,9 +339,9 @@ Analyze the provided application and generate appropriate answers for the scores
 Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
 Respond only with valid JSON in the exact format requested.";
 
-                await LogPromptInput("ScoresheetAll", systemPrompt, analysisContent);
+                await LogPromptInputAsync("ScoresheetAll", systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
-                await LogPromptOutput("ScoresheetAll", modelOutput);
+                await LogPromptOutputAsync("ScoresheetAll", modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -350,7 +355,7 @@ Respond only with valid JSON in the exact format requested.";
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
-                _logger.LogWarning("{Message}", NoKeyError);
+                _logger.LogWarning("{Message}", MissingApiKeyMessage);
                 return "{}";
             }
 
@@ -411,9 +416,9 @@ Always provide citations that reference specific parts of the application conten
 Be honest about your confidence level - if information is missing or unclear, reflect this in a lower confidence score.
 Respond only with valid JSON in the exact format requested.";
 
-                await LogPromptInput("ScoresheetSection", systemPrompt, analysisContent);
+                await LogPromptInputAsync("ScoresheetSection", systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
-                await LogPromptOutput("ScoresheetSection", modelOutput);
+                await LogPromptOutputAsync("ScoresheetSection", modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -423,53 +428,46 @@ Respond only with valid JSON in the exact format requested.";
             }
         }
 
-        private async Task LogPromptInput(string promptType, string? systemPrompt, string userPrompt)
+        private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
         {
-            if (!LogPayloads)
+            if (!IsPayloadLoggingEnabled)
             {
                 return;
             }
 
             var formattedInput = FormatPromptInputForLog(systemPrompt, userPrompt);
-            _logger.LogDebug("AI {PromptType} input payload: {PromptInput}", promptType, formattedInput);
-            await WriteAiPromptLog(promptType, "INPUT", formattedInput);
+            _logger.LogInformation("AI {PromptType} input payload: {PromptInput}", promptType, formattedInput);
+            await WritePromptLogFileAsync(promptType, "INPUT", formattedInput);
         }
 
-        private async Task LogPromptOutput(string promptType, string output)
+        private async Task LogPromptOutputAsync(string promptType, string output)
         {
-            if (!LogPayloads)
+            if (!IsPayloadLoggingEnabled)
             {
                 return;
             }
 
             var formattedOutput = FormatPromptOutputForLog(output);
-            _logger.LogDebug("AI {PromptType} model output payload: {ModelOutput}", promptType, formattedOutput);
-            await WriteAiPromptLog(promptType, "OUTPUT", formattedOutput);
+            _logger.LogInformation("AI {PromptType} model output payload: {ModelOutput}", promptType, formattedOutput);
+            await WritePromptLogFileAsync(promptType, "OUTPUT", formattedOutput);
         }
 
-        private async Task WriteAiPromptLog(string promptType, string payloadType, string payload)
+        private async Task WritePromptLogFileAsync(string promptType, string payloadType, string payload)
         {
-            if (!LogPayloads)
+            if (!CanWritePromptFileLog())
             {
                 return;
             }
 
             try
             {
-                await AiPromptLogWriteSemaphore.WaitAsync();
-                try
-                {
-                    var now = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz");
-                    var logPath = Path.Combine(AppContext.BaseDirectory, AiPromptLogRelativePath);
-                    EnsureAiPromptLogInitialized(logPath);
+                var now = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz");
+                var logDirectory = Path.Combine(AppContext.BaseDirectory, PromptLogDirectoryName);
+                Directory.CreateDirectory(logDirectory);
 
-                    var entry = $"{now} [{promptType}] {payloadType}\n{payload}\n\n";
-                    await File.AppendAllTextAsync(logPath, entry);
-                }
-                finally
-                {
-                    AiPromptLogWriteSemaphore.Release();
-                }
+                var logPath = Path.Combine(logDirectory, PromptLogFileName);
+                var entry = $"{now} [{promptType}] {payloadType}\n{payload}\n\n";
+                await File.AppendAllTextAsync(logPath, entry);
             }
             catch (Exception ex)
             {
@@ -477,21 +475,10 @@ Respond only with valid JSON in the exact format requested.";
             }
         }
 
-        private static void EnsureAiPromptLogInitialized(string logPath)
+        private bool CanWritePromptFileLog()
         {
-            if (_aiPromptLogInitialized)
-            {
-                return;
-            }
-
-            var directory = Path.GetDirectoryName(logPath);
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            File.WriteAllText(logPath, string.Empty);
-            _aiPromptLogInitialized = true;
+            return IsPayloadLoggingEnabled
+                && IsPromptFileLoggingEnabled;
         }
 
         private static string FormatPromptInputForLog(string? systemPrompt, string userPrompt)
@@ -510,7 +497,7 @@ Respond only with valid JSON in the exact format requested.";
 
             if (TryParseJsonObjectFromResponse(output, out var jsonObject))
             {
-                return JsonSerializer.Serialize(jsonObject, IndentedJsonLogOptions);
+                return JsonSerializer.Serialize(jsonObject, JsonLogOptions);
             }
 
             return output.Trim();
