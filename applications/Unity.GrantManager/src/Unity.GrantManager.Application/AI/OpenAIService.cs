@@ -23,10 +23,11 @@ namespace Unity.GrantManager.AI
         private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
         private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
 
+        // Optional local debugging sink for prompt payload logs to a local file.
+        // Not intended for deployed/shared environments.
+        private bool IsPromptFileLoggingEnabled => _configuration.GetValue<bool?>("AI:Logging:EnablePromptFileLog") ?? false;
         private const string PromptLogDirectoryName = "logs";
         private static readonly string PromptLogFileName = $"ai-prompts-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Environment.ProcessId}.log";
-        private bool IsPayloadLoggingEnabled => _configuration.GetValue<bool?>("AI:Logging:LogPayloads") ?? false;
-        private bool IsPromptFileLoggingEnabled => _configuration.GetValue<bool?>("AI:Logging:EnablePromptFileLog") ?? false;
 
         private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
 
@@ -430,11 +431,6 @@ Respond only with valid JSON in the exact format requested.";
 
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
         {
-            if (!IsPayloadLoggingEnabled)
-            {
-                return;
-            }
-
             var formattedInput = FormatPromptInputForLog(systemPrompt, userPrompt);
             _logger.LogInformation("AI {PromptType} input payload: {PromptInput}", promptType, formattedInput);
             await WritePromptLogFileAsync(promptType, "INPUT", formattedInput);
@@ -442,11 +438,6 @@ Respond only with valid JSON in the exact format requested.";
 
         private async Task LogPromptOutputAsync(string promptType, string output)
         {
-            if (!IsPayloadLoggingEnabled)
-            {
-                return;
-            }
-
             var formattedOutput = FormatPromptOutputForLog(output);
             _logger.LogInformation("AI {PromptType} model output payload: {ModelOutput}", promptType, formattedOutput);
             await WritePromptLogFileAsync(promptType, "OUTPUT", formattedOutput);
@@ -477,8 +468,7 @@ Respond only with valid JSON in the exact format requested.";
 
         private bool CanWritePromptFileLog()
         {
-            return IsPayloadLoggingEnabled
-                && IsPromptFileLoggingEnabled;
+            return IsPromptFileLoggingEnabled;
         }
 
         private static string FormatPromptInputForLog(string? systemPrompt, string userPrompt)
