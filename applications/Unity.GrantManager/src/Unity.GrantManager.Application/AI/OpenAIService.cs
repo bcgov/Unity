@@ -26,6 +26,7 @@ namespace Unity.GrantManager.AI
         private readonly string NoKeyError = "OpenAI API key is not configured";
         private const string AiPromptLogRelativePath = "logs/ai-prompts.log";
         private static int _aiPromptLogInitialized;
+        private static readonly JsonSerializerOptions IndentedJsonLogOptions = new() { WriteIndented = true };
 
         public OpenAIService(HttpClient httpClient, IConfiguration configuration, ILogger<OpenAIService> logger, ITextExtractionService textExtractionService)
         {
@@ -497,7 +498,7 @@ Respond only with valid JSON in the exact format requested.";
 
             if (TryParseJsonObjectFromResponse(output, out var jsonObject))
             {
-                return JsonSerializer.Serialize(jsonObject, new JsonSerializerOptions { WriteIndented = true });
+                return JsonSerializer.Serialize(jsonObject, IndentedJsonLogOptions);
             }
 
             return output.Trim();
