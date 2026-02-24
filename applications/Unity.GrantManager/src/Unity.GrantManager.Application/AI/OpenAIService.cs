@@ -67,13 +67,14 @@ namespace Unity.GrantManager.AI
             try
             {
                 var systemPrompt = prompt ?? "You are a professional grant analyst for the BC Government.";
+                var userPrompt = content ?? string.Empty;
 
                 var requestBody = new
                 {
                     messages = new[]
                     {
                        new { role = "system", content = systemPrompt },
-                       new { role = "user", content = content }
+                       new { role = "user", content = userPrompt }
                    },
                     max_tokens = maxTokens,
                     temperature = 0.3
@@ -97,6 +98,11 @@ namespace Unity.GrantManager.AI
                 {
                     _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
                     return "AI analysis failed - service temporarily unavailable.";
+                }
+
+                if (string.IsNullOrWhiteSpace(responseContent))
+                {
+                    return "No summary generated.";
                 }
 
                 using var jsonDoc = JsonDocument.Parse(responseContent);
