@@ -19,13 +19,13 @@ namespace Unity.GrantManager.AI
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
 
-        private string? ApiKey => _configuration["AI:OpenAI:ApiKey"];
-        private string? ApiUrl => _configuration["AI:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
+        private string? ApiKey => _configuration["Azure:OpenAI:ApiKey"];
+        private string? ApiUrl => _configuration["Azure:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
         private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
 
         // Optional local debugging sink for prompt payload logs to a local file.
         // Not intended for deployed/shared environments.
-        private bool IsPromptFileLoggingEnabled => _configuration.GetValue<bool?>("AI:Logging:EnablePromptFileLog") ?? false;
+        private bool IsPromptFileLoggingEnabled => _configuration.GetValue<bool?>("Azure:Logging:EnablePromptFileLog") ?? false;
         private const string PromptLogDirectoryName = "logs";
         private static readonly string PromptLogFileName = $"ai-prompts-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Environment.ProcessId}.log";
 
