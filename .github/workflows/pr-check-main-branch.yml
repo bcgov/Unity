@@ -1,4 +1,4 @@
-name: Main - Branch Protection
+name: Main - Branch Protection - CI & Unit Tests
 permissions:
   contents: read
   pull-requests: write
