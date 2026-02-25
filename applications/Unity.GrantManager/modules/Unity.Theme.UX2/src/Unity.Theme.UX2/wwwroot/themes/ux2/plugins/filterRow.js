@@ -389,6 +389,9 @@
                 $(externalSearchId).val('');
             }
 
+            // Clear the search input field
+            $('#search').val('');
+
             // Clear custom filter inputs
             $('.custom-filter-input').val('');
 
@@ -398,8 +401,9 @@
             // Clear order
             dt.order(initialSortOrder);
 
-            // Reload data
-            dt.ajax.reload();
+            // If we want to reset quick date range dropdown to default (last 6 months) and trigger change
+            // The change event handler will reload the table, so would need to remove ajax.reload() here
+            $('#quickDateRange').val($('#quickDateRange option[selected]').val()).trigger('change');
 
             // Update button state
             this._updateButtonState();
