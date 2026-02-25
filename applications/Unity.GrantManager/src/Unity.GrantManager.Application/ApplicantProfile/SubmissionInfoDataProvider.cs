@@ -109,6 +109,11 @@ namespace Unity.GrantManager.ApplicantProfile
             }
         }
 
+        /// <summary>
+        /// Extracts the submission timestamp from the CHEFS JSON <c>createdAt</c> field.
+        /// Falls back to the provided <paramref name="fallback"/> value if the field is
+        /// missing or the JSON cannot be parsed.
+        /// </summary>
         private DateTime ResolveSubmissionTime(string submissionJson, DateTime fallback)
         {
             try

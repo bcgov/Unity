@@ -37,6 +37,19 @@ namespace Unity.GrantManager.Applicants
             return new ContactInfoDataProvider(currentTenant, applicantProfileContactService);
         }
 
+        private static AddressInfoDataProvider CreateAddressInfoDataProvider()
+        {
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
+            var submissionRepo = Substitute.For<IRepository<ApplicationFormSubmission, Guid>>();
+            submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
+            var addressRepo = Substitute.For<IRepository<ApplicantAddress, Guid>>();
+            addressRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicantAddress>().AsAsyncQueryable()));
+            var applicationRepo = Substitute.For<IRepository<Application, Guid>>();
+            applicationRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Application>().AsAsyncQueryable()));
+            return new AddressInfoDataProvider(currentTenant, submissionRepo, addressRepo, applicationRepo);
+        }
+
         private static SubmissionInfoDataProvider CreateSubmissionInfoDataProvider()
         {
             var currentTenant = Substitute.For<ICurrentTenant>();
@@ -88,14 +101,14 @@ namespace Unity.GrantManager.Applicants
         [Fact]
         public void AddressInfoDataProvider_Key_ShouldMatchExpected()
         {
-            var provider = new AddressInfoDataProvider();
+            var provider = CreateAddressInfoDataProvider();
             provider.Key.ShouldBe(ApplicantProfileKeys.AddressInfo);
         }
 
         [Fact]
         public async Task AddressInfoDataProvider_GetDataAsync_ShouldReturnAddressInfoDto()
         {
-            var provider = new AddressInfoDataProvider();
+            var provider = CreateAddressInfoDataProvider();
             var result = await provider.GetDataAsync(CreateRequest(ApplicantProfileKeys.AddressInfo));
             result.ShouldNotBeNull();
             result.ShouldBeOfType<ApplicantAddressInfoDto>();
@@ -140,7 +153,7 @@ namespace Unity.GrantManager.Applicants
             [
                 CreateContactInfoDataProvider(),
                 new OrgInfoDataProvider(),
-                new AddressInfoDataProvider(),
+                CreateAddressInfoDataProvider(),
                 CreateSubmissionInfoDataProvider(),
                 new PaymentInfoDataProvider()
             ];
