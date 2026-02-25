@@ -403,7 +403,7 @@
 
             // If we want to reset quick date range dropdown to default (last 6 months) and trigger change
             // The change event handler will reload the table, so would need to remove ajax.reload() here
-            $('#quickDateRange').val('last6months').trigger('change');
+            $('#quickDateRange').val($('#quickDateRange option[selected]').val()).trigger('change');
 
             // Update button state
             this._updateButtonState();
