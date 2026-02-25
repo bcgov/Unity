@@ -96,6 +96,15 @@ public class ApplicationLinksAppService : CrudAppService<
         return resultList;
     }
 
+    /// <summary>
+    /// Retrieves a list of application links of the specified type for a given application.
+    /// </summary>
+    /// <remarks>Use this method to obtain links associated with a particular application and link type. The
+    /// returned list is mapped to ApplicationLinksDto for convenient consumption in client code.</remarks>
+    /// <param name="applicationId">The unique identifier of the application for which to retrieve links. Must be a valid GUID.</param>
+    /// <param name="linkType">The type of application link to retrieve, specified by the <see cref="ApplicationLinkType"/> enumeration.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see cref="ApplicationLinksDto"/>
+    /// objects matching the specified application ID and link type. The list will be empty if no links are found.</returns>
     public async Task<List<ApplicationLinksDto>> GetApplicationLinksByType(Guid applicationId, ApplicationLinkType linkType)
     {
         var applicationLinksQuery = await ApplicationLinksRepository
@@ -104,11 +113,30 @@ public class ApplicationLinksAppService : CrudAppService<
         return ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(applicationLinksQuery);
     }
 
+    /// <summary>
+    /// Retrieves a list of child application links associated with the specified applicationId.
+    /// </summary>
+    /// <remarks>This method is asynchronous and may involve network or database calls, which could affect
+    /// performance. Ensure that the applicationId provided is valid to avoid exceptions.</remarks>
+    /// <param name="applicationId">The unique identifier of the application for which child applications are being retrieved. This parameter cannot
+    /// be an empty GUID.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see cref="ApplicationLinksDto"/>
+    /// objects representing the child applications. The list will be empty if no child applications are found.</returns>
     public async Task<List<ApplicationLinksDto>> GetChildApplications(Guid applicationId)
     {
         return await GetApplicationLinksByType(applicationId, ApplicationLinkType.Child);
     }
 
+    /// <summary>
+    /// Retrieves a dictionary that maps each specified parent application ID to a list of its associated child application IDs.
+    /// </summary>
+    /// <remarks>The method fetches application links from the repository and groups them by parent
+    /// application ID. Ensure that the provided parent application IDs exist in the repository to obtain meaningful
+    /// results.</remarks>
+    /// <param name="parentApplicationIds">A list of GUIDs representing the parent application IDs for which to retrieve child application IDs. This
+    /// parameter cannot be null or empty.</param>
+    /// <returns>A dictionary where each key is a parent application ID and the corresponding value is a list of child
+    /// application IDs linked to that parent. The dictionary will be empty if no child applications are found.</returns>
     public async Task<Dictionary<Guid, List<Guid>>> GetChildApplicationIdsByParentIdsAsync(List<Guid> parentApplicationIds)
     {
         var links = await ApplicationLinksRepository
