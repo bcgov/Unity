@@ -163,9 +163,9 @@ namespace Unity.Payments.Integrations.Cas
             }
         }
 
-        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string invoiceNumber, string supplierNumber, string siteNumber)
+        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(Guid tenantId, string invoiceNumber, string supplierNumber, string siteNumber)
         {
-            var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
+            var authToken = await iTokenService.GetAuthTokenAsync(tenantId);
             var casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);
