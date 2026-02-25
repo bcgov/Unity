@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ namespace Unity.GrantManager.Contacts;
 
 /// <summary>
 /// Generic contact management service. Manages contacts and their links to arbitrary entity types.
-/// Currently marked as <c>[RemoteService(false)]</c> � not exposed as an HTTP endpoint.
+/// Currently marked as <c>[RemoteService(false)]</c> — not exposed as an HTTP endpoint.
 /// Authorization roles to be configured before enabling remote access.
 /// </summary>
 

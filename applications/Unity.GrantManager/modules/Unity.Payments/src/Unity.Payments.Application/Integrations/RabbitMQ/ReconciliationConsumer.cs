@@ -16,10 +16,10 @@ public class ReconciliationConsumer(
     {
         if (reconcilePaymentMessage != null && !reconcilePaymentMessage.InvoiceNumber.IsNullOrEmpty() && reconcilePaymentMessage.TenantId != Guid.Empty)
         {
-
             // string invoiceNumber, string supplierNumber, string siteNumber)
             // Go to CAS retrieve the status of the payment
             CasPaymentSearchResult result = await invoiceService.GetCasPaymentAsync(
+                reconcilePaymentMessage.TenantId,   
                 reconcilePaymentMessage.InvoiceNumber,
                 reconcilePaymentMessage.SupplierNumber,
                 reconcilePaymentMessage.SiteNumber);

@@ -1,4 +1,4 @@
-using NSubstitute;
+ï»¿using NSubstitute;
 using Shouldly;
 using System;
 using System.Linq;
@@ -352,7 +352,7 @@ namespace Unity.GrantManager.Contacts
             // Act
             await _service.CreateContactAsync(input);
 
-            // Assert — GetQueryableAsync should not be called (ClearPrimaryAsync not invoked)
+            // Assert - GetQueryableAsync should not be called (ClearPrimaryAsync not invoked)
             await _contactLinkRepository.DidNotReceive().GetQueryableAsync();
         }
 
@@ -484,7 +484,7 @@ namespace Unity.GrantManager.Contacts
             // Act
             await _service.SetPrimaryContactAsync("TestEntity", entityId, contactId);
 
-            // Assert — only the target link should be updated (set to primary)
+            // Assert â€” only the target link should be updated (set to primary)
             await _contactLinkRepository.Received(1).UpdateAsync(
                 Arg.Is<ContactLink>(l => l.Id == targetLinkId && l.IsPrimary),
                 true,
@@ -539,7 +539,7 @@ namespace Unity.GrantManager.Contacts
             // Act
             await _service.SetPrimaryContactAsync("TestEntity", entityId, contactId);
 
-            // Assert — both existing primaries cleared
+            // Assert â€” both existing primaries cleared
             await _contactLinkRepository.Received(1).UpdateAsync(
                 Arg.Is<ContactLink>(l => l.Id == primaryLinkId1 && !l.IsPrimary),
                 true,
