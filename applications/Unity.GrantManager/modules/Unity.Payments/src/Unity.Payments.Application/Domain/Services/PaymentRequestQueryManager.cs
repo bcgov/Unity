@@ -239,13 +239,13 @@ namespace Unity.Payments.Domain.Services
             var allCorrelationIds = new List<Guid> { applicationId };
             allCorrelationIds.AddRange(childApplicationIds);
 
-            var summaries = await paymentRequestRepository.GetBatchPaymentRollupsByCorrelationIdsAsync(allCorrelationIds);
+            var batchRollup = await paymentRequestRepository.GetBatchPaymentRollupsByCorrelationIdsAsync(allCorrelationIds);
 
             return new ApplicationPaymentRollupDto
             {
                 ApplicationId = applicationId,
-                TotalPaid = summaries.Sum(s => s.TotalPaid),
-                TotalPending = summaries.Sum(s => s.TotalPending)
+                TotalPaid = batchRollup.Sum(s => s.TotalPaid),
+                TotalPending = batchRollup.Sum(s => s.TotalPending)
             };
         }
 
