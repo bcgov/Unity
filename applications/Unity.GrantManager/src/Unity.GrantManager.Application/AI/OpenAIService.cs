@@ -128,7 +128,6 @@ namespace Unity.GrantManager.AI
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
 
-                string contentToAnalyze;
                 var prompt = @"ROLE
 You are a professional grant analyst for the BC Government.
 
@@ -147,30 +146,24 @@ RULES
 - Keep the summary specific, concrete, and reviewer-facing.
 - Return plain text only (no markdown, bullets, or JSON).";
 
-                if (!string.IsNullOrWhiteSpace(extractedText))
+                var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
+                if (attachmentText != null)
                 {
                     _logger.LogDebug("Extracted {TextLength} characters from {FileName}", extractedText.Length, fileName);
-
-                    contentToAnalyze = $@"ATTACHMENT
-{{
-  ""name"": ""{fileName}"",
-  ""contentType"": ""{contentType}"",
-  ""sizeBytes"": {fileContent.Length},
-  ""text"": {JsonSerializer.Serialize(extractedText)}
-}}";
                 }
                 else
                 {
                     _logger.LogDebug("No text extracted from {FileName}, analyzing metadata only", fileName);
-
-                    contentToAnalyze = $@"ATTACHMENT
-{{
-  ""name"": ""{fileName}"",
-  ""contentType"": ""{contentType}"",
-  ""sizeBytes"": {fileContent.Length},
-  ""text"": null
-}}";
                 }
+
+                var attachmentPayload = new
+                {
+                    name = fileName,
+                    contentType,
+                    sizeBytes = fileContent.Length,
+                    text = attachmentText
+                };
+                var contentToAnalyze = $"ATTACHMENT\n{JsonSerializer.Serialize(attachmentPayload, JsonLogOptions)}";
 
                 await LogPromptInputAsync("AttachmentSummary", prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
