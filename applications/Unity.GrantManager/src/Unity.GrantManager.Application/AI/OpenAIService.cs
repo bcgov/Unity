@@ -168,23 +168,45 @@ namespace Unity.GrantManager.AI
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Count > 0
-                    ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
-                    : "No attachments provided.";
+                object schemaPayload = new { };
+                if (!string.IsNullOrWhiteSpace(formFieldConfiguration))
+                {
+                    try
+                    {
+                        using var schemaDoc = JsonDocument.Parse(formFieldConfiguration);
+                        schemaPayload = schemaDoc.RootElement.Clone();
+                    }
+                    catch (JsonException)
+                    {
+                        _logger.LogWarning("Invalid form field configuration JSON. Using empty schema payload.");
+                    }
+                }
 
-                var fieldConfigurationSection = !string.IsNullOrEmpty(formFieldConfiguration)
-                    ? $@"
-{formFieldConfiguration}"
-                    : string.Empty;
+                var dataPayload = new
+                {
+                    applicationContent
+                };
 
-                var analysisContent = $@"APPLICATION CONTENT:
-{applicationContent}
+                var attachmentsPayload = attachmentSummaries?.Count > 0
+                    ? attachmentSummaries
+                        .Select((summary, index) => new
+                        {
+                            name = $"Attachment {index + 1}",
+                            summary = summary
+                        })
+                        .Cast<object>()
+                    : Enumerable.Empty<object>();
 
-ATTACHMENT SUMMARIES:
-- {attachmentSummariesText}
-{fieldConfigurationSection}
+                var analysisContent = $@"SCHEMA
+{JsonSerializer.Serialize(schemaPayload, JsonLogOptions)}
 
-EVALUATION RUBRIC:
+DATA
+{JsonSerializer.Serialize(dataPayload, JsonLogOptions)}
+
+ATTACHMENTS
+{JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions)}
+
+RUBRIC
 {rubric}
 
 SEVERITY
@@ -221,7 +243,7 @@ OUTPUT
 }}
 
 RULES
-- Use only APPLICATION CONTENT, ATTACHMENT SUMMARIES, EVALUATION RUBRIC, and form field context as evidence.
+- Use only SCHEMA, DATA, ATTACHMENTS, and RUBRIC as evidence.
 - Do not invent fields, documents, requirements, or facts.
 - Treat missing or empty values as findings only when they weaken rubric evidence.
 - Prefer material issues; avoid nitpicking.
@@ -243,7 +265,7 @@ RULES
 You are an expert grant analyst assistant for human reviewers.
 
 TASK
-Using APPLICATION CONTENT, ATTACHMENT SUMMARIES, EVALUATION RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, return review findings.";
+Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, return review findings.";
 
                 await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
