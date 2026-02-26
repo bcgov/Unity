@@ -401,7 +401,12 @@
                 @if (aiApplicationAnalysisEnabled)
                 { 
                 <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
-                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">AI Application Analysis</h6>
+                    <div class="d-flex justify-content-between align-items-center px-3 pt-4 pb-2">
+                        <h6 class="fw-bold m-0">AI Application Analysis</h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="regenerateAiAnalysis">
+                            <i class="fa-solid fa-rotate-right me-1"></i> Regenerate
+                        </button>
+                    </div>
                     <div class="ai-analysis-container">
                         @* Default message when no analysis data is available *@
                         <div class="ai-analysis-no-data px-3 py-4" id="aiAnalysisNoData">

@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager.AI;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
@@ -21,6 +22,7 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
+using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
@@ -46,7 +48,8 @@ public class GrantApplicationAppService(
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService)
+    IPaymentRequestAppService paymentRequestService,
+    IApplicationAnalysisService applicationAnalysisService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
@@ -1063,6 +1066,20 @@ public class GrantApplicationAppService(
         }
     }
 
+    [Authorize(GrantApplicationPermissions.AI.ApplicationAnalysis.Default)]
+    public async Task<string> GenerateAIAnalysisAsync(Guid applicationId)
+    {
+        try
+        {
+            return await applicationAnalysisService.RegenerateAndSaveAsync(applicationId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error regenerating AI analysis for application {ApplicationId}", applicationId);
+            throw new UserFriendlyException("Failed to regenerate AI analysis. Please try again.");
+        }
+    }
+
     public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)
     {
         var application = await applicationRepository.GetAsync(applicationId);
@@ -1140,4 +1157,5 @@ public class GrantApplicationAppService(
 
         return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
     }
+
 }
