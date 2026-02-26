@@ -101,7 +101,7 @@ sequenceDiagram
 
 ### 1. ContactInfoDataProvider (`CONTACTINFO`)
 
-**Purpose:** Aggregates contact information from two sources — profile-linked contacts and application-level contacts.
+**Purpose:** Aggregates contact information from three sources — profile-linked contacts, application-level contacts, and applicant agent contacts derived from the submission login token.
 
 **Dependencies:**
 - `ICurrentTenant` — for multi-tenant scoping
@@ -112,7 +112,8 @@ sequenceDiagram
 1. Switches to the requested tenant context.
 2. Retrieves **profile contacts** — contacts linked to the applicant profile via `ContactLink` records where `RelatedEntityType == "ApplicantProfile"` and `RelatedEntityId == profileId`. These are **editable** (`IsEditable = true`).
 3. Retrieves **application contacts** — contacts on applications whose form submissions match the normalized OIDC subject. These are **read-only** (`IsEditable = false`).
-4. Merges both lists into a single `ApplicantContactInfoDto.Contacts` collection.
+4. Retrieves **applicant agent contacts** — contact information derived from `ApplicantAgent` records on applications whose form submissions match the normalized OIDC subject. The join path is `Submission → Application → ApplicantAgent`. These are **read-only** (`IsEditable = false`).
+5. Merges all three lists into a single `ApplicantContactInfoDto.Contacts` collection.
 
 **Subject Normalization:** The OIDC subject (e.g. `user@idir`) is normalized by stripping everything after `@` and converting to uppercase.
 
@@ -132,15 +133,27 @@ flowchart TD
         AC1["Normalize Subject<br/>strip domain, uppercase"]
         AC2["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
         AC3["JOIN ApplicationContact<br/>ON ApplicationId"]
+        AC3b["JOIN Application<br/>ON ApplicationId<br/>for ReferenceNo"]
         AC4["Map to ContactInfoItemDto<br/>IsEditable = false"]
-        AC1 --> AC2 --> AC3 --> AC4
+        AC1 --> AC2 --> AC3 --> AC3b --> AC4
+    end
+
+    subgraph AgentContacts["Applicant Agent Contacts - Read-Only"]
+        AG1["Normalize Subject<br/>strip domain, uppercase"]
+        AG2["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
+        AG3["JOIN ApplicantAgent<br/>ON ApplicationId"]
+        AG3b["JOIN Application<br/>ON ApplicationId<br/>for ReferenceNo"]
+        AG4["Map to ContactInfoItemDto<br/>ContactType = 'ApplicantAgent'<br/>IsEditable = false"]
+        AG1 --> AG2 --> AG3 --> AG3b --> AG4
     end
 
     Start --> Tenant
     Tenant --> PC1
     Tenant --> AC1
+    Tenant --> AG1
     PC3 --> Merge["Merge into Contacts list"]
     AC4 --> Merge
+    AG4 --> Merge
     Merge --> Return([Return ApplicantContactInfoDto])
 ```
 
@@ -149,7 +162,26 @@ flowchart TD
 | Source | Entity | Join Path | Editable |
 |--------|--------|-----------|----------|
 | Profile Contacts | `ContactLink` → `Contact` | `ContactLink.RelatedEntityId = profileId` | ✅ Yes |
-| Application Contacts | `ApplicationFormSubmission` → `ApplicationContact` | `Submission.OidcSub = normalizedSubject` | ❌ No |
+| Application Contacts | `ApplicationFormSubmission` → `ApplicationContact` → `Application` | `Submission.OidcSub = normalizedSubject`, `Application.Id` for `ReferenceNo` | ❌ No |
+| Applicant Agent Contacts | `ApplicationFormSubmission` → `ApplicantAgent` → `Application` | `Submission.ApplicationId = Agent.ApplicationId`, `Application.Id` for `ReferenceNo` | ❌ No |
+
+**Applicant Agent Field Mapping:**
+
+The `ApplicantAgent` entity is populated from the CHEFS submission login token during intake import. Its fields are mapped to `ContactInfoItemDto` as follows:
+
+| ApplicantAgent Field | ContactInfoItemDto Field |
+|---------------------|-------------------------|
+| `Id` | `ContactId` |
+| `Name` | `Name` |
+| `Title` | `Title` |
+| `Email` | `Email` |
+| `Phone` | `WorkPhoneNumber` |
+| `PhoneExtension` | `WorkPhoneExtension` |
+| `Phone2` | `MobilePhoneNumber` |
+| `RoleForApplicant` | `Role` |
+| `ApplicationId` | `ApplicationId` |
+| `Application.ReferenceNo` | `ReferenceNo` |
+| _(literal)_ `"ApplicantAgent"` | `ContactType` |
 
 ---
 
@@ -356,7 +388,7 @@ Providers distinguish between **editable** and **read-only** data:
 
 | Provider | Editable Source | Read-Only Source |
 |----------|----------------|-----------------|
-| ContactInfo | Profile-linked contacts | Application-level contacts |
+| ContactInfo | Profile-linked contacts | Application-level contacts, Applicant agent contacts |
 | AddressInfo | Addresses linked via ApplicantId | Addresses linked via ApplicationId |
 
 ---
