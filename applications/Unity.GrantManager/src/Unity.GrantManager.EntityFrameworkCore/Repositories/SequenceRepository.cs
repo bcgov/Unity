@@ -39,15 +39,14 @@ public class SequenceRepository(IDbContextProvider<GrantTenantDbContext> dbConte
         var safeSchema = commandBuilder.QuoteIdentifier(schema);
 
         // Schema is sanitized via NpgsqlCommandBuilder.QuoteIdentifier; table name is a known
-        // lowercase constant that requires no quoting.
-#pragma warning disable S2077 // SQL queries should not be dynamically formatted
+        // lowercase constant that requires no quoting. All user-supplied values (tenantId, prefix)
+        // are passed as parameters, not interpolated into the SQL string.
         const string sql = @"
             INSERT INTO {0}.unity_sequence_counters (tenant_id, prefix, current_value)
             VALUES (@tenantId, @prefix, 1)
             ON CONFLICT (tenant_id, prefix) DO UPDATE
                 SET current_value = unity_sequence_counters.current_value + 1
             RETURNING current_value;";
-#pragma warning restore S2077
 
         var sqlWithSchema = string.Format(sql, safeSchema);
 
@@ -61,7 +60,9 @@ public class SequenceRepository(IDbContextProvider<GrantTenantDbContext> dbConte
         {
             var connection = dbContext.Database.GetDbConnection();
             using var command = connection.CreateCommand();
+#pragma warning disable S2077 // Schema identifier is sanitized via NpgsqlCommandBuilder.QuoteIdentifier; all user values are parameterized
             command.CommandText = sqlWithSchema;
+#pragma warning restore S2077
             command.Transaction = npgsqlTransaction;
             command.Parameters.Add(new NpgsqlParameter("tenantId", tenantId));
             command.Parameters.Add(new NpgsqlParameter("prefix", prefix));
