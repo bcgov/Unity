@@ -512,8 +512,16 @@ $(function () {
             data: 'paymentDate',
             className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+            render: function (data) {
+                if (!data) return null;
+                // Check if date is in DD-MMM-YYYY format
+                if (/^\d{2}-[A-Z]{3}-\d{4}$/.test(data)) {
+                    // Parse and reformat
+                    const date = luxon.DateTime.fromFormat(data, 'dd-MMM-yyyy');
+                    return date.toFormat('yyyy-MM-dd');
+                }
+                // Use default render for other formats
+                return DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)(data);
             }
         };
     }
