@@ -321,16 +321,6 @@
             fetch: fetchVariablesMenuItems(dropdownItems, editor)
         });
 
-    // Add a custom toolbar button to manually trigger autoresize
-    editor.ui.registry.addButton('autoResizeButton', {
-        text: 'Auto Fit',
-        icon: 'resize',
-        tooltip: 'Auto-resize to fit content',
-        onAction: function() {
-            editor.execCommand('mceAutoResize');
-        }
-    });
-
         editor.on('init', function () {
             editor.mode.set(isPopulated ? 'readonly' : 'design');
             if (data?.bodyHTML) {
