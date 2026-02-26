@@ -99,15 +99,13 @@
                         toggleCustomDateInputs(defaultQuickDateRange === 'custom');
 
                         const range = getDateRange(defaultQuickDateRange);
+                        setDateRangeLocalStorage(defaultQuickDateRange, range);
+
                         if (range) {
                             UIElements.submittedFromInput.val(range.fromDate);
                             UIElements.submittedToInput.val(range.toDate);
                             grantTableFilters.submittedFromDate = range.fromDate;
                             grantTableFilters.submittedToDate = range.toDate;
-
-                            localStorage.setItem('GrantApplications_FromDate', range.fromDate);
-                            localStorage.setItem('GrantApplications_ToDate', range.toDate);
-                            localStorage.setItem('GrantApplications_QuickRange', defaultQuickDateRange);
                         }
 
                         // Reload table data with updated filters
@@ -331,6 +329,20 @@
         dtInstance.ajax.reload(null, true);
     }
 
+    function setDateRangeLocalStorage(quickDateRange, fromToRange) {
+        localStorage.setItem('GrantApplications_QuickRange', quickDateRange || defaultQuickDateRange);
+        if (fromToRange) {
+            if (fromToRange.fromDate && fromToRange.toDate) {
+                localStorage.setItem('GrantApplications_FromDate', fromToRange.fromDate);
+                localStorage.setItem('GrantApplications_ToDate', fromToRange.toDate);
+            } else {
+                // For "All time", clear the date filters
+                localStorage.removeItem('GrantApplications_FromDate');
+                localStorage.removeItem('GrantApplications_ToDate');
+            }
+        }
+    }
+
     function handleQuickDateRangeChange() {
         const selectedRange = $(this).val();
 
@@ -347,23 +359,13 @@
 
         // Get the date range for the selected option
         const range = getDateRange(selectedRange);
-
+        setDateRangeLocalStorage(selectedRange, range);
         if (range) {
             // Populate the hidden date fields
             UIElements.submittedFromInput.val(range.fromDate || '');
             UIElements.submittedToInput.val(range.toDate || '');
             grantTableFilters.submittedFromDate = range.fromDate;
             grantTableFilters.submittedToDate = range.toDate;
-
-            // Save to localStorage
-            if (range.fromDate && range.toDate) {
-                localStorage.setItem('GrantApplications_FromDate', range.fromDate);
-                localStorage.setItem('GrantApplications_ToDate', range.toDate);
-            } else {
-                // For "All time", clear the date filters
-                localStorage.removeItem('GrantApplications_FromDate');
-                localStorage.removeItem('GrantApplications_ToDate');
-            }
 
             // Reload the table with new filters
             const dtInstance = $('#GrantApplicationsTable').DataTable();
@@ -409,9 +411,9 @@
                     // If there is any date change, this will refresh post load 
                     // to ensure the correct data is shown based on the saved filters.
                     data.refreshTableWithDates =
-                        data.customFilters.quickDateRange != UIElements.quickDateRange.val()
-                        || data.customFilters.submittedFromDate != UIElements.submittedFromInput.val()
-                        || data.customFilters.submittedToDate != UIElements.submittedToInput.val();
+                        data.customFilters.quickDateRange !== UIElements.quickDateRange.val()
+                        || data.customFilters.submittedFromDate !== UIElements.submittedFromInput.val()
+                        || data.customFilters.submittedToDate !== UIElements.submittedToInput.val();
                     restoreCustomFilters(data.customFilters);
                 }
             },
@@ -473,14 +475,7 @@
         grantTableFilters.submittedToDate = filters.submittedToDate || null;
 
         // Update localStorage to stay in sync
-        if (filters.submittedFromDate && filters.submittedToDate) {
-            localStorage.setItem('GrantApplications_FromDate', filters.submittedFromDate);
-            localStorage.setItem('GrantApplications_ToDate', filters.submittedToDate);
-        } else {
-            localStorage.removeItem('GrantApplications_FromDate');
-            localStorage.removeItem('GrantApplications_ToDate');
-        }
-        localStorage.setItem('GrantApplications_QuickRange', filters.quickDateRange || defaultQuickDateRange);
+        setDateRangeLocalStorage(filters?.quickDateRange, { fromDate: filters.submittedFromDate, toDate: filters.submittedToDate });
     }
 
 
