@@ -489,7 +489,6 @@ $(function () {
             className: 'data-table-header text-nowrap',
             index: columnIndex,
             render: function (data, type) {
-                if (!data) return null;
                 return DateUtils.formatUtcDateToLocal(data, type);
             }
         };
@@ -502,7 +501,6 @@ $(function () {
             className: 'data-table-header text-nowrap',
             index: columnIndex,
             render: function(data, type) {
-                if (!data) return null;
                 return DateUtils.formatUtcDateToLocal(data, type);
             }
         };
@@ -515,7 +513,6 @@ $(function () {
             className: 'data-table-header text-nowrap',
             index: columnIndex,
             render: function (data, type) {
-                if (!data) return null;
                 return DateUtils.formatUtcDateToLocal(data, type);
             }
         };
@@ -579,7 +576,6 @@ $(function () {
             render: function (data, type) {
                 let approval = getExpenseApprovalsDetails(data, level);
                 const approvalDate = approval?.decisionDate;
-                if (!approvalDate) return null;
                 return DateUtils.formatUtcDateToLocal(approvalDate, type);
             }
         };

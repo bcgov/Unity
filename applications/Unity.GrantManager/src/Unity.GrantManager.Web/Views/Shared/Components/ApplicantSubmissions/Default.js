@@ -264,7 +264,6 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function (data, type) {
-                if (!data) return null;
                 return DateUtils.formatUtcDateToLocal(data, type);
             }
         };
