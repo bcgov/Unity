@@ -264,8 +264,8 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function (data, type) {
-                const formattedDate = DateUtils.formatUtcDateToLocal(data, type);
-                return formattedDate ? String(formattedDate) : '';
+                if (!data) return null;
+                return DateUtils.formatUtcDateToLocal(data, type);
             }
         };
     }
