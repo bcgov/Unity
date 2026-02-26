@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System;
 using System.Threading.Tasks;
-using System.Globalization;
 using Unity.GrantManager.Assessments;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
@@ -132,14 +131,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                             question.Answer = rawAnswer;
                         }
                     }
-                    if (aiAnswerValue.TryGetProperty("rationale", out var rationaleProp) ||
-                        aiAnswerValue.TryGetProperty("citation", out rationaleProp))
+                    if (aiAnswerValue.TryGetProperty("rationale", out var rationaleProp))
                     {
                         question.AICitation = rationaleProp.ToString();
                     }
                     if (aiAnswerValue.TryGetProperty("confidence", out var confidenceProp))
                     {
-                        question.AIConfidence = ParseAiConfidence(confidenceProp);
+                        if (confidenceProp.TryGetInt32(out var confidence))
+                        {
+                            question.AIConfidence = Math.Clamp(confidence, 0, 100);
+                        }
                     }
                 }
                 else
@@ -237,35 +238,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             }
 
             return numericAnswer;
-        }
-
-        private static int ParseAiConfidence(JsonElement confidenceProp)
-        {
-            int confidence = 0;
-
-            if (confidenceProp.ValueKind == JsonValueKind.Number)
-            {
-                if (confidenceProp.TryGetInt32(out var intValue))
-                {
-                    confidence = intValue;
-                }
-                else if (confidenceProp.TryGetDouble(out var doubleValue))
-                {
-                    confidence = (int)Math.Round(doubleValue, MidpointRounding.AwayFromZero);
-                }
-            }
-            else if (confidenceProp.ValueKind == JsonValueKind.String)
-            {
-                var raw = confidenceProp.GetString();
-                if (!int.TryParse(raw, out confidence) &&
-                    double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedDouble))
-                {
-                    confidence = (int)Math.Round(parsedDouble, MidpointRounding.AwayFromZero);
-                }
-            }
-
-            var rounded = (int)Math.Round(confidence / 5.0, MidpointRounding.AwayFromZero) * 5;
-            return Math.Clamp(rounded, 0, 100);
         }
 
     }
