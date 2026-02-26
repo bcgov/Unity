@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager.AI;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
@@ -21,6 +22,7 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
+using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
@@ -46,7 +48,8 @@ public class GrantApplicationAppService(
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService)
+    IPaymentRequestAppService paymentRequestService,
+    IApplicationScoresheetAnalysisService applicationScoresheetAnalysisService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
@@ -1060,6 +1063,20 @@ public class GrantApplicationAppService(
         {
             Logger.LogError(ex, "Error dismissing AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
             throw new UserFriendlyException("Failed to dismiss the AI issue. Please try again.");
+        }
+    }
+
+    [Authorize(GrantApplicationPermissions.AI.ApplicationAnalysis.Default)]
+    public async Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId)
+    {
+        try
+        {
+            return await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(applicationId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error regenerating AI scoresheet answers for application {ApplicationId}", applicationId);
+            throw new UserFriendlyException("Failed to regenerate AI scoresheet answers. Please try again.");
         }
     }
 
