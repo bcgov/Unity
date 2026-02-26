@@ -1,4 +1,4 @@
-name: Dev - CI & Unit Tests
+name: Dev - Branch Protection - CI & Unit Tests
 
 permissions:
   contents: read
