@@ -171,13 +171,12 @@ describe("Unity Login and check data from CHEFS", () => {
     page.switchToGrantProgram("Default Grants Program");
   });
 
-  it("Tests the existence and functionality of the Submitted Date From and Submitted Date To filters", () => {
-    // Set date filters using page object methods
+  it("Tests the existence and functionality of the Quick Date Range filter", () => {
+    // Select "All time" from quick date range dropdown and verify table refreshes
     page
-      .setSubmittedFromDate("2022-01-01")
+      .selectQuickDateRange("alltime")
       .waitForTableRefresh()
-      .setSubmittedToDate(page.getTodayIsoLocal())
-      .waitForTableRefresh();
+      .verifyQuickDateRangeValue("alltime");
   });
 
   // With no rows selected verify the visibility of Filter, Export, Save View, and Columns.

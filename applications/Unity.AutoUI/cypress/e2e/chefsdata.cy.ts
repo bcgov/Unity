@@ -59,13 +59,12 @@ describe('Unity Login and check data from CHEFS', () => {
         // Ensure the search field exists
         cy.get('#search', { timeout: STANDARD_TIMEOUT }).should('exist')
 
-        // Conditionally widen Submitted Date range if the control exists
+        // Select "All time" from quick date range to widen the search
         cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
-            if ($body.find('input#submittedFromDate').length > 0) {
-                cy.get('input#submittedFromDate', { timeout: STANDARD_TIMEOUT })
-                    .should('exist')
-                    .clear()
-                    .type('2022-01-01')
+            if ($body.find('select#quickDateRange').length > 0) {
+                cy.get('select#quickDateRange', { timeout: STANDARD_TIMEOUT })
+                    .should('be.visible')
+                    .select('alltime')
             }
         })
 

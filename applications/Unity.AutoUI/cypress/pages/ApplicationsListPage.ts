@@ -16,9 +16,21 @@ export class ApplicationsListPage extends ApplicationsPage {
 
   // Date filter selectors
   private readonly dateFilters = {
+    quickDateRange: "select#quickDateRange",
     submittedFromDate: "input#submittedFromDate",
     submittedToDate: "input#submittedToDate",
     spinner: 'div.spinner-grow[role="status"]',
+  };
+
+  // Quick date range option values
+  private readonly quickDateRangeOptions = {
+    today: "today",
+    last7Days: "last7days",
+    last30Days: "last30days",
+    last3Months: "last3months",
+    last6Months: "last6months",
+    allTime: "alltime",
+    custom: "custom",
   };
 
   // Extended action bar selectors (beyond ApplicationsPage)
@@ -71,7 +83,60 @@ export class ApplicationsListPage extends ApplicationsPage {
   // ============ Date Filter Methods ============
 
   /**
-   * Set the Submitted From Date filter
+   * Select a quick date range from the dropdown
+   * @param range - One of: "today", "last7days", "last30days", "last3months", "last6months", "alltime", "custom"
+   */
+  selectQuickDateRange(
+    range:
+      | "today"
+      | "last7days"
+      | "last30days"
+      | "last3months"
+      | "last6months"
+      | "alltime"
+      | "custom"
+  ): this {
+    cy.get(this.dateFilters.quickDateRange, { timeout: this.STANDARD_TIMEOUT })
+      .should("be.visible")
+      .select(range);
+    return this;
+  }
+
+  /**
+   * Select "Last 6 months" from quick date range (default)
+   */
+  selectLast6Months(): this {
+    return this.selectQuickDateRange("last6months");
+  }
+
+  /**
+   * Select "All time" from quick date range
+   */
+  selectAllTime(): this {
+    return this.selectQuickDateRange("alltime");
+  }
+
+  /**
+   * Verify the quick date range dropdown has expected value
+   */
+  verifyQuickDateRangeValue(
+    expectedValue:
+      | "today"
+      | "last7days"
+      | "last30days"
+      | "last3months"
+      | "last6months"
+      | "alltime"
+      | "custom"
+  ): this {
+    cy.get(this.dateFilters.quickDateRange, { timeout: this.STANDARD_TIMEOUT })
+      .should("have.value", expectedValue);
+    return this;
+  }
+
+  /**
+   * Set the Submitted From Date filter (for custom date range)
+   * @deprecated Use selectQuickDateRange() instead. This method is for custom date ranges only.
    */
   setSubmittedFromDate(date: string): this {
     cy.get(this.dateFilters.submittedFromDate, { timeout: this.STANDARD_TIMEOUT })
