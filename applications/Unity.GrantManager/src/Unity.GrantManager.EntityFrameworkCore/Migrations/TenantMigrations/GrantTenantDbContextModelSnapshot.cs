@@ -4280,7 +4280,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationLink", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Application", null)
-                        .WithMany()
+                        .WithMany("ApplicationLinks")
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -4538,6 +4538,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("ApplicantAgent");
 
                     b.Navigation("ApplicationAssignments");
+
+                    b.Navigation("ApplicationLinks");
 
                     b.Navigation("ApplicationTags");
 

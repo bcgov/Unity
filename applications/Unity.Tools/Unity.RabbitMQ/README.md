@@ -1,61 +1,215 @@
-# Unity RabbitMQ
+# RabbitMQ Configuration
 
-This directory contains the setup for RabbitMQ message broker in an OpenShift container. It includes configuration for administrator and client users, as well as virtual hosts for development environments.
+This directory contains a Docker Compose configuration for setting up RabbitMQ for local development.
 
-## Contents
-- RabbitMQ configuration files
-- User and vhost setup instructions
+## Overview
 
-See the README for setup and usage instructions.
+The setup provides:
 
-Setup of RabbitMQ message broker in an OpenShift container requires an administrator user (`unity-admin`) and two client users each associated with their own virtual hosts (`/dev` and `/dev2`).
+- **RabbitMQ Server**: Message broker for Unity applications
+- **Management Interface**: Web-based management and monitoring
+- **Persistent Storage**: Data persistence across container restarts
 
-## Prerequisites
+## Getting Started
 
-- OpenShift cluster access
-- RabbitMQ installed on your OpenShift cluster
-- RabbitMQ CLI tools (`rabbitmqctl`)
+### Basic Usage
 
-## Setup
+Start RabbitMQ:
 
-### Creating Virtual Hosts
-
-To create the virtual hosts `/dev` and `/dev2`, use the following commands:
-
-```sh
-rabbitmqctl add_vhost /dev
-rabbitmqctl add_vhost /dev2
+```bash
+docker-compose up
 ```
 
-### Adding Users and Setting Permissions
+To run in detached mode:
 
-Create the administrator user `unity-admin`:
-
-```sh
-rabbitmqctl add_user unity-admin 'your_admin_password'
-rabbitmqctl set_permissions -p / unity-admin ".*" ".*" ".*"
-rabbitmqctl set_user_tags unity-admin administrator
+```bash
+docker-compose up -d
 ```
 
-Create the client user `unity-rabbitmq-user-dev` for the `/dev` vhost:
+### Configuration Options
 
-```sh
-rabbitmqctl add_user unity-rabbitmq-user-dev 'your_dev_password'
-rabbitmqctl set_permissions -p /dev unity-rabbitmq-user-dev ".*" ".*" ".*"
+This setup supports environment variables for customization:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RABBITMQ_DEFAULT_USER` | `admin` | Default RabbitMQ username |
+| `RABBITMQ_DEFAULT_PASS` | `admin` | Default RabbitMQ password |
+
+#### Custom Credentials
+
+You can set custom RabbitMQ credentials:
+
+```bash
+# PowerShell
+$env:RABBITMQ_DEFAULT_USER="myuser"; $env:RABBITMQ_DEFAULT_PASS="mypassword"; docker-compose up
+
+# Bash/CMD
+RABBITMQ_DEFAULT_USER=myuser RABBITMQ_DEFAULT_PASS=mypassword docker-compose up
 ```
 
-Create the client user `unity-rabbitmq-user-dev2` for the `/dev2` vhost:
+Alternatively, create a `.env` file in the same directory:
 
-```sh
-rabbitmqctl add_user unity-rabbitmq-user-dev2 'your_dev2_password'
-rabbitmqctl set_permissions -p /dev2 unity-rabbitmq-user-dev2 ".*" ".*" ".*"
+```config
+RABBITMQ_DEFAULT_USER=myuser
+RABBITMQ_DEFAULT_PASS=mypassword
 ```
 
-## Volume Mounts
+### Accessing RabbitMQ
 
-To persist RabbitMQ data a container volume mount is required with backup to offsite S3 storage.
+#### Management Interface
 
-```yaml
-volumeMounts:
-  - mountPath: /var/lib/rabbitmq
+- **URL**: http://localhost:15672
+- **Username**: `admin` (or your custom user)
+- **Password**: `admin` (or your custom password)
+
+#### AMQP Connection
+
+- **Host**: localhost
+- **Port**: 5672
+- **Username**: `admin` (or your custom user)
+- **Password**: `admin` (or your custom password)
+
+### Client Application Configuration
+
+For Unity applications, configure your `appsettings.json` as follows:
+
+```json
+{
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Port": 5672,
+    "Username": "admin",
+    "Password": "admin",
+    "VirtualHost": "/",
+    "ExchangeName": "unity.exchange",
+    "QueueName": "unity.queue"
+  }
+}
 ```
+
+#### Configuration Examples
+
+For local development:
+
+```json
+{
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Port": 5672,
+    "Username": "admin",
+    "Password": "admin"
+  }
+}
+```
+
+For Docker network communication:
+
+```json
+{
+  "RabbitMQ": {
+    "Host": "rabbitmq",
+    "Port": 5672,
+    "Username": "admin",
+    "Password": "admin"
+  }
+}
+```
+
+For Kubernetes deployment:
+
+```json
+{
+  "RabbitMQ": {
+    "Host": "unity-rabbitmq.namespace.svc.cluster.local",
+    "Port": 5672,
+    "Username": "admin",
+    "Password": "your-secure-password"
+  }
+}
+```
+
+## Verifying the Setup
+
+Check RabbitMQ status:
+
+```bash
+# Check if RabbitMQ is running
+docker ps | grep rabbitmq
+
+# Check logs
+docker-compose logs rabbitmq
+```
+
+Test connection using management API:
+
+```bash
+curl -u admin:admin http://localhost:15672/api/overview
+```
+
+## Stopping and Cleanup
+
+Stop RabbitMQ:
+
+```bash
+docker-compose down
+```
+
+Remove volumes (this will delete all data):
+
+```bash
+docker-compose down -v
+```
+
+## Notes & Limitations
+
+- This setup is designed for local development and testing
+- For production deployments, use proper secrets management
+- The management interface is exposed on all interfaces (0.0.0.0)
+- Data persists in Docker volumes between restarts
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Port Already in Use**: If ports 5672 or 15672 are already in use, modify the port mappings in `docker-compose.yml`
+
+2. **Permission Issues**: Ensure Docker has proper permissions to create volumes
+
+3. **Connection Refused**: Check that RabbitMQ has fully started by monitoring the logs:
+   ```bash
+   docker-compose logs -f rabbitmq
+   ```
+
+### RabbitMQ Management Commands
+
+Useful management commands via the web interface or CLI:
+
+```bash
+# List queues
+docker exec rabbitmq rabbitmqctl list_queues
+
+# List exchanges  
+docker exec rabbitmq rabbitmqctl list_exchanges
+
+# List users
+docker exec rabbitmq rabbitmqctl list_users
+
+# Add user
+docker exec rabbitmq rabbitmqctl add_user newuser newpassword
+
+# Set permissions
+docker exec rabbitmq rabbitmqctl set_permissions -p / newuser ".*" ".*" ".*"
+```
+
+## Integration with Unity Applications
+
+This RabbitMQ setup is designed to work seamlessly with Unity applications that require message queuing capabilities. The configuration matches the OpenShift deployment specifications for consistency across development and production environments.
+
+### Message Patterns
+
+Common RabbitMQ patterns used in Unity applications:
+
+- **Work Queues**: Distributing tasks among workers
+- **Publish/Subscribe**: Broadcasting messages to multiple consumers
+- **Routing**: Selective message routing based on criteria
+- **Topics**: Complex routing patterns with wildcards

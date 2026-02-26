@@ -1,0 +1,62 @@
+services:
+  metabase:
+    image: metabase/metabase:v0.51.4
+    container_name: unity-metabase
+    hostname: unity-metabase
+    environment:
+      - MB_DB_TYPE=postgres
+      - MB_DB_DBNAME=${MB_DB_DBNAME:-metabase}
+      - MB_DB_PORT=5432
+      - MB_DB_USER=${MB_DB_USER:-metabase}
+      - MB_DB_PASS=${MB_DB_PASS:-metabase123}
+      - MB_DB_HOST=metabase-db
+      - JAVA_OPTS=-Xmx1024m -Xss1m -Dfile.encoding=UTF-8 -Dlogfile.path=target/log -server
+    ports:
+      - "3000:3000"
+      - "8443:8443"
+    depends_on:
+      metabase-db:
+        condition: service_healthy
+    networks:
+      - metabase-network
+    volumes:
+      - metabase-data:/metabase-data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
+  metabase-db:
+    image: postgres:15
+    container_name: metabase-db
+    hostname: metabase-db
+    environment:
+      - POSTGRES_DB=${MB_DB_DBNAME:-metabase}
+      - POSTGRES_USER=${POSTGRES_USER:-metabase}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-metabase123}
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts with Unity DB
+    networks:
+      - metabase-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-metabase} -d ${MB_DB_DBNAME:-metabase}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+networks:
+  metabase-network:
+    driver: bridge
+
+volumes:
+  metabase-data:
+    driver: local
+  postgres-data:
+    driver: local

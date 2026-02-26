@@ -1,9 +1,16 @@
+using NSubstitute;
 using Shouldly;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applicants.ApplicantProfile;
-using Unity.GrantManager.Applicants.ProfileData;
+using Unity.GrantManager.ApplicantProfile;
+using Unity.GrantManager.ApplicantProfile.ProfileData;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.Integrations;
+using Unity.GrantManager.TestHelpers;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 using Xunit;
 
 namespace Unity.GrantManager.Applicants
@@ -18,17 +25,58 @@ namespace Unity.GrantManager.Applicants
             Key = key
         };
 
+        private static ContactInfoDataProvider CreateContactInfoDataProvider()
+        {
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
+            var applicantProfileContactService = Substitute.For<IApplicantProfileContactService>();
+            applicantProfileContactService.GetProfileContactsAsync(Arg.Any<Guid>())
+                .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
+            applicantProfileContactService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
+                .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
+            return new ContactInfoDataProvider(currentTenant, applicantProfileContactService);
+        }
+
+        private static AddressInfoDataProvider CreateAddressInfoDataProvider()
+        {
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
+            var submissionRepo = Substitute.For<IRepository<ApplicationFormSubmission, Guid>>();
+            submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
+            var addressRepo = Substitute.For<IRepository<ApplicantAddress, Guid>>();
+            addressRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicantAddress>().AsAsyncQueryable()));
+            var applicationRepo = Substitute.For<IRepository<Application, Guid>>();
+            applicationRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Application>().AsAsyncQueryable()));
+            return new AddressInfoDataProvider(currentTenant, submissionRepo, addressRepo, applicationRepo);
+        }
+
+        private static SubmissionInfoDataProvider CreateSubmissionInfoDataProvider()
+        {
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
+            var submissionRepo = Substitute.For<IRepository<ApplicationFormSubmission, Guid>>();
+            submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
+            var applicationRepo = Substitute.For<IRepository<Application, Guid>>();
+            applicationRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Application>().AsAsyncQueryable()));
+            var statusRepo = Substitute.For<IRepository<ApplicationStatus, Guid>>();
+            statusRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationStatus>().AsAsyncQueryable()));
+            var endpointManagementAppService = Substitute.For<IEndpointManagementAppService>();
+            endpointManagementAppService.GetChefsApiBaseUrlAsync().Returns(Task.FromResult(string.Empty));
+            var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<SubmissionInfoDataProvider>>();
+            return new SubmissionInfoDataProvider(currentTenant, submissionRepo, applicationRepo, statusRepo, endpointManagementAppService, logger);
+        }
+
         [Fact]
         public void ContactInfoDataProvider_Key_ShouldMatchExpected()
         {
-            var provider = new ContactInfoDataProvider();
+            var provider = CreateContactInfoDataProvider();
             provider.Key.ShouldBe(ApplicantProfileKeys.ContactInfo);
         }
 
         [Fact]
         public async Task ContactInfoDataProvider_GetDataAsync_ShouldReturnContactInfoDto()
         {
-            var provider = new ContactInfoDataProvider();
+            var provider = CreateContactInfoDataProvider();
             var result = await provider.GetDataAsync(CreateRequest(ApplicantProfileKeys.ContactInfo));
             result.ShouldNotBeNull();
             result.ShouldBeOfType<ApplicantContactInfoDto>();
@@ -53,14 +101,14 @@ namespace Unity.GrantManager.Applicants
         [Fact]
         public void AddressInfoDataProvider_Key_ShouldMatchExpected()
         {
-            var provider = new AddressInfoDataProvider();
+            var provider = CreateAddressInfoDataProvider();
             provider.Key.ShouldBe(ApplicantProfileKeys.AddressInfo);
         }
 
         [Fact]
         public async Task AddressInfoDataProvider_GetDataAsync_ShouldReturnAddressInfoDto()
         {
-            var provider = new AddressInfoDataProvider();
+            var provider = CreateAddressInfoDataProvider();
             var result = await provider.GetDataAsync(CreateRequest(ApplicantProfileKeys.AddressInfo));
             result.ShouldNotBeNull();
             result.ShouldBeOfType<ApplicantAddressInfoDto>();
@@ -69,14 +117,14 @@ namespace Unity.GrantManager.Applicants
         [Fact]
         public void SubmissionInfoDataProvider_Key_ShouldMatchExpected()
         {
-            var provider = new SubmissionInfoDataProvider();
+            var provider = CreateSubmissionInfoDataProvider();
             provider.Key.ShouldBe(ApplicantProfileKeys.SubmissionInfo);
         }
 
         [Fact]
         public async Task SubmissionInfoDataProvider_GetDataAsync_ShouldReturnSubmissionInfoDto()
         {
-            var provider = new SubmissionInfoDataProvider();
+            var provider = CreateSubmissionInfoDataProvider();
             var result = await provider.GetDataAsync(CreateRequest(ApplicantProfileKeys.SubmissionInfo));
             result.ShouldNotBeNull();
             result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
@@ -103,10 +151,10 @@ namespace Unity.GrantManager.Applicants
         {
             IApplicantProfileDataProvider[] providers =
             [
-                new ContactInfoDataProvider(),
+                CreateContactInfoDataProvider(),
                 new OrgInfoDataProvider(),
-                new AddressInfoDataProvider(),
-                new SubmissionInfoDataProvider(),
+                CreateAddressInfoDataProvider(),
+                CreateSubmissionInfoDataProvider(),
                 new PaymentInfoDataProvider()
             ];
 

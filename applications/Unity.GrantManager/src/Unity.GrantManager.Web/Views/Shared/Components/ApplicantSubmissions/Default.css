@@ -108,9 +108,9 @@
     word-wrap: break-word;
 }
 
-/* Override tab-content scrolling for Submissions tab - no scrolling */
-#detailsTab .tab-content:has(#SubmissionsWidget) {
-    overflow: hidden !important;
+/* Submissions tab pane - handle overflow internally via dt-scroll-body */
+#nav-submissions {
+    overflow: hidden;
 }
 
 /* Make Submissions widget fill available space */

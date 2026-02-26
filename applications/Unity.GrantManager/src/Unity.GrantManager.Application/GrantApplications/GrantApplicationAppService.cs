@@ -23,7 +23,6 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
-using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -40,10 +39,10 @@ namespace Unity.GrantManager.GrantApplications;
 public class GrantApplicationAppService(
     IApplicationManager applicationManager,
     IApplicationRepository applicationRepository,
-    IApplicationStatusRepository applicationStatusRepository,    
+    IApplicationStatusRepository applicationStatusRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
-    IApplicationFormRepository applicationFormRepository,    
+    IApplicationFormRepository applicationFormRepository,
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
@@ -52,7 +51,7 @@ public class GrantApplicationAppService(
 {
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        // 1️⃣ Fetch applications with filters + paging in DB
+        // 1️ Fetch applications with filters + paging in DB
         var applications = await applicationRepository.WithFullDetailsAsync(
             input.SkipCount,
             input.MaxResultCount,
@@ -63,22 +62,17 @@ public class GrantApplicationAppService(
 
         var applicationIds = applications.Select(a => a.Id).ToList();
 
+        // 2️ Fetch payment rollup batch if feature enabled
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-        List<PaymentDetailsDto> paymentRequests = [];
+        Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
 
         if (paymentsFeatureEnabled && applicationIds.Count > 0)
         {
-            paymentRequests = await paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+            paymentRollupBatch = await paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
         }
 
-        // 2️⃣ Pre-aggregate payment amounts for O(1) lookup
-        var paymentRequestsByApplication = paymentRequests
-            .Where(pr => pr.Status == PaymentRequestStatus.Submitted)
-            .GroupBy(pr => pr.CorrelationId)
-            .ToDictionary(g => g.Key, g => g.Sum(pr => pr.Amount));
-
-        // 3️⃣ Map applications to DTOs
+        // 3️ Map applications to DTOs
         var appDtos = applications.Select(app =>
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
@@ -101,19 +95,20 @@ public class GrantApplicationAppService(
             appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
             appDto.ApplicationLinks = ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(app.ApplicationLinks?.ToList() ?? []);
 
-            if (paymentsFeatureEnabled && paymentRequestsByApplication.Count > 0)
+            if (paymentsFeatureEnabled && paymentRollupBatch.Count > 0)
             {
+                paymentRollupBatch.TryGetValue(app.Id, out var rollup);
                 appDto.PaymentInfo = new PaymentInfoDto
                 {
                     ApprovedAmount = app.ApprovedAmount,
-                    TotalPaid = paymentRequestsByApplication.GetValueOrDefault(app.Id)
+                    TotalPaid = rollup?.TotalPaid ?? 0
                 };
             }
             return appDto;
 
         }).ToList();
 
-        // 4️⃣ Get total count using same filters
+        // 4️ Get total count using same filters
         var totalCount = await applicationRepository.GetCountAsync(
             input.SubmittedFromDate,
             input.SubmittedToDate
@@ -215,7 +210,7 @@ public class GrantApplicationAppService(
     public async Task<ApplicationForm?> GetApplicationFormAsync(Guid applicationFormId)
     {
         return await (await applicationFormRepository.GetQueryableAsync()).FirstOrDefaultAsync(s => s.Id == applicationFormId);
-    }  
+    }
 
     [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
@@ -671,7 +666,7 @@ public class GrantApplicationAppService(
         }
 
         return await applicantAgentRepository.UpdateAsync(applicantAgent);
-    }    
+    }
 
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task UpdateMergedApplicantAsync(Guid applicationId, CreateUpdateApplicantInfoDto input)
@@ -816,7 +811,7 @@ public class GrantApplicationAppService(
                 Debug.WriteLine(ex.ToString());
             }
         }
-    }   
+    }
 
     public async Task<List<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
     {
