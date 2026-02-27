@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -32,7 +32,7 @@ public class ApplicationLinksAppService : CrudAppService<
     public IApplicationRepository ApplicationRepository { get; set; } = null!;
     public IApplicantRepository ApplicantRepository { get; set; } = null!;
     public IApplicationFormAppService ApplicationFormAppService { get; set; } = null!;
-    
+
     public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : base(repository) { }
 
     public async Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId)
@@ -96,6 +96,58 @@ public class ApplicationLinksAppService : CrudAppService<
         return resultList;
     }
 
+    /// <summary>
+    /// Retrieves a list of application links of the specified type for a given application.
+    /// </summary>
+    /// <remarks>Use this method to obtain links associated with a particular application and link type. The
+    /// returned list is mapped to ApplicationLinksDto for convenient consumption in client code.</remarks>
+    /// <param name="applicationId">The unique identifier of the application for which to retrieve links. Must be a valid GUID.</param>
+    /// <param name="linkType">The type of application link to retrieve, specified by the <see cref="ApplicationLinkType"/> enumeration.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see cref="ApplicationLinksDto"/>
+    /// objects matching the specified application ID and link type. The list will be empty if no links are found.</returns>
+    public async Task<List<ApplicationLinksDto>> GetApplicationLinksByType(Guid applicationId, ApplicationLinkType linkType)
+    {
+        var applicationLinksQuery = await ApplicationLinksRepository
+            .GetListAsync(al => al.ApplicationId == applicationId && al.LinkType == linkType);
+
+        return ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(applicationLinksQuery);
+    }
+
+    /// <summary>
+    /// Retrieves a list of child application links associated with the specified applicationId.
+    /// </summary>
+    /// <remarks>This method is asynchronous and may involve network or database calls, which could affect
+    /// performance. Ensure that the applicationId provided is valid to avoid exceptions.</remarks>
+    /// <param name="applicationId">The unique identifier of the application for which child applications are being retrieved. This parameter cannot
+    /// be an empty GUID.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see cref="ApplicationLinksDto"/>
+    /// objects representing the child applications. The list will be empty if no child applications are found.</returns>
+    public async Task<List<ApplicationLinksDto>> GetChildApplications(Guid applicationId)
+    {
+        return await GetApplicationLinksByType(applicationId, ApplicationLinkType.Child);
+    }
+
+    /// <summary>
+    /// Retrieves a dictionary that maps each specified parent application ID to a list of its associated child application IDs.
+    /// </summary>
+    /// <remarks>The method fetches application links from the repository and groups them by parent
+    /// application ID. Ensure that the provided parent application IDs exist in the repository to obtain meaningful
+    /// results.</remarks>
+    /// <param name="parentApplicationIds">A list of GUIDs representing the parent application IDs for which to retrieve child application IDs. This
+    /// parameter cannot be null or empty.</param>
+    /// <returns>A dictionary where each key is a parent application ID and the corresponding value is a list of child
+    /// application IDs linked to that parent. The dictionary will be empty if no child applications are found.</returns>
+    public async Task<Dictionary<Guid, List<Guid>>> GetChildApplicationIdsByParentIdsAsync(List<Guid> parentApplicationIds)
+    {
+        var links = await ApplicationLinksRepository
+            .GetListAsync(al => parentApplicationIds.Contains(al.ApplicationId)
+                             && al.LinkType == ApplicationLinkType.Child);
+
+        return links
+            .GroupBy(l => l.ApplicationId)
+            .ToDictionary(g => g.Key, g => g.Select(l => l.LinkedApplicationId).ToList());
+    }
+
     public async Task<ApplicationLinksInfoDto> GetLinkedApplicationAsync(Guid currentApplicationId, Guid linkedApplicationId)
     {
         var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();
@@ -154,7 +206,7 @@ public class ApplicationLinksAppService : CrudAppService<
     public async Task<ApplicationLinksInfoDto> GetCurrentApplicationInfoAsync(Guid applicationId)
     {
         Logger.LogInformation("GetCurrentApplicationInfoAsync called with applicationId: {ApplicationId}", applicationId);
-        
+
         try
         {
             var applicationsQuery = await ApplicationRepository.GetQueryableAsync();
@@ -162,7 +214,7 @@ public class ApplicationLinksAppService : CrudAppService<
                 .Include(a => a.ApplicationStatus)
                 .Where(a => a.Id == applicationId)
                 .FirstOrDefaultAsync();
-                
+
             if (application == null)
             {
                 Logger.LogWarning("Application not found with ID: {ApplicationId}", applicationId);
@@ -249,13 +301,13 @@ public class ApplicationLinksAppService : CrudAppService<
                 LinkType = ApplicationLinkType.Related,
                 FormVersion = formVersion
             };
-            
+
             return result;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Critical error in GetCurrentApplicationInfoAsync for applicationId: {ApplicationId}", applicationId);
-            
+
             // If all else fails, return a basic structure
             return new ApplicationLinksInfoDto
             {
@@ -276,16 +328,16 @@ public class ApplicationLinksAppService : CrudAppService<
     {
         // Get the link to find the paired record
         var link = await Repository.GetAsync(applicationLinkId);
-        
+
         // Find the paired link (reverse direction)
         var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();
         var pairedLink = await applicationLinksQuery
             .Where(x => x.ApplicationId == link.LinkedApplicationId && x.LinkedApplicationId == link.ApplicationId)
             .FirstOrDefaultAsync();
-        
+
         // Delete both links
         await Repository.DeleteAsync(applicationLinkId);
-        
+
         if (pairedLink != null)
         {
             await Repository.DeleteAsync(pairedLink.Id);
@@ -295,7 +347,7 @@ public class ApplicationLinksAppService : CrudAppService<
     public async Task<ApplicationLinksInfoDto> GetApplicationDetailsByReferenceAsync(string referenceNumber)
     {
         Logger.LogInformation("GetApplicationDetailsByReferenceAsync called with referenceNumber: {ReferenceNumber}", referenceNumber);
-        
+
         try
         {
             var applicationsQuery = await ApplicationRepository.GetQueryableAsync();
@@ -303,7 +355,7 @@ public class ApplicationLinksAppService : CrudAppService<
                 .Include(a => a.ApplicationStatus)
                 .Where(a => a.ReferenceNo == referenceNumber)
                 .FirstOrDefaultAsync();
-                
+
             if (application == null)
             {
                 Logger.LogWarning("Application not found with ReferenceNumber: {ReferenceNumber}", referenceNumber);
@@ -375,7 +427,7 @@ public class ApplicationLinksAppService : CrudAppService<
         catch (Exception ex)
         {
             Logger.LogError(ex, "Critical error in GetApplicationDetailsByReferenceAsync for referenceNumber: {ReferenceNumber}", referenceNumber);
-            
+
             return new ApplicationLinksInfoDto
             {
                 Id = Guid.Empty,
@@ -394,46 +446,46 @@ public class ApplicationLinksAppService : CrudAppService<
     public async Task UpdateLinkTypeAsync(Guid applicationLinkId, ApplicationLinkType newLinkType)
     {
         Logger.LogInformation("UpdateLinkTypeAsync called with linkId: {LinkId}, newLinkType: {LinkType}", applicationLinkId, newLinkType);
-                
+
         // Get the existing link
         var link = await Repository.GetAsync(applicationLinkId);
-            
+
         if (link != null)
         {
             // Update the link type
             link.LinkType = newLinkType;
             await Repository.UpdateAsync(link);
-                
+
             Logger.LogInformation("Successfully updated link type for linkId: {LinkId}", applicationLinkId);
         }
         else
         {
             Logger.LogWarning("Link not found with ID: {LinkId}", applicationLinkId);
         }
-        
+
     }
 
     public async Task<ApplicationLinkValidationResult> ValidateApplicationLinksAsync(
-        Guid currentApplicationId, 
+        Guid currentApplicationId,
         List<ApplicationLinkValidationRequest> proposedLinks)
     {
         var result = new ApplicationLinkValidationResult();
-        
+
         // Skip validation for empty or Related-only links
         var hierarchicalLinks = proposedLinks.Where(l => l.LinkType != ApplicationLinkType.Related).ToList();
         if (hierarchicalLinks.Count == 0)
         {
             return result;
         }
-        
+
         // Validate current app constraints
         var currentAppError = ValidateCurrentApplicationConstraints(hierarchicalLinks);
-        
+
         // Process each proposed link
         foreach (var proposedLink in hierarchicalLinks)
         {
             var errorMessage = await ValidateLinkBasedOnType(currentApplicationId, proposedLink, currentAppError, hierarchicalLinks);
-            
+
             if (!string.IsNullOrEmpty(errorMessage))
             {
                 result.ValidationErrors[proposedLink.ReferenceNumber] = true;
@@ -444,31 +496,31 @@ public class ApplicationLinksAppService : CrudAppService<
                 result.ValidationErrors[proposedLink.ReferenceNumber] = false;
             }
         }
-        
+
         return result;
     }
-    
+
     private static string ValidateCurrentApplicationConstraints(List<ApplicationLinkValidationRequest> proposedLinks)
     {
         var parentCount = proposedLinks.Count(l => l.LinkType == ApplicationLinkType.Parent);
-        var hasParent = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent); 
-        var hasChild = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Child); 
+        var hasParent = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent);
+        var hasChild = proposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Child);
 
         if (parentCount > 1)
         {
             return ERROR_MULTIPLE_PARENTS;
         }
-        
+
         if (hasParent && hasChild)
         {
             return ERROR_PARENT_WITH_CHILDREN;
         }
-        
+
         return string.Empty;
     }
-    
+
     private async Task<string> ValidateLinkBasedOnType(
-        Guid currentApplicationId, 
+        Guid currentApplicationId,
         ApplicationLinkValidationRequest proposedLink,
         string currentAppError,
         List<ApplicationLinkValidationRequest> allProposedLinks)
@@ -481,25 +533,25 @@ public class ApplicationLinksAppService : CrudAppService<
                 {
                     return currentAppError;
                 }
-                
+
                 // Then check if the proposed parent is already a child of another app
                 return await ValidateTargetCannotBeParentIfAlreadyChild(currentApplicationId, proposedLink);
-                
+
             case ApplicationLinkType.Child:
                 // Check if current app is trying to be both parent and child
                 if (!string.IsNullOrEmpty(currentAppError) && allProposedLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
                 {
                     return ERROR_CURRENT_APP_IS_CHILD;
                 }
-                
+
                 // Check target app conflicts
                 return await ValidateTargetCanAcceptChildLink(currentApplicationId, proposedLink);
-                
+
             default:
                 return string.Empty;
         }
     }
-    
+
     private async Task<string> ValidateTargetCannotBeParentIfAlreadyChild(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
     {
         var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
@@ -513,29 +565,29 @@ public class ApplicationLinksAppService : CrudAppService<
         {
             return ERROR_TARGET_CHILD_CANNOT_BE_PARENT;
         }
-        
+
         return string.Empty;
     }
-    
+
     private async Task<string> ValidateTargetCanAcceptChildLink(Guid currentApplicationId, ApplicationLinkValidationRequest proposedLink)
     {
         var targetLinks = await GetListByApplicationAsync(proposedLink.TargetApplicationId);
 
         // Exclude reverse links and self-references
-        var targetExternalLinks = targetLinks.Where(l => 
-            l.ApplicationId != currentApplicationId && 
+        var targetExternalLinks = targetLinks.Where(l =>
+            l.ApplicationId != currentApplicationId &&
             l.ApplicationId != proposedLink.TargetApplicationId).ToList();
-        
+
         if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Parent))
         {
             return ERROR_TARGET_ALREADY_HAS_PARENT;
         }
-        
+
         if (targetExternalLinks.Exists(l => l.LinkType == ApplicationLinkType.Child))
         {
             return ERROR_TARGET_IS_PARENT_TO_OTHERS;
         }
-        
+
         return string.Empty;
     }
 }

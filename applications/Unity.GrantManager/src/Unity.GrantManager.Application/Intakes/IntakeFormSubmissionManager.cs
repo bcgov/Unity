@@ -54,7 +54,7 @@ namespace Unity.GrantManager.Intakes
             intakeMap.SubmissionId = formSubmission.submission.id;
             intakeMap.SubmissionDate = formSubmission.submission.updatedAt;
             intakeMap.ConfirmationId = formSubmission.submission.confirmationId;
-            using var uow = _unitOfWorkManager.Begin();
+            using var uow = _unitOfWorkManager.Begin(isTransactional: true);//transaction needed for sequence number generation (SequenceRepository) to ensure atomicity and consistency
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
             await _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
 

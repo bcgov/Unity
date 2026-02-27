@@ -31,9 +31,9 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public int? DefaultPaymentGroup { get; set; }
     public FormHierarchyType? FormHierarchy { get; set; }
     public Guid? ParentFormId { get; set; }
-    public Guid? ParentFormVersionId { get; set; }
     public bool RenderFormIoToHtml { get; set; } = false;
     public bool IsDirectApproval { get; set; } = false;
+    [MaxLength(100)]
     public string? Prefix { get; set; }
     public SuffixConfigType? SuffixType { get; set; }
     public static List<(SuffixConfigType SuffixType, string DisplayName)> GetAvailableSuffixTypes()

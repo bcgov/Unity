@@ -136,6 +136,7 @@ $(function () {
                         })
                         .catch(function (error) {
                             abp.notify.error('Error deleting application link.');
+                            dataTable.ajax.reload();
                         });
                 }
             }
@@ -163,6 +164,9 @@ $(function () {
             'The application links have been successfully updated.',
             'Application Links'
         );
+    });
+
+    applicationLinksModal.onClose(function () {
         dataTable.ajax.reload();
     });
 
@@ -921,17 +925,28 @@ $(function () {
                 data: formData,
                 processData: false,
                 contentType: false,
-                success: () => {
+                success: (response) => {
                     applicationLinksModal.close();
-                    abp.notify.success(
-                        'The application links have been successfully updated.',
-                        'Application Links'
-                    );
+                    if (response.success)
+                    {
+                        abp.notify.success('The application links have been successfully updated.','Application Links');
+                    }
+                    else
+                    {   // Display the error message from the server 
+                        abp.notify.error(response.message || 'Failed to update application links.','Application Links');
+                    }
                     dataTable.ajax.reload();
                 },
                 error: (xhr, status, error) => {
                     console.error('Error updating application links:', status, error);
-                    abp.notify.error('Error updating application links: ' + error);
+                    let errorMessage = 'Error updating application links.';
+
+                    // Try to extract error message from response
+                    if (xhr.responseJSON?.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+
+                    abp.notify.error(errorMessage);
                 }
             });
         }

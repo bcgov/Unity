@@ -1660,9 +1660,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("ParentFormId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ParentFormVersionId")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("Payable")
                         .HasColumnType("boolean");
 
@@ -1696,8 +1693,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("IntakeId");
 
                     b.HasIndex("ParentFormId");
-
-                    b.HasIndex("ParentFormVersionId");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -4256,11 +4251,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .WithMany()
                         .HasForeignKey("ParentFormId")
                         .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationFormVersion", null)
-                        .WithMany()
-                        .HasForeignKey("ParentFormVersionId")
-                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormSubmission", b =>
@@ -4290,7 +4280,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationLink", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Application", null)
-                        .WithMany()
+                        .WithMany("ApplicationLinks")
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -4548,6 +4538,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("ApplicantAgent");
 
                     b.Navigation("ApplicationAssignments");
+
+                    b.Navigation("ApplicationLinks");
 
                     b.Navigation("ApplicationTags");
 

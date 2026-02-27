@@ -2,6 +2,7 @@
 
 function removeApplicationPaymentRequest(applicationId) {
     let $container = $('#' + applicationId);
+    let $parentGroup = $container.closest('.parent-child-group');
     $container.remove();
 
     $('#' + applicationId).remove();
@@ -17,6 +18,11 @@ function removeApplicationPaymentRequest(applicationId) {
         $('#payment-modal').find('#btnSubmitPayment').prop('disabled', true);
     } else {
         $('#no-payment-msg').css('display', 'none');
+    }
+
+    // Clean up empty group wrappers
+    if ($parentGroup.length && $parentGroup.find('.single-payment').length === 0) {
+        $parentGroup.remove();
     }
 
     // Always recalculate the total after removal
@@ -169,8 +175,14 @@ function validateParentChildAmounts(correlationId) {
     let maximumAllowedInput = $(
         `input[name="ApplicationPaymentRequestForm[${index}].MaximumAllowedAmount"]`
     ).val();
+    let parentApprovedAmount = $(
+        `input[name="ApplicationPaymentRequestForm[${index}].ParentApprovedAmount"]`
+    ).val();
     let maximumAllowed = maximumAllowedInput
         ? parseFloat(maximumAllowedInput)
+        : 0;
+    let approvedAmount = parentApprovedAmount
+        ? parseFloat(parentApprovedAmount)
         : 0;
 
     // Determine if this is a parent or child
@@ -179,7 +191,6 @@ function validateParentChildAmounts(correlationId) {
 
     // Find all payments in this parent-child group
     let groupTotal = 0;
-    let groupMembers = [];
 
     $('input[name*=".CorrelationId"]').each(function () {
         let itemCorrelationId = $(this).val();
@@ -208,28 +219,31 @@ function validateParentChildAmounts(correlationId) {
             );
             let amount = parseFloat(amountInput.val().replace(/,/g, '')) || 0;
             groupTotal += amount;
-            groupMembers.push(itemCorrelationId);
         }
     });
 
     // Validate: groupTotal <= maximumAllowed
     let hasError = groupTotal > maximumAllowed;
 
-    // Show/hide errors for ALL members of the group
-    groupMembers.forEach(function (memberId) {
-        let errorDiv = $(`#column_${memberId}_parent_child_error`);
-        let errorMessage = $(`#parent_child_error_message_${memberId}`);
+    // Show/hide error once at the group level
+    if (groupKey == null) return;
+    let groupWrapper = $(`.parent-child-group[data-group-key="${CSS.escape(groupKey)}"]`);
+    let groupErrorDiv = groupWrapper.find('[data-role="group-error"]');
+    let groupErrorMessage = groupWrapper.find('[data-role="group-error-message"]');
 
-        if (hasError) {
-            let message = `Parent-child total (${formatCurrency(
-                groupTotal
-            )}) exceeds maximum allowed by parent (${formatCurrency(
-                maximumAllowed
-            )})`;
-            errorMessage.text(message);
-            errorDiv.css('display', 'block');
-        } else {
-            errorDiv.css('display', 'none');
-        }
-    });
+    if (hasError) {
+        let message = `The total payment amount (${formatCurrency(
+            groupTotal
+        )}) exceeds the remaining balance (${formatCurrency(
+            maximumAllowed
+        )}) of the approved amount (${formatCurrency(
+            approvedAmount
+        )}) for the application or its parent application.`;
+        groupErrorMessage.text(message);
+        groupErrorDiv.css('display', 'block');
+        groupWrapper.addClass('has-error');
+    } else {
+        groupErrorDiv.css('display', 'none');
+        groupWrapper.removeClass('has-error');
+    }
 }

@@ -57,49 +57,33 @@ public class PaymentConfigurationValidationTests : GrantManagerApplicationTestBa
                 ApplicationFormId = GrantManagerTestData.ApplicationForm1_Id,
                 Payable = true,
                 FormHierarchy = FormHierarchyType.Child,
-                ParentFormId = GrantManagerTestData.ApplicationForm1_Id,
-                ParentFormVersionId = Guid.NewGuid()
+                ParentFormId = GrantManagerTestData.ApplicationForm1_Id
             }));
 
         exception.Code.ShouldBe(GrantManagerDomainErrorCodes.ChildFormCannotReferenceSelf);
     }
 
     [Fact]
-    public async Task SavePaymentConfiguration_ShouldValidateParentVersion()
+    public async Task SavePaymentConfiguration_ShouldAcceptValidParentForm()
     {
         var parentForm = await _applicationFormRepository.InsertAsync(new ApplicationForm
         {
             IntakeId = GrantManagerTestData.Intake1_Id,
             ApplicationFormName = "Parent Form For Validation",
-            Payable = true
+            Payable = true,
+            FormHierarchy = FormHierarchyType.Parent
         }, autoSave: true);
-
-        var parentVersion = await _applicationFormVersionRepository.InsertAsync(new ApplicationFormVersion
-        {
-            ApplicationFormId = parentForm.Id,
-            Version = 1,
-            Published = true
-        }, autoSave: true);
-
-        var mismatchException = await Should.ThrowAsync<BusinessException>(
-            _applicationFormAppService.SavePaymentConfiguration(new FormPaymentConfigurationDto
-            {
-                ApplicationFormId = GrantManagerTestData.ApplicationForm1_Id,
-                Payable = true,
-                FormHierarchy = FormHierarchyType.Child,
-                ParentFormId = parentForm.Id,
-                ParentFormVersionId = Guid.NewGuid()
-            }));
-
-        mismatchException.Code.ShouldBe(GrantManagerDomainErrorCodes.ParentFormVersionMismatch);
 
         await _applicationFormAppService.SavePaymentConfiguration(new FormPaymentConfigurationDto
         {
             ApplicationFormId = GrantManagerTestData.ApplicationForm1_Id,
             Payable = true,
             FormHierarchy = FormHierarchyType.Child,
-            ParentFormId = parentForm.Id,
-            ParentFormVersionId = parentVersion.Id
+            ParentFormId = parentForm.Id
         });
+
+        var savedForm = await _applicationFormRepository.GetAsync(GrantManagerTestData.ApplicationForm1_Id);
+        savedForm.ParentFormId.ShouldBe(parentForm.Id);
+        savedForm.FormHierarchy.ShouldBe(FormHierarchyType.Child);
     }
 }

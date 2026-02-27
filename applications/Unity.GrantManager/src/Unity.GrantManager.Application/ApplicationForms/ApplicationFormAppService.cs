@@ -206,11 +206,6 @@ public class ApplicationFormAppService
                     throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
                 }
 
-                if (!dto.ParentFormVersionId.HasValue)
-                {
-                    throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentFormVersion);
-                }
-
                 if (dto.ParentFormId.Value == appForm.Id)
                 {
                     throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormCannotReferenceSelf);
@@ -221,12 +216,6 @@ public class ApplicationFormAppService
                 {
                     throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
                 }
-
-                var parentFormVersion = await _applicationFormVersionRepository.FindAsync(dto.ParentFormVersionId.Value);
-                if (parentFormVersion is null || parentFormVersion.ApplicationFormId != parentForm.Id)
-                {
-                    throw new BusinessException(GrantManagerDomainErrorCodes.ParentFormVersionMismatch);
-                }
             }
         }
 
@@ -236,7 +225,6 @@ public class ApplicationFormAppService
         appForm.PaymentApprovalThreshold = dto.PaymentApprovalThreshold;
         appForm.FormHierarchy = dto.FormHierarchy;
         appForm.ParentFormId = dto.ParentFormId;
-        appForm.ParentFormVersionId = dto.ParentFormVersionId;
         var resolvedDefaultPaymentGroup = dto.DefaultPaymentGroup ?? PaymentGroup.EFT;
         appForm.DefaultPaymentGroup = dto.Payable ? (int?)resolvedDefaultPaymentGroup : null;
         await Repository.UpdateAsync(appForm);
@@ -252,43 +240,40 @@ public class ApplicationFormAppService
         var normalizedFilter = string.IsNullOrWhiteSpace(input.Filter) ? null : input.Filter.Trim();
 
         var formsQueryable = await Repository.GetQueryableAsync();
-        var versionsQueryable = await _applicationFormVersionRepository.GetQueryableAsync();
-
-        var query =
-            from form in formsQueryable
-            join version in versionsQueryable on form.Id equals version.ApplicationFormId
-            where version.Published
-            select new { form, version };
+        var query = formsQueryable.AsQueryable();
 
         if (input.ExcludeFormId.HasValue)
         {
-            query = query.Where(x => x.form.Id != input.ExcludeFormId.Value);
+            query = query.Where(x => x.Id != input.ExcludeFormId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(normalizedFilter))
         {
             var loweredFilter = normalizedFilter.ToLowerInvariant();
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+                               // Need to suppress this because EF Core does not support StringComparison
             query = query.Where(x =>
-                x.form.ApplicationFormName != null &&
-                x.form.ApplicationFormName.ToLower().Contains(loweredFilter));
+                (x.ApplicationFormName != null &&
+                 x.ApplicationFormName.ToLower().Contains(loweredFilter)) ||
+                (x.Category != null &&
+                 x.Category.ToLower().Contains(loweredFilter)));
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
         }
 
         var totalCount = await AsyncExecuter.CountAsync(query);
 
         var items = await AsyncExecuter.ToListAsync(
             query
-                .OrderBy(x => x.form.ApplicationFormName)
-                .ThenByDescending(x => x.version.Version)
+                .OrderBy(x => x.ApplicationFormName)
                 .Skip(skipCount)
                 .Take(maxResultCount)
         );
 
         var results = items.Select(x => new ParentFormLookupDto
         {
-            ApplicationFormId = x.form.Id,
-            ApplicationFormVersionId = x.version.Id,
-            ApplicationFormName = x.form.ApplicationFormName ?? string.Empty,
-            Version = x.version.Version
+            ApplicationFormId = x.Id,
+            ApplicationFormName = x.ApplicationFormName ?? string.Empty,
+            Category = x.Category
         }).ToList();
 
         return new PagedResultDto<ParentFormLookupDto>(totalCount, results);

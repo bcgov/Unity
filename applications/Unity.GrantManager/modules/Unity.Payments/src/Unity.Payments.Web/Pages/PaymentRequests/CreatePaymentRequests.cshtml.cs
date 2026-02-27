@@ -214,9 +214,28 @@ namespace Unity.Payments.Web.Pages.Payments
             {
                 decimal approvedAmmount = application.ApprovedAmount;
                 decimal totalFutureRequested = await paymentRequestAppService.GetTotalPaymentRequestAmountByCorrelationIdAsync(application.Id);
-                if (approvedAmmount > totalFutureRequested)
+
+                // If this application has children, include their paid/pending amounts too
+                decimal childrenTotalPaidPending = 0;
+                var applicationLinks = await applicationLinksService.GetListByApplicationAsync(application.Id);
+                var childLinks = applicationLinks.Where(link => link.LinkType == ApplicationLinkType.Child && link.ApplicationId != application.Id).ToList();
+
+                if (childLinks.Count > 0)
                 {
-                    remainingAmount = approvedAmmount - totalFutureRequested;
+                    // This is a parent application, sum up all children's paid/pending payments
+                    foreach (var childLink in childLinks)
+                    {
+                        decimal childTotal = await paymentRequestAppService
+                            .GetTotalPaymentRequestAmountByCorrelationIdAsync(childLink.ApplicationId);
+                        childrenTotalPaidPending += childTotal;
+                    }
+                }
+
+                // Calculate remaining: Approved - (Parent Paid/Pending + Children Paid/Pending)
+                decimal totalConsumed = totalFutureRequested + childrenTotalPaidPending;
+                if (approvedAmmount > totalConsumed)
+                {
+                    remainingAmount = approvedAmmount - totalConsumed;
                 }
             }
 
@@ -257,9 +276,8 @@ namespace Unity.Payments.Web.Pages.Payments
                 return (errors, parentReferenceNo); // No validation needed
             }
 
-            // Check if ParentFormId and ParentFormVersionId are set
-            if (!applicationForm.ParentFormId.HasValue ||
-                !applicationForm.ParentFormVersionId.HasValue)
+            // Check if ParentFormId is set
+            if (!applicationForm.ParentFormId.HasValue)
             {
                 // Configuration issue - should not happen if validation works
                 return (errors, parentReferenceNo);
@@ -284,11 +302,10 @@ namespace Unity.Payments.Web.Pages.Payments
             var parentApplication = await applicationService.GetAsync(parentLink.ApplicationId);
             parentReferenceNo = parentApplication.ReferenceNo;
 
-            // Validate both ParentFormId and ParentFormVersionId
+            // Validate ParentFormId matches
             bool formIdMatches = parentFormDetails.ApplicationFormId == applicationForm.ParentFormId.Value;
-            bool versionIdMatches = parentFormDetails.ApplicationFormVersionId == applicationForm.ParentFormVersionId.Value;
 
-            if (!formIdMatches || !versionIdMatches)
+            if (!formIdMatches)
             {
                 errors.Add("The selected parent form in Payment Configuration does not match the application's linked parent. Please verify and try again.");
                 return (errors, parentReferenceNo);
@@ -460,6 +477,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 {
                     child.MaximumAllowedAmount = maximumPaymentAmount;
                     child.IsPartOfParentChildGroup = true;
+                    child.ParentApprovedAmount = approvedAmount;
                 }
 
                 // Apply validation data to parent if in submission
@@ -467,6 +485,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 {
                     parentInSubmission.MaximumAllowedAmount = maximumPaymentAmount;
                     parentInSubmission.IsPartOfParentChildGroup = true;
+                    parentInSubmission.ParentApprovedAmount = approvedAmount;
                 }
             }
         }

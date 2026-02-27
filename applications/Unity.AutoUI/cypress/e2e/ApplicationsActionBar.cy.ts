@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import { loginIfNeeded } from "../support/auth";
+import { ApplicationsListPage } from "../pages/ApplicationDetailsPage";
 
 describe("Unity Login and check data from CHEFS", () => {
     const STANDARD_TIMEOUT = 20000;
