@@ -77,7 +77,7 @@ namespace Unity.GrantManager.Contacts
             await _provider.GetDataAsync(request);
 
             // Assert
-            await _applicantProfileContactService.Received(1).GetApplicationContactsBySubjectAsync(request.Subject);
+            await _applicantProfileContactService.Received(1).GetApplicationContactsBySubjectAsync("TESTUSER");
         }
 
         [Fact]
@@ -90,7 +90,7 @@ namespace Unity.GrantManager.Contacts
             await _provider.GetDataAsync(request);
 
             // Assert
-            await _applicantProfileContactService.Received(1).GetApplicantAgentContactsBySubjectAsync(request.Subject);
+            await _applicantProfileContactService.Received(1).GetApplicantAgentContactsBySubjectAsync("TESTUSER");
         }
 
         [Fact]
@@ -112,8 +112,8 @@ namespace Unity.GrantManager.Contacts
                 new() { ContactId = Guid.NewGuid(), Name = "Agent Contact 1", IsEditable = false, ContactType = "ApplicantAgent" }
             };
             _applicantProfileContactService.GetProfileContactsAsync(request.ProfileId).Returns(profileContacts);
-            _applicantProfileContactService.GetApplicationContactsBySubjectAsync(request.Subject).Returns(appContacts);
-            _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(request.Subject).Returns(agentContacts);
+            _applicantProfileContactService.GetApplicationContactsBySubjectAsync("TESTUSER").Returns(appContacts);
+            _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync("TESTUSER").Returns(agentContacts);
 
             // Act
             var result = await _provider.GetDataAsync(request);
@@ -165,9 +165,9 @@ namespace Unity.GrantManager.Contacts
             };
             _applicantProfileContactService.GetProfileContactsAsync(request.ProfileId)
                 .Returns(new List<ContactInfoItemDto> { profileContact });
-            _applicantProfileContactService.GetApplicationContactsBySubjectAsync(request.Subject)
+            _applicantProfileContactService.GetApplicationContactsBySubjectAsync("TESTUSER")
                 .Returns(new List<ContactInfoItemDto> { appContact });
-            _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(request.Subject)
+            _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync("TESTUSER")
                 .Returns(new List<ContactInfoItemDto> { agentContact });
 
             // Act

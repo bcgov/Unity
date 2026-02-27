@@ -162,7 +162,7 @@ namespace Unity.GrantManager.Contacts
             _applicationRepository.GetQueryableAsync().Returns(applications);
 
             // Act
-            var result = await _service.GetApplicationContactsBySubjectAsync("testuser@idir");
+            var result = await _service.GetApplicationContactsBySubjectAsync("TESTUSER");
 
             // Assert
             result.Count.ShouldBe(1);
@@ -179,124 +179,6 @@ namespace Unity.GrantManager.Contacts
             contact.IsEditable.ShouldBeFalse();
             contact.ApplicationId.ShouldBe(applicationId);
             contact.ReferenceNo.ShouldBe("REF-001");
-        }
-
-        [Fact]
-        public async Task GetApplicationContactsBySubjectAsync_ShouldMatchCaseInsensitively()
-        {
-            // Arrange
-            var applicationId = Guid.NewGuid();
-
-            var submissions = new[]
-            {
-                new ApplicationFormSubmission
-                {
-                    OidcSub = "TESTUSER",
-                    ApplicationId = applicationId,
-                    ApplicantId = Guid.NewGuid(),
-                    ApplicationFormId = Guid.NewGuid()
-                }
-            }.AsAsyncQueryable();
-
-            var applicationContacts = new[]
-            {
-                WithId(new ApplicationContact
-                {
-                    ApplicationId = applicationId,
-                    ContactFullName = "Case Test",
-                    ContactType = "ADDITIONAL_CONTACT"
-                }, Guid.NewGuid())
-            }.AsAsyncQueryable();
-
-            _submissionRepository.GetQueryableAsync().Returns(submissions);
-            _applicationContactRepository.GetQueryableAsync().Returns(applicationContacts);
-            _applicationRepository.GetQueryableAsync().Returns(
-                new[] { WithId(new Application(), applicationId) }.AsAsyncQueryable());
-
-            // Act
-            var result = await _service.GetApplicationContactsBySubjectAsync("testuser@IDIR");
-
-            // Assert
-            result.Count.ShouldBe(1);
-        }
-
-        [Fact]
-        public async Task GetApplicationContactsBySubjectAsync_ShouldStripDomainFromSubject()
-        {
-            // Arrange
-            var applicationId = Guid.NewGuid();
-
-            var submissions = new[]
-            {
-                new ApplicationFormSubmission
-                {
-                    OidcSub = "MYUSER",
-                    ApplicationId = applicationId,
-                    ApplicantId = Guid.NewGuid(),
-                    ApplicationFormId = Guid.NewGuid()
-                }
-            }.AsAsyncQueryable();
-
-            var applicationContacts = new[]
-            {
-                WithId(new ApplicationContact
-                {
-                    ApplicationId = applicationId,
-                    ContactFullName = "Domain Strip Test",
-                    ContactType = "ADDITIONAL_CONTACT"
-                }, Guid.NewGuid())
-            }.AsAsyncQueryable();
-
-            _submissionRepository.GetQueryableAsync().Returns(submissions);
-            _applicationContactRepository.GetQueryableAsync().Returns(applicationContacts);
-            _applicationRepository.GetQueryableAsync().Returns(
-                new[] { WithId(new Application(), applicationId) }.AsAsyncQueryable());
-
-            // Act
-            var result = await _service.GetApplicationContactsBySubjectAsync("myuser@differentdomain");
-
-            // Assert
-            result.Count.ShouldBe(1);
-            result[0].Name.ShouldBe("Domain Strip Test");
-        }
-
-        [Fact]
-        public async Task GetApplicationContactsBySubjectAsync_WithSubjectWithoutAtSign_ShouldStillMatch()
-        {
-            // Arrange
-            var applicationId = Guid.NewGuid();
-
-            var submissions = new[]
-            {
-                new ApplicationFormSubmission
-                {
-                    OidcSub = "PLAINUSER",
-                    ApplicationId = applicationId,
-                    ApplicantId = Guid.NewGuid(),
-                    ApplicationFormId = Guid.NewGuid()
-                }
-            }.AsAsyncQueryable();
-
-            var applicationContacts = new[]
-            {
-                WithId(new ApplicationContact
-                {
-                    ApplicationId = applicationId,
-                    ContactFullName = "Plain User Contact",
-                    ContactType = "ADDITIONAL_CONTACT"
-                }, Guid.NewGuid())
-            }.AsAsyncQueryable();
-
-            _submissionRepository.GetQueryableAsync().Returns(submissions);
-            _applicationContactRepository.GetQueryableAsync().Returns(applicationContacts);
-            _applicationRepository.GetQueryableAsync().Returns(
-                new[] { WithId(new Application(), applicationId) }.AsAsyncQueryable());
-
-            // Act
-            var result = await _service.GetApplicationContactsBySubjectAsync("plainuser");
-
-            // Assert
-            result.Count.ShouldBe(1);
         }
 
         [Fact]
@@ -331,7 +213,7 @@ namespace Unity.GrantManager.Contacts
                 new[] { WithId(new Application(), applicationId) }.AsAsyncQueryable());
 
             // Act
-            var result = await _service.GetApplicationContactsBySubjectAsync("differentuser@idir");
+            var result = await _service.GetApplicationContactsBySubjectAsync("DIFFERENTUSER");
 
             // Assert
             result.ShouldBeEmpty();
@@ -349,7 +231,7 @@ namespace Unity.GrantManager.Contacts
                 .Returns(Array.Empty<Application>().AsAsyncQueryable());
 
             // Act
-            var result = await _service.GetApplicationContactsBySubjectAsync("testuser@idir");
+            var result = await _service.GetApplicationContactsBySubjectAsync("TESTUSER");
 
             // Assert
             result.ShouldBeEmpty();
@@ -406,7 +288,7 @@ namespace Unity.GrantManager.Contacts
                 }.AsAsyncQueryable());
 
             // Act
-            var result = await _service.GetApplicationContactsBySubjectAsync("testuser@idir");
+            var result = await _service.GetApplicationContactsBySubjectAsync("TESTUSER");
 
             // Assert
             result.Count.ShouldBe(2);
@@ -454,7 +336,7 @@ namespace Unity.GrantManager.Contacts
                 new[] { WithId(new Application { ReferenceNo = "REF-AGENT-001" }, applicationId) }.AsAsyncQueryable());
 
             // Act
-            var result = await _service.GetApplicantAgentContactsBySubjectAsync("testuser@idir");
+            var result = await _service.GetApplicantAgentContactsBySubjectAsync("TESTUSER");
 
             // Assert
             result.Count.ShouldBe(1);
@@ -486,7 +368,7 @@ namespace Unity.GrantManager.Contacts
                 .Returns(Array.Empty<Application>().AsAsyncQueryable());
 
             // Act
-            var result = await _service.GetApplicantAgentContactsBySubjectAsync("testuser@idir");
+            var result = await _service.GetApplicantAgentContactsBySubjectAsync("TESTUSER");
 
             // Assert
             result.ShouldBeEmpty();
