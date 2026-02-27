@@ -1,6 +1,10 @@
 using Microsoft.Extensions.Logging;
+using NPOI.SS.UserModel;
+using NPOI.XWPF.UserModel;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,6 +16,12 @@ namespace Unity.GrantManager.AI
     public class TextExtractionService : ITextExtractionService, ITransientDependency
     {
         private const int MaxExtractedTextLength = 50000;
+        private const int MaxExcelSheets = 10;
+        private const int MaxExcelRowsPerSheet = 2000;
+        private const int MaxExcelCellsPerRow = 50;
+        private const int MaxDocxParagraphs = 2000;
+        private const int MaxDocxTableRows = 2000;
+        private const int MaxDocxTableCellsPerRow = 50;
         private readonly ILogger<TextExtractionService> _logger;
 
         public TextExtractionService(ILogger<TextExtractionService> logger)
@@ -29,13 +39,11 @@ namespace Unity.GrantManager.AI
 
             try
             {
-                // Normalize content type
                 var normalizedContentType = contentType?.ToLowerInvariant() ?? string.Empty;
                 var extension = Path.GetExtension(fileName)?.ToLowerInvariant() ?? string.Empty;
 
                 string rawText;
 
-                // Handle text-based files
                 if (normalizedContentType.Contains("text/") ||
                     extension == ".txt" ||
                     extension == ".csv" ||
@@ -46,37 +54,37 @@ namespace Unity.GrantManager.AI
                     return NormalizeAndLimitText(rawText, fileName);
                 }
 
-                // Handle PDF files
                 if (normalizedContentType.Contains("pdf") || extension == ".pdf")
                 {
-                    rawText = await Task.FromResult(ExtractTextFromPdfFile(fileName, fileContent));
+                    rawText = ExtractTextFromPdfFile(fileName, fileContent);
                     return NormalizeAndLimitText(rawText, fileName);
                 }
 
-                // Handle Word documents
                 if (normalizedContentType.Contains("word") ||
                     normalizedContentType.Contains("msword") ||
                     normalizedContentType.Contains("officedocument.wordprocessingml") ||
                     extension == ".doc" ||
                     extension == ".docx")
                 {
-                    // For now, return empty string - can be enhanced with Word parsing library
-                    _logger.LogDebug("Word document text extraction not yet implemented for {FileName}", fileName);
+                    if (extension == ".docx" || normalizedContentType.Contains("officedocument.wordprocessingml"))
+                    {
+                        rawText = ExtractTextFromWordDocx(fileContent);
+                        return NormalizeAndLimitText(rawText, fileName);
+                    }
+
+                    _logger.LogDebug("Legacy .doc extraction is not supported for {FileName}", fileName);
                     return string.Empty;
                 }
 
-                // Handle Excel files
                 if (normalizedContentType.Contains("excel") ||
                     normalizedContentType.Contains("spreadsheet") ||
                     extension == ".xls" ||
                     extension == ".xlsx")
                 {
-                    // For now, return empty string - can be enhanced with Excel parsing library
-                    _logger.LogDebug("Excel text extraction not yet implemented for {FileName}", fileName);
-                    return string.Empty;
+                    rawText = ExtractTextFromExcelFile(fileName, fileContent);
+                    return NormalizeAndLimitText(rawText, fileName);
                 }
 
-                // For other file types, return empty string
                 _logger.LogDebug("No text extraction available for content type {ContentType} with extension {Extension}",
                     contentType, extension);
                 return string.Empty;
@@ -92,17 +100,13 @@ namespace Unity.GrantManager.AI
         {
             try
             {
-                // Try UTF-8 first
                 var text = Encoding.UTF8.GetString(fileContent);
 
-                // Check if the decoded text contains replacement characters (indicates encoding issue)
                 if (text.Contains('\uFFFD'))
                 {
-                    // Try other encodings
                     text = Encoding.ASCII.GetString(fileContent);
                 }
 
-                // Limit the extracted text to a reasonable size.
                 if (text.Length > MaxExtractedTextLength)
                 {
                     text = text.Substring(0, MaxExtractedTextLength);
@@ -152,6 +156,137 @@ namespace Unity.GrantManager.AI
                 _logger.LogWarning(ex, "PDF text extraction failed for {FileName}", fileName);
                 return string.Empty;
             }
+        }
+
+        private string ExtractTextFromWordDocx(byte[] fileContent)
+        {
+            try
+            {
+                using var stream = new MemoryStream(fileContent, writable: false);
+                using var document = new XWPFDocument(stream);
+                var parts = new List<string>();
+
+                foreach (var paragraph in document.Paragraphs.Take(MaxDocxParagraphs))
+                {
+                    if (!string.IsNullOrWhiteSpace(paragraph.ParagraphText))
+                    {
+                        parts.Add(paragraph.ParagraphText);
+                    }
+                }
+
+                foreach (var table in document.Tables)
+                {
+                    foreach (var row in table.Rows.Take(MaxDocxTableRows))
+                    {
+                        foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
+                        {
+                            var text = cell.GetText();
+                            if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                parts.Add(text);
+                            }
+                        }
+                    }
+                }
+
+                var combined = string.Join(Environment.NewLine, parts);
+                if (combined.Length > MaxExtractedTextLength)
+                {
+                    combined = combined.Substring(0, MaxExtractedTextLength);
+                }
+
+                return combined;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Word (.docx) text extraction failed");
+                return string.Empty;
+            }
+        }
+
+        private string ExtractTextFromExcelFile(string fileName, byte[] fileContent)
+        {
+            try
+            {
+                using var stream = new MemoryStream(fileContent, writable: false);
+                using var workbook = WorkbookFactory.Create(stream);
+                var rows = new List<string>();
+                var totalLength = 0;
+                var sheetCount = Math.Min(workbook.NumberOfSheets, MaxExcelSheets);
+
+                for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
+                {
+                    var sheet = workbook.GetSheetAt(sheetIndex);
+                    if (sheet == null)
+                    {
+                        continue;
+                    }
+
+                    var processedRows = 0;
+                    foreach (IRow row in sheet)
+                    {
+                        if (processedRows >= MaxExcelRowsPerSheet || totalLength >= MaxExtractedTextLength)
+                        {
+                            break;
+                        }
+
+                        var cellTexts = row.Cells
+                            .Take(MaxExcelCellsPerRow)
+                            .Select(GetCellText)
+                            .Where(value => !string.IsNullOrWhiteSpace(value))
+                            .ToList();
+
+                        processedRows++;
+
+                        if (cellTexts.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        var rowText = string.Join(" | ", cellTexts);
+                        rows.Add(rowText);
+                        totalLength += rowText.Length;
+                    }
+
+                    if (totalLength >= MaxExtractedTextLength)
+                    {
+                        break;
+                    }
+                }
+
+                var combined = string.Join(Environment.NewLine, rows);
+                if (combined.Length > MaxExtractedTextLength)
+                {
+                    combined = combined.Substring(0, MaxExtractedTextLength);
+                }
+
+                return combined;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Excel text extraction failed for {FileName}", fileName);
+                return string.Empty;
+            }
+        }
+
+        private static string GetCellText(ICell cell)
+        {
+            if (cell == null)
+            {
+                return string.Empty;
+            }
+
+            return (cell.CellType switch
+            {
+                CellType.String => cell.StringCellValue ?? string.Empty,
+                CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
+                    ? cell.DateCellValue.ToString()
+                    : cell.NumericCellValue.ToString(),
+                CellType.Boolean => cell.BooleanCellValue ? "true" : "false",
+                CellType.Formula => cell.ToString(),
+                CellType.Blank => string.Empty,
+                _ => cell.ToString() ?? string.Empty
+            }) ?? string.Empty;
         }
 
         private string NormalizeAndLimitText(string text, string fileName)
