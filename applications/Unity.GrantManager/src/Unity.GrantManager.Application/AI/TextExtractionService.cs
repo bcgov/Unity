@@ -269,7 +269,7 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        private static string GetCellText(ICell cell)
+        private static string GetCellText(NPOI.SS.UserModel.ICell cell)
         {
             if (cell == null)
             {
