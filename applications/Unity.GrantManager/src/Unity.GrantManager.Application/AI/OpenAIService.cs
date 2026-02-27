@@ -168,40 +168,70 @@ namespace Unity.GrantManager.AI
 
             try
             {
-                var attachmentSummariesText = attachmentSummaries?.Count > 0
-                    ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
-                    : "No attachments provided.";
+                object schemaPayload = new { };
+                if (!string.IsNullOrWhiteSpace(formFieldConfiguration))
+                {
+                    try
+                    {
+                        using var schemaDoc = JsonDocument.Parse(formFieldConfiguration);
+                        schemaPayload = schemaDoc.RootElement.Clone();
+                    }
+                    catch (JsonException)
+                    {
+                        _logger.LogWarning("Invalid form field configuration JSON. Using empty schema payload.");
+                    }
+                }
 
-                var fieldConfigurationSection = !string.IsNullOrEmpty(formFieldConfiguration)
-                    ? $@"
-{formFieldConfiguration}"
-                    : string.Empty;
+                var dataPayload = new
+                {
+                    applicationContent
+                };
 
-                var analysisContent = $@"APPLICATION CONTENT:
-{applicationContent}
+                var attachmentsPayload = attachmentSummaries?.Count > 0
+                    ? attachmentSummaries
+                        .Select((summary, index) => new
+                        {
+                            name = $"Attachment {index + 1}",
+                            summary = summary
+                        })
+                        .Cast<object>()
+                    : Enumerable.Empty<object>();
 
-ATTACHMENT SUMMARIES:
-- {attachmentSummariesText}
-{fieldConfigurationSection}
+                var analysisContent = $@"SCHEMA
+{JsonSerializer.Serialize(schemaPayload, JsonLogOptions)}
 
-EVALUATION RUBRIC:
+DATA
+{JsonSerializer.Serialize(dataPayload, JsonLogOptions)}
+
+ATTACHMENTS
+{JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions)}
+
+RUBRIC
 {rubric}
 
-Analyze this grant application comprehensively across all five rubric categories (Eligibility, Completeness, Financial Review, Risk Assessment, and Quality Indicators). Identify issues, concerns, and areas for improvement. Return your findings in the following JSON format:
+SEVERITY
+ERROR: Issue that would likely prevent the application from being approved.
+WARNING: Issue that could negatively affect the application's approval.
+RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.
+
+SCORE
+HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
+MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
+LOW: Application has significant gaps or risks across key rubric areas.
+
+OUTPUT
 {{
   ""overall_score"": ""HIGH/MEDIUM/LOW"",
   ""warnings"": [
     {{
       ""category"": ""Brief summary of the warning"",
-      ""message"": ""Detailed warning message with full context and explanation"",
-      ""severity"": ""WARNING""
+      ""message"": ""Detailed warning message with full context and explanation""
     }}
   ],
   ""errors"": [
     {{
       ""category"": ""Brief summary of the error"",
-      ""message"": ""Detailed error message with full context and explanation"",
-      ""severity"": ""ERROR""
+      ""message"": ""Detailed error message with full context and explanation""
     }}
   ],
   ""recommendations"": [
@@ -212,19 +242,30 @@ Analyze this grant application comprehensively across all five rubric categories
   ]
 }}
 
-Important: The 'category' field should be a concise summary (3-6 words) that captures the essence of the issue, while the 'message' field should contain the detailed explanation.";
+RULES
+- Use only SCHEMA, DATA, ATTACHMENTS, and RUBRIC as evidence.
+- Do not invent fields, documents, requirements, or facts.
+- Treat missing or empty values as findings only when they weaken rubric evidence.
+- Prefer material issues; avoid nitpicking.
+- Each error/warning/recommendation must describe one concrete issue or consideration and why it matters.
+- Use 3-6 words for category.
+- Each message must be 1-2 complete sentences.
+- Each message must be grounded in concrete evidence from provided inputs.
+- If attachment evidence is used, reference the attachment explicitly in the message.
+- Do not provide applicant-facing advice.
+- Do not mention rubric section names in findings.
+- If no findings exist, return empty arrays.
+- overall_score must be HIGH, MEDIUM, or LOW.
+- Return values exactly as specified in OUTPUT.
+- Do not return keys outside OUTPUT.
+- Return valid JSON only.
+- Return plain JSON only (no markdown).";
 
-                var systemPrompt = @"You are an expert grant application reviewer for the BC Government.
+                var systemPrompt = @"ROLE
+You are an expert grant analyst assistant for human reviewers.
 
-Conduct a thorough, comprehensive analysis across all rubric categories. Identify substantive issues, concerns, and opportunities for improvement.
-
-Classify findings based on their impact on the application's evaluation and fundability:
-- ERRORS: Important missing information, significant gaps in required content, compliance issues, or major concerns affecting eligibility
-- WARNINGS: Areas needing clarification, moderate issues, or concerns that should be addressed
-
-Evaluate the quality, clarity, and appropriateness of all application content. Be thorough but fair - identify real issues while avoiding nitpicking.
-
-Respond only with valid JSON in the exact format requested.";
+TASK
+Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, return review findings.";
 
                 await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
