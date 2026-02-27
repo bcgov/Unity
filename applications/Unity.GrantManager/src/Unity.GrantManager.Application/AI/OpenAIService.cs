@@ -128,23 +128,42 @@ namespace Unity.GrantManager.AI
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
 
-                string contentToAnalyze;
-                string prompt;
+                var prompt = @"ROLE
+You are a professional grant analyst for the BC Government.
 
-                if (!string.IsNullOrWhiteSpace(extractedText))
+TASK
+Produce a concise reviewer-facing summary of the provided attachment context.
+
+OUTPUT
+- Plain text only
+- 1-2 complete sentences
+
+RULES
+- Use only the provided attachment context as evidence.
+- If text content is present, summarize the actual content.
+- If text content is missing or empty, provide a conservative metadata-based summary.
+- Do not invent missing details.
+- Keep the summary specific, concrete, and reviewer-facing.
+- Return plain text only (no markdown, bullets, or JSON).";
+
+                var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
+                if (attachmentText != null)
                 {
                     _logger.LogDebug("Extracted {TextLength} characters from {FileName}", extractedText.Length, fileName);
-
-                    contentToAnalyze = $"Document: {fileName}\nType: {contentType}\nContent:\n{extractedText}";
-                    prompt = "Please analyze this document and provide a concise summary of its content, purpose, and key information, for use by your fellow grant analysts. It should be 1-2 sentences long and about 46 tokens.";
                 }
                 else
                 {
                     _logger.LogDebug("No text extracted from {FileName}, analyzing metadata only", fileName);
-
-                    contentToAnalyze = $"File: {fileName}, Type: {contentType}, Size: {fileContent.Length} bytes";
-                    prompt = "Please analyze this document and provide a concise summary of its content, purpose, and key information, for use by your fellow grant analysts. It should be 1-2 sentences long and about 46 tokens.";
                 }
+
+                var attachmentPayload = new
+                {
+                    name = fileName,
+                    contentType,
+                    sizeBytes = fileContent.Length,
+                    text = attachmentText
+                };
+                var contentToAnalyze = $"ATTACHMENT\n{JsonSerializer.Serialize(attachmentPayload, JsonLogOptions)}";
 
                 await LogPromptInputAsync("AttachmentSummary", prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
