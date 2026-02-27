@@ -67,14 +67,13 @@
                 </abp-tab>
                 @*-------- Submissions Section END ---------*@
 
-                @*-------- Payments Section ---------*@
-                <abp-tab name="nav-payments" title="Payments">
-                    <div class="w-100 px-2" id="PaymentsWidget">
-                        <h6>Under Construction</h6>
-                        @*-------- await Component.InvokeAsync("ApplicantPayments", new { applicantId = Model.ApplicantId }) ---------*@
+                @*-------- History Section ---------*@
+                <abp-tab name="nav-history" title="History">
+                    <div class="w-100 px-2" id="HistoryWidget">
+                        @await Component.InvokeAsync("ApplicantHistory", new { applicantId = Model.ApplicantId })
                     </div>
                 </abp-tab>
-                @*-------- Payments Section END ---------*@
+                @*-------- History Section END ---------*@
 
             </abp-tabs>
         </abp-card>

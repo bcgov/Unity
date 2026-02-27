@@ -1,0 +1,40 @@
+/* ApplicantHistory Component Styles */
+
+.applicant-info-container {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.applicant-info-container .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    position: sticky;
+    top: 72px;
+    padding-right: 24px;
+    z-index: 999;
+}
+
+.applicant-info-container .save-button-container .floating-save-btn {
+    position: static;
+}
+
+.history-section {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+.history-section:last-child {
+    border-bottom: none;
+}
+
+.history-section__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.history-section__toolbar .tbl-search {
+    max-width: 280px;
+}

@@ -1,0 +1,81 @@
+@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Unity.GrantManager.Web.Pages.ApplicantHistory.EditFundingHistoryModal
+@{
+    Layout = null;
+}
+
+<form method="post">
+    <abp-modal>
+        <abp-modal-header title="Edit Funding History"></abp-modal-header>
+        <abp-modal-body>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="FundingHistoryForm.ApplicantId" />
+
+            <div class="mb-3">
+                <label class="form-label" for="FundingHistoryForm_GrantCategory">Grant Category</label>
+                <input type="text" id="FundingHistoryForm_GrantCategory" name="FundingHistoryForm.GrantCategory"
+                       class="form-control" value="@Model.FundingHistoryForm?.GrantCategory" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="FundingHistoryForm_FundingYear">Funding Year</label>
+                <input type="text" id="FundingHistoryForm_FundingYear" name="FundingHistoryForm.FundingYear"
+                       class="form-control numeric-mask" inputmode="numeric"
+                       value="@Model.FundingHistoryForm?.FundingYear" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label d-block">Renewed Funding</label>
+                <div class="switch-container">
+                    <div class="px-3 form-check unt-form-switch form-switch">
+                        <input class="form-check-input" type="checkbox" id="FundingHistoryForm_RenewedFunding"
+                               name="FundingHistoryForm.RenewedFunding"
+                               @(Model.FundingHistoryForm?.RenewedFunding == true ? "checked" : "") />
+                        <label class="form-check-label" for="FundingHistoryForm_RenewedFunding">Renewed Funding</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <label class="form-label" for="FundingHistoryForm_ApprovedAmount">Approved Amount</label>
+                    <input type="text" id="FundingHistoryForm_ApprovedAmount" name="FundingHistoryForm.ApprovedAmount"
+                           class="form-control unity-currency-input"
+                           value="@Model.FundingHistoryForm?.ApprovedAmount" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <label class="form-label" for="FundingHistoryForm_ReconsiderationAmount">Reconsideration Amount</label>
+                    <input type="text" id="FundingHistoryForm_ReconsiderationAmount" name="FundingHistoryForm.ReconsiderationAmount"
+                           class="form-control unity-currency-input"
+                           value="@Model.FundingHistoryForm?.ReconsiderationAmount" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <label class="form-label" for="FundingHistoryForm_TotalGrantAmount">Total Grant Amount</label>
+                    <input type="text" id="FundingHistoryForm_TotalGrantAmount" name="FundingHistoryForm.TotalGrantAmount"
+                           class="form-control unity-currency-input"
+                           value="@Model.FundingHistoryForm?.TotalGrantAmount" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="FundingHistoryForm_FundingNotes">Funding Notes</label>
+                <input type="text" id="FundingHistoryForm_FundingNotes" name="FundingHistoryForm.FundingNotes"
+                       class="form-control" value="@Model.FundingHistoryForm?.FundingNotes" />
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

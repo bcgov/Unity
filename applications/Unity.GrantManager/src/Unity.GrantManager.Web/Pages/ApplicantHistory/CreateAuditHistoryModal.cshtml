@@ -1,0 +1,39 @@
+@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Unity.GrantManager.Web.Pages.ApplicantHistory.CreateAuditHistoryModal
+@{
+    Layout = null;
+}
+
+<form method="post">
+    <abp-modal>
+        <abp-modal-header title="Add Audit History Record"></abp-modal-header>
+        <abp-modal-body>
+            <input type="hidden" asp-for="AuditHistoryForm.ApplicantId" />
+
+            <div class="mb-3">
+                <label class="form-label" for="AuditHistoryForm_AuditTrackingNumber">Audit Tracking Number</label>
+                <input type="text" id="AuditHistoryForm_AuditTrackingNumber" name="AuditHistoryForm.AuditTrackingNumber"
+                       class="form-control" value="@Model.AuditHistoryForm?.AuditTrackingNumber" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="AuditHistoryForm_AuditDate">Audit Date</label>
+                <input type="date" id="AuditHistoryForm_AuditDate" name="AuditHistoryForm.AuditDate"
+                       class="form-control"
+                       value="@(Model.AuditHistoryForm?.AuditDate?.ToString("yyyy-MM-dd"))"
+                       data-datepicker="false" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="AuditHistoryForm_AuditNote">Audit Note</label>
+                <input type="text" id="AuditHistoryForm_AuditNote" name="AuditHistoryForm.AuditNote"
+                       class="form-control" value="@Model.AuditHistoryForm?.AuditNote" />
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
