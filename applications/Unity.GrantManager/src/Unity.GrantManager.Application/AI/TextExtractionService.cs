@@ -2,13 +2,16 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using UglyToad.PdfPig;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
 {
     public class TextExtractionService : ITextExtractionService, ITransientDependency
     {
+        private const int MaxExtractedTextLength = 50000;
         private readonly ILogger<TextExtractionService> _logger;
 
         public TextExtractionService(ILogger<TextExtractionService> logger)
@@ -30,6 +33,8 @@ namespace Unity.GrantManager.AI
                 var normalizedContentType = contentType?.ToLowerInvariant() ?? string.Empty;
                 var extension = Path.GetExtension(fileName)?.ToLowerInvariant() ?? string.Empty;
 
+                string rawText;
+
                 // Handle text-based files
                 if (normalizedContentType.Contains("text/") ||
                     extension == ".txt" ||
@@ -37,15 +42,15 @@ namespace Unity.GrantManager.AI
                     extension == ".json" ||
                     extension == ".xml")
                 {
-                    return await ExtractTextFromTextFileAsync(fileContent);
+                    rawText = await ExtractTextFromTextFileAsync(fileContent);
+                    return NormalizeAndLimitText(rawText, fileName);
                 }
 
                 // Handle PDF files
                 if (normalizedContentType.Contains("pdf") || extension == ".pdf")
                 {
-                    // For now, return empty string - can be enhanced with PDF parsing library
-                    _logger.LogDebug("PDF text extraction not yet implemented for {FileName}", fileName);
-                    return string.Empty;
+                    rawText = await Task.FromResult(ExtractTextFromPdfFile(fileName, fileContent));
+                    return NormalizeAndLimitText(rawText, fileName);
                 }
 
                 // Handle Word documents
@@ -97,12 +102,11 @@ namespace Unity.GrantManager.AI
                     text = Encoding.ASCII.GetString(fileContent);
                 }
 
-                // Limit the extracted text to a reasonable size (e.g., first 50,000 characters)
-                const int maxLength = 50000;
-                if (text.Length > maxLength)
+                // Limit the extracted text to a reasonable size.
+                if (text.Length > MaxExtractedTextLength)
                 {
-                    text = text.Substring(0, maxLength);
-                    _logger.LogDebug("Truncated text content to {MaxLength} characters", maxLength);
+                    text = text.Substring(0, MaxExtractedTextLength);
+                    _logger.LogDebug("Truncated text content to {MaxLength} characters", MaxExtractedTextLength);
                 }
 
                 return await Task.FromResult(text);
@@ -112,6 +116,118 @@ namespace Unity.GrantManager.AI
                 _logger.LogError(ex, "Error decoding text file");
                 return string.Empty;
             }
+        }
+
+        private string ExtractTextFromPdfFile(string fileName, byte[] fileContent)
+        {
+            try
+            {
+                using var stream = new MemoryStream(fileContent, writable: false);
+                using var document = PdfDocument.Open(stream);
+                var builder = new StringBuilder();
+
+                foreach (var page in document.GetPages())
+                {
+                    if (builder.Length >= MaxExtractedTextLength)
+                    {
+                        break;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(page.Text))
+                    {
+                        builder.AppendLine(page.Text);
+                    }
+                }
+
+                var text = builder.ToString();
+                if (text.Length > MaxExtractedTextLength)
+                {
+                    text = text.Substring(0, MaxExtractedTextLength);
+                }
+
+                return text;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "PDF text extraction failed for {FileName}", fileName);
+                return string.Empty;
+            }
+        }
+
+        private string NormalizeAndLimitText(string text, string fileName)
+        {
+            var normalized = NormalizeExtractedText(text);
+            normalized = RemoveLeadingFileNameArtifact(normalized, fileName);
+
+            if (normalized.Length > MaxExtractedTextLength)
+            {
+                normalized = normalized.Substring(0, MaxExtractedTextLength);
+                _logger.LogDebug("Truncated extracted content to {MaxLength} characters", MaxExtractedTextLength);
+            }
+
+            return normalized;
+        }
+
+        private static string NormalizeExtractedText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            var normalized = text
+                .Replace('\0', ' ')
+                .Replace("\r\n", "\n")
+                .Replace('\r', '\n');
+
+            normalized = Regex.Replace(normalized, @"(?<=[a-z])(?=[A-Z])", " ");
+            normalized = Regex.Replace(normalized, @"(?<=[\.\,\:\;\)])(?=[A-Za-z0-9])", " ");
+            normalized = Regex.Replace(normalized, @":-", ": - ");
+            normalized = Regex.Replace(normalized, @"(?<=\S)- (?=[A-Za-z])", " - ");
+            normalized = Regex.Replace(
+                normalized,
+                @"(?<=[a-z])(?=(project|funding|budget|community|summary|notes|details|planning|outcomes|background|services)\b)",
+                " ",
+                RegexOptions.IgnoreCase);
+            normalized = Regex.Replace(normalized, @"[ \t]+", " ");
+            normalized = Regex.Replace(normalized, @"\n\s*", "\n");
+            normalized = Regex.Replace(normalized, @"\n{2,}", "\n");
+
+            return normalized.Trim();
+        }
+
+        private static string RemoveLeadingFileNameArtifact(string text, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(fileName))
+            {
+                return text;
+            }
+
+            var rawStem = Path.GetFileNameWithoutExtension(fileName)?.Trim();
+            if (string.IsNullOrWhiteSpace(rawStem))
+            {
+                return text;
+            }
+
+            var decodedStem = Uri.UnescapeDataString(rawStem);
+            foreach (var candidate in new[] { rawStem, decodedStem })
+            {
+                if (string.IsNullOrWhiteSpace(candidate))
+                {
+                    continue;
+                }
+
+                if (text.StartsWith(candidate, StringComparison.OrdinalIgnoreCase))
+                {
+                    var stripped = text.Substring(candidate.Length).TrimStart(' ', '-', ':', '.', '\t');
+                    if (!string.IsNullOrWhiteSpace(stripped))
+                    {
+                        return stripped;
+                    }
+                }
+            }
+
+            return text;
         }
     }
 }
