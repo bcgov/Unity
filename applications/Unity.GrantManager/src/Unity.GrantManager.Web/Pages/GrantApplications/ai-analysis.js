@@ -298,17 +298,17 @@ globalThis.regenerateAIAnalysis = function() {
     }
 
     $button
-        .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Regenerating...')
+        .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Refreshing Analysis...')
         .prop('disabled', true);
 
     unity.grantManager.grantApplications.grantApplication
         .generateAIAnalysis(applicationId)
         .then(function() {
-            abp.notify.success('AI analysis regenerated successfully.');
+            abp.notify.success('AI analysis refreshed successfully.');
             loadAIAnalysis();
         })
         .catch(function() {
-            abp.message.error('Failed to regenerate AI analysis. Please try again.');
+            abp.message.error('Failed to refresh AI analysis. Please try again.');
         })
         .always(function() {
             $button.html(existingHtml).prop('disabled', false);
