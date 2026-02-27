@@ -135,12 +135,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                     {
                         question.AICitation = rationaleProp.ToString();
                     }
-                    if (aiAnswerValue.TryGetProperty("confidence", out var confidenceProp))
+                    if (aiAnswerValue.TryGetProperty("confidence", out var confidenceProp) &&
+                        confidenceProp.TryGetInt32(out var confidence))
                     {
-                        if (confidenceProp.TryGetInt32(out var confidence))
-                        {
-                            question.AIConfidence = Math.Clamp(confidence, 0, 100);
-                        }
+                        question.AIConfidence = Math.Clamp(confidence, 0, 100);
                     }
                 }
                 else
