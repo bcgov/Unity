@@ -63,10 +63,6 @@ public class ApplicantProfileContactService(
     /// <inheritdoc />
     public async Task<List<ContactInfoItemDto>> GetApplicationContactsBySubjectAsync(string subject)
     {
-        var normalizedSubject = subject.Contains('@')
-            ? subject[..subject.IndexOf('@')].ToUpperInvariant()
-            : subject.ToUpperInvariant();
-
         var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
         var applicationContactsQuery = await applicationContactRepository.GetQueryableAsync();
         var applicationsQuery = await applicationRepository.GetQueryableAsync();
@@ -75,7 +71,7 @@ public class ApplicantProfileContactService(
             from submission in submissionsQuery
             join appContact in applicationContactsQuery on submission.ApplicationId equals appContact.ApplicationId
             join application in applicationsQuery on submission.ApplicationId equals application.Id
-            where submission.OidcSub == normalizedSubject
+            where submission.OidcSub == subject
             select new ContactInfoItemDto
             {
                 ContactId = appContact.Id,
@@ -98,10 +94,6 @@ public class ApplicantProfileContactService(
     /// <inheritdoc />
     public async Task<List<ContactInfoItemDto>> GetApplicantAgentContactsBySubjectAsync(string subject)
     {
-        var normalizedSubject = subject.Contains('@')
-            ? subject[..subject.IndexOf('@')].ToUpperInvariant()
-            : subject.ToUpperInvariant();
-
         var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
         var agentsQuery = await applicantAgentRepository.GetQueryableAsync();
         var applicationsQuery = await applicationRepository.GetQueryableAsync();
@@ -110,7 +102,7 @@ public class ApplicantProfileContactService(
             from submission in submissionsQuery
             join agent in agentsQuery on submission.ApplicationId equals agent.ApplicationId
             join application in applicationsQuery on submission.ApplicationId equals application.Id
-            where submission.OidcSub == normalizedSubject
+            where submission.OidcSub == subject
             select new ContactInfoItemDto
             {
                 ContactId = agent.Id,

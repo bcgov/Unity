@@ -33,10 +33,14 @@ namespace Unity.GrantManager.ApplicantProfile
                 var profileContacts = await applicantProfileContactService.GetProfileContactsAsync(request.ProfileId);
                 dto.Contacts.AddRange(profileContacts);
 
-                var applicationContacts = await applicantProfileContactService.GetApplicationContactsBySubjectAsync(request.Subject);
+                var normalizedSubject = request.Subject.Contains('@')
+                    ? request.Subject[..request.Subject.IndexOf('@')].ToUpperInvariant()
+                    : request.Subject.ToUpperInvariant();
+
+                var applicationContacts = await applicantProfileContactService.GetApplicationContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(applicationContacts);
 
-                var agentContacts = await applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(request.Subject);
+                var agentContacts = await applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(agentContacts);
             }
 
