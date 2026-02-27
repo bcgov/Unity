@@ -69,7 +69,7 @@ X-Api-Key: {your-api-key}
 
 ### 1. Get Applicant Profile
 
-Retrieves basic profile information for an applicant.
+Retrieves applicant profile data based on the specified key. The response `data` property is polymorphic and varies by key. See [Applicant Profile Data Providers](./applicant-profile-data-providers.md) for full details on each provider.
 
 **Endpoint**: `GET /api/app/applicant-profiles/profile`
 
@@ -79,20 +79,33 @@ Retrieves basic profile information for an applicant.
 | `ProfileId` | `Guid` | Yes | Unique identifier for the applicant profile |
 | `Subject` | `string` | Yes | OIDC subject identifier (e.g., `user@idp`) |
 | `TenantId` | `Guid` | Yes | The tenant ID to query within |
+| `Key` | `string` | Yes | The data type to retrieve: `CONTACTINFO`, `ADDRESSINFO`, `SUBMISSIONINFO`, `ORGINFO`, `PAYMENTINFO` |
 
 **Request Example**:
 ```http
-GET /api/app/applicant-profiles/profile?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299&TenantId=7c9e6679-7425-40de-944b-e07fc1f90ae7
+GET /api/app/applicant-profiles/profile?ProfileId=3fa85f64-5717-4562-b3fc-2c963f66afa6&Subject=smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299&TenantId=7c9e6679-7425-40de-944b-e07fc1f90ae7&Key=CONTACTINFO
 X-Api-Key: your-api-key-here
 ```
 
-**Response Example** (200 OK):
+**Response Example** (200 OK — `Key=CONTACTINFO`):
 ```json
 {
   "profileId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "subject": "smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299",
-  "email": "applicant@example.com",
-  "displayName": "John Doe"
+  "key": "CONTACTINFO",
+  "tenantId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "data": {
+    "dataType": "CONTACTINFO",
+    "contacts": [
+      {
+        "contactId": "a1b2c3d4-...",
+        "name": "John Doe",
+        "email": "applicant@example.com",
+        "contactType": "ApplicantProfile",
+        "isEditable": true
+      }
+    ]
+  }
 }
 ```
 
@@ -102,10 +115,13 @@ public class ApplicantProfileDto
 {
     public Guid ProfileId { get; set; }
     public string Subject { get; set; }
-    public string Email { get; set; }
-    public string DisplayName { get; set; }
+    public string Key { get; set; }
+    public Guid TenantId { get; set; }
+    public ApplicantProfileDataDto? Data { get; set; }  // Polymorphic — varies by Key
 }
 ```
+
+The `Data` property uses a JSON discriminator (`dataType`) for polymorphic deserialization. See [Applicant Profile Data Providers](./applicant-profile-data-providers.md) for the complete schema of each data type.
 
 ---
 
@@ -159,25 +175,32 @@ public class ApplicantTenantDto
 
 ## Subject Identifier Format
 
-The system extracts and normalizes OIDC subject identifiers as follows:
+The system extracts and normalizes OIDC subject identifiers as follows. For full extraction logic including the CHEFS form prerequisite and token structure, see [OIDC Subject Ingestion from CHEFS](./applicant-profile-data-providers.md#oidc-subject-ingestion-from-chefs).
 
 ### Input Formats Supported
-1. **From CHEFS Submission**:
+
+Search paths are checked in priority order until a non-empty value is found:
+
+1. **From CHEFS Submission (primary)**:
+   - Path: `submission.data.applicantAgent.sub`
+   - Example: `"smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299"`
+
+2. **From CHEFS Submission (alternate)**:
    - Path: `submission.data.hiddenApplicantAgent.sub`
    - Example: `"smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299"`
 
-2. **From CreatedBy Field**:
-   - Path: `submission.createdBy`
+3. **From CreatedBy Field (fallback)**:
+   - Path: `createdBy`
    - Example: `"anonymous@bcservicescard"`
 
 ### Normalization Rules
 1. Extract the identifier **before** the `@` symbol
 2. Convert to **UPPERCASE**
-3. Store in `AppApplicantTenantMaps.OidcSubUsername`
+3. Store in `AppApplicantTenantMaps.OidcSubUsername` and `ApplicationFormSubmission.OidcSub`
 
 **Examples**:
-- `smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299` ? `SMZFRRLA7J5HW6Z7WZVYZDRTQ6DJ6FBR`
-- `anonymous@bcservicescard` ? `ANONYMOUS`
+- `smzfrrla7j5hw6z7wzvyzdrtq6dj6fbr@chefs-frontend-5299` --> `SMZFRRLA7J5HW6Z7WZVYZDRTQ6DJ6FBR`
+- `anonymous@bcservicescard` --> `ANONYMOUS`
 
 **Implementation**: See `IntakeSubmissionHelper.ExtractOidcSub(dynamic submission)`
 
@@ -472,7 +495,7 @@ graph TB
 
 ### Message Flow Patterns
 
-#### 1. Commands (Applicant Portal ? Unity)
+#### 1. Commands (Applicant Portal --> Unity)
 
 Commands represent requests from the Applicant Portal for Unity to perform an action.
 
@@ -513,7 +536,7 @@ sequenceDiagram
   - Trigger: User requests status update
   - Action: Unity publishes current status event
 
-#### 2. Events (Unity ? Applicant Portal)
+#### 2. Events (Unity --> Applicant Portal)
 
 Events represent notifications about things that have happened in Unity.
 
@@ -1087,13 +1110,13 @@ public class EncryptedMessage
 
 #### Planned Message Types
 
-**Commands** (Portal ? Unity):
+**Commands** (Portal --> Unity):
 - `CreateApplicationDraftCommand`
 - `UploadDocumentCommand`
 - `WithdrawApplicationCommand`
 - `RequestApplicationReviewCommand`
 
-**Events** (Unity ? Portal):
+**Events** (Unity --> Portal):
 - `ReviewerAssignedEvent`
 - `AssessmentCompletedEvent`
 - `FundingAgreementGeneratedEvent`
@@ -1549,7 +1572,7 @@ For issues or questions:
 
 ## Related Documentation
 
-- [Applicant Tenant Mapping Implementation](./ApplicantTenantMapping.md) - Technical implementation details
+- [Applicant Profile Data Providers](./applicant-profile-data-providers.md) - Provider strategy, data flow diagrams, and OIDC subject extraction details
 - [API Key Authentication](../src/Unity.GrantManager.HttpApi/Controllers/Authentication/README.md) - Authentication setup
 - [Background Jobs](../src/Unity.GrantManager.Application/HealthChecks/BackgroundWorkers/README.md) - Background worker configuration
 
