@@ -11,6 +11,7 @@ using Volo.Abp.Caching;
 using Unity.GrantManager.Integrations.Css;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.TenantManagement;
+using Microsoft.Extensions.Logging;
 namespace Unity.Payments.Integrations.Cas
 {
     [RemoteService(false)]
@@ -35,11 +36,11 @@ namespace Unity.Payments.Integrations.Cas
 
             var tenant = await tenantRepository.GetAsync(tenantId);
             var casClientCode = tenant.ExtraProperties?["CasClientCode"]?.ToString();
-
             if (string.IsNullOrEmpty(casClientCode))
             {
                 throw new UserFriendlyException("No CAS client code configured for the current tenant. Please contact your administrator.");
             }
+            Logger.LogInformation("Retrieved CAS client code {CasClientCode} for tenant {TenantId}", casClientCode, tenantId);
 
             var casClientId = await casClientCodeLookupService.GetClientIdByCasClientCodeAsync(casClientCode)
                 ?? throw new UserFriendlyException($"No CAS client configuration found for CAS client code: {casClientCode}");
