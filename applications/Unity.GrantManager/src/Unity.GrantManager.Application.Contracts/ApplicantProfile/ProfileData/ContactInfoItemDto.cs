@@ -17,5 +17,6 @@ namespace Unity.GrantManager.ApplicantProfile.ProfileData
         public bool IsPrimary { get; set; }
         public bool IsEditable { get; set; }
         public Guid? ApplicationId { get; set; }
+        public string? ReferenceNo { get; set; }
     }
 }
