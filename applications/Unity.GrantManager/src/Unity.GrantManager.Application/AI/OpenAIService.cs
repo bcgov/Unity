@@ -176,9 +176,9 @@ namespace Unity.GrantManager.AI
                         using var schemaDoc = JsonDocument.Parse(formFieldConfiguration);
                         schemaPayload = schemaDoc.RootElement.Clone();
                     }
-                    catch (JsonException)
+                    catch (JsonException ex)
                     {
-                        _logger.LogWarning("Invalid form field configuration JSON. Using empty schema payload.");
+                        _logger.LogWarning(ex, "Invalid form field configuration JSON. Using empty schema payload.");
                     }
                 }
 
