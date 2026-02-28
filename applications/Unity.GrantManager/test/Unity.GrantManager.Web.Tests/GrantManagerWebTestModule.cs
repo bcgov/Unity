@@ -19,7 +19,7 @@ namespace Unity.GrantManager;
 [DependsOn(
     typeof(AbpAspNetCoreTestBaseModule),
     typeof(GrantManagerWebModule),
-    typeof(GrantManagerApplicationTestModule)
+    typeof(WebTestInMemoryDbModule)
 )]
 public class GrantManagerWebTestModule : AbpModule
 {

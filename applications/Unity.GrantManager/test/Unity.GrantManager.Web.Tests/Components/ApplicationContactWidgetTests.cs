@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Unity.GrantManager.Components
 {
+    [Collection(WebTestCollection.Name)]
     public class ApplicationContactWidgetTests
     {
         [Fact]

@@ -6,7 +6,7 @@ using Volo.Abp.Users;
 using Xunit;
 using Xunit.Abstractions;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: CollectionBehavior(DisableTestParallelization = false)]
 
 namespace Unity.GrantManager;
 
