@@ -154,6 +154,7 @@
     "Permission:AI.Reporting": "AI Reporting",
     "Permission:AI.ApplicationAnalysis": "AI Application Analysis",
     "Permission:AI.AttachmentSummary": "AI Attachment Summary",
+    "Permission:AI.ScoringAssistant": "AI Scoring Assistant",
 
     "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",
