@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
 {
-    public class TextExtractionService : ITextExtractionService, ITransientDependency
+    public partial class TextExtractionService : ITextExtractionService, ITransientDependency
     {
         private const int MaxExtractedTextLength = 50000;
         private readonly ILogger<TextExtractionService> _logger;
@@ -126,16 +127,16 @@ namespace Unity.GrantManager.AI
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
 
-                foreach (var page in document.GetPages())
+                foreach (var pageText in document.GetPages().Select(page => page.Text))
                 {
                     if (builder.Length >= MaxExtractedTextLength)
                     {
                         break;
                     }
 
-                    if (!string.IsNullOrWhiteSpace(page.Text))
+                    if (!string.IsNullOrWhiteSpace(pageText))
                     {
-                        builder.AppendLine(page.Text);
+                        builder.AppendLine(pageText);
                     }
                 }
 
@@ -180,18 +181,14 @@ namespace Unity.GrantManager.AI
                 .Replace("\r\n", "\n")
                 .Replace('\r', '\n');
 
-            normalized = Regex.Replace(normalized, @"(?<=[a-z])(?=[A-Z])", " ");
-            normalized = Regex.Replace(normalized, @"(?<=[\.\,\:\;\)])(?=[A-Za-z0-9])", " ");
-            normalized = Regex.Replace(normalized, @":-", ": - ");
-            normalized = Regex.Replace(normalized, @"(?<=\S)- (?=[A-Za-z])", " - ");
-            normalized = Regex.Replace(
-                normalized,
-                @"(?<=[a-z])(?=(project|funding|budget|community|summary|notes|details|planning|outcomes|background|services)\b)",
-                " ",
-                RegexOptions.IgnoreCase);
-            normalized = Regex.Replace(normalized, @"[ \t]+", " ");
-            normalized = Regex.Replace(normalized, @"\n\s*", "\n");
-            normalized = Regex.Replace(normalized, @"\n{2,}", "\n");
+            normalized = LowerToUpperWordBoundaryRegex().Replace(normalized, " ");
+            normalized = PunctuationToWordBoundaryRegex().Replace(normalized, " ");
+            normalized = ColonDashSpacingRegex().Replace(normalized, ": - ");
+            normalized = HyphenSpacingRegex().Replace(normalized, " - ");
+            normalized = KeywordBoundaryRegex().Replace(normalized, " ");
+            normalized = MultipleSpacesRegex().Replace(normalized, " ");
+            normalized = NewlineWhitespaceRegex().Replace(normalized, "\n");
+            normalized = MultipleNewlinesRegex().Replace(normalized, "\n");
 
             return normalized.Trim();
         }
@@ -229,5 +226,29 @@ namespace Unity.GrantManager.AI
 
             return text;
         }
+
+        [GeneratedRegex(@"(?<=[a-z])(?=[A-Z])")]
+        private static partial Regex LowerToUpperWordBoundaryRegex();
+
+        [GeneratedRegex(@"(?<=[\.\,\:\;\)])(?=[A-Za-z0-9])")]
+        private static partial Regex PunctuationToWordBoundaryRegex();
+
+        [GeneratedRegex(@":-")]
+        private static partial Regex ColonDashSpacingRegex();
+
+        [GeneratedRegex(@"(?<=\S)- (?=[A-Za-z])")]
+        private static partial Regex HyphenSpacingRegex();
+
+        [GeneratedRegex(@"(?<=[a-z])(?=(project|funding|budget|community|summary|notes|details|planning|outcomes|background|services)\b)", RegexOptions.IgnoreCase)]
+        private static partial Regex KeywordBoundaryRegex();
+
+        [GeneratedRegex(@"[ \t]+")]
+        private static partial Regex MultipleSpacesRegex();
+
+        [GeneratedRegex(@"\n\s*")]
+        private static partial Regex NewlineWhitespaceRegex();
+
+        [GeneratedRegex(@"\n{2,}")]
+        private static partial Regex MultipleNewlinesRegex();
     }
 }
