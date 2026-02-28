@@ -44,7 +44,7 @@ $(function () {
         return [
             { title: 'Grant Category', data: 'grantCategory', name: 'grantCategory', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             { title: 'Funding Year', data: 'fundingYear', name: 'fundingYear', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
-            { title: 'Renewed Funding', data: 'renewedFunding', name: 'renewedFunding', className: 'data-table-header', render: (d) => d === true ? 'Yes' : d === false ? 'No' : nullPlaceholder },
+            { title: 'Renewed Funding', data: 'renewedFunding', name: 'renewedFunding', className: 'data-table-header', render: (d) => d === true ? 'Yes' : 'No' },
             { title: 'Approved Amount', data: 'approvedAmount', name: 'approvedAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             { title: 'Reconsideration Amount', data: 'reconsiderationAmount', name: 'reconsiderationAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             { title: 'Total Grant Amount', data: 'totalGrantAmount', name: 'totalGrantAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },

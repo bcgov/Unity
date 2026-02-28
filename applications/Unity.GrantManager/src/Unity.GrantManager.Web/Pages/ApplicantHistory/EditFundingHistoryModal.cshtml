@@ -5,7 +5,7 @@
     Layout = null;
 }
 
-<form method="post">
+<form method="post" asp-page="/ApplicantHistory/EditFundingHistoryModal" id="EditFundingHistoryForm">
     <abp-modal>
         <abp-modal-header title="Edit Funding History"></abp-modal-header>
         <abp-modal-body>
@@ -13,24 +13,26 @@
             <input type="hidden" asp-for="FundingHistoryForm.ApplicantId" />
 
             <div class="mb-3">
-                <label class="form-label" for="FundingHistoryForm_GrantCategory">Grant Category</label>
+                <label class="form-label" for="FundingHistoryForm_GrantCategory">Grant Category <span class="text-danger">*</span></label>
                 <input type="text" id="FundingHistoryForm_GrantCategory" name="FundingHistoryForm.GrantCategory"
-                       class="form-control" value="@Model.FundingHistoryForm?.GrantCategory" />
+                       class="form-control" value="@Model.FundingHistoryForm?.GrantCategory" required />
+                <div class="invalid-feedback">Grant Category is required.</div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label" for="FundingHistoryForm_FundingYear">Funding Year</label>
+                <label class="form-label" for="FundingHistoryForm_FundingYear">Funding Year <span class="text-danger">*</span></label>
                 <input type="text" id="FundingHistoryForm_FundingYear" name="FundingHistoryForm.FundingYear"
-                       class="form-control numeric-mask" inputmode="numeric"
-                       value="@Model.FundingHistoryForm?.FundingYear" />
+                       class="form-control" inputmode="numeric" maxlength="4"
+                       value="@Model.FundingHistoryForm?.FundingYear" required />
+                <div class="invalid-feedback">Funding Year is required.</div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label d-block">Renewed Funding</label>
                 <div class="switch-container">
-                    <div class="px-3 form-check unt-form-switch form-switch">
+                    <div class="form-check unt-form-switch form-switch">
                         <input class="form-check-input" type="checkbox" id="FundingHistoryForm_RenewedFunding"
-                               name="FundingHistoryForm.RenewedFunding"
+                               name="FundingHistoryForm.RenewedFunding" value="true"
                                @(Model.FundingHistoryForm?.RenewedFunding == true ? "checked" : "") />
                         <label class="form-check-label" for="FundingHistoryForm_RenewedFunding">Renewed Funding</label>
                     </div>
@@ -79,3 +81,42 @@
         </abp-modal-footer>
     </abp-modal>
 </form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            var $currencyInputs = $('#EditFundingHistoryForm .unity-currency-input');
+            $currencyInputs.maskMoney({ thousands: ',', decimal: '.' });
+            $currencyInputs.each(function () {
+                $(this).maskMoney('mask', this.value);
+            });
+            $currencyInputs.on('blur', function () {
+                if ($(this).val() === '' || $(this).val() === '0') {
+                    $(this).val('0.00');
+                }
+            });
+
+            var $grantCategory = $('#FundingHistoryForm_GrantCategory');
+            var $fundingYear   = $('#FundingHistoryForm_FundingYear');
+
+            $grantCategory.on('input', function () { $(this).removeClass('is-invalid'); });
+            $fundingYear.on('input', function () {
+                $(this).val($(this).val().replace(/\D/g, '').slice(0, 4));
+                $(this).removeClass('is-invalid');
+            });
+
+            $('#EditFundingHistoryForm').on('submit', function (e) {
+                var valid = true;
+                if ($grantCategory.val().trim() === '') {
+                    $grantCategory.addClass('is-invalid');
+                    valid = false;
+                }
+                if ($fundingYear.val().trim() === '') {
+                    $fundingYear.addClass('is-invalid');
+                    valid = false;
+                }
+                if (!valid) e.preventDefault();
+            });
+        }
+    })();
+</script>
