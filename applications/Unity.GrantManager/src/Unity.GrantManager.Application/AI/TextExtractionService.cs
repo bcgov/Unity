@@ -166,11 +166,11 @@ namespace Unity.GrantManager.AI
                 using var document = new XWPFDocument(stream);
                 var parts = new List<string>();
 
-                foreach (var paragraph in document.Paragraphs.Take(MaxDocxParagraphs))
+                foreach (var paragraphText in document.Paragraphs.Take(MaxDocxParagraphs).Select(paragraph => paragraph.ParagraphText))
                 {
-                    if (!string.IsNullOrWhiteSpace(paragraph.ParagraphText))
+                    if (!string.IsNullOrWhiteSpace(paragraphText))
                     {
-                        parts.Add(paragraph.ParagraphText);
+                        parts.Add(paragraphText);
                     }
                 }
 
