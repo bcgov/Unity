@@ -62,18 +62,10 @@ namespace Unity.GrantManager.AI
                 request?.MaxTokens ?? 150);
         }
 
-        public Task<string> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
-        {
-            return GenerateAttachmentSummaryAsync(
-                request?.FileName ?? string.Empty,
-                request?.FileContent ?? Array.Empty<byte>(),
-                request?.ContentType ?? "application/octet-stream");
-        }
-
         public Task<string> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
         {
-            var dataJson = JsonSerializer.Serialize(request.Data, new JsonSerializerOptions { WriteIndented = true });
-            var schemaJson = JsonSerializer.Serialize(request.Schema, new JsonSerializerOptions { WriteIndented = true });
+            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
+            var schemaJson = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
 
             var attachmentSummaries = request.Attachments
                 .Select(a => $"{a.Name}: {a.Summary}")
@@ -90,22 +82,6 @@ namespace Unity.GrantManager.AI
                 attachmentSummaries,
                 request.Rubric ?? string.Empty,
                 formFieldConfiguration);
-        }
-
-        public Task<string> GenerateScoresheetSectionAnswersAsync(ScoresheetSectionRequest request)
-        {
-            var dataJson = JsonSerializer.Serialize(request.Data, new JsonSerializerOptions { WriteIndented = true });
-            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, new JsonSerializerOptions { WriteIndented = true });
-
-            var attachmentSummaries = request.Attachments
-                .Select(a => $"{a.Name}: {a.Summary}")
-                .ToList();
-
-            return GenerateScoresheetSectionAnswersAsync(
-                dataJson,
-                attachmentSummaries,
-                sectionJson,
-                request.SectionName);
         }
 
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
@@ -229,6 +205,14 @@ RULES
                 _logger.LogError(ex, "Error generating attachment summary for {FileName}", fileName);
                 return $"AI analysis not available for this attachment ({fileName}).";
             }
+        }
+
+        public Task<string> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
+        {
+            return GenerateAttachmentSummaryAsync(
+                request?.FileName ?? string.Empty,
+                request?.FileContent ?? Array.Empty<byte>(),
+                request?.ContentType ?? "application/octet-stream");
         }
 
         public async Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric, string? formFieldConfiguration = null)
@@ -564,6 +548,22 @@ Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions
                 _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", sectionName);
                 return "{}";
             }
+        }
+
+        public Task<string> GenerateScoresheetSectionAnswersAsync(ScoresheetSectionRequest request)
+        {
+            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
+            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
+
+            var attachmentSummaries = request.Attachments
+                .Select(a => $"{a.Name}: {a.Summary}")
+                .ToList();
+
+            return GenerateScoresheetSectionAnswersAsync(
+                dataJson,
+                attachmentSummaries,
+                sectionJson,
+                request.SectionName);
         }
 
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
