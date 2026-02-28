@@ -40,6 +40,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
 
             var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(model.ChefsFormVersionId);
             model.Version = formVersion?.Version?.ToString();
+            model.ChefsFormPublished = formVersion?.Published;
             model.WorksheetLinks = await worksheetLinkAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
 
             model.PublishedWorksheets = [.. (await worksheetListAppService.GetListAsync())
