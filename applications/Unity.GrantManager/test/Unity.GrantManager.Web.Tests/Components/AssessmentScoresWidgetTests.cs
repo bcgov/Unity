@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Unity.GrantManager.Components
 {
-    public class AssessmentScoresWidgetTests : GrantManagerWebTestBase
+    public class AssessmentScoresWidgetTests
     {
         [Fact]
         public async Task AssessmentScoresWidgetReturnsStatus()

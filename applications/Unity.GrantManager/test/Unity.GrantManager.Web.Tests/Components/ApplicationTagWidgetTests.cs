@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Unity.GrantManager.Components
 {
-    public class ApplicationTagsWidgetTests : GrantManagerWebTestBase
+    public class ApplicationTagsWidgetTests
     {
         [Fact]
         public async Task ApplicationTagsWidgetReturnsStatus()

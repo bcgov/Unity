@@ -1,21 +1,22 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Unity.Flex.Web.Views.Shared.Components.CurrencyWidget;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
-using Unity.GrantManager;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.Flex.Web.Tests.Components
 {
-    public class CurrencyWidgetTests : GrantManagerWebTestBase
+    [Collection(ComponentTestCollection.Name)]
+    public class CurrencyWidgetTests
     {
         private readonly IAbpLazyServiceProvider lazyServiceProvider;
 
-        public CurrencyWidgetTests()
+        public CurrencyWidgetTests(ComponentTestFixture fixture)
         {
-            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+            lazyServiceProvider = fixture.Services.GetRequiredService<IAbpLazyServiceProvider>();
         }
 
         [Fact]

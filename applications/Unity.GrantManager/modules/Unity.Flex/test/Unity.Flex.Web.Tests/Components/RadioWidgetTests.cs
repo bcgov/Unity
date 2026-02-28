@@ -1,21 +1,22 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Unity.Flex.Web.Views.Shared.Components.RadioWidget;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
-using Unity.GrantManager;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.Flex.Web.Tests.Components
 {
-    public class RadioWidgetTests : GrantManagerWebTestBase
+    [Collection(ComponentTestCollection.Name)]
+    public class RadioWidgetTests
     {
         private readonly IAbpLazyServiceProvider lazyServiceProvider;
 
-        public RadioWidgetTests()
+        public RadioWidgetTests(ComponentTestFixture fixture)
         {
-            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+            lazyServiceProvider = fixture.Services.GetRequiredService<IAbpLazyServiceProvider>();
         }
 
         [Fact]
