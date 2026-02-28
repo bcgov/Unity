@@ -19,6 +19,44 @@ namespace Unity.GrantManager.AI
         ILogger<ApplicationAnalysisService> logger) : IApplicationAnalysisService, ITransientDependency
     {
         private const string ComponentsKey = "components";
+        private const string AnalysisRubric = @"
+BC GOVERNMENT GRANT EVALUATION RUBRIC:
+
+1. ELIGIBILITY REQUIREMENTS:
+   - Project must align with program objectives
+   - Applicant must be eligible entity type
+   - Budget must be reasonable and well-justified
+   - Project timeline must be realistic
+
+2. COMPLETENESS CHECKS:
+   - All required fields completed
+   - Necessary supporting documents provided
+   - Budget breakdown detailed and accurate
+   - Project description clear and comprehensive
+
+3. FINANCIAL REVIEW:
+   - Requested amount is within program limits
+   - Budget is reasonable for scope of work
+   - Matching funds or in-kind contributions identified
+   - Cost per outcome/beneficiary is reasonable
+
+4. RISK ASSESSMENT:
+   - Applicant capacity to deliver project
+   - Technical feasibility of proposed work
+   - Environmental or regulatory compliance
+   - Potential for cost overruns or delays
+
+5. QUALITY INDICATORS:
+   - Clear project objectives and outcomes
+   - Well-defined target audience/beneficiaries
+   - Appropriate project methodology
+   - Sustainability plan for long-term impact
+
+EVALUATION CRITERIA:
+- HIGH: Meets all requirements, well-prepared application, low risk
+- MEDIUM: Meets most requirements, minor issues or missing elements
+- LOW: Missing key requirements, significant concerns, high risk
+";
 
         public async Task<string> RegenerateAndSaveAsync(Guid applicationId)
         {
@@ -58,7 +96,7 @@ FULL APPLICATION FORM SUBMISSION:
             var analysis = await aiService.AnalyzeApplicationAsync(
                 applicationContent,
                 attachmentSummaries,
-                GetAnalysisRubric(),
+                AnalysisRubric,
                 formFieldConfiguration);
 
             var cleanedAnalysis = CleanJsonResponse(analysis);
@@ -94,45 +132,6 @@ FULL APPLICATION FORM SUBMISSION:
 
             return cleaned.Trim();
         }
-
-        private static string GetAnalysisRubric() => @"
-BC GOVERNMENT GRANT EVALUATION RUBRIC:
-
-1. ELIGIBILITY REQUIREMENTS:
-   - Project must align with program objectives
-   - Applicant must be eligible entity type
-   - Budget must be reasonable and well-justified
-   - Project timeline must be realistic
-
-2. COMPLETENESS CHECKS:
-   - All required fields completed
-   - Necessary supporting documents provided
-   - Budget breakdown detailed and accurate
-   - Project description clear and comprehensive
-
-3. FINANCIAL REVIEW:
-   - Requested amount is within program limits
-   - Budget is reasonable for scope of work
-   - Matching funds or in-kind contributions identified
-   - Cost per outcome/beneficiary is reasonable
-
-4. RISK ASSESSMENT:
-   - Applicant capacity to deliver project
-   - Technical feasibility of proposed work
-   - Environmental or regulatory compliance
-   - Potential for cost overruns or delays
-
-5. QUALITY INDICATORS:
-   - Clear project objectives and outcomes
-   - Well-defined target audience/beneficiaries
-   - Appropriate project methodology
-   - Sustainability plan for long-term impact
-
-EVALUATION CRITERIA:
-- HIGH: Meets all requirements, well-prepared application, low risk
-- MEDIUM: Meets most requirements, minor issues or missing elements
-- LOW: Missing key requirements, significant concerns, high risk
-";
 
         private async Task<string> ExtractFormFieldConfigurationAsync(Guid formVersionId)
         {

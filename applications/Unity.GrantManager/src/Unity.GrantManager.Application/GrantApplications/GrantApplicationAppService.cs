@@ -48,8 +48,7 @@ public class GrantApplicationAppService(
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService,
-    IApplicationAnalysisService applicationAnalysisService)
+    IPaymentRequestAppService paymentRequestService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
@@ -1071,7 +1070,8 @@ public class GrantApplicationAppService(
     {
         try
         {
-            return await applicationAnalysisService.RegenerateAndSaveAsync(applicationId);
+            var analysisService = LazyServiceProvider.LazyGetRequiredService<IApplicationAnalysisService>();
+            return await analysisService.RegenerateAndSaveAsync(applicationId);
         }
         catch (Exception ex)
         {
