@@ -7,10 +7,10 @@
 
 <div class="row">
     <div class="col-6 pt-3 pl-3">
-        <label for="applicationFormVersion" class="form-label">Version:</label>
+        <label for="applicationFormVersionRo" class="form-label">Version:</label>
         <div class="select-icon-wrapper">
             <select class="form-select form-control" id="applicationFormVersionRo" name="Version" disabled>
-                <option value="@Model.Version - @Model.ChefsFormVersionId">@Model.Version - @Model.ChefsFormVersionId</option>
+                <option value="@Model.ChefsFormVersionId">@Model.Version - @Model.ChefsFormVersionId</option>
             </select>
             @if (Model?.ChefsFormPublished == true)
             {
