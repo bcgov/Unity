@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
@@ -39,10 +40,10 @@ public abstract class GrantManagerWebTestBase : AbpWebApplicationFactoryIntegrat
             }
         }
 
-#if WINDOWS
-        // 🔹 Remove EventLog logger to avoid ObjectDisposedException in tests
-        services.RemoveAll<Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>();
-#endif
+if (OperatingSystem.IsWindows())
+        {
+            services.RemoveAll<Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>();
+        }
 
         //
         // 🔹 Replace real channel provider with fake

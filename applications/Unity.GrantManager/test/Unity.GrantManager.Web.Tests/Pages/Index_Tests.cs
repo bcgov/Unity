@@ -22,6 +22,6 @@ public class Index_Tests
         var response = await _client.GetAsync("/");
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
-        content.ShouldNotBeNull();
+        content.ShouldNotBeNullOrEmpty();
     }
 }

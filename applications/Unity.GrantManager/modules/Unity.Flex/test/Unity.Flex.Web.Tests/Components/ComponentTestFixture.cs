@@ -26,9 +26,10 @@ public class ComponentTestFixture : WebApplicationFactory<Program>
                 }
             }
 
-#if WINDOWS
-            services.RemoveAll<Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>();
-#endif
+if (OperatingSystem.IsWindows())
+            {
+                services.RemoveAll<Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>();
+            }
 
             services.Replace(
                 ServiceDescriptor.Singleton<IChannelProvider, FakeChannelProvider>()
