@@ -19,7 +19,7 @@
         </div>
     </div>
     <div class="col-6 pt-3">
-        <input type="hidden" id="originalScoresheetId" value="@Model.ScoresheetId" />
+        <input type="hidden" id="originalScoresheetId" value="@Model!.ScoresheetId" />
         <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
             <option value="">Please choose...</option>
         </abp-select>
