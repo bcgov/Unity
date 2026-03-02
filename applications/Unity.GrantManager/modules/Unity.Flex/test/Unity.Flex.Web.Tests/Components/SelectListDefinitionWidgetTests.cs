@@ -1,22 +1,23 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using System.Text.Json;
 using Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.GrantManager;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.Flex.Web.Tests.Components
 {
-    public class SelectListDefinitionWidgetTests : GrantManagerWebTestBase
+    [Collection(ComponentTestCollection.Name)]
+    public class SelectListDefinitionWidgetTests
     {
         private readonly IAbpLazyServiceProvider lazyServiceProvider;
 
-        public SelectListDefinitionWidgetTests()
+        public SelectListDefinitionWidgetTests(ComponentTestFixture fixture)
         {
-            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+            lazyServiceProvider = fixture.Services.GetRequiredService<IAbpLazyServiceProvider>();
         }
 
         [Fact]

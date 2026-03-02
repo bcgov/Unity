@@ -17,6 +17,7 @@ using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.AI;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
@@ -1095,7 +1096,7 @@ public class GrantApplicationAppService(
             writer.WriteStartObject();
 
             var dismissedItems = new HashSet<string>();
-            if (jsonDoc.RootElement.TryGetProperty("dismissed_items", out var dismissedArray))
+            if (jsonDoc.RootElement.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedArray))
             {
                 foreach (var item in dismissedArray.EnumerateArray())
                 {
@@ -1120,14 +1121,14 @@ public class GrantApplicationAppService(
             // Write all properties
             foreach (var property in jsonDoc.RootElement.EnumerateObject())
             {
-                if (property.Name != "dismissed_items")
+                if (property.Name != AIJsonKeys.Dismissed)
                 {
                     property.WriteTo(writer);
                 }
             }
 
-            // Write updated dismissed_items array
-            writer.WritePropertyName("dismissed_items");
+            // Write updated dismissed array
+            writer.WritePropertyName(AIJsonKeys.Dismissed);
             writer.WriteStartArray();
             foreach (var id in dismissedItems)
             {

@@ -9,11 +9,11 @@ const DateUtils = (function () {
      * @param {string|Date} dateUtc - The UTC date to format
      * @param {string} type - The type of formatting (for DataTables compatibility)
      * @param {object} options - Additional formatting options
-     * @returns {string|number} Formatted date string or timestamp for sorting
+     * @returns {string|number|null} Formatted date string or timestamp for sorting, null if input is invalid
      */
     function formatUtcDateToLocal(dateUtc, type, options) {
         if (!dateUtc) {
-            return '';
+            return null;
         }
 
         const date = new Date(dateUtc);

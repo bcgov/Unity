@@ -486,9 +486,11 @@ $(function () {
             title: l('ApplicationPaymentListTable:RequestedOn'),
             name: 'requestedOn',
             data: 'creationTime',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
+            render: function (data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
+            }
         };
     }
     function getUpdatedOnColumn(columnIndex) {
@@ -496,9 +498,11 @@ $(function () {
             title: l('ApplicationPaymentListTable:UpdatedOn'),
             name: 'updatedOn',
             data: 'lastModificationTime',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
+            render: function(data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
+            }
         };
     }
     function getPaidOnColumn(columnIndex) {
@@ -506,7 +510,7 @@ $(function () {
             title: l('ApplicationPaymentListTable:PaidOn'),
             name: 'paidOn',
             data: 'paymentDate',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
             render: function (data) {
                 if (!data) return null;
@@ -575,11 +579,12 @@ $(function () {
             title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
             name: `l${level}ApprovalDate`,
             data: 'expenseApprovals',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: function (data) {
+            render: function (data, type) {
                 let approval = getExpenseApprovalsDetails(data, level);
-                return formatDate(approval?.decisionDate);
+                const approvalDate = approval?.decisionDate;
+                return DateUtils.formatUtcDateToLocal(approvalDate, type);
             }
         };
     }
@@ -709,12 +714,6 @@ $(function () {
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
-    }
-
-    function formatDate(data) {
-        return data != null ? luxon.DateTime.fromISO(data, {
-            locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString() : null;
     }
 
     $('#search').on('input', function () {
