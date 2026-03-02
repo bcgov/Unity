@@ -109,7 +109,11 @@ $(function () {
                 title: 'Audit Date', data: 'auditDate', name: 'auditDate', className: 'data-table-header',
                 render: function (d) {
                     if (!d) return nullPlaceholder;
-                    try { return luxon.DateTime.fromISO(d).toLocaleString(); } catch (e) { return d; }
+                    try {
+                        return luxon.DateTime.fromISO(d, {
+                            locale: abp.localization.currentCulture.name,
+                        }).toUTC().toLocaleString();
+                    } catch (e) { return d; }
                 }
             },
             { title: 'Audit Note', data: 'auditNote', name: 'auditNote', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
