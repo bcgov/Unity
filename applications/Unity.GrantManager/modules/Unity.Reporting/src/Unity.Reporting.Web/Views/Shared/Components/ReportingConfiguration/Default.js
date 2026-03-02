@@ -315,6 +315,34 @@ $(function () {
         }
     }
 
+    // Function to check for dynamic_columns placeholder in current table data
+    function checkForDynamicColumnsInTable() {
+        let hasDynamicColumns = false;
+
+        if (dataTable) {
+            dataTable.rows().every(function () {
+                const data = this.data();
+                if (data.key === 'dynamic_columns') {
+                    hasDynamicColumns = true;
+                    return false; // Break the loop
+                }
+            });
+        }
+
+        return hasDynamicColumns;
+    }
+
+    // Function to update dynamic columns warning display
+    function updateDynamicColumnsWarning(hasDynamicColumns) {
+        const $warning = $('#div-dynamic-columns-warning');
+
+        if (hasDynamicColumns) {
+            $warning.removeClass('dynamic-columns-div-hidden');
+        } else {
+            $warning.addClass('dynamic-columns-div-hidden');
+        }
+    }
+
     // Function to show or hide the Generate View button based on configuration existence
     function updateGenerateViewButtonVisibility(hasConfiguration) {
         const $generateBtn = $('#btn-generate-view-report-configuration');
@@ -672,6 +700,10 @@ $(function () {
             // Check for duplicate keys and update warning
             const hasDuplicates = checkForDuplicateKeysInTable();
             updateDuplicateKeysWarning(hasDuplicates);
+
+            // Check for dynamic columns placeholder and update warning
+            const hasDynamicColumns = checkForDynamicColumnsInTable();
+            updateDynamicColumnsWarning(hasDynamicColumns);
 
             // Force column adjustment after draw if tab is visible
             setTimeout(function () {

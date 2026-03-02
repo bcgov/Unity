@@ -5,11 +5,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Reporting.Configuration;
 using Unity.GrantManager.ApplicationForms;
-using Unity.Reporting.Configuration.FieldsProviders;
 using Unity.Reporting.Domain.Configuration;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.Reporting.Configuration.FieldProviders
+namespace Unity.Reporting.Configuration.FieldsProviders
 {
     /// <summary>
     /// Fields provider implementation for Unity.Flex scoresheets that extracts field metadata from scoresheet configurations.
@@ -146,7 +145,7 @@ namespace Unity.Reporting.Configuration.FieldProviders
             try
             {
                 // Parse the mapping JSON to extract metadata
-                var mapping = JsonSerializer.Deserialize<Mapping>(reportColumnsMap.Mapping);
+                var mapping = JsonSerializer.Deserialize<ScoresheetMapping>(reportColumnsMap.Mapping);
                 var info = mapping?.Metadata?.Info;
                 if (info != null)
                 {
@@ -222,19 +221,19 @@ namespace Unity.Reporting.Configuration.FieldProviders
 
             return infoString;
         }
-    }
 
-    /// <summary>
-    /// Simplified internal mapping class structure for JSON deserialization compatibility.
-    /// Used specifically for parsing stored mapping metadata to extract scoresheet information
-    /// during change detection operations without requiring the full mapping object structure.
-    /// </summary>
-    internal class Mapping
-    {
         /// <summary>
-        /// Gets or sets the metadata information associated with the mapping.
-        /// Contains contextual information about scoresheets and other correlation-specific details.
+        /// Simplified private mapping class structure for JSON deserialization compatibility.
+        /// Used specifically for parsing stored mapping metadata to extract scoresheet information
+        /// during change detection operations without requiring the full mapping object structure.
         /// </summary>
-        public MapMetadataDto? Metadata { get; set; }
+        private class ScoresheetMapping
+        {
+            /// <summary>
+            /// Gets or sets the metadata information associated with the mapping.
+            /// Contains contextual information about scoresheets and other correlation-specific details.
+            /// </summary>
+            public MapMetadataDto? Metadata { get; set; }
+        }
     }
 }
