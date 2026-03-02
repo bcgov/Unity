@@ -12,14 +12,9 @@ using Xunit;
 
 namespace Unity.GrantManager.Components
 {
-    public class ApplicationContactWidgetTests : GrantManagerWebTestBase
+    [Collection(WebTestCollection.Name)]
+    public class ApplicationContactWidgetTests
     {
-        public ApplicationContactWidgetTests()
-        {
-            // Disable logging to avoid disposed logger errors during tests
-            Environment.SetEnvironmentVariable("Logging:LogLevel:Default", "None");
-        }
-
         [Fact]
         public async Task ApplicationContactWidgetReturnsStatus()
         {
@@ -64,7 +59,7 @@ namespace Unity.GrantManager.Components
             };
 
             //Act
-            var result = await viewComponent.InvokeAsync(applicationId, true) as ViewViewComponentResult;
+            var result = await viewComponent.InvokeAsync(applicationId) as ViewViewComponentResult;
             ApplicationContactsWidgetViewModel? resultModel;
 
             resultModel = result!.ViewData!.Model! as ApplicationContactsWidgetViewModel;

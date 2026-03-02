@@ -4,19 +4,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Services;
 using Unity.Payments.Domain.Shared;
 using Unity.Payments.Enums;
+using Unity.Payments.PaymentRequests.Notifications;
 using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.Features;
-using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Users;
-using Unity.Payments.PaymentRequests.Notifications;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -29,7 +30,8 @@ namespace Unity.Payments.PaymentRequests
                 IPaymentsManager paymentsManager,
                 FsbPaymentNotifier fsbPaymentNotifier,
                 IPaymentRequestQueryManager paymentRequestQueryManager,
-                IPaymentRequestConfigurationManager paymentRequestConfigurationManager) : PaymentsAppService, IPaymentRequestAppService
+                IPaymentRequestConfigurationManager paymentRequestConfigurationManager,
+                Lazy<IApplicationLinksService> applicationLinksService) : PaymentsAppService, IPaymentRequestAppService
 
     {
         public async Task<Guid?> GetDefaultAccountCodingId()
@@ -327,6 +329,39 @@ namespace Unity.Payments.PaymentRequests
         public async Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId)
         {
             return await paymentRequestQueryManager.GetPaymentPendingListByCorrelationIdAsync(applicationId);
+        }
+
+        /// <summary>
+        /// Retrieves the payment rollup for the specified application, including any linked child
+        /// applications.
+        /// </summary>
+        /// <remarks>This method first obtains any child applications associated with the given
+        /// application ID and then queries the payment rollup for both the application and its children. Use this
+        /// method to obtain a comprehensive payment overview when applications may be linked together.</remarks>
+        /// <param name="applicationId">The unique identifier of the application for which the payment rollup is requested.</param>
+        /// <returns>An instance of <see cref="ApplicationPaymentRollupDto"/> containing the payment rollup details for the
+        /// specified application and its linked child applications.</returns>
+        public async Task<ApplicationPaymentRollupDto> GetApplicationPaymentRollupAsync(Guid applicationId)
+        {
+            var childLinks = await applicationLinksService.Value.GetChildApplications(applicationId);
+            var childApplicationIds = childLinks.Select(l => l.LinkedApplicationId).ToList();
+            return await paymentRequestQueryManager.GetApplicationPaymentRollupAsync(applicationId, childApplicationIds);
+        }
+
+        /// <summary>
+        /// Retrieves batch payment rollup information for the specified applications and their child applications.
+        /// </summary>
+        /// <remarks>This method asynchronously resolves child applications linked to the provided
+        /// application identifiers before fetching a batch of payment rollups. Ensure that all application identifiers are valid
+        /// and exist in the system.</remarks>
+        /// <param name="applicationIds">A list of application identifiers for which payment rollups are requested. This parameter cannot be null
+        /// or empty.</param>
+        /// <returns>A dictionary mapping each application identifier to its corresponding <see cref="ApplicationPaymentRollupDto"/>. The dictionary
+        /// includes entries for both the specified applications and their child applications.</returns>
+        public async Task<Dictionary<Guid, ApplicationPaymentRollupDto>> GetApplicationPaymentRollupBatchAsync(List<Guid> applicationIds)
+        {
+            var childApplicationIdsByParent = await applicationLinksService.Value.GetChildApplicationIdsByParentIdsAsync(applicationIds);
+            return await paymentRequestQueryManager.GetApplicationPaymentRollupBatchAsync(applicationIds, childApplicationIdsByParent);
         }
     }
 }

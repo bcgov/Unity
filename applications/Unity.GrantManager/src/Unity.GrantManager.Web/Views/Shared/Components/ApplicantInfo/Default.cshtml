@@ -30,7 +30,6 @@
         });
 
     bool IsViewEditable = !updatePermissionResult.AllProhibited;
-    bool IsAdditionalContactAddable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Create);
     bool IsAdditionalContactEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update);
     bool IsAssignApplicant = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.AssignApplicant);
     bool IsLookupEnabled = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.Summary.Update);
@@ -369,18 +368,7 @@
       form-id="@Model.ApplicationFormId" show-legend="false"
       editable-if="IsAdditionalContactEditable">
     <abp-row class="px-1 pb-2 mb-4 summary-container">
-        <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
-        <div id="applicationContactsWidget">
-            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId, isReadOnly = !IsAdditionalContactEditable })
-        </div>
-
-        @if (IsAdditionalContactAddable)
-        {
-            <div class="d-flex justify-content-end">
-                <abp-button text="Add Contact" id="AddContactButton" class="add_contact_btn" icon-type="Other" icon="fl fl-plus"
-                            button-type="Light" />
-            </div>
-        }
+        @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId })
     </abp-row>
 </zone>
 

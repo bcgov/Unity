@@ -33,6 +33,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? ParentFormId { get; set; }
     public bool RenderFormIoToHtml { get; set; } = false;
     public bool IsDirectApproval { get; set; } = false;
+    [MaxLength(100)]
     public string? Prefix { get; set; }
     public SuffixConfigType? SuffixType { get; set; }
     public static List<(SuffixConfigType SuffixType, string DisplayName)> GetAvailableSuffixTypes()

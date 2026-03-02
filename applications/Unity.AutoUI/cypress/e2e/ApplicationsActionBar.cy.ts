@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { loginIfNeeded } from "../support/auth";
-import { ApplicationsListPage } from "../pages/ApplicationDetailsPage";
+import { ApplicationsListPage } from "../pages/ApplicationsListPage";
 
 describe("Unity Login and check data from CHEFS", () => {
   const page = new ApplicationsListPage();
@@ -171,13 +171,12 @@ describe("Unity Login and check data from CHEFS", () => {
     page.switchToGrantProgram("Default Grants Program");
   });
 
-  it("Tests the existence and functionality of the Submitted Date From and Submitted Date To filters", () => {
-    // Set date filters using page object methods
+  it("Tests the existence and functionality of the Quick Date Range filter", () => {
+    // Select "All time" from quick date range dropdown and verify table refreshes
     page
-      .setSubmittedFromDate("2022-01-01")
+      .selectQuickDateRange("alltime")
       .waitForTableRefresh()
-      .setSubmittedToDate(page.getTodayIsoLocal())
-      .waitForTableRefresh();
+      .verifyQuickDateRangeValue("alltime");
   });
 
   // With no rows selected verify the visibility of Filter, Export, Save View, and Columns.
@@ -196,7 +195,7 @@ describe("Unity Login and check data from CHEFS", () => {
       .verifyTableHasData()
       .selectMultipleRows([0, 1])
       .verifyActionBarExists()
-      .clickPaymentButton()
+      .clickPaymentButtonWithWait()
       .waitForPaymentModalVisible()
       .closePaymentModal()
       .verifyPaymentModalClosed();

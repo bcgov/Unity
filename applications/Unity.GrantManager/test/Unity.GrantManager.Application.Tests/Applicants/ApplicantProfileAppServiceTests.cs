@@ -1,8 +1,8 @@
 using Shouldly;
 using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applicants.ApplicantProfile;
-using Unity.GrantManager.Applicants.ProfileData;
+using Unity.GrantManager.ApplicantProfile;
+using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Applicants
         {
             ProfileId = Guid.NewGuid(),
             Subject = "testuser@idir",
-            TenantId = Guid.NewGuid(),
+            TenantId = Guid.Empty,
             Key = key
         };
 
@@ -37,7 +37,7 @@ namespace Unity.GrantManager.Applicants
             var request = CreateRequest(key);
 
             // Act
-            var result = await _service.GetApplicantProfileAsync(request);
+            var result = await WithUnitOfWorkAsync(() => _service.GetApplicantProfileAsync(request));
 
             // Assert
             result.ShouldNotBeNull();
@@ -60,7 +60,7 @@ namespace Unity.GrantManager.Applicants
             var request = CreateRequest(key);
 
             // Act
-            var result = await _service.GetApplicantProfileAsync(request);
+            var result = await WithUnitOfWorkAsync(() => _service.GetApplicantProfileAsync(request));
 
             // Assert
             result.Data.ShouldNotBeNull();
@@ -89,7 +89,7 @@ namespace Unity.GrantManager.Applicants
             var request = CreateRequest("contactinfo");
 
             // Act
-            var result = await _service.GetApplicantProfileAsync(request);
+            var result = await WithUnitOfWorkAsync(() => _service.GetApplicantProfileAsync(request));
 
             // Assert
             result.Data.ShouldNotBeNull();

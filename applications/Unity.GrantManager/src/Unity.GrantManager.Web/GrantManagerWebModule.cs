@@ -460,6 +460,7 @@ public class GrantManagerWebModule : AbpModule
                     Type = SecuritySchemeType.ApiKey,
                     Scheme = "ApiKeyScheme"
                 });
+                options.SchemaFilter<Swagger.ApplicantProfileDataSchemaFilter>();
             }
         );
     }
