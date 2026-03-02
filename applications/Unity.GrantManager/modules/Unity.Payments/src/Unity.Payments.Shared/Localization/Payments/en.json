@@ -6,6 +6,7 @@
 
     "Unity.Payments:Errors:ThresholdExceeded": "There are payments in this batch that require a third level of approval. Please remove them from this batch and add to another for the appropriate level of approval",
     "Unity.Payments:Errors:ZeroPayment": "Cannot submit a payment request for $0.00",
+    "Unity.Payments:Errors:MissingSupplierNumber": "Cannot submit a payment request without a supplier number",
     "Unity.Payments:Errors:ConfigurationExists": "Configuration already exitst",
     "Unity.Payments:Errors:ConfigurationDoesNotExist": "Configuration does not exits",
     "Unity.Payments:Errors:InvalidAccountCodingFiled": "Invalid account coding field {field} : {length}",

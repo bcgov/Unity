@@ -54,6 +54,12 @@ public class CreateModalModel : TenantManagementPageModel
         [Required]
         public string Directory { get; set; } = "IDIR";
 
+        public string Division { get; set; } = string.Empty;
+        public string Branch { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string CasClientCode { get; set; } = string.Empty;
+
+
         [Required]
         public string UserIdentifier { get; set; } = string.Empty;
     }

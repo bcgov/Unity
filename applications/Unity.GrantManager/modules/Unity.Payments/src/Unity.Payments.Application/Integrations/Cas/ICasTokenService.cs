@@ -1,9 +1,15 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
+using Microsoft.AspNetCore.Authorization;
+using Volo.Abp;
+
 namespace Unity.Payments.Integrations.Cas
 {
     public interface ICasTokenService : IApplicationService
     {
-        Task<string> GetAuthTokenAsync();
+        [AllowAnonymous]
+        [RemoteService(false)]
+        Task<string> GetAuthTokenAsync(Guid tenantId);
     }
 }

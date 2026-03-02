@@ -38,3 +38,6 @@
         <abp-table id="TenantsTable" striped-rows="false" class="nowrap"></abp-table>
     </abp-card-body>
 </abp-card>
+<script>
+    globalThis.casClientCodeHash = @Html.Raw(Json.Serialize(Model.CasClientCodeHash));
+</script>

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -31,7 +32,9 @@ public class GrantManagerDbContext :
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
 
+    public DbSet<ApplicantTenantMap> ApplicantTenantMaps { get; set; }
     public DbSet<DynamicUrl> DynamicUrls { get; set; }
+    public DbSet<CasClientCode> CasClientCodes { get; set; }
     public DbSet<Sector> Sectors { get; set; }
     public DbSet<SubSector> SubSectors { get; set; }
     public DbSet<EconomicRegion> EconomicRegion { get; set; }
@@ -92,6 +95,13 @@ public class GrantManagerDbContext :
         modelBuilder.AddQuartz(builder => builder.UsePostgreSql("qrtz_", null));
 
         /* Configure your own tables/entities inside here */
+        modelBuilder.Entity<CasClientCode>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "CasClientCodes",
+                GrantManagerConsts.DbSchema);    
+            b.ConfigureByConvention();
+        });
+
         modelBuilder.Entity<DynamicUrl>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "DynamicUrls",
@@ -157,6 +167,19 @@ public class GrantManagerDbContext :
 
             b.ConfigureByConvention();
         });
+
+        
+        modelBuilder.Entity<ApplicantTenantMap>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicantTenantMaps",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.HasIndex(x => x.OidcSubUsername);
+            b.HasIndex(x => new { x.OidcSubUsername, x.TenantId }).IsUnique();
+        });
+        
 
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
         foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))

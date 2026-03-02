@@ -8,6 +8,8 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications;
+using Unity.GrantManager.Controllers.Authentication;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Unity.GrantManager;
 
@@ -25,7 +27,10 @@ public class GrantManagerHttpApiModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var services = context.Services;
+
         ConfigureLocalization();
+        ConfigureFilters(services);
     }
 
     private void ConfigureLocalization()
@@ -38,5 +43,10 @@ public class GrantManagerHttpApiModule : AbpModule
                     typeof(AbpUiResource)
                 );
         });
+    }
+
+    private static void ConfigureFilters(IServiceCollection services)
+    {
+        services.AddScoped<ApiKeyAuthorizationFilter>();
     }
 }

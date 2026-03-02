@@ -37,3 +37,17 @@
     margin-bottom: -10px;
     padding-bottom: 0px !important;
 }
+
+.custom-date-range-container-div {
+    display: inline-block;
+    padding: 0px;
+    margin: 0px;
+}
+
+.quick-date-input {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: var(--bc-layout-margin-small) !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+}

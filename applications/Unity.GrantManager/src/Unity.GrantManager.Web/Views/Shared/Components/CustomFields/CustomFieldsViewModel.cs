@@ -16,6 +16,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
         [JsonRequired]
         public Guid ChefsFormVersionId { get; set; }
 
+        public bool? ChefsFormPublished { get; set; }
         public string? FormName { get; set; }
         public string? Version { get; set; }
 

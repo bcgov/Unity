@@ -216,6 +216,9 @@ function initializeDataTable(options) {
         externalSearchId = 'search',
         disableColumnSelect = false,
         listColumnDefs,
+        onStateSaveParams,//External hooks for save/load/loaded
+        onStateLoadParams,
+        onStateLoaded,
     } = options;
 
     // Process columns and visibility
@@ -314,14 +317,28 @@ function initializeDataTable(options) {
         processing: true,
         stateSave: true,
         stateDuration: 0,
+        externalSearchInputId: `#${externalSearchId}`,
+        onStateSaveParams,
+        onStateLoadParams,
+        onStateLoaded,
         stateSaveParams: function (settings, data) {
             let externalSearch = $(settings.oInit.externalSearchInputId);
             if (externalSearch.length) data.externalSearch = externalSearch.val();
+            
+            // Call custom stateSave hook if provided
+            if (typeof settings.oInit.onStateSaveParams === 'function') {
+                settings.oInit.onStateSaveParams(settings, data);
+            }
         },
         stateLoadParams: function (settings, data) {
             if (data.externalSearch) {
                 let externalSearch = $(settings.oInit.externalSearchInputId);
                 if (externalSearch.length) externalSearch.val(data.externalSearch);
+            }
+
+            // Call custom stateLoad hook if provided
+            if (typeof settings.oInit.onStateLoadParams === 'function') {
+                settings.oInit.onStateLoadParams(settings, data);
             }
         },
         stateLoaded: function (settings, data) {
@@ -359,6 +376,11 @@ function initializeDataTable(options) {
                         console.warn('Column adjustment failed in stateLoaded:', err); 
                     }
                 }
+            }
+
+            // Call custom loaded hook if provided
+            if (typeof settings.oInit.onStateLoaded === 'function') {
+                settings.oInit.onStateLoaded(dtApi, data);
             }
         },
     });

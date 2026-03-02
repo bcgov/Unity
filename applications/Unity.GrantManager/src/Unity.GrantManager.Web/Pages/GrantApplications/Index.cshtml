@@ -18,7 +18,6 @@
 @section scripts
 {
     <abp-script src="/libs/select2/js/select2.full.min.js" />
-    <abp-script src="/js/DateUtils.js" />
     <abp-script src="/Pages/GrantApplications/Index.js" />
 }
 
@@ -26,7 +25,7 @@
     <abp-style src="/Pages/GrantApplications/Index.css" />
 }
 
-<div class="container-fluid px-2 container-grant-application">
+<div class="container-fluid px-2 container-grant-application action-bar-date-controls">
     @await Component.InvokeAsync("ActionBar")
     <div class="application-scrollable-content">
         <abp-table id="GrantApplicationsTable"></abp-table>

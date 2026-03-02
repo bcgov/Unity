@@ -12,7 +12,8 @@ $(function () {
         'orgStatus',
         'organizationType',
         'status',
-        'redStop'
+        'redStop',
+        'creationTime'
     ];
 
     const defaultSortOrderColumn = {
@@ -455,6 +456,8 @@ $(function () {
                     text: "Reset to Default View",
                     action: function (e, dt, node, config)
                     {
+                        let dtInit = dt.init();
+                        let initialSortOrder = dtInit?.order ?? [];
                         dt.columns().visible(false);
 
                         // List of all columns not including default columns
@@ -482,7 +485,7 @@ $(function () {
                         $('#search, .custom-filter-input').val('');
                         dt.columns().search('');
                         dt.search('');
-                        dt.order(defaultSortOrderColumn).draw(); // Sort by creationTime descending
+                        dt.order(initialSortOrder).draw();
 
                         // Close the dropdown
                         dt.buttons('.grp-savedStates')

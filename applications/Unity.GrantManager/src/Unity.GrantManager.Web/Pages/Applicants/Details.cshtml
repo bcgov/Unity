@@ -62,8 +62,7 @@
                 @*-------- Submissions Section ---------*@
                 <abp-tab name="nav-submissions" title="Submissions">
                     <div class="w-100 px-2" id="SubmissionsWidget">
-                        <h6>Under Construction</h6>
-                        @*-------- await Component.InvokeAsync("ApplicantSubmissions", new { applicantId = Model.ApplicantId }) ---------*@
+                        @await Component.InvokeAsync("ApplicantSubmissions", new { applicantId = Model.ApplicantId })
                     </div>
                 </abp-tab>
                 @*-------- Submissions Section END ---------*@

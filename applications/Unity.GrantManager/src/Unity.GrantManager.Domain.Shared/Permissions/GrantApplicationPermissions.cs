@@ -40,9 +40,24 @@ namespace Unity.GrantManager.Permissions
             public const string AssignApplicant = Default + ".AssignApplicant";
         }
 
-        public static class AIReporting
+        public static class AI
         {
-            public const string Default = GroupName + ".AIReporting";
+            public const string GroupName = "AI";
+
+            public static class Reporting
+            {
+                public const string Default = GroupName + ".Reporting";
+            }
+
+            public static class ApplicationAnalysis
+            {
+                public const string Default = GroupName + ".ApplicationAnalysis";
+            }
+
+            public static class AttachmentSummary
+            {
+                public const string Default = GroupName + ".AttachmentSummary";
+            }
         }
 
         public static class Assignments
@@ -88,6 +103,22 @@ namespace Unity.GrantManager.Permissions
             public const string AddAdditionalContact = Default + ".AdditionalContact" + Operation.Create;
             public const string UpdateAdditionalContact = Default + ".AdditionalContact" + Operation.Update;
             public const string DeleteAdditionalContact = Default + ".AdditionalContact" + Operation.Delete;
+        }
+
+        public static class Payments
+        {
+            public const string Default = GroupName + ".Payments";
+            public const string Create = Default + ".Create";
+            public const string Edit = Default + ".Edit";
+            public const string Delete = Default + ".Delete";
+            
+            public static class PaymentRequests
+            {
+                public const string PaymentRequestDefault = Payments.Default + ".PaymentRequests";
+                public const string CreatePaymentRequest = Default + ".Create";
+                public const string EditPaymentRequest = Default + ".Edit";
+                public const string DeletePaymentRequest = Default + ".Delete";
+            }
         }
 
         public static string[] GetAll()

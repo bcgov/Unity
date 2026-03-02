@@ -124,6 +124,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<UpdateApplicantAddressDto, ApplicantAddress>()
             .ForMember(dest => dest.Postal, opt => opt.MapFrom(src => src.PostalCode))
             .IgnoreNullAndDefaultValues();
+
     }
 
     private static bool? ConvertIndigenousOrgIndToBool(string indigenousOrgInd)
@@ -145,6 +146,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             _ => null
         };
     }
+
 }
 
 // Extension methods for reusable mapping configurations

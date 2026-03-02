@@ -19,7 +19,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string Status { get; set; } = string.Empty;
     public int Probability { get; set; }
     public DateTime ProposalDate { get; set; }
-
+    public List<ApplicationLinksDto> ApplicationLinks { get; set; } = new();
     public string ApplicationName { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string EconomicRegion { get; set; } = string.Empty;

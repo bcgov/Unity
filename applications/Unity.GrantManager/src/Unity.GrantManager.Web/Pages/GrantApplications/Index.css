@@ -129,4 +129,26 @@ table.dataTable tbody tr {
     right: 0px !important;
 }
 
+.action-bar-date-controls .search-action-bar {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.action-bar-date-controls .date-input-filter-div {
+    margin-top: 10px;
+}
+
+.action-bar-date-controls .date-input-filter-div label.form-label {
+    font-size: 13.6px;
+    margin-bottom: 0.3rem;
+}
+
+.action-bar-date-controls #app_custom_buttons {
+    margin-top: 10px;
+}
+
+.action-bar-date-controls #dynamicButtonContainerId {
+    margin-top: 10px;
+}
+
 /**end**/

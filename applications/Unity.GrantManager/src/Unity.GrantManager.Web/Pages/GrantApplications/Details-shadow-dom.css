@@ -1,0 +1,106 @@
+/*
+ * Details-shadow-dom.css
+ * CSS rules for form.io submission rendering inside Shadow DOM
+ * This file is loaded inside the shadow root to style form.io content
+ */
+
+/* ===== Card Accordion Styling ===== */
+.card-header {
+    padding-bottom: 1.5rem !important;
+}
+
+.card-title {
+    font-weight: 600 !important;
+}
+
+/* Accordion arrow icon (collapsed state) */
+.card-header:not(.card-body .card-header)::before {
+    content: ' ';
+    display: block;
+    border-bottom: 1px solid #313132;
+    border-right: 1px solid #313132;
+    height: 10px;
+    width: 10px;
+    transform: rotate(45deg);
+    float: right !important;
+    transition: all 0.5s !important;
+}
+
+/* Accordion arrow icon (expanded state) */
+.card-header:not(.card-body .card-header).custom-active::before {
+    content: ' ';
+    display: block;
+    border-bottom: 1px solid #313132;
+    border-right: 1px solid #313132;
+    height: 10px;
+    width: 10px;
+    transform: rotate(-135deg);
+    float: right !important;
+    transition: all 0.5s !important;
+}
+
+/* Accordion body animation */
+.card-body {
+    transition: height 0.5s;
+    overflow: hidden;
+}
+
+.card-header.bg-default {
+    background-color: white !important;
+    margin-top: 1.2rem;
+}
+
+/* ===== Form.io Component Styling ===== */
+
+/* Bold labels in form.io components */
+.formio-component label {
+    font-weight: bold !important;
+}
+
+/* Hide nextTab components */
+[class^='formio-component-nextTab'] {
+    display: none;
+}
+
+/* Show textarea card bodies (override default hiding) */
+.formio-component-textarea div .card-body {
+    display: inherit !important;
+}
+
+/* Hide submit button */
+.formio-component-submit {
+    display: none;
+}
+
+/* Word break for editor content */
+.formio-editor-read-only-content {
+    word-break: normal !important;
+}
+
+/* ===== Disable Interactivity (Read-Only Mode) ===== */
+
+/* Disable all links */
+a {
+    pointer-events: none;
+    cursor: default;
+    text-decoration: none;
+    color: black;
+}
+
+/* Hide all buttons */
+button {
+    display: none;
+}
+
+/* ===== Form Validation ===== */
+
+/* Error label styling */
+form label.error {
+    color: #dc3545 !important;
+    font-size: 0.8em;
+}
+
+/* Hide calendar icon in input groups */
+.input-group-text:has(i.fa-calendar) {
+    display: none !important;
+}

@@ -252,11 +252,6 @@ namespace Unity.Payments.Suppliers
             return ObjectMapper.Map<Site, SiteDto>(updateSupplier.Sites.First(s => s.Id == siteId));
         }
 
-        public virtual async Task DeleteAsync(Guid id)
-        {
-            await supplierRepository.DeleteAsync(id);
-        }
-
         public SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId, PaymentGroup? defaultPaymentGroup = null)
         {
             var resolvedPaymentGroup = defaultPaymentGroup ?? PaymentGroup.EFT;
@@ -280,6 +275,14 @@ namespace Unity.Payments.Suppliers
                     SiteProtected = siteEto.SiteProtected,
                     LastUpdatedInCas = siteEto.LastUpdated
                 };
+        }
+
+        public async Task ClearCorrelationAsync(Guid supplierId)
+        {
+            var supplier = await supplierRepository.GetAsync(supplierId);
+            supplier.CorrelationId = Guid.Empty;
+            supplier.CorrelationProvider = string.Empty;
+            await supplierRepository.UpdateAsync(supplier);
         }
 
         private async Task<PaymentGroup> ResolveDefaultPaymentGroupForApplicantAsync(Guid applicantId, Guid? applicationId = null)

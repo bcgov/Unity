@@ -14,9 +14,8 @@ The project is in a reliable state and major changes are unlikely to happen.
         ├── Unity.NginxData/    - Nginx HTTP server and reference files
         ├── Unity.RabbitMQ/     - RabbitMQ message broker configuration
         └── Unity.RedisSentinel/- Redis Sentinel high-availability setup
-    database/                   - Database configuration and scripts
-    documentation/              - Solution documentation and assets
-    openshift/                  - OpenShift deployment files and configs
+    database/                   - Database configuration scripts
+    documentation/              - Solution documentation
     COMPLIANCE.yaml             - BCGov PIA/STRA compliance status
     CONTRIBUTING.md             - How to contribute
     LICENSE                     - License

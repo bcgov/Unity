@@ -166,12 +166,16 @@
         if (tinymce.get("EmailBody")) {
             tinymce.get("EmailBody").remove(); // remove existing instance
         }
+
         tinymce.init({
             license_key: 'gpl',
-            selector: `#EmailBody`,
+            selector: '#EmailBody',
             plugins: getPlugins(),
             toolbar: getToolbarOptions(),
-            statusbar: false,
+            resize: true,
+            statusbar: true,
+            elementpath: false,
+            branding: false,
             promotion: false,
             content_css: false,
             skin: false,
@@ -608,12 +612,16 @@
         if (tinymce.get("EmailBody")) {
             tinymce.get("EmailBody").remove(); // remove existing instance
         }
+
         tinymce.init({
             license_key: 'gpl',
-            selector: `#EmailBody`,
+            selector: '#EmailBody',
             plugins: getPlugins(),
             toolbar: getToolbarOptions(),
-            statusbar: false,
+            resize: true,
+            statusbar: true,
+            elementpath: false,
+            branding: false,
             promotion: false,
             content_css: false,
             skin: false,

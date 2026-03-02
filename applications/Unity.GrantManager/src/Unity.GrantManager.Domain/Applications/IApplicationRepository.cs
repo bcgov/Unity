@@ -26,5 +26,8 @@ namespace Unity.GrantManager.Applications
             DateTime? submittedToDate = null,
             string? searchTerm = null // optional search filter
         );
+
+        // Get applications by applicant ID
+        Task<List<Application>> GetByApplicantIdAsync(Guid applicantId);
     }
 }

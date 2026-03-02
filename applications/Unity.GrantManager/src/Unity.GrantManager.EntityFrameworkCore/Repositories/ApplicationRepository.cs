@@ -78,6 +78,7 @@ public class ApplicationRepository
             .Include(a => a.ApplicationTags!)
                 .ThenInclude(x => x.Tag)
             .Include(a => a.Owner)
+            .Include(a => a.ApplicationLinks)
             .Include(a => a.ApplicationAssignments!)
                 .ThenInclude(aa => aa.Assignee);
     }
@@ -116,6 +117,7 @@ public class ApplicationRepository
                 .ThenInclude(aa => aa.Assignee)
             .Include(a => a.Applicant)
             .Include(a => a.ApplicantAgent)
+            .Include(a => a.ApplicationLinks)
             .FirstOrDefaultAsync(a => a.Id == id);
     }
 
@@ -182,6 +184,16 @@ public class ApplicationRepository
         return await query
             .Skip(skipCount)
             .Take(maxResultCount)
+            .ToListAsync();
+    }
+
+    public async Task<List<Application>> GetByApplicantIdAsync(Guid applicantId)
+    {
+        var query = await BuildBaseQueryAsync();
+
+        return await query
+            .Where(a => a.ApplicantId == applicantId)
+            .OrderByDescending(a => a.SubmissionDate)
             .ToListAsync();
     }
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
 using System;
@@ -14,13 +15,14 @@ using Xunit;
 
 namespace Unity.GrantManager.Components
 {
-    public class SummaryWidgetTests : GrantManagerWebTestBase
+    [Collection(WebTestCollection.Name)]
+    public class SummaryWidgetTests
     {
         private readonly IAbpLazyServiceProvider lazyServiceProvider;
 
-        public SummaryWidgetTests()
+        public SummaryWidgetTests(WebTestFixture fixture)
         {            
-            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();            
+            lazyServiceProvider = fixture.Services.GetRequiredService<IAbpLazyServiceProvider>();            
         }
 
         [Fact]
