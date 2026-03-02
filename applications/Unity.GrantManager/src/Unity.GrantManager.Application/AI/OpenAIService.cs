@@ -54,15 +54,16 @@ namespace Unity.GrantManager.AI
             return Task.FromResult(true);
         }
 
-        public Task<string> GenerateCompletionAsync(AICompletionRequest request)
+        public async Task<AICompletionResponse> GenerateCompletionAsync(AICompletionRequest request)
         {
-            return GenerateSummaryAsync(
+            var content = await GenerateSummaryAsync(
                 request?.UserPrompt ?? string.Empty,
                 request?.SystemPrompt,
                 request?.MaxTokens ?? 150);
+            return new AICompletionResponse { Content = content };
         }
 
-        public Task<string> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
+        public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
         {
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schemaJson = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
@@ -77,11 +78,12 @@ namespace Unity.GrantManager.AI
             var formFieldConfiguration = $@"SCHEMA
 {schemaJson}";
 
-            return AnalyzeApplicationAsync(
+            var raw = await AnalyzeApplicationAsync(
                 applicationContent,
                 attachmentSummaries,
                 request.Rubric ?? string.Empty,
                 formFieldConfiguration);
+            return ParseApplicationAnalysisResponse(raw);
         }
 
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
@@ -207,12 +209,13 @@ RULES
             }
         }
 
-        public Task<string> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
+        public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
         {
-            return GenerateAttachmentSummaryAsync(
+            var summary = await GenerateAttachmentSummaryAsync(
                 request?.FileName ?? string.Empty,
                 request?.FileContent ?? Array.Empty<byte>(),
                 request?.ContentType ?? "application/octet-stream");
+            return new AttachmentSummaryResponse { Summary = summary };
         }
 
         public async Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric, string? formFieldConfiguration = null)
@@ -550,7 +553,7 @@ Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions
             }
         }
 
-        public Task<string> GenerateScoresheetSectionAnswersAsync(ScoresheetSectionRequest request)
+        public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAnswersAsync(ScoresheetSectionRequest request)
         {
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
@@ -559,11 +562,124 @@ Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions
                 .Select(a => $"{a.Name}: {a.Summary}")
                 .ToList();
 
-            return GenerateScoresheetSectionAnswersAsync(
+            var raw = await GenerateScoresheetSectionAnswersAsync(
                 dataJson,
                 attachmentSummaries,
                 sectionJson,
                 request.SectionName);
+            return ParseScoresheetSectionResponse(raw);
+        }
+
+        private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
+        {
+            var response = new ApplicationAnalysisResponse();
+
+            if (!TryParseJsonObjectFromResponse(raw, out var root))
+            {
+                return response;
+            }
+
+            if (root.TryGetProperty("overall_score", out var overallScore) && overallScore.ValueKind == JsonValueKind.String)
+            {
+                response.Rating = overallScore.GetString();
+            }
+
+            if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
+            {
+                response.Errors = ParseFindings(errors);
+            }
+
+            if (root.TryGetProperty("warnings", out var warnings) && warnings.ValueKind == JsonValueKind.Array)
+            {
+                response.Warnings = ParseFindings(warnings);
+            }
+
+            if (root.TryGetProperty("recommendations", out var recommendations) && recommendations.ValueKind == JsonValueKind.Array)
+            {
+                response.Summaries = ParseFindings(recommendations);
+            }
+
+            if (root.TryGetProperty("dismissed_items", out var dismissed) && dismissed.ValueKind == JsonValueKind.Array)
+            {
+                response.Dismissed = dismissed
+                    .EnumerateArray()
+                    .Select(item => item.ValueKind == JsonValueKind.String ? item.GetString() : null)
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Cast<string>()
+                    .ToList();
+            }
+
+            return response;
+        }
+
+        private static List<ApplicationAnalysisFinding> ParseFindings(JsonElement array)
+        {
+            var findings = new List<ApplicationAnalysisFinding>();
+            foreach (var item in array.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var id = item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                    ? idProp.GetString()
+                    : null;
+                var title = item.TryGetProperty("category", out var titleProp) && titleProp.ValueKind == JsonValueKind.String
+                    ? titleProp.GetString()
+                    : null;
+                var detail = item.TryGetProperty("message", out var detailProp) && detailProp.ValueKind == JsonValueKind.String
+                    ? detailProp.GetString()
+                    : null;
+
+                findings.Add(new ApplicationAnalysisFinding
+                {
+                    Id = id,
+                    Title = title,
+                    Detail = detail
+                });
+            }
+
+            return findings;
+        }
+
+        private static ScoresheetSectionResponse ParseScoresheetSectionResponse(string raw)
+        {
+            var response = new ScoresheetSectionResponse();
+            if (!TryParseJsonObjectFromResponse(raw, out var root))
+            {
+                return response;
+            }
+
+            foreach (var property in root.EnumerateObject())
+            {
+                if (property.Value.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var answer = property.Value.TryGetProperty("answer", out var answerProp)
+                    ? answerProp.Clone()
+                    : default;
+                var rationale = property.Value.TryGetProperty("rationale", out var rationaleProp) &&
+                                rationaleProp.ValueKind == JsonValueKind.String
+                    ? rationaleProp.GetString() ?? string.Empty
+                    : string.Empty;
+                var confidence = property.Value.TryGetProperty("confidence", out var confidenceProp) &&
+                                 confidenceProp.ValueKind == JsonValueKind.Number &&
+                                 confidenceProp.TryGetInt32(out var parsedConfidence)
+                    ? parsedConfidence
+                    : 0;
+
+                response.Answers[property.Name] = new ScoresheetSectionAnswer
+                {
+                    Answer = answer,
+                    Rationale = rationale,
+                    Confidence = confidence
+                };
+            }
+
+            return response;
         }
 
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
