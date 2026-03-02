@@ -16,6 +16,7 @@ namespace Unity.Flex.Reporting.Configuration
     public static partial class WorksheetFieldSchemaParser
     {
         private const string UnknownSectionName = "unknown_section";
+        private const string ComponentsPropertyName = "components";
 
         /// <summary>
         /// Parses a custom field and returns component metadata items.
@@ -399,7 +400,7 @@ namespace Unity.Flex.Reporting.Configuration
                 var root = document.RootElement;
 
                 // CHEFS form schemas have a "components" array at the root
-                if (root.TryGetProperty("components", out var componentsElement))
+                if (root.TryGetProperty(ComponentsPropertyName, out var componentsElement))
                 {
                     return FindDataGridInComponents(componentsElement, dataGridKey);
                 }
@@ -426,24 +427,20 @@ namespace Unity.Flex.Reporting.Configuration
 
             foreach (var component in componentsElement.EnumerateArray())
             {
-                // Check if this component matches the DataGrid key
+                // Check if this component matches the DataGrid key and has a type
                 if (component.TryGetProperty("key", out var keyElement) && 
-                    keyElement.GetString() == dataGridKey)
+                    keyElement.GetString() == dataGridKey &&
+                    component.TryGetProperty("type", out var typeElement))
                 {
-                    // Check if it's a DataGrid type
-                    if (component.TryGetProperty("type", out var typeElement))
+                    var type = typeElement.GetString();
+                    if (type == "datagrid" || type == "dataGrid")
                     {
-                        var type = typeElement.GetString();
-                        if (type == "datagrid" || type == "dataGrid")
-                        {
-                            // Extract columns from the DataGrid
-                            return ExtractColumnsFromDataGrid(component);
-                        }
+                        return ExtractColumnsFromDataGrid(component);
                     }
                 }
 
                 // Recursively search in nested components (for panels, columns, etc.)
-                if (component.TryGetProperty("components", out var nestedComponents))
+                if (component.TryGetProperty(ComponentsPropertyName, out var nestedComponents))
                 {
                     var result = FindDataGridInComponents(nestedComponents, dataGridKey);
                     if (result != null)
@@ -451,18 +448,33 @@ namespace Unity.Flex.Reporting.Configuration
                 }
 
                 // Also check columns property (for layout components)
-                if (component.TryGetProperty("columns", out var columnsElement) && 
-                    columnsElement.ValueKind == JsonValueKind.Array)
+                var layoutResult = FindDataGridInLayoutColumns(component, dataGridKey);
+                if (layoutResult != null)
+                    return layoutResult;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Searches for a DataGrid component within layout column components.
+        /// </summary>
+        /// <param name="component">The JSON element representing a layout component</param>
+        /// <param name="dataGridKey">The key of the DataGrid to find</param>
+        /// <returns>List of DataGrid column definitions, or null if not found</returns>
+        private static List<DataGridDefinitionColumn>? FindDataGridInLayoutColumns(JsonElement component, string dataGridKey)
+        {
+            if (!component.TryGetProperty("columns", out var columnsElement) || 
+                columnsElement.ValueKind != JsonValueKind.Array)
+                return null;
+
+            foreach (var column in columnsElement.EnumerateArray())
+            {
+                if (column.TryGetProperty(ComponentsPropertyName, out var columnComponents))
                 {
-                    foreach (var column in columnsElement.EnumerateArray())
-                    {
-                        if (column.TryGetProperty("components", out var columnComponents))
-                        {
-                            var result = FindDataGridInComponents(columnComponents, dataGridKey);
-                            if (result != null)
-                                return result;
-                        }
-                    }
+                    var result = FindDataGridInComponents(columnComponents, dataGridKey);
+                    if (result != null)
+                        return result;
                 }
             }
 
@@ -479,7 +491,7 @@ namespace Unity.Flex.Reporting.Configuration
             var columns = new List<DataGridDefinitionColumn>();
 
             // CHEFS DataGrid components have a "components" property that contains the column definitions
-            if (dataGridComponent.TryGetProperty("components", out var componentsElement) && 
+            if (dataGridComponent.TryGetProperty(ComponentsPropertyName, out var componentsElement) && 
                 componentsElement.ValueKind == JsonValueKind.Array)
             {
                 foreach (var columnComponent in componentsElement.EnumerateArray())

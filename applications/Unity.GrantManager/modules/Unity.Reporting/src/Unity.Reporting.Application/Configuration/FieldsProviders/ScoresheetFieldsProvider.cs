@@ -227,7 +227,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
         /// Used specifically for parsing stored mapping metadata to extract scoresheet information
         /// during change detection operations without requiring the full mapping object structure.
         /// </summary>
-        private class ScoresheetMapping
+        private sealed class ScoresheetMapping
         {
             /// <summary>
             /// Gets or sets the metadata information associated with the mapping.
