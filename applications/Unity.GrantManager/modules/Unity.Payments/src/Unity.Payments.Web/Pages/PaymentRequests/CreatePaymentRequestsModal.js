@@ -2,7 +2,7 @@
 
 
 function handleAccountCodingOverrideChange() {
-    // for all of the accountCoding Overide warnings, check if the selected value matches the data-account-coding-id, if it does show the warning, if not hide the warning
+    // For all accountCoding override warnings, hide the warning when no value is selected or when the selected value matches the element's data-account-coding-id; otherwise, show the warning
     let selectedValue = $('#AccountCodingSelect').val();
     $('.account-coding-override-warning').each(function () {
         let $warning = $(this);

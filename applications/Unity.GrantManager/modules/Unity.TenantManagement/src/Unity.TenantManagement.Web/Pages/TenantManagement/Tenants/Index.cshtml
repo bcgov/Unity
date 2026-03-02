@@ -35,7 +35,7 @@
 }
 <abp-card id="TenantsWrapper">
     <abp-card-body>
-        <input type="hidden" id="casClientCodeHashData" data-hash='@Html.Raw(Json.Serialize(Model.CasClientCodeHash))' />
+        <input type="hidden" id="casClientCodeHashData" data-hash='@Json.Serialize(Model.CasClientCodeHash)' />
         <abp-table id="TenantsTable" striped-rows="false" class="nowrap"></abp-table>
     </abp-card-body>
 </abp-card>

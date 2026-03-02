@@ -143,26 +143,16 @@
                                     }
                                     </h6>
                     @if (await PermissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.AccountCodingOverride))
-                    {                                    
-                        @foreach (Unity.Payments.Domain.AccountCodings.AccountCoding accountCoding in Model.AccountCodings)
+                    {
+                        if (item.AccountCodingId.HasValue && Model.AccountCodingDisplayMap.TryGetValue(item.AccountCodingId.Value, out var accountCodeDisplay))
                         {
-                            if (item.AccountCodingId == accountCoding.Id)
-                            {
-                                <abp-column size="_4">                                                                                    
-                                    <div class="form-control-plaintext" id="AccountCodingDisplay_@i">
-                                        <h6 class="single-payment-card-application-name mb-0">
-                                            <span class="fw-bold">
-                                                Account Code: 
-                                            </span>
-                                            <span class="fw-normal unt-form-label-primary nowrap">
-                                                @accountCoding.FullAccountCode()@(accountCoding.Id.ToString() == Model.DefaultAccountCodingId ? " (Default)" : "")
-                                            </span>
-
-                                        </h6>
-                                    </div>
-                                </abp-column>
-                            }
-                        }                                    
+                                <span class="ms-auto">
+                                    <h6 class="single-payment-card-application-name mb-0">
+                                        <span class="fw-bold">Account Code: </span>
+                                        <span class="fw-normal unt-form-label-primary nowrap">@accountCodeDisplay</span>
+                                    </h6>
+                                </span>
+                        }
                     }
                                 <abp-button onclick='removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
                                                 onkeydown='if(event.key==="Enter") removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'

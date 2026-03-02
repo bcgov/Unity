@@ -17,6 +17,8 @@ using Volo.Abp;
 using Unity.Payments.Enums;
 using Microsoft.Extensions.Logging;
 using Unity.Payments.Domain.AccountCodings;
+using Microsoft.AspNetCore.Authorization;
+using Unity.Payments.Permissions;
 
 
 namespace Unity.Payments.Web.Pages.Payments
@@ -43,6 +45,8 @@ namespace Unity.Payments.Web.Pages.Payments
         [BindProperty]
         public List<Domain.AccountCodings.AccountCoding> AccountCodings { get; set; } = [];
 
+        public Dictionary<Guid, string> AccountCodingDisplayMap { get; set; } = [];
+
         [BindProperty]
         public List<PaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
 
@@ -53,7 +57,7 @@ namespace Unity.Payments.Web.Pages.Payments
         public bool HasPaymentConfiguration { get; set; }
 
         [BindProperty]
-        public string? DefaultAccountCodingId { get; set; }        
+        public string? DefaultAccountCodingId { get; set; }
 
         [BindProperty]
         public string? AccountCodingOverride { get; set; }        
@@ -109,6 +113,10 @@ namespace Unity.Payments.Web.Pages.Payments
                 HasPaymentConfiguration = false;
             }
             AccountCodings = await accountCodingRepository.GetListAsync();
+            AccountCodingDisplayMap = AccountCodings.ToDictionary(
+                ac => ac.Id,
+                ac => ac.FullAccountCode() + (ac.Id.ToString() == DefaultAccountCodingId ? " (Default)" : "")
+            );
             var applications = await applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
 
             foreach (var application in applications)
@@ -117,7 +125,6 @@ namespace Unity.Payments.Web.Pages.Payments
 
                 // Grabs the Account Coding ID from the Application Form and if there is none then the Payment Configuration
                 // If neither exist then an error on the payment request will be shown
-                // New: Account coding override
                 Guid? accountCodingId = await paymentSettingsAppService.GetAccountCodingIdByApplicationIdAsync(application.Id);
 
                 // Load ApplicationForm with hierarchy information
@@ -349,18 +356,30 @@ namespace Unity.Payments.Web.Pages.Payments
                     "Cannot submit payment request: Supplier number is missing for one or more applications.");
             }
 
-            var payments = MapPaymentRequests();
+            bool hasOverridePermission = await AuthorizationService.IsGrantedAsync(PaymentsPermissions.Payments.AccountCodingOverride);
+            var payments = MapPaymentRequests(hasOverridePermission);
 
             await paymentRequestAppService.CreateAsync(payments);
 
             return NoContent();
         }
 
-        private List<CreatePaymentRequestDto> MapPaymentRequests()
+        private List<CreatePaymentRequestDto> MapPaymentRequests(bool hasOverridePermission)
         {
             var payments = new List<CreatePaymentRequestDto>();
 
             if (ApplicationPaymentRequestForm == null) return payments;
+
+            // Only apply the override if the user has the permission,
+            // a value was provided, and it parses to a valid non-empty GUID
+            Guid? accountCodingOverrideId = null;
+            if (hasOverridePermission
+                && !string.IsNullOrWhiteSpace(AccountCodingOverride)
+                && Guid.TryParse(AccountCodingOverride, out var overrideGuid)
+                && overrideGuid != Guid.Empty)
+            {
+                accountCodingOverrideId = overrideGuid;
+            }
 
             foreach (var payment in ApplicationPaymentRequestForm)
             {
@@ -377,9 +396,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     PayeeName = payment.ApplicantName ?? string.Empty,
                     SubmissionConfirmationCode = payment.SubmissionConfirmationCode ?? string.Empty,
                     CorrelationProvider = PaymentConsts.ApplicationCorrelationProvider,
-                    AccountCodingId = Guid.TryParse(AccountCodingOverride, out var overrideGuid)
-                        ? overrideGuid
-                        : payment.AccountCodingId,
+                    AccountCodingId = accountCodingOverrideId ?? payment.AccountCodingId
                 });
             }
 
