@@ -281,7 +281,7 @@ LOW: Application has significant gaps or risks across key rubric areas.
 
 OUTPUT
 {{
-  ""overall_score"": ""HIGH/MEDIUM/LOW"",
+  ""rating"": ""HIGH/MEDIUM/LOW"",
   ""warnings"": [
     {{
       ""category"": ""Brief summary of the warning"",
@@ -294,12 +294,13 @@ OUTPUT
       ""message"": ""Detailed error message with full context and explanation""
     }}
   ],
-  ""recommendations"": [
+  ""summaries"": [
     {{
       ""category"": ""Brief summary of the recommendation"",
       ""message"": ""Detailed recommendation with specific actionable guidance""
     }}
-  ]
+  ],
+  ""dismissed"": []
 }}
 
 RULES
@@ -315,7 +316,7 @@ RULES
 - Do not provide applicant-facing advice.
 - Do not mention rubric section names in findings.
 - If no findings exist, return empty arrays.
-- overall_score must be HIGH, MEDIUM, or LOW.
+- rating must be HIGH, MEDIUM, or LOW.
 - Return values exactly as specified in OUTPUT.
 - Do not return keys outside OUTPUT.
 - Return valid JSON only.
@@ -353,9 +354,11 @@ Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, ret
 
                     foreach (var property in jsonDoc.RootElement.EnumerateObject())
                     {
-                        if (property.Name == "errors" || property.Name == "warnings")
+                        var outputPropertyName = property.Name;
+
+                        if (outputPropertyName == AIJsonKeys.Errors || outputPropertyName == AIJsonKeys.Warnings)
                         {
-                            writer.WritePropertyName(property.Name);
+                            writer.WritePropertyName(outputPropertyName);
                             writer.WriteStartArray();
 
                             foreach (var item in property.Value.EnumerateArray())
@@ -378,14 +381,21 @@ Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, ret
                         }
                         else
                         {
+                            if (outputPropertyName != property.Name)
+                            {
+                                writer.WritePropertyName(outputPropertyName);
+                                property.Value.WriteTo(writer);
+                                continue;
+                            }
+
                             property.WriteTo(writer);
                         }
                     }
 
-                    // Add dismissed_items array if not present
-                    if (!jsonDoc.RootElement.TryGetProperty("dismissed_items", out _))
+                    // Add dismissed array if not present.
+                    if (!jsonDoc.RootElement.TryGetProperty(AIJsonKeys.Dismissed, out _))
                     {
-                        writer.WritePropertyName("dismissed_items");
+                        writer.WritePropertyName(AIJsonKeys.Dismissed);
                         writer.WriteStartArray();
                         writer.WriteEndArray();
                     }
@@ -579,9 +589,9 @@ Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions
                 return response;
             }
 
-            if (root.TryGetProperty("overall_score", out var overallScore) && overallScore.ValueKind == JsonValueKind.String)
+            if (TryGetStringProperty(root, AIJsonKeys.Rating, out var rating))
             {
-                response.Rating = overallScore.GetString();
+                response.Rating = rating;
             }
 
             if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
@@ -594,12 +604,12 @@ Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions
                 response.Warnings = ParseFindings(warnings);
             }
 
-            if (root.TryGetProperty("recommendations", out var recommendations) && recommendations.ValueKind == JsonValueKind.Array)
+            if (root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) && summaries.ValueKind == JsonValueKind.Array)
             {
-                response.Summaries = ParseFindings(recommendations);
+                response.Summaries = ParseFindings(summaries);
             }
 
-            if (root.TryGetProperty("dismissed_items", out var dismissed) && dismissed.ValueKind == JsonValueKind.Array)
+            if (root.TryGetProperty(AIJsonKeys.Dismissed, out var dismissed) && dismissed.ValueKind == JsonValueKind.Array)
             {
                 response.Dismissed = dismissed
                     .EnumerateArray()
@@ -610,6 +620,18 @@ Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions
             }
 
             return response;
+        }
+
+        private static bool TryGetStringProperty(JsonElement root, string propertyName, out string? value)
+        {
+            value = null;
+            if (!root.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            value = property.GetString();
+            return !string.IsNullOrWhiteSpace(value);
         }
 
         private static List<ApplicationAnalysisFinding> ParseFindings(JsonElement array)
