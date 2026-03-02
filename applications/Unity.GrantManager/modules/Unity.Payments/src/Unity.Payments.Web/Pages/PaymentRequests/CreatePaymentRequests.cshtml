@@ -143,17 +143,14 @@
                                         <span>&nbsp;&nbsp;(Parent Id: <strong>@item.ParentReferenceNo</strong>)</span>
                                     }
                                     </h6>
-                    @if (canOverride)
+                    @if (canOverride && item.AccountCodingId.HasValue && Model.AccountCodingDisplayMap.TryGetValue(item.AccountCodingId.Value, out var accountCodeDisplay))
                     {
-                        if (item.AccountCodingId.HasValue && Model.AccountCodingDisplayMap.TryGetValue(item.AccountCodingId.Value, out var accountCodeDisplay))
-                        {
                                 <span class="ms-auto">
                                     <h6 class="single-payment-card-application-name mb-0">
                                         <span class="fw-bold">Account Code: </span>
                                         <span class="fw-normal unt-form-label-primary nowrap">@accountCodeDisplay</span>
                                     </h6>
                                 </span>
-                        }
                     }
                                 <abp-button onclick='removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
                                                 onkeydown='if(event.key==="Enter") removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
