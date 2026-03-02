@@ -41,9 +41,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
         public List<Guid> SelectedApplicationIds { get; set; } = [];
 
-
-        [BindProperty]
-        public List<Domain.AccountCodings.AccountCoding> AccountCodings { get; set; } = [];
+        public List<Domain.AccountCodings.AccountCoding> AccountCodings { get; private set; } = [];
 
         public Dictionary<Guid, string> AccountCodingDisplayMap { get; set; } = [];
 
