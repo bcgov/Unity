@@ -4,12 +4,13 @@ using Unity.Payments.Enums;
 using Unity.Payments.PaymentTags;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.Payments.PaymentRequests
 {
 #pragma warning disable CS8618
     [Serializable]
-    public class PaymentRequestDto : AuditedEntityDto<Guid>
+    public class PaymentRequestDto : AuditedEntityDto<Guid>, IMultiTenant
     {
         public string InvoiceNumber { get; set; }
         public decimal Amount { get; set; }
@@ -45,6 +46,8 @@ namespace Unity.Payments.PaymentRequests
         public Guid? FsbNotificationEmailLogId { get; set; }
         public DateTime? FsbNotificationSentDate { get; set; }
         public string? FsbApNotified { get; set; }
+
+        public Guid? TenantId { get; set; }
 
         public static explicit operator PaymentRequestDto(CreatePaymentRequestDto v)
         {

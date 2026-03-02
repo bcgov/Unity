@@ -113,10 +113,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             {
                 question.IsHumanConfirmed = false; // Mark as AI generated
 
-                // Handle enhanced AI response format with answer, citation, and confidence
+                // Handle AI response format with answer, rationale, and confidence.
                 if (aiAnswerValue.ValueKind == JsonValueKind.Object)
                 {
-                    // New format with citations and confidence scores
+                    // New format with rationale and confidence
                     if (aiAnswerValue.TryGetProperty("answer", out var answerProp))
                     {
                         var rawAnswer = answerProp.ToString();
@@ -131,14 +131,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                             question.Answer = rawAnswer;
                         }
                     }
-                    if (aiAnswerValue.TryGetProperty("citation", out var citationProp))
+                    if (aiAnswerValue.TryGetProperty("rationale", out var rationaleProp))
                     {
-                        question.AICitation = citationProp.ToString();
+                        question.AICitation = rationaleProp.ToString();
                     }
                     if (aiAnswerValue.TryGetProperty("confidence", out var confidenceProp) &&
-                        confidenceProp.TryGetInt32(out var confidenceScore))
+                        confidenceProp.TryGetInt32(out var confidence))
                     {
-                        question.AIConfidence = confidenceScore;
+                        question.AIConfidence = Math.Clamp(confidence, 0, 100);
                     }
                 }
                 else
