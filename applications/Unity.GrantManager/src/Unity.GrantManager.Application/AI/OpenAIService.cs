@@ -54,6 +54,38 @@ namespace Unity.GrantManager.AI
             return Task.FromResult(true);
         }
 
+        public async Task<AICompletionResponse> GenerateCompletionAsync(AICompletionRequest request)
+        {
+            var content = await GenerateSummaryAsync(
+                request?.UserPrompt ?? string.Empty,
+                request?.SystemPrompt,
+                request?.MaxTokens ?? 150);
+            return new AICompletionResponse { Content = content };
+        }
+
+        public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
+        {
+            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
+            var schemaJson = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
+
+            var attachmentSummaries = request.Attachments
+                .Select(a => $"{a.Name}: {a.Summary}")
+                .ToList();
+
+            var applicationContent = $@"DATA
+{dataJson}";
+
+            var formFieldConfiguration = $@"SCHEMA
+{schemaJson}";
+
+            var raw = await AnalyzeApplicationAsync(
+                applicationContent,
+                attachmentSummaries,
+                request.Rubric ?? string.Empty,
+                formFieldConfiguration);
+            return ParseApplicationAnalysisResponse(raw);
+        }
+
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
         {
             if (string.IsNullOrEmpty(ApiKey))
@@ -177,6 +209,15 @@ RULES
             }
         }
 
+        public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
+        {
+            var summary = await GenerateAttachmentSummaryAsync(
+                request?.FileName ?? string.Empty,
+                request?.FileContent ?? Array.Empty<byte>(),
+                request?.ContentType ?? "application/octet-stream");
+            return new AttachmentSummaryResponse { Summary = summary };
+        }
+
         public async Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric, string? formFieldConfiguration = null)
         {
             if (string.IsNullOrEmpty(ApiKey))
@@ -240,7 +281,7 @@ LOW: Application has significant gaps or risks across key rubric areas.
 
 OUTPUT
 {{
-  ""overall_score"": ""HIGH/MEDIUM/LOW"",
+  ""rating"": ""HIGH/MEDIUM/LOW"",
   ""warnings"": [
     {{
       ""category"": ""Brief summary of the warning"",
@@ -253,12 +294,13 @@ OUTPUT
       ""message"": ""Detailed error message with full context and explanation""
     }}
   ],
-  ""recommendations"": [
+  ""summaries"": [
     {{
       ""category"": ""Brief summary of the recommendation"",
       ""message"": ""Detailed recommendation with specific actionable guidance""
     }}
-  ]
+  ],
+  ""dismissed"": []
 }}
 
 RULES
@@ -274,7 +316,7 @@ RULES
 - Do not provide applicant-facing advice.
 - Do not mention rubric section names in findings.
 - If no findings exist, return empty arrays.
-- overall_score must be HIGH, MEDIUM, or LOW.
+- rating must be HIGH, MEDIUM, or LOW.
 - Return values exactly as specified in OUTPUT.
 - Do not return keys outside OUTPUT.
 - Return valid JSON only.
@@ -312,9 +354,11 @@ Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, ret
 
                     foreach (var property in jsonDoc.RootElement.EnumerateObject())
                     {
-                        if (property.Name == "errors" || property.Name == "warnings")
+                        var outputPropertyName = property.Name;
+
+                        if (outputPropertyName == AIJsonKeys.Errors || outputPropertyName == AIJsonKeys.Warnings)
                         {
-                            writer.WritePropertyName(property.Name);
+                            writer.WritePropertyName(outputPropertyName);
                             writer.WriteStartArray();
 
                             foreach (var item in property.Value.EnumerateArray())
@@ -337,14 +381,21 @@ Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, ret
                         }
                         else
                         {
+                            if (outputPropertyName != property.Name)
+                            {
+                                writer.WritePropertyName(outputPropertyName);
+                                property.Value.WriteTo(writer);
+                                continue;
+                            }
+
                             property.WriteTo(writer);
                         }
                     }
 
-                    // Add dismissed_items array if not present
-                    if (!jsonDoc.RootElement.TryGetProperty("dismissed_items", out _))
+                    // Add dismissed array if not present.
+                    if (!jsonDoc.RootElement.TryGetProperty(AIJsonKeys.Dismissed, out _))
                     {
-                        writer.WritePropertyName("dismissed_items");
+                        writer.WritePropertyName(AIJsonKeys.Dismissed);
                         writer.WriteStartArray();
                         writer.WriteEndArray();
                     }
@@ -510,6 +561,147 @@ Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions
                 _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", sectionName);
                 return "{}";
             }
+        }
+
+        public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAnswersAsync(ScoresheetSectionRequest request)
+        {
+            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
+            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
+
+            var attachmentSummaries = request.Attachments
+                .Select(a => $"{a.Name}: {a.Summary}")
+                .ToList();
+
+            var raw = await GenerateScoresheetSectionAnswersAsync(
+                dataJson,
+                attachmentSummaries,
+                sectionJson,
+                request.SectionName);
+            return ParseScoresheetSectionResponse(raw);
+        }
+
+        private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
+        {
+            var response = new ApplicationAnalysisResponse();
+
+            if (!TryParseJsonObjectFromResponse(raw, out var root))
+            {
+                return response;
+            }
+
+            if (TryGetStringProperty(root, AIJsonKeys.Rating, out var rating))
+            {
+                response.Rating = rating;
+            }
+
+            if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
+            {
+                response.Errors = ParseFindings(errors);
+            }
+
+            if (root.TryGetProperty("warnings", out var warnings) && warnings.ValueKind == JsonValueKind.Array)
+            {
+                response.Warnings = ParseFindings(warnings);
+            }
+
+            if (root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) && summaries.ValueKind == JsonValueKind.Array)
+            {
+                response.Summaries = ParseFindings(summaries);
+            }
+
+            if (root.TryGetProperty(AIJsonKeys.Dismissed, out var dismissed) && dismissed.ValueKind == JsonValueKind.Array)
+            {
+                response.Dismissed = dismissed
+                    .EnumerateArray()
+                    .Select(item => item.ValueKind == JsonValueKind.String ? item.GetString() : null)
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Cast<string>()
+                    .ToList();
+            }
+
+            return response;
+        }
+
+        private static bool TryGetStringProperty(JsonElement root, string propertyName, out string? value)
+        {
+            value = null;
+            if (!root.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            value = property.GetString();
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
+        private static List<ApplicationAnalysisFinding> ParseFindings(JsonElement array)
+        {
+            var findings = new List<ApplicationAnalysisFinding>();
+            foreach (var item in array.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var id = item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                    ? idProp.GetString()
+                    : null;
+                var title = item.TryGetProperty("category", out var titleProp) && titleProp.ValueKind == JsonValueKind.String
+                    ? titleProp.GetString()
+                    : null;
+                var detail = item.TryGetProperty("message", out var detailProp) && detailProp.ValueKind == JsonValueKind.String
+                    ? detailProp.GetString()
+                    : null;
+
+                findings.Add(new ApplicationAnalysisFinding
+                {
+                    Id = id,
+                    Title = title,
+                    Detail = detail
+                });
+            }
+
+            return findings;
+        }
+
+        private static ScoresheetSectionResponse ParseScoresheetSectionResponse(string raw)
+        {
+            var response = new ScoresheetSectionResponse();
+            if (!TryParseJsonObjectFromResponse(raw, out var root))
+            {
+                return response;
+            }
+
+            foreach (var property in root.EnumerateObject())
+            {
+                if (property.Value.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var answer = property.Value.TryGetProperty("answer", out var answerProp)
+                    ? answerProp.Clone()
+                    : default;
+                var rationale = property.Value.TryGetProperty("rationale", out var rationaleProp) &&
+                                rationaleProp.ValueKind == JsonValueKind.String
+                    ? rationaleProp.GetString() ?? string.Empty
+                    : string.Empty;
+                var confidence = property.Value.TryGetProperty("confidence", out var confidenceProp) &&
+                                 confidenceProp.ValueKind == JsonValueKind.Number &&
+                                 confidenceProp.TryGetInt32(out var parsedConfidence)
+                    ? parsedConfidence
+                    : 0;
+
+                response.Answers[property.Name] = new ScoresheetSectionAnswer
+                {
+                    Answer = answer,
+                    Rationale = rationale,
+                    Confidence = confidence
+                };
+            }
+
+            return response;
         }
 
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
