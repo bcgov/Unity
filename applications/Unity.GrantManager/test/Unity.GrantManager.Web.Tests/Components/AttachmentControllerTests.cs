@@ -13,7 +13,8 @@ using Xunit;
 
 namespace Unity.GrantManager.Components
 {
-    public class AttachmentControllerTests : GrantManagerWebTestBase
+    [Collection(WebTestCollection.Name)]
+    public class AttachmentControllerTests
     {
         [Fact]
         public async Task UploadApplicationAttachments_InvalidInput_ReturnsBadRequest()
