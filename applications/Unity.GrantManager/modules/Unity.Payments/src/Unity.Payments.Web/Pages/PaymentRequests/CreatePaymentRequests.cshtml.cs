@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Unity.Payments.Suppliers;
 using Unity.Payments.PaymentRequests;
 using System.Threading.Tasks;
@@ -15,10 +16,14 @@ using Unity.GrantManager.ApplicationForms;
 using Volo.Abp;
 using Unity.Payments.Enums;
 using Microsoft.Extensions.Logging;
+using Unity.Payments.Domain.AccountCodings;
+
 
 namespace Unity.Payments.Web.Pages.Payments
 {
+    [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Primary constructor for dependency injection")]
     public class CreatePaymentRequestsModel(
+        IAccountCodingRepository accountCodingRepository,
         IGrantApplicationAppService applicationService,
         IPaymentRequestAppService paymentRequestAppService,
         IPaymentConfigurationAppService paymentConfigurationAppService,
@@ -34,13 +39,24 @@ namespace Unity.Payments.Web.Pages.Payments
 
         public List<Guid> SelectedApplicationIds { get; set; } = [];
 
+
+        [BindProperty]
+        public List<Domain.AccountCodings.AccountCoding> AccountCodings { get; set; } = [];
+
         [BindProperty]
         public List<PaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
 
         [BindProperty]
         public bool DisableSubmit { get; set; }
+
         [BindProperty]
         public bool HasPaymentConfiguration { get; set; }
+
+        [BindProperty]
+        public string? DefaultAccountCodingId { get; set; }        
+
+        [BindProperty]
+        public string? AccountCodingOverride { get; set; }        
 
         [BindProperty]
         public string BatchNumberDisplay { get; set; } = string.Empty;
@@ -85,13 +101,14 @@ namespace Unity.Payments.Web.Pages.Payments
             if (paymentConfiguration != null)
             {
                 HasPaymentConfiguration = true;
+                DefaultAccountCodingId = paymentConfiguration.DefaultAccountCodingId != Guid.Empty ? paymentConfiguration.DefaultAccountCodingId.ToString() : null;
             }
             else
             {
                 DisableSubmit = true;
                 HasPaymentConfiguration = false;
             }
-
+            AccountCodings = await accountCodingRepository.GetListAsync();
             var applications = await applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
 
             foreach (var application in applications)
@@ -100,6 +117,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
                 // Grabs the Account Coding ID from the Application Form and if there is none then the Payment Configuration
                 // If neither exist then an error on the payment request will be shown
+                // New: Account coding override
                 Guid? accountCodingId = await paymentSettingsAppService.GetAccountCodingIdByApplicationIdAsync(application.Id);
 
                 // Load ApplicationForm with hierarchy information
@@ -359,7 +377,9 @@ namespace Unity.Payments.Web.Pages.Payments
                     PayeeName = payment.ApplicantName ?? string.Empty,
                     SubmissionConfirmationCode = payment.SubmissionConfirmationCode ?? string.Empty,
                     CorrelationProvider = PaymentConsts.ApplicationCorrelationProvider,
-                    AccountCodingId = payment.AccountCodingId,
+                    AccountCodingId = Guid.TryParse(AccountCodingOverride, out var overrideGuid)
+                        ? overrideGuid
+                        : payment.AccountCodingId,
                 });
             }
 

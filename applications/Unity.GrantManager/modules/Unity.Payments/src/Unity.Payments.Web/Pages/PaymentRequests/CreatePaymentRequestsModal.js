@@ -1,5 +1,19 @@
 ﻿let createPaymentNumberFormatter = createNumberFormatter();
 
+
+function handleAccountCodingOverrideChange() {
+    // for all of the accountCoding Overide warnings, check if the selected value matches the data-account-coding-id, if it does show the warning, if not hide the warning
+    let selectedValue = $('#AccountCodingSelect').val();
+    $('.account-coding-override-warning').each(function () {
+        let $warning = $(this);
+        if (selectedValue === '' || $warning.data('account-coding-id') === selectedValue) {
+            $warning.addClass('hidden');
+        } else {
+            $warning.removeClass('hidden');
+        }
+    });
+}
+
 function removeApplicationPaymentRequest(applicationId) {
     let $container = $('#' + applicationId);
     let $parentGroup = $container.closest('.parent-child-group');
@@ -43,8 +57,8 @@ function checkMaxValueRequest(applicationId, input, amountRemaining) {
         validateParentChildAmounts(applicationId);
     } else {
         // Use existing remaining amount validation
-        let enteredValue = parseFloat(input.value.replace(/,/g, ''));
-        let remainingErrorId = '#column_' + applicationId + '_remaining_error';
+        let enteredValue = Number.parseFloat(input.value.replace(/,/g, ''));
+        let remainingErrorId = '#error_column_' + applicationId;
         if (amountRemaining < enteredValue) {
             $(remainingErrorId).css('display', 'block');
         } else {
@@ -81,7 +95,7 @@ function validateAllPaymentAmounts() {
             );
             let enteredValue =
                 parseFloat(amountInput.val().replace(/,/g, '')) || 0;
-            let remainingErrorId = `#column_${correlationId}_remaining_error`;
+            let remainingErrorId = `#error_column_${correlationId}`;
 
             if (enteredValue > remainingAmount) {
                 $(remainingErrorId).css('display', 'block');
@@ -217,7 +231,7 @@ function validateParentChildAmounts(correlationId) {
             let amountInput = $(
                 `input[name="ApplicationPaymentRequestForm[${itemIndex}].Amount"]`
             );
-            let amount = parseFloat(amountInput.val().replace(/,/g, '')) || 0;
+            let amount = Number.parseFloat(amountInput.val().replace(/,/g, '')) || 0;
             groupTotal += amount;
         }
     });
@@ -247,3 +261,9 @@ function validateParentChildAmounts(correlationId) {
         groupWrapper.removeClass('has-error');
     }
 }
+
+$(function () {
+    $('.unity-currency-input').maskMoney();
+    // Validate payment amounts on initial page load
+    validateAllPaymentAmounts();
+});

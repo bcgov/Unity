@@ -2,6 +2,7 @@
     let l = abp.localization.getResource('AbpTenantManagement');
     let _tenantAppService = unity.tenantManagement.tenant;
     let _userImportService = unity.grantManager.identity.userImport;
+    let _casClientCodeHash = {};
 
     let _editModal = new abp.ModalManager(
         abp.appPath + 'TenantManagement/Tenants/EditModal'
@@ -117,7 +118,7 @@
                         render: function (data, type, row) {
                             if (type === 'display') {
                                 const code = row.casClientCode || '';
-                                const displayValue = globalThis.casClientCodeHash?.[code] || '';
+                                const displayValue = _casClientCodeHash[code] || '';
                                 return displayValue;
                             }
                             return data;
@@ -252,6 +253,14 @@
 
     $(function () {
         let _$wrapper = $('#TenantsWrapper');
+        
+        // Parse CAS client code hash from hidden field data attribute
+        let casClientCodeHashEl = document.getElementById('casClientCodeHashData');
+        try {
+            _casClientCodeHash = casClientCodeHashEl ? JSON.parse(casClientCodeHashEl.dataset.hash || '{}') : {};
+        } catch (e) {
+            console.warn('Failed to parse CAS client code hash', e);
+        }
 
         _dataTable = _$wrapper.find('table').DataTable(
             abp.libs.datatables.normalizeConfiguration({

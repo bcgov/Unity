@@ -2,7 +2,9 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @using Unity.Payments.Localization
 @using Microsoft.Extensions.Localization
-
+@using Unity.Payments.Permissions
+@using Volo.Abp.Authorization.Permissions;
+@inject IPermissionChecker PermissionChecker
 @model Unity.Payments.Web.Pages.Payments.CreatePaymentRequestsModel
 
 @inject IStringLocalizer<PaymentsResource> L
@@ -76,6 +78,24 @@
                                 <input type="text" class="form-control unity-currency-input" id="TotalAmount" value="@Model.TotalAmount" disabled />
                             </abp-column>
                         </abp-row>
+                    @if (await PermissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.AccountCodingOverride))
+                    {
+                        <abp-row class="m-0 p-1">
+                            <abp-column size="_8">
+                                <label for="AccountCodingSelect" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:AccountCodingOverride"]</label>
+                                <select id="AccountCodingSelect" name="AccountCodingOverride" 
+                                    onchange="handleAccountCodingOverrideChange(this)"
+                                    class="form-control">
+                                    <option value="">Select @L["ApplicationPaymentRequest:AccountCodingOverride"]</option>
+                                    @foreach (Unity.Payments.Domain.AccountCodings.AccountCoding accountCoding in Model.AccountCodings)
+                                    {
+                                        <option value="@accountCoding.Id">@accountCoding.FullAccountCodeWithDescription()@(accountCoding.Id.ToString() == Model.DefaultAccountCodingId ? " (Default)" : "" )</option>
+                                    }
+                                </select>
+                            </abp-column>
+                        </abp-row>
+                    }
+
                     </abp-card-body>
                 </abp-card>
             <abp-card class="pt-0">
@@ -117,12 +137,35 @@
                                 <abp-column size="_12" class="d-flex justify-content-between align-items-center px-1">
                                     <h6 class="single-payment-card-application-name mb-0">
                                         <span class="fw-bold">@item.ApplicantName/@item.InvoiceNumber</span>
-                                        @if (!string.IsNullOrEmpty(item.ParentReferenceNo))
-                                        {
-                                            <span>&nbsp;&nbsp;(Parent Id: <strong>@item.ParentReferenceNo</strong>)</span>
-                                        }
+                                    @if (!string.IsNullOrEmpty(item.ParentReferenceNo))
+                                    {
+                                        <span>&nbsp;&nbsp;(Parent Id: <strong>@item.ParentReferenceNo</strong>)</span>
+                                    }
                                     </h6>
-                                    <abp-button onclick='removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
+                    @if (await PermissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.AccountCodingOverride))
+                    {                                    
+                        @foreach (Unity.Payments.Domain.AccountCodings.AccountCoding accountCoding in Model.AccountCodings)
+                        {
+                            if (item.AccountCodingId == accountCoding.Id)
+                            {
+                                <abp-column size="_4">                                                                                    
+                                    <div class="form-control-plaintext" id="AccountCodingDisplay_@i">
+                                        <h6 class="single-payment-card-application-name mb-0">
+                                            <span class="fw-bold">
+                                                Account Code: 
+                                            </span>
+                                            <span class="fw-normal unt-form-label-primary nowrap">
+                                                @accountCoding.FullAccountCode()@(accountCoding.Id.ToString() == Model.DefaultAccountCodingId ? " (Default)" : "")
+                                            </span>
+
+                                        </h6>
+                                    </div>
+                                </abp-column>
+                            }
+                        }                                    
+                    }
+                                <abp-button onclick='removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
+                                                onkeydown='if(event.key==="Enter") removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
                                                 size="Small"
                                                 icon-type="Other"
                                                 class="m-0 p-0 remove-single-payment"
@@ -162,8 +205,10 @@
                                 <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" alt="@item.Description" disabled="@item.DisableFields"/>
                                 </abp-column>
-
-                                <abp-column size="_12" class="payment-error-column" id="@($"column_{item.CorrelationId}_remaining_error")" style="display: none;">
+                                <abp-column size="_12"
+                                            class="payment-error-column"
+                                            id="error_column_@($"{item.CorrelationId}")"
+                                            style="display: none;">
                                     <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @item.RemainingAmount</span>
                                 </abp-column>
 
@@ -173,6 +218,12 @@
                                     <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @item.ErrorList[j]</span>
                                 </abp-column>
                                 }
+                                <span class="warning-text account-coding-override-warning nowrap hidden" data-account-coding-id="@Model.ApplicationPaymentRequestForm[i].AccountCodingId">
+                                    <span><span class="payment-note-prefix">Note</span>
+                                    <div style="display: inline-block; margin-left: 14px;">
+                                        @L["ApplicationPaymentRequest:AccountCodingOverrideWarning"]                                                    
+                                    </div>
+                                </span>                                
 
                             </abp-row>
                         </div>
@@ -217,12 +268,3 @@
     </abp-modal>
 </form>
 
-<script defer>
-    (function () {
-        if (window.jQuery) {
-            $('.unity-currency-input').maskMoney();
-            // Validate payment amounts on initial page load
-            validateAllPaymentAmounts();
-        }
-    })();
-</script>

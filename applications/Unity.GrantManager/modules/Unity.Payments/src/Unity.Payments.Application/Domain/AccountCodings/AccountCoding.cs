@@ -4,6 +4,7 @@ using System;
 using Volo.Abp.Domain.Entities.Auditing;
 using System.Linq;
 using Volo.Abp.MultiTenancy;
+using Unity.Payments.PaymentRequests;
 
 namespace Unity.Payments.Domain.AccountCodings
 {
@@ -15,6 +16,16 @@ namespace Unity.Payments.Domain.AccountCodings
         public string ServiceLine { get; private set; }
         public string Stob { get; private set; }
         public string ProjectNumber { get; private set; }
+
+        public string FullAccountCode()
+        {
+            return AccountCodingFormatter.Format(this);             
+        }
+
+        public string FullAccountCodeWithDescription()
+        {
+            return AccountCodingFormatter.FormatWithDescription(this);             
+        }        
 
         public string? Description { get; private set; }
 
