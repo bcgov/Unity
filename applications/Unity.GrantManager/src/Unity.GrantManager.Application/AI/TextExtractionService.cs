@@ -29,12 +29,12 @@ namespace Unity.GrantManager.AI
             _logger = logger;
         }
 
-        public async Task<string> ExtractTextAsync(string fileName, byte[] fileContent, string contentType)
+        public Task<string> ExtractTextAsync(string fileName, byte[] fileContent, string contentType)
         {
             if (fileContent == null || fileContent.Length == 0)
             {
                 _logger.LogDebug("File content is empty for {FileName}", fileName);
-                return string.Empty;
+                return Task.FromResult(string.Empty);
             }
 
             try
@@ -50,14 +50,14 @@ namespace Unity.GrantManager.AI
                     extension == ".json" ||
                     extension == ".xml")
                 {
-                    rawText = await ExtractTextFromTextFileAsync(fileContent);
-                    return NormalizeAndLimitText(rawText, fileName);
+                    rawText = ExtractTextFromTextFile(fileContent);
+                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
                 if (normalizedContentType.Contains("pdf") || extension == ".pdf")
                 {
                     rawText = ExtractTextFromPdfFile(fileName, fileContent);
-                    return NormalizeAndLimitText(rawText, fileName);
+                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
                 if (normalizedContentType.Contains("word") ||
@@ -69,11 +69,11 @@ namespace Unity.GrantManager.AI
                     if (extension == ".docx" || normalizedContentType.Contains("officedocument.wordprocessingml"))
                     {
                         rawText = ExtractTextFromWordDocx(fileContent);
-                        return NormalizeAndLimitText(rawText, fileName);
+                        return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                     }
 
                     _logger.LogDebug("Legacy .doc extraction is not supported for {FileName}", fileName);
-                    return string.Empty;
+                    return Task.FromResult(string.Empty);
                 }
 
                 if (normalizedContentType.Contains("excel") ||
@@ -82,21 +82,21 @@ namespace Unity.GrantManager.AI
                     extension == ".xlsx")
                 {
                     rawText = ExtractTextFromExcelFile(fileName, fileContent);
-                    return NormalizeAndLimitText(rawText, fileName);
+                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
                 _logger.LogDebug("No text extraction available for content type {ContentType} with extension {Extension}",
                     contentType, extension);
-                return string.Empty;
+                return Task.FromResult(string.Empty);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error extracting text from {FileName}", fileName);
-                return string.Empty;
+                return Task.FromResult(string.Empty);
             }
         }
 
-        private async Task<string> ExtractTextFromTextFileAsync(byte[] fileContent)
+        private string ExtractTextFromTextFile(byte[] fileContent)
         {
             try
             {
@@ -113,7 +113,7 @@ namespace Unity.GrantManager.AI
                     _logger.LogDebug("Truncated text content to {MaxLength} characters", MaxExtractedTextLength);
                 }
 
-                return await Task.FromResult(text);
+                return text;
             }
             catch (Exception ex)
             {
