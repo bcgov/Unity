@@ -52,8 +52,21 @@ $(function () {
             {
                 title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header',
                 render: function (data, type, row) {
-                    return `<button class="btn btn-sm btn-outline-secondary funding-edit-btn me-1" data-id="${row.id}">Edit</button>` +
-                           `<button class="btn btn-sm btn-outline-danger funding-delete-btn" data-id="${row.id}">Delete</button>`;
+                    let $wrapper = $('<div>').addClass('d-flex align-items-center gap-2');
+
+                    let $editBtn = $('<button>')
+                        .addClass('btn btn-sm edit-button px-0 funding-edit-btn')
+                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .append($('<i>').addClass('fl fl-edit'));
+
+                    let $deleteBtn = $('<button>')
+                        .addClass('btn btn-link p-0 funding-delete-btn')
+                        .attr({ 'title': 'Delete Funding History', 'data-id': row.id })
+                        .css({ 'color': '#0066cc', 'text-decoration': 'none' })
+                        .append($('<i>').addClass('fa fa-times'));
+
+                    $wrapper.append($editBtn).append($deleteBtn);
+                    return $wrapper.prop('outerHTML');
                 }
             }
         ].map(function (col, i) { col.index = i; col.targets = [i]; return col; });
@@ -64,13 +77,26 @@ $(function () {
             { title: 'Year', data: 'year', name: 'year', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             { title: 'Issue Heading', data: 'issueHeading', name: 'issueHeading', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             { title: 'Issue Description', data: 'issueDescription', name: 'issueDescription', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
-            { title: 'Resolved', data: 'resolved', name: 'resolved', className: 'data-table-header', render: (d) => d === true ? 'Yes' : d === false ? 'No' : nullPlaceholder },
+            { title: 'Resolved', data: 'resolved', name: 'resolved', className: 'data-table-header', render: (d) => d === true ? 'Yes' : 'No' },
             { title: 'Resolution Note', data: 'resolutionNote', name: 'resolutionNote', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             {
                 title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header',
                 render: function (data, type, row) {
-                    return `<button class="btn btn-sm btn-outline-secondary issue-edit-btn me-1" data-id="${row.id}">Edit</button>` +
-                           `<button class="btn btn-sm btn-outline-danger issue-delete-btn" data-id="${row.id}">Delete</button>`;
+                    let $wrapper = $('<div>').addClass('d-flex align-items-center gap-2');
+
+                    let $editBtn = $('<button>')
+                        .addClass('btn btn-sm edit-button px-0 issue-edit-btn')
+                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .append($('<i>').addClass('fl fl-edit'));
+
+                    let $deleteBtn = $('<button>')
+                        .addClass('btn btn-link p-0 issue-delete-btn')
+                        .attr({ 'title': 'Delete Issue Tracking', 'data-id': row.id })
+                        .css({ 'color': '#0066cc', 'text-decoration': 'none' })
+                        .append($('<i>').addClass('fa fa-times'));
+
+                    $wrapper.append($editBtn).append($deleteBtn);
+                    return $wrapper.prop('outerHTML');
                 }
             }
         ].map(function (col, i) { col.index = i; col.targets = [i]; return col; });
@@ -90,8 +116,21 @@ $(function () {
             {
                 title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header',
                 render: function (data, type, row) {
-                    return `<button class="btn btn-sm btn-outline-secondary audit-edit-btn me-1" data-id="${row.id}">Edit</button>` +
-                           `<button class="btn btn-sm btn-outline-danger audit-delete-btn" data-id="${row.id}">Delete</button>`;
+                    let $wrapper = $('<div>').addClass('d-flex align-items-center gap-2');
+
+                    let $editBtn = $('<button>')
+                        .addClass('btn btn-sm edit-button px-0 audit-edit-btn')
+                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .append($('<i>').addClass('fl fl-edit'));
+
+                    let $deleteBtn = $('<button>')
+                        .addClass('btn btn-link p-0 audit-delete-btn')
+                        .attr({ 'title': 'Delete Audit History', 'data-id': row.id })
+                        .css({ 'color': '#0066cc', 'text-decoration': 'none' })
+                        .append($('<i>').addClass('fa fa-times'));
+
+                    $wrapper.append($editBtn).append($deleteBtn);
+                    return $wrapper.prop('outerHTML');
                 }
             }
         ].map(function (col, i) { col.index = i; col.targets = [i]; return col; });
@@ -198,6 +237,10 @@ $(function () {
         dynamicButtonContainerId: 'auditHistoryDynamicButtons'
     });
 
+    if (auditHistoryTable && typeof auditHistoryTable.externalSearch === 'function') {
+        auditHistoryTable.externalSearch('#audit-history-search', { delay: 300 });
+    }
+
     // ── Modal result callbacks ─────────────────────────────────────────────────
 
     createFundingModal.onResult(function () {
@@ -232,48 +275,87 @@ $(function () {
 
     // ── Edit / Delete — delegated handlers on table containers ────────────────
 
-    $('#FundingHistoryTable').on('click', '.funding-edit-btn', function () {
-        editFundingModal.open({ id: $(this).data('id') });
+    $('#FundingHistoryTable').on('click', 'td button.funding-edit-btn', function (event) {
+        event.stopPropagation();
+        let rowData = fundingHistoryTable.row(event.target.closest('tr')).data();
+        editFundingModal.open({ id: rowData.id });
     });
 
-    $('#FundingHistoryTable').on('click', '.funding-delete-btn', function () {
-        const id = $(this).data('id');
-        abp.message.confirm('Are you sure you want to delete this funding history record?', function (confirmed) {
-            if (confirmed) {
-                unity.grantManager.applicantProfile.applicantHistory.deleteFundingHistory(id)
-                    .done(function () { fundingHistoryTable.ajax.reload(); abp.notify.success('Record deleted.'); })
-                    .fail(function () { abp.notify.error('Failed to delete record.'); });
+    $('#FundingHistoryTable').on('click', '.funding-delete-btn', function (e) {
+        e.preventDefault();
+        let id = $(this).data('id');
+        abp.message.confirm(
+            'Are you sure you want to delete this funding history record?',
+            'Delete Funding History',
+            function (isConfirmed) {
+                if (isConfirmed) {
+                    unity.grantManager.applicantProfile.applicantHistory.deleteFundingHistory(id)
+                        .then(function () {
+                            abp.notify.success('Record deleted.');
+                            fundingHistoryTable.ajax.reload();
+                        })
+                        .catch(function () {
+                            abp.notify.error('Failed to delete record.');
+                            fundingHistoryTable.ajax.reload();
+                        });
+                }
             }
-        });
+        );
     });
 
-    $('#IssueTrackingTable').on('click', '.issue-edit-btn', function () {
-        editIssueModal.open({ id: $(this).data('id') });
+    $('#IssueTrackingTable').on('click', 'td button.issue-edit-btn', function (event) {
+        event.stopPropagation();
+        let rowData = issueTrackingTable.row(event.target.closest('tr')).data();
+        editIssueModal.open({ id: rowData.id });
     });
 
-    $('#IssueTrackingTable').on('click', '.issue-delete-btn', function () {
-        const id = $(this).data('id');
-        abp.message.confirm('Are you sure you want to delete this issue tracking record?', function (confirmed) {
-            if (confirmed) {
-                unity.grantManager.applicantProfile.applicantHistory.deleteIssueTracking(id)
-                    .done(function () { issueTrackingTable.ajax.reload(); abp.notify.success('Record deleted.'); })
-                    .fail(function () { abp.notify.error('Failed to delete record.'); });
+    $('#IssueTrackingTable').on('click', '.issue-delete-btn', function (e) {
+        e.preventDefault();
+        let id = $(this).data('id');
+        abp.message.confirm(
+            'Are you sure you want to delete this issue tracking record?',
+            'Delete Issue Tracking',
+            function (isConfirmed) {
+                if (isConfirmed) {
+                    unity.grantManager.applicantProfile.applicantHistory.deleteIssueTracking(id)
+                        .then(function () {
+                            abp.notify.success('Record deleted.');
+                            issueTrackingTable.ajax.reload();
+                        })
+                        .catch(function () {
+                            abp.notify.error('Failed to delete record.');
+                            issueTrackingTable.ajax.reload();
+                        });
+                }
             }
-        });
+        );
     });
 
-    $('#AuditHistoryTable').on('click', '.audit-edit-btn', function () {
-        editAuditModal.open({ id: $(this).data('id') });
+    $('#AuditHistoryTable').on('click', 'td button.audit-edit-btn', function (event) {
+        event.stopPropagation();
+        let rowData = auditHistoryTable.row(event.target.closest('tr')).data();
+        editAuditModal.open({ id: rowData.id });
     });
 
-    $('#AuditHistoryTable').on('click', '.audit-delete-btn', function () {
-        const id = $(this).data('id');
-        abp.message.confirm('Are you sure you want to delete this audit history record?', function (confirmed) {
-            if (confirmed) {
-                unity.grantManager.applicantProfile.applicantHistory.deleteAuditHistory(id)
-                    .done(function () { auditHistoryTable.ajax.reload(); abp.notify.success('Record deleted.'); })
-                    .fail(function () { abp.notify.error('Failed to delete record.'); });
+    $('#AuditHistoryTable').on('click', '.audit-delete-btn', function (e) {
+        e.preventDefault();
+        let id = $(this).data('id');
+        abp.message.confirm(
+            'Are you sure you want to delete this audit history record?',
+            'Delete Audit History',
+            function (isConfirmed) {
+                if (isConfirmed) {
+                    unity.grantManager.applicantProfile.applicantHistory.deleteAuditHistory(id)
+                        .then(function () {
+                            abp.notify.success('Record deleted.');
+                            auditHistoryTable.ajax.reload();
+                        })
+                        .catch(function () {
+                            abp.notify.error('Failed to delete record.');
+                            auditHistoryTable.ajax.reload();
+                        });
+                }
             }
-        });
+        );
     });
 });

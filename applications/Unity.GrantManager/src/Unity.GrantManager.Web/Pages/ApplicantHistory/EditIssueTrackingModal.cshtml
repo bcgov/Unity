@@ -5,7 +5,7 @@
     Layout = null;
 }
 
-<form method="post">
+<form method="post" asp-page="/ApplicantHistory/EditIssueTrackingModal" id="EditIssueTrackingForm">
     <abp-modal>
         <abp-modal-header title="Edit Issue Tracking Record"></abp-modal-header>
         <abp-modal-body>
@@ -15,7 +15,7 @@
             <div class="mb-3">
                 <label class="form-label" for="IssueTrackingForm_Year">Year</label>
                 <input type="text" id="IssueTrackingForm_Year" name="IssueTrackingForm.Year"
-                       class="form-control numeric-mask" inputmode="numeric"
+                       class="form-control" inputmode="numeric" maxlength="4"
                        value="@Model.IssueTrackingForm?.Year" />
             </div>
 
@@ -34,9 +34,9 @@
             <div class="mb-3">
                 <label class="form-label d-block">Resolved</label>
                 <div class="switch-container">
-                    <div class="px-3 form-check unt-form-switch form-switch">
+                    <div class="form-check unt-form-switch form-switch">
                         <input class="form-check-input" type="checkbox" id="IssueTrackingForm_Resolved"
-                               name="IssueTrackingForm.Resolved"
+                               name="IssueTrackingForm.Resolved" value="true"
                                @(Model.IssueTrackingForm?.Resolved == true ? "checked" : "") />
                         <label class="form-check-label" for="IssueTrackingForm_Resolved">Resolved</label>
                     </div>
@@ -55,3 +55,13 @@
         </abp-modal-footer>
     </abp-modal>
 </form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('#IssueTrackingForm_Year').on('input', function () {
+                $(this).val($(this).val().replace(/\D/g, '').slice(0, 4));
+            });
+        }
+    })();
+</script>

@@ -71,12 +71,13 @@
             </div>
         </section>
 
-        @* ── Audit History ── (no search bar per mockup) *@
+        @* ── Audit History ── *@
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Audit History</h6>
             </div>
-            <div class="history-section__toolbar history-section__toolbar--no-search">
+            <div class="history-section__toolbar">
+                <input type="search" id="audit-history-search" class="tbl-search" placeholder="Search" />
                 <div id="auditHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="AuditHistoryTable" hoverable-rows="true" class="w-100"></abp-table>
