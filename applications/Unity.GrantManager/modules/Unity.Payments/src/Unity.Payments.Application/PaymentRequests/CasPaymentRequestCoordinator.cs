@@ -92,7 +92,7 @@ namespace Unity.Payments.PaymentRequests
                     InvoiceNumber = paymentRequest.InvoiceNumber,
                     SupplierNumber = paymentRequest.SupplierNumber,
                     SiteNumber = paymentRequest.Site?.Number ?? string.Empty,
-                    TenantId = _currentTenant.Id!.Value
+                    TenantId = paymentRequest.TenantId ?? _currentTenant.Id!.Value
                 };
 
                 await _paymentQueueService.SendPaymentToReconciliationQueueAsync(reconcilePaymentMessage);
