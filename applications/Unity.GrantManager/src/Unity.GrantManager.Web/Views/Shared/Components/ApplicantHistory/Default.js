@@ -43,14 +43,18 @@ $(function () {
     function getFundingHistoryColumns() {
         return [
             { title: 'Grant Category', data: 'grantCategory', name: 'grantCategory', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
-            { title: 'Funding Year', data: 'fundingYear', name: 'fundingYear', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
-            { title: 'Renewed Funding', data: 'renewedFunding', name: 'renewedFunding', className: 'data-table-header', render: (d) => d === true ? 'Yes' : 'No' },
+            { title: 'Funding Year', data: 'fundingYear', name: 'fundingYear', className: 'data-table-header', width: '80px', render: (d) => d ?? nullPlaceholder },
+            { title: 'Renewed Funding', data: 'renewedFunding', name: 'renewedFunding', className: 'data-table-header', width: '110px', render: (d) => d === true ? 'Yes' : 'No' },
             { title: 'Approved Amount', data: 'approvedAmount', name: 'approvedAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             { title: 'Reconsideration Amount', data: 'reconsiderationAmount', name: 'reconsiderationAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             { title: 'Total Grant Amount', data: 'totalGrantAmount', name: 'totalGrantAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
-            { title: 'Notes', data: 'fundingNotes', name: 'fundingNotes', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             {
-                title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header',
+                title: 'Notes', data: 'fundingNotes', name: 'fundingNotes', className: 'data-table-header', width: '200px',
+                createdCell: function (td) { $(td).css('min-width', '200px'); },
+                render: (d) => d ?? nullPlaceholder
+            },
+            {
+                title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header', width: '70px',
                 render: function (data, type, row) {
                     let $wrapper = $('<div>').addClass('d-flex align-items-center gap-2');
 
@@ -74,13 +78,17 @@ $(function () {
 
     function getIssueTrackingColumns() {
         return [
-            { title: 'Year', data: 'year', name: 'year', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
+            { title: 'Year', data: 'year', name: 'year', className: 'data-table-header', width: '80px', render: (d) => d ?? nullPlaceholder },
             { title: 'Issue Heading', data: 'issueHeading', name: 'issueHeading', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             { title: 'Issue Description', data: 'issueDescription', name: 'issueDescription', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
-            { title: 'Resolved', data: 'resolved', name: 'resolved', className: 'data-table-header', render: (d) => d === true ? 'Yes' : 'No' },
-            { title: 'Resolution Note', data: 'resolutionNote', name: 'resolutionNote', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
+            { title: 'Resolved', data: 'resolved', name: 'resolved', className: 'data-table-header', width: '80px', render: (d) => d === true ? 'Yes' : 'No' },
             {
-                title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header',
+                title: 'Resolution Note', data: 'resolutionNote', name: 'resolutionNote', className: 'data-table-header', width: '200px',
+                createdCell: function (td) { $(td).css('min-width', '200px'); },
+                render: (d) => d ?? nullPlaceholder
+            },
+            {
+                title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header', width: '70px',
                 render: function (data, type, row) {
                     let $wrapper = $('<div>').addClass('d-flex align-items-center gap-2');
 
@@ -113,12 +121,12 @@ $(function () {
                         return luxon.DateTime.fromISO(d, {
                             locale: abp.localization.currentCulture.name,
                         }).toUTC().toLocaleString();
-                    } catch (e) { return d; }
+                    } catch (e) { console.warn('Audit date parse error:', e); return d; }
                 }
             },
             { title: 'Audit Note', data: 'auditNote', name: 'auditNote', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             {
-                title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header',
+                title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header', width: '70px',
                 render: function (data, type, row) {
                     let $wrapper = $('<div>').addClass('d-flex align-items-center gap-2');
 
