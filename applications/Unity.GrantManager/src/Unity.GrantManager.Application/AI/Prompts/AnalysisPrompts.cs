@@ -2,52 +2,88 @@ namespace Unity.GrantManager.AI
 {
     internal static class AnalysisPrompts
     {
-        public const string DefaultRubric = @"ELIGIBILITY REQUIREMENTS: Project aligns with program objectives; Applicant is an eligible entity; Budget is reasonable and justified; Timeline is realistic.
-COMPLETENESS CHECKS: Required information is present; Supporting materials are provided where applicable; Description is clear.
-FINANCIAL REVIEW: Requested amount is within limits; Budget matches scope; Matching funds or contributions are identified.
-RISK ASSESSMENT: Applicant capacity; Feasibility; Compliance considerations; Delivery risks.
-QUALITY INDICATORS: Clear objectives; Defined beneficiaries; Appropriate approach; Long-term sustainability.";
-
         public const string ScoreRules = @"HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
 MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
 LOW: Application has significant gaps or risks across key rubric areas.";
 
+        public const string SeverityRules = @"ERROR: Issue that would likely prevent the application from being approved.
+WARNING: Issue that could negatively affect the application's approval.
+RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
+
         public const string OutputTemplate = @"{
-  ""overall_score"": ""HIGH/MEDIUM/LOW"",
+  ""rating"": ""HIGH/MEDIUM/LOW"",
   ""warnings"": [
     {
       ""category"": ""Brief summary of the warning"",
-      ""message"": ""Detailed warning message with full context and explanation"",
-      ""severity"": ""WARNING""
+      ""message"": ""Detailed warning message with full context and explanation""
     }
   ],
   ""errors"": [
     {
       ""category"": ""Brief summary of the error"",
-      ""message"": ""Detailed error message with full context and explanation"",
-      ""severity"": ""ERROR""
+      ""message"": ""Detailed error message with full context and explanation""
     }
   ],
-  ""recommendations"": [
+  ""summaries"": [
     {
       ""category"": ""Brief summary of the recommendation"",
       ""message"": ""Detailed recommendation with specific actionable guidance""
     }
-  ]
+  ],
+  ""dismissed"": []
 }";
 
-        public const string Rules = @"Important: The 'category' field should be a concise summary (3-6 words) that captures the essence of the issue, while the 'message' field should contain the detailed explanation.";
+        public const string Rules = @"- Use only SCHEMA, DATA, ATTACHMENTS, and RUBRIC as evidence.
+- Do not invent fields, documents, requirements, or facts.
+- Treat missing or empty values as findings only when they weaken rubric evidence.
+- Prefer material issues; avoid nitpicking.
+- Each error/warning/recommendation must describe one concrete issue or consideration and why it matters.
+- Use 3-6 words for category.
+- Each message must be 1-2 complete sentences.
+- Each message must be grounded in concrete evidence from provided inputs.
+- If attachment evidence is used, reference the attachment explicitly in the message.
+- Do not provide applicant-facing advice.
+- Do not mention rubric section names in findings.
+- If no findings exist, return empty arrays.
+- rating must be HIGH, MEDIUM, or LOW.
+- Return values exactly as specified in OUTPUT.
+- Do not return keys outside OUTPUT.
+- Return valid JSON only.
+- Return plain JSON only (no markdown).";
 
         public static readonly string SystemPrompt = PromptHeader.Build(
-            "You are an expert grant application reviewer for the BC Government.",
-            @"Conduct a thorough, comprehensive analysis across all rubric categories. Identify substantive issues, concerns, and opportunities for improvement.
+            "You are an expert grant analyst assistant for human reviewers.",
+            "Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, return review findings.");
 
-Classify findings based on their impact on the application's evaluation and fundability:
-- ERRORS: Important missing information, significant gaps in required content, compliance issues, or major concerns affecting eligibility
-- WARNINGS: Areas needing clarification, moderate issues, or concerns that should be addressed
+        public static string BuildUserPrompt(
+            string schemaJson,
+            string dataJson,
+            string attachmentsJson,
+            string rubric)
+        {
+            return $@"SCHEMA
+{schemaJson}
 
-Evaluate the quality, clarity, and appropriateness of all application content. Be thorough but fair - identify real issues while avoiding nitpicking.
+DATA
+{dataJson}
 
-Respond only with valid JSON in the exact format requested.");
+ATTACHMENTS
+{attachmentsJson}
+
+RUBRIC
+{rubric}
+
+SEVERITY
+{SeverityRules}
+
+SCORE
+{ScoreRules}
+
+OUTPUT
+{OutputTemplate}
+
+RULES
+{Rules}";
+        }
     }
 }

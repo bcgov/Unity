@@ -4,38 +4,58 @@ namespace Unity.GrantManager.AI
     {
         public static readonly string SectionSystemPrompt = PromptHeader.Build(
             "You are an expert grant application reviewer for the BC Government.",
-            @"Analyze the provided application and generate appropriate answers for the scoresheet section questions based on the application content.
-Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
-Always provide citations that reference specific parts of the application content to support your answers.
-Be honest about your confidence level - if information is missing or unclear, reflect this in a lower confidence score.
-Respond only with valid JSON in the exact format requested.");
+            "Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions in SECTION.");
 
         public const string SectionOutputTemplate = @"{
   ""<question_id>"": {
     ""answer"": ""<string | number>"",
-    ""citation"": ""<evidence-based rationale>"",
+    ""rationale"": ""<evidence-based rationale>"",
     ""confidence"": 85
   }
 }";
 
-        public const string SectionRules = @"Please analyze this grant application and provide appropriate answers for each question in the requested section only.
+        public const string SectionRules = @"- Use only DATA and ATTACHMENTS as evidence.
+- Do not invent missing application details.
+- Return exactly one answer object per question ID in SECTION.questions.
+- Do not omit any question IDs from SECTION.questions.
+- Do not add keys that are not question IDs from SECTION.questions.
+- Use RESPONSE as the output contract and fill every placeholder value.
+- Each answer object must include: answer, rationale, confidence.
+- answer type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
+- For yes/no questions, answer must be exactly ""Yes"" or ""No"".
+- For numeric questions, answer must be a numeric value within the allowed range.
+- For select list questions, answer must be the selected availableOptions.number encoded as a string.
+- For select list questions, never return option label text (for example: ""Yes"", ""No"", or ""N/A""); return the option number string.
+- For text and text area questions, answer must be concise, grounded in evidence, and non-empty.
+- rationale must be 1-2 complete sentences grounded in concrete DATA/ATTACHMENTS evidence.
+- For every question, rationale must justify both the selected answer and confidence level based on evidence strength.
+- If evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
+- confidence must be an integer from 0 to 100.
+- Confidence reflects certainty in the selected answer given available evidence, not application quality.
+- Return values exactly as specified in RESPONSE.
+- Do not return keys outside RESPONSE.
+- Return valid JSON only.
+- Return plain JSON only (no markdown).";
 
-For each question, provide:
-1. Your answer based on the application content
-2. A brief cited description (1-2 sentences) explaining your reasoning with specific references to the application content
-3. A confidence score from 0-100 indicating how confident you are in your answer based on available information
+        public static string BuildSectionUserPrompt(
+            string applicationContent,
+            string attachmentSummariesText,
+            string sectionPayloadJson)
+        {
+            return $@"DATA
+{applicationContent}
 
-Guidelines for answers:
-- For numeric questions, provide a numeric value within the specified range
-- For yes/no questions, provide either 'Yes' or 'No'
-- For text questions, provide a concise, relevant response
-- For select list questions, respond with ONLY the number from the 'number' field (1, 2, 3, etc.) of your chosen option. NEVER return 0 - the lowest valid answer is 1.
-- For text area questions, provide a detailed but concise response
-- Base your confidence score on how clearly the application content supports your answer
+ATTACHMENTS
+- {attachmentSummariesText}
 
-Do not return any markdown formatting, just the JSON by itself";
+SECTION
+{sectionPayloadJson}
+
+RESPONSE
+{SectionOutputTemplate}
+
+RULES
+{SectionRules}";
+        }
     }
 }
-
-
-

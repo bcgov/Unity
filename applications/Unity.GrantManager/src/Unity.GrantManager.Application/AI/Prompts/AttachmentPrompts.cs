@@ -6,7 +6,22 @@ namespace Unity.GrantManager.AI
             "You are a professional grant analyst for the BC Government.",
             "Produce a concise reviewer-facing summary of the provided attachment context.");
 
-        public const string Prompt = @"Please analyze this document and provide a concise summary of its content, purpose, and key information, for use by your fellow grant analysts. It should be 1-2 sentences long and about 46 tokens.";
+        public const string OutputSection = @"OUTPUT
+- Plain text only
+- 1-2 complete sentences";
+
+        public const string RulesSection = @"RULES
+- Use only the provided attachment context as evidence.
+- If text content is present, summarize the actual content.
+- If text content is missing or empty, provide a conservative metadata-based summary.
+- Do not invent missing details.
+- Keep the summary specific, concrete, and reviewer-facing.
+- Return plain text only (no markdown, bullets, or JSON).";
+
+        public static string BuildUserPrompt(string attachmentPayloadJson)
+        {
+            return $@"ATTACHMENT
+{attachmentPayloadJson}";
+        }
     }
 }
-
