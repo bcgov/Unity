@@ -1,4 +1,4 @@
-﻿$(function () {
+$(function () {
     // Check if createNumberFormatter exists
     if (typeof createNumberFormatter !== 'function') {
         console.error('createNumberFormatter is not defined. Ensure table-utils.js is loaded before Index.js');
@@ -374,6 +374,7 @@
     }
 
     function initializeDataTableAndEvents() {
+        let initialLoad = true;
         dataTable = initializeDataTable({
             dt,
             defaultVisibleColumns,
@@ -418,9 +419,12 @@
                 }
             },
             onStateLoaded: function (dtApi, data) {
-                if (data?.refreshTableWithDates) {
+                // This needs to only reload when clicking on the load state not on initial page load
+                // Otherwise it duplicates the data
+                if (!initialLoad && data?.refreshTableWithDates) {
                     dtApi.ajax.reload(null, false);
                 }
+                initialLoad = false; // Reset flag after use
             }
         });
         dataTable.on('search.dt', () => handleSearch());

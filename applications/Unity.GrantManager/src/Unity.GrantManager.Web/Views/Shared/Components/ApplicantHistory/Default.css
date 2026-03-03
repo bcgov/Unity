@@ -1,0 +1,71 @@
+/* ApplicantHistory Component Styles */
+
+.applicant-info-container {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.applicant-info-container .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    position: sticky;
+    top: 56px;
+    padding-right: 24px;
+    z-index: 999;
+}
+
+.applicant-info-container .save-button-container .floating-save-btn {
+    position: static;
+}
+
+.history-section {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+.history-section:last-child {
+    border-bottom: none;
+}
+
+.history-section__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.history-section__toolbar .tbl-search {
+    max-width: 280px;
+}
+
+.history-section__toolbar .dynamic-buttons-div {
+    margin-left: auto;
+    position: relative;
+}
+
+.history-section__toolbar .dynamic-buttons-div .dt-button-collection {
+    left: auto !important;
+    right: 0 !important;
+    top: 100% !important;
+}
+
+/* Prevent wrapper and dt-container from generating their own scrollbars */
+#FundingHistoryTable_wrapper,
+#IssueTrackingTable_wrapper,
+#AuditHistoryTable_wrapper {
+    overflow: visible !important;
+}
+
+.applicant-history-widget .dt-container {
+    overflow: visible !important;
+}
+
+/* Scroll body — vertical scrollbar when many records */
+#FundingHistoryTable_wrapper .dt-scroll-body,
+#IssueTrackingTable_wrapper .dt-scroll-body,
+#AuditHistoryTable_wrapper .dt-scroll-body {
+    max-height: 350px !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+}
