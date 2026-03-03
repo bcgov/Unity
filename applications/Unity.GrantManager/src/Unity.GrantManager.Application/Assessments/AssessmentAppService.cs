@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Volo.Abp;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using System;
 using System.Collections.Generic;
@@ -224,6 +225,10 @@ namespace Unity.GrantManager.Assessments
             var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
             if (assessment != null)
             {
+                if (assessment.IsAiAssessment)
+                {
+                    throw new BusinessException(GrantManagerDomainErrorCodes.CannotModifyAiAssessment);
+                }
                 assessment.ApprovalRecommended = dto.ApprovalRecommended;
                 await _assessmentRepository.UpdateAsync(assessment);
             }
@@ -277,6 +282,11 @@ namespace Unity.GrantManager.Assessments
         public async Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
+
+            if (assessment.IsAiAssessment)
+            {
+                throw new BusinessException(GrantManagerDomainErrorCodes.CannotModifyAiAssessment);
+            }
 
             await AuthorizationService.CheckAsync(assessment, GetActionAuthorizationRequirement(triggerAction));
 
@@ -332,6 +342,10 @@ namespace Unity.GrantManager.Assessments
                 var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
                 if (assessment != null)
                 {
+                    if (assessment.IsAiAssessment)
+                    {
+                        throw new BusinessException(GrantManagerDomainErrorCodes.CannotModifyAiAssessment);
+                    }
                     if (CurrentUser.GetId() != assessment.AssessorId)
                     {
                         throw new AbpValidationException("Error: You do not own this assessment record.");
@@ -364,6 +378,10 @@ namespace Unity.GrantManager.Assessments
             {
                 if (assessment != null)
                 {
+                    if (assessment.IsAiAssessment)
+                    {
+                        throw new BusinessException(GrantManagerDomainErrorCodes.CannotModifyAiAssessment);
+                    }
                     if (CurrentUser.GetId() != assessment.AssessorId)
                     {
                         throw new AbpValidationException("Error: You do not own this assessment record.");
