@@ -13,17 +13,19 @@
             <input type="hidden" asp-for="AuditHistoryForm.ApplicantId" />
 
             <div class="mb-3">
-                <label class="form-label" for="AuditHistoryForm_AuditTrackingNumber">Audit Tracking Number</label>
+                <label class="form-label" for="AuditHistoryForm_AuditTrackingNumber">Audit Tracking Number <span class="text-danger">*</span></label>
                 <input type="text" id="AuditHistoryForm_AuditTrackingNumber" name="AuditHistoryForm.AuditTrackingNumber"
-                       class="form-control" value="@Model.AuditHistoryForm?.AuditTrackingNumber" />
+                       class="form-control" value="@Model.AuditHistoryForm?.AuditTrackingNumber" required />
+                <div class="invalid-feedback">Audit Tracking Number is required.</div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label" for="AuditHistoryForm_AuditDate">Audit Date</label>
+                <label class="form-label" for="AuditHistoryForm_AuditDate">Audit Date <span class="text-danger">*</span></label>
                 <input type="date" id="AuditHistoryForm_AuditDate" name="AuditHistoryForm.AuditDate"
                        class="form-control"
                        value="@(Model.AuditHistoryForm?.AuditDate?.ToString("yyyy-MM-dd"))"
-                       data-datepicker="false" />
+                       data-datepicker="false" required />
+                <div class="invalid-feedback">Audit Date is required.</div>
             </div>
 
             <div class="mb-3">
@@ -38,3 +40,28 @@
         </abp-modal-footer>
     </abp-modal>
 </form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            var $auditTrackingNumber = $('#AuditHistoryForm_AuditTrackingNumber');
+            var $auditDate           = $('#AuditHistoryForm_AuditDate');
+
+            $auditTrackingNumber.on('input', function () { $(this).removeClass('is-invalid'); });
+            $auditDate.on('change', function () { $(this).removeClass('is-invalid'); });
+
+            $('#EditAuditHistoryForm').on('submit', function (e) {
+                var valid = true;
+                if ($auditTrackingNumber.val().trim() === '') {
+                    $auditTrackingNumber.addClass('is-invalid');
+                    valid = false;
+                }
+                if ($auditDate.val().trim() === '') {
+                    $auditDate.addClass('is-invalid');
+                    valid = false;
+                }
+                if (!valid) e.preventDefault();
+            });
+        }
+    })();
+</script>

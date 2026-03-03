@@ -13,18 +13,16 @@
             <input type="hidden" asp-for="FundingHistoryForm.ApplicantId" />
 
             <div class="mb-3">
-                <label class="form-label" for="FundingHistoryForm_GrantCategory">Grant Category <span class="text-danger">*</span></label>
+                <label class="form-label" for="FundingHistoryForm_GrantCategory">Grant Category</label>
                 <input type="text" id="FundingHistoryForm_GrantCategory" name="FundingHistoryForm.GrantCategory"
-                       class="form-control" value="@Model.FundingHistoryForm?.GrantCategory" required />
-                <div class="invalid-feedback">Grant Category is required.</div>
+                       class="form-control" value="@Model.FundingHistoryForm?.GrantCategory" />
             </div>
 
             <div class="mb-3">
-                <label class="form-label" for="FundingHistoryForm_FundingYear">Funding Year <span class="text-danger">*</span></label>
+                <label class="form-label" for="FundingHistoryForm_FundingYear">Funding Year</label>
                 <input type="text" id="FundingHistoryForm_FundingYear" name="FundingHistoryForm.FundingYear"
                        class="form-control" inputmode="numeric" maxlength="4"
-                       value="@Model.FundingHistoryForm?.FundingYear" required />
-                <div class="invalid-feedback">Funding Year is required.</div>
+                       value="@Model.FundingHistoryForm?.FundingYear" />
             </div>
 
             <div class="mb-3">
@@ -96,26 +94,10 @@
                 }
             });
 
-            var $grantCategory = $('#FundingHistoryForm_GrantCategory');
-            var $fundingYear   = $('#FundingHistoryForm_FundingYear');
+            var $fundingYear = $('#FundingHistoryForm_FundingYear');
 
-            $grantCategory.on('input', function () { $(this).removeClass('is-invalid'); });
             $fundingYear.on('input', function () {
                 $(this).val($(this).val().replace(/\D/g, '').slice(0, 4));
-                $(this).removeClass('is-invalid');
-            });
-
-            $('#EditFundingHistoryForm').on('submit', function (e) {
-                var valid = true;
-                if ($grantCategory.val().trim() === '') {
-                    $grantCategory.addClass('is-invalid');
-                    valid = false;
-                }
-                if ($fundingYear.val().trim() === '') {
-                    $fundingYear.addClass('is-invalid');
-                    valid = false;
-                }
-                if (!valid) e.preventDefault();
             });
         }
     })();
