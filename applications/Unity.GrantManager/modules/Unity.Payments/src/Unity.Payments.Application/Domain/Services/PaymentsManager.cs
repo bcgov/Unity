@@ -9,6 +9,7 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Shared;
 using Unity.Payments.Domain.Workflow;
 using Unity.Payments.Enums;
+using Unity.Payments.Codes;
 using Unity.Payments.PaymentRequests;
 using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
@@ -150,6 +151,7 @@ namespace Unity.Payments.Domain.Services
                 if (preventPayment)
                 {
                     statusChangedTo = PaymentRequestStatus.FSB;
+                    paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.SentToAccountsPayable);
                 }
                 else
                 {
