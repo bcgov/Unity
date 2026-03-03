@@ -1,5 +1,4 @@
 $(function () {
-    console.log("wtf");
     // Check if createNumberFormatter exists
     if (typeof createNumberFormatter !== 'function') {
         console.error('createNumberFormatter is not defined. Ensure table-utils.js is loaded before Index.js');
@@ -12,7 +11,6 @@ $(function () {
 
     let dt = $('#GrantApplicationsTable');
     let dataTable;
-    let stateRestoreClicked = false; // Flag to track if a saved state was clicked
 
     //For stateRestore label in modal
     let languageSetValues = {
