@@ -1,0 +1,66 @@
+@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Unity.GrantManager.Web.Pages.ApplicantHistory.CreateIssueTrackingModal
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page="/ApplicantHistory/CreateIssueTrackingModal" id="CreateIssueTrackingForm">
+    <abp-modal>
+        <abp-modal-header title="Add Issue Tracking Record"></abp-modal-header>
+        <abp-modal-body>
+            <input type="hidden" asp-for="IssueTrackingForm.ApplicantId" />
+
+            <div class="mb-3">
+                <label class="form-label" for="IssueTrackingForm_Year">Year</label>
+                <input type="text" id="IssueTrackingForm_Year" name="IssueTrackingForm.Year"
+                       class="form-control" inputmode="numeric" maxlength="4"
+                       value="@Model.IssueTrackingForm?.Year" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="IssueTrackingForm_IssueHeading">Issue Heading</label>
+                <input type="text" id="IssueTrackingForm_IssueHeading" name="IssueTrackingForm.IssueHeading"
+                       class="form-control" value="@Model.IssueTrackingForm?.IssueHeading" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="IssueTrackingForm_IssueDescription">Issue Description</label>
+                <input type="text" id="IssueTrackingForm_IssueDescription" name="IssueTrackingForm.IssueDescription"
+                       class="form-control" value="@Model.IssueTrackingForm?.IssueDescription" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label d-block">Resolved</label>
+                <div class="switch-container">
+                    <div class="form-check unt-form-switch form-switch">
+                        <input class="form-check-input" type="checkbox" id="IssueTrackingForm_Resolved"
+                               name="IssueTrackingForm.Resolved" value="true"
+                               @(Model.IssueTrackingForm?.Resolved == true ? "checked" : "") />
+                        <label class="form-check-label" for="IssueTrackingForm_Resolved">Resolved</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="IssueTrackingForm_ResolutionNote">Resolution Note</label>
+                <input type="text" id="IssueTrackingForm_ResolutionNote" name="IssueTrackingForm.ResolutionNote"
+                       class="form-control" value="@Model.IssueTrackingForm?.ResolutionNote" />
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('#IssueTrackingForm_Year').on('input', function () {
+                $(this).val($(this).val().replace(/\D/g, '').slice(0, 4));
+            });
+        }
+    })();
+</script>
