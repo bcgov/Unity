@@ -6,7 +6,7 @@
 }
 
 <div class="row">
-    <div class="col-6 pt-3 pl-3">
+    <div class="col-6 p-3">
         <label for="applicationFormVersionRo" class="form-label">Version:</label>
         <div class="select-icon-wrapper">
             <select class="form-select form-control" id="applicationFormVersionRo" name="Version" disabled>
@@ -18,7 +18,7 @@
             }
         </div>
     </div>
-    <div class="col-6 pt-3">
+    <div class="col-6 p-3">
         <input type="hidden" id="originalScoresheetId" value="@Model!.ScoresheetId" />
         <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
             <option value="">Please choose...</option>
