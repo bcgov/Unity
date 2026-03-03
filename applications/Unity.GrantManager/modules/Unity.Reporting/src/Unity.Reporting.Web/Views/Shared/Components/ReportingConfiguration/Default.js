@@ -289,19 +289,11 @@ $(function () {
 
     // Function to check for duplicate keys in current table data
     function checkForDuplicateKeysInTable() {
-        let hasDuplicates = false;
+        if (!dataTable) return false;
 
-        if (dataTable) {
-            dataTable.rows().every(function () {
-                const data = this.data();
-                if (hasDuplicateKeyPrefix(data.path) || hasDuplicateKeyPrefix(data.dataPath)) {
-                    hasDuplicates = true;
-                    return false; // Break the loop
-                }
-            });
-        }
-
-        return hasDuplicates;
+        return dataTable.rows().data().toArray().some(function (data) {
+            return hasDuplicateKeyPrefix(data.path) || hasDuplicateKeyPrefix(data.dataPath);
+        });
     }
 
     // Function to update duplicate keys warning display
@@ -317,19 +309,11 @@ $(function () {
 
     // Function to check for dynamic_columns placeholder in current table data
     function checkForDynamicColumnsInTable() {
-        let hasDynamicColumns = false;
+        if (!dataTable) return false;
 
-        if (dataTable) {
-            dataTable.rows().every(function () {
-                const data = this.data();
-                if (data.key === 'dynamic_columns') {
-                    hasDynamicColumns = true;
-                    return false; // Break the loop
-                }
-            });
-        }
-
-        return hasDynamicColumns;
+        return dataTable.rows().data().toArray().some(function (data) {
+            return data.key === 'dynamic_columns';
+        });
     }
 
     // Function to update dynamic columns warning display

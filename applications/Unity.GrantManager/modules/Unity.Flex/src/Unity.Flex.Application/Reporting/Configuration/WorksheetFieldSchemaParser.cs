@@ -26,7 +26,7 @@ namespace Unity.Flex.Reporting.Configuration
         /// <param name="field">The custom field to parse</param>
         /// <param name="worksheet">The worksheet containing the field (for name context)</param>
         /// <param name="formSchema">Optional form schema JSON string for resolving dynamic DataGrid columns</param>
-        /// <param name="submissionHeaderMapping">Optional submission header mapping (not used in current implementation)</param>
+        /// <param name="submissionHeaderMapping">Optional submission header mapping</param>
         /// <returns>List of component metadata items</returns>
         public static List<WorksheetComponentMetaDataItemDto> ParseField(CustomField field, 
             Worksheet worksheet, 
@@ -432,8 +432,8 @@ namespace Unity.Flex.Reporting.Configuration
                     keyElement.GetString() == dataGridKey &&
                     component.TryGetProperty("type", out var typeElement))
                 {
-                    var type = typeElement.GetString();
-                    if (type == "datagrid" || type == "dataGrid")
+                    var type = typeElement.GetString()?.ToLower();
+                    if (type == "datagrid")
                     {
                         return ExtractColumnsFromDataGrid(component);
                     }
@@ -542,7 +542,7 @@ namespace Unity.Flex.Reporting.Configuration
                 "day" => "date",
                 "datetime" => "datetime",
                 "email" => "text",
-                "phoneNumber" => "text",
+                "phonenumber" => "text",
                 "url" => "text",
                 _ => "text" // Default to text for unknown types
             };
