@@ -92,6 +92,49 @@ public class AssessmentManager : DomainService
     }
 
     /// <summary>
+    /// Creates and inserts a read-only AI Scoring <see cref="Assessment"/> for an application.
+    /// No user is required — the well-known AI Scoring Person is used as the assessor.
+    /// Does not affect application state. Idempotent: returns the existing record if one already exists.
+    /// </summary>
+    /// <param name="application">The application being assessed.</param>
+    /// <returns>A new or existing AI <see cref="Assessment"/> for the <see cref="Application"/>.</returns>
+    public async Task<Assessment> CreateAiAssessmentAsync(Application application)
+    {
+        // Idempotency: only one AI assessment per application
+        var existing = await _assessmentRepository.FirstOrDefaultAsync(
+            x => x.ApplicationId == application.Id && x.IsAiAssessment);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
+
+        var newAssessment = new Assessment(
+            GuidGenerator.Create(),
+            application.Id,
+            AIScoringConstants.AiPersonId)
+        {
+            IsAiAssessment = true
+        };
+
+        var assessment = await _assessmentRepository.InsertAsync(newAssessment, autoSave: true);
+
+        if (form.ScoresheetId != null && await _featureChecker.IsEnabledAsync("Unity.Flex"))
+        {
+            await _localEventBus.PublishAsync(new CreateScoresheetInstanceEto()
+            {
+                ScoresheetId = form.ScoresheetId ?? Guid.Empty,
+                CorrelationId = assessment.Id,
+                CorrelationProvider = "Assessment",
+                RelatedCorrelationId = null
+            });
+        }
+
+        return assessment;
+    }
+
+    /// <summary>
     /// Checks if a user has already been assigned an <see cref="Assessment"/> for an <see cref="Application"/>.
     /// </summary>
     /// <param name="application">The application being assessed.</param>
