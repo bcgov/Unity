@@ -160,23 +160,11 @@ namespace Unity.GrantManager.AI
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
 
-                var prompt = @"ROLE
-You are a professional grant analyst for the BC Government.
+                var prompt = $@"{AttachmentPrompts.SystemPrompt}
 
-TASK
-Produce a concise reviewer-facing summary of the provided attachment context.
+{AttachmentPrompts.OutputSection}
 
-OUTPUT
-- Plain text only
-- 1-2 complete sentences
-
-RULES
-- Use only the provided attachment context as evidence.
-- If text content is present, summarize the actual content.
-- If text content is missing or empty, provide a conservative metadata-based summary.
-- Do not invent missing details.
-- Keep the summary specific, concrete, and reviewer-facing.
-- Return plain text only (no markdown, bullets, or JSON).";
+{AttachmentPrompts.RulesSection}";
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
                 if (attachmentText != null)
@@ -195,7 +183,8 @@ RULES
                     sizeBytes = fileContent.Length,
                     text = attachmentText
                 };
-                var contentToAnalyze = $"ATTACHMENT\n{JsonSerializer.Serialize(attachmentPayload, JsonLogOptions)}";
+                var contentToAnalyze = AttachmentPrompts.BuildUserPrompt(
+                    JsonSerializer.Serialize(attachmentPayload, JsonLogOptions));
 
                 await LogPromptInputAsync("AttachmentSummary", prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
@@ -257,76 +246,13 @@ RULES
                         .Cast<object>()
                     : Enumerable.Empty<object>();
 
-                var analysisContent = $@"SCHEMA
-{JsonSerializer.Serialize(schemaPayload, JsonLogOptions)}
+                var analysisContent = AnalysisPrompts.BuildUserPrompt(
+                    JsonSerializer.Serialize(schemaPayload, JsonLogOptions),
+                    JsonSerializer.Serialize(dataPayload, JsonLogOptions),
+                    JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions),
+                    rubric);
 
-DATA
-{JsonSerializer.Serialize(dataPayload, JsonLogOptions)}
-
-ATTACHMENTS
-{JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions)}
-
-RUBRIC
-{rubric}
-
-SEVERITY
-ERROR: Issue that would likely prevent the application from being approved.
-WARNING: Issue that could negatively affect the application's approval.
-RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.
-
-SCORE
-HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
-MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
-LOW: Application has significant gaps or risks across key rubric areas.
-
-OUTPUT
-{{
-  ""rating"": ""HIGH/MEDIUM/LOW"",
-  ""warnings"": [
-    {{
-      ""category"": ""Brief summary of the warning"",
-      ""message"": ""Detailed warning message with full context and explanation""
-    }}
-  ],
-  ""errors"": [
-    {{
-      ""category"": ""Brief summary of the error"",
-      ""message"": ""Detailed error message with full context and explanation""
-    }}
-  ],
-  ""summaries"": [
-    {{
-      ""category"": ""Brief summary of the recommendation"",
-      ""message"": ""Detailed recommendation with specific actionable guidance""
-    }}
-  ],
-  ""dismissed"": []
-}}
-
-RULES
-- Use only SCHEMA, DATA, ATTACHMENTS, and RUBRIC as evidence.
-- Do not invent fields, documents, requirements, or facts.
-- Treat missing or empty values as findings only when they weaken rubric evidence.
-- Prefer material issues; avoid nitpicking.
-- Each error/warning/recommendation must describe one concrete issue or consideration and why it matters.
-- Use 3-6 words for category.
-- Each message must be 1-2 complete sentences.
-- Each message must be grounded in concrete evidence from provided inputs.
-- If attachment evidence is used, reference the attachment explicitly in the message.
-- Do not provide applicant-facing advice.
-- Do not mention rubric section names in findings.
-- If no findings exist, return empty arrays.
-- rating must be HIGH, MEDIUM, or LOW.
-- Return values exactly as specified in OUTPUT.
-- Do not return keys outside OUTPUT.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).";
-
-                var systemPrompt = @"ROLE
-You are an expert grant analyst assistant for human reviewers.
-
-TASK
-Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, return review findings.";
+                var systemPrompt = AnalysisPrompts.SystemPrompt;
 
                 await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
@@ -503,53 +429,12 @@ Respond only with valid JSON in the exact format requested.";
                     questions = sectionQuestionsPayload
                 };
 
-                var analysisContent = $@"DATA
-{applicationContent}
+                var analysisContent = ScoresheetPrompts.BuildSectionUserPrompt(
+                    applicationContent,
+                    attachmentSummariesText,
+                    JsonSerializer.Serialize(sectionPayload, JsonLogOptions));
 
-ATTACHMENTS
-- {attachmentSummariesText}
-
-SECTION
-{JsonSerializer.Serialize(sectionPayload, JsonLogOptions)}
-
-RESPONSE
-{{
-  ""<question_id>"": {{
-    ""answer"": ""<string | number>"",
-    ""rationale"": ""<evidence-based rationale>"",
-    ""confidence"": 85
-  }}
-}}
-
-RULES
-- Use only DATA and ATTACHMENTS as evidence.
-- Do not invent missing application details.
-- Return exactly one answer object per question ID in SECTION.questions.
-- Do not omit any question IDs from SECTION.questions.
-- Do not add keys that are not question IDs from SECTION.questions.
-- Use RESPONSE as the output contract and fill every placeholder value.
-- Each answer object must include: answer, rationale, confidence.
-- answer type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
-- For yes/no questions, answer must be exactly ""Yes"" or ""No"".
-- For numeric questions, answer must be a numeric value within the allowed range.
-- For select list questions, answer must be the selected availableOptions.number encoded as a string.
-- For select list questions, never return option label text (for example: ""Yes"", ""No"", or ""N/A""); return the option number string.
-- For text and text area questions, answer must be concise, grounded in evidence, and non-empty.
-- rationale must be 1-2 complete sentences grounded in concrete DATA/ATTACHMENTS evidence.
-- For every question, rationale must justify both the selected answer and confidence level based on evidence strength.
-- If evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
-- confidence must be an integer from 0 to 100.
-- Confidence reflects certainty in the selected answer given available evidence, not application quality.
-- Return values exactly as specified in RESPONSE.
-- Do not return keys outside RESPONSE.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).";
-
-                var systemPrompt = @"ROLE
-You are an expert grant application reviewer for the BC Government.
-
-TASK
-Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions in SECTION.";
+                var systemPrompt = ScoresheetPrompts.SectionSystemPrompt;
 
                 await LogPromptInputAsync("ScoresheetSection", systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
