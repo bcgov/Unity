@@ -18,6 +18,12 @@ namespace Unity.Flex.Reporting.Configuration
         private const string UnknownSectionName = "unknown_section";
         private const string ComponentsPropertyName = "components";
 
+        private static readonly JsonDocumentOptions LenientJsonOptions = new()
+        {
+            AllowTrailingCommas = true,
+            CommentHandling = JsonCommentHandling.Skip
+        };
+
         /// <summary>
         /// Parses a custom field and returns component metadata items.
         /// For simple fields, returns a single item. For complex fields like DataGrid, 
@@ -220,7 +226,7 @@ namespace Unity.Flex.Reporting.Configuration
 
             try
             {
-                using var document = JsonDocument.Parse(submissionHeaderMapping);
+                using var document = JsonDocument.Parse(submissionHeaderMapping, LenientJsonOptions);
                 var root = document.RootElement;
 
                 if (root.TryGetProperty(keyToSearch, out var valueElement))
@@ -396,7 +402,7 @@ namespace Unity.Flex.Reporting.Configuration
 
             try
             {
-                using var document = JsonDocument.Parse(formSchema);
+                using var document = JsonDocument.Parse(formSchema, LenientJsonOptions);
                 var root = document.RootElement;
 
                 // CHEFS form schemas have a "components" array at the root
