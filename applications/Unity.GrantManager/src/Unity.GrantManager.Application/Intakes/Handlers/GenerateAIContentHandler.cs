@@ -155,7 +155,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                     FileContent = fileContent,
                     ContentType = contentType
                 });
-                await SaveAttachmentSummaryAsync(attachment, fileName, summary, fileContent.Length == 0);
+                await SaveAttachmentSummaryAsync(attachment, fileName, summary.Summary, fileContent.Length == 0);
             }
             catch (Exception ex)
             {
@@ -269,14 +269,15 @@ namespace Unity.GrantManager.Intakes.Handlers
                 };
 
                 var analysis = await _aiService.GenerateApplicationAnalysisAsync(analysisRequest);
-                if (!IsValidAnalysisPayload(analysis))
+                var analysisJson = JsonSerializer.Serialize(analysis, _jsonOptionsIndented);
+                if (!IsValidAnalysisPayload(analysisJson))
                 {
                     _logger.LogWarning("Skipping invalid AI analysis payload for application {ApplicationId}.", application.Id);
                     return;
                 }
 
                 // Update the tracked application with the analysis
-                trackedApplication.AIAnalysis = analysis;
+                trackedApplication.AIAnalysis = analysisJson;
                 await _applicationRepository.UpdateAsync(trackedApplication);
 
                 _logger.LogInformation("Successfully generated AI analysis for application {ApplicationId}", application.Id);
@@ -288,11 +289,11 @@ namespace Unity.GrantManager.Intakes.Handlers
             }
         }
 
-        private static List<ApplicationAnalysisAttachment> BuildAnalysisAttachments(List<ApplicationChefsFileAttachment> attachments)
+        private static List<AIAttachmentItem> BuildAnalysisAttachments(List<ApplicationChefsFileAttachment> attachments)
         {
             return attachments
                 .Where(a => !string.IsNullOrWhiteSpace(a.AISummary))
-                .Select(a => new ApplicationAnalysisAttachment
+                .Select(a => new AIAttachmentItem
                 {
                     Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
                     Summary = a.AISummary!.Trim()
@@ -442,11 +443,11 @@ namespace Unity.GrantManager.Intakes.Handlers
             }
         }
 
-        private static List<AIAttachmentPromptItem> BuildScoresheetAttachments(List<ApplicationChefsFileAttachment> attachments)
+        private static List<AIAttachmentItem> BuildScoresheetAttachments(List<ApplicationChefsFileAttachment> attachments)
         {
             return attachments
                 .Where(a => !string.IsNullOrEmpty(a.AISummary))
-                .Select(a => new AIAttachmentPromptItem
+                .Select(a => new AIAttachmentItem
                 {
                     Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
                     Summary = a.AISummary!.Trim()
@@ -553,7 +554,7 @@ FULL APPLICATION FORM SUBMISSION:
             JsonElement sectionSchema,
             Guid applicationId,
             JsonElement scoresheetData,
-            List<AIAttachmentPromptItem> scoresheetAttachments,
+            List<AIAttachmentItem> scoresheetAttachments,
             Dictionary<string, object> allSectionResults)
         {
             try
@@ -568,21 +569,25 @@ FULL APPLICATION FORM SUBMISSION:
                     SectionSchema = sectionSchema
                 });
 
-                if (string.IsNullOrWhiteSpace(sectionAnswers))
+                if (sectionAnswers.Answers.Count == 0)
                 {
                     return;
                 }
 
                 try
                 {
-                    using var sectionDoc = JsonDocument.Parse(sectionAnswers);
                     var expectedQuestionIds = ExtractSectionQuestionIds(sectionSchema);
                     var returnedQuestionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                    foreach (var property in sectionDoc.RootElement.EnumerateObject())
+                    foreach (var answerEntry in sectionAnswers.Answers)
                     {
-                        returnedQuestionIds.Add(property.Name);
-                        allSectionResults[property.Name] = property.Value.Clone();
+                        returnedQuestionIds.Add(answerEntry.Key);
+                        allSectionResults[answerEntry.Key] = new Dictionary<string, object?>
+                        {
+                            [AIJsonKeys.Answer] = answerEntry.Value.Answer,
+                            [AIJsonKeys.Rationale] = answerEntry.Value.Rationale,
+                            [AIJsonKeys.Confidence] = answerEntry.Value.Confidence
+                        };
                     }
 
                     var missingQuestionIds = expectedQuestionIds.Except(returnedQuestionIds, StringComparer.OrdinalIgnoreCase).ToArray();
@@ -610,8 +615,8 @@ FULL APPLICATION FORM SUBMISSION:
                 }
                 catch (JsonException ex)
                 {
-                    _logger.LogError(ex, "Failed to parse AI response for section {SectionName} in application {ApplicationId}. Content: {InvalidJson}",
-                        sectionName, applicationId, sectionAnswers);
+                    _logger.LogError(ex, "Failed to process AI response for section {SectionName} in application {ApplicationId}.",
+                        sectionName, applicationId);
                 }
             }
             catch (Exception ex)

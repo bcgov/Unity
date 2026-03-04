@@ -208,10 +208,11 @@ public class AttachmentAppService(
             ContentType = contentType
         });
 
-        attachment.AISummary = summary;
+        var summaryText = summary.Summary;
+        attachment.AISummary = summaryText;
         await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
 
-        return summary;
+        return summaryText;
     }
     
     public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds)
