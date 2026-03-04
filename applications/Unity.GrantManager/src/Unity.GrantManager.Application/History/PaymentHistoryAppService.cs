@@ -37,12 +37,12 @@ namespace Unity.GrantManager.History
                 
                 foreach (var propertyChange in entityChange.EntityChange.PropertyChanges)
                 {
-                    string origninalValue = CleanValue(propertyChange.OriginalValue);
+                    string originalValue = CleanValue(propertyChange.OriginalValue);
                     string newValue = CleanValue(propertyChange.NewValue);
                     string displayNewValue = MapFsbToDisplayText(newValue);
 
                     // Don't display history if both original and new values are empty, as it doesn't provide useful information and may clutter the history with irrelevant entries.    
-                    if (string.IsNullOrEmpty(origninalValue) && string.IsNullOrEmpty(newValue))
+                    if (string.IsNullOrEmpty(originalValue) && string.IsNullOrEmpty(newValue))
                     {
                         continue;
                     }
@@ -52,7 +52,7 @@ namespace Unity.GrantManager.History
                     {
                         EntityName = GetShortEntityName(entityChange.EntityChange.EntityTypeFullName),
                         PropertyName = propertyChange.PropertyName,
-                        OriginalValue = origninalValue,
+                        OriginalValue = originalValue,
                         NewValue = displayNewValue,
                         ChangeTime = utcDateTime.ToLocalTime(),
                         UserName = entityChange.UserName,
