@@ -22,6 +22,8 @@ namespace Unity.Payments.Repositories
         {
             ReCheckStatusList.Add(CasPaymentRequestStatus.ServiceUnavailable);
             ReCheckStatusList.Add(CasPaymentRequestStatus.SentToCas);
+            ReCheckStatusList.Add(CasPaymentRequestStatus.NotFound);
+            ReCheckStatusList.Add(CasPaymentRequestStatus.SentToAccountsPayable);
             ReCheckStatusList.Add(CasPaymentRequestStatus.NeverValidated);
 
             FailedStatusList.Add(CasPaymentRequestStatus.ServiceUnavailable);
