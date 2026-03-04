@@ -188,8 +188,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {Function} [options.onStateSaveParams] - Hook for additional state save parameters
  * @param {Function} [options.onStateLoadParams] - Hook for additional state load parameters
  * @param {Function} [options.onStateLoaded] - Hook called after state is loaded
- * @param {boolean} [options.fixedHeaders=false] - Enable fixed header with scrollable body
- * @param {string} [options.fixedHeaderScrollY='calc(100vh - 325px)'] - CSS height for the scrollable table body (DataTables scrollY)
+ * @param {boolean} [options.fixedHeaders=false] - Enable fixed header with dynamically sized scrollable body
  * @returns {DataTable} Initialized DataTable API instance
  *
  * @example
@@ -225,7 +224,6 @@ function initializeDataTable(options) {
         onStateLoadParams,
         onStateLoaded,
         fixedHeaders = false,
-        fixedHeaderScrollY = `calc(100vh - 325px)`
     } = options;
 
     // Process columns and visibility
@@ -393,10 +391,15 @@ function initializeDataTable(options) {
     };
 
     if (fixedHeaders) {
-        configuration.scrollY = fixedHeaderScrollY;
+        configuration.scrollY = `calc(100vh - 325px)`; // Initial value – ScrollResize plugin will recalculate dynamically
     }
 
     let iDt = new DataTable(dt, configuration);
+
+    // Initialize ScrollResize plugin for dynamic scroll body sizing
+    if (fixedHeaders && DataTable.ScrollResize) {
+        new DataTable.ScrollResize(iDt);
+    }
 
     // Initialize FilterRow plugin
     initializeFilterRowPlugin(iDt);
@@ -629,37 +632,6 @@ function moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContaine
     }
 }
 
-// ============================================================================
-// ======= RESIZE SCROLL BODY =================================================
-/**
- * Dynamically adjusts the DataTable scroll body height based on container size.
- * Leaves room for headers, filters, and paging.
- * @param {DataTable.Api} iDt
- */
-function resizeDataTableScrollBody(iDt) {
-    if (!iDt?.table?.()?.node) return;
-
-    const $wrapper = $(iDt.table().container());
-    const $scrollBody = $wrapper.find('.dt-scroll-body');
-    if (!$scrollBody.length) return;
-
-    let reservedHeight = 0;
-    reservedHeight += $wrapper.find('.dt-scroll-head').outerHeight(true) || 0;
-    reservedHeight += $wrapper.find('.dt-top, .dataTables_length, .dataTables_filter').outerHeight(true) || 0;
-    reservedHeight += $wrapper.find('.dt-bottom, .dataTables_paginate, .dataTables_info').outerHeight(true) || 0;
-    reservedHeight += 8; // buffer
-
-    const $container = $wrapper.closest('.dt-container, .dataTables_wrapper');
-    if (!$container.length) return;
-    const containerHeight = $container.innerHeight();
-    if (!containerHeight) return;
-
-    const newHeight = Math.max(containerHeight - reservedHeight, 150);
-    $scrollBody.css({ height: newHeight + 'px', maxHeight: newHeight + 'px' });
-
-    try { iDt.columns.adjust(); } catch (e) { console.warn('resizeDataTableScrollBody: columns.adjust failed', e); }
-}
-
 
 // ============================================================================
 // Other previously existing functions (init, getSelectColumn, assignColumnIndices, etc.) remain unchanged
@@ -682,7 +654,7 @@ function createNumberFormatter() {
  */
 function addDataTableFixCSS() {
     if (!$('#dt-column-fix-css').length) {
-        $('<style id="dt-column-fix-css"> dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; max-height: 90%; } </style>').appendTo('head');
+        $('<style id="dt-column-fix-css"> dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; } </style>').appendTo('head');
     }
 }
 
