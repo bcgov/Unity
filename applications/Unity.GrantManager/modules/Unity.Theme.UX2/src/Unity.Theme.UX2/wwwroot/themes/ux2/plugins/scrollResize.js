@@ -103,7 +103,7 @@
          *
          * Uses getBoundingClientRect so we automatically account for every
          * element above the scroll body (navbar, action bar, search row,
-         * column headers, filter row, …) without hard-coding selectors.
+         * column headers, filter row, ...) without hard-coding selectors.
          */
         _size() {
             let scrollBody = this.s.scrollBody;
