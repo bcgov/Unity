@@ -281,7 +281,7 @@ function initializeDataTable(options) {
                 features: [{
                     info: { text: '_START_-_END_ of _TOTAL_' },
                     paging: { buttons: 3, boundaryNumbers: true, firstLast: true },
-                    pageLength: { menu: [25, 50, 75, 100] },
+                    pageLength: { menu: [[25, 50, 75, 100, -1], [25, 50, 75, 100, 'All']] },
                 }]
             },
         },
