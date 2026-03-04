@@ -528,6 +528,7 @@ $(function () {
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues,
+        fixedHeaders: true,
         dataTableName: 'ApplicantsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         // Add state handling to validate and clear corrupted states

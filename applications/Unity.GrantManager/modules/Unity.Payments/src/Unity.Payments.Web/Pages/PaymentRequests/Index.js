@@ -164,7 +164,8 @@ $(function () {
         languageSetValues: {},
         dataTableName: 'PaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
-        useNullPlaceholder: true
+        useNullPlaceholder: true,
+        fixedHeaders: true
     });
 
     // Attach the draw event to add custom row coloring logic
