@@ -244,7 +244,7 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        private bool TryAppendExcelSheet(ISheet? sheet, StringBuilder builder)
+        private static bool TryAppendExcelSheet(ISheet? sheet, StringBuilder builder)
         {
             if (sheet == null)
             {
@@ -270,7 +270,7 @@ namespace Unity.GrantManager.AI
             return builder.Length >= MaxExtractedTextLength;
         }
 
-        private bool TryAppendExcelRow(IRow row, StringBuilder builder)
+        private static bool TryAppendExcelRow(IRow row, StringBuilder builder)
         {
             var rowHasValue = false;
             foreach (var cell in row.Cells.Take(MaxExcelCellsPerRow))
