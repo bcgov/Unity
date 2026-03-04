@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using NPOI.SS.UserModel;
 using NPOI.XWPF.UserModel;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -220,52 +219,19 @@ namespace Unity.GrantManager.AI
                 using var workbook = WorkbookFactory.Create(stream);
                 var builder = new StringBuilder();
                 var sheetCount = Math.Min(workbook.NumberOfSheets, MaxExcelSheets);
-                var limitReached = false;
 
                 for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
                 {
-                    if (limitReached || builder.Length >= MaxExtractedTextLength)
+                    if (builder.Length >= MaxExtractedTextLength)
                     {
                         break;
                     }
 
                     var sheet = workbook.GetSheetAt(sheetIndex);
-                    if (sheet == null)
+                    var limitReached = TryAppendExcelSheet(sheet, builder);
+                    if (limitReached)
                     {
-                        continue;
-                    }
-
-                    var processedRows = 0;
-                    foreach (IRow row in sheet)
-                    {
-                        if (processedRows >= MaxExcelRowsPerSheet || builder.Length >= MaxExtractedTextLength)
-                        {
-                            break;
-                        }
-
-                        var rowHasValue = false;
-                        foreach (var cell in row.Cells.Take(MaxExcelCellsPerRow))
-                        {
-                            var value = GetCellText(cell);
-                            if (string.IsNullOrWhiteSpace(value))
-                            {
-                                continue;
-                            }
-
-                            var separator = rowHasValue ? " | " : (builder.Length > 0 ? Environment.NewLine : null);
-                            limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength, separator);
-                            rowHasValue = true;
-                            if (limitReached)
-                            {
-                                break;
-                            }
-                        }
-
-                        processedRows++;
-                        if (limitReached)
-                        {
-                            break;
-                        }
+                        break;
                     }
                 }
 
@@ -276,6 +242,64 @@ namespace Unity.GrantManager.AI
                 _logger.LogWarning(ex, "Excel text extraction failed for {FileName}", fileName);
                 return string.Empty;
             }
+        }
+
+        private static bool TryAppendExcelSheet(ISheet? sheet, StringBuilder builder)
+        {
+            if (sheet == null)
+            {
+                return false;
+            }
+
+            var processedRows = 0;
+            foreach (IRow row in sheet)
+            {
+                if (processedRows >= MaxExcelRowsPerSheet || builder.Length >= MaxExtractedTextLength)
+                {
+                    break;
+                }
+
+                var limitReached = TryAppendExcelRow(row, builder);
+                processedRows++;
+                if (limitReached)
+                {
+                    return true;
+                }
+            }
+
+            return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static bool TryAppendExcelRow(IRow row, StringBuilder builder)
+        {
+            var rowHasValue = false;
+            foreach (var cell in row.Cells.Take(MaxExcelCellsPerRow))
+            {
+                var value = GetCellText(cell);
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                string? separator = null;
+                if (rowHasValue)
+                {
+                    separator = " | ";
+                }
+                else if (builder.Length > 0)
+                {
+                    separator = Environment.NewLine;
+                }
+
+                var limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength, separator);
+                rowHasValue = true;
+                if (limitReached)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool AppendWithLimit(StringBuilder builder, string? value, int maxLength, string? separator = null)
