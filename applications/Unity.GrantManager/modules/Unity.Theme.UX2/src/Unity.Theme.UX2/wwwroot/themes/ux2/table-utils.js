@@ -188,7 +188,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {Function} [options.onStateSaveParams] - Hook for additional state save parameters
  * @param {Function} [options.onStateLoadParams] - Hook for additional state load parameters
  * @param {Function} [options.onStateLoaded] - Hook called after state is loaded
- * @param {boolean} [options.fixedHeader=false] - Enable fixed header with scrollable body
+ * @param {boolean} [options.fixedHeaders=false] - Enable fixed header with scrollable body
  * @param {string} [options.fixedHeaderOffset='calc(100vh - 325px)'] - CSS height for fixed header offset
  * @returns {DataTable} Initialized DataTable API instance
  *
@@ -224,7 +224,7 @@ function initializeDataTable(options) {
         onStateSaveParams, //External hooks for save/load/loaded
         onStateLoadParams,
         onStateLoaded,
-        fixedHeader = false,
+        fixedHeaders = false,
         fixedHeaderOffset = `calc(100vh - 325px)`
     } = options;
 
@@ -392,7 +392,7 @@ function initializeDataTable(options) {
         },
     };
 
-    if (fixedHeader) {
+    if (fixedHeaders) {
         configuration.scrollY = fixedHeaderOffset;
     }
 
