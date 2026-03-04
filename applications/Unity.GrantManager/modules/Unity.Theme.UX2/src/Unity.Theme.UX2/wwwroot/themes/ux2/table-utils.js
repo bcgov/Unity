@@ -189,7 +189,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {Function} [options.onStateLoadParams] - Hook for additional state load parameters
  * @param {Function} [options.onStateLoaded] - Hook called after state is loaded
  * @param {boolean} [options.fixedHeaders=false] - Enable fixed header with scrollable body
- * @param {string} [options.fixedHeaderOffset='calc(100vh - 325px)'] - CSS height for fixed header offset
+ * @param {string} [options.fixedHeaderScrollY='calc(100vh - 325px)'] - CSS height for the scrollable table body (DataTables scrollY)
  * @returns {DataTable} Initialized DataTable API instance
  *
  * @example
@@ -393,7 +393,7 @@ function initializeDataTable(options) {
     };
 
     if (fixedHeaders) {
-        configuration.scrollY = fixedHeaderOffset;
+        configuration.scrollY = fixedHeaderScrollY;
     }
 
     let iDt = new DataTable(dt, configuration);
