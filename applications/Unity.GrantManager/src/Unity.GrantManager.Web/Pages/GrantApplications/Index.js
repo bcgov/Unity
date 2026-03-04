@@ -396,6 +396,7 @@ $(function () {
             serverSideEnabled: false,
             pagingEnabled: true,
             reorderEnabled: true,
+            fixedHeaders: true,
             languageSetValues,
             dataTableName: 'GrantApplicationsTable',
             dynamicButtonContainerId: 'dynamicButtonContainerId',

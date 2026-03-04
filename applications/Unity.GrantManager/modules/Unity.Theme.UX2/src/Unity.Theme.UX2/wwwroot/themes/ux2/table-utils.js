@@ -185,6 +185,11 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {string} [options.externalSearchId='search'] - ID of external search input element
  * @param {boolean} [options.disableColumnSelect=false] - Disable column visibility toggle
  * @param {Array<Object>} [options.listColumnDefs] - Additional columnDefs configurations
+ * @param {Function} [options.onStateSaveParams] - Hook for additional state save parameters
+ * @param {Function} [options.onStateLoadParams] - Hook for additional state load parameters
+ * @param {Function} [options.onStateLoaded] - Hook called after state is loaded
+ * @param {boolean} [options.fixedHeader=false] - Enable fixed header with scrollable body
+ * @param {string} [options.fixedHeaderOffset='calc(100vh - 325px)'] - CSS height for fixed header offset
  * @returns {DataTable} Initialized DataTable API instance
  *
  * @example
@@ -216,9 +221,11 @@ function initializeDataTable(options) {
         externalSearchId = 'search',
         disableColumnSelect = false,
         listColumnDefs,
-        onStateSaveParams,//External hooks for save/load/loaded
+        onStateSaveParams, //External hooks for save/load/loaded
         onStateLoadParams,
         onStateLoaded,
+        fixedHeader = false,
+        fixedHeaderOffset = `calc(100vh - 325px)`
     } = options;
 
     // Process columns and visibility
@@ -235,8 +242,8 @@ function initializeDataTable(options) {
     // Add loading class initially
     dt.closest('.dt-container, .dataTables_wrapper').addClass('dt-loading');
 
-    // Create the DataTable
-    let iDt = new DataTable(dt, {
+    // Create the DataTable Configuration object
+    let configuration = {
         serverSide: serverSideEnabled,
         paging: pagingEnabled,
         order: defaultSortOrder,
@@ -383,7 +390,13 @@ function initializeDataTable(options) {
                 settings.oInit.onStateLoaded(dtApi, data);
             }
         },
-    });
+    };
+
+    if (fixedHeader) {
+        configuration.scrollY = fixedHeaderOffset;
+    }
+
+    let iDt = new DataTable(dt, configuration);
 
     // Initialize FilterRow plugin
     initializeFilterRowPlugin(iDt);

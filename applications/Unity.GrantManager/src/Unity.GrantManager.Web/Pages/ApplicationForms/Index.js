@@ -128,6 +128,7 @@
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-forms',
+        fixedHeaders: true
     });
 
     createModal.onResult(function () {

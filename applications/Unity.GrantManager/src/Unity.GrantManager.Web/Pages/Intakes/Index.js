@@ -107,7 +107,8 @@
         dataTableName: 'IntakesTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-intakes'
+        externalSearchId: 'search-intakes',
+        fixedHeaders: true
     });
 
     createModal.onResult(function () {

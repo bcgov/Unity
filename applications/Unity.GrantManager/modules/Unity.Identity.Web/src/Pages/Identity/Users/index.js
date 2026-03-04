@@ -266,7 +266,8 @@ $(function () {
         dataTableName: 'UsersTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-users'
+        externalSearchId: 'search-users',
+        fixedHeaders: true
     });
 
     _editModal.onResult(function () {

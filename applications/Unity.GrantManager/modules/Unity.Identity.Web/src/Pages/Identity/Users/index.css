@@ -28,8 +28,3 @@
 #UsersWrapper {
     background-color: transparent;
 }
-
-#UsersWrapper .dt-scroll-body {
-    max-height: calc(100vh - 370px);
-    overflow-y: scroll;
-}
