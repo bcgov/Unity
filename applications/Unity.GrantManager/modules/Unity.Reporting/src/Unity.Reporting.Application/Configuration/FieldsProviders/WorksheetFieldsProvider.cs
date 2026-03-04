@@ -4,12 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Reporting.Configuration;
 using Unity.Flex.WorksheetLinks;
-using Unity.Reporting.Configuration.FieldsProviders;
 using Unity.Reporting.Domain.Configuration;
 using Volo.Abp.DependencyInjection;
 using System.Text.Json;
 
-namespace Unity.Reporting.Configuration.FieldProviders
+namespace Unity.Reporting.Configuration.FieldsProviders
 {
     /// <summary>
     /// Fields provider implementation for Unity.Flex worksheets that extracts field metadata from linked worksheets.
@@ -37,7 +36,7 @@ namespace Unity.Reporting.Configuration.FieldProviders
 
             foreach (var link in links)
             {
-                var metadata = await worksheetsMetadataService.GetWorksheetSchemaMetaDataAsync(link.WorksheetId);
+                var metadata = await worksheetsMetadataService.GetWorksheetSchemaMetaDataAsync(link.WorksheetId, correlationId);
                 worksheetMetadata.Add(metadata);
 
                 // Add worksheet information to the metadata map

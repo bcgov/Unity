@@ -289,19 +289,11 @@ $(function () {
 
     // Function to check for duplicate keys in current table data
     function checkForDuplicateKeysInTable() {
-        let hasDuplicates = false;
+        if (!dataTable) return false;
 
-        if (dataTable) {
-            dataTable.rows().every(function () {
-                const data = this.data();
-                if (hasDuplicateKeyPrefix(data.path) || hasDuplicateKeyPrefix(data.dataPath)) {
-                    hasDuplicates = true;
-                    return false; // Break the loop
-                }
-            });
-        }
-
-        return hasDuplicates;
+        return dataTable.rows().data().toArray().some(function (data) {
+            return hasDuplicateKeyPrefix(data.path) || hasDuplicateKeyPrefix(data.dataPath);
+        });
     }
 
     // Function to update duplicate keys warning display
@@ -312,6 +304,26 @@ $(function () {
             $warning.removeClass('duplicate-keys-div-hidden');
         } else {
             $warning.addClass('duplicate-keys-div-hidden');
+        }
+    }
+
+    // Function to check for dynamic_columns placeholder in current table data
+    function checkForDynamicColumnsInTable() {
+        if (!dataTable) return false;
+
+        return dataTable.rows().data().toArray().some(function (data) {
+            return data.key === 'dynamic_columns';
+        });
+    }
+
+    // Function to update dynamic columns warning display
+    function updateDynamicColumnsWarning(hasDynamicColumns) {
+        const $warning = $('#div-dynamic-columns-warning');
+
+        if (hasDynamicColumns) {
+            $warning.removeClass('dynamic-columns-div-hidden');
+        } else {
+            $warning.addClass('dynamic-columns-div-hidden');
         }
     }
 
@@ -672,6 +684,10 @@ $(function () {
             // Check for duplicate keys and update warning
             const hasDuplicates = checkForDuplicateKeysInTable();
             updateDuplicateKeysWarning(hasDuplicates);
+
+            // Check for dynamic columns placeholder and update warning
+            const hasDynamicColumns = checkForDynamicColumnsInTable();
+            updateDynamicColumnsWarning(hasDynamicColumns);
 
             // Force column adjustment after draw if tab is visible
             setTimeout(function () {
