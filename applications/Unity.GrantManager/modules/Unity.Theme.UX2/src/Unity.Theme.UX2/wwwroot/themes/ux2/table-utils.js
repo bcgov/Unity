@@ -358,8 +358,8 @@ function initializeDataTable(options) {
                             settings._filterRow._updateButtonState();
                         }
                         // Trigger a redraw so the stored filters are reflected. Without this the
-                        // filter values are restored by default via index, but possibly in the wrong 
-                        // column indexes, which leads to inccorectly filtered data (AB#31364)
+                        // filter values are restored by default via index, but possibly in the wrong
+                        // column indexes, which leads to incorrectly filtered data (AB#31364)
                         dtApi.draw();
                     }
                 }, 100);
@@ -499,10 +499,14 @@ function restoreColumnFilterState(columnHeader, displayIdx, settings, data, dtAp
     let savedCol = data.columns[originalIdx];
     let searchValue = savedCol?.search?.search || '';
 
-    // When filtering, cells only exist for visible columns. The displayIdx could map 
-    // incorrectedly when the column is then hidden or reordered. Look up directly by
-    // the data-column-name rathern than the index provided.
-    let $input = $filterCells.find(`input.custom-filter-input[data-column-name="${colName}"]`);
+    // When filtering, cells only exist for visible columns. The displayIdx could map
+    // incorrectly when the column is then hidden or reordered. Look up directly by
+    // the data-column-name rather than the index provided.
+    let $input = $filterCells
+        .find('input.custom-filter-input')
+        .filter(function () {
+            return $(this).attr('data-column-name') === colName;
+        });
 
     if ($input.length && searchValue) {
         $input.val(searchValue);
