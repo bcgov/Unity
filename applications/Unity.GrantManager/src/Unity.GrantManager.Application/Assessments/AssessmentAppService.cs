@@ -14,6 +14,7 @@ using Unity.Flex.Worksheets.Definitions;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
 using Unity.Modules.Shared;
 using Volo.Abp.Application.Services;
@@ -88,6 +89,14 @@ namespace Unity.GrantManager.Assessments
         {
             var assessments = await _assessmentRepository.GetListWithAssessorsAsync(applicationId);
             var assessmentList = ObjectMapper.Map<List<AssessmentWithAssessorQueryResultItem>, List<AssessmentListItemDto>>(assessments);
+
+            // If AI Scoring feature is disabled, or user doesn't have permissions to view AI assessments, filter out AI assessments from the list
+            var aiScoringEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+            var canViewAI = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AI.ScoringAssistant.Default);
+            assessmentList = assessmentList
+                .Where(a => !a.IsAiAssessment || (aiScoringEnabled && canViewAI))
+                .ToList();
+
             bool isApplicationUsingDefaultScoresheet = true;
             foreach (var assessment in assessmentList)
             {
