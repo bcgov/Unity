@@ -280,7 +280,7 @@ function initializeDataTable(options) {
                 className: 'dt-unity-footer d-md-flex col-md',
                 features: [{
                     info: { text: '_START_-_END_ of _TOTAL_' },
-                    paging: { buttons: 3, boundaryNumbers: true, firstLast: false },
+                    paging: { buttons: 3, boundaryNumbers: true, firstLast: true },
                     pageLength: { menu: [25, 50, 75, 100] },
                 }]
             },
