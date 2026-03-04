@@ -225,7 +225,7 @@ function initializeDataTable(options) {
         onStateLoadParams,
         onStateLoaded,
         fixedHeaders = false,
-        fixedHeaderOffset = `calc(100vh - 325px)`
+        fixedHeaderScrollY = `calc(100vh - 325px)`
     } = options;
 
     // Process columns and visibility
