@@ -1,9 +1,14 @@
+@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationInfo
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
 
 @model ApplicantOrganizationInfoViewModel
 
 @{
     Layout = null;
+    bool canEditRedStop = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ApplicantInfo.EditRedStop);
 }
 
 <div id="ApplicantOrganizationInfo_SectorData" style="display:none;">
@@ -49,7 +54,14 @@
                                 <abp-column size="_4" class="px-1">
                                     <div class="switch-container">
                                         <div class="px-3 form-check unt-form-switch form-switch">
-                                            <abp-input type="checkbox" asp-for="RedStop" />
+                                            @if (canEditRedStop)
+                                            {
+                                                <abp-input type="checkbox" asp-for="RedStop" />
+                                            }
+                                            else
+                                            {
+                                                <abp-input type="checkbox" asp-for="RedStop" disabled />
+                                            }
                                         </div>
                                     </div>
                                 </abp-column>

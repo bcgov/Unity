@@ -38,6 +38,12 @@ namespace Unity.GrantManager.Permissions
             public const string ViewList = Default + ".ViewList";
             public const string Edit = Default + Operation.Update;
             public const string AssignApplicant = Default + ".AssignApplicant";
+
+            public static class ApplicantInfo
+            {
+                public const string Default     = Applicants.Default + ".ApplicantInfo";
+                public const string EditRedStop = Default + ".EditRedStop";
+            }
         }
 
         public static class AI

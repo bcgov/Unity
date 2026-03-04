@@ -132,6 +132,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<UpdateApplicantSummaryDto, Applicant>()
             .ForMember(dest => dest.IndigenousOrgInd,
                 opt => opt.MapFrom(src => ConvertBoolToIndigenousOrgInd(src.IndigenousOrgInd)))
+            .ForMember(dest => dest.RedStop, opt => opt.Ignore())
             .IgnoreNullAndDefaultValues();
         CreateMap<ContactInfoDto, ApplicantAgent>()
             .IgnoreNullAndDefaultValues();

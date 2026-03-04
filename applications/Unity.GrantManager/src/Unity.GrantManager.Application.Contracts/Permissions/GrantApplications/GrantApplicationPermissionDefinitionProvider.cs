@@ -48,6 +48,12 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.ViewList, L("Permission:GrantApplicationManagement.Applicants.ViewList"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagement.Applicants.Edit"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.AssignApplicant, L("Permission:GrantApplicationManagement.Applicants.AssignApplicant"));
+            var applicantInfoPermissions = applicatPermissions.AddChild(
+                GrantApplicationPermissions.Applicants.ApplicantInfo.Default,
+                L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo"));
+            applicantInfoPermissions.AddChild(
+                GrantApplicationPermissions.Applicants.ApplicantInfo.EditRedStop,
+                L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo.EditRedStop"));
 
             // Assignment
             var assignmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assignments.Default, L("Permission:GrantApplicationManagement.Assignments.Default"));
