@@ -670,7 +670,7 @@ function createNumberFormatter() {
  */
 function addDataTableFixCSS() {
     if (!$('#dt-column-fix-css').length) {
-        $('<style id="dt-column-fix-css"> dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; } </style>').appendTo('head');
+        $('<style id="dt-column-fix-css"> table.dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; } </style>').appendTo('head');
     }
 }
 

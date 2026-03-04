@@ -43,16 +43,16 @@
 
     // Resolve DataTables CSS class names from the canonical registry so the
     // plugin stays correct if DataTables ever renames its classes.
-    let classes = DataTable.ext.classes;
-    let scrollClasses = classes.scrolling;
-    let CSS_SCROLL_BODY = scrollClasses.body;            // 'dt-scroll-body'
-    let CSS_SCROLL_HEAD = scrollClasses.header.self;      // 'dt-scroll-head'
-    let CSS_SCROLL_WRAP = scrollClasses.container;        // 'dt-scroll'
-    let CSS_LAYOUT_ROW  = classes.layout.row;             // 'dt-layout-row'
+    const classes = DataTable.ext.classes;
+    const scrollClasses = classes.scrolling;
+    const CSS_SCROLL_BODY = scrollClasses.body;            // 'dt-scroll-body'
+    const CSS_SCROLL_HEAD = scrollClasses.header.self;      // 'dt-scroll-head'
+    const CSS_SCROLL_WRAP = scrollClasses.container;        // 'dt-scroll'
+    const CSS_LAYOUT_ROW  = classes.layout.row;             // 'dt-layout-row'
 
     // Custom classes (not from DataTables)
-    let CSS_SCROLL_RESIZE = 'dt-scroll-resize';
-    let CSS_UNITY_FOOTER  = 'dt-unity-footer';
+    const CSS_SCROLL_RESIZE = 'dt-scroll-resize';
+    const CSS_UNITY_FOOTER  = 'dt-unity-footer';
 
     /**
      * @param {DataTable.Api} dt   - DataTables API instance
