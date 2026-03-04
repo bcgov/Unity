@@ -68,7 +68,7 @@ namespace Unity.GrantManager.AI
                 {
                     if (extension == ".docx" || normalizedContentType.Contains("officedocument.wordprocessingml"))
                     {
-                        rawText = ExtractTextFromWordDocx(fileContent);
+                        rawText = ExtractTextFromWordDocx(fileName, fileContent);
                         return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                     }
 
@@ -158,48 +158,56 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        private string ExtractTextFromWordDocx(byte[] fileContent)
+        private string ExtractTextFromWordDocx(string fileName, byte[] fileContent)
         {
             try
             {
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = new XWPFDocument(stream);
-                var parts = new List<string>();
+                var builder = new StringBuilder();
 
                 foreach (var paragraphText in document.Paragraphs.Take(MaxDocxParagraphs).Select(paragraph => paragraph.ParagraphText))
                 {
-                    if (!string.IsNullOrWhiteSpace(paragraphText))
+                    var limitReached = AppendWithLimit(builder, paragraphText, MaxExtractedTextLength, Environment.NewLine);
+                    if (limitReached)
                     {
-                        parts.Add(paragraphText);
+                        break;
                     }
                 }
 
-                foreach (var table in document.Tables)
+                if (builder.Length < MaxExtractedTextLength)
                 {
-                    foreach (var row in table.Rows.Take(MaxDocxTableRows))
+                    foreach (var table in document.Tables)
                     {
-                        foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
+                        foreach (var row in table.Rows.Take(MaxDocxTableRows))
                         {
-                            var text = cell.GetText();
-                            if (!string.IsNullOrWhiteSpace(text))
+                            foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
                             {
-                                parts.Add(text);
+                                var limitReached = AppendWithLimit(builder, cell.GetText(), MaxExtractedTextLength, Environment.NewLine);
+                                if (limitReached)
+                                {
+                                    break;
+                                }
                             }
+
+                            if (builder.Length >= MaxExtractedTextLength)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (builder.Length >= MaxExtractedTextLength)
+                        {
+                            break;
                         }
                     }
                 }
 
-                var combined = string.Join(Environment.NewLine, parts);
-                if (combined.Length > MaxExtractedTextLength)
-                {
-                    combined = combined.Substring(0, MaxExtractedTextLength);
-                }
-
-                return combined;
+                return builder.ToString();
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Word (.docx) text extraction failed");
+                _logger.LogWarning(ex, "Word (.docx) text extraction failed for {FileName}", fileName);
                 return string.Empty;
             }
         }
@@ -210,12 +218,17 @@ namespace Unity.GrantManager.AI
             {
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var workbook = WorkbookFactory.Create(stream);
-                var rows = new List<string>();
-                var totalLength = 0;
+                var builder = new StringBuilder();
                 var sheetCount = Math.Min(workbook.NumberOfSheets, MaxExcelSheets);
+                var limitReached = false;
 
                 for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
                 {
+                    if (limitReached || builder.Length >= MaxExtractedTextLength)
+                    {
+                        break;
+                    }
+
                     var sheet = workbook.GetSheetAt(sheetIndex);
                     if (sheet == null)
                     {
@@ -225,48 +238,84 @@ namespace Unity.GrantManager.AI
                     var processedRows = 0;
                     foreach (IRow row in sheet)
                     {
-                        if (processedRows >= MaxExcelRowsPerSheet || totalLength >= MaxExtractedTextLength)
+                        if (processedRows >= MaxExcelRowsPerSheet || builder.Length >= MaxExtractedTextLength)
                         {
                             break;
                         }
 
-                        var cellTexts = row.Cells
-                            .Take(MaxExcelCellsPerRow)
-                            .Select(GetCellText)
-                            .Where(value => !string.IsNullOrWhiteSpace(value))
-                            .ToList();
-
-                        processedRows++;
-
-                        if (cellTexts.Count == 0)
+                        var rowHasValue = false;
+                        foreach (var cell in row.Cells.Take(MaxExcelCellsPerRow))
                         {
-                            continue;
+                            var value = GetCellText(cell);
+                            if (string.IsNullOrWhiteSpace(value))
+                            {
+                                continue;
+                            }
+
+                            var separator = rowHasValue ? " | " : (builder.Length > 0 ? Environment.NewLine : null);
+                            limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength, separator);
+                            rowHasValue = true;
+                            if (limitReached)
+                            {
+                                break;
+                            }
                         }
 
-                        var rowText = string.Join(" | ", cellTexts);
-                        rows.Add(rowText);
-                        totalLength += rowText.Length;
-                    }
-
-                    if (totalLength >= MaxExtractedTextLength)
-                    {
-                        break;
+                        processedRows++;
+                        if (limitReached)
+                        {
+                            break;
+                        }
                     }
                 }
 
-                var combined = string.Join(Environment.NewLine, rows);
-                if (combined.Length > MaxExtractedTextLength)
-                {
-                    combined = combined.Substring(0, MaxExtractedTextLength);
-                }
-
-                return combined;
+                return builder.ToString();
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Excel text extraction failed for {FileName}", fileName);
                 return string.Empty;
             }
+        }
+
+        private static bool AppendWithLimit(StringBuilder builder, string? value, int maxLength, string? separator = null)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return builder.Length >= maxLength;
+            }
+
+            if (builder.Length >= maxLength)
+            {
+                return true;
+            }
+
+            var remaining = maxLength - builder.Length;
+            if (remaining <= 0)
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrEmpty(separator) && builder.Length > 0)
+            {
+                if (separator.Length >= remaining)
+                {
+                    builder.Append(separator.AsSpan(0, remaining));
+                    return true;
+                }
+
+                builder.Append(separator);
+                remaining -= separator.Length;
+            }
+
+            if (value.Length >= remaining)
+            {
+                builder.Append(value.AsSpan(0, remaining));
+                return true;
+            }
+
+            builder.Append(value);
+            return false;
         }
 
         private static string GetCellText(NPOI.SS.UserModel.ICell cell)
