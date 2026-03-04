@@ -82,7 +82,9 @@ namespace Unity.GrantManager.Assessments
         {
             IQueryable<Assessment> queryableAssessments = _assessmentRepository.GetQueryableAsync().Result;
             var assessments = queryableAssessments.Where(c => c.ApplicationId.Equals(applicationId)).ToList();
-            return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(assessments.OrderByDescending(s => s.CreationTime).ToList()));
+            return await Task.FromResult<IList<AssessmentDto>>(
+                ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(
+                    assessments.OrderByDescending(s => s.IsAiAssessment).ThenByDescending(s => s.CreationTime).ToList()));
         }
 
         public async Task<AssessmentDisplayListDto> GetDisplayList(Guid applicationId)
@@ -95,6 +97,8 @@ namespace Unity.GrantManager.Assessments
             var canViewAI = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AI.ScoringAssistant.Default);
             assessmentList = assessmentList
                 .Where(a => !a.IsAiAssessment || (aiScoringEnabled && canViewAI))
+                .OrderByDescending(a => a.IsAiAssessment)
+                .ThenByDescending(a => a.StartDate)
                 .ToList();
 
             bool isApplicationUsingDefaultScoresheet = true;
