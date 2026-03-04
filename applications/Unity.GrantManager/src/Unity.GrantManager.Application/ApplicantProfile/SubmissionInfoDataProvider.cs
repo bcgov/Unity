@@ -87,7 +87,7 @@ namespace Unity.GrantManager.ApplicantProfile
         /// <summary>
         /// Derives the CHEFS form view URL from the INTAKE_API_BASE dynamic URL setting.
         /// e.g. https://chefs-dev.apps.silver.devops.gov.bc.ca/app/api/v1
-        ///   -> https://chefs-dev.apps.silver.devops.gov.bc.ca/app/form/view?s=
+        ///   -> https://chefs-dev.apps.silver.devops.gov.bc.ca/app/user/view?s=
         /// </summary>
         private async Task<string> ResolveFormViewUrlAsync()
         {
@@ -100,7 +100,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 {
                     trimmed = trimmed[..^apiSegment.Length];
                 }
-                return $"{trimmed}/form/view?s=";
+                return $"{trimmed}/user/view?s=";
             }
             catch (Exception ex)
             {
