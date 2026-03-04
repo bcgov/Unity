@@ -893,11 +893,20 @@ input.form-control.disabled:read-only, textarea.form-control.disabled:read-only,
     border: var(--bs-border-width) solid var(--bs-border-color);
 }
 
+table.dataTable .dt-unity-footer {
+    width: 100%;
+    display: flex;
+    padding-bottom: 0.25rem;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
 
 @media (max-height: 768px) {
     .dt-scroll-body {
         overflow-y: scroll !important;
     }
+
     .dt-container:not(.dt-scroll-resize) .dt-scroll-body {
         max-height: calc(100vh - 42vh);
     }

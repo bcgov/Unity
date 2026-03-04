@@ -244,6 +244,7 @@ function initializeDataTable(options) {
     let configuration = {
         serverSide: serverSideEnabled,
         paging: pagingEnabled,
+        pageLength: 25,
         order: defaultSortOrder,
         searching: true,
         scrollX: true,
@@ -276,9 +277,12 @@ function initializeDataTable(options) {
             bottomStart: null,
             bottomEnd: null,
             bottom1: {
-                info: { text: '_START_-_END_ of _TOTAL_' },
-                paging: { buttons: 3, boundaryNumbers: true, firstLast: false },
-                pageLength: { menu: [10, 25, 50, 100] },
+                className: 'dt-unity-footer d-md-flex col-md',
+                features: [{
+                    info: { text: '_START_-_END_ of _TOTAL_' },
+                    paging: { buttons: 3, boundaryNumbers: true, firstLast: false },
+                    pageLength: { menu: [25, 50, 75, 100] },
+                }]
             },
         },
         initComplete: function () {
@@ -391,15 +395,10 @@ function initializeDataTable(options) {
     };
 
     if (fixedHeaders) {
-        configuration.scrollY = `calc(100vh - 325px)`; // Initial value – ScrollResize plugin will recalculate dynamically
+        configuration.scrollY = 'calc(100vh - 325px)'; // Initial value – ScrollResize plugin will recalculate dynamically
     }
 
     let iDt = new DataTable(dt, configuration);
-
-    // Initialize ScrollResize plugin for dynamic scroll body sizing
-    if (fixedHeaders && DataTable.ScrollResize) {
-        new DataTable.ScrollResize(iDt);
-    }
 
     // Initialize FilterRow plugin
     initializeFilterRowPlugin(iDt);
@@ -417,6 +416,11 @@ function initializeDataTable(options) {
     iDt.on('user-select', function (e, dt, type, cell, originalEvent) {
         if (originalEvent.target.nodeName.toLowerCase() === 'a') e.preventDefault();
     });
+
+    // Initialize ScrollResize plugin for dynamic scroll body sizing
+    if (fixedHeaders && DataTable.ScrollResize) {
+        iDt.settings()[0]._scrollResize = new DataTable.ScrollResize(iDt);
+    }
 
     return iDt;
 }

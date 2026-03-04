@@ -29,7 +29,7 @@
  * @example
  *   // Manual initialisation after DataTable creation:
  *   let table = $('#example').DataTable({ scrollY: '100px', scrollCollapse: true });
- *   new DataTable.ScrollResize(table);
+ *   DataTable.ScrollResize(table);
  */
 
 (function ($) {
@@ -50,63 +50,53 @@
     let CSS_SCROLL_WRAP = scrollClasses.container;        // 'dt-scroll'
     let CSS_LAYOUT_ROW  = classes.layout.row;             // 'dt-layout-row'
 
-    // Custom marker class applied by this plugin (not from DataTables)
+    // Custom classes (not from DataTables)
     let CSS_SCROLL_RESIZE = 'dt-scroll-resize';
-
-    // -----------------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------------
+    let CSS_UNITY_FOOTER  = 'dt-unity-footer';
 
     /**
      * @param {DataTable.Api} dt   - DataTables API instance
      * @param {Object}        opts - Configuration options
      * @param {number}  [opts.minHeight=150]    Minimum scroll body height in px
-     * @param {number}  [opts.buffer=16]        Extra px subtracted as safety margin
-     * @param {number}  [opts.throttleDelay=60] Throttle interval for resize (ms)
+     * @param {number}  [opts.buffer=32]        Extra px subtracted as safety margin
+     * @param {number}  [opts.throttleDelay=30] Throttle interval for resize (ms)
      */
-    let ScrollResize = function (dt, opts) {
-        if (!(this instanceof ScrollResize)) {
-            throw new Error("ScrollResize must be initialised with the 'new' keyword.");
+    class ScrollResize {
+        constructor(dt, opts) {
+            if (!(this instanceof ScrollResize)) {
+                throw new Error("ScrollResize must be initialised with the 'new' keyword.");
+            }
+
+            let table = dt.table();
+            let container = $(table.container());
+
+            this.s = $.extend({
+                minHeight: 150,
+                buffer: 32,
+                throttleDelay: 30
+            }, opts);
+
+            this.s.dt = dt;
+            this.s.table = $(table.node());
+            this.s.container = container;
+            this.s.scrollBody = container.find('div.' + CSS_SCROLL_BODY);
+            this.s.scrollHead = container.find('div.' + CSS_SCROLL_HEAD);
+            this.s.namespace = '.dtScrollResize' + (ScrollResize._counter++);
+
+            // Guard: scrollY must be enabled for a scroll body to exist
+            if (!this.s.scrollBody.length) {
+                console.warn('ScrollResize: no .' + CSS_SCROLL_BODY + ' found – is scrollY enabled?');
+                return;
+            }
+
+            // Mark container so CSS can opt out of static max-height rules
+            container.addClass(CSS_SCROLL_RESIZE);
+
+            this._bindEvents();
+            // Use a small delay so the table is fully laid out before the first calc
+            let that = this;
+            setTimeout(function () { that._size(); }, 0);
         }
-
-        let table = dt.table();
-        let container = $(table.container());
-
-        this.s = $.extend({
-            minHeight: 150,
-            buffer: 75,
-            throttleDelay: 60,
-        }, opts);
-
-        this.s.dt = dt;
-        this.s.table = $(table.node());
-        this.s.container = container;
-        this.s.scrollBody = container.find('div.' + CSS_SCROLL_BODY);
-        this.s.scrollHead = container.find('div.' + CSS_SCROLL_HEAD);
-        this.s.namespace = '.dtScrollResize' + (ScrollResize._counter++);
-
-        // Guard: scrollY must be enabled for a scroll body to exist
-        if (!this.s.scrollBody.length) {
-            console.warn('ScrollResize: no .' + CSS_SCROLL_BODY + ' found – is scrollY enabled?');
-            return;
-        }
-
-        // Mark container so CSS can opt out of static max-height rules
-        container.addClass(CSS_SCROLL_RESIZE);
-
-        this._bindEvents();
-        // Use a small delay so the table is fully laid out before the first calc
-        let that = this;
-        setTimeout(function () { that._size(); }, 0);
-    };
-
-    ScrollResize._counter = 0;
-
-    // -----------------------------------------------------------------------
-    // Prototype
-    // -----------------------------------------------------------------------
-
-    ScrollResize.prototype = {
 
         /**
          * Core sizing calculation.
@@ -115,7 +105,7 @@
          * element above the scroll body (navbar, action bar, search row,
          * column headers, filter row, …) without hard-coding selectors.
          */
-        _size: function () {
+        _size() {
             let scrollBody = this.s.scrollBody;
             if (!scrollBody.length || !scrollBody.is(':visible')) return;
 
@@ -136,31 +126,33 @@
             if (currentHeight !== newHeightPx) {
                 scrollBody.css({ 'height': newHeightPx, 'max-height': newHeightPx });
             }
-        },
+        }
 
         /**
-         * Measure the combined height of all layout rows below the scroll body
-         * inside the DataTables container (pagination, info, page-length, …).
+         * Measure the height of the footer area below the scroll body
+         * (pagination, info, page-length controls).
          *
-         * DataTables 2.x DOM structure:
-         *   div.dt-container
-         *     div.dt-layout-row            ← top controls
-         *     div.dt-layout-row            ← table row
-         *       div.dt-layout-cell
-         *         div.dt-scroll            ← scroll wrapper
-         *           div.dt-scroll-head
-         *           div.dt-scroll-body
-         *     div.dt-layout-row            ← bottom controls (pagination, info)
-         *
-         * We traverse from .dt-scroll up to its parent .dt-layout-row, then
-         * sum the outerHeight of every subsequent sibling row.
+         * Primary:  looks for the .dt-unity-footer element inside the
+         *           container and measures its parent .dt-layout-row.
+         * Fallback: traverses from .dt-scroll up to its parent
+         *           .dt-layout-row and sums every subsequent sibling row.
          */
-        _getFooterHeight: function () {
-            let scrollBody = this.s.scrollBody;
+        _getFooterHeight() {
+            let container = this.s.container;
             let total = 0;
 
-            // Navigate: .dt-scroll-body → .dt-scroll → .dt-layout-row
-            let scrollWrapper = scrollBody.closest('.' + CSS_SCROLL_WRAP);
+            // Primary: use the .dt-unity-footer marker class
+            let footer = container.find('.' + CSS_UNITY_FOOTER);
+            if (footer.length) {
+                // The footer element sits inside a .dt-layout-row wrapper;
+                // measure whichever is the outermost so margins are included.
+                let row = footer.closest('.' + CSS_LAYOUT_ROW);
+                total = (row.length ? row : footer).outerHeight(true) || 0;
+                return total;
+            }
+
+            // Fallback: DOM traversal for non-standard layouts
+            let scrollWrapper = this.s.scrollBody.closest('.' + CSS_SCROLL_WRAP);
             let tableLayoutRow = scrollWrapper.closest('.' + CSS_LAYOUT_ROW);
 
             if (tableLayoutRow.length) {
@@ -169,24 +161,13 @@
                 });
             }
 
-            // Fallback: position-based detection if layout-row traversal
-            // found nothing (e.g. non-standard layout configuration).
-            if (total === 0) {
-                let bodyBottom = scrollBody[0].getBoundingClientRect().bottom;
-                this.s.container.find('.' + CSS_LAYOUT_ROW).each(function () {
-                    if (this.getBoundingClientRect().top >= bodyBottom - 5) {
-                        total += $(this).outerHeight(true) || 0;
-                    }
-                });
-            }
-
             return total;
-        },
+        }
 
         /**
          * Bind all the events that should trigger a recalculation.
          */
-        _bindEvents: function () {
+        _bindEvents() {
             let that = this;
             let ns = this.s.namespace;
             let dt = this.s.dt;
@@ -221,16 +202,15 @@
                 this._resizeObserver.observe(this.s.scrollHead[0]);
             }
 
-            // --- Cleanup on table destroy ---
             dt.on('destroy' + ns, function () {
                 that._destroy();
             });
-        },
+        }
 
         /**
          * Remove all bound listeners, observers, and inline styles.
          */
-        _destroy: function () {
+        _destroy() {
             let ns = this.s.namespace;
 
             $(window).off(ns);
@@ -244,11 +224,10 @@
             this.s.scrollBody.css({ 'height': '', 'max-height': '' });
             this.s.container.removeClass(CSS_SCROLL_RESIZE);
         }
-    };
+    }
 
-    // -----------------------------------------------------------------------
-    // Static reference
-    // -----------------------------------------------------------------------
+    ScrollResize._counter = 0;
+
     DataTable.ScrollResize = ScrollResize;
 
     return DataTable.ScrollResize;
