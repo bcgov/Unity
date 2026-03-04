@@ -244,7 +244,6 @@ function initializeDataTable(options) {
     let configuration = {
         serverSide: serverSideEnabled,
         paging: pagingEnabled,
-        pageLength: 25,
         order: defaultSortOrder,
         searching: true,
         scrollX: true,

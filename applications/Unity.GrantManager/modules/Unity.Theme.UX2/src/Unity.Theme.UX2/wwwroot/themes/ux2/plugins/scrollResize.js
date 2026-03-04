@@ -29,7 +29,7 @@
  * @example
  *   // Manual initialisation after DataTable creation:
  *   let table = $('#example').DataTable({ scrollY: '100px', scrollCollapse: true });
- *   DataTable.ScrollResize(table);
+ *   new DataTable.ScrollResize(table);
  */
 
 (function ($) {
@@ -63,10 +63,6 @@
      */
     class ScrollResize {
         constructor(dt, opts) {
-            if (!(this instanceof ScrollResize)) {
-                throw new Error("ScrollResize must be initialised with the 'new' keyword.");
-            }
-
             let table = dt.table();
             let container = $(table.container());
 
