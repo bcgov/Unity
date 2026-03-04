@@ -276,7 +276,7 @@ namespace Unity.GrantManager.Applicants
 
             // Assert
             var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
-            dto.LinkSource.ShouldBe("https://chefs-dev.apps.silver.devops.gov.bc.ca/app/form/view?s=");
+            dto.LinkSource.ShouldBe("https://chefs-dev.apps.silver.devops.gov.bc.ca/app/user/view?s=");
         }
 
         [Fact]
