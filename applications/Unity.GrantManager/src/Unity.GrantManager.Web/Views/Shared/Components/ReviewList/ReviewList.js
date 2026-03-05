@@ -421,6 +421,7 @@ function cloneButtonAction(e, dt, button, config) {
     if (typeof (selectedRow) === 'object') {
         unity.grantManager.assessments.assessment.cloneFromAi(selectedRow.id, {})
             .done(function (data) {
+                dt.buttons('Create:name').disable();
                 PubSub.publish('assessment_action_completed');
                 PubSub.publish('refresh_review_list', data.id);
                 PubSub.publish("application_status_changed");

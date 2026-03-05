@@ -113,7 +113,8 @@ public class AssessmentManager : DomainService
         var newAssessment = new Assessment(
             GuidGenerator.Create(),
             application.Id,
-            AIScoringConstants.AiPersonId)
+            AIScoringConstants.AiPersonId,
+            AssessmentState.COMPLETED)
         {
             IsAiAssessment = true
         };
