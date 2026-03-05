@@ -49,10 +49,10 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagement.Applicants.Edit"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.AssignApplicant, L("Permission:GrantApplicationManagement.Applicants.AssignApplicant"));
             var applicantInfoPermissions = applicatPermissions.AddChild(
-                GrantApplicationPermissions.Applicants.ApplicantInfo.Default,
+                GrantApplicationPermissions.Applicants.ApplicantInfoDefault,
                 L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo"));
             applicantInfoPermissions.AddChild(
-                GrantApplicationPermissions.Applicants.ApplicantInfo.EditRedStop,
+                GrantApplicationPermissions.Applicants.EditRedStop,
                 L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo.EditRedStop"));
 
             // Assignment

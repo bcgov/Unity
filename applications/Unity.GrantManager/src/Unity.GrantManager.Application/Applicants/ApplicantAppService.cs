@@ -197,7 +197,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             .ToList() ?? [];
 
         if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
-            && await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Applicants.ApplicantInfo.EditRedStop))
+            && await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Applicants.EditRedStop))
         {
             applicant.RedStop = input.Data.RedStop;
         }
