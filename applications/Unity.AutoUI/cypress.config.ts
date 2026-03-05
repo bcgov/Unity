@@ -5,6 +5,7 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },
+    specPattern: ['cypress/e2e/**/*.cy.{js,jsx,ts,tsx}', 'cypress/regression/**/*.cy.{js,jsx,ts,tsx}'],
     baseUrl: 'https://developer.gov.bc.ca/',
     defaultCommandTimeout: 20000, // Time, in milliseconds, to wait until most DOM based commands are considered timed out.
     viewportWidth: 1440,  // Default width in pixels.

@@ -186,6 +186,39 @@ export class ApplicationsListPage extends ApplicationsPage {
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   }
 
+  // ============ Search Methods ============
+
+  /**
+   * Search for a submission by ID
+   */
+  searchForSubmission(submissionId: string): this {
+    cy.get("#search", { timeout: this.STANDARD_TIMEOUT })
+      .clear()
+      .type(submissionId);
+    this.waitForTableRefresh();
+    return this;
+  }
+
+  /**
+   * Select a row by matching text content
+   */
+  selectRowByText(text: string): this {
+    cy.contains("tr", text, { timeout: this.STANDARD_TIMEOUT })
+      .find(".checkbox-select")
+      .click({ force: true });
+    return this;
+  }
+
+  /**
+   * Click the OPEN button (external link)
+   */
+  clickOpenButton(): this {
+    cy.get("#externalLink", { timeout: this.STANDARD_TIMEOUT })
+      .should("exist")
+      .click({ force: true });
+    return this;
+  }
+
   // ============ Extended Table Methods ============
 
   /**
