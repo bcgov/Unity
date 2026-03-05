@@ -574,50 +574,42 @@ FULL APPLICATION FORM SUBMISSION:
                     return;
                 }
 
-                try
+                var expectedQuestionIds = ExtractSectionQuestionIds(sectionSchema);
+                var returnedQuestionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var answerEntry in sectionAnswers.Answers)
                 {
-                    var expectedQuestionIds = ExtractSectionQuestionIds(sectionSchema);
-                    var returnedQuestionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                    foreach (var answerEntry in sectionAnswers.Answers)
+                    returnedQuestionIds.Add(answerEntry.Key);
+                    allSectionResults[answerEntry.Key] = new Dictionary<string, object?>
                     {
-                        returnedQuestionIds.Add(answerEntry.Key);
-                        allSectionResults[answerEntry.Key] = new Dictionary<string, object?>
-                        {
-                            [AIJsonKeys.Answer] = answerEntry.Value.Answer,
-                            [AIJsonKeys.Rationale] = answerEntry.Value.Rationale,
-                            [AIJsonKeys.Confidence] = answerEntry.Value.Confidence
-                        };
-                    }
-
-                    var missingQuestionIds = expectedQuestionIds.Except(returnedQuestionIds, StringComparer.OrdinalIgnoreCase).ToArray();
-                    if (missingQuestionIds.Length > 0)
-                    {
-                        _logger.LogWarning(
-                            "AI scoresheet response missing question answers for section {SectionName} in application {ApplicationId}. Expected: {ExpectedCount}, Returned: {ReturnedCount}, MissingIds: {MissingIds}.",
-                            sectionName,
-                            applicationId,
-                            expectedQuestionIds.Count,
-                            returnedQuestionIds.Count,
-                            string.Join(",", missingQuestionIds));
-                    }
-                    else
-                    {
-                        _logger.LogDebug(
-                            "AI scoresheet response complete for section {SectionName} in application {ApplicationId}. Returned {ReturnedCount} answers.",
-                            sectionName,
-                            applicationId,
-                            returnedQuestionIds.Count);
-                    }
-
-                    _logger.LogDebug("Successfully processed section {SectionName} with {QuestionCount} questions",
-                        sectionName, questionCount);
+                        [AIJsonKeys.Answer] = answerEntry.Value.Answer,
+                        [AIJsonKeys.Rationale] = answerEntry.Value.Rationale,
+                        [AIJsonKeys.Confidence] = answerEntry.Value.Confidence
+                    };
                 }
-                catch (JsonException ex)
+
+                var missingQuestionIds = expectedQuestionIds.Except(returnedQuestionIds, StringComparer.OrdinalIgnoreCase).ToArray();
+                if (missingQuestionIds.Length > 0)
                 {
-                    _logger.LogError(ex, "Failed to process AI response for section {SectionName} in application {ApplicationId}.",
-                        sectionName, applicationId);
+                    _logger.LogWarning(
+                        "AI scoresheet response missing question answers for section {SectionName} in application {ApplicationId}. Expected: {ExpectedCount}, Returned: {ReturnedCount}, MissingIds: {MissingIds}.",
+                        sectionName,
+                        applicationId,
+                        expectedQuestionIds.Count,
+                        returnedQuestionIds.Count,
+                        string.Join(",", missingQuestionIds));
                 }
+                else
+                {
+                    _logger.LogDebug(
+                        "AI scoresheet response complete for section {SectionName} in application {ApplicationId}. Returned {ReturnedCount} answers.",
+                        sectionName,
+                        applicationId,
+                        returnedQuestionIds.Count);
+                }
+
+                _logger.LogDebug("Successfully processed section {SectionName} with {QuestionCount} questions",
+                    sectionName, questionCount);
             }
             catch (Exception ex)
             {

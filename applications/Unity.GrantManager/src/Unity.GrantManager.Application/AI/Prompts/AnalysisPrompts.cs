@@ -82,11 +82,11 @@ RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
 - Do not provide applicant-facing advice.
 - Do not mention rubric section names in findings.
 - If no findings exist, return empty arrays.
-- rating must be HIGH, MEDIUM, or LOW.
-- Return values exactly as specified in OUTPUT.
-- Do not return keys outside OUTPUT.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).";
+- rating must be HIGH, MEDIUM, or LOW."
+            + "\n" + PromptCoreRules.ExactOutputShape
+            + "\n" + PromptCoreRules.NoExtraOutputKeys
+            + "\n" + PromptCoreRules.ValidJsonOnly
+            + "\n" + PromptCoreRules.PlainJsonOnly;
 
         public static readonly string SystemPrompt = PromptHeader.Build(
             "You are an expert grant analyst assistant for human reviewers.",
