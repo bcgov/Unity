@@ -336,8 +336,8 @@
             data: 'creationTime',
             className: 'data-table-header',
             index: 5,
-            render: function (data) {
-                return formatDate(data);
+            render: function(data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
             },
         };
     }
@@ -349,8 +349,8 @@
             data: 'lastModificationTime',
             className: 'data-table-header',
             index: 6,
-            render: function (data) {
-                return formatDate(data);
+            render: function(data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
             },
         };
     }
@@ -362,8 +362,8 @@
             data: 'paidOn',
             className: 'data-table-header',
             index: 7,
-            render: function (data) {
-                return formatDate(data);
+            render: function (data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
             },
         };
     }
@@ -468,16 +468,6 @@
             className: 'data-table-header',
             index: 13,
         };
-    }
-
-    function formatDate(data) {
-        return data != null
-            ? luxon.DateTime.fromISO(data, {
-                  locale: abp.localization.currentCulture.name,
-              })
-                  .toUTC()
-                  .toLocaleString()
-            : '{Not Available}';
     }
 
     PubSub.subscribe('refresh_application_list', (msg, data) => {

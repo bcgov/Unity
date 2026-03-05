@@ -34,6 +34,8 @@ namespace Unity.GrantManager.Applicants
                 .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
             applicantProfileContactService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
                 .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
+            applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(Arg.Any<string>())
+                .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
             return new ContactInfoDataProvider(currentTenant, applicantProfileContactService);
         }
 

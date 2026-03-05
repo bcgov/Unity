@@ -14,6 +14,7 @@ public static class PaymentsPermissions
         public const string L3ApproveOrDecline = Default + ".L3ApproveOrDecline";
         public const string Decline = Default + ".Decline";
         public const string RequestPayment = Default + ".RequestPayment";
+        public const string AccountCodingOverride = Default + ".AccountCodingOverride";
         public const string EditSupplierInfo = Default + ".EditSupplierInfo";
         public const string EditFormPaymentConfiguration = Default + ".EditFormPaymentConfiguration";
     }    

@@ -1,22 +1,23 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using System.Text.Json;
 using Unity.Flex.Web.Views.Shared.Components.DataGridDefinitionWidget;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.GrantManager;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.Flex.Web.Tests.Components
 {
-    public class DataGridDefinitionWidgetTests : GrantManagerWebTestBase
+    [Collection(ComponentTestCollection.Name)]
+    public class DataGridDefinitionWidgetTests
     {
         private readonly IAbpLazyServiceProvider lazyServiceProvider;
 
-        public DataGridDefinitionWidgetTests()
+        public DataGridDefinitionWidgetTests(ComponentTestFixture fixture)
         {
-            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+            lazyServiceProvider = fixture.Services.GetRequiredService<IAbpLazyServiceProvider>();
         }
 
         [Fact]

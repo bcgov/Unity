@@ -118,13 +118,15 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                     ColumnNames = await GetViewColumnNamesAsync(normalizedViewName)
                 };
 
-                // Build the preview query using the LIMIT 1 subquery pattern
+                // Build the preview query - select the most recently created application
                 var previewQuery = $@"
                     SELECT * 
                     FROM ""Reporting"".""{normalizedViewName}""
                     WHERE ""application_id"" = (
-                        SELECT ""application_id""
-                        FROM ""Reporting"".""{normalizedViewName}""
+                        SELECT v.""application_id""
+                        FROM ""Reporting"".""{normalizedViewName}"" v
+                        INNER JOIN ""Applications"" a ON v.""application_id"" = a.""Id""
+                        ORDER BY a.""CreationTime"" DESC
                         LIMIT 1
                     )";
 

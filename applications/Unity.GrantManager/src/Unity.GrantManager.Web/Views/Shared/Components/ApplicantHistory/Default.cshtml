@@ -1,0 +1,96 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantHistory
+
+@model ApplicantHistoryViewModel
+
+@{
+    Layout = null;
+}
+
+<div class="applicant-history-widget applicant-info-container px-1 pb-2 mb-4">
+
+    <div class="save-button-container">
+        <abp-button text="Save"
+                    id="saveApplicantHistoryBtn"
+                    class="floating-save-btn"
+                    icon-type="Other"
+                    icon="fl fl-save"
+                    button-type="Primary"
+                    disabled="true" />
+    </div>
+
+    <form id="ApplicantHistoryNotesForm" autocomplete="off">
+        <input type="hidden" id="ApplicantHistory_ApplicantId" value="@Model.ApplicantId" />
+
+        @* ── Funding History ── *@
+        <section class="history-section">
+            <div class="pb-1 pt-2">
+                <h6 class="fw-bold mb-0">Funding History</h6>
+            </div>
+            <div class="pb-2 pt-1">
+                <span class="history-section__subtitle">Previous Funding History</span>
+            </div>
+            <div class="history-section__toolbar">
+                <input type="search" id="funding-history-search" class="tbl-search" placeholder="Search" />
+                <div id="fundingHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
+            </div>
+            <abp-table id="FundingHistoryTable" hoverable-rows="true" class="w-100"></abp-table>
+
+            <div class="mt-3">
+                <label class="form-label fw-bold">Previous Funding Notes</label>
+                <br/>
+                <label class="form-label">Additional Comments</label>
+                <textarea id="FundingHistoryComments"
+                          name="FundingHistoryComments"
+                          class="form-control"
+                          rows="4">@Model.FundingHistoryComments</textarea>
+            </div>
+        </section>
+
+        @* ── Issue Tracking ── *@
+        <section class="history-section">
+            <div class="pb-1 pt-2">
+                <h6 class="fw-bold mb-0">Issue Tracking</h6>
+            </div>
+            <div class="pb-2 pt-1">
+                <span class="history-section__subtitle">Previous Issues</span>
+            </div>
+            <div class="history-section__toolbar">
+                <input type="search" id="issue-tracking-search" class="tbl-search" placeholder="Search" />
+                <div id="issueTrackingDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
+            </div>
+            <abp-table id="IssueTrackingTable" hoverable-rows="true" class="w-100"></abp-table>
+
+            <div class="mt-3">
+                <label class="form-label fw-bold">Issue Notes</label>
+                <br/>
+                <label class="form-label">Additional Comments</label>
+                <textarea id="IssueTrackingComments"
+                          name="IssueTrackingComments"
+                          class="form-control"
+                          rows="4">@Model.IssueTrackingComments</textarea>
+            </div>
+        </section>
+
+        @* ── Audit History ── *@
+        <section class="history-section">
+            <div class="pb-1 pt-2">
+                <h6 class="fw-bold mb-0">Audit History</h6>
+            </div>
+            <div class="history-section__toolbar">
+                <input type="search" id="audit-history-search" class="tbl-search" placeholder="Search" />
+                <div id="auditHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
+            </div>
+            <abp-table id="AuditHistoryTable" hoverable-rows="true" class="w-100"></abp-table>
+
+            <div class="mt-3">
+                <label class="form-label fw-bold">Audit History Notes</label>
+                <br/>
+                <label class="form-label">Additional Comments</label>
+                <textarea id="AuditComments"
+                          name="AuditComments"
+                          class="form-control"
+                          rows="4">@Model.AuditComments</textarea>
+            </div>
+        </section>
+    </form>
+</div>

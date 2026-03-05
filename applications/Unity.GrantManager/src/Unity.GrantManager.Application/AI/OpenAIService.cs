@@ -54,6 +54,38 @@ namespace Unity.GrantManager.AI
             return Task.FromResult(true);
         }
 
+        public async Task<AICompletionResponse> GenerateCompletionAsync(AICompletionRequest request)
+        {
+            var content = await GenerateSummaryAsync(
+                request?.UserPrompt ?? string.Empty,
+                request?.SystemPrompt,
+                request?.MaxTokens ?? 150);
+            return new AICompletionResponse { Content = content };
+        }
+
+        public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
+        {
+            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
+            var schemaJson = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
+
+            var attachmentSummaries = request.Attachments
+                .Select(a => $"{a.Name}: {a.Summary}")
+                .ToList();
+
+            var applicationContent = $@"DATA
+{dataJson}";
+
+            var formFieldConfiguration = $@"SCHEMA
+{schemaJson}";
+
+            var raw = await AnalyzeApplicationAsync(
+                applicationContent,
+                attachmentSummaries,
+                request.Rubric ?? string.Empty,
+                formFieldConfiguration);
+            return ParseApplicationAnalysisResponse(raw);
+        }
+
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
         {
             if (string.IsNullOrEmpty(ApiKey))
@@ -128,23 +160,11 @@ namespace Unity.GrantManager.AI
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
 
-                var prompt = @"ROLE
-You are a professional grant analyst for the BC Government.
+                var prompt = $@"{AttachmentPrompts.SystemPrompt}
 
-TASK
-Produce a concise reviewer-facing summary of the provided attachment context.
+{AttachmentPrompts.OutputSection}
 
-OUTPUT
-- Plain text only
-- 1-2 complete sentences
-
-RULES
-- Use only the provided attachment context as evidence.
-- If text content is present, summarize the actual content.
-- If text content is missing or empty, provide a conservative metadata-based summary.
-- Do not invent missing details.
-- Keep the summary specific, concrete, and reviewer-facing.
-- Return plain text only (no markdown, bullets, or JSON).";
+{AttachmentPrompts.RulesSection}";
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
                 if (attachmentText != null)
@@ -163,7 +183,8 @@ RULES
                     sizeBytes = fileContent.Length,
                     text = attachmentText
                 };
-                var contentToAnalyze = $"ATTACHMENT\n{JsonSerializer.Serialize(attachmentPayload, JsonLogOptions)}";
+                var contentToAnalyze = AttachmentPrompts.BuildUserPrompt(
+                    JsonSerializer.Serialize(attachmentPayload, JsonLogOptions));
 
                 await LogPromptInputAsync("AttachmentSummary", prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
@@ -175,6 +196,15 @@ RULES
                 _logger.LogError(ex, "Error generating attachment summary for {FileName}", fileName);
                 return $"AI analysis not available for this attachment ({fileName}).";
             }
+        }
+
+        public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
+        {
+            var summary = await GenerateAttachmentSummaryAsync(
+                request?.FileName ?? string.Empty,
+                request?.FileContent ?? Array.Empty<byte>(),
+                request?.ContentType ?? "application/octet-stream");
+            return new AttachmentSummaryResponse { Summary = summary };
         }
 
         public async Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric, string? formFieldConfiguration = null)
@@ -195,9 +225,9 @@ RULES
                         using var schemaDoc = JsonDocument.Parse(formFieldConfiguration);
                         schemaPayload = schemaDoc.RootElement.Clone();
                     }
-                    catch (JsonException)
+                    catch (JsonException ex)
                     {
-                        _logger.LogWarning("Invalid form field configuration JSON. Using empty schema payload.");
+                        _logger.LogWarning(ex, "Invalid form field configuration JSON. Using empty schema payload.");
                     }
                 }
 
@@ -216,75 +246,13 @@ RULES
                         .Cast<object>()
                     : Enumerable.Empty<object>();
 
-                var analysisContent = $@"SCHEMA
-{JsonSerializer.Serialize(schemaPayload, JsonLogOptions)}
+                var analysisContent = AnalysisPrompts.BuildUserPrompt(
+                    JsonSerializer.Serialize(schemaPayload, JsonLogOptions),
+                    JsonSerializer.Serialize(dataPayload, JsonLogOptions),
+                    JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions),
+                    rubric);
 
-DATA
-{JsonSerializer.Serialize(dataPayload, JsonLogOptions)}
-
-ATTACHMENTS
-{JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions)}
-
-RUBRIC
-{rubric}
-
-SEVERITY
-ERROR: Issue that would likely prevent the application from being approved.
-WARNING: Issue that could negatively affect the application's approval.
-RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.
-
-SCORE
-HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
-MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
-LOW: Application has significant gaps or risks across key rubric areas.
-
-OUTPUT
-{{
-  ""overall_score"": ""HIGH/MEDIUM/LOW"",
-  ""warnings"": [
-    {{
-      ""category"": ""Brief summary of the warning"",
-      ""message"": ""Detailed warning message with full context and explanation""
-    }}
-  ],
-  ""errors"": [
-    {{
-      ""category"": ""Brief summary of the error"",
-      ""message"": ""Detailed error message with full context and explanation""
-    }}
-  ],
-  ""recommendations"": [
-    {{
-      ""category"": ""Brief summary of the recommendation"",
-      ""message"": ""Detailed recommendation with specific actionable guidance""
-    }}
-  ]
-}}
-
-RULES
-- Use only SCHEMA, DATA, ATTACHMENTS, and RUBRIC as evidence.
-- Do not invent fields, documents, requirements, or facts.
-- Treat missing or empty values as findings only when they weaken rubric evidence.
-- Prefer material issues; avoid nitpicking.
-- Each error/warning/recommendation must describe one concrete issue or consideration and why it matters.
-- Use 3-6 words for category.
-- Each message must be 1-2 complete sentences.
-- Each message must be grounded in concrete evidence from provided inputs.
-- If attachment evidence is used, reference the attachment explicitly in the message.
-- Do not provide applicant-facing advice.
-- Do not mention rubric section names in findings.
-- If no findings exist, return empty arrays.
-- overall_score must be HIGH, MEDIUM, or LOW.
-- Return values exactly as specified in OUTPUT.
-- Do not return keys outside OUTPUT.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).";
-
-                var systemPrompt = @"ROLE
-You are an expert grant analyst assistant for human reviewers.
-
-TASK
-Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, return review findings.";
+                var systemPrompt = AnalysisPrompts.SystemPrompt;
 
                 await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
@@ -312,9 +280,11 @@ Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, ret
 
                     foreach (var property in jsonDoc.RootElement.EnumerateObject())
                     {
-                        if (property.Name == "errors" || property.Name == "warnings")
+                        var outputPropertyName = property.Name;
+
+                        if (outputPropertyName == AIJsonKeys.Errors || outputPropertyName == AIJsonKeys.Warnings)
                         {
-                            writer.WritePropertyName(property.Name);
+                            writer.WritePropertyName(outputPropertyName);
                             writer.WriteStartArray();
 
                             foreach (var item in property.Value.EnumerateArray())
@@ -337,14 +307,21 @@ Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, ret
                         }
                         else
                         {
+                            if (outputPropertyName != property.Name)
+                            {
+                                writer.WritePropertyName(outputPropertyName);
+                                property.Value.WriteTo(writer);
+                                continue;
+                            }
+
                             property.WriteTo(writer);
                         }
                     }
 
-                    // Add dismissed_items array if not present
-                    if (!jsonDoc.RootElement.TryGetProperty("dismissed_items", out _))
+                    // Add dismissed array if not present.
+                    if (!jsonDoc.RootElement.TryGetProperty(AIJsonKeys.Dismissed, out _))
                     {
-                        writer.WritePropertyName("dismissed_items");
+                        writer.WritePropertyName(AIJsonKeys.Dismissed);
                         writer.WriteStartArray();
                         writer.WriteEndArray();
                     }
@@ -452,53 +429,12 @@ Respond only with valid JSON in the exact format requested.";
                     questions = sectionQuestionsPayload
                 };
 
-                var analysisContent = $@"DATA
-{applicationContent}
+                var analysisContent = ScoresheetPrompts.BuildSectionUserPrompt(
+                    applicationContent,
+                    attachmentSummariesText,
+                    JsonSerializer.Serialize(sectionPayload, JsonLogOptions));
 
-ATTACHMENTS
-- {attachmentSummariesText}
-
-SECTION
-{JsonSerializer.Serialize(sectionPayload, JsonLogOptions)}
-
-RESPONSE
-{{
-  ""<question_id>"": {{
-    ""answer"": ""<string | number>"",
-    ""rationale"": ""<evidence-based rationale>"",
-    ""confidence"": 85
-  }}
-}}
-
-RULES
-- Use only DATA and ATTACHMENTS as evidence.
-- Do not invent missing application details.
-- Return exactly one answer object per question ID in SECTION.questions.
-- Do not omit any question IDs from SECTION.questions.
-- Do not add keys that are not question IDs from SECTION.questions.
-- Use RESPONSE as the output contract and fill every placeholder value.
-- Each answer object must include: answer, rationale, confidence.
-- answer type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
-- For yes/no questions, answer must be exactly ""Yes"" or ""No"".
-- For numeric questions, answer must be a numeric value within the allowed range.
-- For select list questions, answer must be the selected availableOptions.number encoded as a string.
-- For select list questions, never return option label text (for example: ""Yes"", ""No"", or ""N/A""); return the option number string.
-- For text and text area questions, answer must be concise, grounded in evidence, and non-empty.
-- rationale must be 1-2 complete sentences grounded in concrete DATA/ATTACHMENTS evidence.
-- For every question, rationale must justify both the selected answer and confidence level based on evidence strength.
-- If evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
-- confidence must be an integer from 0 to 100.
-- Confidence reflects certainty in the selected answer given available evidence, not application quality.
-- Return values exactly as specified in RESPONSE.
-- Do not return keys outside RESPONSE.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).";
-
-                var systemPrompt = @"ROLE
-You are an expert grant application reviewer for the BC Government.
-
-TASK
-Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions in SECTION.";
+                var systemPrompt = ScoresheetPrompts.SectionSystemPrompt;
 
                 await LogPromptInputAsync("ScoresheetSection", systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
@@ -510,6 +446,147 @@ Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions
                 _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", sectionName);
                 return "{}";
             }
+        }
+
+        public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAnswersAsync(ScoresheetSectionRequest request)
+        {
+            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
+            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
+
+            var attachmentSummaries = request.Attachments
+                .Select(a => $"{a.Name}: {a.Summary}")
+                .ToList();
+
+            var raw = await GenerateScoresheetSectionAnswersAsync(
+                dataJson,
+                attachmentSummaries,
+                sectionJson,
+                request.SectionName);
+            return ParseScoresheetSectionResponse(raw);
+        }
+
+        private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
+        {
+            var response = new ApplicationAnalysisResponse();
+
+            if (!TryParseJsonObjectFromResponse(raw, out var root))
+            {
+                return response;
+            }
+
+            if (TryGetStringProperty(root, AIJsonKeys.Rating, out var rating))
+            {
+                response.Rating = rating;
+            }
+
+            if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
+            {
+                response.Errors = ParseFindings(errors);
+            }
+
+            if (root.TryGetProperty("warnings", out var warnings) && warnings.ValueKind == JsonValueKind.Array)
+            {
+                response.Warnings = ParseFindings(warnings);
+            }
+
+            if (root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) && summaries.ValueKind == JsonValueKind.Array)
+            {
+                response.Summaries = ParseFindings(summaries);
+            }
+
+            if (root.TryGetProperty(AIJsonKeys.Dismissed, out var dismissed) && dismissed.ValueKind == JsonValueKind.Array)
+            {
+                response.Dismissed = dismissed
+                    .EnumerateArray()
+                    .Select(item => item.ValueKind == JsonValueKind.String ? item.GetString() : null)
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Cast<string>()
+                    .ToList();
+            }
+
+            return response;
+        }
+
+        private static bool TryGetStringProperty(JsonElement root, string propertyName, out string? value)
+        {
+            value = null;
+            if (!root.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            value = property.GetString();
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
+        private static List<ApplicationAnalysisFinding> ParseFindings(JsonElement array)
+        {
+            var findings = new List<ApplicationAnalysisFinding>();
+            foreach (var item in array.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var id = item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                    ? idProp.GetString()
+                    : null;
+                var title = item.TryGetProperty("category", out var titleProp) && titleProp.ValueKind == JsonValueKind.String
+                    ? titleProp.GetString()
+                    : null;
+                var detail = item.TryGetProperty("message", out var detailProp) && detailProp.ValueKind == JsonValueKind.String
+                    ? detailProp.GetString()
+                    : null;
+
+                findings.Add(new ApplicationAnalysisFinding
+                {
+                    Id = id,
+                    Title = title,
+                    Detail = detail
+                });
+            }
+
+            return findings;
+        }
+
+        private static ScoresheetSectionResponse ParseScoresheetSectionResponse(string raw)
+        {
+            var response = new ScoresheetSectionResponse();
+            if (!TryParseJsonObjectFromResponse(raw, out var root))
+            {
+                return response;
+            }
+
+            foreach (var property in root.EnumerateObject())
+            {
+                if (property.Value.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var answer = property.Value.TryGetProperty("answer", out var answerProp)
+                    ? answerProp.Clone()
+                    : default;
+                var rationale = property.Value.TryGetProperty("rationale", out var rationaleProp) &&
+                                rationaleProp.ValueKind == JsonValueKind.String
+                    ? rationaleProp.GetString() ?? string.Empty
+                    : string.Empty;
+                var confidence = property.Value.TryGetProperty("confidence", out var confidenceProp) &&
+                                 confidenceProp.ValueKind == JsonValueKind.Number &&
+                                 confidenceProp.TryGetInt32(out var parsedConfidence)
+                    ? parsedConfidence
+                    : 0;
+
+                response.Answers[property.Name] = new ScoresheetSectionAnswer
+                {
+                    Answer = answer,
+                    Rationale = rationale,
+                    Confidence = confidence
+                };
+            }
+
+            return response;
         }
 
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)

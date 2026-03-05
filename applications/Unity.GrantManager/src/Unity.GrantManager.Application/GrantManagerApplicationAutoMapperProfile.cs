@@ -2,6 +2,7 @@
 using System;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Comments;
@@ -93,6 +94,19 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationTags, ApplicationTagsDto>();
         CreateMap<ApplicationTags, ApplicationTagsDto>()
         .ForMember(dest => dest.Tag, opt => opt.MapFrom(src => src.Tag));
+
+        //-- APPLICANT HISTORY
+        CreateMap<FundingHistory, FundingHistoryDto>();
+        CreateMap<CreateUpdateFundingHistoryDto, FundingHistory>();
+        CreateMap<FundingHistoryDto, FundingHistory>();
+
+        CreateMap<IssueTracking, IssueTrackingDto>();
+        CreateMap<CreateUpdateIssueTrackingDto, IssueTracking>();
+        CreateMap<IssueTrackingDto, IssueTracking>();
+
+        CreateMap<AuditHistory, AuditHistoryDto>();
+        CreateMap<CreateUpdateAuditHistoryDto, AuditHistory>();
+        CreateMap<AuditHistoryDto, AuditHistory>();
 
         //-- PROJECT INFO
         CreateMap<UpdateProjectInfoDto, Application>()

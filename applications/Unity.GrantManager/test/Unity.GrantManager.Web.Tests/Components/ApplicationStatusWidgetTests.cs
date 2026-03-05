@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Components
 {
+    [Collection(WebTestCollection.Name)]
     public class ApplicationStatusWidgetTests
     {
         public ApplicationStatusWidgetTests()

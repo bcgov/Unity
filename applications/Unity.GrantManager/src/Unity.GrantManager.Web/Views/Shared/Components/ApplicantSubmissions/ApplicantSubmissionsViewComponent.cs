@@ -169,7 +169,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            context.Files.AddIfNotContains("/js/DateUtils.js");
             context.Files.AddIfNotContains("/Views/Shared/Components/ApplicantSubmissions/Default.js");
         }
     }

@@ -25,6 +25,8 @@
     "ApplicationPaymentRequest:BatchNumberName": "Batch #",
     "ApplicationPaymentRequest:NumberPayment": "Number of Payments",
     "ApplicationPaymentRequest:TotalAmount": "Total Amount",
+    "ApplicationPaymentRequest:AccountCodingOverride": "Account Coding Override",
+    "ApplicationPaymentRequest:AccountCodingOverrideWarning": "An overridden account code is being used for this payment request.", 
     "ApplicationPaymentRequest:BatchNote": "Note",
 
     "ApplicationPaymentRequest:Validations:RemainingAmountExceeded": "Cannot add a payment that exceeds the remaining amount of ",
@@ -120,6 +122,7 @@
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
     "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
     "Permission:Payments.RequestPayment": "Request Payment",
+    "Permission:Payments.AccountCodingOverride": "Override Account Coding",
     "Permission:Payments.EditFormPaymentConfiguration": "Edit Form Payment Configuration",
     "Enum:PaymentRequestStatus.L1Pending": "L1 Pending",
     "Enum:PaymentRequestStatus.L1Approved": "L1 Approved",
