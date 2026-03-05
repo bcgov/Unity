@@ -5,6 +5,7 @@ const actionButtonConfigMap = {
     Create: { buttonType: 'createButton', order: 1 },
     Complete: { buttonType: 'unityWorkflow', order: 2 },
     SendBack: { buttonType: 'unityWorkflow', order: 3 },
+    Clone: { buttonType: 'cloneButton', order: 4 },
     _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }
 
@@ -54,6 +55,11 @@ $(function () {
             extend: 'unityWorkflow',
             init: createButtonInit,
             action: createButtonAction
+        },
+        cloneButton: {
+            extend: 'unityWorkflow',
+            text: cloneButtonText,
+            action: cloneButtonAction
         }
     });
 
@@ -72,6 +78,11 @@ $(function () {
     let assessmentCreateButtonGroup = {
         name: 'assessmentCreateButtonsGroup',
         buttons: Array(renderUnityWorkflowButton('Create'))
+    };
+
+    let assessmentCloneButtonGroup = {
+        name: 'assessmentCloneButtonsGroup',
+        buttons: Array(renderUnityWorkflowButton('Clone'))
     };
 
     const reviewListDiv = "ReviewListTable";
@@ -110,8 +121,12 @@ $(function () {
                     title: l('ReviewerList:AssessorName'),
                     data: 'assessorFullName',
                     className: 'data-table-header',
-                    render: function (data) {
-                        return data ?? nullPlaceholder;
+                    render: function (data, type, row) {
+                        let name = data ?? nullPlaceholder;
+                        if (row.isAiAssessment) {
+                            name = '<span class="badge bg-info me-1">AI</span>' + name;
+                        }
+                        return name;
                     },
                 },
                 {
@@ -190,6 +205,10 @@ $(function () {
         CreateAssessmentButton();
     }
 
+    if (abp.auth.isGranted('AI.ScoringAssistant')) {
+        CloneAssessmentButton();
+    }
+
     async function CreateAssessmentButton() {
         let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
         createButtons.container().prependTo("#AdjudicationTeamLeadActionBar");
@@ -201,6 +220,12 @@ $(function () {
     async function CheckAssessmentCreateButton() {
         let applicationStatus = await getActionButtonConfigMap();
         return !finalApplicationStates.includes(applicationStatus.statusCode);
+    }
+
+    function CloneAssessmentButton() {
+        let cloneButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCloneButtonGroup);
+        cloneButtons.container().prependTo("#AdjudicationTeamLeadActionBar");
+        reviewListTable.buttons('Clone:name').disable();
     }
 
     reviewListTable.buttons(0, null).container().appendTo("#AdjudicationTeamLeadActionBar");
@@ -253,7 +278,7 @@ function handleRowSelection(e, dt, type, indexes, reviewListTable) {
             PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
         }
         e.currentTarget.classList.toggle('selected');
-        refreshActionButtons(dt, selectedData.id);
+        refreshActionButtons(dt, selectedData.id, selectedData);
     }
 }
 
@@ -294,16 +319,27 @@ function getButtonArray(actionArray) {
         .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-function refreshActionButtons(dataTableContext, assessmentId) {
+function refreshActionButtons(dataTableContext, assessmentId, selectedData) {
     dataTableContext.buttons(0, null).disable();
+    dataTableContext.buttons('Clone:name').disable();
 
     if (assessmentId) {
-        unity.grantManager.assessments.assessment.getPermittedActions(assessmentId, {})
-            .then(function (actionListResult) {
-                // Check permissions
-                let enabledButtons = actionListResult.map((x) => x + ':name');
-                dataTableContext.buttons(enabledButtons).enable();
-            });
+        if (selectedData?.isAiAssessment) {
+            // AI assessment: Clone is only available if the current user has no existing human assessment
+            unity.grantManager.assessments.assessment.getCurrentUserAssessmentId(pageApplicationId, {})
+                .done(function (existingAssessmentId) {
+                    if (existingAssessmentId == null) {
+                        dataTableContext.buttons('Clone:name').enable();
+                    }
+                });
+        } else {
+            // Human assessment: enable workflow buttons based on permitted actions
+            unity.grantManager.assessments.assessment.getPermittedActions(assessmentId, {})
+                .then(function (actionListResult) {
+                    let enabledButtons = actionListResult.map((x) => x + ':name');
+                    dataTableContext.buttons(enabledButtons).enable();
+                });
+        }
     }
 
     if (typeof CheckAssessmentCreateButton === 'function') {
@@ -345,6 +381,10 @@ function unityWorkflowButtonText(dt, button, config) {
     return '<span>' + buttonText + '</span>';
 }
 
+function cloneButtonText(dt, button, config) {
+    return '<span>' + l('ReviewerList:CloneAssessment') + '</span>';
+}
+
 function unityWorkflowButtonAction(e, dt, button, config) {
     let selectedRow = dt.rows({ selected: true }).data()[0];
     if (typeof (selectedRow) === 'object') {
@@ -374,6 +414,23 @@ function createButtonInit(dt, button, config) {
                 that.disable();
             }
         });
+}
+
+function cloneButtonAction(e, dt, button, config) {
+    let selectedRow = dt.rows({ selected: true }).data()[0];
+    if (typeof (selectedRow) === 'object') {
+        unity.grantManager.assessments.assessment.cloneFromAi(selectedRow.id, {})
+            .done(function (data) {
+                PubSub.publish('assessment_action_completed');
+                PubSub.publish('refresh_review_list', data.id);
+                PubSub.publish("application_status_changed");
+                PubSub.publish("refresh_detail_panel_summary");
+                abp.notify.success(
+                    l('ReviewerList:CloneAssessment'),
+                    "Completed Successfully"
+                );
+            });
+    }
 }
 
 function createButtonAction(e, dt, button, config) {

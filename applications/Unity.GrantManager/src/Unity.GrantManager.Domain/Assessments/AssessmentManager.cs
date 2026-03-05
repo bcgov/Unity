@@ -62,7 +62,7 @@ public class AssessmentManager : DomainService
         var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
 
         var otherAssessments = await _assessmentRepository.GetListByApplicationId(application.Id);
-        bool hasOtherAssessments = otherAssessments != null && otherAssessments.Count != 0;
+        bool hasOtherAssessments = otherAssessments != null && otherAssessments.Any(a => !a.IsAiAssessment);
 
         var assessment = await _assessmentRepository.InsertAsync(
             new Assessment(

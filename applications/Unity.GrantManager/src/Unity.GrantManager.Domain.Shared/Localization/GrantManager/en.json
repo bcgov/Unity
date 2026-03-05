@@ -100,6 +100,7 @@
     "ReviewerList:InclusiveGrowth": "Inclusive Growth",
     "ReviewerList:CleanGrowth": "Clean Growth",
     "ReviewerList:Subtotal": "Subtotal",
+    "ReviewerList:CloneAssessment": "Clone Assessment",
 
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",
@@ -248,6 +249,8 @@
     "GrantManager:PayableFormRequiresHierarchy": "Please select a form hierarchy before saving a payable form.",
     "GrantManager:ChildFormRequiresParentForm": "Please select a parent form when the form hierarchy is set to Child.",
     "GrantManager:ChildFormCannotReferenceSelf": "A form cannot reference itself as the parent.",
+    "GrantManager:CannotModifyAiAssessment": "AI assessments are read-only.",
+    "GrantManager:CannotCloneNonAiAssessment": "Only AI assessments can be cloned.",
 
     "AssessmentResultsView:ApprovalTitle": "Approval",
     "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",

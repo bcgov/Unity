@@ -73,8 +73,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                     // First, populate human answers
                     ResolveAnswers(scoresheetInstance, scoresheetDto, humanAnsweredQuestions);
 
-                    // Then, populate AI answers for questions without human answers
-                    ResolveAiAnswers(aiAnswers, scoresheetDto, humanAnsweredQuestions);
+                    // Only show AI suggestions on the dedicated AI assessment row.
+                    // Human assessments (including clones) show only their own saved answers.
+                    if (assessment.IsAiAssessment)
+                    {
+                        ResolveAiAnswers(aiAnswers, scoresheetDto, humanAnsweredQuestions);
+                    }
                 }
             }
             AssessmentScoresWidgetViewModel model = new()

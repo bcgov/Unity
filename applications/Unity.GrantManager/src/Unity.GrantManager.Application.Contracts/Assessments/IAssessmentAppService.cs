@@ -16,4 +16,5 @@ public interface IAssessmentAppService : IApplicationService
     Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId);
     Task UpdateAssessmentScore(AssessmentScoresDto dto);    
     Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto);
+    Task<AssessmentDto> CloneFromAiAsync(Guid aiAssessmentId);
 }
