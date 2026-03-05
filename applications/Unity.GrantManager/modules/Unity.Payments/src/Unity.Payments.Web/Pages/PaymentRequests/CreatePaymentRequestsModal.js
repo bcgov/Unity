@@ -263,7 +263,6 @@ function validateParentChildAmounts(correlationId) {
 }
 
 $(function () {
-    $('.unity-currency-input').maskMoney();
     // Validate payment amounts on initial page load
     validateAllPaymentAmounts();
 });
