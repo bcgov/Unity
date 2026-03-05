@@ -80,7 +80,7 @@
                             </abp-column>
                         </abp-row>
                     @if (canOverride)
-                    {
+                    { 
                         <abp-row class="m-0 p-1">
                             <abp-column size="_8">
                                 <label for="AccountCodingSelect" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:AccountCodingOverride"]</label>
@@ -182,10 +182,13 @@
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@item.DisableFields"/>
                                 </abp-column>
                                 <abp-column size="_2" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount"
-                                            class="amount unity-currency-input"
+                                    <div class="unity-input-group">
+                                            <span class="unity-input-prepend">$</span>
+                                            <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount"
+                                               class="unity-currency-input amount"
                                                disabled="@item.DisableFields"
                                                onchange='checkMaxValueRequest("@item.CorrelationId",this, @item.RemainingAmount)' />
+                                    </div>
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].SiteName" alt="@item.SiteName" disabled="true"/>
@@ -255,4 +258,21 @@
         </abp-modal-footer>
     </abp-modal>
 </form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney();
+
+            // Format existing values from server fields
+            $('.unity-currency-input').each(function () {
+                let $currencyField = $(this);
+                let fieldVal = $currencyField.val();
+                if (fieldVal) {
+                    $currencyField.maskMoney('mask', fieldVal);
+                }
+            });
+        }
+    })();
+</script>
 
