@@ -512,7 +512,7 @@ Respond only with valid JSON in the exact format requested.";
             {
                 response.Dismissed = dismissed
                     .EnumerateArray()
-                    .Select(item => item.ValueKind == JsonValueKind.String ? item.GetString() : null)
+                    .Select(GetStringValueOrNull)
                     .Where(item => !string.IsNullOrWhiteSpace(item))
                     .Cast<string>()
                     .ToList();
@@ -531,6 +531,16 @@ Respond only with valid JSON in the exact format requested.";
 
             value = property.GetString();
             return !string.IsNullOrWhiteSpace(value);
+        }
+
+        private static string? GetStringValueOrNull(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                return element.GetString();
+            }
+
+            return null;
         }
 
         private static List<ApplicationAnalysisFinding> ParseFindings(JsonElement array)

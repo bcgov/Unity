@@ -428,8 +428,6 @@ $(function () {
                 initialLoad = false; // Reset flag after use
             }
         });
-        dataTable.on('search.dt', () => handleSearch());
-
         dataTable.on('select', function (e, dt, type, indexes) {
 
             if (indexes?.length) {
@@ -489,10 +487,6 @@ $(function () {
             let data = dataTable.row(indexes).data();
             PubSub.publish(action, data);
         }
-    }
-
-    function handleSearch() {
-        let filter = $('.dt-search input').val();
     }
 
     function getColumns() {

@@ -233,7 +233,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
             /// Gets or sets the metadata information associated with the mapping.
             /// Contains contextual information about scoresheets and other correlation-specific details.
             /// </summary>
-            public MapMetadataDto? Metadata { get; set; }
+            public MapMetadataDto? Metadata { get; }
         }
     }
 }
