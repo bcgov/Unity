@@ -48,7 +48,8 @@ public class GrantApplicationAppService(
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService)
+    IPaymentRequestAppService paymentRequestService,
+    IApplicationAnalysisService applicationAnalysisService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
     private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
@@ -1057,6 +1058,19 @@ public class GrantApplicationAppService(
     public async Task<string> DismissAIIssueAsync(Guid applicationId, string issueId)
     {
         return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: true);
+    }
+
+    public async Task<string> GenerateAIAnalysisAsync(Guid applicationId)
+    {
+        try
+        {
+            return await applicationAnalysisService.RegenerateAndSaveAsync(applicationId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error regenerating AI analysis for application {ApplicationId}", applicationId);
+            throw new UserFriendlyException("Failed to regenerate AI analysis. Please try again.");
+        }
     }
 
     public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)

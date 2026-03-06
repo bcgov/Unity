@@ -308,6 +308,33 @@ globalThis.restoreAIIssue = function(issueId) {
         });
 }
 
+globalThis.regenerateAIAnalysis = function() {
+    const applicationId = $('#DetailsViewApplicationId').val();
+    const $button = $('#regenerateAiAnalysis');
+    const existingHtml = $button.html();
+
+    if (!applicationId || $button.prop('disabled')) {
+        return;
+    }
+
+    $button
+        .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Regenerating...')
+        .prop('disabled', true);
+
+    unity.grantManager.grantApplications.grantApplication
+        .generateAIAnalysis(applicationId)
+        .then(function() {
+            abp.notify.success('AI analysis regenerated successfully.');
+            loadAIAnalysis();
+        })
+        .catch(function() {
+            abp.message.error('Failed to regenerate AI analysis. Please try again.');
+        })
+        .always(function() {
+            $button.html(existingHtml).prop('disabled', false);
+        });
+}
+
 function toggleAccordionItem($header) {
     const targetId = $header.attr('data-target');
     const $body = $('#' + targetId);
@@ -365,3 +392,12 @@ function loadAIAnalysis() {
             console.warn('Failed to load application data', error);
         });
 }
+
+$(function() {
+    const $regenerateButton = $('#regenerateAiAnalysis');
+    if ($regenerateButton.length > 0) {
+        $regenerateButton.on('click', function() {
+            regenerateAIAnalysis();
+        });
+    }
+});
