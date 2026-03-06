@@ -1109,7 +1109,7 @@ public class GrantApplicationAppService(
         {
             root = JsonNode.Parse(analysisJson) as JsonObject;
         }
-        catch (JsonException)
+        catch (System.Text.Json.JsonException)
         {
             return analysisJson;
         }
@@ -1148,7 +1148,7 @@ public class GrantApplicationAppService(
             dismissedItems.RemoveAll(id => string.Equals(id, issueId, StringComparison.Ordinal));
         }
 
-        root[AIJsonKeys.Dismissed] = new JsonArray(dismissedItems.Select(JsonValue.Create).ToArray());
+        root[AIJsonKeys.Dismissed] = new JsonArray(dismissedItems.Select(id => JsonValue.Create(id)).ToArray());
         return root.ToJsonString(AiAnalysisWriteOptions);
     }
 
