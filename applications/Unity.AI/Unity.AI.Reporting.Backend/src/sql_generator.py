@@ -257,8 +257,7 @@ class SQLGenerator:
                 continue
 
             # Unpack the tuple (text, usage)
-            raw, usage = result
-            logger.debug(f"Raw completion:\n{raw}")
+            _, usage = result
 
             # Aggregate tokens
             total_prompt += usage.get('prompt_tokens', 0)
