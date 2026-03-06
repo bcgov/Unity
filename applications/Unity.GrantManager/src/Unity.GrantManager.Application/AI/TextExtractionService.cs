@@ -131,10 +131,17 @@ namespace Unity.GrantManager.AI
 
                 foreach (var pageText in document.GetPages().Select(page => page.Text))
                 {
-                    var limitReached = AppendWithLimit(builder, pageText, MaxExtractedTextLength, Environment.NewLine);
+                    var limitReached = AppendWithLimit(builder, pageText, MaxExtractedTextLength);
                     if (limitReached)
                     {
                         break;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(pageText) &&
+                        builder.Length > 0 &&
+                        builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+                    {
+                        builder.Append(Environment.NewLine);
                     }
                 }
 
@@ -157,10 +164,17 @@ namespace Unity.GrantManager.AI
 
                 foreach (var paragraphText in document.Paragraphs.Take(MaxDocxParagraphs).Select(paragraph => paragraph.ParagraphText))
                 {
-                    var limitReached = AppendWithLimit(builder, paragraphText, MaxExtractedTextLength, Environment.NewLine);
+                    var limitReached = AppendWithLimit(builder, paragraphText, MaxExtractedTextLength);
                     if (limitReached)
                     {
                         break;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(paragraphText) &&
+                        builder.Length > 0 &&
+                        builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+                    {
+                        builder.Append(Environment.NewLine);
                     }
                 }
 
@@ -172,10 +186,18 @@ namespace Unity.GrantManager.AI
                         {
                             foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
                             {
-                                var limitReached = AppendWithLimit(builder, cell.GetText(), MaxExtractedTextLength, Environment.NewLine);
+                                var cellText = cell.GetText();
+                                var limitReached = AppendWithLimit(builder, cellText, MaxExtractedTextLength);
                                 if (limitReached)
                                 {
                                     break;
+                                }
+
+                                if (!string.IsNullOrWhiteSpace(cellText) &&
+                                    builder.Length > 0 &&
+                                    builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+                                {
+                                    builder.Append(Environment.NewLine);
                                 }
                             }
 
@@ -276,10 +298,6 @@ namespace Unity.GrantManager.AI
                 {
                     separator = " | ";
                 }
-                else if (builder.Length > 0)
-                {
-                    separator = Environment.NewLine;
-                }
 
                 var limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength, separator);
                 rowHasValue = true;
@@ -289,7 +307,13 @@ namespace Unity.GrantManager.AI
                 }
             }
 
-            return false;
+            if (rowHasValue &&
+                builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+            {
+                builder.Append(Environment.NewLine);
+            }
+
+            return builder.Length >= MaxExtractedTextLength;
         }
 
         private static bool AppendWithLimit(StringBuilder builder, string? value, int maxLength, string? separator = null)
