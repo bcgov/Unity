@@ -12,7 +12,6 @@ using Unity.Flex.Domain.Scoresheets;
 using System.Text.Json;
 using Volo.Abp.Features;
 using Newtonsoft.Json.Linq;
-using System.Text;
 
 namespace Unity.GrantManager.Intakes.Handlers
 {
@@ -29,14 +28,22 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IFeatureChecker _featureChecker;
-        const string ComponentsKey = "components";
-
-        readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+        private const string ComponentsKey = "components";
+        private static readonly HashSet<string> NonDataComponentTypes = new()
         {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            "button", "simplebuttonadvanced", "html", "htmlelement", "content", "simpleseparator"
         };
-        readonly JsonSerializerOptions jsonOptionsIndented = new JsonSerializerOptions
+        private static readonly HashSet<string> ExcludedPromptDataKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "simplefile",
+            "applicantAgent",
+            "submit",
+            "lateEntry",
+            "metadata",
+            "full_application_form_submission"
+        };
+
+        private readonly JsonSerializerOptions _jsonOptionsIndented = new JsonSerializerOptions
         {
             WriteIndented = true
         };
@@ -110,7 +117,6 @@ namespace Unity.GrantManager.Intakes.Handlers
                         await ProcessAttachmentSummaryAsync(attachment, eventData.Application.Id);
                     }
                 }
-                }
 
                 // Generate application analysis and scoresheet if feature is enabled
                 if (applicationAnalysisEnabled)
@@ -143,8 +149,13 @@ namespace Unity.GrantManager.Intakes.Handlers
                 _logger.LogDebug("Generating AI summary for attachment {FileName}", fileName);
 
                 var (fileContent, contentType) = await GetAttachmentContentForSummaryAsync(attachment, fileName);
-                var summary = await _aiService.GenerateAttachmentSummaryAsync(fileName, fileContent, contentType);
-                await SaveAttachmentSummaryAsync(attachment, fileName, summary, fileContent.Length == 0);
+                var summary = await _aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
+                {
+                    FileName = fileName,
+                    FileContent = fileContent,
+                    ContentType = contentType
+                });
+                await SaveAttachmentSummaryAsync(attachment, fileName, summary.Summary, fileContent.Length == 0);
             }
             catch (Exception ex)
             {
@@ -223,101 +234,50 @@ namespace Unity.GrantManager.Intakes.Handlers
                     return;
                 }
 
-                // Collect all attachment summaries that were generated
-                var attachmentSummaries = attachments
-                    .Where(a => !string.IsNullOrEmpty(a.AISummary))
-                    .Select(a => $"{a.FileName}: {a.AISummary}")
-                    .ToList();
+                var analysisAttachments = BuildAnalysisAttachments(attachments);
 
                 // Get form submission content including rendered HTML
                 var formSubmission = await _applicationFormSubmissionRepository
                     .GetByApplicationAsync(application.Id);
 
-                // Extract form field configuration (required vs optional fields)
-                string formFieldConfiguration = "Form configuration not available.";
-                if (formSubmission?.ApplicationFormVersionId != null)
+                var formFieldSchema = BuildEmptyFormFieldSchema();
+
+                if (formSubmission?.ApplicationFormVersionId is Guid formVersionId)
                 {
-                    formFieldConfiguration = await ExtractFormFieldConfigurationAsync(formSubmission.ApplicationFormVersionId.Value);
-                    _logger.LogDebug("Extracted form field configuration for application {ApplicationId}: {Configuration}",
-                        application.Id, formFieldConfiguration);
+                    formFieldSchema = await ExtractFormFieldConfigurationSchemaAsync(formVersionId);
+                    _logger.LogDebug("Extracted form field schema for application {ApplicationId}",
+                        application.Id);
                 }
                 else
                 {
-                    _logger.LogWarning("Could not extract form field configuration for application {ApplicationId} - ApplicationFormVersionId is null",
+                    _logger.LogWarning("Could not extract form field schema for application {ApplicationId} - ApplicationFormVersionId is null",
                         application.Id);
                 }
 
-                // Get application content including the full form submission
-                var notSpecified = "Not specified";
-                var applicationContent = $@"
-Project Name: {application.ProjectName}
-Reference Number: {application.ReferenceNo}
-Requested Amount: ${application.RequestedAmount:N2}
-Total Project Budget: ${application.TotalProjectBudget:N2}
-Project Summary: {application.ProjectSummary ?? "Not provided"}
-City: {application.City ?? notSpecified}
-Economic Region: {application.EconomicRegion ?? notSpecified}
-Community: {application.Community ?? notSpecified}
-Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? notSpecified}
-Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecified}
-Submission Date: {application.SubmissionDate.ToShortDateString()}
-
-FULL APPLICATION FORM SUBMISSION:
-{formSubmission?.RenderedHTML ?? "Form submission content not available"}
-";
-                _logger.LogInformation("Generating analysis for following application: {Application}", applicationContent);
-
-                // Hardcoded rubric for now
-                var rubric = @"
-BC GOVERNMENT GRANT EVALUATION RUBRIC:
-
-1. ELIGIBILITY REQUIREMENTS:
-   - Project must align with program objectives
-   - Applicant must be eligible entity type
-   - Budget must be reasonable and well-justified
-   - Project timeline must be realistic
-
-2. COMPLETENESS CHECKS:
-   - All required fields completed
-   - Necessary supporting documents provided
-   - Budget breakdown detailed and accurate
-   - Project description clear and comprehensive
-
-3. FINANCIAL REVIEW:
-   - Requested amount is within program limits
-   - Budget is reasonable for scope of work
-   - Matching funds or in-kind contributions identified
-   - Cost per outcome/beneficiary is reasonable
-
-4. RISK ASSESSMENT:
-   - Applicant capacity to deliver project
-   - Technical feasibility of proposed work
-   - Environmental or regulatory compliance
-   - Potential for cost overruns or delays
-
-5. QUALITY INDICATORS:
-   - Clear project objectives and outcomes
-   - Well-defined target audience/beneficiaries
-   - Appropriate project methodology
-   - Sustainability plan for long-term impact
-
-EVALUATION CRITERIA:
-- HIGH: Meets all requirements, well-prepared application, low risk
-- MEDIUM: Meets most requirements, minor issues or missing elements
-- LOW: Missing key requirements, significant concerns, high risk
-";
+                var analysisData = BuildAnalysisDataPayload(application, formSubmission);
+                _logger.LogInformation("Generating analysis for application {ApplicationId}", application.Id);
 
                 _logger.LogDebug("Generating AI analysis for application {ApplicationId} with {AttachmentCount} attachment summaries",
-                    application.Id, attachmentSummaries.Count);
+                    application.Id, analysisAttachments.Count);
 
-                // Generate the analysis with form field configuration
-                var analysis = await _aiService.AnalyzeApplicationAsync(applicationContent, attachmentSummaries, rubric, formFieldConfiguration);
+                var analysisRequest = new ApplicationAnalysisRequest
+                {
+                    Schema = formFieldSchema,
+                    Data = analysisData,
+                    Attachments = analysisAttachments,
+                    Rubric = AnalysisPrompts.DefaultRubric
+                };
 
-                // Clean the response to remove any markdown formatting
-                var cleanedAnalysis = CleanJsonResponse(analysis);
+                var analysis = await _aiService.GenerateApplicationAnalysisAsync(analysisRequest);
+                var analysisJson = JsonSerializer.Serialize(analysis, _jsonOptionsIndented);
+                if (!IsValidAnalysisPayload(analysisJson))
+                {
+                    _logger.LogWarning("Skipping invalid AI analysis payload for application {ApplicationId}.", application.Id);
+                    return;
+                }
 
                 // Update the tracked application with the analysis
-                trackedApplication.AIAnalysis = cleanedAnalysis;
+                trackedApplication.AIAnalysis = analysisJson;
                 await _applicationRepository.UpdateAsync(trackedApplication);
 
                 _logger.LogInformation("Successfully generated AI analysis for application {ApplicationId}", application.Id);
@@ -327,6 +287,85 @@ EVALUATION CRITERIA:
                 _logger.LogError(ex, "Error generating application analysis for {ApplicationId}", application.Id);
                 // Don't throw - this should not break the main submission processing
             }
+        }
+
+        private static List<AIAttachmentItem> BuildAnalysisAttachments(List<ApplicationChefsFileAttachment> attachments)
+        {
+            return attachments
+                .Where(a => !string.IsNullOrWhiteSpace(a.AISummary))
+                .Select(a => new AIAttachmentItem
+                {
+                    Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
+                    Summary = a.AISummary!.Trim()
+                })
+                .ToList();
+        }
+
+        private JsonElement BuildAnalysisDataPayload(Application application, ApplicationFormSubmission? formSubmission)
+        {
+            var fallbackPayload = BuildFallbackAnalysisDataPayload(application, formSubmission?.RenderedHTML);
+
+            if (string.IsNullOrWhiteSpace(formSubmission?.Submission))
+            {
+                return JsonSerializer.SerializeToElement(fallbackPayload);
+            }
+
+            try
+            {
+                using var submissionDoc = JsonDocument.Parse(formSubmission.Submission);
+                var root = submissionDoc.RootElement;
+
+                JsonElement submissionData = root;
+                if (root.ValueKind == JsonValueKind.Object &&
+                    root.TryGetProperty("data", out var dataElement) &&
+                    dataElement.ValueKind == JsonValueKind.Object)
+                {
+                    submissionData = dataElement;
+                }
+                else if (root.ValueKind == JsonValueKind.Object &&
+                    root.TryGetProperty("submission", out var submissionElement) &&
+                    submissionElement.ValueKind == JsonValueKind.Object &&
+                    submissionElement.TryGetProperty("data", out var nestedDataElement) &&
+                    nestedDataElement.ValueKind == JsonValueKind.Object)
+                {
+                    submissionData = nestedDataElement;
+                }
+
+                if (submissionData.ValueKind != JsonValueKind.Object)
+                {
+                    return JsonSerializer.SerializeToElement(fallbackPayload);
+                }
+
+                var values = BuildPromptDataValues(submissionData);
+
+                return JsonSerializer.SerializeToElement(values);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Failed to parse form submission JSON for application {ApplicationId}; falling back to curated analysis data.",
+                    application.Id);
+                return JsonSerializer.SerializeToElement(fallbackPayload);
+            }
+        }
+
+        private static object BuildFallbackAnalysisDataPayload(Application application, string? renderedFormHtml)
+        {
+            var notSpecified = "Not specified";
+            return new
+            {
+                project_name = application.ProjectName,
+                reference_number = application.ReferenceNo,
+                requested_amount = application.RequestedAmount,
+                total_project_budget = application.TotalProjectBudget,
+                project_summary = application.ProjectSummary ?? "Not provided",
+                city = application.City ?? notSpecified,
+                economic_region = application.EconomicRegion ?? notSpecified,
+                community = application.Community ?? notSpecified,
+                project_start_date = application.ProjectStartDate,
+                project_end_date = application.ProjectEndDate,
+                submission_date = application.SubmissionDate
+            };
         }
 
         private async Task GenerateScoresheetAnalysisAsync(Application application, List<ApplicationChefsFileAttachment> attachments)
@@ -374,21 +413,111 @@ EVALUATION CRITERIA:
                     return;
                 }
 
-                // Process each section individually for better AI focus
                 var allSectionResults = new Dictionary<string, object>();
-
-                // Collect all attachment summaries that were generated
-                var attachmentSummaries = attachments
-                    .Where(a => !string.IsNullOrEmpty(a.AISummary))
-                    .Select(a => $"{a.FileName}: {a.AISummary}")
-                    .ToList();
-
-                // Get form submission for rendered HTML content
+                var scoresheetAttachments = BuildScoresheetAttachments(attachments);
                 var formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(application.Id);
+                var scoresheetData = BuildScoresheetDataPayload(application, formSubmission);
+                LogFormSubmissionPreview(formSubmission?.RenderedHTML);
 
-                // Get application content including the full form submission
-                var notSpecified = "Not specified";
-                var applicationContent = $@"
+                foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
+                {
+                    var sectionSchema = BuildScoresheetSectionSchema(section.Fields);
+                    await ProcessScoresheetSectionAsync(
+                        section.Name,
+                        section.Fields.Count,
+                        sectionSchema,
+                        application.Id,
+                        scoresheetData,
+                        scoresheetAttachments,
+                        allSectionResults);
+                }
+
+                await SaveScoresheetResultsAsync(trackedApplication, allSectionResults);
+
+                _logger.LogInformation("Successfully generated and saved AI scoresheet answers for application {ApplicationId}. Answers will be parsed when scoresheet instance is created.", application.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating scoresheet analysis for {ApplicationId}", application.Id);
+                // Don't throw - this should not break the main submission processing
+            }
+        }
+
+        private static List<AIAttachmentItem> BuildScoresheetAttachments(List<ApplicationChefsFileAttachment> attachments)
+        {
+            return attachments
+                .Where(a => !string.IsNullOrEmpty(a.AISummary))
+                .Select(a => new AIAttachmentItem
+                {
+                    Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
+                    Summary = a.AISummary!.Trim()
+                })
+                .ToList();
+        }
+
+        private JsonElement BuildScoresheetDataPayload(Application application, ApplicationFormSubmission? formSubmission)
+        {
+            var fallbackContent = BuildScoresheetFallbackContent(application, formSubmission?.RenderedHTML);
+
+            if (string.IsNullOrWhiteSpace(formSubmission?.Submission))
+            {
+                return JsonSerializer.SerializeToElement(new { submission_content = fallbackContent });
+            }
+
+            try
+            {
+                using var submissionDoc = JsonDocument.Parse(formSubmission.Submission);
+                var root = submissionDoc.RootElement;
+
+                JsonElement submissionData = root;
+                if (root.ValueKind == JsonValueKind.Object &&
+                    root.TryGetProperty("data", out var dataElement) &&
+                    dataElement.ValueKind == JsonValueKind.Object)
+                {
+                    submissionData = dataElement;
+                }
+                else if (root.ValueKind == JsonValueKind.Object &&
+                    root.TryGetProperty("submission", out var submissionElement) &&
+                    submissionElement.ValueKind == JsonValueKind.Object &&
+                    submissionElement.TryGetProperty("data", out var nestedDataElement) &&
+                    nestedDataElement.ValueKind == JsonValueKind.Object)
+                {
+                    submissionData = nestedDataElement;
+                }
+
+                if (submissionData.ValueKind == JsonValueKind.Object)
+                {
+                    return JsonSerializer.SerializeToElement(BuildPromptDataValues(submissionData));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Failed to parse scoresheet submission JSON for application {ApplicationId}; falling back to summary content.",
+                    application.Id);
+            }
+
+            return JsonSerializer.SerializeToElement(new { submission_content = fallbackContent });
+        }
+
+        private static Dictionary<string, JsonElement> BuildPromptDataValues(JsonElement submissionData)
+        {
+            var deserializedValues = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(submissionData.GetRawText()) ??
+                                     new Dictionary<string, JsonElement>();
+            var values = new Dictionary<string, JsonElement>(deserializedValues, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var excludedKey in ExcludedPromptDataKeys)
+            {
+                values.Remove(excludedKey);
+            }
+
+            return values;
+        }
+
+        private static string BuildScoresheetFallbackContent(Application application, string? renderedFormHtml)
+        {
+            var notSpecified = "Not specified";
+            return $@"
 Project Name: {application.ProjectName}
 Reference Number: {application.ReferenceNo}
 Requested Amount: ${application.RequestedAmount:N2}
@@ -402,157 +531,154 @@ Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecifi
 Submission Date: {application.SubmissionDate.ToShortDateString()}
 
 FULL APPLICATION FORM SUBMISSION:
-{formSubmission?.RenderedHTML ?? "Form submission content not available"}
+{renderedFormHtml ?? "Form submission content not available"}
 ";
+        }
 
-                _logger.LogInformation("Form submission HTML length: {HtmlLength} characters", formSubmission?.RenderedHTML?.Length ?? 0);
-                if (formSubmission?.RenderedHTML?.Length > 100)
+        private void LogFormSubmissionPreview(string? renderedFormHtml)
+        {
+            _logger.LogInformation("Form submission HTML length: {HtmlLength} characters", renderedFormHtml?.Length ?? 0);
+            if (renderedFormHtml?.Length > 100)
+            {
+                _logger.LogDebug("Form submission HTML is present and non-trivial.");
+            }
+            else
+            {
+                _logger.LogWarning("Form submission HTML is missing or very short.");
+            }
+        }
+
+        private async Task ProcessScoresheetSectionAsync(
+            string sectionName,
+            int questionCount,
+            JsonElement sectionSchema,
+            Guid applicationId,
+            JsonElement scoresheetData,
+            List<AIAttachmentItem> scoresheetAttachments,
+            Dictionary<string, object> allSectionResults)
+        {
+            try
+            {
+                _logger.LogDebug("Processing section {SectionName} for application {ApplicationId}",
+                    sectionName, applicationId);
+                var sectionAnswers = await _aiService.GenerateScoresheetSectionAnswersAsync(new ScoresheetSectionRequest
                 {
-                    _logger.LogDebug("Form submission HTML preview: {HtmlPreview}...",
-                        formSubmission.RenderedHTML.Substring(0, Math.Min(500, formSubmission.RenderedHTML.Length)));
+                    Data = scoresheetData,
+                    Attachments = scoresheetAttachments,
+                    SectionName = sectionName,
+                    SectionSchema = sectionSchema
+                });
+
+                if (sectionAnswers.Answers.Count == 0)
+                {
+                    return;
+                }
+
+                var expectedQuestionIds = ExtractSectionQuestionIds(sectionSchema);
+                var returnedQuestionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var answerEntry in sectionAnswers.Answers)
+                {
+                    returnedQuestionIds.Add(answerEntry.Key);
+                    allSectionResults[answerEntry.Key] = new Dictionary<string, object?>
+                    {
+                        [AIJsonKeys.Answer] = answerEntry.Value.Answer,
+                        [AIJsonKeys.Rationale] = answerEntry.Value.Rationale,
+                        [AIJsonKeys.Confidence] = answerEntry.Value.Confidence
+                    };
+                }
+
+                var missingQuestionIds = expectedQuestionIds.Except(returnedQuestionIds, StringComparer.OrdinalIgnoreCase).ToArray();
+                if (missingQuestionIds.Length > 0)
+                {
+                    _logger.LogWarning(
+                        "AI scoresheet response missing question answers for section {SectionName} in application {ApplicationId}. Expected: {ExpectedCount}, Returned: {ReturnedCount}, MissingIds: {MissingIds}.",
+                        sectionName,
+                        applicationId,
+                        expectedQuestionIds.Count,
+                        returnedQuestionIds.Count,
+                        string.Join(",", missingQuestionIds));
                 }
                 else
                 {
-                    _logger.LogWarning("Form submission HTML is missing or very short: {FullHtml}", formSubmission?.RenderedHTML);
+                    _logger.LogDebug(
+                        "AI scoresheet response complete for section {SectionName} in application {ApplicationId}. Returned {ReturnedCount} answers.",
+                        sectionName,
+                        applicationId,
+                        returnedQuestionIds.Count);
                 }
 
-                // Process each section individually
-                foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
-                {
-                    try
-                    {
-                        _logger.LogDebug("Processing section {SectionName} for application {ApplicationId}",
-                            section.Name, application.Id);
-
-                        // Build section-specific JSON
-                        var sectionQuestionsData = new List<object>();
-                        foreach (var field in section.Fields.OrderBy(f => f.Order))
-                        {
-                            var questionData = new
-                            {
-                                id = field.Id.ToString(),
-                                question = field.Label,
-                                description = field.Description,
-                                type = field.Type.ToString(),
-                                definition = field.Definition,
-                                availableOptions = ExtractSelectListOptions(field)
-                            };
-                            sectionQuestionsData.Add(questionData);
-                        }
-
-                        var sectionJson = JsonSerializer.Serialize(sectionQuestionsData, jsonOptions);
-
-                        // Generate AI answers for this section
-                        var sectionAnswers = await _aiService.GenerateScoresheetSectionAnswersAsync(
-                            applicationContent,
-                            attachmentSummaries,
-                            sectionJson,
-                            section.Name);
-
-                        // Parse and store section results
-                        if (!string.IsNullOrWhiteSpace(sectionAnswers))
-                        {
-                            var cleanedJson = CleanJsonResponse(sectionAnswers);
-                            try
-                            {
-                                using var sectionDoc = JsonDocument.Parse(cleanedJson);
-                                foreach (var property in sectionDoc.RootElement.EnumerateObject())
-                                {
-                                    allSectionResults[property.Name] = property.Value.Clone();
-                                }
-
-                                _logger.LogDebug("Successfully processed section {SectionName} with {QuestionCount} questions",
-                                    section.Name, sectionQuestionsData.Count);
-                            }
-                            catch (JsonException ex)
-                            {
-                                _logger.LogError(ex, "Failed to parse AI response for section {SectionName} in application {ApplicationId}. Content: {InvalidJson}",
-                                    section.Name, application.Id, sectionAnswers);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error processing section {SectionName} for application {ApplicationId}",
-                            section.Name, application.Id);
-                        // Continue with other sections even if one fails
-                    }
-                }
-
-                // Combine all section results into final JSON
-                var combinedResults = JsonSerializer.Serialize(allSectionResults, jsonOptionsIndented);
-
-                var scoresheetAnswers = combinedResults;
-
-                // Validate and sanitize the JSON before saving
-                string validatedJson = "{}"; // Default empty JSON
-                try
-                {
-                    if (!string.IsNullOrWhiteSpace(scoresheetAnswers))
-                    {
-                        // Try to parse the JSON to validate it
-                        using var jsonDoc = JsonDocument.Parse(scoresheetAnswers);
-                        validatedJson = scoresheetAnswers;
-                        _logger.LogDebug("AI generated valid JSON for scoresheet answers: {JsonPreview}",
-                            scoresheetAnswers);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("AI service returned empty or null scoresheet answers for application {ApplicationId}", application.Id);
-                    }
-                }
-                catch (JsonException ex)
-                {
-                    _logger.LogError(ex, "AI service returned invalid JSON for scoresheet answers for application {ApplicationId}. Content: {InvalidJson}",
-                        application.Id, scoresheetAnswers);
-                    validatedJson = "{}"; // Use empty JSON as fallback
-                }
-
-                // Store AI scoresheet answers in the application for later parsing
-                trackedApplication.AIScoresheetAnswers = validatedJson;
-                await _applicationRepository.UpdateAsync(trackedApplication);
-
-                _logger.LogInformation("Successfully generated and saved AI scoresheet answers for application {ApplicationId}. Answers will be parsed when scoresheet instance is created.", application.Id);
+                _logger.LogDebug("Successfully processed section {SectionName} with {QuestionCount} questions",
+                    sectionName, questionCount);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating scoresheet analysis for {ApplicationId}", application.Id);
-                // Don't throw - this should not break the main submission processing
+                _logger.LogError(ex, "Error processing section {SectionName} for application {ApplicationId}",
+                    sectionName, applicationId);
             }
         }
 
-        private static string CleanJsonResponse(string response)
+        private static HashSet<string> ExtractSectionQuestionIds(JsonElement sectionSchema)
         {
-            if (string.IsNullOrWhiteSpace(response))
-                return response;
-
-            // Remove markdown code block delimiters
-            var cleaned = response.Trim();
-
-            // Handle ```json opening tag
-            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase) || cleaned.StartsWith("```"))
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (sectionSchema.ValueKind != JsonValueKind.Array)
             {
-                var startIndex = cleaned.IndexOf('\n');
-                if (startIndex >= 0)
+                return ids;
+            }
+
+            foreach (var question in sectionSchema.EnumerateArray())
+            {
+                if (question.ValueKind == JsonValueKind.Object &&
+                    question.TryGetProperty("id", out var idProp) &&
+                    idProp.ValueKind == JsonValueKind.String)
                 {
-                    cleaned = cleaned.Substring(startIndex + 1);
+                    var id = idProp.GetString();
+                    if (!string.IsNullOrWhiteSpace(id))
+                    {
+                        ids.Add(id);
+                    }
                 }
             }
 
-            // Handle closing ``` tag
-            if (cleaned.EndsWith("```"))
-            {
-                var lastIndex = cleaned.LastIndexOf("```");
-                if (lastIndex > 0)
-                {
-                    cleaned = cleaned.Substring(0, lastIndex);
-                }
-            }
-
-            return cleaned.Trim();
+            return ids;
         }
 
-        private static (int number, string value, long numericValue)[]? ExtractSelectListOptions(Unity.Flex.Domain.Scoresheets.Question field)
+        private static JsonElement BuildScoresheetSectionSchema(IEnumerable<Unity.Flex.Domain.Scoresheets.Question> fields)
+        {
+            var sectionQuestionsData = fields
+                .OrderBy(f => f.Order)
+                .Select(field =>
+                {
+                    var options = ExtractSelectListOptions(field);
+                    return new
+                    {
+                        id = field.Id.ToString(),
+                        question = field.Label,
+                        description = field.Description,
+                        type = field.Type.ToString(),
+                        options,
+                        allowed_answers = ExtractSelectListOptionNumbers(options)
+                    };
+                })
+                .ToList();
+
+            return JsonSerializer.SerializeToElement(sectionQuestionsData);
+        }
+
+        private async Task SaveScoresheetResultsAsync(Application trackedApplication, Dictionary<string, object> allSectionResults)
+        {
+            var combinedResults = JsonSerializer.Serialize(allSectionResults, _jsonOptionsIndented);
+            if (!IsValidScoresheetAnswersPayload(combinedResults))
+            {
+                _logger.LogWarning("Skipping invalid AI scoresheet payload for application {ApplicationId}.", trackedApplication.Id);
+                return;
+            }
+
+            trackedApplication.AIScoresheetAnswers = combinedResults;
+            await _applicationRepository.UpdateAsync(trackedApplication);
+        }
+
+        private static object[]? ExtractSelectListOptions(Unity.Flex.Domain.Scoresheets.Question field)
         {
             if (field.Type != Unity.Flex.Scoresheets.Enums.QuestionType.SelectList || string.IsNullOrEmpty(field.Definition))
                 return null;
@@ -564,9 +690,11 @@ FULL APPLICATION FORM SUBMISSION:
                 {
                     return definition.Options
                         .Select((option, index) =>
-                            (number: index,
-                             value: option.Value,
-                             numericValue: option.NumericValue))
+                            (object)new
+                            {
+                                number = index + 1,
+                                value = option.Value
+                            })
                         .ToArray();
                 }
             }
@@ -578,19 +706,29 @@ FULL APPLICATION FORM SUBMISSION:
             return null;
         }
 
+        private static string[]? ExtractSelectListOptionNumbers(object[]? options)
+        {
+            if (options == null || options.Length == 0)
+            {
+                return null;
+            }
+
+            return options
+                .Select((_, index) => (index + 1).ToString())
+                .ToArray();
+        }
+
         /// <summary>
-        /// Extracts field configuration from form schema to identify which fields are required vs optional
+        /// Extracts form field metadata keyed by field key for analysis schema prompts.
         /// </summary>
-        /// <param name="formVersionId">The form version ID to extract configuration from</param>
-        /// <returns>A formatted string describing required and optional fields</returns>
-        private async Task<string> ExtractFormFieldConfigurationAsync(Guid formVersionId)
+        private async Task<JsonElement> ExtractFormFieldConfigurationSchemaAsync(Guid formVersionId)
         {
             try
             {
                 var formVersion = await _applicationFormVersionRepository.GetAsync(formVersionId);
                 if (formVersion == null || string.IsNullOrEmpty(formVersion.FormSchema))
                 {
-                    return "Form configuration not available.";
+                    return BuildEmptyFormFieldSchema();
                 }
 
                 var schema = JObject.Parse(formVersion.FormSchema);
@@ -598,52 +736,32 @@ FULL APPLICATION FORM SUBMISSION:
 
                 if (components == null || components.Count == 0)
                 {
-                    return "No form fields configured.";
+                    return BuildEmptyFormFieldSchema();
                 }
 
-                var requiredFields = new List<string>();
-                var optionalFields = new List<string>();
-
-                ExtractFieldRequirements(components, requiredFields, optionalFields, string.Empty);
-               
-                var configurationText = new StringBuilder();
-
-                configurationText.AppendLine("FORM FIELD CONFIGURATION:");
-                configurationText.AppendLine();
-
-                if (requiredFields.Count > 0)
-                {
-                    configurationText.AppendLine("REQUIRED FIELDS (must be completed):");
-                    foreach (var field in requiredFields)
-                    {
-                        configurationText.AppendLine($"- {field}");
-                    }
-                    configurationText.AppendLine();
-                }
-
-                if (optionalFields.Count > 0)
-                {
-                    configurationText.AppendLine("OPTIONAL FIELDS (may be left blank):");
-                    foreach (var field in optionalFields)
-                    {
-                        configurationText.AppendLine($"- {field}");
-                    }
-                }
-
-
-                return configurationText.ToString();
+                var fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                ExtractFieldRequirements(components, fields, string.Empty);
+                return JsonSerializer.SerializeToElement(fields);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error extracting form field configuration for form version {FormVersionId}", formVersionId);
-                return "Form configuration could not be extracted.";
+                _logger.LogError(ex, "Error extracting form field schema for form version {FormVersionId}", formVersionId);
+                return BuildEmptyFormFieldSchema();
             }
         }
 
+        private static JsonElement BuildEmptyFormFieldSchema()
+        {
+            return JsonSerializer.SerializeToElement(new Dictionary<string, string>());
+        }
+
         /// <summary>
-        /// Recursively extracts field requirements from form components
+        /// Recursively extracts form field metadata from form components
         /// </summary>
-        private static void ExtractFieldRequirements(JArray components, List<string> requiredFields, List<string> optionalFields, string currentPath)
+        private static void ExtractFieldRequirements(
+            JArray components,
+            Dictionary<string, string> fields,
+            string currentPath)
         {
             foreach (var component in components.OfType<JObject>())
             {
@@ -651,44 +769,35 @@ FULL APPLICATION FORM SUBMISSION:
                 var label = component["label"]?.ToString();
                 var type = component["type"]?.ToString();
 
-                // Skip container components that don't represent actual data fields
-                var skipTypes = new HashSet<string> { "button", "simplebuttonadvanced", "html", "htmlelement", "content", "simpleseparator" };
-                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || skipTypes.Contains(type))
+                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || NonDataComponentTypes.Contains(type))
                 {
-                    // Still process nested components even if we skip the container
-                    ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, currentPath);
+                    ProcessNestedFieldRequirements(component, type, fields, currentPath);
                     continue;
                 }
 
                 var displayName = !string.IsNullOrEmpty(label) ? $"{label} ({key})" : key;
                 var fullPath = string.IsNullOrEmpty(currentPath) ? displayName : $"{currentPath} > {displayName}";
 
-                // Check if the field is required
                 var validate = component["validate"] as JObject;
                 var isRequired = validate?["required"]?.Value<bool>() ?? false;
 
-                // Add to appropriate list (only for data input fields)
                 if (component["input"]?.Value<bool>() == true)
                 {
-                    if (isRequired)
-                    {
-                        requiredFields.Add(fullPath);
-                    }
-                    else
-                    {
-                        optionalFields.Add(fullPath);
-                    }
+                    fields[key] = NormalizeFieldType(type, component);
                 }
 
-                // Process nested components
-                ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, fullPath);
+                ProcessNestedFieldRequirements(component, type, fields, fullPath);
             }
         }
 
         /// <summary>
         /// Processes nested components for different container types
         /// </summary>
-        private static void ProcessNestedFieldRequirements(JObject component, string? type, List<string> requiredFields, List<string> optionalFields, string currentPath)
+        private static void ProcessNestedFieldRequirements(
+            JObject component,
+            string? type,
+            Dictionary<string, string> fields,
+            string currentPath)
         {
             switch (type)
             {
@@ -702,7 +811,7 @@ FULL APPLICATION FORM SUBMISSION:
                     var nestedComponents = component[ComponentsKey] as JArray;
                     if (nestedComponents != null)
                     {
-                        ExtractFieldRequirements(nestedComponents, requiredFields, optionalFields, currentPath);
+                        ExtractFieldRequirements(nestedComponents, fields, currentPath);
                     }
                     break;
 
@@ -718,7 +827,7 @@ FULL APPLICATION FORM SUBMISSION:
                             var columnComponents = column[ComponentsKey] as JArray;
                             if (columnComponents != null)
                             {
-                                ExtractFieldRequirements(columnComponents, requiredFields, optionalFields, currentPath);
+                                ExtractFieldRequirements(columnComponents, fields, currentPath);
                             }
                         }
                     }
@@ -734,12 +843,216 @@ FULL APPLICATION FORM SUBMISSION:
                             var tabComponents = tab[ComponentsKey] as JArray;
                             if (tabComponents != null)
                             {
-                                ExtractFieldRequirements(tabComponents, requiredFields, optionalFields, currentPath);
+                                ExtractFieldRequirements(tabComponents, fields, currentPath);
                             }
                         }
                     }
                     break;
             }
+        }
+
+        private static string NormalizeFieldType(string rawType, JObject component)
+        {
+            if (component["multiple"]?.Value<bool>() == true)
+            {
+                return "array";
+            }
+
+            return rawType.ToLowerInvariant() switch
+            {
+                "number" => "number",
+                "currency" => "number",
+                "checkbox" => "boolean",
+                "datetime" => "date",
+                "day" => "date",
+                "date" => "date",
+                "time" => "date",
+                "datagrid" => "array",
+                "editgrid" => "array",
+                "table" => "array",
+                "container" => "object",
+                "panel" => "object",
+                "fieldset" => "object",
+                "well" => "object",
+                _ => "string"
+            };
+        }
+
+        private static bool IsValidAnalysisPayload(string analysisJson)
+        {
+            if (string.IsNullOrWhiteSpace(analysisJson))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(analysisJson);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object)
+                {
+                    return false;
+                }
+
+                if (!root.TryGetProperty(AIJsonKeys.Rating, out var overallScore) ||
+                    overallScore.ValueKind != JsonValueKind.String)
+                {
+                    return false;
+                }
+
+                if (!root.TryGetProperty(AIJsonKeys.Errors, out var errors) ||
+                    !root.TryGetProperty(AIJsonKeys.Warnings, out var warnings) ||
+                    !root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) ||
+                    !root.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedItems))
+                {
+                    return false;
+                }
+
+                if (!HasOnlyAllowedProperties(root, new[]
+                {
+                    AIJsonKeys.Rating,
+                    AIJsonKeys.Errors,
+                    AIJsonKeys.Warnings,
+                    AIJsonKeys.Summaries,
+                    AIJsonKeys.Dismissed
+                }))
+                {
+                    return false;
+                }
+
+                if (!IsValidFindingsArray(errors) || !IsValidFindingsArray(warnings) || !IsValidFindingsArray(summaries))
+                {
+                    return false;
+                }
+
+                if (dismissedItems.ValueKind != JsonValueKind.Array ||
+                    dismissedItems.EnumerateArray().Any(id => id.ValueKind != JsonValueKind.String))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static bool IsValidFindingsArray(JsonElement element)
+        {
+            if (element.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            foreach (var finding in element.EnumerateArray())
+            {
+                if (finding.ValueKind != JsonValueKind.Object)
+                {
+                    return false;
+                }
+
+                if (!finding.TryGetProperty(AIJsonKeys.Title, out var title) || title.ValueKind != JsonValueKind.String)
+                {
+                    return false;
+                }
+
+                if (!finding.TryGetProperty(AIJsonKeys.Detail, out var detail) || detail.ValueKind != JsonValueKind.String)
+                {
+                    return false;
+                }
+
+                if (!HasOnlyAllowedProperties(finding, new[]
+                {
+                    AIJsonKeys.Id,
+                    AIJsonKeys.Title,
+                    AIJsonKeys.Detail
+                }))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsValidScoresheetAnswersPayload(string scoresheetJson)
+        {
+            if (string.IsNullOrWhiteSpace(scoresheetJson))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(scoresheetJson);
+                if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    return false;
+                }
+
+                foreach (var question in doc.RootElement.EnumerateObject())
+                {
+                    if (question.Value.ValueKind != JsonValueKind.Object)
+                    {
+                        return false;
+                    }
+
+                    if (!question.Value.TryGetProperty(AIJsonKeys.Answer, out var answer))
+                    {
+                        return false;
+                    }
+
+                    var validAnswerType = answer.ValueKind is JsonValueKind.String or JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False;
+                    if (!validAnswerType)
+                    {
+                        return false;
+                    }
+
+                    if (!question.Value.TryGetProperty(AIJsonKeys.Rationale, out var rationale) || rationale.ValueKind != JsonValueKind.String)
+                    {
+                        return false;
+                    }
+
+                    if (!question.Value.TryGetProperty(AIJsonKeys.Confidence, out var confidence) || !confidence.TryGetInt32(out var confidenceValue))
+                    {
+                        return false;
+                    }
+
+                    if (confidenceValue < 0 || confidenceValue > 100 || confidenceValue % 5 != 0)
+                    {
+                        return false;
+                    }
+
+                    if (!HasOnlyAllowedProperties(question.Value, new[]
+                    {
+                        AIJsonKeys.Answer,
+                        AIJsonKeys.Rationale,
+                        AIJsonKeys.Confidence
+                    }))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static bool HasOnlyAllowedProperties(JsonElement element, IReadOnlyCollection<string> allowedProperties)
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var allowed = new HashSet<string>(allowedProperties, StringComparer.Ordinal);
+            return element.EnumerateObject().All(property => allowed.Contains(property.Name));
         }
 
     }

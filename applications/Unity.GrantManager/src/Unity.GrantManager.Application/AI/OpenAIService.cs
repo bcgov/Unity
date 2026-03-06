@@ -68,22 +68,25 @@ namespace Unity.GrantManager.AI
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schemaJson = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
 
-            var attachmentSummaries = request.Attachments
-                .Select(a => $"{a.Name}: {a.Summary}")
-                .ToList();
+            var attachmentsPayload = request.Attachments
+                .Select(a => new
+                {
+                    name = string.IsNullOrWhiteSpace(a.Name) ? "attachment" : a.Name.Trim(),
+                    summary = string.IsNullOrWhiteSpace(a.Summary) ? string.Empty : a.Summary.Trim()
+                })
+                .Cast<object>();
 
-            var applicationContent = $@"DATA
-{dataJson}";
+            var analysisContent = AnalysisPrompts.BuildUserPrompt(
+                schemaJson,
+                dataJson,
+                JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions),
+                request.Rubric ?? string.Empty);
 
-            var formFieldConfiguration = $@"SCHEMA
-{schemaJson}";
-
-            var raw = await AnalyzeApplicationAsync(
-                applicationContent,
-                attachmentSummaries,
-                request.Rubric ?? string.Empty,
-                formFieldConfiguration);
-            return ParseApplicationAnalysisResponse(raw);
+            var systemPrompt = AnalysisPrompts.SystemPrompt;
+            await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
+            var raw = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
+            await LogPromptOutputAsync("ApplicationAnalysis", raw);
+            return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(raw));
         }
 
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
@@ -428,11 +431,14 @@ Respond only with valid JSON in the exact format requested.";
                     name = sectionName,
                     questions = sectionQuestionsPayload
                 };
+                var sectionPayloadJson = JsonSerializer.Serialize(sectionPayload, JsonLogOptions);
+                var responseTemplate = BuildScoresheetSectionResponseTemplate(sectionPayloadJson);
 
                 var analysisContent = ScoresheetPrompts.BuildSectionUserPrompt(
                     applicationContent,
                     attachmentSummariesText,
-                    JsonSerializer.Serialize(sectionPayload, JsonLogOptions));
+                    sectionPayloadJson,
+                    responseTemplate);
 
                 var systemPrompt = ScoresheetPrompts.SectionSystemPrompt;
 
@@ -587,6 +593,51 @@ Respond only with valid JSON in the exact format requested.";
             }
 
             return response;
+        }
+
+        private static string BuildScoresheetSectionResponseTemplate(string sectionPayloadJson)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(sectionPayloadJson);
+                if (!doc.RootElement.TryGetProperty("questions", out var questions) || questions.ValueKind != JsonValueKind.Array)
+                {
+                    return ScoresheetPrompts.SectionOutputTemplate;
+                }
+
+                var template = new Dictionary<string, object>();
+                foreach (var question in questions.EnumerateArray())
+                {
+                    if (!question.TryGetProperty("id", out var idProp) || idProp.ValueKind != JsonValueKind.String)
+                    {
+                        continue;
+                    }
+
+                    var questionId = idProp.GetString();
+                    if (string.IsNullOrWhiteSpace(questionId))
+                    {
+                        continue;
+                    }
+
+                    template[questionId] = new
+                    {
+                        answer = string.Empty,
+                        rationale = string.Empty,
+                        confidence = 0
+                    };
+                }
+
+                if (template.Count == 0)
+                {
+                    return ScoresheetPrompts.SectionOutputTemplate;
+                }
+
+                return JsonSerializer.Serialize(template, JsonLogOptions);
+            }
+            catch (JsonException)
+            {
+                return ScoresheetPrompts.SectionOutputTemplate;
+            }
         }
 
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
