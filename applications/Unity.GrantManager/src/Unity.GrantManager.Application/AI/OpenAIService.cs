@@ -18,6 +18,14 @@ namespace Unity.GrantManager.AI
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
+        private const string ApplicationAnalysisPromptType = "ApplicationAnalysis";
+        private const string AttachmentSummaryPromptType = "AttachmentSummary";
+        private const string ScoresheetAllPromptType = "ScoresheetAll";
+        private const string ScoresheetSectionPromptType = "ScoresheetSection";
+        private const string NoSummaryGeneratedMessage = "No summary generated.";
+        private const string ServiceNotConfiguredMessage = "AI analysis not available - service not configured.";
+        private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
+        private const string SummaryFailedRetryMessage = "AI analysis failed - please try again later.";
 
         private string? ApiKey => _configuration["Azure:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["Azure:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
@@ -83,9 +91,9 @@ namespace Unity.GrantManager.AI
                 request.Rubric ?? string.Empty);
 
             var systemPrompt = AnalysisPrompts.SystemPrompt;
-            await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
+            await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
             var raw = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
-            await LogPromptOutputAsync("ApplicationAnalysis", raw);
+            await LogPromptOutputAsync(ApplicationAnalysisPromptType, raw);
             return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(raw));
         }
 
@@ -94,7 +102,7 @@ namespace Unity.GrantManager.AI
             if (string.IsNullOrEmpty(ApiKey))
             {
                 _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
-                return "AI analysis not available - service not configured.";
+                return ServiceNotConfiguredMessage;
             }
 
             _logger.LogDebug("Calling OpenAI chat completions. PromptLength: {PromptLength}, MaxTokens: {MaxTokens}", content?.Length ?? 0, maxTokens);
@@ -132,12 +140,12 @@ namespace Unity.GrantManager.AI
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
-                    return "AI analysis failed - service temporarily unavailable.";
+                    return ServiceTemporarilyUnavailableMessage;
                 }
 
                 if (string.IsNullOrWhiteSpace(responseContent))
                 {
-                    return "No summary generated.";
+                    return NoSummaryGeneratedMessage;
                 }
 
                 using var jsonDoc = JsonDocument.Parse(responseContent);
@@ -145,15 +153,15 @@ namespace Unity.GrantManager.AI
                 if (choices.GetArrayLength() > 0)
                 {
                     var message = choices[0].GetProperty("message");
-                    return message.GetProperty("content").GetString() ?? "No summary generated.";
+                    return message.GetProperty("content").GetString() ?? NoSummaryGeneratedMessage;
                 }
 
-                return "No summary generated.";
+                return NoSummaryGeneratedMessage;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating AI summary");
-                return "AI analysis failed - please try again later.";
+                return SummaryFailedRetryMessage;
             }
         }
 
@@ -189,9 +197,9 @@ namespace Unity.GrantManager.AI
                 var contentToAnalyze = AttachmentPrompts.BuildUserPrompt(
                     JsonSerializer.Serialize(attachmentPayload, JsonLogOptions));
 
-                await LogPromptInputAsync("AttachmentSummary", prompt, contentToAnalyze);
+                await LogPromptInputAsync(AttachmentSummaryPromptType, prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
-                await LogPromptOutputAsync("AttachmentSummary", modelOutput);
+                await LogPromptOutputAsync(AttachmentSummaryPromptType, modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -215,7 +223,7 @@ namespace Unity.GrantManager.AI
             if (string.IsNullOrEmpty(ApiKey))
             {
                 _logger.LogWarning("{Message}", MissingApiKeyMessage);
-                return "AI analysis not available - service not configured.";
+                return ServiceNotConfiguredMessage;
             }
 
             try
@@ -257,9 +265,9 @@ namespace Unity.GrantManager.AI
 
                 var systemPrompt = AnalysisPrompts.SystemPrompt;
 
-                await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
+                await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
-                await LogPromptOutputAsync("ApplicationAnalysis", rawAnalysis);
+                await LogPromptOutputAsync(ApplicationAnalysisPromptType, rawAnalysis);
 
                 // Post-process the AI response to add unique IDs to errors and warnings
                 return AddIdsToAnalysisItems(rawAnalysis);
@@ -267,7 +275,7 @@ namespace Unity.GrantManager.AI
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error analyzing application");
-                return "AI analysis failed - please try again later.";
+                return SummaryFailedRetryMessage;
             }
         }
 
@@ -386,9 +394,9 @@ Analyze the provided application and generate appropriate answers for the scores
 Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
 Respond only with valid JSON in the exact format requested.";
 
-                await LogPromptInputAsync("ScoresheetAll", systemPrompt, analysisContent);
+                await LogPromptInputAsync(ScoresheetAllPromptType, systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
-                await LogPromptOutputAsync("ScoresheetAll", modelOutput);
+                await LogPromptOutputAsync(ScoresheetAllPromptType, modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -442,9 +450,9 @@ Respond only with valid JSON in the exact format requested.";
 
                 var systemPrompt = ScoresheetPrompts.SectionSystemPrompt;
 
-                await LogPromptInputAsync("ScoresheetSection", systemPrompt, analysisContent);
+                await LogPromptInputAsync(ScoresheetSectionPromptType, systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
-                await LogPromptOutputAsync("ScoresheetSection", modelOutput);
+                await LogPromptOutputAsync(ScoresheetSectionPromptType, modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -538,16 +546,27 @@ Respond only with valid JSON in the exact format requested.";
                 var id = item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String
                     ? idProp.GetString()
                     : null;
-                var title = item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String
-                    ? titleProp.GetString()
-                    : item.TryGetProperty("category", out var legacyTitleProp) && legacyTitleProp.ValueKind == JsonValueKind.String
-                        ? legacyTitleProp.GetString()
-                        : null;
-                var detail = item.TryGetProperty(AIJsonKeys.Detail, out var detailProp) && detailProp.ValueKind == JsonValueKind.String
-                    ? detailProp.GetString()
-                    : item.TryGetProperty("message", out var legacyDetailProp) && legacyDetailProp.ValueKind == JsonValueKind.String
-                        ? legacyDetailProp.GetString()
-                        : null;
+                string? title = null;
+                if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
+                {
+                    title = titleProp.GetString();
+                }
+                else if (item.TryGetProperty("category", out var legacyTitleProp) &&
+                         legacyTitleProp.ValueKind == JsonValueKind.String)
+                {
+                    title = legacyTitleProp.GetString();
+                }
+
+                string? detail = null;
+                if (item.TryGetProperty(AIJsonKeys.Detail, out var detailProp) && detailProp.ValueKind == JsonValueKind.String)
+                {
+                    detail = detailProp.GetString();
+                }
+                else if (item.TryGetProperty("message", out var legacyDetailProp) &&
+                         legacyDetailProp.ValueKind == JsonValueKind.String)
+                {
+                    detail = legacyDetailProp.GetString();
+                }
 
                 findings.Add(new ApplicationAnalysisFinding
                 {
