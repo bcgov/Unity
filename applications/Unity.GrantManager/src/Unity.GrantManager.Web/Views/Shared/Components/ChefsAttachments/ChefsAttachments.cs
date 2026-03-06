@@ -6,7 +6,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Volo.Abp.Features;
 using Volo.Abp.Authorization.Permissions;
-using Unity.GrantManager.Permissions;
 using Unity.AI.Permissions;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
