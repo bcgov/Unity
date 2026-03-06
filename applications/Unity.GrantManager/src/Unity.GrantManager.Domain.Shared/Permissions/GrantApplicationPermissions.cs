@@ -60,6 +60,11 @@ namespace Unity.GrantManager.Permissions
             {
                 public const string Default = GroupName + ".AttachmentSummary";
             }
+
+            public static class ScoringAssistant
+            {
+                public const string Default = GroupName + ".ScoringAssistant";
+            }
         }
 
         public static class Assignments

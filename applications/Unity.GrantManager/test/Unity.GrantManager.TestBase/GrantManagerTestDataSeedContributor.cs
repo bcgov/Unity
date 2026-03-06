@@ -158,6 +158,23 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
+        Application? application2 = await _applicationRepository.FindAsync(GrantManagerTestData.Application2_Id);
+        application2 ??= await _applicationRepository.InsertAsync(
+            new ApplicationSeed(GrantManagerTestData.Application2_Id)
+            {
+                ApplicantId = GrantManagerTestData.Applicant1_Id,
+                ProjectName = "Application 2 For Integration Test Funding",
+                ApplicationFormId = GrantManagerTestData.ApplicationForm1_Id,
+                ApplicationStatusId = (await _applicationStatusRepository.GetAsync(x => x.StatusCode == GrantApplicationState.SUBMITTED)).Id,
+                ReferenceNo = "TEST67890",
+                RequestedAmount = 5000m,
+                ProposalDate = new DateTime(2022, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
+                SubmissionDate = new DateTime(2023, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
+                Payload = "{}"
+            },
+            autoSave: true
+        );
+
         Assessment? assessment1 = await _assessmentRepository.FindAsync(GrantManagerTestData.Assessment1_Id);
         assessment1 ??= await _assessmentRepository.InsertAsync(
             new Assessment
@@ -167,6 +184,17 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 assessorId: GrantManagerTestData.User1_UserId,
                 AssessmentState.IN_PROGRESS
             ), autoSave: true);
+
+        Assessment? aiAssessment1 = await _assessmentRepository.FindAsync(GrantManagerTestData.AiAssessment1_Id);
+        aiAssessment1 ??= await _assessmentRepository.InsertAsync(
+            new Assessment
+            (
+                id: GrantManagerTestData.AiAssessment1_Id,
+                applicationId: GrantManagerTestData.Application1_Id,
+                assessorId: AIScoringConstants.AiPersonId,
+                AssessmentState.COMPLETED
+            )
+            { IsAiAssessment = true }, autoSave: true);
 
         AssessmentAttachment? assessmentAttachment1 = await _assessmentAttachmentRepository.FindAsync(GrantManagerTestData.AssessmentAttachment1_Id);
         assessmentAttachment1 ??= await _assessmentAttachmentRepository.InsertAsync(
@@ -243,6 +271,19 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 FullName = "Test User 2",
                 OidcDisplayName = "Test User 2 : Test",
                 OidcSub = "TestUser2"
+            }, autoSave: true);
+        }
+
+        var aiPerson = await _personRepository.FindAsync(AIScoringConstants.AiPersonId);
+        if (aiPerson == null)
+        {
+            await _personRepository.InsertAsync(new Person()
+            {
+                Id = AIScoringConstants.AiPersonId,
+                Badge = AIScoringConstants.AiBadge,
+                FullName = AIScoringConstants.AiDisplayName,
+                OidcDisplayName = AIScoringConstants.AiDisplayName,
+                OidcSub = AIScoringConstants.AiOidcSub
             }, autoSave: true);
         }
     }

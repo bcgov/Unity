@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Volo.Abp;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ using Unity.Flex.Worksheets.Definitions;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
 using Unity.Modules.Shared;
 using Volo.Abp.Application.Services;
@@ -80,13 +82,25 @@ namespace Unity.GrantManager.Assessments
         {
             IQueryable<Assessment> queryableAssessments = _assessmentRepository.GetQueryableAsync().Result;
             var assessments = queryableAssessments.Where(c => c.ApplicationId.Equals(applicationId)).ToList();
-            return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(assessments.OrderByDescending(s => s.CreationTime).ToList()));
+            return await Task.FromResult<IList<AssessmentDto>>(
+                ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(
+                    assessments.OrderByDescending(s => s.IsAiAssessment).ThenByDescending(s => s.CreationTime).ToList()));
         }
 
         public async Task<AssessmentDisplayListDto> GetDisplayList(Guid applicationId)
         {
             var assessments = await _assessmentRepository.GetListWithAssessorsAsync(applicationId);
             var assessmentList = ObjectMapper.Map<List<AssessmentWithAssessorQueryResultItem>, List<AssessmentListItemDto>>(assessments);
+
+            // If AI Scoring feature is disabled, or user doesn't have permissions to view AI assessments, filter out AI assessments from the list
+            var aiScoringEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+            var canViewAI = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AI.ScoringAssistant.Default);
+            assessmentList = assessmentList
+                .Where(a => !a.IsAiAssessment || (aiScoringEnabled && canViewAI))
+                .OrderByDescending(a => a.IsAiAssessment)
+                .ThenByDescending(a => a.StartDate)
+                .ToList();
+
             bool isApplicationUsingDefaultScoresheet = true;
             foreach (var assessment in assessmentList)
             {
@@ -224,6 +238,10 @@ namespace Unity.GrantManager.Assessments
             var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
             if (assessment != null)
             {
+                if (assessment.IsAiAssessment)
+                {
+                    throw new BusinessException(GrantManagerDomainErrorCodes.CannotModifyAiAssessment);
+                }
                 assessment.ApprovalRecommended = dto.ApprovalRecommended;
                 await _assessmentRepository.UpdateAsync(assessment);
             }
@@ -277,6 +295,11 @@ namespace Unity.GrantManager.Assessments
         public async Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
+
+            if (assessment.IsAiAssessment)
+            {
+                throw new BusinessException(GrantManagerDomainErrorCodes.CannotModifyAiAssessment);
+            }
 
             await AuthorizationService.CheckAsync(assessment, GetActionAuthorizationRequirement(triggerAction));
 
@@ -332,6 +355,10 @@ namespace Unity.GrantManager.Assessments
                 var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
                 if (assessment != null)
                 {
+                    if (assessment.IsAiAssessment)
+                    {
+                        throw new BusinessException(GrantManagerDomainErrorCodes.CannotModifyAiAssessment);
+                    }
                     if (CurrentUser.GetId() != assessment.AssessorId)
                     {
                         throw new AbpValidationException("Error: You do not own this assessment record.");
@@ -357,6 +384,156 @@ namespace Unity.GrantManager.Assessments
             }
         }
 
+        /// <summary>
+        /// Creates a new human assessment by cloning an existing AI assessment.
+        /// Copies the AI scoresheet answers (from Application.AIScoresheetAnswers) as real
+        /// Answer records on the new assessment's scoresheet instance, and carries over
+        /// ApprovalRecommended as a starting point for the reviewer.
+        /// </summary>
+        /// <param name="aiAssessmentId">The ID of the source AI assessment to clone from.</param>
+        /// <returns>The newly created human <see cref="AssessmentDto"/>.</returns>
+        /// <exception cref="BusinessException">
+        /// Thrown when the specified assessment is not an AI assessment.
+        /// </exception>
+        public async Task<AssessmentDto> CloneFromAiAsync(Guid aiAssessmentId)
+        {
+            var aiAssessment = await _assessmentRepository.GetAsync(aiAssessmentId);
+            if (!aiAssessment.IsAiAssessment)
+            {
+                throw new BusinessException(GrantManagerDomainErrorCodes.CannotCloneNonAiAssessment);
+            }
+
+            var application = await _applicationRepository.GetAsync(aiAssessment.ApplicationId);
+            var currentUser = await _userLookupProvider.FindByIdAsync(CurrentUser.GetId());
+            var newAssessment = await _assessmentManager.CreateAsync(application, currentUser);
+
+            newAssessment.ApprovalRecommended = aiAssessment.ApprovalRecommended;
+            await _assessmentRepository.UpdateAsync(newAssessment);
+
+            if (await _featureChecker.IsEnabledAsync(UnityFlex) && !string.IsNullOrEmpty(application.AIScoresheetAnswers))
+            {
+                await CopyAiAnswersToAssessmentAsync(application.AIScoresheetAnswers, newAssessment.Id);
+            }
+
+            return ObjectMapper.Map<Assessment, AssessmentDto>(newAssessment);
+        }
+
+        /// <summary>
+        /// Parses Application.AIScoresheetAnswers (JSONB) and writes each AI answer as a
+        /// real Answer record on the new human assessment's scoresheet instance.
+        /// <para>
+        /// Question types are resolved via <see cref="IScoresheetAppService"/> so that each value
+        /// is stored in the correct serialized format. SelectList answers are converted from the
+        /// AI's 1-based numeric index to the actual option value before being persisted.
+        /// Questions not identified as Numeric, YesNo, or SelectList default to TextArea.
+        /// </para>
+        /// <para>
+        /// Answers are persisted by publishing a <see cref="PersistScoresheetSectionInstanceEto"/>
+        /// local event, reusing the same pipeline as <see cref="SaveScoresheetSectionAnswers"/>.
+        /// </para>
+        /// </summary>
+        private async Task CopyAiAnswersToAssessmentAsync(string aiScoresheetAnswers, Guid newAssessmentId)
+        {
+            var rawAiAnswers = new Dictionary<Guid, string>();
+            try
+            {
+                using var doc = JsonDocument.Parse(aiScoresheetAnswers);
+                foreach (var property in doc.RootElement.EnumerateObject())
+                {
+                    if (!Guid.TryParse(property.Name, out var questionId)) continue;
+                    if (property.Value.ValueKind != JsonValueKind.Object) continue;
+                    if (!property.Value.TryGetProperty("answer", out var answerProp)) continue;
+                    rawAiAnswers[questionId] = answerProp.ToString();
+                }
+            }
+            catch (JsonException)
+            {
+                return;
+            }
+
+            if (rawAiAnswers.Count == 0) return;
+
+            var questionIds = rawAiAnswers.Keys.ToList();
+            var numericQuestionIds = (await _scoresheetAppService.GetNumericQuestionIdsAsync(questionIds)).ToHashSet();
+            var yesNoQuestions = await _scoresheetAppService.GetYesNoQuestionsAsync(questionIds);
+            var selectListQuestions = await _scoresheetAppService.GetSelectListQuestionsAsync(questionIds);
+            var yesNoQuestionIds = yesNoQuestions.Select(q => q.Id).ToHashSet();
+            var selectListQuestionIds = selectListQuestions.Select(q => q.Id).ToHashSet();
+
+            var assessmentAnswers = new List<AssessmentAnswersEto>();
+            foreach (var (questionId, rawAnswer) in rawAiAnswers)
+            {
+                QuestionType questionType;
+                string answer;
+
+                if (numericQuestionIds.Contains(questionId))
+                {
+                    questionType = QuestionType.Number;
+                    answer = rawAnswer;
+                }
+                else if (yesNoQuestionIds.Contains(questionId))
+                {
+                    questionType = QuestionType.YesNo;
+                    answer = rawAnswer;
+                }
+                else if (selectListQuestionIds.Contains(questionId))
+                {
+                    questionType = QuestionType.SelectList;
+                    var q = selectListQuestions.Find(x => x.Id == questionId);
+                    answer = ConvertNumericAnswerToSelectListValue(rawAnswer, q?.Definition);
+                }
+                else
+                {
+                    questionType = QuestionType.TextArea;
+                    answer = rawAnswer;
+                }
+
+                assessmentAnswers.Add(new AssessmentAnswersEto
+                {
+                    QuestionId = questionId,
+                    Answer = answer,
+                    QuestionType = (int)questionType
+                });
+            }
+
+            if (assessmentAnswers.Count > 0)
+            {
+                await _localEventBus.PublishAsync(new PersistScoresheetSectionInstanceEto
+                {
+                    AssessmentId = newAssessmentId,
+                    AssessmentAnswers = assessmentAnswers
+                });
+            }
+        }
+
+        /// <summary>
+        /// Converts a 1-based numeric index (as returned by the AI for SelectList questions)
+        /// to the actual option value defined in the question's JSON definition.
+        /// Returns the original value unchanged if parsing fails or the index is out of range.
+        /// </summary>
+        private static string ConvertNumericAnswerToSelectListValue(string numericAnswer, string? definition)
+        {
+            if (string.IsNullOrEmpty(definition) || string.IsNullOrEmpty(numericAnswer))
+                return numericAnswer;
+            try
+            {
+                if (!int.TryParse(numericAnswer.Trim(), out var optionNumber) || optionNumber <= 0)
+                    return numericAnswer;
+                var selectListDefinition = JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition);
+                if (selectListDefinition?.Options != null && selectListDefinition.Options.Count > 0)
+                {
+                    var optionIndex = optionNumber - 1;
+                    if (optionIndex < selectListDefinition.Options.Count)
+                        return selectListDefinition.Options[optionIndex].Value;
+                }
+            }
+            catch (JsonException)
+            {
+                // Malformed definition — return the raw answer unchanged
+            }
+            return numericAnswer;
+        }
+
         public async Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto)
         {
             var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
@@ -364,6 +541,10 @@ namespace Unity.GrantManager.Assessments
             {
                 if (assessment != null)
                 {
+                    if (assessment.IsAiAssessment)
+                    {
+                        throw new BusinessException(GrantManagerDomainErrorCodes.CannotModifyAiAssessment);
+                    }
                     if (CurrentUser.GetId() != assessment.AssessorId)
                     {
                         throw new AbpValidationException("Error: You do not own this assessment record.");

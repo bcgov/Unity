@@ -136,6 +136,11 @@ namespace Unity.GrantManager.Permissions.GrantApplications
                 GrantApplicationPermissions.AI.AttachmentSummary.Default,
                 L("Permission:AI.AttachmentSummary"))
                 .RequireFeatures("Unity.AI.AttachmentSummaries");
+
+            aiPermissionsGroup.AddPermission(
+                GrantApplicationPermissions.AI.ScoringAssistant.Default,
+                L("Permission:AI.ScoringAssistant"))
+                .RequireFeatures("Unity.AI.Scoring");
         }
 
         private static LocalizableString L(string name)

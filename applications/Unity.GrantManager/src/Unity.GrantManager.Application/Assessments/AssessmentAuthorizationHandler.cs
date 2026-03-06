@@ -24,6 +24,12 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         OperationAuthorizationRequirement requirement,
         Assessment resource)
     {
+        if (resource.IsAiAssessment)
+        {
+            context.Fail();
+            return;
+        }
+
         if (requirement.Name.Equals(UnitySelector.Review.AssessmentReviewList.Update.SendBack)
             && await CheckPolicyAsync(requirement.Name, context))
         {

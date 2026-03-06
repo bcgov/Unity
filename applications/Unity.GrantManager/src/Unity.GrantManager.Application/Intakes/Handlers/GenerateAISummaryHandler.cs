@@ -8,6 +8,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
+using Volo.Abp.EventBus.Local;
 using Unity.Flex.Domain.Scoresheets;
 using System.Text.Json;
 using Volo.Abp.Features;
@@ -28,6 +29,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IFeatureChecker _featureChecker;
+        public ILocalEventBus LocalEventBus { get; set; } = NullLocalEventBus.Instance;
         const string ComponentsKey = "components";
 
         readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
@@ -77,11 +79,12 @@ namespace Unity.GrantManager.Intakes.Handlers
                 return;
             }
 
-            // Check if either AI feature is enabled
+            // Check if any AI feature is enabled
             var attachmentSummariesEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
             var applicationAnalysisEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
+            var scoringEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.Scoring");
 
-            if (!attachmentSummariesEnabled && !applicationAnalysisEnabled)
+            if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
             {
                 _logger.LogDebug("All AI features are disabled, skipping AI generation for application {ApplicationId}.", eventData.Application.Id);
                 return;
@@ -186,14 +189,20 @@ namespace Unity.GrantManager.Intakes.Handlers
                 }
                 }
 
-                // Generate application analysis and scoresheet if feature is enabled
+                // Generate application analysis if feature is enabled
                 if (applicationAnalysisEnabled)
                 {
-                    // After processing all attachments, perform application analysis
                     await GenerateApplicationAnalysisAsync(eventData.Application, attachments);
+                }
 
-                    // Generate AI scoresheet answers
+                // Generate AI scoresheet answers and trigger AI assessment creation if feature is enabled
+                if (scoringEnabled)
+                {
                     await GenerateScoresheetAnalysisAsync(eventData.Application, attachments);
+                    await LocalEventBus.PublishAsync(new AiScoresheetAnswersGeneratedEvent
+                    {
+                        Application = eventData.Application
+                    });
                 }
             }
             catch (Exception ex)
