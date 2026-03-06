@@ -204,7 +204,10 @@ class SQLGenerator:
             f"{past_context}"
             f"Please generate sql and metadata for the following question, "
             f"with reasoning but no explanation. "
-            f"Please enable map option only for questions involving regional districts: "
+            f"Please enable map option only for questions involving regional districts. "
+            f"When using columns from the \"Reporting\" schema that have type/Text but contain numeric values (e.g. currency amounts), "
+            f"always cast them using ::numeric before applying any aggregation (e.g. SUM(\"m2Cost\"::numeric)). "
+            f"Similarly, cast type/Text date columns using ::date when filtering or ordering by date: "
             f"{question}{newline}"
             f"### Reasoning:"
         )
@@ -308,10 +311,14 @@ class SQLGenerator:
 
         # Get relevant schemas
         schemas = self.embeddings.get_formatted_schemas(question, db_id)
+        if not schemas:
+            logger.error(f"No schemas found for db_id={db_id}. Embeddings may not have been generated yet.")
+            return None, None, None
 
         # Generate multiple completions in parallel
         async with aiohttp.ClientSession() as session:
             parsed_schema = await self.fetch_completion(f'''Please parse this schema to return only tables and columns relevant to the users question. Never add to the schema, only remove as necessary.
+Pay special attention to tables in the "Reporting" schema — if the question mentions any column name that appears in a Reporting schema table, always keep that table.
                                   <question>{question}</question>
                                   <schema>{schemas}</schema>
                                   In the case that the question is NSFW or completely unrelated please return NSFW''', session, 0)
