@@ -18,6 +18,10 @@ namespace Unity.GrantManager.Intakes.Handlers
     public class GenerateAIContentHandler : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
     {
         private const string DefaultContentType = "application/octet-stream";
+        private const string ArrayFieldType = "array";
+        private const string ObjectFieldType = "object";
+        private const string AttachmentSummariesFeatureName = "Unity.AI.AttachmentSummaries";
+        private const string ApplicationAnalysisFeatureName = "Unity.AI.ApplicationAnalysis";
         private readonly IAIService _aiService;
         private readonly ISubmissionAppService _submissionAppService;
         private readonly IApplicationChefsFileAttachmentRepository _attachmentRepository;
@@ -41,6 +45,26 @@ namespace Unity.GrantManager.Intakes.Handlers
             "lateEntry",
             "metadata",
             "full_application_form_submission"
+        };
+        private static readonly string[] AllowedAnalysisRootProperties =
+        {
+            AIJsonKeys.Rating,
+            AIJsonKeys.Errors,
+            AIJsonKeys.Warnings,
+            AIJsonKeys.Summaries,
+            AIJsonKeys.Dismissed
+        };
+        private static readonly string[] AllowedFindingProperties =
+        {
+            AIJsonKeys.Id,
+            AIJsonKeys.Title,
+            AIJsonKeys.Detail
+        };
+        private static readonly string[] AllowedScoresheetAnswerProperties =
+        {
+            AIJsonKeys.Answer,
+            AIJsonKeys.Rationale,
+            AIJsonKeys.Confidence
         };
 
         private readonly JsonSerializerOptions _jsonOptionsIndented = new JsonSerializerOptions
@@ -86,8 +110,8 @@ namespace Unity.GrantManager.Intakes.Handlers
             }
 
             // Check if either AI feature is enabled
-            var attachmentSummariesEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
-            var applicationAnalysisEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
+            var attachmentSummariesEnabled = await _featureChecker.IsEnabledAsync(AttachmentSummariesFeatureName);
+            var applicationAnalysisEnabled = await _featureChecker.IsEnabledAsync(ApplicationAnalysisFeatureName);
 
             if (!attachmentSummariesEnabled && !applicationAnalysisEnabled)
             {
@@ -303,7 +327,7 @@ namespace Unity.GrantManager.Intakes.Handlers
 
         private JsonElement BuildAnalysisDataPayload(Application application, ApplicationFormSubmission? formSubmission)
         {
-            var fallbackPayload = BuildFallbackAnalysisDataPayload(application, formSubmission?.RenderedHTML);
+            var fallbackPayload = BuildFallbackAnalysisDataPayload(application);
 
             if (string.IsNullOrWhiteSpace(formSubmission?.Submission))
             {
@@ -349,7 +373,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             }
         }
 
-        private static object BuildFallbackAnalysisDataPayload(Application application, string? renderedFormHtml)
+        private static object BuildFallbackAnalysisDataPayload(Application application)
         {
             var notSpecified = "Not specified";
             return new
@@ -778,9 +802,6 @@ FULL APPLICATION FORM SUBMISSION:
                 var displayName = !string.IsNullOrEmpty(label) ? $"{label} ({key})" : key;
                 var fullPath = string.IsNullOrEmpty(currentPath) ? displayName : $"{currentPath} > {displayName}";
 
-                var validate = component["validate"] as JObject;
-                var isRequired = validate?["required"]?.Value<bool>() ?? false;
-
                 if (component["input"]?.Value<bool>() == true)
                 {
                     fields[key] = NormalizeFieldType(type, component);
@@ -855,7 +876,7 @@ FULL APPLICATION FORM SUBMISSION:
         {
             if (component["multiple"]?.Value<bool>() == true)
             {
-                return "array";
+                return ArrayFieldType;
             }
 
             return rawType.ToLowerInvariant() switch
@@ -867,13 +888,13 @@ FULL APPLICATION FORM SUBMISSION:
                 "day" => "date",
                 "date" => "date",
                 "time" => "date",
-                "datagrid" => "array",
-                "editgrid" => "array",
-                "table" => "array",
-                "container" => "object",
-                "panel" => "object",
-                "fieldset" => "object",
-                "well" => "object",
+                "datagrid" => ArrayFieldType,
+                "editgrid" => ArrayFieldType,
+                "table" => ArrayFieldType,
+                "container" => ObjectFieldType,
+                "panel" => ObjectFieldType,
+                "fieldset" => ObjectFieldType,
+                "well" => ObjectFieldType,
                 _ => "string"
             };
         }
@@ -908,14 +929,7 @@ FULL APPLICATION FORM SUBMISSION:
                     return false;
                 }
 
-                if (!HasOnlyAllowedProperties(root, new[]
-                {
-                    AIJsonKeys.Rating,
-                    AIJsonKeys.Errors,
-                    AIJsonKeys.Warnings,
-                    AIJsonKeys.Summaries,
-                    AIJsonKeys.Dismissed
-                }))
+                if (!HasOnlyAllowedProperties(root, AllowedAnalysisRootProperties))
                 {
                     return false;
                 }
@@ -963,12 +977,7 @@ FULL APPLICATION FORM SUBMISSION:
                     return false;
                 }
 
-                if (!HasOnlyAllowedProperties(finding, new[]
-                {
-                    AIJsonKeys.Id,
-                    AIJsonKeys.Title,
-                    AIJsonKeys.Detail
-                }))
+                if (!HasOnlyAllowedProperties(finding, AllowedFindingProperties))
                 {
                     return false;
                 }
@@ -992,14 +1001,14 @@ FULL APPLICATION FORM SUBMISSION:
                     return false;
                 }
 
-                foreach (var question in doc.RootElement.EnumerateObject())
+                foreach (var question in doc.RootElement.EnumerateObject().Select(question => question.Value))
                 {
-                    if (question.Value.ValueKind != JsonValueKind.Object)
+                    if (question.ValueKind != JsonValueKind.Object)
                     {
                         return false;
                     }
 
-                    if (!question.Value.TryGetProperty(AIJsonKeys.Answer, out var answer))
+                    if (!question.TryGetProperty(AIJsonKeys.Answer, out var answer))
                     {
                         return false;
                     }
@@ -1010,12 +1019,12 @@ FULL APPLICATION FORM SUBMISSION:
                         return false;
                     }
 
-                    if (!question.Value.TryGetProperty(AIJsonKeys.Rationale, out var rationale) || rationale.ValueKind != JsonValueKind.String)
+                    if (!question.TryGetProperty(AIJsonKeys.Rationale, out var rationale) || rationale.ValueKind != JsonValueKind.String)
                     {
                         return false;
                     }
 
-                    if (!question.Value.TryGetProperty(AIJsonKeys.Confidence, out var confidence) || !confidence.TryGetInt32(out var confidenceValue))
+                    if (!question.TryGetProperty(AIJsonKeys.Confidence, out var confidence) || !confidence.TryGetInt32(out var confidenceValue))
                     {
                         return false;
                     }
@@ -1025,12 +1034,7 @@ FULL APPLICATION FORM SUBMISSION:
                         return false;
                     }
 
-                    if (!HasOnlyAllowedProperties(question.Value, new[]
-                    {
-                        AIJsonKeys.Answer,
-                        AIJsonKeys.Rationale,
-                        AIJsonKeys.Confidence
-                    }))
+                    if (!HasOnlyAllowedProperties(question, AllowedScoresheetAnswerProperties))
                     {
                         return false;
                     }

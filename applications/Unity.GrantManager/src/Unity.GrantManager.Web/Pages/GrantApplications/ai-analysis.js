@@ -77,6 +77,10 @@ function getFindingDetailText(item) {
     }
 }
 
+function getVisibleIssueCount(activeWarnings, activeErrors, summaries) {
+    return activeWarnings.length + activeErrors.length + summaries.length;
+}
+
 function renderRealAIAnalysis(analysisData) {
     const rawWarnings = analysisData.warnings || [];
     const rawErrors = analysisData.errors || [];
@@ -223,11 +227,12 @@ function renderRealAIAnalysis(analysisData) {
         );
 
         $accordionList.append(accordionItem);
-        let totalLength = summaries.length + activeWarnings.length + activeErrors.length;
-        PubSub.publish('update_ai_analysis_count', {
-            itemCount: totalLength,
-        });
     }
+
+    const totalLength = getVisibleIssueCount(activeWarnings, activeErrors, summaries);
+    PubSub.publish('update_ai_analysis_count', {
+        itemCount: totalLength,
+    });
 
     // If no items, show the no-data message; otherwise hide it
     const $noDataMessage = $('#aiAnalysisNoData');
@@ -240,7 +245,7 @@ function renderRealAIAnalysis(analysisData) {
     }
 
     // Update tab badge with total count
-    const totalIssues = activeWarnings.length + activeErrors.length + summaries.length;
+    const totalIssues = getVisibleIssueCount(activeWarnings, activeErrors, summaries);
     $('#ai-analysis-tab').html(`<i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(${totalIssues})`);
 
     // Remove all previous event handlers from accordion list
