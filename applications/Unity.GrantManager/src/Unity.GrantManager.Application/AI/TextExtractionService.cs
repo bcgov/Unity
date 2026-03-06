@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using NPOI.SS.UserModel;
 using NPOI.XWPF.UserModel;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -128,15 +129,11 @@ namespace Unity.GrantManager.AI
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
+                var pageTexts = document.GetPages()
+                    .Select(page => page.Text)
+                    .Where(pageText => !string.IsNullOrWhiteSpace(pageText));
 
-                foreach (var pageText in document.GetPages().Select(page => page.Text))
-                {
-                    var limitReached = AppendWithLimit(builder, pageText, MaxExtractedTextLength, Environment.NewLine);
-                    if (limitReached)
-                    {
-                        break;
-                    }
-                }
+                AppendUntilLimit(builder, pageTexts);
 
                 return builder.ToString();
             }
@@ -154,43 +151,14 @@ namespace Unity.GrantManager.AI
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = new XWPFDocument(stream);
                 var builder = new StringBuilder();
+                var paragraphTexts = document.Paragraphs
+                    .Take(MaxDocxParagraphs)
+                    .Select(paragraph => paragraph.ParagraphText)
+                    .Where(paragraphText => !string.IsNullOrWhiteSpace(paragraphText));
 
-                foreach (var paragraphText in document.Paragraphs.Take(MaxDocxParagraphs).Select(paragraph => paragraph.ParagraphText))
-                {
-                    var limitReached = AppendWithLimit(builder, paragraphText, MaxExtractedTextLength, Environment.NewLine);
-                    if (limitReached)
-                    {
-                        break;
-                    }
-                }
+                AppendUntilLimit(builder, paragraphTexts);
 
-                if (builder.Length < MaxExtractedTextLength)
-                {
-                    foreach (var table in document.Tables)
-                    {
-                        foreach (var row in table.Rows.Take(MaxDocxTableRows))
-                        {
-                            foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
-                            {
-                                var limitReached = AppendWithLimit(builder, cell.GetText(), MaxExtractedTextLength, Environment.NewLine);
-                                if (limitReached)
-                                {
-                                    break;
-                                }
-                            }
-
-                            if (builder.Length >= MaxExtractedTextLength)
-                            {
-                                break;
-                            }
-                        }
-
-                        if (builder.Length >= MaxExtractedTextLength)
-                        {
-                            break;
-                        }
-                    }
-                }
+                TryAppendDocxTableText(document, builder);
 
                 return builder.ToString();
             }
@@ -198,6 +166,30 @@ namespace Unity.GrantManager.AI
             {
                 _logger.LogWarning(ex, "Word (.docx) text extraction failed for {FileName}", fileName);
                 return string.Empty;
+            }
+        }
+
+        private static void TryAppendDocxTableText(XWPFDocument document, StringBuilder builder)
+        {
+            if (builder.Length >= MaxExtractedTextLength)
+            {
+                return;
+            }
+
+            foreach (var table in document.Tables)
+            {
+                foreach (var row in table.Rows.Take(MaxDocxTableRows))
+                {
+                    var cellTexts = row.GetTableCells()
+                        .Take(MaxDocxTableCellsPerRow)
+                        .Select(cell => cell.GetText())
+                        .Where(cellText => !string.IsNullOrWhiteSpace(cellText));
+
+                    if (AppendUntilLimit(builder, cellTexts))
+                    {
+                        return;
+                    }
+                }
             }
         }
 
@@ -276,10 +268,6 @@ namespace Unity.GrantManager.AI
                 {
                     separator = " | ";
                 }
-                else if (builder.Length > 0)
-                {
-                    separator = Environment.NewLine;
-                }
 
                 var limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength, separator);
                 rowHasValue = true;
@@ -289,7 +277,44 @@ namespace Unity.GrantManager.AI
                 }
             }
 
-            return false;
+            if (rowHasValue &&
+                builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+            {
+                builder.Append(Environment.NewLine);
+            }
+
+            return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static bool TryAppendWithTrailingNewline(StringBuilder builder, string? value)
+        {
+            var limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength);
+            if (limitReached)
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                AppendTrailingNewlineIfRoom(builder);
+            }
+
+            return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static bool AppendUntilLimit(StringBuilder builder, IEnumerable<string> texts)
+        {
+            var limitReached = texts.Any(text => TryAppendWithTrailingNewline(builder, text));
+            return limitReached || builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static void AppendTrailingNewlineIfRoom(StringBuilder builder)
+        {
+            if (builder.Length > 0 &&
+                builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+            {
+                builder.Append(Environment.NewLine);
+            }
         }
 
         private static bool AppendWithLimit(StringBuilder builder, string? value, int maxLength, string? separator = null)
