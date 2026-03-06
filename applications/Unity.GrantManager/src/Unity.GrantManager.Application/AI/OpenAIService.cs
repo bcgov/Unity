@@ -68,22 +68,25 @@ namespace Unity.GrantManager.AI
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schemaJson = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
 
-            var attachmentSummaries = request.Attachments
-                .Select(a => $"{a.Name}: {a.Summary}")
-                .ToList();
+            var attachmentsPayload = request.Attachments
+                .Select(a => new
+                {
+                    name = string.IsNullOrWhiteSpace(a.Name) ? "attachment" : a.Name.Trim(),
+                    summary = string.IsNullOrWhiteSpace(a.Summary) ? string.Empty : a.Summary.Trim()
+                })
+                .Cast<object>();
 
-            var applicationContent = $@"DATA
-{dataJson}";
+            var analysisContent = AnalysisPrompts.BuildUserPrompt(
+                schemaJson,
+                dataJson,
+                JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions),
+                request.Rubric ?? string.Empty);
 
-            var formFieldConfiguration = $@"SCHEMA
-{schemaJson}";
-
-            var raw = await AnalyzeApplicationAsync(
-                applicationContent,
-                attachmentSummaries,
-                request.Rubric ?? string.Empty,
-                formFieldConfiguration);
-            return ParseApplicationAnalysisResponse(raw);
+            var systemPrompt = AnalysisPrompts.SystemPrompt;
+            await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
+            var raw = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
+            await LogPromptOutputAsync("ApplicationAnalysis", raw);
+            return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(raw));
         }
 
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
