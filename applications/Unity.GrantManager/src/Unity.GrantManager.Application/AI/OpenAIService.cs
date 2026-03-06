@@ -614,7 +614,7 @@ Respond only with valid JSON in the exact format requested.";
                 var confidence = property.Value.TryGetProperty("confidence", out var confidenceProp) &&
                                  confidenceProp.ValueKind == JsonValueKind.Number &&
                                  confidenceProp.TryGetInt32(out var parsedConfidence)
-                    ? parsedConfidence
+                    ? NormalizeConfidence(parsedConfidence)
                     : 0;
 
                 response.Answers[property.Name] = new ScoresheetSectionAnswer
@@ -626,6 +626,13 @@ Respond only with valid JSON in the exact format requested.";
             }
 
             return response;
+        }
+
+        private static int NormalizeConfidence(int confidence)
+        {
+            var clamped = Math.Clamp(confidence, 0, 100);
+            var rounded = (int)Math.Round(clamped / 5.0, MidpointRounding.AwayFromZero) * 5;
+            return Math.Clamp(rounded, 0, 100);
         }
 
         private static string BuildScoresheetSectionResponseTemplate(string sectionPayloadJson)

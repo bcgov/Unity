@@ -8,6 +8,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
+using Volo.Abp.EventBus.Local;
 using Unity.Flex.Domain.Scoresheets;
 using System.Text.Json;
 using Volo.Abp.Features;
@@ -32,6 +33,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IFeatureChecker _featureChecker;
+        public ILocalEventBus LocalEventBus { get; set; } = NullLocalEventBus.Instance;
         private const string ComponentsKey = "components";
         private static readonly HashSet<string> NonDataComponentTypes = new()
         {
@@ -457,6 +459,10 @@ namespace Unity.GrantManager.Intakes.Handlers
                 }
 
                 await SaveScoresheetResultsAsync(trackedApplication, allSectionResults);
+                await LocalEventBus.PublishAsync(new AiScoresheetAnswersGeneratedEvent
+                {
+                    Application = application
+                });
 
                 _logger.LogInformation("Successfully generated and saved AI scoresheet answers for application {ApplicationId}. Answers will be parsed when scoresheet instance is created.", application.Id);
             }
@@ -1029,7 +1035,7 @@ FULL APPLICATION FORM SUBMISSION:
                         return false;
                     }
 
-                    if (confidenceValue < 0 || confidenceValue > 100 || confidenceValue % 5 != 0)
+                    if (confidenceValue < 0 || confidenceValue > 100)
                     {
                         return false;
                     }

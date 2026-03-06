@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
@@ -57,7 +58,6 @@ public class GrantApplicationAppService(
 
     private static readonly JsonSerializerOptions AiAnalysisWriteOptions = new()
     {
-        PropertyNameCaseInsensitive = true,
         WriteIndented = true
     };
 
@@ -1099,25 +1099,57 @@ public class GrantApplicationAppService(
 
     private static string ModifyDismissedItems(string analysisJson, string issueId, bool isDismiss)
     {
-        var analysis = System.Text.Json.JsonSerializer.Deserialize<ApplicationAnalysisResponse>(analysisJson, AiAnalysisReadOptions)
-            ?? new ApplicationAnalysisResponse();
+        if (string.IsNullOrWhiteSpace(analysisJson))
+        {
+            return analysisJson;
+        }
 
-        var dismissedItems = new HashSet<string>(
-            analysis.Dismissed.Where(id => !string.IsNullOrWhiteSpace(id)),
-            StringComparer.Ordinal);
+        JsonObject? root;
+        try
+        {
+            root = JsonNode.Parse(analysisJson) as JsonObject;
+        }
+        catch (JsonException)
+        {
+            return analysisJson;
+        }
+
+        if (root == null)
+        {
+            return analysisJson;
+        }
+
+        var dismissedItems = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        if (root[AIJsonKeys.Dismissed] is JsonArray dismissedArray)
+        {
+            foreach (var item in dismissedArray)
+            {
+                var id = item?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(id) || !seen.Add(id))
+                {
+                    continue;
+                }
+
+                dismissedItems.Add(id);
+            }
+        }
 
         if (isDismiss)
         {
-            dismissedItems.Add(issueId);
+            if (seen.Add(issueId))
+            {
+                dismissedItems.Add(issueId);
+            }
         }
         else
         {
-            dismissedItems.Remove(issueId);
+            dismissedItems.RemoveAll(id => string.Equals(id, issueId, StringComparison.Ordinal));
         }
 
-        analysis.Dismissed = dismissedItems.ToList();
-
-        return System.Text.Json.JsonSerializer.Serialize(analysis, AiAnalysisWriteOptions);
+        root[AIJsonKeys.Dismissed] = new JsonArray(dismissedItems.Select(JsonValue.Create).ToArray());
+        return root.ToJsonString(AiAnalysisWriteOptions);
     }
 
     private static ApplicationAnalysisResponse? ParseAiAnalysisData(string? analysisJson)
