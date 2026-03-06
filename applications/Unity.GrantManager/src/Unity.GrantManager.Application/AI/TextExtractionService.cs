@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using NPOI.SS.UserModel;
 using NPOI.XWPF.UserModel;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -129,16 +130,10 @@ namespace Unity.GrantManager.AI
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
                 var pageTexts = document.GetPages()
-                    .Where(page => !string.IsNullOrWhiteSpace(page.Text))
-                    .Select(page => page.Text);
+                    .Select(page => page.Text)
+                    .Where(pageText => !string.IsNullOrWhiteSpace(pageText));
 
-                foreach (var pageText in pageTexts)
-                {
-                    if (TryAppendWithTrailingNewline(builder, pageText))
-                    {
-                        break;
-                    }
-                }
+                AppendUntilLimit(builder, pageTexts);
 
                 return builder.ToString();
             }
@@ -158,16 +153,10 @@ namespace Unity.GrantManager.AI
                 var builder = new StringBuilder();
                 var paragraphTexts = document.Paragraphs
                     .Take(MaxDocxParagraphs)
-                    .Where(paragraph => !string.IsNullOrWhiteSpace(paragraph.ParagraphText))
-                    .Select(paragraph => paragraph.ParagraphText);
+                    .Select(paragraph => paragraph.ParagraphText)
+                    .Where(paragraphText => !string.IsNullOrWhiteSpace(paragraphText));
 
-                foreach (var paragraphText in paragraphTexts)
-                {
-                    if (TryAppendWithTrailingNewline(builder, paragraphText))
-                    {
-                        break;
-                    }
-                }
+                AppendUntilLimit(builder, paragraphTexts);
 
                 TryAppendDocxTableText(document, builder);
 
@@ -193,15 +182,12 @@ namespace Unity.GrantManager.AI
                 {
                     var cellTexts = row.GetTableCells()
                         .Take(MaxDocxTableCellsPerRow)
-                        .Where(cell => !string.IsNullOrWhiteSpace(cell.GetText()))
-                        .Select(cell => cell.GetText());
+                        .Select(cell => cell.GetText())
+                        .Where(cellText => !string.IsNullOrWhiteSpace(cellText));
 
-                    foreach (var cellText in cellTexts)
+                    if (AppendUntilLimit(builder, cellTexts))
                     {
-                        if (TryAppendWithTrailingNewline(builder, cellText))
-                        {
-                            return;
-                        }
+                        return;
                     }
                 }
             }
@@ -314,6 +300,12 @@ namespace Unity.GrantManager.AI
             }
 
             return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static bool AppendUntilLimit(StringBuilder builder, IEnumerable<string> texts)
+        {
+            var limitReached = texts.Any(text => TryAppendWithTrailingNewline(builder, text));
+            return limitReached || builder.Length >= MaxExtractedTextLength;
         }
 
         private static void AppendTrailingNewlineIfRoom(StringBuilder builder)
