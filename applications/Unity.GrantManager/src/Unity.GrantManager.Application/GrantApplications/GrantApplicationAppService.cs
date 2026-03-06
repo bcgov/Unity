@@ -50,6 +50,17 @@ public class GrantApplicationAppService(
     IPaymentRequestAppService paymentRequestService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
+    private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private static readonly JsonSerializerOptions AiAnalysisWriteOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true
+    };
+
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
         // 1️ Fetch applications with filters + paging in DB
@@ -204,6 +215,8 @@ public class GrantApplicationAppService(
             appDto.SubSector = application.Applicant.SubSector;
             appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
+
+        appDto.AIAnalysisData = ParseAiAnalysisData(appDto.AIAnalysis);
 
         return appDto;
     }
@@ -1043,29 +1056,21 @@ public class GrantApplicationAppService(
 
     public async Task<string> DismissAIIssueAsync(Guid applicationId, string issueId)
     {
-        var application = await applicationRepository.GetAsync(applicationId);
-
-        if (string.IsNullOrEmpty(application.AIAnalysis))
-        {
-            throw new UserFriendlyException("No AI analysis available for this application.");
-        }
-
-        try
-        {
-            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss: true);
-            application.AIAnalysis = updatedAnalysis;
-            await applicationRepository.UpdateAsync(application);
-            return updatedAnalysis;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error dismissing AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
-            throw new UserFriendlyException("Failed to dismiss the AI issue. Please try again.");
-        }
+        return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: true);
     }
 
     public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)
     {
+        return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: false);
+    }
+
+    private async Task<string> UpdateAIIssueDismissStateAsync(Guid applicationId, string issueId, bool isDismiss)
+    {
+        if (string.IsNullOrWhiteSpace(issueId))
+        {
+            throw new UserFriendlyException("AI issue id is required.");
+        }
+
         var application = await applicationRepository.GetAsync(applicationId);
 
         if (string.IsNullOrEmpty(application.AIAnalysis))
@@ -1075,70 +1080,60 @@ public class GrantApplicationAppService(
 
         try
         {
-            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss: false);
+            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss);
             application.AIAnalysis = updatedAnalysis;
             await applicationRepository.UpdateAsync(application);
             return updatedAnalysis;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error restoring AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
-            throw new UserFriendlyException("Failed to restore the AI issue. Please try again.");
+            var action = isDismiss ? "dismissing" : "restoring";
+            var userMessage = isDismiss
+                ? "Failed to dismiss the AI issue. Please try again."
+                : "Failed to restore the AI issue. Please try again.";
+
+            Logger.LogError(ex, "Error {Action} AI issue {IssueId} for application {ApplicationId}", action, issueId, applicationId);
+            throw new UserFriendlyException(userMessage);
         }
     }
 
     private static string ModifyDismissedItems(string analysisJson, string issueId, bool isDismiss)
     {
-        using var jsonDoc = JsonDocument.Parse(analysisJson);
-        using var memoryStream = new System.IO.MemoryStream();
-        using (var writer = new Utf8JsonWriter(memoryStream, new JsonWriterOptions { Indented = true }))
+        var analysis = System.Text.Json.JsonSerializer.Deserialize<ApplicationAnalysisResponse>(analysisJson, AiAnalysisReadOptions)
+            ?? new ApplicationAnalysisResponse();
+
+        var dismissedItems = new HashSet<string>(
+            analysis.Dismissed.Where(id => !string.IsNullOrWhiteSpace(id)),
+            StringComparer.Ordinal);
+
+        if (isDismiss)
         {
-            writer.WriteStartObject();
-
-            var dismissedItems = new HashSet<string>();
-            if (jsonDoc.RootElement.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedArray))
-            {
-                foreach (var item in dismissedArray.EnumerateArray())
-                {
-                    var itemValue = item.GetString();
-                    if (!string.IsNullOrWhiteSpace(itemValue))
-                    {
-                        dismissedItems.Add(itemValue);
-                    }
-                }
-            }
-
-            // Modify the dismissed items set
-            if (isDismiss && !string.IsNullOrWhiteSpace(issueId))
-            {
-                dismissedItems.Add(issueId);
-            }
-            else if (!isDismiss)
-            {
-                dismissedItems.Remove(issueId);
-            }
-
-            // Write all properties
-            foreach (var property in jsonDoc.RootElement.EnumerateObject())
-            {
-                if (property.Name != AIJsonKeys.Dismissed)
-                {
-                    property.WriteTo(writer);
-                }
-            }
-
-            // Write updated dismissed array
-            writer.WritePropertyName(AIJsonKeys.Dismissed);
-            writer.WriteStartArray();
-            foreach (var id in dismissedItems)
-            {
-                writer.WriteStringValue(id);
-            }
-            writer.WriteEndArray();
-
-            writer.WriteEndObject();
+            dismissedItems.Add(issueId);
+        }
+        else
+        {
+            dismissedItems.Remove(issueId);
         }
 
-        return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+        analysis.Dismissed = dismissedItems.ToList();
+
+        return System.Text.Json.JsonSerializer.Serialize(analysis, AiAnalysisWriteOptions);
+    }
+
+    private static ApplicationAnalysisResponse? ParseAiAnalysisData(string? analysisJson)
+    {
+        if (string.IsNullOrWhiteSpace(analysisJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<ApplicationAnalysisResponse>(analysisJson, AiAnalysisReadOptions);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 }
