@@ -2,6 +2,43 @@ namespace Unity.GrantManager.AI
 {
     internal static class AnalysisPrompts
     {
+        public const string DefaultRubric = @"BC GOVERNMENT GRANT EVALUATION RUBRIC:
+
+1. ELIGIBILITY REQUIREMENTS:
+   - Project must align with program objectives
+   - Applicant must be eligible entity type
+   - Budget must be reasonable and well-justified
+   - Project timeline must be realistic
+
+2. COMPLETENESS CHECKS:
+   - All required fields completed
+   - Necessary supporting documents provided
+   - Budget breakdown detailed and accurate
+   - Project description clear and comprehensive
+
+3. FINANCIAL REVIEW:
+   - Requested amount is within program limits
+   - Budget is reasonable for scope of work
+   - Matching funds or in-kind contributions identified
+   - Cost per outcome/beneficiary is reasonable
+
+4. RISK ASSESSMENT:
+   - Applicant capacity to deliver project
+   - Technical feasibility of proposed work
+   - Environmental or regulatory compliance
+   - Potential for cost overruns or delays
+
+5. QUALITY INDICATORS:
+   - Clear project objectives and outcomes
+   - Well-defined target audience/beneficiaries
+   - Appropriate project methodology
+   - Sustainability plan for long-term impact
+
+EVALUATION CRITERIA:
+- HIGH: Meets all requirements, well-prepared application, low risk
+- MEDIUM: Meets most requirements, minor issues or missing elements
+- LOW: Missing key requirements, significant concerns, high risk";
+
         public const string ScoreRules = @"HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
 MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
 LOW: Application has significant gaps or risks across key rubric areas.";
@@ -45,11 +82,11 @@ RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
 - Do not provide applicant-facing advice.
 - Do not mention rubric section names in findings.
 - If no findings exist, return empty arrays.
-- rating must be HIGH, MEDIUM, or LOW.
-- Return values exactly as specified in OUTPUT.
-- Do not return keys outside OUTPUT.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).";
+- rating must be HIGH, MEDIUM, or LOW."
+            + "\n" + PromptCoreRules.ExactOutputShape
+            + "\n" + PromptCoreRules.NoExtraOutputKeys
+            + "\n" + PromptCoreRules.ValidJsonOnly
+            + "\n" + PromptCoreRules.PlainJsonOnly;
 
         public static readonly string SystemPrompt = PromptHeader.Build(
             "You are an expert grant analyst assistant for human reviewers.",
