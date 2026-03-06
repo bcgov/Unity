@@ -129,7 +129,9 @@ namespace Unity.GrantManager.AI
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
 
-                foreach (var pageText in document.GetPages().Select(page => page.Text).Where(pageText => !string.IsNullOrWhiteSpace(pageText)))
+                foreach (var pageText in document.GetPages()
+                    .Where(page => !string.IsNullOrWhiteSpace(page.Text))
+                    .Select(page => page.Text))
                 {
                     if (TryAppendWithTrailingNewline(builder, pageText))
                     {
@@ -156,8 +158,8 @@ namespace Unity.GrantManager.AI
 
                 foreach (var paragraphText in document.Paragraphs
                     .Take(MaxDocxParagraphs)
-                    .Select(paragraph => paragraph.ParagraphText)
-                    .Where(paragraphText => !string.IsNullOrWhiteSpace(paragraphText)))
+                    .Where(paragraph => !string.IsNullOrWhiteSpace(paragraph.ParagraphText))
+                    .Select(paragraph => paragraph.ParagraphText))
                 {
                     if (TryAppendWithTrailingNewline(builder, paragraphText))
                     {
@@ -189,8 +191,8 @@ namespace Unity.GrantManager.AI
                 {
                     foreach (var cellText in row.GetTableCells()
                         .Take(MaxDocxTableCellsPerRow)
-                        .Select(cell => cell.GetText())
-                        .Where(cellText => !string.IsNullOrWhiteSpace(cellText)))
+                        .Where(cell => !string.IsNullOrWhiteSpace(cell.GetText()))
+                        .Select(cell => cell.GetText()))
                     {
                         if (TryAppendWithTrailingNewline(builder, cellText))
                         {
