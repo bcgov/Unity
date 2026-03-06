@@ -128,10 +128,11 @@ namespace Unity.GrantManager.AI
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
-
-                foreach (var pageText in document.GetPages()
+                var pageTexts = document.GetPages()
                     .Where(page => !string.IsNullOrWhiteSpace(page.Text))
-                    .Select(page => page.Text))
+                    .Select(page => page.Text);
+
+                foreach (var pageText in pageTexts)
                 {
                     if (TryAppendWithTrailingNewline(builder, pageText))
                     {
@@ -155,11 +156,12 @@ namespace Unity.GrantManager.AI
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = new XWPFDocument(stream);
                 var builder = new StringBuilder();
-
-                foreach (var paragraphText in document.Paragraphs
+                var paragraphTexts = document.Paragraphs
                     .Take(MaxDocxParagraphs)
                     .Where(paragraph => !string.IsNullOrWhiteSpace(paragraph.ParagraphText))
-                    .Select(paragraph => paragraph.ParagraphText))
+                    .Select(paragraph => paragraph.ParagraphText);
+
+                foreach (var paragraphText in paragraphTexts)
                 {
                     if (TryAppendWithTrailingNewline(builder, paragraphText))
                     {
@@ -189,10 +191,12 @@ namespace Unity.GrantManager.AI
             {
                 foreach (var row in table.Rows.Take(MaxDocxTableRows))
                 {
-                    foreach (var cellText in row.GetTableCells()
+                    var cellTexts = row.GetTableCells()
                         .Take(MaxDocxTableCellsPerRow)
                         .Where(cell => !string.IsNullOrWhiteSpace(cell.GetText()))
-                        .Select(cell => cell.GetText()))
+                        .Select(cell => cell.GetText());
+
+                    foreach (var cellText in cellTexts)
                     {
                         if (TryAppendWithTrailingNewline(builder, cellText))
                         {
