@@ -153,7 +153,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Payments.Shared", "mo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Flex.Web.Tests", "modules\Unity.Flex\test\Unity.Flex.Web.Tests\Unity.Flex.Web.Tests.csproj", "{5F4CFB7E-A14A-40A1-8833-A55CB296D31B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Reporting.Web", "modules\Unity.Reporting\src\Unity.Reporting.Web\Unity.Reporting.Web.csproj", "{3E4E5506-9820-4650-8062-4A07FB2C851A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Reporting.Web", "modules\Unity.Reporting\src\Unity.Reporting.Web\Unity.Reporting.Web.csproj", "{3E4E5506-9820-4650-8062-4A07FB2C851A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity.AI", "Unity.AI", "{BA2040C4-DC9D-44D2-B8A8-5A18D3D649AB}"
 EndProject
@@ -163,7 +163,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AI.Application.Contra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AI.Application", "modules\Unity.AI\src\Unity.AI.Application\Unity.AI.Application.csproj", "{7CF9D364-2018-4199-879B-371F6E1AC58B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.AI.Web", "modules\Unity.AI\src\Unity.AI.Web\Unity.AI.Web.csproj", "{378A4EB8-3DC1-420E-98B5-798DE71BEF0D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AI.Web", "modules\Unity.AI\src\Unity.AI.Web\Unity.AI.Web.csproj", "{378A4EB8-3DC1-420E-98B5-798DE71BEF0D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

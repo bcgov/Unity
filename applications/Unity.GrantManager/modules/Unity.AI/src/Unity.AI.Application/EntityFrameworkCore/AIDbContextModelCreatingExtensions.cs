@@ -10,11 +10,7 @@ public static class AIDbContextModelCreatingExtensions
         Check.NotNull(modelBuilder, nameof(modelBuilder));
 
         // Configure AI entities here as they are introduced.
-        // Example:
-        // modelBuilder.Entity<SomeEntity>(b =>
-        // {
-        //     b.ToTable(AIDbProperties.DbTablePrefix + "SomeEntities", AIDbProperties.DbSchema);
-        //     b.ConfigureByConvention();
-        // });
+        // Example: modelBuilder add Entity To table and configurations
+
     }
 }

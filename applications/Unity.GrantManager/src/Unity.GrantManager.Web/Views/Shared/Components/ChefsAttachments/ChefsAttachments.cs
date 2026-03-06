@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
         {
             var isAIAttachmentSummariesEnabled =
                 await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries") &&
-                await _permissionChecker.IsGrantedAsync(AIPermissions.Default.AttachmentSummary.Default);
+                await _permissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
             ViewBag.IsAIAttachmentSummariesEnabled = isAIAttachmentSummariesEnabled;
             return View();
         }

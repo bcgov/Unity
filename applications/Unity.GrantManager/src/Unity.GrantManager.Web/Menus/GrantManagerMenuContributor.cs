@@ -125,7 +125,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                     l["Menu:AIReporting"],
                     "~/AIReporting",
                     icon: "fl fl-view-dashboard",
-                    requiredPermissionName: AIPermissions.Default.Reporting.Default,
+                    requiredPermissionName: AIPermissions.Reporting.ReportingDefault,
                     order: 9
                 )
             );

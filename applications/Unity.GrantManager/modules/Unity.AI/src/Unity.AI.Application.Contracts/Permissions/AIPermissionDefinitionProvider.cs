@@ -16,22 +16,22 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
 
 
             aiPermissionsGroup.AddPermission(
-                AIPermissions.Default.Reporting.Default,
+                AIPermissions.Reporting.ReportingDefault,
                 L("Permission:AI.Reporting"))
                 .RequireFeatures("Unity.AIReporting");                
 
             aiPermissionsGroup.AddPermission(
-                AIPermissions.Default.ApplicationAnalysis.Default,
+                AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault,
                 L("Permission:AI.ApplicationAnalysis"))
                  .RequireFeatures("Unity.AI.ApplicationAnalysis");
 
             aiPermissionsGroup.AddPermission(
-                AIPermissions.Default.AttachmentSummary.Default ,
+                AIPermissions.AttachmentSummary.AttachmentSummaryDefault ,
                 L("Permission:AI.AttachmentSummary"))
                  .RequireFeatures("Unity.AI.AttachmentSummaries");
 
             aiPermissionsGroup.AddPermission(
-                AIPermissions.Default.ScoringAssistant.Default,
+                AIPermissions.ScoringAssistant.ScoringAssistantDefault,
                 L("Permission:AI.ScoringAssistant"))
                  .RequireFeatures("Unity.AI.Scoring");
 
