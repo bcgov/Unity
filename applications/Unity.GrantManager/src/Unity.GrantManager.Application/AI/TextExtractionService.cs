@@ -154,7 +154,10 @@ namespace Unity.GrantManager.AI
                 using var document = new XWPFDocument(stream);
                 var builder = new StringBuilder();
 
-                foreach (var paragraphText in document.Paragraphs.Take(MaxDocxParagraphs).Select(paragraph => paragraph.ParagraphText))
+                foreach (var paragraphText in document.Paragraphs
+                    .Take(MaxDocxParagraphs)
+                    .Select(paragraph => paragraph.ParagraphText)
+                    .Where(paragraphText => !string.IsNullOrWhiteSpace(paragraphText)))
                 {
                     if (TryAppendWithTrailingNewline(builder, paragraphText))
                     {
@@ -184,9 +187,12 @@ namespace Unity.GrantManager.AI
             {
                 foreach (var row in table.Rows.Take(MaxDocxTableRows))
                 {
-                    foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
+                    foreach (var cellText in row.GetTableCells()
+                        .Take(MaxDocxTableCellsPerRow)
+                        .Select(cell => cell.GetText())
+                        .Where(cellText => !string.IsNullOrWhiteSpace(cellText)))
                     {
-                        if (TryAppendWithTrailingNewline(builder, cell.GetText()))
+                        if (TryAppendWithTrailingNewline(builder, cellText))
                         {
                             return;
                         }
