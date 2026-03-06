@@ -535,15 +535,19 @@ Respond only with valid JSON in the exact format requested.";
                     continue;
                 }
 
-                var id = item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                var id = item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String
                     ? idProp.GetString()
                     : null;
-                var title = item.TryGetProperty("category", out var titleProp) && titleProp.ValueKind == JsonValueKind.String
+                var title = item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String
                     ? titleProp.GetString()
-                    : null;
-                var detail = item.TryGetProperty("message", out var detailProp) && detailProp.ValueKind == JsonValueKind.String
+                    : item.TryGetProperty("category", out var legacyTitleProp) && legacyTitleProp.ValueKind == JsonValueKind.String
+                        ? legacyTitleProp.GetString()
+                        : null;
+                var detail = item.TryGetProperty(AIJsonKeys.Detail, out var detailProp) && detailProp.ValueKind == JsonValueKind.String
                     ? detailProp.GetString()
-                    : null;
+                    : item.TryGetProperty("message", out var legacyDetailProp) && legacyDetailProp.ValueKind == JsonValueKind.String
+                        ? legacyDetailProp.GetString()
+                        : null;
 
                 findings.Add(new ApplicationAnalysisFinding
                 {
