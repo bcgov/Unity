@@ -181,15 +181,21 @@ $(function () {
         let savedFromDate = localStorage.getItem('GrantApplications_FromDate');
         let savedToDate = localStorage.getItem('GrantApplications_ToDate');
 
-
-
         let isCustomRange = savedQuickRange === 'custom';
         toggleCustomDateInputs(isCustomRange);
-        let range = !isCustomRange ? getDateRange(savedQuickRange) :
-            {
+
+        let range = !isCustomRange
+            ? getDateRange(savedQuickRange)
+            : {
                 fromDate: savedFromDate || '',
                 toDate: savedToDate || ''
             };
+
+        if (!isCustomRange && !range) {
+            savedQuickRange = defaultQuickDateRange;
+            range = getDateRange(savedQuickRange);
+        }
+
         setDateRangeFilters(savedQuickRange, range);
         setDateRangeLocalStorage(savedQuickRange, range);
 
@@ -239,28 +245,38 @@ $(function () {
 
     function setDateRangeFilters(quickDateRange, range) {
         UIElements.quickDateRange.val(quickDateRange);
-        UIElements.submittedFromInput.val(range.fromDate);
-        UIElements.submittedToInput.val(range.toDate);
 
-        grantTableFilters.submittedFromDate = range.fromDate;
-        grantTableFilters.submittedToDate = range.toDate;
+        if (range) { 
+            const fromDate = range.fromDate ?? '';
+            const toDate = range.toDate ?? '';
+            UIElements.submittedFromInput.val(fromDate);
+            UIElements.submittedToInput.val(toDate);
+            grantTableFilters.submittedFromDate = fromDate;
+            grantTableFilters.submittedToDate = toDate;
+        }
     }
 
     function setDateRangeLocalStorage(quickDateRange, fromToRange) {
         localStorage.setItem('GrantApplications_QuickRange', quickDateRange || defaultQuickDateRange);
         if (fromToRange) {
-            if (fromToRange.fromDate && fromToRange.toDate) {
-                localStorage.setItem('GrantApplications_FromDate', fromToRange.fromDate);
-                localStorage.setItem('GrantApplications_ToDate', fromToRange.toDate);
-            } else {
-                // For "All time", clear the date filters
+            const fromDate = fromToRange.fromDate;
+            const toDate = fromToRange.toDate;
+            if (fromDate) {
+                localStorage.setItem('GrantApplications_FromDate', fromDate);
+            }
+            else {
                 localStorage.removeItem('GrantApplications_FromDate');
+            }
+            if (toDate) {
+                localStorage.setItem('GrantApplications_ToDate', toDate);
+            }
+            else {
                 localStorage.removeItem('GrantApplications_ToDate');
             }
         }
     }
 
-    // Returns a formated { fromDate, toDate } for the filter fields. 
+    // Returns a formatted { fromDate, toDate } for the filter fields. 
     // Null if 'custom' or no input provided (assumes custom is default break)
     function getDateRange(rangeType) {
         let today = new Date();
@@ -286,7 +302,7 @@ $(function () {
             case 'alltime':
                 return { fromDate: null, toDate: null };
             case 'custom':
-            default:
+            default: 
                 return null; // Don't modify dates for custom
         }
 
@@ -455,11 +471,17 @@ $(function () {
         let isCustomRange = filters.quickDateRange === 'custom';
         toggleCustomDateInputs(isCustomRange);
 
-        let range = !isCustomRange ? getDateRange(quickRange) :
-        {
-            fromDate: filters.submittedFromDate || '',
-            toDate: filters.submittedToDate || ''
-        };
+        let range = !isCustomRange
+            ? getDateRange(quickRange)
+            : {
+                fromDate: filters.submittedFromDate || '',
+                toDate: filters.submittedToDate || ''
+            };
+
+        if (!isCustomRange && !range) {
+            quickRange = defaultQuickDateRange;
+            range = getDateRange(quickRange);
+        }
 
         setDateRangeFilters(quickRange, range);
         setDateRangeLocalStorage(quickRange, range);
