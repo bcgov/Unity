@@ -51,20 +51,20 @@ RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
   ""rating"": ""HIGH/MEDIUM/LOW"",
   ""warnings"": [
     {
-      ""category"": ""Brief summary of the warning"",
-      ""message"": ""Detailed warning message with full context and explanation""
+      ""title"": ""Brief summary of the warning"",
+      ""detail"": ""Detailed warning message with full context and explanation""
     }
   ],
   ""errors"": [
     {
-      ""category"": ""Brief summary of the error"",
-      ""message"": ""Detailed error message with full context and explanation""
+      ""title"": ""Brief summary of the error"",
+      ""detail"": ""Detailed error message with full context and explanation""
     }
   ],
   ""summaries"": [
     {
-      ""category"": ""Brief summary of the recommendation"",
-      ""message"": ""Detailed recommendation with specific actionable guidance""
+      ""title"": ""Brief summary of the recommendation"",
+      ""detail"": ""Detailed recommendation with specific actionable guidance""
     }
   ],
   ""dismissed"": []
@@ -75,10 +75,10 @@ RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
 - Treat missing or empty values as findings only when they weaken rubric evidence.
 - Prefer material issues; avoid nitpicking.
 - Each error/warning/recommendation must describe one concrete issue or consideration and why it matters.
-- Use 3-6 words for category.
-- Each message must be 1-2 complete sentences.
-- Each message must be grounded in concrete evidence from provided inputs.
-- If attachment evidence is used, reference the attachment explicitly in the message.
+- Use 3-6 words for title.
+- Each detail must be 1-2 complete sentences.
+- Each detail must be grounded in concrete evidence from provided inputs.
+- If attachment evidence is used, reference the attachment explicitly in detail.
 - Do not provide applicant-facing advice.
 - Do not mention rubric section names in findings.
 - If no findings exist, return empty arrays.

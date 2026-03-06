@@ -201,17 +201,17 @@ public class AttachmentAppService(
         var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
         var (fileContent, contentType) = await GetAttachmentContentForSummaryAsync(attachment, fileName);
 
-        var summary = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
+        var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
         {
             FileName = fileName,
             FileContent = fileContent,
             ContentType = contentType
         });
 
-        attachment.AISummary = summary;
+        attachment.AISummary = summaryResponse.Summary;
         await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
 
-        return summary;
+        return summaryResponse.Summary;
     }
     
     public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds)
