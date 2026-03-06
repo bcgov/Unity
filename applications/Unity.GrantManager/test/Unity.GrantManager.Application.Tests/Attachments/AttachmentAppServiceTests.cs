@@ -58,7 +58,7 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
-        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id));
+        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id) && !s.IsAiAssessment);
 
         // Act
         var assessmentAttachments = (await _attachmentAppServiceTest.GetAssessmentAsync(assessment!.Id)).ToList();
@@ -119,7 +119,7 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
-        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id));
+        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id) && !s.IsAiAssessment);
 
         // Act
         var attachments = await _attachmentAppServiceTest.GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.ASSESSMENT, assessment!.Id));
@@ -154,7 +154,7 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
-        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id));
+        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id) && !s.IsAiAssessment);
 
         // Act
         var attachments = await _attachmentAppServiceTest.GetAttachmentsInternalAsync(
@@ -192,7 +192,7 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
-        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id));
+        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id) && !s.IsAiAssessment);
         var attachment = (await _attachmentAppServiceTest.GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.ASSESSMENT, assessment!.Id)))[0];
 
         // Act
@@ -244,7 +244,7 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
-        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id));
+        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id) && !s.IsAiAssessment);
         var attachment = (await _attachmentAppServiceTest.GetAssessmentAsync(assessment!.Id))[0];
 
         // Act
@@ -315,7 +315,7 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
-        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id));
+        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id) && !s.IsAiAssessment);
         var attachment = (await _attachmentAppServiceTest.GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.ASSESSMENT, assessment!.Id)))[0];
         var newDisplayName = attachment.DisplayName + "_Updated";
         var updateDto = new UpdateAttachmentMetadataDto
@@ -385,7 +385,7 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
-        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id));
+        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id) && !s.IsAiAssessment);
         var attachment = (await _attachmentAppServiceTest.GetAssessmentAsync(assessment!.Id))[0];
         var newDisplayName = attachment.DisplayName + "_Updated";
         var updateDto = new UpdateAttachmentMetadataDto

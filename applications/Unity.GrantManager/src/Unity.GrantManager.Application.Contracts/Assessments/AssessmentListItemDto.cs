@@ -17,7 +17,8 @@ public class AssessmentListItemDto
     public AssessmentState Status { get; set; }
     public bool IsComplete { get; set; }
     public bool? ApprovalRecommended { get; set; }
-    
+    public bool IsAiAssessment { get; set; }
+
     public double SubTotal {  get; set; }
 
     public int? FinancialAnalysis { get; set; }

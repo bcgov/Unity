@@ -4,6 +4,7 @@
     {
         // Unity Status
         public const string SentToCas = "SentToCas";
+        public const string SentToAccountsPayable = "SentToAccountsPayable";
 
         // CAS INVOICE STATUS
         public const string ErrorFromCas = "Error";

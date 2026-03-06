@@ -166,10 +166,63 @@ namespace Unity.GrantManager.Assessments
             var assessment = (await _assessmentRepository.GetQueryableAsync())
                 .Where(s => s.AssessorId == GrantManagerTestData.User1_UserId).First();
 
-            // Assert            
+            // Assert
             await Assert.ThrowsAsync<BusinessException>(async () =>
                 await _assessmentAppService.ExecuteAssessmentAction(assessment.Id, AssessmentAction.SendBack)
             );
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task CloneFromAiAsync_Should_Throw_On_Non_AI_Assessment()
+        {
+            // Arrange
+            Login(GrantManagerTestData.User1_UserId);
+
+            using var uow = _unitOfWorkManager.Begin();
+
+            // Act & Assert — Assessment1_Id is a human assessment, not AI
+            await Assert.ThrowsAsync<BusinessException>(async () =>
+                await _assessmentAppService.CloneFromAiAsync(GrantManagerTestData.Assessment1_Id));
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task CloneFromAiAsync_Should_Create_Human_Assessment_From_AI_Assessment()
+        {
+            // Arrange — User2 has no existing human assessment on Application1
+            Login(GrantManagerTestData.User2_UserId);
+
+            using var uow = _unitOfWorkManager.Begin();
+            var beforeCount = (await _assessmentRepository.GetQueryableAsync())
+                .Count(s => s.ApplicationId == GrantManagerTestData.Application1_Id && !s.IsAiAssessment);
+
+            // Act
+            var result = await _assessmentAppService.CloneFromAiAsync(GrantManagerTestData.AiAssessment1_Id);
+
+            // Assert
+            result.ShouldNotBeNull();
+            result.IsAiAssessment.ShouldBe(false);
+            var afterCount = (await _assessmentRepository.GetQueryableAsync())
+                .Count(s => s.ApplicationId == GrantManagerTestData.Application1_Id && !s.IsAiAssessment);
+            afterCount.ShouldBe(beforeCount + 1);
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task GetDisplayList_Should_Exclude_AI_Assessment_When_Feature_Disabled()
+        {
+            // Arrange — Unity.AI.Scoring feature is disabled by default in test environment
+            Login(GrantManagerTestData.User1_UserId);
+
+            using var uow = _unitOfWorkManager.Begin();
+
+            // Act
+            var result = await _assessmentAppService.GetDisplayList(GrantManagerTestData.Application1_Id);
+
+            // Assert — AI assessment is seeded but should be filtered out
+            result.ShouldNotBeNull();
+            result.Data.ShouldNotContain(a => a.IsAiAssessment);
         }
     }
 }

@@ -267,6 +267,7 @@
                 // Toggle filter row visibility
                 $popover.find('#showFilter').on('click', function () {
                     that.dom.filterRow.toggle();
+                    that.s.dt.trigger('filterRow-visibility', [that.dom.filterRow.is(':visible')]);
                 });
 
                 // Clear all filters
@@ -418,6 +419,7 @@
          */
         show: function () {
             this.dom.filterRow.show();
+            this.s.dt.trigger('filterRow-visibility', [true]);
             return this;
         },
 
@@ -427,6 +429,7 @@
          */
         hide: function () {
             this.dom.filterRow.hide();
+            this.s.dt.trigger('filterRow-visibility', [false]);
             return this;
         },
 
@@ -436,6 +439,7 @@
          */
         toggle: function () {
             this.dom.filterRow.toggle();
+            this.s.dt.trigger('filterRow-visibility', [this.dom.filterRow.is(':visible')]);
             return this;
         },
 

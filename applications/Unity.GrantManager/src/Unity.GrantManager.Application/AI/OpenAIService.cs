@@ -18,6 +18,14 @@ namespace Unity.GrantManager.AI
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
+        private const string ApplicationAnalysisPromptType = "ApplicationAnalysis";
+        private const string AttachmentSummaryPromptType = "AttachmentSummary";
+        private const string ScoresheetAllPromptType = "ScoresheetAll";
+        private const string ScoresheetSectionPromptType = "ScoresheetSection";
+        private const string NoSummaryGeneratedMessage = "No summary generated.";
+        private const string ServiceNotConfiguredMessage = "AI analysis not available - service not configured.";
+        private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
+        private const string SummaryFailedRetryMessage = "AI analysis failed - please try again later.";
 
         private string? ApiKey => _configuration["Azure:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["Azure:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
@@ -68,22 +76,25 @@ namespace Unity.GrantManager.AI
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schemaJson = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
 
-            var attachmentSummaries = request.Attachments
-                .Select(a => $"{a.Name}: {a.Summary}")
-                .ToList();
+            var attachmentsPayload = request.Attachments
+                .Select(a => new
+                {
+                    name = string.IsNullOrWhiteSpace(a.Name) ? "attachment" : a.Name.Trim(),
+                    summary = string.IsNullOrWhiteSpace(a.Summary) ? string.Empty : a.Summary.Trim()
+                })
+                .Cast<object>();
 
-            var applicationContent = $@"DATA
-{dataJson}";
+            var analysisContent = AnalysisPrompts.BuildUserPrompt(
+                schemaJson,
+                dataJson,
+                JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions),
+                request.Rubric ?? string.Empty);
 
-            var formFieldConfiguration = $@"SCHEMA
-{schemaJson}";
-
-            var raw = await AnalyzeApplicationAsync(
-                applicationContent,
-                attachmentSummaries,
-                request.Rubric ?? string.Empty,
-                formFieldConfiguration);
-            return ParseApplicationAnalysisResponse(raw);
+            var systemPrompt = AnalysisPrompts.SystemPrompt;
+            await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
+            var raw = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
+            await LogPromptOutputAsync(ApplicationAnalysisPromptType, raw);
+            return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(raw));
         }
 
         public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
@@ -91,7 +102,7 @@ namespace Unity.GrantManager.AI
             if (string.IsNullOrEmpty(ApiKey))
             {
                 _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
-                return "AI analysis not available - service not configured.";
+                return ServiceNotConfiguredMessage;
             }
 
             _logger.LogDebug("Calling OpenAI chat completions. PromptLength: {PromptLength}, MaxTokens: {MaxTokens}", content?.Length ?? 0, maxTokens);
@@ -129,12 +140,12 @@ namespace Unity.GrantManager.AI
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
-                    return "AI analysis failed - service temporarily unavailable.";
+                    return ServiceTemporarilyUnavailableMessage;
                 }
 
                 if (string.IsNullOrWhiteSpace(responseContent))
                 {
-                    return "No summary generated.";
+                    return NoSummaryGeneratedMessage;
                 }
 
                 using var jsonDoc = JsonDocument.Parse(responseContent);
@@ -142,15 +153,15 @@ namespace Unity.GrantManager.AI
                 if (choices.GetArrayLength() > 0)
                 {
                     var message = choices[0].GetProperty("message");
-                    return message.GetProperty("content").GetString() ?? "No summary generated.";
+                    return message.GetProperty("content").GetString() ?? NoSummaryGeneratedMessage;
                 }
 
-                return "No summary generated.";
+                return NoSummaryGeneratedMessage;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating AI summary");
-                return "AI analysis failed - please try again later.";
+                return SummaryFailedRetryMessage;
             }
         }
 
@@ -186,9 +197,9 @@ namespace Unity.GrantManager.AI
                 var contentToAnalyze = AttachmentPrompts.BuildUserPrompt(
                     JsonSerializer.Serialize(attachmentPayload, JsonLogOptions));
 
-                await LogPromptInputAsync("AttachmentSummary", prompt, contentToAnalyze);
+                await LogPromptInputAsync(AttachmentSummaryPromptType, prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
-                await LogPromptOutputAsync("AttachmentSummary", modelOutput);
+                await LogPromptOutputAsync(AttachmentSummaryPromptType, modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -212,7 +223,7 @@ namespace Unity.GrantManager.AI
             if (string.IsNullOrEmpty(ApiKey))
             {
                 _logger.LogWarning("{Message}", MissingApiKeyMessage);
-                return "AI analysis not available - service not configured.";
+                return ServiceNotConfiguredMessage;
             }
 
             try
@@ -254,9 +265,9 @@ namespace Unity.GrantManager.AI
 
                 var systemPrompt = AnalysisPrompts.SystemPrompt;
 
-                await LogPromptInputAsync("ApplicationAnalysis", systemPrompt, analysisContent);
+                await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
-                await LogPromptOutputAsync("ApplicationAnalysis", rawAnalysis);
+                await LogPromptOutputAsync(ApplicationAnalysisPromptType, rawAnalysis);
 
                 // Post-process the AI response to add unique IDs to errors and warnings
                 return AddIdsToAnalysisItems(rawAnalysis);
@@ -264,7 +275,7 @@ namespace Unity.GrantManager.AI
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error analyzing application");
-                return "AI analysis failed - please try again later.";
+                return SummaryFailedRetryMessage;
             }
         }
 
@@ -383,9 +394,9 @@ Analyze the provided application and generate appropriate answers for the scores
 Be thorough, objective, and fair in your assessment. Base your answers strictly on the provided application content.
 Respond only with valid JSON in the exact format requested.";
 
-                await LogPromptInputAsync("ScoresheetAll", systemPrompt, analysisContent);
+                await LogPromptInputAsync(ScoresheetAllPromptType, systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
-                await LogPromptOutputAsync("ScoresheetAll", modelOutput);
+                await LogPromptOutputAsync(ScoresheetAllPromptType, modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -428,17 +439,20 @@ Respond only with valid JSON in the exact format requested.";
                     name = sectionName,
                     questions = sectionQuestionsPayload
                 };
+                var sectionPayloadJson = JsonSerializer.Serialize(sectionPayload, JsonLogOptions);
+                var responseTemplate = BuildScoresheetSectionResponseTemplate(sectionPayloadJson);
 
                 var analysisContent = ScoresheetPrompts.BuildSectionUserPrompt(
                     applicationContent,
                     attachmentSummariesText,
-                    JsonSerializer.Serialize(sectionPayload, JsonLogOptions));
+                    sectionPayloadJson,
+                    responseTemplate);
 
                 var systemPrompt = ScoresheetPrompts.SectionSystemPrompt;
 
-                await LogPromptInputAsync("ScoresheetSection", systemPrompt, analysisContent);
+                await LogPromptInputAsync(ScoresheetSectionPromptType, systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
-                await LogPromptOutputAsync("ScoresheetSection", modelOutput);
+                await LogPromptOutputAsync(ScoresheetSectionPromptType, modelOutput);
                 return modelOutput;
             }
             catch (Exception ex)
@@ -498,7 +512,7 @@ Respond only with valid JSON in the exact format requested.";
             {
                 response.Dismissed = dismissed
                     .EnumerateArray()
-                    .Select(item => item.ValueKind == JsonValueKind.String ? item.GetString() : null)
+                    .Select(GetStringValueOrNull)
                     .Where(item => !string.IsNullOrWhiteSpace(item))
                     .Cast<string>()
                     .ToList();
@@ -519,6 +533,16 @@ Respond only with valid JSON in the exact format requested.";
             return !string.IsNullOrWhiteSpace(value);
         }
 
+        private static string? GetStringValueOrNull(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                return element.GetString();
+            }
+
+            return null;
+        }
+
         private static List<ApplicationAnalysisFinding> ParseFindings(JsonElement array)
         {
             var findings = new List<ApplicationAnalysisFinding>();
@@ -529,15 +553,30 @@ Respond only with valid JSON in the exact format requested.";
                     continue;
                 }
 
-                var id = item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                var id = item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String
                     ? idProp.GetString()
                     : null;
-                var title = item.TryGetProperty("category", out var titleProp) && titleProp.ValueKind == JsonValueKind.String
-                    ? titleProp.GetString()
-                    : null;
-                var detail = item.TryGetProperty("message", out var detailProp) && detailProp.ValueKind == JsonValueKind.String
-                    ? detailProp.GetString()
-                    : null;
+                string? title = null;
+                if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
+                {
+                    title = titleProp.GetString();
+                }
+                else if (item.TryGetProperty("category", out var legacyTitleProp) &&
+                         legacyTitleProp.ValueKind == JsonValueKind.String)
+                {
+                    title = legacyTitleProp.GetString();
+                }
+
+                string? detail = null;
+                if (item.TryGetProperty(AIJsonKeys.Detail, out var detailProp) && detailProp.ValueKind == JsonValueKind.String)
+                {
+                    detail = detailProp.GetString();
+                }
+                else if (item.TryGetProperty("message", out var legacyDetailProp) &&
+                         legacyDetailProp.ValueKind == JsonValueKind.String)
+                {
+                    detail = legacyDetailProp.GetString();
+                }
 
                 findings.Add(new ApplicationAnalysisFinding
                 {
@@ -575,7 +614,7 @@ Respond only with valid JSON in the exact format requested.";
                 var confidence = property.Value.TryGetProperty("confidence", out var confidenceProp) &&
                                  confidenceProp.ValueKind == JsonValueKind.Number &&
                                  confidenceProp.TryGetInt32(out var parsedConfidence)
-                    ? parsedConfidence
+                    ? NormalizeConfidence(parsedConfidence)
                     : 0;
 
                 response.Answers[property.Name] = new ScoresheetSectionAnswer
@@ -587,6 +626,58 @@ Respond only with valid JSON in the exact format requested.";
             }
 
             return response;
+        }
+
+        private static int NormalizeConfidence(int confidence)
+        {
+            var clamped = Math.Clamp(confidence, 0, 100);
+            var rounded = (int)Math.Round(clamped / 5.0, MidpointRounding.AwayFromZero) * 5;
+            return Math.Clamp(rounded, 0, 100);
+        }
+
+        private static string BuildScoresheetSectionResponseTemplate(string sectionPayloadJson)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(sectionPayloadJson);
+                if (!doc.RootElement.TryGetProperty("questions", out var questions) || questions.ValueKind != JsonValueKind.Array)
+                {
+                    return ScoresheetPrompts.SectionOutputTemplate;
+                }
+
+                var template = new Dictionary<string, object>();
+                foreach (var question in questions.EnumerateArray())
+                {
+                    if (!question.TryGetProperty("id", out var idProp) || idProp.ValueKind != JsonValueKind.String)
+                    {
+                        continue;
+                    }
+
+                    var questionId = idProp.GetString();
+                    if (string.IsNullOrWhiteSpace(questionId))
+                    {
+                        continue;
+                    }
+
+                    template[questionId] = new
+                    {
+                        answer = string.Empty,
+                        rationale = string.Empty,
+                        confidence = 0
+                    };
+                }
+
+                if (template.Count == 0)
+                {
+                    return ScoresheetPrompts.SectionOutputTemplate;
+                }
+
+                return JsonSerializer.Serialize(template, JsonLogOptions);
+            }
+            catch (JsonException)
+            {
+                return ScoresheetPrompts.SectionOutputTemplate;
+            }
         }
 
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)

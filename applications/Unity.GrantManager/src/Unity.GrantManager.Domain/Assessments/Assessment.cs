@@ -27,6 +27,8 @@ public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentSta
 
     public bool? ApprovalRecommended { get; set; }
 
+    public bool IsAiAssessment { get; set; }
+
     public AssessmentState Status { get; private set; }
         
     public int? FinancialAnalysis { get; set; }

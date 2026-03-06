@@ -11,8 +11,3 @@
 #IntakesTable_filter input {
     margin: 0.25rem;
 }
-
-#IntakesTable_wrapper .dt-scroll-body {
-    max-height: calc(100vh - 350px);
-    overflow-y: scroll;
-}
