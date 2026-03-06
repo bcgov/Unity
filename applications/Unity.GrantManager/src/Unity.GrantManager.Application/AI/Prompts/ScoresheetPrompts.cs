@@ -4,43 +4,59 @@ namespace Unity.GrantManager.AI
     {
         public static readonly string SectionSystemPrompt = PromptHeader.Build(
             "You are an expert grant application reviewer for the BC Government.",
-            "Using DATA, ATTACHMENTS, SECTION, RESPONSE, and RULES, answer only the questions in SECTION.");
+            "Using DATA, ATTACHMENTS, SECTION, RESPONSE, OUTPUT, and RULES, answer only the questions in SECTION.");
 
         public const string SectionOutputTemplate = @"{
   ""<question_id>"": {
     ""answer"": ""<string | number>"",
     ""rationale"": ""<evidence-based rationale>"",
-    ""confidence"": 85
+    ""confidence"": <integer 0-100 step 5>
   }
 }";
 
-        public const string SectionRules = @"- Use only DATA and ATTACHMENTS as evidence.
-- Do not invent missing application details.
-- Return exactly one answer object per question ID in SECTION.questions.
+        public const string SectionRules = "- Use only DATA and ATTACHMENTS as evidence.\n"
+            + "- Do not invent missing application details.\n"
+            + @"- Return exactly one answer object per question ID in SECTION.questions.
 - Do not omit any question IDs from SECTION.questions.
 - Do not add keys that are not question IDs from SECTION.questions.
 - Use RESPONSE as the output contract and fill every placeholder value.
-- Each answer object must include: answer, rationale, confidence.
-- answer type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
-- For yes/no questions, answer must be exactly ""Yes"" or ""No"".
+- Follow this process in order: (1) copy RESPONSE, (2) iterate SECTION.questions in order, (3) fill answer+rationale+confidence for each matching question ID, (4) run final completeness check.
+- Each answer object must include: ""answer"", ""rationale"", and ""confidence"".
+- Never omit ""answer"", ""rationale"", or ""confidence"" for any question type.
+- The ""answer"" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
+- The ""rationale"" field must be 1-2 complete sentences and grounded in concrete DATA/ATTACHMENTS evidence.
+- In ""rationale"", cite concrete source evidence from the provided input content; do not cite prompt section headers.
+- For every question, rationale must justify both the selected answer and the selected confidence level based on evidence strength.
+- If explicit evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
+- Do not treat missing or non-contradictory information as evidence.
+- The ""confidence"" field must be an integer from 0 to 100 in increments of 5 and represents confidence in the selected answer.
+- Set confidence by certainty of the selected answer based on available evidence, regardless of which option is selected.
+- For yes/no questions, the ""answer"" field must be exactly ""Yes"" or ""No"".
 - For numeric questions, answer must be a numeric value within the allowed range.
-- For select list questions, answer must be the selected availableOptions.number encoded as a string.
-- For select list questions, never return option label text (for example: ""Yes"", ""No"", or ""N/A""); return the option number string.
-- For text and text area questions, answer must be concise, grounded in evidence, and non-empty.
-- rationale must be 1-2 complete sentences grounded in concrete DATA/ATTACHMENTS evidence.
-- For every question, rationale must justify both the selected answer and confidence level based on evidence strength.
-- If evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
-- confidence must be an integer from 0 to 100.
-- Confidence reflects certainty in the selected answer given available evidence, not application quality.
-- Return values exactly as specified in RESPONSE.
-- Do not return keys outside RESPONSE.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).";
+- For numeric questions, answer must never be blank.
+- If evidence is insufficient for a numeric question, return the minimum allowed numeric value and explain uncertainty in rationale.
+- If a required value is explicitly missing in DATA/ATTACHMENTS, set confidence high (80-100) when selecting the conservative minimum.
+- For select list questions, return only the selected options.number as a string (the option index shown in options), never label text or points.
+- For select list questions, the ""answer"" value must be one of question.allowed_answers exactly.
+- Never return 0 for select list answers unless 0 exists as an explicit option number.
+- For text and text area questions, answer must be concise, evidence-based, non-empty, and avoid boilerplate placeholders.
+- For text and text area questions, answer is the reviewer comment, and rationale must explain the evidence basis and certainty for that comment.
+- For comment fields, summarize key evidence-based conclusions from the other questions in SECTION, including uncertainty where applicable.
+- Do not leave rationale empty when answer is populated.
+- Final self-check before responding: every question ID in RESPONSE must have a non-empty ""answer"", non-empty ""rationale"", and ""confidence"".
+- If any answer object is incomplete, regenerate the full JSON response before returning it.
+"
+            + PromptCoreRules.MinimumNarrativeWords + "\n"
+            + PromptCoreRules.ExactOutputShape + "\n"
+            + PromptCoreRules.NoExtraOutputKeys + "\n"
+            + PromptCoreRules.ValidJsonOnly + "\n"
+            + PromptCoreRules.PlainJsonOnly;
 
         public static string BuildSectionUserPrompt(
             string applicationContent,
             string attachmentSummariesText,
-            string sectionPayloadJson)
+            string sectionPayloadJson,
+            string responseTemplateJson)
         {
             return $@"DATA
 {applicationContent}
@@ -52,6 +68,9 @@ SECTION
 {sectionPayloadJson}
 
 RESPONSE
+{responseTemplateJson}
+
+OUTPUT
 {SectionOutputTemplate}
 
 RULES
