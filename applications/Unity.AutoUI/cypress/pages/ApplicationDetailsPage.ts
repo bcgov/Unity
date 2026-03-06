@@ -473,10 +473,24 @@ export class ApplicationDetailsPage extends BasePage {
   }
 
   /**
-   * Click Approve action
+   * Click Approve action.
+   * If "Complete Assessment" is enabled in the dropdown, click it first,
+   * then reopen the dropdown before clicking Approve.
    */
   clickApprove(): this {
     this.openStatusActionsDropdown();
+    cy.get(this.statusActions.completeAssessment).then(($btn) => {
+      if (!$btn.is(":disabled")) {
+        cy.wrap($btn).click({ force: true });
+        cy.get(this.confirmModal.modal, { timeout: 10000 }).then(($modal) => {
+          if ($modal.is(":visible")) {
+            cy.wrap($modal).find(this.confirmModal.confirmButton).click({ force: true });
+            cy.wait(1000);
+          }
+        });
+        this.openStatusActionsDropdown();
+      }
+    });
     this.clickElement(this.statusActions.approve);
     return this;
   }
@@ -550,6 +564,25 @@ export class ApplicationDetailsPage extends BasePage {
       .find(this.confirmModal.cancelButton)
       .should("be.visible")
       .click({ force: true });
+    return this;
+  }
+
+  /**
+   * Dismiss any error modal if present (SweetAlert2)
+   * Uses failOnStatusCode: false to not fail if no modal exists
+   */
+  dismissErrorModalIfPresent(): this {
+    cy.get("body").then(($body) => {
+      // Check if SweetAlert2 modal with error icon exists
+      if ($body.find(".swal2-container").length > 0) {
+        // Click OK/Confirm button to dismiss
+        cy.get(".swal2-container")
+          .find(".swal2-confirm, button:contains('Ok'), button:contains('OK')")
+          .first()
+          .click({ force: true });
+        cy.wait(500);
+      }
+    });
     return this;
   }
 

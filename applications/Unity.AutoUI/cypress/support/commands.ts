@@ -196,3 +196,198 @@ Cypress.Commands.add("clearBrowserCache", () => {
     });
   });
 });
+
+// ============ Dynamic Submission Fetching ============
+
+// Use interfaces from index.d.ts - only define API response wrapper here
+interface GrantApplicationResponse {
+  items: GrantApplication[];
+  totalCount: number;
+}
+
+/**
+ * Fetches a dynamic submission ID (referenceNo) from the API after login.
+ * Uses session cookies automatically from Cypress.
+ * Results are sorted by submissionDate descending (latest first) by default.
+ *
+ * @param options - Optional filters for selecting submissions
+ * @returns Chainable containing the referenceNo (e.g., "209BD469")
+ *
+ * @example
+ * // Get latest submission from "Data Seeder" category
+ * cy.fetchDynamicSubmission({ categoryFilter: 'Data Seeder' }).then((id) => { ... })
+ *
+ * @example
+ * // Get latest "Submitted" submission
+ * cy.fetchDynamicSubmission({ statusFilter: ['Submitted'] }).then((id) => { ... })
+ *
+ * @example
+ * // Get second-latest submission from specific category
+ * cy.fetchDynamicSubmission({ categoryFilter: 'Data Seeder', index: 1 }).then((id) => { ... })
+ *
+ * Available status values: 'Submitted', 'Under Assessment', 'Approved', 'Closed', 'Deferred'
+ */
+Cypress.Commands.add(
+  "fetchDynamicSubmission",
+  (options: FetchSubmissionOptions = {}) => {
+    const baseUrl = Cypress.env("webapp.url");
+    const apiUrl = `${baseUrl}api/app/grant-application`;
+
+    // Get XSRF token from cookies for the request
+    return cy.getCookie("XSRF-TOKEN").then((xsrfCookie) => {
+      const xsrfToken = xsrfCookie?.value || "";
+
+      return cy
+        .request({
+          method: "GET",
+          url: apiUrl,
+          qs: {
+            submittedFromDate: "",
+            submittedToDate: "",
+          },
+          headers: {
+            Accept: "application/json, text/javascript, */*; q=0.01",
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+            RequestVerificationToken: xsrfToken,
+          },
+          failOnStatusCode: false,
+        })
+        .then((response) => {
+          if (response.status !== 200) {
+            throw new Error(
+              `API request failed with status ${response.status}: ${JSON.stringify(response.body)}`
+            );
+          }
+
+          const data = response.body as GrantApplicationResponse;
+          let applications = data.items || [];
+
+          Cypress.log({ name: "fetch", message: `📋 Fetched ${applications.length} applications from API` });
+
+          // Filter by category if specified (e.g., 'Data Seeder')
+          if (options.categoryFilter) {
+            applications = applications.filter((app) =>
+              app.category === options.categoryFilter
+            );
+            Cypress.log({
+              name: "filter",
+              message: `📋 Filtered to ${applications.length} applications with category: ${options.categoryFilter}`,
+            });
+          }
+
+          // Filter by status if specified (e.g., 'Submitted', 'Under Assessment', 'Approved')
+          if (options.statusFilter && options.statusFilter.length > 0) {
+            applications = applications.filter((app) =>
+              options.statusFilter!.includes(app.status)
+            );
+            Cypress.log({
+              name: "filter",
+              message: `📋 Filtered to ${applications.length} applications with status: ${options.statusFilter.join(", ")}`,
+            });
+          }
+
+          // Filter by max age if specified
+          if (options.maxAge) {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - options.maxAge);
+            applications = applications.filter((app) => {
+              const submissionDate = new Date(app.submissionDate);
+              return submissionDate >= cutoffDate;
+            });
+            Cypress.log({
+              name: "filter",
+              message: `📋 Filtered to ${applications.length} applications within ${options.maxAge} days`,
+            });
+          }
+
+          if (applications.length === 0) {
+            throw new Error(
+              "No applications found matching the specified criteria"
+            );
+          }
+
+          // Sort applications (default: by submissionDate descending for latest first)
+          const sortBy = options.sortBy || 'submissionDate';
+          const sortOrder = options.sortOrder || 'desc';
+          applications.sort((a, b) => {
+            let aVal: number | string;
+            let bVal: number | string;
+
+            if (sortBy === 'submissionDate') {
+              aVal = new Date(a.submissionDate).getTime();
+              bVal = new Date(b.submissionDate).getTime();
+            } else {
+              aVal = a[sortBy] as number;
+              bVal = b[sortBy] as number;
+            }
+
+            if (sortOrder === 'desc') {
+              return bVal > aVal ? 1 : bVal < aVal ? -1 : 0;
+            } else {
+              return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+            }
+          });
+
+          // Get the submission at the specified index (default: 0 = first/latest)
+          const index = options.index || 0;
+          if (index >= applications.length) {
+            throw new Error(
+              `Index ${index} out of range. Only ${applications.length} applications available.`
+            );
+          }
+
+          const selectedApp = applications[index];
+          Cypress.log({
+            name: "selected",
+            message: `✅ Selected submission: ${selectedApp.referenceNo} (Status: ${selectedApp.status}, Category: ${selectedApp.category})`,
+          });
+
+          return selectedApp.referenceNo;
+        });
+    });
+  }
+);
+
+/**
+ * Fetches all available submissions from the API.
+ * Useful for selecting a specific submission based on custom criteria.
+ *
+ * @returns Chainable containing array of grant applications
+ */
+Cypress.Commands.add("fetchAllSubmissions", () => {
+  const baseUrl = Cypress.env("webapp.url");
+  const apiUrl = `${baseUrl}api/app/grant-application`;
+
+  return cy.getCookie("XSRF-TOKEN").then((xsrfCookie) => {
+    const xsrfToken = xsrfCookie?.value || "";
+
+    return cy
+      .request({
+        method: "GET",
+        url: apiUrl,
+        qs: {
+          submittedFromDate: "",
+          submittedToDate: "",
+        },
+        headers: {
+          Accept: "application/json, text/javascript, */*; q=0.01",
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          RequestVerificationToken: xsrfToken,
+        },
+        failOnStatusCode: false,
+      })
+      .then((response) => {
+        if (response.status !== 200) {
+          throw new Error(
+            `API request failed with status ${response.status}: ${JSON.stringify(response.body)}`
+          );
+        }
+
+        const data = response.body as GrantApplicationResponse;
+        Cypress.log({ name: "fetch", message: `📋 Fetched ${data.items?.length || 0} total applications` });
+        return data.items || [];
+      });
+  });
+});
