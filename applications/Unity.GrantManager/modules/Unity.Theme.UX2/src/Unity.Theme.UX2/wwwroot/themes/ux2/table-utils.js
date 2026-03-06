@@ -224,6 +224,7 @@ function initializeDataTable(options) {
         onStateLoadParams,
         onStateLoaded,
         fixedHeaders = false,
+        lengthMenu = [25, 50, 75, 100, -1]
     } = options;
 
     // Process columns and visibility
@@ -269,7 +270,11 @@ function initializeDataTable(options) {
         language: {
             ...languageSetValues,
             lengthMenu: 'Show _MENU_ _ENTRIES_',
+            lengthLabels: {
+                '-1': 'All'
+            }
         },
+        lengthMenu: lengthMenu,
         layout: {
             topStart: { search: { placeholder: 'Search' } },
             topEnd: { buttons: updatedActionButtons },
@@ -280,7 +285,7 @@ function initializeDataTable(options) {
                 features: [{
                     info: { text: '_START_-_END_ of _TOTAL_' },
                     paging: { buttons: 3, boundaryNumbers: true, firstLast: true },
-                    pageLength: { menu: [[25, 50, 75, 100, -1], [25, 50, 75, 100, 'All']] },
+                    pageLength: {},
                 }]
             },
         },
@@ -339,9 +344,21 @@ function initializeDataTable(options) {
             }
         },
         stateLoadParams: function (settings, data) {
-            if (data.externalSearch) {
+            if (data?.externalSearch) {
                 let externalSearch = $(settings.oInit.externalSearchInputId);
                 if (externalSearch.length) externalSearch.val(data.externalSearch);
+            }
+
+            // Validate length value to prevent invalid state issues after updates to lengthMenu options
+            const availableLengths = Array.isArray(settings?.aLengthMenu)
+                ? settings.aLengthMenu
+                : [];
+
+            if (data && availableLengths.length > 0) {
+                const currentLength = data.length;
+                if (currentLength === undefined || !availableLengths.includes(currentLength)) {
+                    data.length = availableLengths[0];
+                }
             }
 
             // Call custom stateLoad hook if provided
