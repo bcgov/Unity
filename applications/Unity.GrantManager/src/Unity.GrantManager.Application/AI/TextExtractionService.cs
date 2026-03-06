@@ -131,17 +131,9 @@ namespace Unity.GrantManager.AI
 
                 foreach (var pageText in document.GetPages().Select(page => page.Text))
                 {
-                    var limitReached = AppendWithLimit(builder, pageText, MaxExtractedTextLength);
-                    if (limitReached)
+                    if (TryAppendWithTrailingNewline(builder, pageText))
                     {
                         break;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(pageText) &&
-                        builder.Length > 0 &&
-                        builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
-                    {
-                        builder.Append(Environment.NewLine);
                     }
                 }
 
@@ -164,55 +156,13 @@ namespace Unity.GrantManager.AI
 
                 foreach (var paragraphText in document.Paragraphs.Take(MaxDocxParagraphs).Select(paragraph => paragraph.ParagraphText))
                 {
-                    var limitReached = AppendWithLimit(builder, paragraphText, MaxExtractedTextLength);
-                    if (limitReached)
+                    if (TryAppendWithTrailingNewline(builder, paragraphText))
                     {
                         break;
                     }
-
-                    if (!string.IsNullOrWhiteSpace(paragraphText) &&
-                        builder.Length > 0 &&
-                        builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
-                    {
-                        builder.Append(Environment.NewLine);
-                    }
                 }
 
-                if (builder.Length < MaxExtractedTextLength)
-                {
-                    foreach (var table in document.Tables)
-                    {
-                        foreach (var row in table.Rows.Take(MaxDocxTableRows))
-                        {
-                            foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
-                            {
-                                var cellText = cell.GetText();
-                                var limitReached = AppendWithLimit(builder, cellText, MaxExtractedTextLength);
-                                if (limitReached)
-                                {
-                                    break;
-                                }
-
-                                if (!string.IsNullOrWhiteSpace(cellText) &&
-                                    builder.Length > 0 &&
-                                    builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
-                                {
-                                    builder.Append(Environment.NewLine);
-                                }
-                            }
-
-                            if (builder.Length >= MaxExtractedTextLength)
-                            {
-                                break;
-                            }
-                        }
-
-                        if (builder.Length >= MaxExtractedTextLength)
-                        {
-                            break;
-                        }
-                    }
-                }
+                TryAppendDocxTableText(document, builder);
 
                 return builder.ToString();
             }
@@ -220,6 +170,28 @@ namespace Unity.GrantManager.AI
             {
                 _logger.LogWarning(ex, "Word (.docx) text extraction failed for {FileName}", fileName);
                 return string.Empty;
+            }
+        }
+
+        private static void TryAppendDocxTableText(XWPFDocument document, StringBuilder builder)
+        {
+            if (builder.Length >= MaxExtractedTextLength)
+            {
+                return;
+            }
+
+            foreach (var table in document.Tables)
+            {
+                foreach (var row in table.Rows.Take(MaxDocxTableRows))
+                {
+                    foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
+                    {
+                        if (TryAppendWithTrailingNewline(builder, cell.GetText()))
+                        {
+                            return;
+                        }
+                    }
+                }
             }
         }
 
@@ -314,6 +286,31 @@ namespace Unity.GrantManager.AI
             }
 
             return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static bool TryAppendWithTrailingNewline(StringBuilder builder, string? value)
+        {
+            var limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength);
+            if (limitReached)
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                AppendTrailingNewlineIfRoom(builder);
+            }
+
+            return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static void AppendTrailingNewlineIfRoom(StringBuilder builder)
+        {
+            if (builder.Length > 0 &&
+                builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+            {
+                builder.Append(Environment.NewLine);
+            }
         }
 
         private static bool AppendWithLimit(StringBuilder builder, string? value, int maxLength, string? separator = null)
