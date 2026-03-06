@@ -129,7 +129,7 @@ namespace Unity.GrantManager.AI
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
 
-                foreach (var pageText in document.GetPages().Select(page => page.Text))
+                foreach (var pageText in document.GetPages().Select(page => page.Text).Where(pageText => !string.IsNullOrWhiteSpace(pageText)))
                 {
                     if (TryAppendWithTrailingNewline(builder, pageText))
                     {
