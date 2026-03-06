@@ -117,7 +117,8 @@ namespace Unity.Notifications.EmailNotifications
                 }
 
                 // Send the email using the CHES client service
-                var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC, true);
+                var emailObject = await GetEmailObjectAsync(
+                    emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC, excludeTemplate: true);
 
                 var response = await chesClientService.SendAsync(emailObject);
 
@@ -224,7 +225,7 @@ namespace Unity.Notifications.EmailNotifications
                 emailLog.TemplateName,
                 emailLog.CC,
                 emailLog.BCC,
-                true);
+                excludeTemplate: true);
 
             // Retrieve attachments from S3
             var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLog.Id);
