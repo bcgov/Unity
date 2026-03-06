@@ -131,24 +131,14 @@ namespace Unity.GrantManager.AI
 
                 foreach (var pageText in document.GetPages().Select(page => page.Text))
                 {
-                    if (builder.Length >= MaxExtractedTextLength)
+                    var limitReached = AppendWithLimit(builder, pageText, MaxExtractedTextLength, Environment.NewLine);
+                    if (limitReached)
                     {
                         break;
                     }
-
-                    if (!string.IsNullOrWhiteSpace(pageText))
-                    {
-                        builder.AppendLine(pageText);
-                    }
                 }
 
-                var text = builder.ToString();
-                if (text.Length > MaxExtractedTextLength)
-                {
-                    text = text.Substring(0, MaxExtractedTextLength);
-                }
-
-                return text;
+                return builder.ToString();
             }
             catch (Exception ex)
             {
