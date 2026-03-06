@@ -1,14 +1,15 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
+using Unity.AI.Permissions;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
 using Unity.Identity.Web.Navigation;
 using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement;
 using Unity.TenantManagement.Web.Navigation;
+using Volo.Abp.Features;
 using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
-using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Web.Menus;
 
@@ -124,7 +125,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                     l["Menu:AIReporting"],
                     "~/AIReporting",
                     icon: "fl fl-view-dashboard",
-                    requiredPermissionName: GrantApplicationPermissions.AI.Reporting.Default,
+                    requiredPermissionName: AIPermissions.Default.Reporting.Default,
                     order: 9
                 )
             );

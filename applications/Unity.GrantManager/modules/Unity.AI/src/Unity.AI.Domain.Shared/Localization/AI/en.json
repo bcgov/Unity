@@ -2,6 +2,10 @@
   "culture": "en",
   "texts": {
     "Permission:AI": "AI",
-    "Permission:AI.Default": "AI Management"
+    "Permission:AI.Default": "AI Management",
+    "Permission:AI.Reporting": "AI Reporting",
+    "Permission:AI.ApplicationAnalysis": "AI Application Analysis",
+    "Permission:AI.AttachmentSummary": "AI Attachment Summary",
+    "Permission:AI.ScoringAssistant": "AI Scoring Assistant"
   }
 }

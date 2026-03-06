@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Volo.Abp.Features;
 using Volo.Abp.Authorization.Permissions;
 using Unity.GrantManager.Permissions;
+using Unity.AI.Permissions;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
 {
@@ -29,7 +30,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
         {
             var isAIAttachmentSummariesEnabled =
                 await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries") &&
-                await _permissionChecker.IsGrantedAsync(GrantApplicationPermissions.AI.AttachmentSummary.Default);
+                await _permissionChecker.IsGrantedAsync(AIPermissions.Default.AttachmentSummary.Default);
             ViewBag.IsAIAttachmentSummariesEnabled = isAIAttachmentSummariesEnabled;
             return View();
         }
