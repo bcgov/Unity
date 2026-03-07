@@ -41,6 +41,9 @@ using JsonSerializerOptions = System.Text.Json.JsonSerializerOptions;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.Modules.Shared.Http;
 using Unity.GrantManager.Integrations.Geocoder;
+using Unity.GrantManager.GrantsPortal;
+using Unity.GrantManager.GrantsPortal.Configuration;
+using Unity.GrantManager.GrantsPortal.Handlers;
 
 namespace Unity.GrantManager;
 
@@ -147,6 +150,22 @@ public class GrantManagerApplicationModule : AbpModule
         }
 
         context.Services.ConfigureRabbitMQ();
+
+        // Grants Applicant Portal RabbitMQ integration
+        context.Services.Configure<GrantsPortalRabbitMqOptions>(configuration.GetSection(GrantsPortalRabbitMqOptions.SectionName));
+        context.Services.AddTransient<IPortalCommandHandler, ContactCreateHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, ContactEditHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, ContactSetPrimaryHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, ContactDeleteHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, AddressEditHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, AddressSetPrimaryHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, OrganizationEditHandler>();
+        context.Services.AddScoped<GrantsPortalAcknowledgmentPublisher>();
+        context.Services.AddHostedService<GrantsPortalCommandConsumerService>();  // RabbitMQ → inbox table
+        context.Services.AddHostedService<GrantsPortalInboxProcessorService>();   // inbox table → process → outbox table
+        context.Services.AddHostedService<GrantsPortalOutboxProcessorService>();  // outbox table → RabbitMQ
+        context.Services.AddHostedService<GrantsPortalMessageCleanupService>();   // purge old processed messages
+
         context.Services.AddScoped<IZoneChecker, ZoneChecker>();
 
         context.Services.AddSingleton(provider =>
