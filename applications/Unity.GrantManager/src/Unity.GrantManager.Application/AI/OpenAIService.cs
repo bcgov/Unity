@@ -476,9 +476,9 @@ namespace Unity.GrantManager.AI
                 return false;
             }
 
-            foreach (var property in root.EnumerateObject())
+            foreach (var value in root.EnumerateObject().Select(property => property.Value))
             {
-                if (property.Value.ValueKind != JsonValueKind.String && property.Value.ValueKind != JsonValueKind.Number)
+                if (value.ValueKind != JsonValueKind.String && value.ValueKind != JsonValueKind.Number)
                 {
                     return false;
                 }
@@ -558,7 +558,7 @@ namespace Unity.GrantManager.AI
             return ids;
         }
 
-        private static void AddQuestionIds(JsonElement questionsArray, ISet<string> ids)
+        private static void AddQuestionIds(JsonElement questionsArray, HashSet<string> ids)
         {
             foreach (var item in questionsArray.EnumerateArray())
             {
