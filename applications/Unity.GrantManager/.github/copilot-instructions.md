@@ -335,7 +335,7 @@ acme.grantManager.applications.application
 
 ### DataTables.net Integration
 
-**Unity Grant Manager uses DataTables.net 1.x** (not 2.x due to ABP compatibility).
+**Unity Grant Manager uses DataTables.net 2.x** with the Bootstrap 5 integration package (`datatables.net-bs5`). Ensure generated examples and APIs target DataTables 2.x.
 
 **Standard DataTable pattern:**
 ```javascript
