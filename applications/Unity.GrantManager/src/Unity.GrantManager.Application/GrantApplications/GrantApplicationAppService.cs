@@ -23,6 +23,7 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
+using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
@@ -48,7 +49,8 @@ public class GrantApplicationAppService(
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService)
+    IPaymentRequestAppService paymentRequestService,
+    IApplicationScoresheetAnalysisService applicationScoresheetAnalysisService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
     private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
@@ -1062,6 +1064,20 @@ public class GrantApplicationAppService(
     public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)
     {
         return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: false);
+    }
+
+    [Authorize(GrantApplicationPermissions.AI.ScoringAssistant.Default)]
+    public async Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId)
+    {
+        try
+        {
+            return await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(applicationId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error regenerating AI scoresheet answers for application {ApplicationId}", applicationId);
+            throw new UserFriendlyException("Failed to regenerate AI scoresheet answers. Please try again.");
+        }
     }
 
     private async Task<string> UpdateAIIssueDismissStateAsync(Guid applicationId, string issueId, bool isDismiss)

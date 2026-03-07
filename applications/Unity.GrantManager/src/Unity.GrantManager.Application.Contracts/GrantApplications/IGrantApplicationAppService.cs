@@ -19,6 +19,7 @@ namespace Unity.GrantManager.GrantApplications
         Task<GrantApplicationDto> GetAsync(Guid id);
         Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
         Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
+        Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId);
         Task<string> DismissAIIssueAsync(Guid applicationId, string issueId);
         Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId);
         Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
