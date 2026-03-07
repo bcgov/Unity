@@ -2,13 +2,13 @@ namespace Unity.GrantManager.AI
 {
     internal static class AnalysisPrompts
     {
-        public const string DefaultRubricV0 = @"ELIGIBILITY REQUIREMENTS: Project aligns with program objectives; Applicant is an eligible entity; Budget is reasonable and justified; Timeline is realistic.
+        public const string DefaultRubric = @"ELIGIBILITY REQUIREMENTS: Project aligns with program objectives; Applicant is an eligible entity; Budget is reasonable and justified; Timeline is realistic.
 COMPLETENESS CHECKS: Required information is present; Supporting materials are provided where applicable; Description is clear.
 FINANCIAL REVIEW: Requested amount is within limits; Budget matches scope; Matching funds or contributions are identified.
 RISK ASSESSMENT: Applicant capacity; Feasibility; Compliance considerations; Delivery risks.
 QUALITY INDICATORS: Clear objectives; Defined beneficiaries; Appropriate approach; Long-term sustainability.";
 
-        public const string DefaultRubric = @"BC GOVERNMENT GRANT EVALUATION RUBRIC:
+        public const string DefaultRubricV0 = @"BC GOVERNMENT GRANT EVALUATION RUBRIC:
 
 1. ELIGIBILITY REQUIREMENTS:
    - Project must align with program objectives
@@ -49,7 +49,7 @@ EVALUATION CRITERIA:
 MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
 LOW: Application has significant gaps or risks across key rubric areas.";
 
-        public const string OutputTemplateV0 = @"{
+        public const string OutputTemplate = @"{
   ""rating"": ""<HIGH|MEDIUM|LOW>"",
   ""errors"": [
     {
@@ -71,7 +71,7 @@ LOW: Application has significant gaps or risks across key rubric areas.";
   ]
 }";
 
-        public const string RulesV0 = PromptCoreRules.UseProvidedEvidence + "\n"
+        public const string Rules = PromptCoreRules.UseProvidedEvidence + "\n"
             + "- Do not invent fields, documents, requirements, or facts.\n"
             + @"- Treat missing or empty values as findings only when they weaken rubric evidence.
 - Prefer material issues; avoid nitpicking.
@@ -92,7 +92,7 @@ LOW: Application has significant gaps or risks across key rubric areas.";
 WARNING: Issue that could negatively affect the application's approval.
 RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
 
-        public const string OutputTemplate = @"{
+        public const string OutputTemplateV0 = @"{
   ""rating"": ""HIGH/MEDIUM/LOW"",
   ""warnings"": [
     {
@@ -115,7 +115,7 @@ RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
   ""dismissed"": []
 }";
 
-        public const string Rules = @"- Use only SCHEMA, DATA, ATTACHMENTS, and RUBRIC as evidence.
+        public const string RulesV0 = @"- Use only SCHEMA, DATA, ATTACHMENTS, and RUBRIC as evidence.
 - Do not invent fields, documents, requirements, or facts.
 - Treat missing or empty values as findings only when they weaken rubric evidence.
 - Prefer material issues; avoid nitpicking.
@@ -135,11 +135,11 @@ RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
 
         public static readonly string SystemPrompt = PromptHeader.Build(
             "You are an expert grant analyst assistant for human reviewers.",
-            "Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, return review findings.");
+            "Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SCORE, OUTPUT, and RULES, return review findings.");
 
         public static readonly string SystemPromptV0 = PromptHeader.Build(
             "You are an expert grant analyst assistant for human reviewers.",
-            "Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SCORE, OUTPUT, and RULES, return review findings.");
+            "Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SEVERITY, SCORE, OUTPUT, and RULES, return review findings.");
 
         public static string GetRubric(bool useV0) => useV0 ? DefaultRubricV0 : DefaultRubric;
         public static string GetSystemPrompt(bool useV0) => useV0 ? SystemPromptV0 : SystemPrompt;
@@ -162,10 +162,10 @@ RECOMMENDATION: Reviewer-facing improvement or follow-up consideration.";
         {
             var output = useV0 ? OutputTemplateV0 : OutputTemplate;
             var rules = useV0 ? RulesV0 : Rules;
-            var severitySection = useV0 ? string.Empty : $@"SEVERITY
+            var severitySection = useV0 ? $@"SEVERITY
 {SeverityRules}
 
-";
+" : string.Empty;
 
             return $@"SCHEMA
 {schemaJson}
