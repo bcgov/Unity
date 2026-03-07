@@ -561,15 +561,9 @@ Respond only with valid JSON in the exact format requested.";
                 return false;
             }
 
-            foreach (var value in root.EnumerateObject().Select(property => property.Value))
-            {
-                if (value.ValueKind != JsonValueKind.String && value.ValueKind != JsonValueKind.Number)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return root.EnumerateObject()
+                .Select(value => value.Value.ValueKind)
+                .All(kind => kind == JsonValueKind.String || kind == JsonValueKind.Number);
         }
 
         private static bool IsValidScoresheetSectionJson(string response, string sectionJson)
