@@ -26,6 +26,7 @@ namespace Unity.GrantManager.AI
         private const string ServiceNotConfiguredMessage = "AI analysis not available - service not configured.";
         private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
         private const string SummaryFailedRetryMessage = "AI analysis failed - please try again later.";
+        private const int MaxAiAttempts = 3;
 
         private string? ApiKey => _configuration["Azure:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["Azure:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
@@ -198,7 +199,10 @@ namespace Unity.GrantManager.AI
                     JsonSerializer.Serialize(attachmentPayload, JsonLogOptions));
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, prompt, contentToAnalyze);
-                var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
+                var modelOutput = await GenerateWithRetryAsync(
+                    () => GenerateSummaryAsync(contentToAnalyze, prompt, 150),
+                    IsValidNarrativeText,
+                    "attachment summary");
                 await LogPromptOutputAsync(AttachmentSummaryPromptType, modelOutput);
                 return modelOutput;
             }
@@ -266,7 +270,10 @@ namespace Unity.GrantManager.AI
                 var systemPrompt = AnalysisPrompts.SystemPrompt;
 
                 await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
-                var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
+                var rawAnalysis = await GenerateWithRetryAsync(
+                    () => GenerateSummaryAsync(analysisContent, systemPrompt, 1000),
+                    IsValidApplicationAnalysisJson,
+                    "application analysis");
                 await LogPromptOutputAsync(ApplicationAnalysisPromptType, rawAnalysis);
 
                 // Post-process the AI response to add unique IDs to errors and warnings
@@ -395,7 +402,10 @@ Be thorough, objective, and fair in your assessment. Base your answers strictly 
 Respond only with valid JSON in the exact format requested.";
 
                 await LogPromptInputAsync(ScoresheetAllPromptType, systemPrompt, analysisContent);
-                var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+                var modelOutput = await GenerateWithRetryAsync(
+                    () => GenerateSummaryAsync(analysisContent, systemPrompt, 2000),
+                    IsValidScoresheetAnswersJson,
+                    "scoresheet all-questions");
                 await LogPromptOutputAsync(ScoresheetAllPromptType, modelOutput);
                 return modelOutput;
             }
@@ -451,7 +461,10 @@ Respond only with valid JSON in the exact format requested.";
                 var systemPrompt = ScoresheetPrompts.SectionSystemPrompt;
 
                 await LogPromptInputAsync(ScoresheetSectionPromptType, systemPrompt, analysisContent);
-                var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
+                var modelOutput = await GenerateWithRetryAsync(
+                    () => GenerateSummaryAsync(analysisContent, systemPrompt, 2000),
+                    content => IsValidScoresheetSectionJson(content, sectionJson),
+                    $"scoresheet section {sectionName}");
                 await LogPromptOutputAsync(ScoresheetSectionPromptType, modelOutput);
                 return modelOutput;
             }
@@ -477,6 +490,187 @@ Respond only with valid JSON in the exact format requested.";
                 sectionJson,
                 request.SectionName);
             return ParseScoresheetSectionResponse(raw);
+        }
+
+        private async Task<string> GenerateWithRetryAsync(
+            Func<Task<string>> operation,
+            Func<string, bool> validator,
+            string operationName)
+        {
+            var lastResponse = string.Empty;
+
+            for (var attempt = 1; attempt <= MaxAiAttempts; attempt++)
+            {
+                try
+                {
+                    lastResponse = await operation();
+                }
+                catch (Exception ex) when (attempt < MaxAiAttempts)
+                {
+                    _logger.LogWarning(ex, "AI {OperationName} attempt {Attempt}/{MaxAttempts} failed; retrying", operationName, attempt, MaxAiAttempts);
+                    continue;
+                }
+
+                if (validator(lastResponse))
+                {
+                    return lastResponse;
+                }
+
+                if (attempt < MaxAiAttempts)
+                {
+                    _logger.LogWarning(
+                        "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid output shape; retrying",
+                        operationName,
+                        attempt,
+                        MaxAiAttempts);
+                }
+            }
+
+            _logger.LogWarning("AI {OperationName} exhausted retries; returning last response", operationName);
+            return lastResponse;
+        }
+
+        private static bool IsValidNarrativeText(string response)
+        {
+            return !string.IsNullOrWhiteSpace(response);
+        }
+
+        private static bool IsValidApplicationAnalysisJson(string response)
+        {
+            if (!TryParseRootObject(response, out var root))
+            {
+                return false;
+            }
+
+            return root.TryGetProperty(AIJsonKeys.Rating, out var rating)
+                   && rating.ValueKind == JsonValueKind.String
+                   && root.TryGetProperty(AIJsonKeys.Errors, out var errors)
+                   && errors.ValueKind == JsonValueKind.Array
+                   && root.TryGetProperty(AIJsonKeys.Warnings, out var warnings)
+                   && warnings.ValueKind == JsonValueKind.Array
+                   && root.TryGetProperty(AIJsonKeys.Summaries, out var summaries)
+                   && summaries.ValueKind == JsonValueKind.Array
+                   && root.TryGetProperty(AIJsonKeys.Dismissed, out var dismissed)
+                   && dismissed.ValueKind == JsonValueKind.Array;
+        }
+
+        private static bool IsValidScoresheetAnswersJson(string response)
+        {
+            if (!TryParseRootObject(response, out var root))
+            {
+                return false;
+            }
+
+            foreach (var property in root.EnumerateObject())
+            {
+                if (property.Value.ValueKind != JsonValueKind.String && property.Value.ValueKind != JsonValueKind.Number)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsValidScoresheetSectionJson(string response, string sectionJson)
+        {
+            if (!TryParseRootObject(response, out var root))
+            {
+                return false;
+            }
+
+            var expectedQuestionIds = ExtractQuestionIds(sectionJson);
+            if (expectedQuestionIds.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var questionId in expectedQuestionIds)
+            {
+                if (!root.TryGetProperty(questionId, out var answerObject) || answerObject.ValueKind != JsonValueKind.Object)
+                {
+                    return false;
+                }
+
+                if (!answerObject.TryGetProperty(AIJsonKeys.Answer, out var answerValue)
+                    || answerValue.ValueKind == JsonValueKind.Null
+                    || answerValue.ValueKind == JsonValueKind.Object
+                    || answerValue.ValueKind == JsonValueKind.Array)
+                {
+                    return false;
+                }
+
+                if (!answerObject.TryGetProperty(AIJsonKeys.Confidence, out var confidenceValue)
+                    || confidenceValue.ValueKind != JsonValueKind.Number
+                    || !confidenceValue.TryGetInt32(out var confidence)
+                    || confidence < 0
+                    || confidence > 100)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static HashSet<string> ExtractQuestionIds(string sectionJson)
+        {
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            try
+            {
+                using var jsonDoc = JsonDocument.Parse(sectionJson);
+                if (jsonDoc.RootElement.ValueKind != JsonValueKind.Array)
+                {
+                    return ids;
+                }
+
+                foreach (var item in jsonDoc.RootElement.EnumerateArray())
+                {
+                    if (item.ValueKind == JsonValueKind.Object
+                        && item.TryGetProperty("id", out var idProperty)
+                        && idProperty.ValueKind == JsonValueKind.String)
+                    {
+                        var id = idProperty.GetString();
+                        if (!string.IsNullOrWhiteSpace(id))
+                        {
+                            ids.Add(id);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                return ids;
+            }
+
+            return ids;
+        }
+
+        private static bool TryParseRootObject(string response, out JsonElement root)
+        {
+            root = default;
+
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var jsonDoc = JsonDocument.Parse(CleanJsonResponse(response));
+                if (jsonDoc.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    return false;
+                }
+
+                root = jsonDoc.RootElement.Clone();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
