@@ -2,7 +2,38 @@ namespace Unity.GrantManager.AI
 {
     internal static class ScoresheetPrompts
     {
+        public static readonly string AllSystemPromptV0 = PromptHeader.Build(
+            "You are an expert grant application reviewer for the BC Government.",
+            "Using DATA, ATTACHMENTS, QUESTIONS, OUTPUT, and RULES, provide answers for all scoresheet questions.");
+
+        public const string AllOutputTemplateV0 = @"{
+  ""<question_id>"": ""<answer_value>""
+}";
+
+        public const string AllRulesV0 = "- Use only DATA and ATTACHMENTS as evidence.\n"
+            + "- Do not invent missing application details.\n"
+            + @"- Return exactly one answer per question ID in QUESTIONS.
+- Do not omit any question IDs from QUESTIONS.
+- Do not add keys that are not question IDs from QUESTIONS.
+- The ""answer"" value type must match the question type.
+- For numeric questions, return a numeric value within the allowed range.
+- For yes/no questions, return exactly ""Yes"" or ""No"".
+- For select list questions, return only the selected options.number as a string and never return option label text.
+- For text and text area questions, return concise, evidence-based text.
+- For text and text area questions, include concise source-grounded rationale from the provided input content.
+- If explicit evidence is insufficient, choose the most conservative valid answer.
+"
+            + PromptCoreRules.MinimumNarrativeWords + "\n"
+            + PromptCoreRules.ExactOutputShape + "\n"
+            + PromptCoreRules.NoExtraOutputKeys + "\n"
+            + PromptCoreRules.ValidJsonOnly + "\n"
+            + PromptCoreRules.PlainJsonOnly;
+
         public static readonly string SectionSystemPrompt = PromptHeader.Build(
+            "You are an expert grant application reviewer for the BC Government.",
+            "Using DATA, ATTACHMENTS, SECTION, RESPONSE, OUTPUT, and RULES, answer only the questions in SECTION.");
+
+        public static readonly string SectionSystemPromptV0 = PromptHeader.Build(
             "You are an expert grant application reviewer for the BC Government.",
             "Using DATA, ATTACHMENTS, SECTION, RESPONSE, OUTPUT, and RULES, answer only the questions in SECTION.");
 
@@ -52,11 +83,23 @@ namespace Unity.GrantManager.AI
             + PromptCoreRules.ValidJsonOnly + "\n"
             + PromptCoreRules.PlainJsonOnly;
 
+        public static string GetSectionSystemPrompt(bool useV0) => useV0 ? SectionSystemPromptV0 : SectionSystemPrompt;
+
         public static string BuildSectionUserPrompt(
             string applicationContent,
             string attachmentSummariesText,
             string sectionPayloadJson,
             string responseTemplateJson)
+        {
+            return BuildSectionUserPrompt(applicationContent, attachmentSummariesText, sectionPayloadJson, responseTemplateJson, useV0: false);
+        }
+
+        public static string BuildSectionUserPrompt(
+            string applicationContent,
+            string attachmentSummariesText,
+            string sectionPayloadJson,
+            string responseTemplateJson,
+            bool useV0)
         {
             return $@"DATA
 {applicationContent}

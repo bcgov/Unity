@@ -22,6 +22,8 @@ namespace Unity.GrantManager.AI
         private const string AttachmentSummaryPromptType = "AttachmentSummary";
         private const string ScoresheetAllPromptType = "ScoresheetAll";
         private const string ScoresheetSectionPromptType = "ScoresheetSection";
+        private const string PromptVersionV0 = "v0";
+        private const string PromptVersionV1 = "v1";
         private const string NoSummaryGeneratedMessage = "No summary generated.";
         private const string ServiceNotConfiguredMessage = "AI analysis not available - service not configured.";
         private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
@@ -38,6 +40,9 @@ namespace Unity.GrantManager.AI
         private static readonly string PromptLogFileName = $"ai-prompts-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Environment.ProcessId}.log";
 
         private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
+
+        private string SelectedPromptVersion => NormalizePromptVersion(_configuration["Azure:OpenAI:PromptVersion"]);
+        private bool UseV0Prompts => string.Equals(SelectedPromptVersion, PromptVersionV0, StringComparison.OrdinalIgnoreCase);
 
         public OpenAIService(
             HttpClient httpClient,
@@ -84,13 +89,10 @@ namespace Unity.GrantManager.AI
                 })
                 .Cast<object>();
 
-            var analysisContent = AnalysisPrompts.BuildUserPrompt(
-                schemaJson,
-                dataJson,
-                JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions),
-                request.Rubric ?? string.Empty);
-
-            var systemPrompt = AnalysisPrompts.SystemPrompt;
+            var attachmentsJson = JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions);
+            var rubric = request.Rubric ?? AnalysisPrompts.GetRubric(UseV0Prompts);
+            var analysisContent = AnalysisPrompts.BuildUserPrompt(schemaJson, dataJson, attachmentsJson, rubric, UseV0Prompts);
+            var systemPrompt = AnalysisPrompts.GetSystemPrompt(UseV0Prompts);
             await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
             var raw = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
             await LogPromptOutputAsync(ApplicationAnalysisPromptType, raw);
@@ -171,11 +173,11 @@ namespace Unity.GrantManager.AI
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
 
-                var prompt = $@"{AttachmentPrompts.SystemPrompt}
+                var prompt = $@"{AttachmentPrompts.GetSystemPrompt(UseV0Prompts)}
 
-{AttachmentPrompts.OutputSection}
+{AttachmentPrompts.GetOutputSection(UseV0Prompts)}
 
-{AttachmentPrompts.RulesSection}";
+{AttachmentPrompts.GetRulesSection(UseV0Prompts)}";
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
                 if (attachmentText != null)
@@ -194,13 +196,13 @@ namespace Unity.GrantManager.AI
                     sizeBytes = fileContent.Length,
                     text = attachmentText
                 };
-                var contentToAnalyze = AttachmentPrompts.BuildUserPrompt(
-                    JsonSerializer.Serialize(attachmentPayload, JsonLogOptions));
+                var payloadJson = JsonSerializer.Serialize(attachmentPayload, JsonLogOptions);
+                var contentToAnalyze = AttachmentPrompts.BuildUserPrompt(payloadJson, UseV0Prompts);
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
                 await LogPromptOutputAsync(AttachmentSummaryPromptType, modelOutput);
-                return modelOutput;
+                return UseV0Prompts ? ExtractSummaryFromJson(modelOutput) : modelOutput;
             }
             catch (Exception ex)
             {
@@ -257,13 +259,14 @@ namespace Unity.GrantManager.AI
                         .Cast<object>()
                     : Enumerable.Empty<object>();
 
-                var analysisContent = AnalysisPrompts.BuildUserPrompt(
-                    JsonSerializer.Serialize(schemaPayload, JsonLogOptions),
-                    JsonSerializer.Serialize(dataPayload, JsonLogOptions),
-                    JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions),
-                    rubric);
-
-                var systemPrompt = AnalysisPrompts.SystemPrompt;
+                var schemaJson = JsonSerializer.Serialize(schemaPayload, JsonLogOptions);
+                var dataJson = JsonSerializer.Serialize(dataPayload, JsonLogOptions);
+                var attachmentsJson = JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions);
+                var fallbackRubric = string.IsNullOrWhiteSpace(rubric)
+                    ? AnalysisPrompts.GetRubric(UseV0Prompts)
+                    : rubric;
+                var analysisContent = AnalysisPrompts.BuildUserPrompt(schemaJson, dataJson, attachmentsJson, fallbackRubric, UseV0Prompts);
+                var systemPrompt = AnalysisPrompts.GetSystemPrompt(UseV0Prompts);
 
                 await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
                 var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
@@ -446,9 +449,10 @@ Respond only with valid JSON in the exact format requested.";
                     applicationContent,
                     attachmentSummariesText,
                     sectionPayloadJson,
-                    responseTemplate);
+                    responseTemplate,
+                    UseV0Prompts);
 
-                var systemPrompt = ScoresheetPrompts.SectionSystemPrompt;
+                var systemPrompt = ScoresheetPrompts.GetSectionSystemPrompt(UseV0Prompts);
 
                 await LogPromptInputAsync(ScoresheetSectionPromptType, systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
@@ -683,14 +687,14 @@ Respond only with valid JSON in the exact format requested.";
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
         {
             var formattedInput = FormatPromptInputForLog(systemPrompt, userPrompt);
-            _logger.LogInformation("AI {PromptType} input payload: {PromptInput}", promptType, formattedInput);
+            _logger.LogInformation("AI {PromptType} ({PromptVersion}) input payload: {PromptInput}", promptType, SelectedPromptVersion, formattedInput);
             await WritePromptLogFileAsync(promptType, "INPUT", formattedInput);
         }
 
         private async Task LogPromptOutputAsync(string promptType, string output)
         {
             var formattedOutput = FormatPromptOutputForLog(output);
-            _logger.LogInformation("AI {PromptType} model output payload: {ModelOutput}", promptType, formattedOutput);
+            _logger.LogInformation("AI {PromptType} ({PromptVersion}) model output payload: {ModelOutput}", promptType, SelectedPromptVersion, formattedOutput);
             await WritePromptLogFileAsync(promptType, "OUTPUT", formattedOutput);
         }
 
@@ -828,6 +832,32 @@ Respond only with valid JSON in the exact format requested.";
             }
 
             return arrayStart;
+        }
+
+        private static string NormalizePromptVersion(string? version)
+        {
+            if (string.Equals(version, PromptVersionV0, StringComparison.OrdinalIgnoreCase))
+            {
+                return PromptVersionV0;
+            }
+
+            return PromptVersionV1;
+        }
+
+        private static string ExtractSummaryFromJson(string output)
+        {
+            if (!TryParseJsonObjectFromResponse(output, out var jsonObject))
+            {
+                return output?.Trim() ?? string.Empty;
+            }
+
+            if (jsonObject.TryGetProperty(AIJsonKeys.Summary, out var summaryProp) &&
+                summaryProp.ValueKind == JsonValueKind.String)
+            {
+                return summaryProp.GetString() ?? string.Empty;
+            }
+
+            return output?.Trim() ?? string.Empty;
         }
     }
 }
