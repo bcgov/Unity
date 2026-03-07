@@ -90,7 +90,7 @@ Unity Grant Manager is a comprehensive grant management platform designed for th
 - **CHES (Common Hosted Email Service)**: Government email notification service
 - **CAS (Common Accounting System)**: Government payment processing system
 - **Keycloak**: Enterprise identity and access management
-- **AWS S3**: Document storage and blob management
+- **COMS (Common Object Management Service)**: Document storage and blob management via S3-compatible APIs
 
 ## Success Criteria
 
