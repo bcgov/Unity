@@ -535,23 +535,19 @@ namespace Unity.GrantManager.AI
             try
             {
                 using var jsonDoc = JsonDocument.Parse(sectionJson);
-                if (jsonDoc.RootElement.ValueKind != JsonValueKind.Array)
+                var root = jsonDoc.RootElement;
+
+                if (root.ValueKind == JsonValueKind.Array)
                 {
+                    AddQuestionIds(root, ids);
                     return ids;
                 }
 
-                foreach (var item in jsonDoc.RootElement.EnumerateArray())
+                if (root.ValueKind == JsonValueKind.Object &&
+                    root.TryGetProperty("questions", out var questionsElement) &&
+                    questionsElement.ValueKind == JsonValueKind.Array)
                 {
-                    if (item.ValueKind == JsonValueKind.Object
-                        && item.TryGetProperty("id", out var idProperty)
-                        && idProperty.ValueKind == JsonValueKind.String)
-                    {
-                        var id = idProperty.GetString();
-                        if (!string.IsNullOrWhiteSpace(id))
-                        {
-                            ids.Add(id);
-                        }
-                    }
+                    AddQuestionIds(questionsElement, ids);
                 }
             }
             catch
@@ -560,6 +556,25 @@ namespace Unity.GrantManager.AI
             }
 
             return ids;
+        }
+
+        private static void AddQuestionIds(JsonElement questionsArray, ISet<string> ids)
+        {
+            foreach (var item in questionsArray.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object ||
+                    !item.TryGetProperty("id", out var idProperty) ||
+                    idProperty.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+
+                var id = idProperty.GetString();
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    ids.Add(id);
+                }
+            }
         }
 
         private static bool TryParseRootObject(string response, out JsonElement root)
