@@ -23,10 +23,22 @@ namespace Unity.GrantManager.AI
         private const int MaxDocxTableRows = 2000;
         private const int MaxDocxTableCellsPerRow = 50;
         private readonly ILogger<TextExtractionService> _logger;
+        private readonly Dictionary<string, Func<string, byte[], string>> _extractorsByExtension;
 
         public TextExtractionService(ILogger<TextExtractionService> logger)
         {
             _logger = logger;
+            _extractorsByExtension = new Dictionary<string, Func<string, byte[], string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                [".txt"] = (_, content) => ExtractTextFromTextFile(content),
+                [".csv"] = (_, content) => ExtractTextFromTextFile(content),
+                [".json"] = (_, content) => ExtractTextFromTextFile(content),
+                [".xml"] = (_, content) => ExtractTextFromTextFile(content),
+                [".pdf"] = ExtractTextFromPdfFile,
+                [".docx"] = (name, content) => ExtractTextFromWordDocx(name, content),
+                [".xls"] = ExtractTextFromExcelFile,
+                [".xlsx"] = ExtractTextFromExcelFile
+            };
         }
 
         public Task<string> ExtractTextAsync(string fileName, byte[] fileContent, string contentType)
@@ -42,46 +54,41 @@ namespace Unity.GrantManager.AI
                 var normalizedContentType = contentType?.ToLowerInvariant() ?? string.Empty;
                 var extension = Path.GetExtension(fileName)?.ToLowerInvariant() ?? string.Empty;
 
-                string rawText;
-
-                if (normalizedContentType.Contains("text/") ||
-                    extension == ".txt" ||
-                    extension == ".csv" ||
-                    extension == ".json" ||
-                    extension == ".xml")
+                if (extension == ".doc")
                 {
-                    rawText = ExtractTextFromTextFile(fileContent);
+                    _logger.LogDebug("Legacy .doc extraction is not supported for {FileName}", fileName);
+                    return Task.FromResult(string.Empty);
+                }
+
+                if (_extractorsByExtension.TryGetValue(extension, out var extractor))
+                {
+                    var rawText = extractor(fileName, fileContent);
                     return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
-                if (normalizedContentType.Contains("pdf") || extension == ".pdf")
+                if (normalizedContentType.Contains("text/"))
                 {
-                    rawText = ExtractTextFromPdfFile(fileName, fileContent);
+                    var rawText = ExtractTextFromTextFile(fileContent);
+                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
+                }
+
+                if (normalizedContentType.Contains("pdf"))
+                {
+                    var rawText = ExtractTextFromPdfFile(fileName, fileContent);
                     return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
                 if (normalizedContentType.Contains("word") ||
                     normalizedContentType.Contains("msword") ||
-                    normalizedContentType.Contains("officedocument.wordprocessingml") ||
-                    extension == ".doc" ||
-                    extension == ".docx")
+                    normalizedContentType.Contains("officedocument.wordprocessingml"))
                 {
-                    if (extension == ".docx" || normalizedContentType.Contains("officedocument.wordprocessingml"))
-                    {
-                        rawText = ExtractTextFromWordDocx(fileName, fileContent);
-                        return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
-                    }
-
-                    _logger.LogDebug("Legacy .doc extraction is not supported for {FileName}", fileName);
-                    return Task.FromResult(string.Empty);
+                    var rawText = ExtractTextFromWordDocx(fileName, fileContent);
+                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
-                if (normalizedContentType.Contains("excel") ||
-                    normalizedContentType.Contains("spreadsheet") ||
-                    extension == ".xls" ||
-                    extension == ".xlsx")
+                if (normalizedContentType.Contains("excel") || normalizedContentType.Contains("spreadsheet"))
                 {
-                    rawText = ExtractTextFromExcelFile(fileName, fileContent);
+                    var rawText = ExtractTextFromExcelFile(fileName, fileContent);
                     return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
