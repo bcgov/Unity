@@ -1,0 +1,29 @@
+namespace Unity.GrantManager.AI
+{
+    internal static class AttachmentPrompts
+    {
+        public static readonly string SystemPrompt = PromptHeader.Build(
+            "You are a professional grant analyst for the BC Government.",
+            "Produce a concise reviewer-facing summary of the provided attachment context.");
+
+        public const string OutputSection = @"OUTPUT
+{
+  ""summary"": ""<string>""
+}";
+
+        public const string RulesSection = "- Use only ATTACHMENT as evidence.\n"
+            + "- If ATTACHMENT.text is present, summarize actual content.\n"
+            + "- If ATTACHMENT.text is null or empty, provide a conservative file-level summary.\n"
+            + PromptCoreRules.NoInvention + "\n"
+            + @"- Write 1-2 complete sentences.
+- Summary must be grounded in concrete ATTACHMENT evidence.
+- Return exactly one object with only the key: summary.
+"
+            + PromptCoreRules.MinimumNarrativeWords + "\n"
+            + PromptCoreRules.ExactOutputShape + "\n"
+            + PromptCoreRules.NoExtraOutputKeys + "\n"
+            + PromptCoreRules.ValidJsonOnly + "\n"
+            + PromptCoreRules.PlainJsonOnly;
+    }
+}
+

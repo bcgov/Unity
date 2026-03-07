@@ -1,0 +1,58 @@
+namespace Unity.GrantManager.AI
+{
+    internal static class AnalysisPrompts
+    {
+        public const string DefaultRubric = @"ELIGIBILITY REQUIREMENTS: Project aligns with program objectives; Applicant is an eligible entity; Budget is reasonable and justified; Timeline is realistic.
+COMPLETENESS CHECKS: Required information is present; Supporting materials are provided where applicable; Description is clear.
+FINANCIAL REVIEW: Requested amount is within limits; Budget matches scope; Matching funds or contributions are identified.
+RISK ASSESSMENT: Applicant capacity; Feasibility; Compliance considerations; Delivery risks.
+QUALITY INDICATORS: Clear objectives; Defined beneficiaries; Appropriate approach; Long-term sustainability.";
+
+        public const string ScoreRules = @"HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
+MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
+LOW: Application has significant gaps or risks across key rubric areas.";
+
+        public const string OutputTemplate = @"{
+  ""rating"": ""<HIGH|MEDIUM|LOW>"",
+  ""errors"": [
+    {
+      ""title"": ""<string>"",
+      ""detail"": ""<string>""
+    }
+  ],
+  ""warnings"": [
+    {
+      ""title"": ""<string>"",
+      ""detail"": ""<string>""
+    }
+  ],
+  ""summaries"": [
+    {
+      ""title"": ""<string>"",
+      ""detail"": ""<string>""
+    }
+  ]
+}";
+
+        public const string Rules = PromptCoreRules.UseProvidedEvidence + "\n"
+            + "- Do not invent fields, documents, requirements, or facts.\n"
+            + @"- Treat missing or empty values as findings only when they weaken rubric evidence.
+- Prefer material issues; avoid nitpicking.
+- Use 3-6 words for title.
+- Each detail must be 1-2 complete sentences.
+- Each detail must cite concrete evidence from DATA or ATTACHMENTS.
+- If ATTACHMENTS evidence is used, cite the attachment by name in detail.
+- If no findings exist, return empty arrays.
+- Rating must be HIGH, MEDIUM, or LOW.
+"
+            + PromptCoreRules.MinimumNarrativeWords + "\n"
+            + PromptCoreRules.ExactOutputShape + "\n"
+            + PromptCoreRules.NoExtraOutputKeys + "\n"
+            + PromptCoreRules.ValidJsonOnly + "\n"
+            + PromptCoreRules.PlainJsonOnly;
+
+        public static readonly string SystemPrompt = PromptHeader.Build(
+            "You are an expert grant analyst assistant for human reviewers.",
+            "Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SCORE, OUTPUT, and RULES, return review findings.");
+    }
+}
