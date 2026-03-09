@@ -42,14 +42,14 @@ public class AddressEditHandler(
         return "Address updated successfully";
     }
 
-    private static GrantApplications.AddressType MapAddressType(string? portalAddressType)
+    private static AddressType MapAddressType(string? portalAddressType)
     {
         return portalAddressType?.ToUpperInvariant() switch
         {
-            "MAILING" => GrantApplications.AddressType.MailingAddress,
-            "PHYSICAL" => GrantApplications.AddressType.PhysicalAddress,
-            "BUSINESS" => GrantApplications.AddressType.BusinessAddress,
-            _ => GrantApplications.AddressType.PhysicalAddress
+            "MAILING" => AddressType.MailingAddress,
+            "PHYSICAL" => AddressType.PhysicalAddress,
+            "BUSINESS" => AddressType.BusinessAddress,
+            _ => AddressType.PhysicalAddress
         };
     }
 }

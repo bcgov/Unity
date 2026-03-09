@@ -1,13 +1,13 @@
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Messaging;
 
 /// <summary>
 /// An acknowledgment or response message to be published to an external system.
+/// TenantId is stored as metadata — not for data isolation.
 /// </summary>
-public class OutboxMessage : AuditedAggregateRoot<Guid>, IMultiTenant
+public class OutboxMessage : AuditedAggregateRoot<Guid>
 {
     /// <summary>
     /// Identifies the integration target (e.g. "GrantsPortal").

@@ -1,6 +1,5 @@
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Messaging;
 
@@ -14,8 +13,9 @@ public enum MessageStatus
 
 /// <summary>
 /// A message received from an external system, stored for sequential processing.
+/// TenantId is stored as metadata for handler dispatch — not for data isolation.
 /// </summary>
-public class InboxMessage : AuditedAggregateRoot<Guid>, IMultiTenant
+public class InboxMessage : AuditedAggregateRoot<Guid>
 {
     /// <summary>
     /// Identifies the integration source (e.g. "GrantsPortal").

@@ -6,7 +6,6 @@ using Unity.GrantManager.GrantsPortal.Messages;
 using Unity.GrantManager.GrantsPortal.Messages.Commands;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantsPortal.Handlers;

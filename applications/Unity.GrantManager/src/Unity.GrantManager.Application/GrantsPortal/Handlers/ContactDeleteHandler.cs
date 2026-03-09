@@ -4,12 +4,12 @@ using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Contacts;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantsPortal.Handlers;
 
 public class ContactDeleteHandler(
+    IContactRepository contactRepository,
     IContactLinkRepository contactLinkRepository,
     ILogger<ContactDeleteHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
@@ -20,18 +20,23 @@ public class ContactDeleteHandler(
     {
         var contactId = Guid.Parse(payload.ContactId ?? throw new ArgumentException("contactId is required"));
 
-        logger.LogInformation("Deleting (deactivating) contact {ContactId} for profile {ProfileId}", contactId, payload.ProfileId);
+        logger.LogInformation("Deleting contact {ContactId} for profile {ProfileId}", contactId, payload.ProfileId);
 
-        // Soft-delete by deactivating contact links
-        var links = await contactLinkRepository.GetListAsync(cl => cl.ContactId == contactId && cl.IsActive);
-
-        foreach (var link in links)
+        // Delete all contact links first (FK dependency)
+        var links = await contactLinkRepository.GetListAsync(cl => cl.ContactId == contactId);
+        if (links.Count > 0)
         {
-            link.IsActive = false;
-            await contactLinkRepository.UpdateAsync(link, autoSave: true);
+            await contactLinkRepository.DeleteManyAsync(links, autoSave: true);
         }
 
-        logger.LogInformation("Contact {ContactId} deactivated successfully", contactId);
+        // Delete the contact
+        var contact = await contactRepository.FindAsync(contactId);
+        if (contact != null)
+        {
+            await contactRepository.DeleteAsync(contact, autoSave: true);
+        }
+
+        logger.LogInformation("Contact {ContactId} deleted successfully", contactId);
         return "Contact deleted successfully";
     }
 }

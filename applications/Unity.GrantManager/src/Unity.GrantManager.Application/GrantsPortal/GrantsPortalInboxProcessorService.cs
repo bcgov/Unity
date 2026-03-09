@@ -75,7 +75,7 @@ public class GrantsPortalInboxProcessorService(
         using (var uow = unitOfWorkManager.Begin(requiresNew: true))
         {
             pendingMessages = await inboxRepo.GetPendingAsync(GrantsPortalRabbitMqOptions.SourceName, 10);
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
         }
 
         if (pendingMessages.Count == 0) return false;

@@ -1,11 +1,9 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Contacts;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantsPortal.Handlers;

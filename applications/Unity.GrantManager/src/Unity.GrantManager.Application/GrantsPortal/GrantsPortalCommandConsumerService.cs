@@ -20,13 +20,13 @@ namespace Unity.GrantManager.GrantsPortal;
 /// Pulls messages off the RabbitMQ queue, saves them to the inbox table, and ACKs immediately.
 /// Actual processing is done by <see cref="GrantsPortalInboxProcessorService"/>.
 /// </summary>
-public class GrantsPortalCommandConsumerService : BackgroundService
+public class GrantsPortalCommandConsumerService(
+    IServiceProvider serviceProvider,
+    IAsyncConnectionFactory connectionFactory,
+    IOptions<GrantsPortalRabbitMqOptions> options,
+    ILogger<GrantsPortalCommandConsumerService> logger) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IAsyncConnectionFactory _connectionFactory;
-    private readonly GrantsPortalRabbitMqOptions _options;
-    private readonly ILogger<GrantsPortalCommandConsumerService> _logger;
-
+    private readonly GrantsPortalRabbitMqOptions _options = options.Value;
     private IConnection? _connection;
     private IModel? _channel;
 
@@ -34,22 +34,10 @@ public class GrantsPortalCommandConsumerService : BackgroundService
     private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(5);
     private CancellationToken _stoppingToken;
 
-    public GrantsPortalCommandConsumerService(
-        IServiceProvider serviceProvider,
-        IAsyncConnectionFactory connectionFactory,
-        IOptions<GrantsPortalRabbitMqOptions> options,
-        ILogger<GrantsPortalCommandConsumerService> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _connectionFactory = connectionFactory;
-        _options = options.Value;
-        _logger = logger;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _stoppingToken = stoppingToken;
-        _logger.LogInformation("Grants Portal command consumer starting...");
+        logger.LogInformation("Grants Portal command consumer starting...");
 
         await ConnectAndConsumeAsync(stoppingToken);
 
@@ -60,7 +48,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("Grants Portal command consumer stopping...");
+            logger.LogInformation("Grants Portal command consumer stopping...");
         }
     }
 
@@ -70,9 +58,9 @@ public class GrantsPortalCommandConsumerService : BackgroundService
         {
             try
             {
-                _logger.LogInformation("Connecting to RabbitMQ for Grants Portal consumer (attempt {Attempt}/{MaxRetries})", attempt, MaxRetries);
+                logger.LogInformation("Connecting to RabbitMQ for Grants Portal consumer (attempt {Attempt}/{MaxRetries})", attempt, MaxRetries);
 
-                _connection = _connectionFactory.CreateConnection();
+                _connection = connectionFactory.CreateConnection();
                 _connection.ConnectionShutdown += OnConnectionShutdown;
                 _channel = _connection.CreateModel();
                 _channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
@@ -80,18 +68,18 @@ public class GrantsPortalCommandConsumerService : BackgroundService
                 DeclareTopology();
                 StartConsuming();
 
-                _logger.LogInformation("Grants Portal command consumer started. Listening on queue {Queue}", _options.InboundQueue);
+                logger.LogInformation("Grants Portal command consumer started. Listening on queue {Queue}", _options.InboundQueue);
                 return;
             }
             catch (Exception ex) when (attempt < MaxRetries)
             {
                 var delay = TimeSpan.FromSeconds(InitialRetryDelay.TotalSeconds * Math.Pow(2, attempt - 1));
-                _logger.LogWarning(ex, "Failed to connect to RabbitMQ (attempt {Attempt}). Retrying in {Delay}s...", attempt, delay.TotalSeconds);
+                logger.LogWarning(ex, "Failed to connect to RabbitMQ (attempt {Attempt}). Retrying in {Delay}s...", attempt, delay.TotalSeconds);
                 await Task.Delay(delay, cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts", MaxRetries);
+                logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts", MaxRetries);
                 throw;
             }
         }
@@ -101,7 +89,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
     {
         if (_stoppingToken.IsCancellationRequested) return;
 
-        _logger.LogWarning("RabbitMQ connection lost: {Reason}. Attempting to reconnect...", e.ReplyText);
+        logger.LogWarning("RabbitMQ connection lost: {Reason}. Attempting to reconnect...", e.ReplyText);
 
         _ = Task.Run(async () =>
         {
@@ -113,7 +101,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to reconnect to RabbitMQ after connection loss");
+                logger.LogError(ex, "Failed to reconnect to RabbitMQ after connection loss");
             }
         }, _stoppingToken);
     }
@@ -142,7 +130,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
                 routingKey: routingKey);
         }
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "Declared exchange {Exchange} (topic), queue {Queue}, bound with routing keys [{RoutingKeys}]",
             _options.Exchange, _options.InboundQueue, string.Join(", ", _options.InboundRoutingKeys));
     }
@@ -171,12 +159,12 @@ public class GrantsPortalCommandConsumerService : BackgroundService
         var correlationId = ea.BasicProperties?.CorrelationId ?? string.Empty;
         var consumingChannel = ((AsyncEventingBasicConsumer)sender).Model;
 
-        _logger.LogInformation("Received message {MessageId} type={MessageType}", messageId, messageType);
+        logger.LogInformation("Received message {MessageId} type={MessageType}", messageId, messageType);
 
         // Guard: discard acknowledgment messages to prevent infinite loops (spec §4.2)
         if (string.Equals(messageType, "MessageAcknowledgment", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogDebug("Discarding acknowledgment message {MessageId} to prevent loop", messageId);
+            logger.LogDebug("Discarding acknowledgment message {MessageId} to prevent loop", messageId);
             consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
             return;
         }
@@ -188,7 +176,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
 
             if (envelope == null)
             {
-                _logger.LogError("Failed to deserialize message {MessageId}. Discarding.", messageId);
+                logger.LogError("Failed to deserialize message {MessageId}. Discarding.", messageId);
                 consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
                 return;
             }
@@ -202,7 +190,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
             var tenantId = ResolveTenantId(payload?.Provider);
 
             // Save to the central host inbox — no tenant context needed
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = serviceProvider.CreateScope();
             var inboxRepo = scope.ServiceProvider.GetRequiredService<IInboxMessageRepository>();
             var unitOfWorkManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
 
@@ -212,7 +200,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
             var existing = await inboxRepo.FindByMessageIdAsync(messageId);
             if (existing != null)
             {
-                _logger.LogInformation("Message {MessageId} already in inbox (status={Status}). Skipping.", messageId, existing.Status);
+                logger.LogInformation("Message {MessageId} already in inbox (status={Status}). Skipping.", messageId, existing.Status);
                 consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
                 return;
             }
@@ -232,11 +220,11 @@ public class GrantsPortalCommandConsumerService : BackgroundService
             await inboxRepo.InsertAsync(inboxMessage, autoSave: true);
             await uow.CompleteAsync();
 
-            _logger.LogInformation("Message {MessageId} saved to inbox for processing", messageId);
+            logger.LogInformation("Message {MessageId} saved to inbox for processing", messageId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error saving message {MessageId} to inbox. Message will be requeued.", messageId);
+            logger.LogError(ex, "Error saving message {MessageId} to inbox. Message will be requeued.", messageId);
             consumingChannel.BasicReject(ea.DeliveryTag, requeue: true);
             return;
         }
@@ -260,7 +248,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
     {
         try
         {
-            if (_connection != null) _connection.ConnectionShutdown -= OnConnectionShutdown;
+            _connection?.ConnectionShutdown -= OnConnectionShutdown;
             _channel?.Close();
             _channel?.Dispose();
             _connection?.Close();
@@ -268,7 +256,7 @@ public class GrantsPortalCommandConsumerService : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Error during connection cleanup");
+            logger.LogDebug(ex, "Error during connection cleanup");
         }
 
         _channel = null;

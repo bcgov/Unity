@@ -18,13 +18,12 @@ namespace Unity.GrantManager.GrantsPortal;
 /// Uses publisher confirms to ensure delivery before marking messages as sent.
 /// No tenant context needed — the outbox table is in the host database.
 /// </summary>
-public class GrantsPortalOutboxProcessorService : BackgroundService
-{
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IAsyncConnectionFactory _connectionFactory;
-    private readonly GrantsPortalRabbitMqOptions _options;
-    private readonly ILogger<GrantsPortalOutboxProcessorService> _logger;
-
+public class GrantsPortalOutboxProcessorService(
+    IServiceProvider serviceProvider,
+    IAsyncConnectionFactory connectionFactory,
+    IOptions<GrantsPortalRabbitMqOptions> options,
+    ILogger<GrantsPortalOutboxProcessorService> logger) : BackgroundService
+{    
     private IConnection? _connection;
     private IModel? _channel;
 
@@ -32,21 +31,9 @@ public class GrantsPortalOutboxProcessorService : BackgroundService
     private static readonly TimeSpan IdleInterval = TimeSpan.FromSeconds(15);
     private const int MaxPublishRetries = 3;
 
-    public GrantsPortalOutboxProcessorService(
-        IServiceProvider serviceProvider,
-        IAsyncConnectionFactory connectionFactory,
-        IOptions<GrantsPortalRabbitMqOptions> options,
-        ILogger<GrantsPortalOutboxProcessorService> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _connectionFactory = connectionFactory;
-        _options = options.Value;
-        _logger = logger;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Grants Portal outbox processor starting...");
+        logger.LogInformation("Grants Portal outbox processor starting...");
 
         // Wait for the application to fully start
         await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
@@ -66,13 +53,13 @@ public class GrantsPortalOutboxProcessorService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in outbox processor loop. Will retry after delay.");
+                logger.LogError(ex, "Error in outbox processor loop. Will retry after delay.");
                 CleanupChannel();
                 await Task.Delay(IdleInterval, stoppingToken);
             }
         }
 
-        _logger.LogInformation("Grants Portal outbox processor stopped.");
+        logger.LogInformation("Grants Portal outbox processor stopped.");
     }
 
     private void EnsureChannel()
@@ -81,16 +68,16 @@ public class GrantsPortalOutboxProcessorService : BackgroundService
 
         CleanupChannel();
 
-        _connection = _connectionFactory.CreateConnection();
+        _connection = connectionFactory.CreateConnection();
         _channel = _connection.CreateModel();
         _channel.ConfirmSelect();
 
-        _logger.LogInformation("Outbox processor RabbitMQ channel established");
+        logger.LogInformation("Outbox processor RabbitMQ channel established");
     }
 
     private async Task<bool> PublishPendingAcksAsync(CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var outboxRepo = scope.ServiceProvider.GetRequiredService<IOutboxMessageRepository>();
         var unitOfWorkManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
 
@@ -98,7 +85,7 @@ public class GrantsPortalOutboxProcessorService : BackgroundService
         using (var uow = unitOfWorkManager.Begin(requiresNew: true))
         {
             pendingMessages = await outboxRepo.GetPendingAsync(GrantsPortalRabbitMqOptions.SourceName, 10);
-            await uow.CompleteAsync();
+            await uow.CompleteAsync(cancellationToken);
         }
 
         if (pendingMessages.Count == 0) return false;
@@ -120,7 +107,7 @@ public class GrantsPortalOutboxProcessorService : BackgroundService
     {
         try
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = serviceProvider.CreateScope();
             var publisher = scope.ServiceProvider.GetRequiredService<GrantsPortalAcknowledgmentPublisher>();
 
             publisher.Publish(
@@ -143,19 +130,19 @@ public class GrantsPortalOutboxProcessorService : BackgroundService
             await outboxRepo.UpdateAsync(outboxMsg, autoSave: true);
             await uow.CompleteAsync();
 
-            _logger.LogInformation("Outbox message {MessageId} published (ack for {OriginalMessageId})",
+            logger.LogInformation("Outbox message {MessageId} published (ack for {OriginalMessageId})",
                 outboxMsg.MessageId, outboxMsg.OriginalMessageId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish outbox message {MessageId}", outboxMsg.MessageId);
+            logger.LogError(ex, "Failed to publish outbox message {MessageId}", outboxMsg.MessageId);
 
             outboxMsg.RetryCount++;
             if (outboxMsg.RetryCount >= MaxPublishRetries)
             {
                 outboxMsg.Status = MessageStatus.Failed;
                 outboxMsg.Details = $"Failed to publish after {MaxPublishRetries} attempts: {ex.Message}";
-                _logger.LogError("Outbox message {MessageId} marked as failed after {MaxRetries} publish attempts",
+                logger.LogError("Outbox message {MessageId} marked as failed after {MaxRetries} publish attempts",
                     outboxMsg.MessageId, MaxPublishRetries);
             }
 
@@ -176,7 +163,7 @@ public class GrantsPortalOutboxProcessorService : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Error during outbox channel cleanup");
+            logger.LogDebug(ex, "Error during outbox channel cleanup");
         }
 
         _channel = null;
