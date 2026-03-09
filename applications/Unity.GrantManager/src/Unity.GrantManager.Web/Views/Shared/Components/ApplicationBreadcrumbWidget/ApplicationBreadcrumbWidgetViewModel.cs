@@ -5,6 +5,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
     public class ApplicationBreadcrumbWidgetViewModel
     {        
         public string ReferenceNo { get; set; } = string.Empty;
+        public Guid ApplicantId { get; set; } = Guid.Empty;
         public string ApplicantName { get; set; } = string.Empty;
         public string ApplicationStatus { get; set; } = string.Empty;
 

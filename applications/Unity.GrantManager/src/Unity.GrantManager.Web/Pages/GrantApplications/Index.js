@@ -581,7 +581,19 @@ $(function () {
             data: 'applicant.applicantName',
             name: 'applicantName',
             className: 'data-table-header',
-            index: columnIndex
+            index: columnIndex,
+            render: function(data, type, row) {
+                let applicantName = (data === "") ? '(Unknown Applicant)' : data;
+                
+                const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                const isGuid = row.applicant.id && guidPattern.test(row.applicant.id);
+                
+                if (isGuid) {
+                    return `<a href="/GrantApplicants/Details?ApplicantId=${row.applicant.id}">${applicantName}</a>`;
+                } else {
+                    return applicantName;
+                }
+            },
         }
     }
 
