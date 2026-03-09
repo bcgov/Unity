@@ -2,6 +2,10 @@
 
 @model ApplicationBreadcrumbWidgetViewModel
 
+@{
+    var renderedApplicantName = string.IsNullOrWhiteSpace(Model.ApplicantName) ? "Unknown Applicant" : Model.ApplicantName;
+}
+
 <div class="breadcrumb-container">
     <abp-button icon="fl fl-arrow-left" icon-type="Other" id="goBack" class="px-2" ></abp-button>
     <div class="application-details-breadcrumb">
@@ -11,12 +15,12 @@
             {
                 <a href="~/GrantApplicants/Details?ApplicantId=@Model.ApplicantId" 
                    class="applicant-name-link link-underline link-offset-1 link-underline-opacity-0 link-underline-opacity-100-hover">
-                    @(Model.ApplicantName ?? "(Unknown Applicant)")
+                    @renderedApplicantName
                 </a>
             }
             else
             {
-                @Model.ApplicantName
+                @renderedApplicantName
             }
         </div>
         <div class="form-version pr-1">@Model.SubmissionFormDescription</div>
