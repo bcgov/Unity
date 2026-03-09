@@ -8,6 +8,7 @@ $(function () {
     const formatter = createNumberFormatter();
     const l = abp.localization.getResource('GrantManager');
     const defaultQuickDateRange = 'last6months';
+    const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     let dt = $('#GrantApplicationsTable');
     let dataTable;
@@ -425,7 +426,6 @@ $(function () {
                 initialLoad = false; // Reset flag after use
             }
         });
-        dataTable.on('search.dt', () => handleSearch());
 
         dataTable.on('select', function (e, dt, type, indexes) {
 
@@ -493,10 +493,6 @@ $(function () {
             let data = dataTable.row(indexes).data();
             PubSub.publish(action, data);
         }
-    }
-
-    function handleSearch() {
-        let filter = $('.dt-search input').val();
     }
 
     function getColumns() {
@@ -583,16 +579,25 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function(data, type, row) {
-                let applicantName = (data === "") ? '(Unknown Applicant)' : data;
-                
-                const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                const isGuid = row.applicant.id && guidPattern.test(row.applicant.id);
-                
-                if (isGuid) {
-                    return `<a href="/GrantApplicants/Details?ApplicantId=${row.applicant.id}">${applicantName}</a>`;
-                } else {
+                let applicantName = (typeof data !== 'string' || data.trim() === '') ? '(Unknown Applicant)' : data;
+
+                if (type === 'sort' || type === 'filter') { 
                     return applicantName;
                 }
+
+                if (type === 'display') {
+                    const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
+                    const applicantId = row?.applicant?.id;
+                    const isGuid = row.applicant.id && guidPattern.test(row.applicant.id);
+
+                    if (isGuid) {
+                        return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
+                    }
+
+                    return safeApplicantName;
+                }
+
+                return applicantName;
             },
         }
     }
